@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
@@ -85,7 +84,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       Submission.Id.random,
       0,
       appName,
-      LocalDateTime.now(clock)
+      FixedClock.now
     )
     val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual, "Rick Deckard", "rick@submitter.com")
   }

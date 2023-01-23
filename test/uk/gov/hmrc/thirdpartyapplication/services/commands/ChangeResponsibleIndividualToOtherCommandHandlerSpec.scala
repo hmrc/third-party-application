@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.NonEmptyChain
@@ -34,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -69,7 +68,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName)
     )
-    val ts   = LocalDateTime.now
+    val ts   = FixedClock.now
     val code = "3242342387452384623549234"
 
     val riVerificationToU = ResponsibleIndividualToUVerification(

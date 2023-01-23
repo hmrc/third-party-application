@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import uk.gov.hmrc.http.HeaderCarrier
@@ -51,7 +50,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     val fmt = DateTimeFormatter.ISO_DATE_TIME
 
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val acceptanceDate        = LocalDateTime.now(clock)
+    val acceptanceDate        = FixedClock.now
 
     val acceptance = TermsOfUseAcceptance(
       responsibleIndividual,

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
 import scala.concurrent.Future
 
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
@@ -25,6 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class ApplicationUpdateServiceRedirectUrisSpec extends ApplicationUpdateServiceUtils with ApiIdentifierSyntax {
 
@@ -49,7 +49,7 @@ class ApplicationUpdateServiceRedirectUrisSpec extends ApplicationUpdateServiceU
     val oldRedirectUris = List.empty
     val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
 
-    val timestamp          = LocalDateTime.now
+    val timestamp          = FixedClock.now
     val updateRedirectUris = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, timestamp)
   }
 

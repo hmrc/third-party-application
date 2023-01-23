@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
@@ -27,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
 class AccessServiceSpec extends AsyncHmrcSpec {
 
@@ -183,8 +182,8 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       ),
       ApplicationState(),
       Privileged(None, scopes),
-      LocalDateTime.now,
-      Some(LocalDateTime.now)
+      FixedClock.now,
+      Some(FixedClock.now)
     )
 
   private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): ApplicationData =
@@ -200,8 +199,8 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       ),
       ApplicationState(),
       Ropc(scopes),
-      LocalDateTime.now,
-      Some(LocalDateTime.now)
+      FixedClock.now,
+      Some(FixedClock.now)
     )
 
   private def standardApplicationDataWithOverrides(applicationId: ApplicationId, overrides: Set[OverrideFlag]): ApplicationData =
@@ -217,7 +216,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       ),
       ApplicationState(),
       Standard(redirectUris = List.empty, overrides = overrides),
-      LocalDateTime.now,
-      Some(LocalDateTime.now)
+      FixedClock.now,
+      Some(FixedClock.now)
     )
 }

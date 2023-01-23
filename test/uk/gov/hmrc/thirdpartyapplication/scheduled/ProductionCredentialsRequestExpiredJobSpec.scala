@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.{Clock, LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
@@ -26,15 +25,15 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   trait Setup extends ApplicationRepositoryMockModule with ApplicationUpdateServiceMockModule with ApplicationTestData {
 
     val mockLockKeeper = mock[ProductionCredentialsRequestExpiredJobLockService]
-    val timeNow        = LocalDateTime.now
-    val fixedClock     = Clock.fixed(timeNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
+    val timeNow        = FixedClock.now
+    val fixedClock     = FixedClock.clock
 
     val riName         = "bob responsible"
     val riEmail        = "bob.responsible@example.com"

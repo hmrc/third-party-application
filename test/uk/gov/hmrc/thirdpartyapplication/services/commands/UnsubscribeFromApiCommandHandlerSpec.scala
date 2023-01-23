@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.{NonEmptyList, ValidatedNec}
@@ -28,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{A
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class UnsubscribeFromApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with ApiIdentifierSyntax {
 
@@ -40,7 +39,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
     val applicationId       = ApplicationId.random
     val gatekeeperUserActor = GatekeeperUserActor("Gatekeeper Admin")
     val apiIdentifier       = "some-context".asIdentifier("1.1")
-    val timestamp           = LocalDateTime.now
+    val timestamp           = FixedClock.now
 
     val unsubscribeFromApi = UnsubscribeFromApi(gatekeeperUserActor, apiIdentifier, timestamp)
   }

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.NonEmptyChain
@@ -26,7 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -69,7 +68,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
     )
 
     val userId    = idsByEmail(adminEmail)
-    val timestamp = LocalDateTime.now
+    val timestamp = FixedClock.now
     val update    = ChangeProductionApplicationPrivacyPolicyLocation(userId, timestamp, newLocation)
     val actor     = CollaboratorActor(adminEmail)
 

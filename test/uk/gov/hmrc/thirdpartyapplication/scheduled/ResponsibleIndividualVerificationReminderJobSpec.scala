@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import java.time.temporal.ChronoUnit.SECONDS
-import java.time.{Clock, LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
@@ -31,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
 class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -39,8 +38,8 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
 
     val mockLockKeeper = mock[ResponsibleIndividualVerificationReminderJobLockService]
     val mockRepo       = ResponsibleIndividualVerificationRepositoryMock.aMock
-    val timeNow        = LocalDateTime.now
-    val fixedClock     = Clock.fixed(timeNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
+    val timeNow        = FixedClock.now
+    val fixedClock     = FixedClock.clock
 
     val riName         = "bob responsible"
     val riEmail        = "bob.responsible@example.com"
@@ -75,7 +74,7 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
       EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
       EmailConnectorMock.SendVerifyResponsibleIndividualReminderToAdmin.thenReturnSuccess()
 
-      val verification = ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, Submission.Id.random, 0, appName, LocalDateTime.now)
+      val verification = ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, Submission.Id.random, 0, appName, FixedClock.now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
       ResponsibleIndividualVerificationRepositoryMock.UpdateState.thenReturnSuccess()
 

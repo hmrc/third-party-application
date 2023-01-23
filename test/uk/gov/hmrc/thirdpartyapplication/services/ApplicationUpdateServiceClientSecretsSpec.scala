@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
 import scala.concurrent.Future
 
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
@@ -25,6 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateServiceUtils {
 
@@ -39,7 +39,7 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
     ApiPlatformEventServiceMock.ApplyEvents.succeeds
     AuditServiceMock.ApplyEvents.succeeds
   }
-  val timestamp      = LocalDateTime.now
+  val timestamp      = FixedClock.now
   val gatekeeperUser = "gkuser1"
   val adminName      = "Mr Admin"
   val adminEmail     = "admin@example.com"
@@ -66,7 +66,7 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
       val event    = ClientSecretAdded(
         UpdateApplicationEvent.Id.random,
         applicationId,
-        LocalDateTime.now(),
+        FixedClock.now,
         UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser),
         secretValue,
         clientSecret
@@ -105,7 +105,7 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
       val event    = ClientSecretRemoved(
         UpdateApplicationEvent.Id.random,
         applicationId,
-        LocalDateTime.now(),
+        FixedClock.now,
         UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser),
         clientSecret.id,
         clientSecret.name

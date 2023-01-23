@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.time.LocalDateTime
 import java.util.UUID
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
@@ -24,6 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 trait ControllerTestData {
 
@@ -63,8 +63,8 @@ trait ControllerTestData {
       environment.toString,
       Some("Description"),
       collaborators,
-      LocalDateTime.now,
-      Some(LocalDateTime.now),
+      FixedClock.now,
+      Some(FixedClock.now),
       grantLengthInDays,
       None,
       standardAccess.redirectUris,

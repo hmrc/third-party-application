@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 
@@ -44,8 +43,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
-import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, UpliftRequestSamples}
 
 class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks
@@ -363,8 +362,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       environment.toString,
       Some("Description"),
       collaborators,
-      LocalDateTime.now,
-      Some(LocalDateTime.now),
+      FixedClock.now,
+      Some(FixedClock.now),
       grantLengthInDays,
       None,
       standardAccess.redirectUris,

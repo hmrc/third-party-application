@@ -616,15 +616,15 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, OldActor("anEmail", COLLABORATOR), None, LocalDateTime.now)
+    StateHistoryResponse(appId, state, OldActor("anEmail", COLLABORATOR), None, FixedClock.now)
   }
 
-  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: LocalDateTime = LocalDateTime.now, state: ApplicationState = testingState()) = {
+  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: LocalDateTime = FixedClock.now, state: ApplicationState = testingState()) = {
     ApplicationWithUpliftRequest(id, "app 1", submittedOn, state.name)
   }
 
   private def anAppResponse(appId: ApplicationId) = {
     val grantLengthInDays = 547
-    new ApplicationResponse(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, LocalDateTime.now, Some(LocalDateTime.now), grantLengthInDays)
+    new ApplicationResponse(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, FixedClock.now, Some(FixedClock.now), grantLengthInDays)
   }
 }

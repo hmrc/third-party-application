@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.NonEmptyChain
@@ -28,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -60,7 +59,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
-    val ts        = LocalDateTime.now
+    val ts        = FixedClock.now
     val riName    = "Mr Responsible"
     val riEmail   = "ri@example.com"
     val underTest = new ChangeResponsibleIndividualToSelfCommandHandler(SubmissionsServiceMock.aMock)

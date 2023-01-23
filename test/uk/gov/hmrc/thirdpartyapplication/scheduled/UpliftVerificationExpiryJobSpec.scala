@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit.{DAYS, HOURS, SECONDS}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State.PENDING_REQUESTER_V
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneAppPerSuite}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock, NoMetricsGuiceOneAppPerSuite}
 
 class UpliftVerificationExpiryJobSpec
     extends AsyncHmrcSpec
@@ -42,7 +42,7 @@ class UpliftVerificationExpiryJobSpec
     with ApplicationStateUtil
     with NoMetricsGuiceOneAppPerSuite {
 
-  final val FixedTimeNow     = LocalDateTime.now(ZoneOffset.UTC)
+  final val FixedTimeNow     = FixedClock.now
   final val expiryTimeInDays = 90
   final val sixty            = 60
   final val twentyFour       = 24
@@ -83,7 +83,7 @@ class UpliftVerificationExpiryJobSpec
         .thenAnswer((a: ApplicationData) => successful(a))
 
       await(underTest.execute)
-      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, LocalDateTime.now(clock).minusDays(expiryTimeInDays))
+      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, FixedClock.now.minusDays(expiryTimeInDays))
       verify(mockApplicationRepository).save(app1.copy(state = testingState()))
       verify(mockApplicationRepository).save(app2.copy(state = testingState()))
       verify(mockStateHistoryRepository).insert(StateHistory(
@@ -91,14 +91,14 @@ class UpliftVerificationExpiryJobSpec
         State.TESTING,
         OldActor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
         Some(PENDING_REQUESTER_VERIFICATION),
-        changedAt = LocalDateTime.now(clock)
+        changedAt = FixedClock.now
       ))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app2.id,
         State.TESTING,
         OldActor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
         Some(PENDING_REQUESTER_VERIFICATION),
-        changedAt = LocalDateTime.now(clock)
+        changedAt = FixedClock.now
       ))
     }
 
@@ -123,7 +123,7 @@ class UpliftVerificationExpiryJobSpec
       val app1: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
       val app2: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
 
-      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[LocalDateTime]))
+      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), *))
         .thenReturn(Future.successful(List(app1, app2)))
       when(mockApplicationRepository.save(any[ApplicationData])).thenReturn(
         Future.failed(new RuntimeException("A failure on executing save db query"))
@@ -131,7 +131,7 @@ class UpliftVerificationExpiryJobSpec
 
       val result: underTest.Result = await(underTest.execute)
 
-      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, LocalDateTime.now(clock).minusDays(expiryTimeInDays))
+      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, FixedClock.now.minusDays(expiryTimeInDays))
       result.message shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing save db query'." +
         " The next execution of the job will do retry."
@@ -151,8 +151,8 @@ class UpliftVerificationExpiryJobSpec
       ),
       state,
       Standard(),
-      LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock))
+      FixedClock.now,
+      Some(FixedClock.now)
     )
   }
 }

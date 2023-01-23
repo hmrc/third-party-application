@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.NonEmptyChain
@@ -27,7 +26,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -41,7 +40,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
     val actor         = ScheduledJobActor(jobId)
     val reasons       = "reasons description text"
     val app           = anApplicationData(appId, environment = Environment.SANDBOX, state = ApplicationState.testing)
-    val ts            = LocalDateTime.now
+    val ts            = FixedClock.now
     val underTest     = new DeleteProductionCredentialsApplicationCommandHandler
   }
 

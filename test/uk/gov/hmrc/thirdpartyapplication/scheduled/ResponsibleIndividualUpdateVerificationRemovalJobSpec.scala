@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import java.time.temporal.ChronoUnit.SECONDS
-import java.time.{Clock, LocalDateTime, ZoneOffset}
+import java.time.{Clock, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil
     with ApplicationTestData {
@@ -39,7 +39,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
       with SubmissionsTestData {
 
     val mockLockKeeper = mock[ResponsibleIndividualUpdateVerificationRemovalJobLockService]
-    val timeNow        = LocalDateTime.now
+    val timeNow        = FixedClock.now
     val fixedClock     = Clock.fixed(timeNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
     val riName         = "bob responsible"
     val riEmail        = "bob.responsible@example.com"
@@ -86,7 +86,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
         completelyAnswerExtendedSubmission.submission.id,
         0,
         "my app",
-        LocalDateTime.now,
+        FixedClock.now,
         ResponsibleIndividual.build("ri name", "ri@example.com"),
         "Mr Admin",
         "admin@example.com"

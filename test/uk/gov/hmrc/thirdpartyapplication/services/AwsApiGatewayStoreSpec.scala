@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
@@ -33,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{A
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
 class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -58,8 +57,8 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
         Token(ClientId.random, serverToken)
       ),
       testingState(),
-      createdOn = LocalDateTime.now,
-      lastAccess = Some(LocalDateTime.now)
+      createdOn = FixedClock.now,
+      lastAccess = Some(FixedClock.now)
     )
   }
 
@@ -96,7 +95,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   }
 
   "applyEvents" should {
-    val now = LocalDateTime.now(ZoneOffset.UTC)
+    val now = FixedClock.now
 
     def buildApplicationDeletedEvent(applicationId: ApplicationId) =
       ApplicationDeleted(

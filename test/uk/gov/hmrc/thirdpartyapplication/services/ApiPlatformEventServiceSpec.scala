@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -35,8 +34,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{C
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
 class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach with TableDrivenPropertyChecks {
 
@@ -53,7 +52,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
     wso2ApplicationName = "wso2Name",
     tokens = ApplicationTokens(Token(ClientId("clientId"), "accessToken", List.empty)),
     state = applicationState,
-    createdOn = LocalDateTime.now(),
+    createdOn = FixedClock.now,
     lastAccess = None,
     rateLimitTier = None,
     environment = "",
@@ -89,10 +88,10 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       val clientSecretAddedEvent = ClientSecretAdded(
         id = UpdateApplicationEvent.Id.random,
         applicationId = applicationData.id,
-        eventDateTime = LocalDateTime.now(),
+        eventDateTime = FixedClock.now,
         actor = CollaboratorActor(adminEmail),
         secretValue = secretValue,
-        clientSecret = ClientSecret("name", LocalDateTime.now(), None, UUID.randomUUID().toString, "eulaVterces")
+        clientSecret = ClientSecret("name", FixedClock.now, None, UUID.randomUUID().toString, "eulaVterces")
       )
       "obfuscate ClientSecret Event when applied" in new Setup() {
         val obfuscatedEvent = ClientSecretAddedObfuscated.fromClientSecretAdded(clientSecretAddedEvent)

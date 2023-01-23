@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
@@ -48,11 +47,11 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   private def aHistory(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
-    StateHistory(appId, state, OldActor("anEmail", COLLABORATOR), Some(TESTING), changedAt = LocalDateTime.now(clock))
+    StateHistory(appId, state, OldActor("anEmail", COLLABORATOR), Some(TESTING), changedAt = FixedClock.now)
   }
 
   private def aStateHistoryResponse(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, OldActor("anEmail", COLLABORATOR), None, LocalDateTime.now(clock))
+    StateHistoryResponse(appId, state, OldActor("anEmail", COLLABORATOR), None, FixedClock.now)
   }
 
   private def anApplicationData(
@@ -70,8 +69,8 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       ApplicationTokens(productionToken),
       state,
       Standard(),
-      LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock))
+      FixedClock.now,
+      Some(FixedClock.now)
     )
   }
 
@@ -193,7 +192,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
         state = PENDING_REQUESTER_VERIFICATION,
         actor = OldActor(gatekeeperUserId, GATEKEEPER),
         previousState = Some(PENDING_GATEKEEPER_APPROVAL),
-        changedAt = LocalDateTime.now(clock)
+        changedAt = FixedClock.now
       )
 
       ApplicationRepoMock.Fetch.thenReturn(application)
@@ -315,7 +314,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
         actor = OldActor(gatekeeperUserId, GATEKEEPER),
         previousState = Some(PENDING_GATEKEEPER_APPROVAL),
         notes = Some(rejectReason),
-        changedAt = LocalDateTime.now(clock)
+        changedAt = FixedClock.now
       )
 
       ApplicationRepoMock.Fetch.thenReturn(application)
@@ -471,9 +470,9 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
     "return correct state history values" in new Setup {
       val appId1   = ApplicationId.random
       val appId2   = ApplicationId.random
-      val ts1      = LocalDateTime.now
-      val ts2      = LocalDateTime.now
-      val ts3      = LocalDateTime.now
+      val ts1      = FixedClock.now
+      val ts2      = FixedClock.now
+      val ts3      = FixedClock.now
       val history1 = ApplicationWithStateHistory(
         appId1,
         "app1",

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.github.tomakehurst.wiremock.client.WireMock._
@@ -28,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{G
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
@@ -90,7 +90,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
   val prodAppNameChangedEvent: ProductionAppNameChanged = ProductionAppNameChanged(
     id = UpdateApplicationEvent.Id.random,
     applicationId = ApplicationId.random,
-    eventDateTime = LocalDateTime.now,
+    eventDateTime = FixedClock.now,
     actor = GatekeeperUserActor("mr gatekeeper"),
     oldAppName = "old name",
     newAppName = "new name",

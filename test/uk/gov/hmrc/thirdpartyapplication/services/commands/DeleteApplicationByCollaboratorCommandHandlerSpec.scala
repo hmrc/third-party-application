@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.NonEmptyChain
@@ -28,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -47,7 +46,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
         Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
       )
     )
-    val ts                = LocalDateTime.now
+    val ts                = FixedClock.now
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
     val underTest         = new DeleteApplicationByCollaboratorCommandHandler(authControlConfig)
   }

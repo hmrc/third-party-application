@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import java.time.LocalDateTime
 import scala.collection.mutable
 
 import com.github.t3hnar.bcrypt._
@@ -35,13 +34,13 @@ trait ApplicationTestData extends ApplicationStateUtil {
     idsByEmail.getOrElseUpdate(email, UserId.random)
   }
 
-  def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = LocalDateTime.now(clock))
+  def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = FixedClock.now)
 
   val loggedInUser = "loggedin@example.com"
   val devEmail     = "dev@example.com"
 
   val serverToken           = "b3c83934c02df8b111e7f9f8700000"
-  val serverTokenLastAccess = LocalDateTime.now(clock)
+  val serverTokenLastAccess = FixedClock.now
   val productionToken       = Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   val requestedByEmail = "john.smith@example.com"
@@ -67,8 +66,8 @@ trait ApplicationTestData extends ApplicationStateUtil {
       ApplicationTokens(productionToken),
       state,
       access,
-      LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock)),
+      FixedClock.now,
+      Some(FixedClock.now),
       grantLength,
       rateLimitTier = rateLimitTier,
       environment = environment.toString,

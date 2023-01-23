@@ -43,6 +43,7 @@ import scala.util.Random.nextString
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 
 import java.time.temporal.ChronoUnit
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
@@ -134,7 +135,7 @@ class ApplicationRepositoryISpec
             productionState("requestorEmail@example.com")
           ).copy(
             rateLimitTier = Some(RateLimitTier.BRONZE),
-            lastAccess = Some(LocalDateTime.now(clock))
+            lastAccess = Some(FixedClock.now)
           )
         )
       )
@@ -240,7 +241,7 @@ class ApplicationRepositoryISpec
           productionState("requestorEmail@example.com")
         )
           .copy(lastAccess =
-            Some(LocalDateTime.now(clock).minusDays(20))
+            Some(FixedClock.now.minusDays(20))
           ) // scalastyle:ignore magic.number
 
       await(applicationRepository.save(application))
@@ -261,7 +262,7 @@ class ApplicationRepositoryISpec
           grantLength = newGrantLength
         )
           .copy(lastAccess =
-            Some(LocalDateTime.now(clock).minusDays(20))
+            Some(FixedClock.now.minusDays(20))
           ) // scalastyle:ignore magic.number
 
       await(applicationRepository.save(application))
@@ -282,7 +283,7 @@ class ApplicationRepositoryISpec
           productionState("requestorEmail@example.com")
         )
           .copy(lastAccess =
-            Some(LocalDateTime.now(clock).minusDays(20))
+            Some(FixedClock.now.minusDays(20))
           ) // scalastyle:ignore magic.number
 
       application.tokens.production.lastAccessTokenUsage mustBe None
@@ -335,7 +336,7 @@ class ApplicationRepositoryISpec
           List(
             aClientSecret(
               name = "Default",
-              lastAccess = Some(LocalDateTime.now(clock).minusDays(20)),
+              lastAccess = Some(FixedClock.now.minusDays(20)),
               hashedSecret = "hashed-secret"
             )
           )
@@ -369,12 +370,12 @@ class ApplicationRepositoryISpec
     }
 
     "update the correct client secret when there are multiple" in {
-      val testStartTime     = LocalDateTime.now(clock)
+      val testStartTime     = FixedClock.now
       val applicationId     = ApplicationId.random
       val secretToUpdate    =
         aClientSecret(
           name = "SecretToUpdate",
-          lastAccess = Some(LocalDateTime.now(clock).minusDays(20)),
+          lastAccess = Some(FixedClock.now.minusDays(20)),
           hashedSecret = "hashed-secret"
         )
       val applicationTokens =
@@ -386,7 +387,7 @@ class ApplicationRepositoryISpec
               secretToUpdate,
               aClientSecret(
                 name = "SecretToLeave",
-                lastAccess = Some(LocalDateTime.now(clock).minusDays(20)),
+                lastAccess = Some(FixedClock.now.minusDays(20)),
                 hashedSecret = "hashed-secret"
               )
             )
@@ -696,7 +697,7 @@ class ApplicationRepositoryISpec
 
   "fetchAllByStatusDetails" should {
 
-    val dayOfExpiry          = LocalDateTime.now(clock)
+    val dayOfExpiry          = FixedClock.now
     val expiryOnTheDayBefore = dayOfExpiry.minusDays(1)
     val expiryOnTheDayAfter  = dayOfExpiry.plusDays(1)
 
@@ -810,7 +811,7 @@ class ApplicationRepositoryISpec
 
   "fetchByStatusDetailsAndEnvironment" should {
 
-    val currentDate        = LocalDateTime.now(clock)
+    val currentDate        = FixedClock.now
     val yesterday          = currentDate.minusDays(1)
     val dayBeforeYesterday = currentDate.minusDays(2)
     val lastWeek           = currentDate.minusDays(7)
@@ -857,7 +858,7 @@ class ApplicationRepositoryISpec
 
   "fetchByStatusDetailsAndEnvironmentNotAleadyNotified" should {
 
-    val currentDate        = LocalDateTime.now(clock)
+    val currentDate        = FixedClock.now
     val yesterday          = currentDate.minusDays(1)
     val dayBeforeYesterday = currentDate.minusDays(2)
     val lastWeek           = currentDate.minusDays(7)
@@ -977,7 +978,7 @@ class ApplicationRepositoryISpec
         state = pendingRequesterVerificationState("requestorEmail@example.com")
       )
       await(applicationRepository.save(application))
-      await(applicationRepository.delete(application.id, LocalDateTime.now))
+      await(applicationRepository.delete(application.id, FixedClock.now))
 
       val retrieved = await(
         applicationRepository.fetchVerifiableUpliftBy(generatedVerificationCode)
@@ -989,7 +990,7 @@ class ApplicationRepositoryISpec
   "delete" should {
 
     "change an application's state to Deleted" in {
-      val now         = LocalDateTime.now
+      val now         = FixedClock.now
       val application = anApplicationDataForTest(ApplicationId.random)
       await(applicationRepository.save(application))
 
@@ -1336,7 +1337,7 @@ class ApplicationRepositoryISpec
         prodClientId = generateClientId
       )
       val applicationInProduction =
-        createAppWithStatusUpdatedOn(State.PRODUCTION, LocalDateTime.now(clock))
+        createAppWithStatusUpdatedOn(State.PRODUCTION, FixedClock.now)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationInProduction))
 
@@ -1359,7 +1360,7 @@ class ApplicationRepositoryISpec
         prodClientId = generateClientId
       )
       val applicationDeleted =
-        createAppWithStatusUpdatedOn(State.DELETED, LocalDateTime.now(clock))
+        createAppWithStatusUpdatedOn(State.DELETED, FixedClock.now)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationDeleted))
 
@@ -1382,7 +1383,7 @@ class ApplicationRepositoryISpec
         prodClientId = generateClientId
       )
       val applicationDeleted =
-        createAppWithStatusUpdatedOn(State.DELETED, LocalDateTime.now(clock))
+        createAppWithStatusUpdatedOn(State.DELETED, FixedClock.now)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationDeleted))
 
@@ -1550,7 +1551,7 @@ class ApplicationRepositoryISpec
         prodClientId = generateClientId
       )
       await(applicationRepository.save(randomDeletedApplication))
-      await(applicationRepository.delete(randomDeletedApplication.id, LocalDateTime.now))
+      await(applicationRepository.delete(randomDeletedApplication.id, FixedClock.now))
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -1589,7 +1590,7 @@ class ApplicationRepositoryISpec
         prodClientId = generateClientId
       )
       await(applicationRepository.save(randomDeletedApplication))
-      await(applicationRepository.delete(randomDeletedApplication.id, LocalDateTime.now))
+      await(applicationRepository.delete(randomDeletedApplication.id, FixedClock.now))
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -1816,13 +1817,13 @@ class ApplicationRepositoryISpec
 
     "return applications last used before a certain date" in {
       val oldApplicationId = ApplicationId.random
-      val cutoffDate       = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate       = FixedClock.now.minusMonths(12)
 
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             oldApplicationId,
-            LocalDateTime.now(clock).minusMonths(18)
+            FixedClock.now.minusMonths(18)
           )
         )
       )
@@ -1830,7 +1831,7 @@ class ApplicationRepositoryISpec
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            LocalDateTime.now(clock)
+            FixedClock.now
           )
         )
       )
@@ -1852,17 +1853,17 @@ class ApplicationRepositoryISpec
     "include applications with no lastAccess date where they were created before cutoff date" in {
       val oldApplicationId = ApplicationId.random
       val oldApplication   = anApplicationDataForTest(oldApplicationId).copy(
-        createdOn = LocalDateTime.now(clock).minusMonths(18),
+        createdOn = FixedClock.now.minusMonths(18),
         lastAccess = None
       )
-      val cutoffDate       = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate       = FixedClock.now.minusMonths(12)
 
       await(applicationRepository.save(oldApplication))
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            LocalDateTime.now(clock)
+            FixedClock.now
           )
         )
       )
@@ -1883,7 +1884,7 @@ class ApplicationRepositoryISpec
 
     "return applications that are equal to the specified cutoff date when searching for older applications" in {
       val oldApplicationId = ApplicationId.random
-      val cutoffDate       = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate       = FixedClock.now.minusMonths(12)
 
       await(
         applicationRepository.save(
@@ -1906,12 +1907,12 @@ class ApplicationRepositoryISpec
     }
 
     "return no results if no applications are last used before the cutoff date" in {
-      val cutoffDate = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate = FixedClock.now.minusMonths(12)
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            LocalDateTime.now(clock)
+            FixedClock.now
           )
         )
       )
@@ -1927,13 +1928,13 @@ class ApplicationRepositoryISpec
 
     "return applications last used after a certain date" in {
       val newerApplicationId = ApplicationId.random
-      val cutoffDate         = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate         = FixedClock.now.minusMonths(12)
 
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             newerApplicationId,
-            LocalDateTime.now(clock)
+            FixedClock.now
           )
         )
       )
@@ -1941,7 +1942,7 @@ class ApplicationRepositoryISpec
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            LocalDateTime.now(clock).minusMonths(18)
+            FixedClock.now.minusMonths(18)
           )
         )
       )
@@ -1964,14 +1965,14 @@ class ApplicationRepositoryISpec
       val newerApplicationId = ApplicationId.random
       val newerApplication   =
         anApplicationDataForTest(newerApplicationId).copy(lastAccess = None)
-      val cutoffDate         = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate         = FixedClock.now.minusMonths(12)
 
       await(applicationRepository.save(newerApplication))
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            LocalDateTime.now(clock).minusMonths(18)
+            FixedClock.now.minusMonths(18)
           )
         )
       )
@@ -1992,7 +1993,7 @@ class ApplicationRepositoryISpec
 
     "return applications that are equal to the specified cutoff date when searching for newer applications" in {
       val applicationId = ApplicationId.random
-      val cutoffDate    = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate    = FixedClock.now.minusMonths(12)
 
       await(
         applicationRepository.save(
@@ -2015,12 +2016,12 @@ class ApplicationRepositoryISpec
     }
 
     "return no results if no applications are last used after the cutoff date" in {
-      val cutoffDate = LocalDateTime.now(clock)
+      val cutoffDate = FixedClock.now
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            LocalDateTime.now(clock).minusMonths(6)
+            FixedClock.now.minusMonths(6)
           )
         )
       )
@@ -2099,8 +2100,8 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by submitted ascending" in {
-      val firstCreatedOn    = LocalDateTime.now(clock).minusDays(2)
-      val secondCreatedOn   = LocalDateTime.now(clock).minusDays(1)
+      val firstCreatedOn    = FixedClock.now.minusDays(2)
+      val secondCreatedOn   = FixedClock.now.minusDays(1)
       val firstApplication  =
         anApplicationDataForTest(
           id = ApplicationId.random,
@@ -2129,8 +2130,8 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by submitted descending" in {
-      val firstCreatedOn    = LocalDateTime.now(clock).minusDays(2)
-      val secondCreatedOn   = LocalDateTime.now(clock).minusDays(1)
+      val firstCreatedOn    = FixedClock.now.minusDays(2)
+      val secondCreatedOn   = FixedClock.now.minusDays(1)
       val firstApplication  =
         anApplicationDataForTest(
           id = ApplicationId.random,
@@ -2159,8 +2160,8 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by lastAccess ascending" in {
-      val mostRecentlyAccessedDate = LocalDateTime.now(clock).minusDays(1)
-      val oldestLastAccessDate     = LocalDateTime.now(clock).minusDays(2)
+      val mostRecentlyAccessedDate = FixedClock.now.minusDays(1)
+      val oldestLastAccessDate     = FixedClock.now.minusDays(2)
       val firstApplication         = applicationWithLastAccessDate(
         ApplicationId.random,
         mostRecentlyAccessedDate
@@ -2187,8 +2188,8 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by lastAccess descending" in {
-      val mostRecentlyAccessedDate = LocalDateTime.now(clock).minusDays(1)
-      val oldestLastAccessDate     = LocalDateTime.now(clock).minusDays(2)
+      val mostRecentlyAccessedDate = FixedClock.now.minusDays(1)
+      val oldestLastAccessDate     = FixedClock.now.minusDays(2)
       val firstApplication         = applicationWithLastAccessDate(
         ApplicationId.random,
         mostRecentlyAccessedDate
@@ -2499,7 +2500,7 @@ class ApplicationRepositoryISpec
         ResponsibleIndividual.Name("bob"),
         ResponsibleIndividual.EmailAddress("bob@example.com")
       )
-      val acceptanceDate          = LocalDateTime.now(clock)
+      val acceptanceDate          = FixedClock.now
       val submissionId            = Submission.Id.random
       val acceptance              = TermsOfUseAcceptance(
         responsibleIndividual,
@@ -2858,7 +2859,7 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(app))
 
       val events             = List("name1", "name2", newestName).map(
-        ProductionAppNameChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldName, _, adminEmail)
+        ProductionAppNameChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, gkUser, oldName, _, adminEmail)
       )
       val appWithUpdatedName = await(
         applicationRepository.applyEvents(NonEmptyList.fromList(events).get)
@@ -2877,7 +2878,7 @@ class ApplicationRepositoryISpec
       val event                 = ClientSecretAdded(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
-        eventDateTime = LocalDateTime.now(),
+        eventDateTime = FixedClock.now,
         actor = CollaboratorActor(adminEmail),
         secretValue = secretValue,
         clientSecret = newClientSecret
@@ -2901,7 +2902,7 @@ class ApplicationRepositoryISpec
       val event                 = ClientSecretRemoved(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
-        eventDateTime = LocalDateTime.now(),
+        eventDateTime = FixedClock.now,
         actor = CollaboratorActor(adminEmail),
         clientSecretId = clientSecretToRemove.id,
         clientSecretName = clientSecretToRemove.name
@@ -2926,7 +2927,7 @@ class ApplicationRepositoryISpec
       val event = CollaboratorAdded(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
-        eventDateTime = LocalDateTime.now(),
+        eventDateTime = FixedClock.now,
         actor = CollaboratorActor(adminEmail),
         collaboratorId = collaborator.userId,
         collaboratorRole = collaborator.role,
@@ -2952,7 +2953,7 @@ class ApplicationRepositoryISpec
       val event = CollaboratorRemoved(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
-        eventDateTime = LocalDateTime.now(),
+        eventDateTime = FixedClock.now,
         actor = CollaboratorActor(adminEmail),
         collaboratorId = collaborator.userId,
         collaboratorRole = collaborator.role,
@@ -2976,7 +2977,7 @@ class ApplicationRepositoryISpec
       val app           = anApplicationData(applicationId).copy(name = oldName)
       await(applicationRepository.save(app))
 
-      val event              = ProductionAppNameChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldName, newName, adminEmail)
+      val event              = ProductionAppNameChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, gkUser, oldName, newName, adminEmail)
       val appWithUpdatedName =
         await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedName.name mustBe newName
@@ -3007,7 +3008,7 @@ class ApplicationRepositoryISpec
       val app           = anApplicationData(applicationId).copy(access = access)
       await(applicationRepository.save(app))
 
-      val event                               = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, oldLocation, newLocation)
+      val event                               = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, oldLocation, newLocation)
       val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedPrivacyPolicyLocation.access match {
         case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
@@ -3023,7 +3024,7 @@ class ApplicationRepositoryISpec
       val app           = anApplicationData(applicationId).copy(access = access)
       await(applicationRepository.save(app))
 
-      val event                               = ProductionLegacyAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, oldUrl, newUrl)
+      val event                               = ProductionLegacyAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, oldUrl, newUrl)
       val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedPrivacyPolicyLocation.access match {
         case Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
@@ -3048,7 +3049,7 @@ class ApplicationRepositoryISpec
       val app           = anApplicationData(applicationId).copy(access = access)
       await(applicationRepository.save(app))
 
-      val event                                 = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, oldLocation, newLocation)
+      val event                                 = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, oldLocation, newLocation)
       val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedTermsConditionsLocation.access match {
         case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation mustBe newLocation
@@ -3064,7 +3065,7 @@ class ApplicationRepositoryISpec
       val app           = anApplicationData(applicationId).copy(access = access)
       await(applicationRepository.save(app))
 
-      val event                                 = ProductionLegacyAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, oldUrl, newUrl)
+      val event                                 = ProductionLegacyAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, oldUrl, newUrl)
       val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedTermsConditionsLocation.access match {
         case Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
@@ -3086,7 +3087,7 @@ class ApplicationRepositoryISpec
         Set.empty,
         TermsAndConditionsLocation.InDesktopSoftware,
         PrivacyPolicyLocation.InDesktopSoftware,
-        List(TermsOfUseAcceptance(oldRi, LocalDateTime.now, submissionId, submissionIndex))
+        List(TermsOfUseAcceptance(oldRi, FixedClock.now, submissionId, submissionIndex))
       )
       val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
       val app                     = anApplicationData(applicationId).copy(access = access)
@@ -3096,7 +3097,7 @@ class ApplicationRepositoryISpec
       val event            = ResponsibleIndividualChanged(
         UpdateApplicationEvent.Id.random,
         applicationId,
-        LocalDateTime.now,
+        FixedClock.now,
         devHubUser,
         oldRi.fullName.value,
         oldRi.emailAddress.value,
@@ -3133,7 +3134,7 @@ class ApplicationRepositoryISpec
         Set.empty,
         TermsAndConditionsLocation.InDesktopSoftware,
         PrivacyPolicyLocation.InDesktopSoftware,
-        List(TermsOfUseAcceptance(oldRi, LocalDateTime.now, submissionId, submissionIndex))
+        List(TermsOfUseAcceptance(oldRi, FixedClock.now, submissionId, submissionIndex))
       )
       val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
       val app                     = anApplicationData(applicationId).copy(access = access)
@@ -3143,7 +3144,7 @@ class ApplicationRepositoryISpec
       val event            = ResponsibleIndividualChangedToSelf(
         UpdateApplicationEvent.Id.random,
         applicationId,
-        LocalDateTime.now,
+        FixedClock.now,
         devHubUser,
         oldRi.fullName.value,
         oldRi.emailAddress.value,
@@ -3184,7 +3185,7 @@ class ApplicationRepositoryISpec
       val event            = ResponsibleIndividualSet(
         UpdateApplicationEvent.Id.random,
         applicationId,
-        LocalDateTime.now,
+        FixedClock.now,
         devHubUser,
         riName,
         riEmail,
@@ -3208,7 +3209,7 @@ class ApplicationRepositoryISpec
 
     "handle ApplicationStateChanged event correctly" in {
       val applicationId           = ApplicationId.random
-      val ts                      = LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS)
+      val ts                      = FixedClock.now.truncatedTo(ChronoUnit.MILLIS)
       val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
       val importantSubmissionData =
         ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
@@ -3242,7 +3243,7 @@ class ApplicationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         "app name",
-        LocalDateTime.now,
+        FixedClock.now,
         CollaboratorActor("admin@example.com"),
         "ms admin",
         "admin@example.com",
@@ -3260,7 +3261,7 @@ class ApplicationRepositoryISpec
       val appId1 = ApplicationId.random
       val appId2 = ApplicationId.random
       val events = List(appId1, appId2).map(
-        ProductionAppNameChanged(UpdateApplicationEvent.Id.random, _, LocalDateTime.now, gkUser, "old name", "new name", adminEmail)
+        ProductionAppNameChanged(UpdateApplicationEvent.Id.random, _, FixedClock.now, gkUser, "old name", "new name", adminEmail)
       )
       await(
         applicationRepository.save(
@@ -3285,7 +3286,7 @@ class ApplicationRepositoryISpec
     def saveApp(state: State, timeOffset: Duration, isNewJourney: Boolean = true, environment: Environment = Environment.PRODUCTION) = {
       val appId = ApplicationId.random
       val app   = anApplicationData(appId).copy(
-        state = ApplicationState(name = state, updatedOn = LocalDateTime.now(clock)),
+        state = ApplicationState(name = state, updatedOn = FixedClock.now),
         access = Standard(importantSubmissionData = isNewJourney match {
           case true  => Some(ImportantSubmissionData(
               None,
@@ -3297,7 +3298,7 @@ class ApplicationRepositoryISpec
             ))
           case false => None
         }),
-        createdOn = LocalDateTime.now.plus(timeOffset).truncatedTo(ChronoUnit.MILLIS),
+        createdOn = FixedClock.now.plus(timeOffset).truncatedTo(ChronoUnit.MILLIS),
         environment = environment.toString,
         tokens = ApplicationTokens(Token(ClientId.random, "access token"))
       )
@@ -3308,7 +3309,7 @@ class ApplicationRepositoryISpec
     def saveHistoryStatePair(appId: ApplicationId, oldState: State, newState: State, timeOffset: Duration)     = saveHistory(appId, Some(oldState), newState, timeOffset)
     def saveHistory(appId: ApplicationId, maybeOldState: Option[State], newState: State, timeOffset: Duration) = {
       val stateHistory =
-        StateHistory(appId, newState, OldActor("actor", ActorType.GATEKEEPER), maybeOldState, None, LocalDateTime.now.plus(timeOffset).truncatedTo(ChronoUnit.MILLIS))
+        StateHistory(appId, newState, OldActor("actor", ActorType.GATEKEEPER), maybeOldState, None, FixedClock.now.plus(timeOffset).truncatedTo(ChronoUnit.MILLIS))
       await(stateHistoryRepository.insert(stateHistory))
       stateHistory
     }
@@ -3507,8 +3508,8 @@ class ApplicationRepositoryISpec
       ),
       state,
       access,
-      LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock)),
+      FixedClock.now,
+      Some(FixedClock.now),
       grantLength = grantLength,
       checkInformation = checkInformation
     )
@@ -3520,7 +3521,7 @@ class ApplicationRepositoryISpec
       name = name,
       lastAccess = lastAccess,
       hashedSecret = hashedSecret,
-      createdOn = LocalDateTime.now(clock)
+      createdOn = FixedClock.now
     )
 
 }

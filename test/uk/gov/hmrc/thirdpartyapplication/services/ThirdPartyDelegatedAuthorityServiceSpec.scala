@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
@@ -30,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationDeleted, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
 class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -43,7 +42,7 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
   }
 
   "applyEvents" should {
-    val now                                                        = LocalDateTime.now(ZoneOffset.UTC)
+    val now                                                        = FixedClock.now
     val clientId                                                   = ClientId("clientId")
     def buildApplicationDeletedEvent(applicationId: ApplicationId) =
       ApplicationDeleted(
