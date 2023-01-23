@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import scala.concurrent.Future
 
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
@@ -47,7 +47,7 @@ class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServ
     val gatekeeperActor = GatekeeperUserActor("admin@gatekeeper")
 
     val apiIdentifier = "some-context".asIdentifier("1.1")
-    val timestamp     = LocalDateTime.now
+    val timestamp     = FixedClock.now
 
     def testForSuccess(applicationUpdate: ApplicationUpdate, event: UpdateApplicationEvent with UpdatesSubscription): Unit = {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)

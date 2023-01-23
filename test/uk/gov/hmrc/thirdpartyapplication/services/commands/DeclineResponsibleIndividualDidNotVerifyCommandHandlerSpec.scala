@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.NonEmptyChain
@@ -69,7 +69,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends AsyncHm
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName)
     )
-    val ts      = LocalDateTime.now
+    val ts      = FixedClock.now
     val code    = "3242342387452384623549234"
     val reasons = "The responsible individual did not accept the terms of use in 20 days."
 

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.{LocalDateTime, ZoneOffset}
 import java.util.concurrent.TimeoutException
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -162,8 +161,8 @@ class ApplicationServiceSpec
         tokens = tokens,
         state = testingState(),
         access = access,
-        createdOn = LocalDateTime.now,
-        lastAccess = Some(LocalDateTime.now)
+        createdOn = FixedClock.now,
+        lastAccess = Some(FixedClock.now)
       )
       val newRedirectUris                     = List("http://new-url.example.com")
       val updatedApplication: ApplicationData = existingApplication.copy(
@@ -466,7 +465,7 @@ class ApplicationServiceSpec
     "update the repository correctly" in new Setup {
       val termsOfUseAcceptance = TermsOfUseAcceptance(
         ResponsibleIndividual(ResponsibleIndividual.Name("bob"), ResponsibleIndividual.EmailAddress("bob@example.com")),
-        LocalDateTime.now(ZoneOffset.UTC),
+        FixedClock.now,
         Submission.Id.random,
         0
       )

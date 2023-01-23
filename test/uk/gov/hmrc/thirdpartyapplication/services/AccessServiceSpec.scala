@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
@@ -183,8 +183,8 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       ),
       ApplicationState(),
       Privileged(None, scopes),
-      LocalDateTime.now,
-      Some(LocalDateTime.now)
+      FixedClock.now,
+      Some(FixedClock.now)
     )
 
   private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): ApplicationData =
@@ -200,8 +200,8 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       ),
       ApplicationState(),
       Ropc(scopes),
-      LocalDateTime.now,
-      Some(LocalDateTime.now)
+      FixedClock.now,
+      Some(FixedClock.now)
     )
 
   private def standardApplicationDataWithOverrides(applicationId: ApplicationId, overrides: Set[OverrideFlag]): ApplicationData =
@@ -217,7 +217,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       ),
       ApplicationState(),
       Standard(redirectUris = List.empty, overrides = overrides),
-      LocalDateTime.now,
-      Some(LocalDateTime.now)
+      FixedClock.now,
+      Some(FixedClock.now)
     )
 }

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.NonEmptyChain
@@ -61,7 +61,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with A
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
-    val ts        = LocalDateTime.now
+    val ts        = FixedClock.now
     val riName    = "Mr Responsible"
     val riEmail   = "ri@example.com"
     val underTest = new VerifyResponsibleIndividualCommandHandler(SubmissionsServiceMock.aMock)

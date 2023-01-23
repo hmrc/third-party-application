@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apiplatform.modules.submissions
 
 import java.time.temporal.ChronoUnit
-import java.time.{LocalDateTime, ZoneOffset}
 import scala.util.Random
 
 import cats.data.NonEmptyList
@@ -25,6 +24,8 @@ import cats.data.NonEmptyList
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import java.time.LocalDateTime
 
 trait StatusTestDataHelper {
 
@@ -32,28 +33,28 @@ trait StatusTestDataHelper {
 
     def hasCompletelyAnsweredWith(answers: Submission.AnswersToQuestions): Submission = {
       (
-        Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, true)) andThen
+        Submission.addStatusHistory(Submission.Status.Answering(FixedClock.now, true)) andThen
           Submission.updateLatestAnswersTo(answers)
       )(submission)
     }
 
     def hasCompletelyAnswered: Submission = {
-      Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, true))(submission)
+      Submission.addStatusHistory(Submission.Status.Answering(FixedClock.now, true))(submission)
     }
 
     def answeringWith(answers: Submission.AnswersToQuestions): Submission = {
       (
-        Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, false)) andThen
+        Submission.addStatusHistory(Submission.Status.Answering(FixedClock.now, false)) andThen
           Submission.updateLatestAnswersTo(answers)
       )(submission)
     }
 
     def answering: Submission = {
-      Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, false))(submission)
+      Submission.addStatusHistory(Submission.Status.Answering(FixedClock.now, false))(submission)
     }
 
     def submitted: Submission = {
-      Submission.submit(LocalDateTime.now, "bob@example.com")(submission)
+      Submission.submit(FixedClock.now, "bob@example.com")(submission)
     }
   }
 }
@@ -94,7 +95,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
     AskWhen.Context.Keys.IN_HOUSE_SOFTWARE -> "No",
     AskWhen.Context.Keys.VAT_OR_ITSA       -> "No"
   )
-  val now                              = LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS)
+  val now                              = FixedClock.now.truncatedTo(ChronoUnit.MILLIS)
 
   val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
 
@@ -168,7 +169,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
       "bob@example.com",
       subId,
       appId,
-      LocalDateTime.now,
+      FixedClock.now,
       questionnaireGroups,
       QuestionIdsOfInterest(
         questionName.id,
@@ -315,7 +316,7 @@ trait MarkedSubmissionsTestData extends SubmissionsTestData with AnsweringQuesti
 
   val markedSubmission = MarkedSubmission(submittedSubmission, markedAnswers)
 
-  def markAsPass(now: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC), requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
+  def markAsPass(now: LocalDateTime = FixedClock.now, requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
     val answers = answersForGroups(Pass)(submission.groups)
     val marks   = answers.map { case (q, a) => q -> Pass }
 

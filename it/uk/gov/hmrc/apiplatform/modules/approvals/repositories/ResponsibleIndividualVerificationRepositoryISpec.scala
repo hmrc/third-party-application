@@ -165,7 +165,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       val submissionId                   = Submission.Id.random
       val savedDocForSubmissionInstance0 = buildAndSaveDoc(INITIAL, FixedClock.now.minusDays(FEW_DAYS_AGO), submissionId, 0)
       buildAndSaveDoc(INITIAL, FixedClock.now.minusDays(FEW_DAYS_AGO), submissionId, 1)
-      val submissionWithTwoInstances     = Submission.addInstance(answersToQuestions, Submission.Status.Answering(LocalDateTime.now, true))(aSubmission.copy(id = submissionId))
+      val submissionWithTwoInstances     = Submission.addInstance(answersToQuestions, Submission.Status.Answering(FixedClock.now, true))(aSubmission.copy(id = submissionId))
       await(repository.delete(submissionWithTwoInstances))
 
       await(repository.findAll) mustBe List(savedDocForSubmissionInstance0)
@@ -175,11 +175,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
   "fetchByStateAndAge" should {
     "retrieve correct documents" in {
       val initialWithOldDate = buildAndSaveDoc(INITIAL, FixedClock.now.minusDays(MANY_DAYS_AGO))
-      buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
-      buildAndSaveDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
-      buildAndSaveDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      buildAndSaveDoc(INITIAL, FixedClock.now.minusDays(FEW_DAYS_AGO))
+      buildAndSaveDoc(REMINDERS_SENT, FixedClock.now.minusDays(MANY_DAYS_AGO))
+      buildAndSaveDoc(REMINDERS_SENT, FixedClock.now.minusDays(FEW_DAYS_AGO))
 
-      val results = await(repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, INITIAL, LocalDateTime.now.minusDays(UPDATE_THRESHOLD)))
+      val results = await(repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, INITIAL, FixedClock.now.minusDays(UPDATE_THRESHOLD)))
 
       results mustBe List(initialWithOldDate)
     }
@@ -521,7 +521,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       val event = ProductionAppNameChanged(
         UpdateApplicationEvent.Id.random,
         applicationId,
-        LocalDateTime.now(),
+        FixedClock.now,
         GatekeeperUserActor("gkuser@example.com"),
         "app name",
         "new name",

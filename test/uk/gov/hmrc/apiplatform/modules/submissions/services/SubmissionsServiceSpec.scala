@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
-import java.time.{LocalDateTime, ZoneOffset}
-
 import cats.data.NonEmptyList
 import org.scalatest.Inside
 
@@ -234,7 +232,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
     }
 
     "applyEvents" should {
-      val now          = LocalDateTime.now(ZoneOffset.UTC)
+      val now          = FixedClock.now
       val appId        = ApplicationId.random
       val submissionId = Submission.Id.random
       val reasons      = "reasons description"

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.{Chain, NonEmptyList, ValidatedNec}
@@ -24,6 +23,7 @@ import cats.data.{Chain, NonEmptyList, ValidatedNec}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, CollaboratorAdded, GatekeeperUserActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class AddCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -48,7 +48,7 @@ class AddCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
       )
     )
 
-    val timestamp         = LocalDateTime.now
+    val timestamp         = FixedClock.now
     val collaboratorEmail = "newdev@somecompany.com"
     val collaborator      = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
     val adminsToEmail     = Set(adminEmail, devEmail)

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.NonEmptyChain
@@ -58,7 +58,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
     val userId    = idsByEmail(adminEmail)
-    val timestamp = LocalDateTime.now
+    val timestamp = FixedClock.now
     val update    = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
     val actor     = CollaboratorActor(adminEmail)
 

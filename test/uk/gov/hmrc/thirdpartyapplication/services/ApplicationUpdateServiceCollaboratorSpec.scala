@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import scala.concurrent.Future
 
 import cats.data.{NonEmptyList, Validated}
@@ -29,12 +29,13 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceUtils with ApplicationTestData {
 
   trait Setup extends CommonSetup
 
-  val timestamp             = LocalDateTime.now
+  val timestamp             = FixedClock.now
   val gatekeeperUser        = "gkuser1"
   val adminName             = "Mr Admin"
   val adminEmail            = "admin@example.com"

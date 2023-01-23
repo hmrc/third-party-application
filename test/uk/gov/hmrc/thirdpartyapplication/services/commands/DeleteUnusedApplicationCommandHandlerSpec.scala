@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import java.nio.charset.StandardCharsets.UTF_8
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.NonEmptyChain
@@ -43,7 +43,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Appli
     val actor             = ScheduledJobActor("DeleteUnusedApplicationsJob")
     val reasons           = "reasons description text"
     val app               = anApplicationData(appId, environment = Environment.SANDBOX)
-    val ts                = LocalDateTime.now
+    val ts                = FixedClock.now
     val authKey           = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
     val underTest         = new DeleteUnusedApplicationCommandHandler(authControlConfig)

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.{LocalDateTime, ZoneOffset}
 import java.util.concurrent.TimeUnit.{DAYS, HOURS, SECONDS}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
@@ -35,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneAppPerSuite}
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import java.time.LocalDateTime
 
 class UpliftVerificationExpiryJobSpec
     extends AsyncHmrcSpec
@@ -43,7 +43,7 @@ class UpliftVerificationExpiryJobSpec
     with ApplicationStateUtil
     with NoMetricsGuiceOneAppPerSuite {
 
-  final val FixedTimeNow     = LocalDateTime.now(ZoneOffset.UTC)
+  final val FixedTimeNow     = FixedClock.now
   final val expiryTimeInDays = 90
   final val sixty            = 60
   final val twentyFour       = 24
@@ -124,7 +124,7 @@ class UpliftVerificationExpiryJobSpec
       val app1: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
       val app2: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
 
-      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[LocalDateTime]))
+      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), *))
         .thenReturn(Future.successful(List(app1, app2)))
       when(mockApplicationRepository.save(any[ApplicationData])).thenReturn(
         Future.failed(new RuntimeException("A failure on executing save db query"))

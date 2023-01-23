@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.{Chain, NonEmptyList, ValidatedNec}
@@ -24,6 +23,7 @@ import cats.data.{Chain, NonEmptyList, ValidatedNec}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretAdded, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -48,7 +48,7 @@ class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
       )
     )
 
-    val timestamp    = LocalDateTime.now
+    val timestamp    = FixedClock.now
     val secretValue  = "secret"
     val clientSecret = ClientSecret("name", timestamp, hashedSecret = "hashed")
 

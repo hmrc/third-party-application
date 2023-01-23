@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -53,7 +53,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
     wso2ApplicationName = "wso2Name",
     tokens = ApplicationTokens(Token(ClientId("clientId"), "accessToken", List.empty)),
     state = applicationState,
-    createdOn = LocalDateTime.now(),
+    createdOn = FixedClock.now,
     lastAccess = None,
     rateLimitTier = None,
     environment = "",
@@ -89,10 +89,10 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       val clientSecretAddedEvent = ClientSecretAdded(
         id = UpdateApplicationEvent.Id.random,
         applicationId = applicationData.id,
-        eventDateTime = LocalDateTime.now(),
+        eventDateTime = FixedClock.now,
         actor = CollaboratorActor(adminEmail),
         secretValue = secretValue,
-        clientSecret = ClientSecret("name", LocalDateTime.now(), None, UUID.randomUUID().toString, "eulaVterces")
+        clientSecret = ClientSecret("name", FixedClock.now, None, UUID.randomUUID().toString, "eulaVterces")
       )
       "obfuscate ClientSecret Event when applied" in new Setup() {
         val obfuscatedEvent = ClientSecretAddedObfuscated.fromClientSecretAdded(clientSecretAddedEvent)

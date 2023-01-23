@@ -16,15 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import java.time.LocalDateTime
-
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class StateHistorySpec extends HmrcSpec {
 
   val applicationId = ApplicationId.random
-  val now           = LocalDateTime.now
+  val now           = FixedClock.now
   val actor         = OldActor("admin@example.com", ActorType.COLLABORATOR)
 
   "State history" should {

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.scalatest.BeforeAndAfterAll
@@ -76,7 +76,7 @@ class NotificationServiceSpec
       val event = ProductionAppNameChanged(
         UpdateApplicationEvent.Id.random,
         applicationId,
-        LocalDateTime.now(),
+        FixedClock.now,
         UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser),
         oldAppName,
         newAppName,
@@ -95,7 +95,7 @@ class NotificationServiceSpec
       val event                    = ProductionAppPrivacyPolicyLocationChanged(
         UpdateApplicationEvent.Id.random,
         applicationId,
-        LocalDateTime.now(),
+        FixedClock.now,
         devHubUser,
         previousPrivacyPolicyUrl,
         newPrivacyPolicyUrl
@@ -120,7 +120,7 @@ class NotificationServiceSpec
       val event                    = ProductionLegacyAppPrivacyPolicyLocationChanged(
         UpdateApplicationEvent.Id.random,
         applicationId,
-        LocalDateTime.now(),
+        FixedClock.now,
         devHubUser,
         previousPrivacyPolicyUrl,
         newPrivacyPolicyUrl
@@ -145,7 +145,7 @@ class NotificationServiceSpec
       val event                         = ProductionAppTermsConditionsLocationChanged(
         UpdateApplicationEvent.Id.random,
         applicationId,
-        LocalDateTime.now(),
+        FixedClock.now,
         devHubUser,
         previousTermsAndConditionsUrl,
         newTermsAndConditionsUrl
@@ -170,7 +170,7 @@ class NotificationServiceSpec
       val event                         = ProductionLegacyAppTermsConditionsLocationChanged(
         UpdateApplicationEvent.Id.random,
         applicationId,
-        LocalDateTime.now(),
+        FixedClock.now,
         devHubUser,
         previousTermsAndConditionsUrl,
         newTermsAndConditionsUrl
@@ -194,7 +194,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         "app name",
-        LocalDateTime.now(),
+        FixedClock.now,
         CollaboratorActor("admin@example.com"),
         "admin name",
         "admin@example.com",
@@ -221,7 +221,7 @@ class NotificationServiceSpec
       val event = ResponsibleIndividualChanged(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
-        LocalDateTime.now(),
+        FixedClock.now,
         CollaboratorActor("admin@example.com"),
         "old ri name",
         "oldri@example.com",
@@ -250,7 +250,7 @@ class NotificationServiceSpec
       val event = ResponsibleIndividualChangedToSelf(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
-        LocalDateTime.now(),
+        FixedClock.now,
         CollaboratorActor("admin@example.com"),
         "old ri name",
         "oldri@example.com",
@@ -276,7 +276,7 @@ class NotificationServiceSpec
       val event = ResponsibleIndividualDeclined(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
-        LocalDateTime.now(),
+        FixedClock.now,
         CollaboratorActor("admin@example.com"),
         "ri name",
         "ri@example.com",
@@ -302,7 +302,7 @@ class NotificationServiceSpec
       val event = ResponsibleIndividualDeclinedUpdate(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
-        LocalDateTime.now(),
+        FixedClock.now,
         CollaboratorActor("admin@example.com"),
         "ri name",
         "ri@example.com",
@@ -323,7 +323,7 @@ class NotificationServiceSpec
       val event = ResponsibleIndividualDidNotVerify(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
-        LocalDateTime.now(),
+        FixedClock.now,
         CollaboratorActor("admin@example.com"),
         "ri name",
         "ri@example.com",
@@ -351,10 +351,10 @@ class NotificationServiceSpec
       val event                = ClientSecretAdded(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
-        LocalDateTime.now(),
+        FixedClock.now,
         CollaboratorActor(requestingAdminEmail),
         "secret",
-        ClientSecret(obfuscatedSecret, LocalDateTime.now(), hashedSecret = "hashed")
+        ClientSecret(obfuscatedSecret, FixedClock.now, hashedSecret = "hashed")
       )
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
@@ -373,7 +373,7 @@ class NotificationServiceSpec
       val requestingAdminEmail = "dev@example.com"
       EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
       val event                =
-        ClientSecretRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(), CollaboratorActor(requestingAdminEmail), clientSecretId, clientSecretName)
+        ClientSecretRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, CollaboratorActor(requestingAdminEmail), clientSecretId, clientSecretName)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -396,7 +396,7 @@ class NotificationServiceSpec
       val event             = CollaboratorAdded(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
-        LocalDateTime.now(),
+        FixedClock.now,
         CollaboratorActor("dev@example.com"),
         collaborator.userId,
         collaborator.emailAddress,
@@ -430,7 +430,7 @@ class NotificationServiceSpec
       val event             = CollaboratorRemoved(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
-        LocalDateTime.now(),
+        FixedClock.now,
         CollaboratorActor("dev@example.com"),
         collaborator.userId,
         collaborator.emailAddress,
@@ -458,7 +458,7 @@ class NotificationServiceSpec
       val event = ApplicationDeletedByGatekeeper(
         UpdateApplicationEvent.Id.random,
         applicationData.id,
-        LocalDateTime.now(),
+        FixedClock.now,
         GatekeeperUserActor("gatekeeperuser"),
         ClientId("clientId"),
         "wso2AppName",
@@ -476,7 +476,7 @@ class NotificationServiceSpec
       val event = ProductionCredentialsApplicationDeleted(
         UpdateApplicationEvent.Id.random,
         applicationData.id,
-        LocalDateTime.now(),
+        FixedClock.now,
         GatekeeperUserActor("gatekeeperuser"),
         ClientId("clientId"),
         "wso2AppName",

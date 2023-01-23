@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.time.LocalDateTime
-
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
@@ -46,8 +44,8 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         ApplicationTokens(Token(ClientId("cid"), "at")),
         productionState("user1"),
         Standard(),
-        LocalDateTime.now,
-        Some(LocalDateTime.now)
+        FixedClock.now,
+        Some(FixedClock.now)
       )
     val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, OldActor("1", ActorType.COLLABORATOR), changedAt = FixedClock.now)
 

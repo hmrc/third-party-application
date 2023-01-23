@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
@@ -471,9 +471,9 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
     "return correct state history values" in new Setup {
       val appId1   = ApplicationId.random
       val appId2   = ApplicationId.random
-      val ts1      = LocalDateTime.now
-      val ts2      = LocalDateTime.now
-      val ts3      = LocalDateTime.now
+      val ts1      = FixedClock.now
+      val ts2      = FixedClock.now
+      val ts3      = FixedClock.now
       val history1 = ApplicationWithStateHistory(
         appId1,
         "app1",

@@ -70,7 +70,7 @@ class NotificationRepositoryISpec
 
     "create an entry" in {
       val applicationId = ApplicationId.random
-      val now           = LocalDateTime.now
+      val now           = FixedClock.now
 
       val result =
         await(notificationRepository.createEntity(Notification(applicationId, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
@@ -84,7 +84,7 @@ class NotificationRepositoryISpec
     "delete any records for the application id" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
-      val now            = LocalDateTime.now
+      val now            = FixedClock.now
       await(notificationRepository.createEntity(Notification(applicationId1, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
       await(notificationRepository.createEntity(Notification(applicationId2, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
 
@@ -103,7 +103,7 @@ class NotificationRepositoryISpec
   }
 
   "applyEvents" should {
-    val now = LocalDateTime.now(ZoneOffset.UTC)
+    val now = FixedClock.now
 
     def buildApplicationDeletedEvent(applicationId: ApplicationId) =
       ApplicationDeleted(
@@ -130,7 +130,7 @@ class NotificationRepositoryISpec
     "handle an ApplicationDeleted event by deleting any records for the application id" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
-      val now            = LocalDateTime.now
+      val now            = FixedClock.now
       await(notificationRepository.createEntity(Notification(applicationId1, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
       await(notificationRepository.createEntity(Notification(applicationId2, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
 
@@ -145,7 +145,7 @@ class NotificationRepositoryISpec
     "handle an ProductionCredentialsApplicationDeleted event by deleting any records for the application id" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
-      val now            = LocalDateTime.now
+      val now            = FixedClock.now
       await(notificationRepository.createEntity(Notification(applicationId1, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
       await(notificationRepository.createEntity(Notification(applicationId2, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
 
