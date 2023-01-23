@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions
 
+import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import scala.util.Random
 
@@ -25,7 +26,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
-import java.time.LocalDateTime
 
 trait StatusTestDataHelper {
 

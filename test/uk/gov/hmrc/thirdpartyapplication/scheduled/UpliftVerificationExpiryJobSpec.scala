@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit.{DAYS, HOURS, SECONDS}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
@@ -32,9 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State.PENDING_REQUESTER_V
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneAppPerSuite}
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock, NoMetricsGuiceOneAppPerSuite}
 
 class UpliftVerificationExpiryJobSpec
     extends AsyncHmrcSpec

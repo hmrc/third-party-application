@@ -22,8 +22,7 @@ import cats.data.{Chain, NonEmptyList, ValidatedNec}
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, CollaboratorAdded, GatekeeperUserActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class AddCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
 

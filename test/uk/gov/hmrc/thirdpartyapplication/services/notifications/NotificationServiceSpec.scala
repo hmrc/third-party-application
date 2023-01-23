@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.scalatest.BeforeAndAfterAll
@@ -31,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, _}
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec

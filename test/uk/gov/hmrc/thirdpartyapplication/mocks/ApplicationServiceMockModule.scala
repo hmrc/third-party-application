@@ -21,7 +21,7 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
 import cats.data.OptionT
-import cats.implicits.{catsStdInstancesForFuture, _}
+import cats.implicits.catsStdInstancesForFuture
 import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 

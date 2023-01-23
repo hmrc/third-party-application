@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import scala.concurrent.Future
 
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}

@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
 import java.time.temporal.ChronoUnit
+import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
 
 trait FixedClock {
 
