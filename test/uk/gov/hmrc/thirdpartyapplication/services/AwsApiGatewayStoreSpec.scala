@@ -60,26 +60,28 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       createdOn = FixedClock.now,
       lastAccess = Some(FixedClock.now)
     )
+
+    def getRateLimitTierFromApp(app: ApplicationData) = app.rateLimitTier.getOrElse(BRONZE)
   }
 
   "createApplication" should {
     "create an application in AWS" in new Setup {
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(eqTo(applicationName), *, eqTo(BRONZE))(eqTo(hc)))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(eqTo(applicationName), *, eqTo(getRateLimitTierFromApp(app)), eqTo(BRONZE))(eqTo(hc)))
         .thenReturn(successful(HasSucceeded))
 
       await(underTest.createApplication(applicationName, serverToken))
 
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(eqTo(applicationName), *, eqTo(BRONZE))(eqTo(hc))
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(eqTo(applicationName), *, eqTo(getRateLimitTierFromApp(app)), eqTo(BRONZE))(eqTo(hc))
     }
   }
 
   "updateApplication" should {
     "update rate limiting tier in AWS" in new Setup {
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(applicationName, serverToken, SILVER)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(applicationName, serverToken, getRateLimitTierFromApp(app), SILVER)(hc)).thenReturn(successful(HasSucceeded))
 
       await(underTest updateApplication (app, SILVER))
 
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(applicationName, serverToken, SILVER)(hc)
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(applicationName, serverToken, getRateLimitTierFromApp(app), SILVER)(hc)
     }
 
   }

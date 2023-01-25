@@ -40,6 +40,7 @@ class AwsRestoreService @Inject() (awsApiGatewayConnector: AwsApiGatewayConnecto
       awsApiGatewayConnector.createOrUpdateApplication(
         application.wso2ApplicationName,
         application.tokens.production.accessToken,
+        application.rateLimitTier.getOrElse(DefaultRateLimitTier),
         application.rateLimitTier.getOrElse(DefaultRateLimitTier)
       )(hc)
     })

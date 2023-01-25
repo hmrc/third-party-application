@@ -29,7 +29,7 @@ import play.api.libs.json._
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HttpClient, UpstreamErrorResponse}
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.SILVER
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{SILVER, BRONZE}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 class AwsApiGatewayConnectorSpec extends ConnectorSpec {
@@ -71,7 +71,7 @@ class AwsApiGatewayConnectorSpec extends ConnectorSpec {
           )
       )
 
-      await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc)) shouldBe HasSucceeded
+      await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, BRONZE, SILVER)(hc)) shouldBe HasSucceeded
 
       wireMockServer.verify(
         postRequestedFor(urlEqualTo(expectedUpdateURL))
@@ -88,7 +88,7 @@ class AwsApiGatewayConnectorSpec extends ConnectorSpec {
         ))
 
       intercept[UpstreamErrorResponse] {
-        await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc))
+        await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, BRONZE, SILVER)(hc))
       }.statusCode shouldBe INTERNAL_SERVER_ERROR
 
     }

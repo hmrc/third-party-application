@@ -78,12 +78,12 @@ class AwsApiGatewayStore @Inject() (awsApiGatewayConnector: AwsApiGatewayConnect
 
   override def createApplication(wso2ApplicationName: String, accessToken: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
-      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, accessToken, BRONZE)(hc)
+      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, accessToken, BRONZE, BRONZE)(hc)
     } yield HasSucceeded
   }
 
   override def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
-    awsApiGatewayConnector.createOrUpdateApplication(app.wso2ApplicationName, app.tokens.production.accessToken, rateLimitTier)(hc)
+    awsApiGatewayConnector.createOrUpdateApplication(app.wso2ApplicationName, app.tokens.production.accessToken, app.rateLimitTier.getOrElse(BRONZE), rateLimitTier)(hc)
 
   override def deleteApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
     awsApiGatewayConnector.deleteApplication(wso2ApplicationName)(hc)

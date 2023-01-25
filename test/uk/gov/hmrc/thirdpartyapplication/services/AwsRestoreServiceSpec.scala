@@ -63,14 +63,14 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
       val application: ApplicationData = buildApplication("foo", serverToken)
 
       ApplicationRepoMock.ProcessAll.thenReturn()
-      when(mockApiGatewayConnector.createOrUpdateApplication(application.wso2ApplicationName, serverToken, BRONZE)(hc))
+      when(mockApiGatewayConnector.createOrUpdateApplication(application.wso2ApplicationName, serverToken, BRONZE, BRONZE)(hc))
         .thenReturn(Future.successful(HasSucceeded))
 
       await(awsRestoreService.restoreData())
 
       val functionCaptured = ApplicationRepoMock.ProcessAll.verify()
       functionCaptured(application)
-      verify(mockApiGatewayConnector).createOrUpdateApplication(application.wso2ApplicationName, serverToken, BRONZE)(hc)
+      verify(mockApiGatewayConnector).createOrUpdateApplication(application.wso2ApplicationName, serverToken, BRONZE, BRONZE)(hc)
     }
   }
 }
