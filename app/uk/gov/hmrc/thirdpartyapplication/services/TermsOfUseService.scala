@@ -17,25 +17,25 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
+
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseRepository
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseRepository
 
 @Singleton
-class TermsOfUseService @Inject()(
-  termsOfUseRepository: TermsOfUseRepository
-)(
-  implicit val ec: ExecutionContext
-) extends ApplicationLogger {
+class TermsOfUseService @Inject() (
+    termsOfUseRepository: TermsOfUseRepository
+  )(implicit val ec: ExecutionContext
+  ) extends ApplicationLogger {
 
   def createInvitation(id: ApplicationId): Future[Boolean] = termsOfUseRepository.create(TermsOfUseInvitation(id))
+
   def fetchInvitations(): Future[List[TermsOfUseInvitationResponse]] = {
     for {
-      invitesF <- termsOfUseRepository.fetchAll()
+      invitesF  <- termsOfUseRepository.fetchAll()
       responsesF = invitesF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn))
     } yield responsesF
   }

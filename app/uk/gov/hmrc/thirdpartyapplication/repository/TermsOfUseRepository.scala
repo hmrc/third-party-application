@@ -17,30 +17,31 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.mongo.MongoComponent
-import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import org.mongodb.scala.model.IndexModel
-import org.mongodb.scala.model.IndexOptions
+import scala.concurrent.{ExecutionContext, Future}
+
 import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
+
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import scala.concurrent.Future
 
 @Singleton
-class TermsOfUseRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation] (
-  collectionName = "termsOfUseInvitation",
-  mongoComponent = mongo,
-  domainFormat = TermsOfUseInvitation.format,
-    indexes = Seq(
-    IndexModel(
-      ascending("applicationId"),
-      IndexOptions()
-        .name("applicationIdIndex")
-        .background(true)
-    )
-  ),
-  replaceIndexes = true
-  ) {
+class TermsOfUseRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](
+      collectionName = "termsOfUseInvitation",
+      mongoComponent = mongo,
+      domainFormat = TermsOfUseInvitation.format,
+      indexes = Seq(
+        IndexModel(
+          ascending("applicationId"),
+          IndexOptions()
+            .name("applicationIdIndex")
+            .background(true)
+        )
+      ),
+      replaceIndexes = true
+    ) {
 
   def create(termsOfUseInvitation: TermsOfUseInvitation): Future[Boolean] = collection.insertOne(termsOfUseInvitation).toFuture().map(res => res.wasAcknowledged)
 

@@ -18,23 +18,27 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
+import play.api.libs.json.Json.toJson
 import play.api.mvc.ControllerComponents
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseService
-import play.api.libs.json.Json.toJson
 
 @Singleton
-class TermsOfUseController @Inject()(
-  termsOfUseService: TermsOfUseService,
-  cc: ControllerComponents
-)(implicit val ec: ExecutionContext) extends BackendController(cc) with JsonUtils {
+class TermsOfUseController @Inject() (
+    termsOfUseService: TermsOfUseService,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends BackendController(cc) with JsonUtils {
+
   def createInvitation(id: ApplicationId) = Action.async { _ =>
     termsOfUseService
       .createInvitation(id)
       .map {
         case true => Created
-        case _ => BadRequest
+        case _    => BadRequest
       }
       .recover(recovery)
   }

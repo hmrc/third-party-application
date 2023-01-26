@@ -16,19 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
-import play.api.test.FakeRequest
-import play.api.test.Helpers.{contentAsJson, status, stubControllerComponents}
-import play.api.http.Status._
-import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
 import java.time.Instant
 import java.time.temporal.ChronoUnit._
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import play.api.http.Status._
 import play.api.libs.json.Json
+import play.api.test.FakeRequest
+import play.api.test.Helpers.{contentAsJson, status, stubControllerComponents}
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
 
 class TermsOfUseControllerSpec extends ControllerSpec {
+
   trait Setup extends TermsOfUseServiceMockModule {
     val applicationId = ApplicationId.random
 

@@ -16,12 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseRepository
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import scala.concurrent.Future.successful
 
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseRepository
+
 trait TermsOfUseRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
+
   protected trait BaseTermsOfUseRepositoryMock {
     def aMock: TermsOfUseRepository
 

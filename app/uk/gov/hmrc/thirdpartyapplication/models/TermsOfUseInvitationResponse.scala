@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import java.time.Instant
-import play.api.libs.json.Format
-import play.api.libs.json.Json
+
+import play.api.libs.json.{Format, Json}
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 final case class TermsOfUseInvitationResponse(applicationId: ApplicationId, createdOn: Instant)
 

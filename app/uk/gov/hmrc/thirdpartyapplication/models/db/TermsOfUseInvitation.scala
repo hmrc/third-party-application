@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import play.api.libs.json.Json
 import java.time.Instant
 import java.time.temporal.ChronoUnit._
-import play.api.libs.json.Format
+
+import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 final case class TermsOfUseInvitation(applicationId: ApplicationId, createdOn: Instant)
 
