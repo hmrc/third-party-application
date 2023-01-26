@@ -31,9 +31,15 @@ class TermsOfUseService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def createInvitation(id: ApplicationId): Future[Boolean] = termsOfUseRepository.create(TermsOfUseInvitation(id))
+  def createInvitation(id: ApplicationId): Future[Boolean] = {
+    logger.info(s"Inviting application(${id.value}) to complete the new terms of use")
+
+    termsOfUseRepository.create(TermsOfUseInvitation(id))
+  }
 
   def fetchInvitations(): Future[List[TermsOfUseInvitationResponse]] = {
+    logger.info("Fetching all applications that have been invited to complete the new terms of use")
+
     for {
       invitesF  <- termsOfUseRepository.fetchAll()
       responsesF = invitesF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn))

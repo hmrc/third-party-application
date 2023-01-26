@@ -18,11 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future.successful
 
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import org.mongodb.scala.model.Filters.equal
 
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
@@ -37,13 +40,19 @@ class TermsOfUseRepository @Inject() (mongo: MongoComponent)(implicit val ec: Ex
           ascending("applicationId"),
           IndexOptions()
             .name("applicationIdIndex")
+            .unique(true)
             .background(true)
         )
       ),
       replaceIndexes = true
     ) {
 
-  def create(termsOfUseInvitation: TermsOfUseInvitation): Future[Boolean] = collection.insertOne(termsOfUseInvitation).toFuture().map(res => res.wasAcknowledged)
+  def create(termsOfUseInvitation: TermsOfUseInvitation): Future[Boolean] = {
+    collection.find(equal("applicationId", Codecs.toBson(termsOfUseInvitation.applicationId))).headOption().flatMap {
+      case Some(value) => successful(false)
+      case None => collection.insertOne(termsOfUseInvitation).toFuture().map(res => res.wasAcknowledged)
+    }
+  }
 
   def fetchAll(): Future[List[TermsOfUseInvitation]] = collection.find().toFuture().map(seq => seq.toList)
 }
