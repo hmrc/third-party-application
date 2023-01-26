@@ -50,7 +50,7 @@ class TermsOfUseController @Inject() (
     findExistingInvitation(applicationId).flatMap {
       case Some(response) => successful(Conflict)
       case None           => createNewInvitation(applicationId)
-    }
+    }.recover(recovery)
   }
 
   def fetchInvitation(applicationId: ApplicationId) = Action.async { _ =>
