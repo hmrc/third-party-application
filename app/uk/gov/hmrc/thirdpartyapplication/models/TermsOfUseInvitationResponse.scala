@@ -22,7 +22,7 @@ import play.api.libs.json.{Format, Json}
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
-final case class TermsOfUseInvitationResponse(applicationId: ApplicationId, createdOn: Instant)
+final case class TermsOfUseInvitationResponse(applicationId: ApplicationId, createdOn: Instant, lastUpdated: Instant)
 
 object TermsOfUseInvitationResponse {
   implicit val format: Format[TermsOfUseInvitationResponse] = Json.format[TermsOfUseInvitationResponse]

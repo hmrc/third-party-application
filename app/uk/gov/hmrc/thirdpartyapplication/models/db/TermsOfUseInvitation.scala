@@ -24,10 +24,10 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
-final case class TermsOfUseInvitation(applicationId: ApplicationId, createdOn: Instant)
+final case class TermsOfUseInvitation(applicationId: ApplicationId, createdOn: Instant, lastUpdated: Instant)
 
 object TermsOfUseInvitation extends MongoJavatimeFormats.Implicits {
   implicit val format: Format[TermsOfUseInvitation] = Json.format[TermsOfUseInvitation]
 
-  def apply(id: ApplicationId): TermsOfUseInvitation = TermsOfUseInvitation(id, Instant.now().truncatedTo(MILLIS))
+  def apply(id: ApplicationId): TermsOfUseInvitation = TermsOfUseInvitation(id, Instant.now().truncatedTo(MILLIS), Instant.now().truncatedTo(MILLIS))
 }

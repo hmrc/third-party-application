@@ -25,6 +25,10 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseService
+import scala.concurrent.Future
+import scala.concurrent.Future.successful
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
+import play.api.mvc.Result
 
 @Singleton
 class TermsOfUseController @Inject() (
@@ -33,14 +37,22 @@ class TermsOfUseController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils {
 
-  def createInvitation(id: ApplicationId) = Action.async { _ =>
-    termsOfUseService
-      .createInvitation(id)
-      .map {
-        case true => Created
-        case _    => BadRequest
+  def createInvitation(applicationId: ApplicationId) = Action.async { _ =>
+    def findExistingInvitation(applicationId: ApplicationId): Future[Option[TermsOfUseInvitationResponse]] = termsOfUseService.fetchInvitation(applicationId)
+
+    def createNewInvitation(applicationId: ApplicationId): Future[Result] = {
+      termsOfUseService
+        .createInvitation(applicationId)
+        .map {
+          case true => Created
+          case _    => InternalServerError
+        }
       }
-      .recover(recovery)
+
+    findExistingInvitation(applicationId).flatMap {
+      case Some(value) => successful(Conflict)
+      case None => createNewInvitation(applicationId)
+    }
   }
 
   def fetchInvitations() = Action.async { _ =>

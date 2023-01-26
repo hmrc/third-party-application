@@ -37,12 +37,21 @@ class TermsOfUseService @Inject() (
     termsOfUseRepository.create(TermsOfUseInvitation(id))
   }
 
+  def fetchInvitation(applicationId: ApplicationId): Future[Option[TermsOfUseInvitationResponse]] = {
+    logger.info(s"Fetching invitation to complete the new terms of use for application(${applicationId.value})")
+
+    for {
+      inviteF  <- termsOfUseRepository.fetch(applicationId)
+      responseF = inviteF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated))
+    } yield responseF
+  }
+
   def fetchInvitations(): Future[List[TermsOfUseInvitationResponse]] = {
     logger.info("Fetching all applications that have been invited to complete the new terms of use")
 
     for {
       invitesF  <- termsOfUseRepository.fetchAll()
-      responsesF = invitesF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn))
+      responsesF = invitesF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated))
     } yield responsesF
   }
 }

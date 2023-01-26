@@ -29,6 +29,7 @@ import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 @Singleton
 class TermsOfUseRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](
@@ -53,6 +54,8 @@ class TermsOfUseRepository @Inject() (mongo: MongoComponent)(implicit val ec: Ex
       case None => collection.insertOne(termsOfUseInvitation).toFuture().map(res => res.wasAcknowledged)
     }
   }
+
+  def fetch(applicationId: ApplicationId): Future[Option[TermsOfUseInvitation]] = collection.find(equal("applicationId", Codecs.toBson(applicationId))).headOption()
 
   def fetchAll(): Future[List[TermsOfUseInvitation]] = collection.find().toFuture().map(seq => seq.toList)
 }

@@ -33,6 +33,7 @@ class TermsOfUseControllerSpec extends ControllerSpec {
 
   trait Setup extends TermsOfUseServiceMockModule {
     val applicationId = ApplicationId.random
+    val now = Instant.now().truncatedTo(MILLIS)
 
     lazy val underTest = new TermsOfUseController(
       TermsOfUseServiceMock.aMock,
@@ -42,6 +43,7 @@ class TermsOfUseControllerSpec extends ControllerSpec {
 
   "create invitation" should {
     "return CREATED when a terms of use invitation is created" in new Setup {
+      TermsOfUseServiceMock.FetchInvitation.thenReturnNone()
       TermsOfUseServiceMock.CreateInvitations.thenReturnSuccess()
 
       val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
@@ -49,12 +51,27 @@ class TermsOfUseControllerSpec extends ControllerSpec {
       status(result) shouldBe CREATED
     }
 
-    "return BAD_REQUEST when a terms of use invitation is NOT created" in new Setup {
+    "return CONFLICT when a terms of use invitation already exists for the application" in new Setup {
+      val response = TermsOfUseInvitationResponse(
+          applicationId,
+          now,
+          now
+        )
+
+      TermsOfUseServiceMock.FetchInvitation.thenReturn(response)
+
+      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
+
+      status(result) shouldBe CONFLICT
+    }
+
+    "return INTERNAL_SERVER_ERROR when a terms of use invitation is NOT created" in new Setup {
+      TermsOfUseServiceMock.FetchInvitation.thenReturnNone()
       TermsOfUseServiceMock.CreateInvitations.thenFail()
 
       val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
 
-      status(result) shouldBe BAD_REQUEST
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 
@@ -63,7 +80,8 @@ class TermsOfUseControllerSpec extends ControllerSpec {
       val invitations = List(
         TermsOfUseInvitationResponse(
           applicationId,
-          Instant.now().truncatedTo(MILLIS)
+          now,
+          now
         )
       )
 
