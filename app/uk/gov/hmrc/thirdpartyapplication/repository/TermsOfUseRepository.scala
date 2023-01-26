@@ -17,19 +17,18 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
 
+import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
-import org.mongodb.scala.model.Filters.equal
 
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.Codecs
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
 @Singleton
 class TermsOfUseRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](
@@ -51,7 +50,7 @@ class TermsOfUseRepository @Inject() (mongo: MongoComponent)(implicit val ec: Ex
   def create(termsOfUseInvitation: TermsOfUseInvitation): Future[Boolean] = {
     collection.find(equal("applicationId", Codecs.toBson(termsOfUseInvitation.applicationId))).headOption().flatMap {
       case Some(value) => successful(false)
-      case None => collection.insertOne(termsOfUseInvitation).toFuture().map(res => res.wasAcknowledged)
+      case None        => collection.insertOne(termsOfUseInvitation).toFuture().map(res => res.wasAcknowledged)
     }
   }
 

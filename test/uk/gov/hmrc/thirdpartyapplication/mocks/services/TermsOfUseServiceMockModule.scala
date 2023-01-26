@@ -36,7 +36,7 @@ trait TermsOfUseServiceMockModule extends MockitoSugar with ArgumentMatchersSuga
 
     object FetchInvitation {
       def thenReturn(invitation: TermsOfUseInvitationResponse) = when(aMock.fetchInvitation(*[ApplicationId])).thenAnswer(successful(Some(invitation)))
-      def thenReturnNone() = when(aMock.fetchInvitation(*[ApplicationId])).thenAnswer(successful(None))
+      def thenReturnNone()                                     = when(aMock.fetchInvitation(*[ApplicationId])).thenAnswer(successful(None))
     }
 
     object FetchInvitations {

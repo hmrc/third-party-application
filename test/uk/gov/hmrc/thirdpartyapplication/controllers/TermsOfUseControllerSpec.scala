@@ -33,7 +33,7 @@ class TermsOfUseControllerSpec extends ControllerSpec {
 
   trait Setup extends TermsOfUseServiceMockModule {
     val applicationId = ApplicationId.random
-    val now = Instant.now().truncatedTo(MILLIS)
+    val now           = Instant.now().truncatedTo(MILLIS)
 
     lazy val underTest = new TermsOfUseController(
       TermsOfUseServiceMock.aMock,
@@ -53,10 +53,10 @@ class TermsOfUseControllerSpec extends ControllerSpec {
 
     "return CONFLICT when a terms of use invitation already exists for the application" in new Setup {
       val response = TermsOfUseInvitationResponse(
-          applicationId,
-          now,
-          now
-        )
+        applicationId,
+        now,
+        now
+      )
 
       TermsOfUseServiceMock.FetchInvitation.thenReturn(response)
 

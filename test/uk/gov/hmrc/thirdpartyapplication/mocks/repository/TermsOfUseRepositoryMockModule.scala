@@ -20,6 +20,7 @@ import scala.concurrent.Future.successful
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseRepository
 
@@ -30,6 +31,12 @@ trait TermsOfUseRepositoryMockModule extends MockitoSugar with ArgumentMatchersS
 
     object Create {
       def thenReturnSuccess() = when(aMock.create(*[TermsOfUseInvitation])).thenAnswer(successful(true))
+      def thenReturnFailure() = when(aMock.create(*[TermsOfUseInvitation])).thenAnswer(successful(false))
+    }
+
+    object FetchInvitation {
+      def thenReturn(invite: TermsOfUseInvitation) = when(aMock.fetch(*[ApplicationId])).thenAnswer(successful(Some(invite)))
+      def thenReturnNone()                         = when(aMock.fetch(*[ApplicationId])).thenAnswer(successful(None))
     }
 
     object FetchAll {

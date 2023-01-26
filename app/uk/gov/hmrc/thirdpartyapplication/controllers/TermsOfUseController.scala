@@ -17,18 +17,16 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.libs.json.Json.toJson
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{ControllerComponents, Result}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseService
-import scala.concurrent.Future
-import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
-import play.api.mvc.Result
+import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseService
 
 @Singleton
 class TermsOfUseController @Inject() (
@@ -47,18 +45,18 @@ class TermsOfUseController @Inject() (
           case true => Created
           case _    => InternalServerError
         }
-      }
+    }
 
     findExistingInvitation(applicationId).flatMap {
       case Some(response) => successful(Conflict)
-      case None => createNewInvitation(applicationId)
+      case None           => createNewInvitation(applicationId)
     }
   }
 
   def fetchInvitation(applicationId: ApplicationId) = Action.async { _ =>
     termsOfUseService.fetchInvitation(applicationId).map {
       case Some(response) => Ok(toJson(response))
-      case None => NotFound
+      case None           => NotFound
     }
   }
 
