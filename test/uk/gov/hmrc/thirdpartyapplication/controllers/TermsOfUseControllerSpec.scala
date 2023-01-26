@@ -75,6 +75,27 @@ class TermsOfUseControllerSpec extends ControllerSpec {
     }
   }
 
+  "fetch invitation" should {
+    "return an OK with a terms of use invitation response" in new Setup {
+      val response = TermsOfUseInvitationResponse(applicationId, now, now)
+
+      TermsOfUseServiceMock.FetchInvitation.thenReturn(response)
+
+      val result = underTest.fetchInvitation(applicationId)(FakeRequest.apply())
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(response)
+    }
+
+    "return an NOT_FOUND when no terms of use invitation exists for the given application id" in new Setup {
+      TermsOfUseServiceMock.FetchInvitation.thenReturnNone()
+
+      val result = underTest.fetchInvitation(applicationId)(FakeRequest.apply())
+
+      status(result) shouldBe NOT_FOUND
+    }
+  }
+
   "fetch invitations" should {
     "return terms of use invitations" in new Setup {
       val invitations = List(
