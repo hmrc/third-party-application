@@ -53,8 +53,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
     val clientSecretLimit                                    = 5
     val credentialConfig: CredentialConfig                   = CredentialConfig(clientSecretLimit)
     val mockApiPlatformEventService: ApiPlatformEventService = mock[ApiPlatformEventService]
-    when(mockApiPlatformEventService.sendClientSecretAddedEvent(any[ApplicationData], any[String])(any[HeaderCarrier])).thenReturn(Future.successful(true))
-    when(mockApiPlatformEventService.sendClientSecretRemovedEvent(any[ApplicationData], any[String])(any[HeaderCarrier])).thenReturn(Future.successful(true))
+    when(mockApiPlatformEventService.sendClientSecretAddedEvent(*[ApplicationData], *)(*)).thenReturn(Future.successful(true))
+    when(mockApiPlatformEventService.sendClientSecretRemovedEvent(*[ApplicationData], *)(*)).thenReturn(Future.successful(true))
 
     val underTest: CredentialService =
       new CredentialService(

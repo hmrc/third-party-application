@@ -79,7 +79,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   private def applyEvent(app: ApplicationData, event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     event match {
       case evt: ApplicationApprovalRequestDeclined => auditApplicationApprovalRequestDeclined(app, evt)
-      case evt: ClientSecretAdded                  => auditClientSecretAdded(app, evt)
+      case evt: ClientSecretAddedV3                => auditClientSecretAdded(app, evt)
       case evt: ClientSecretRemoved                => auditClientSecretRemoved(app, evt)
       case evt: CollaboratorAdded                  => auditAddCollaborator(app, evt)
       case evt: CollaboratorRemoved                => auditRemoveCollaborator(app, evt)
@@ -140,7 +140,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .toOption
       .value
 
-  private def auditClientSecretAdded(app: ApplicationData, evt: ClientSecretAdded)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditClientSecretAdded(app: ApplicationData, evt: ClientSecretAddedV3)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       ClientSecretAddedAudit,
       Map("applicationId" -> app.id.value.toString, "newClientSecret" -> evt.clientSecret.name, "clientSecretType" -> "PRODUCTION")

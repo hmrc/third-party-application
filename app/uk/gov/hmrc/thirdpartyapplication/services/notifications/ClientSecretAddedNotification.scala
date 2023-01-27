@@ -31,7 +31,7 @@ object ClientSecretAddedNotification {
   def sendClientSecretAddedNotification(
       emailConnector: EmailConnector,
       app: ApplicationData,
-      event: UpdateApplicationEvent.ClientSecretAdded
+      event: UpdateApplicationEvent.ClientSecretAddedV3
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     event.actor match {

@@ -74,6 +74,9 @@ class ApplicationUpdateService @Inject() (
     for {
       app      <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
       events   <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
+
+
+
       savedApp <- E.liftF(applicationRepository.applyEvents(events))
       _        <- E.liftF(stateHistoryRepository.applyEvents(events))
       _        <- E.liftF(subscriptionRepository.applyEvents(events.collect { case evt: UpdateApplicationEvent with UpdatesSubscription => evt }))
@@ -82,6 +85,7 @@ class ApplicationUpdateService @Inject() (
       _        <- E.liftF(apiGatewayStore.applyEvents(events))
       _        <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
       _        <- E.liftF(notificationRepository.applyEvents(events))
+
       _        <- E.liftF(apiPlatformEventService.applyEvents(events))
       _        <- E.liftF(auditService.applyEvents(savedApp, events))
       _        <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt }))

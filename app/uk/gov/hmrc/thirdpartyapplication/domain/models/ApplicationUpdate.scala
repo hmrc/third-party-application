@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Ac
 trait ApplicationUpdate {
   def timestamp: LocalDateTime
 }
-case class AddClientSecret(actor: Actor, secretValue: String, clientSecret: ClientSecret, timestamp: LocalDateTime)                                     extends ApplicationUpdate
+case class AddClientSecret(actor: Actor, clientSecret: ClientSecret, timestamp: LocalDateTime)                                     extends ApplicationUpdate
 case class RemoveClientSecret(actor: Actor, clientSecretId: String, timestamp: LocalDateTime)                                                           extends ApplicationUpdate
 case class AddCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                              extends ApplicationUpdate
 case class RemoveCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                           extends ApplicationUpdate

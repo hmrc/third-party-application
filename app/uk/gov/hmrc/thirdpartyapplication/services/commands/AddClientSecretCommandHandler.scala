@@ -38,12 +38,11 @@ class AddClientSecretCommandHandler @Inject() ()(implicit val ec: ExecutionConte
 
   private def asEvents(app: ApplicationData, cmd: AddClientSecret): NonEmptyList[UpdateApplicationEvent] = {
     NonEmptyList.of(
-      ClientSecretAdded(
+      ClientSecretAddedV3(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
-        secretValue = cmd.secretValue,
         clientSecret = cmd.clientSecret
       )
     )

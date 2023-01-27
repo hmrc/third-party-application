@@ -2874,13 +2874,11 @@ class ApplicationRepositoryISpec
       val app = anApplicationData(applicationId)
 
       val newClientSecret       = aClientSecret(name = "name", hashedSecret = "eulaVterces")
-      val secretValue           = "secretValue"
-      val event                 = ClientSecretAdded(
+      val event                 = ClientSecretAddedV3(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = FixedClock.now,
         actor = CollaboratorActor(adminEmail),
-        secretValue = secretValue,
         clientSecret = newClientSecret
       )
       val existingClientSecrets = app.tokens.production.clientSecrets

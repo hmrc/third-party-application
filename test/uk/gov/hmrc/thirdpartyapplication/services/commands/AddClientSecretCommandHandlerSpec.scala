@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.{Chain, NonEmptyList, ValidatedNec}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretAdded, CollaboratorActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretAddedV3, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
@@ -51,8 +51,8 @@ class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
     val secretValue  = "secret"
     val clientSecret = ClientSecret("name", timestamp, hashedSecret = "hashed")
 
-    val addClientSecretByDev   = AddClientSecret(CollaboratorActor(devEmail), secretValue, clientSecret, timestamp)
-    val addClientSecretByAdmin = AddClientSecret(CollaboratorActor(adminEmail), secretValue, clientSecret, timestamp)
+    val addClientSecretByDev   = AddClientSecret(CollaboratorActor(devEmail), clientSecret, timestamp)
+    val addClientSecretByAdmin = AddClientSecret(CollaboratorActor(adminEmail), clientSecret, timestamp)
   }
 
   "process" should {
@@ -60,11 +60,10 @@ class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
       val result = await(underTest.process(app, addClientSecretByAdmin))
 
       result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[ClientSecretAdded]
+      val event = result.toOption.get.head.asInstanceOf[ClientSecretAddedV3]
       event.applicationId shouldBe applicationId
       event.actor shouldBe adminActor
       event.eventDateTime shouldBe timestamp
-      event.secretValue shouldBe secretValue
       event.clientSecret shouldBe clientSecret
     }
 
@@ -84,11 +83,10 @@ class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
       val result           = await(underTest.process(nonProductionApp, addClientSecretByDev))
 
       result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[ClientSecretAdded]
+      val event = result.toOption.get.head.asInstanceOf[ClientSecretAddedV3]
       event.applicationId shouldBe nonProductionApp.id
       event.actor shouldBe developerActor
       event.eventDateTime shouldBe timestamp
-      event.secretValue shouldBe secretValue
       event.clientSecret shouldBe clientSecret
     }
   }

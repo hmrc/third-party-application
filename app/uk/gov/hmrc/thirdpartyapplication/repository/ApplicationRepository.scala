@@ -676,7 +676,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     }
   }
 
-  private def updateClientSecretAdded(evt: UpdateApplicationEvent.ClientSecretAdded): Future[ApplicationData] =
+  private def updateClientSecretAdded(evt: UpdateApplicationEvent.ClientSecretAddedV3): Future[ApplicationData] =
     updateApplication(
       evt.applicationId,
       Updates.push(
@@ -812,7 +812,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     import UpdateApplicationEvent._
 
     event match {
-      case evt: ClientSecretAdded                                                                                 => updateClientSecretAdded(evt)
+      case evt: ClientSecretAddedV3                                                                               => updateClientSecretAdded(evt)
       case evt: ClientSecretRemoved                                                                               => updateClientSecretRemoved(evt)
       case evt: RedirectUrisUpdated                                                                               => updateRedirectUrisUpdated(evt)
       case evt: ProductionAppNameChanged                                                                          => updateApplicationName(evt.applicationId, evt.newAppName)
@@ -834,7 +834,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case _: ApplicationDeleted | _: ApplicationDeletedByGatekeeper | _: ProductionCredentialsApplicationDeleted => noOp(event)
       case _: ApiSubscribed                                                                                       => noOp(event)
       case _: ApiUnsubscribed                                                                                     => noOp(event)
-      case _: ClientSecretAddedObfuscated                                                                         => noOp(event)
+      case _: ClientSecretAddedV2                                                                                 => noOp(event)
     }
   }
   // scalastyle:on cyclomatic.complexity

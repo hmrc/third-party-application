@@ -61,19 +61,18 @@ class CredentialService @Inject() (
 
   def addClientSecretNew(applicationId: ApplicationId, request: ClientSecretRequestWithActor)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
 
-    def generateCommand() = {
-      val generatedSecret = clientSecretService.generateClientSecret()
-      AddClientSecret(actor = request.actor, secretValue = generatedSecret._2, clientSecret = generatedSecret._1, timestamp = request.timestamp)
+    def generateCommand(clientSecret: ClientSecret) = {
+      AddClientSecret(actor = request.actor, clientSecret, timestamp = request.timestamp)
     }
 
     for {
       existingApp        <- fetchApp(applicationId)
       _                   = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
-      addSecretCmd        = generateCommand()
+      (clientSecret, secretValue) = clientSecretService.generateClientSecret()
+      addSecretCmd        = generateCommand(clientSecret)
       _                  <- applicationUpdateService.update(applicationId, addSecretCmd).value
       updatedApplication <- fetchApp(applicationId)
-    } yield ApplicationTokenResponse(updatedApplication.tokens.production, addSecretCmd.clientSecret.id, addSecretCmd.secretValue)
-
+    } yield ApplicationTokenResponse(updatedApplication.tokens.production, addSecretCmd.clientSecret.id, secretValue)
   }
 
   @deprecated("remove after client is no longer using the old endpoint")
@@ -87,8 +86,8 @@ class CredentialService @Inject() (
       newSecretValue  = generatedSecret._2
 
       updatedApplication    <- applicationRepository.addClientSecret(applicationId, newSecret)
-      _                      = apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication, newSecret.id)
-      _                      = auditService.audit(ClientSecretAddedAudit, Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
+      _                     <- apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication, newSecret.id)
+      _                     =  auditService.audit(ClientSecretAddedAudit, Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
       notificationRecipients = existingApp.admins.map(_.emailAddress)
 
       _ = emailConnector.sendAddedClientSecretNotification(secretRequest.actorEmailAddress, newSecret.name, existingApp.name, notificationRecipients)

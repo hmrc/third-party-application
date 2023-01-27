@@ -114,20 +114,8 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[ApiUnsubscribed] = Json.format[ApiUnsubscribed]
   }
 
-  case class ClientSecretAdded(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      secretValue: String,
-      clientSecret: ClientSecret
-    ) extends UpdateApplicationEvent with TriggersNotification
-
-  object ClientSecretAdded {
-    implicit val format: OFormat[ClientSecretAdded] = Json.format[ClientSecretAdded]
-  }
-
-  case class ClientSecretAddedObfuscated(
+  
+  case class ClientSecretAddedV2(
       id: UpdateApplicationEvent.Id,
       applicationId: ApplicationId,
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
@@ -135,13 +123,21 @@ object UpdateApplicationEvent {
       clientSecretId: String,
       clientSecretName: String
     ) extends UpdateApplicationEvent
+  
+  object ClientSecretAddedV2 {
+    implicit val format: OFormat[ClientSecretAddedV2] = Json.format[ClientSecretAddedV2]
+  }
 
-  object ClientSecretAddedObfuscated {
-    implicit val format: OFormat[ClientSecretAddedObfuscated] = Json.format[ClientSecretAddedObfuscated]
+  case class ClientSecretAddedV3(
+      id: UpdateApplicationEvent.Id,
+      applicationId: ApplicationId,
+      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+      actor: Actor,
+      clientSecret: ClientSecret
+    ) extends UpdateApplicationEvent with TriggersNotification
 
-    def fromClientSecretAdded(evt: ClientSecretAdded) = {
-      ClientSecretAddedObfuscated(evt.id, evt.applicationId, evt.eventDateTime, evt.actor, evt.clientSecret.id, evt.clientSecret.name)
-    }
+  object ClientSecretAddedV3 {
+    implicit val format: OFormat[ClientSecretAddedV3] = Json.format[ClientSecretAddedV3]
   }
 
   case class ClientSecretRemoved(
@@ -478,7 +474,8 @@ object UpdateApplicationEvent {
   implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
     .and[ApiSubscribed](EventType.API_SUBSCRIBED_V2.toString)
     .and[ApiUnsubscribed](EventType.API_UNSUBSCRIBED_V2.toString)
-    .and[ClientSecretAddedObfuscated](EventType.CLIENT_SECRET_ADDED_V2.toString)
+    .and[ClientSecretAddedV2](EventType.CLIENT_SECRET_ADDED_V2.toString)
+    .and[ClientSecretAddedV3](EventType.CLIENT_SECRET_ADDED_V3.toString)
     .and[ClientSecretRemoved](EventType.CLIENT_SECRET_REMOVED_V2.toString)
     .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
     .and[ProductionAppPrivacyPolicyLocationChanged](EventType.PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)

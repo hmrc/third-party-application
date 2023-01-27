@@ -57,18 +57,17 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
 
   "update with AddClientSecret" should {
 
-    val addClientSecret = AddClientSecret(CollaboratorActor(adminEmail), secretValue, clientSecret, timestamp)
+    val addClientSecret = AddClientSecret(CollaboratorActor(adminEmail), clientSecret, timestamp)
 
     "return the updated application if the application exists" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       val appAfter = applicationData.copy(tokens = ApplicationTokens(updatedProductionToken))
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      val event    = ClientSecretAdded(
+      val event    = ClientSecretAddedV3(
         UpdateApplicationEvent.Id.random,
         applicationId,
         FixedClock.now,
         UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser),
-        secretValue,
         clientSecret
       )
 

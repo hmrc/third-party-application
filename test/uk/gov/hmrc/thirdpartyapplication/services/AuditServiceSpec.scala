@@ -215,12 +215,11 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
 
     "applyEvents with a ClientSecretAdded event" in new Setup {
 
-      val clientSecretAdded = ClientSecretAdded(
+      val clientSecretAdded = ClientSecretAddedV3(
         UpdateApplicationEvent.Id.random,
         applicationId,
         timestamp,
         collaboratorActor,
-        "secret value",
         ClientSecret(name = "name", hashedSecret = "hashedSecret")
       )
 
