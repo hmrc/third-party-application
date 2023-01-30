@@ -70,12 +70,10 @@ class ApplicationCommandService @Inject() (
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
 
-  def update(applicationId: ApplicationId, applicationUpdate: ApplicationCommand)(implicit hc: HeaderCarrier): EitherT[Future, NonEmptyChain[String], ApplicationData] = {
+  def update(applicationId: ApplicationId, command: ApplicationCommand)(implicit hc: HeaderCarrier): EitherT[Future, NonEmptyChain[String], ApplicationData] = {
     for {
-      app      <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
-      events   <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
-
-
+      app    <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
+      events <- EitherT(processUpdate(app, command).map(_.toEither))
 
       savedApp <- E.liftF(applicationRepository.applyEvents(events))
       _        <- E.liftF(stateHistoryRepository.applyEvents(events))
@@ -86,15 +84,15 @@ class ApplicationCommandService @Inject() (
       _        <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
       _        <- E.liftF(notificationRepository.applyEvents(events))
 
-      _        <- E.liftF(apiPlatformEventService.applyEvents(events))
-      _        <- E.liftF(auditService.applyEvents(savedApp, events))
-      _        <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt }))
+      _ <- E.liftF(apiPlatformEventService.applyEvents(events))
+      _ <- E.liftF(auditService.applyEvents(savedApp, events))
+      _ <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt }))
     } yield savedApp
   }
 
   // scalastyle:off cyclomatic.complexity
-  private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationCommand)(implicit hc: HeaderCarrier): CommandHandler.Result = {
-    applicationUpdate match {
+  private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): CommandHandler.Result = {
+    command match {
       case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
       case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
@@ -115,7 +113,7 @@ class ApplicationCommandService @Inject() (
       case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
       case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
       case cmd: UpdateRedirectUris                                    => updateRedirectUrisCommandHandler.process(app, cmd)
-      case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationCommand type $applicationUpdate"))
+      case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationCommand type $command"))
     }
   }
   // scalastyle:on cyclomatic.complexity

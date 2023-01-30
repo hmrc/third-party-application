@@ -114,7 +114,6 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[ApiUnsubscribed] = Json.format[ApiUnsubscribed]
   }
 
-  
   case class ClientSecretAddedV2(
       id: UpdateApplicationEvent.Id,
       applicationId: ApplicationId,
@@ -123,7 +122,7 @@ object UpdateApplicationEvent {
       clientSecretId: String,
       clientSecretName: String
     ) extends UpdateApplicationEvent
-  
+
   object ClientSecretAddedV2 {
     implicit val format: OFormat[ClientSecretAddedV2] = Json.format[ClientSecretAddedV2]
   }

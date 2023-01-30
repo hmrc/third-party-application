@@ -49,12 +49,12 @@ class ApplicationCommandServiceApiSubscriptionsSpec extends ApplicationCommandSe
     val apiIdentifier = "some-context".asIdentifier("1.1")
     val timestamp     = FixedClock.now
 
-    def testForSuccess(applicationUpdate: ApplicationCommand, event: UpdateApplicationEvent with UpdatesSubscription): Unit = {
+    def testForSuccess(command: ApplicationCommand, event: UpdateApplicationEvent with UpdatesSubscription): Unit = {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.ApplyEvents.thenReturn(applicationData)
       SubscriptionRepoMock.ApplyEvents.succeeds()
 
-      val result = await(underTest.update(applicationId, applicationUpdate).value)
+      val result = await(underTest.update(applicationId, command).value)
 
       result shouldBe Right(applicationData)
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
@@ -63,10 +63,10 @@ class ApplicationCommandServiceApiSubscriptionsSpec extends ApplicationCommandSe
       AuditServiceMock.ApplyEvents.verifyCalledWith(applicationData, NonEmptyList.one(event))
     }
 
-    def testForMissingApplication(applicationUpdate: ApplicationCommand): Unit = {
+    def testForMissingApplication(command: ApplicationCommand): Unit = {
       ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
 
-      val result = await(underTest.update(applicationId, applicationUpdate).value)
+      val result = await(underTest.update(applicationId, command).value)
 
       result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled

@@ -27,7 +27,7 @@ import play.api.test.{FakeRequest, Helpers}
 
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, ApplicationCommandServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandServiceMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
 

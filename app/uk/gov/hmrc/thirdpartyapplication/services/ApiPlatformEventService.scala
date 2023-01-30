@@ -25,7 +25,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -44,7 +43,7 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
 
   private def obfuscateEvent(event: UpdateApplicationEvent): UpdateApplicationEvent = {
     event match {
-      case _                      => event
+      case _ => event
     }
   }
 

@@ -44,7 +44,7 @@ case class SubscribeToApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp:
 case class UnsubscribeFromApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime)                                                     extends ApplicationCommand
 case class UpdateRedirectUris(actor: Actor, oldRedirectUris: List[String], newRedirectUris: List[String], timestamp: LocalDateTime)                     extends ApplicationCommand
 
-trait GatekeeperSpecificApplicationCommand                                                                                         extends ApplicationCommand {
+trait GatekeeperSpecificApplicationCommand                                                                                        extends ApplicationCommand {
   def gatekeeperUser: String
 }
 case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperSpecificApplicationCommand

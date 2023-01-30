@@ -1474,12 +1474,13 @@ class ApplicationControllerSpec
 
   "temp" should {
     "dump some json" in {
-      val e: UpdateApplicationEvent = UpdateApplicationEvent.ApiSubscribed(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, UpdateApplicationEvent.CollaboratorActor("bob"), "bob", "1.0")
+      val e: UpdateApplicationEvent =
+        UpdateApplicationEvent.ApiSubscribed(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, UpdateApplicationEvent.CollaboratorActor("bob"), "bob", "1.0")
 
       val txt = Json.toJson(e).toString.replace("447", "447Z")
 
       val e2 = Json.parse(txt).as[UpdateApplicationEvent]
-      
+
       println(e2)
 
       e shouldBe e2

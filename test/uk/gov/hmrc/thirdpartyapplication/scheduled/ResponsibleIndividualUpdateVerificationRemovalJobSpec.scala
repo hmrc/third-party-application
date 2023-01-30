@@ -100,8 +100,8 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
         INITIAL,
         timeNow.minus(removalInterval.toSeconds, SECONDS)
       )
-      val applicationUpdate                        = ApplicationCommandServiceMock.Update.verifyCalledWith(app.id)
-      val declineResponsibleIndividualDidNotVerify = applicationUpdate.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
+      val command                                  = ApplicationCommandServiceMock.Update.verifyCalledWith(app.id)
+      val declineResponsibleIndividualDidNotVerify = command.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
       declineResponsibleIndividualDidNotVerify.code shouldBe code
     }
   }

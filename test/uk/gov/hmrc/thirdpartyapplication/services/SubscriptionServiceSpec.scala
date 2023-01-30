@@ -46,15 +46,15 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   trait SetupWithoutHc extends AuditServiceMockModule with ApplicationCommandServiceMockModule {
 
-    lazy val locked                  = false
-    val mockApiGatewayStore          = mock[ApiGatewayStore](withSettings.lenient())
-    val mockApplicationRepository    = mock[ApplicationRepository](withSettings.lenient())
-    val mockStateHistoryRepository   = mock[StateHistoryRepository](withSettings.lenient())
-    val mockEmailConnector           = mock[EmailConnector](withSettings.lenient())
-    val mockSubscriptionRepository   = mock[SubscriptionRepository](withSettings.lenient())
-    val mockApiPlatformEventsService = mock[ApiPlatformEventService](withSettings.lenient())
+    lazy val locked                   = false
+    val mockApiGatewayStore           = mock[ApiGatewayStore](withSettings.lenient())
+    val mockApplicationRepository     = mock[ApplicationRepository](withSettings.lenient())
+    val mockStateHistoryRepository    = mock[StateHistoryRepository](withSettings.lenient())
+    val mockEmailConnector            = mock[EmailConnector](withSettings.lenient())
+    val mockSubscriptionRepository    = mock[SubscriptionRepository](withSettings.lenient())
+    val mockApiPlatformEventsService  = mock[ApiPlatformEventService](withSettings.lenient())
     val mockApplicationCommandService = mock[ApplicationCommandService](withSettings.lenient())
-    val response                     = mock[WSResponse]
+    val response                      = mock[WSResponse]
 
     val underTest = new SubscriptionService(
       mockApplicationRepository,

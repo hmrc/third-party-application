@@ -91,8 +91,8 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
         REMINDERS_SENT,
         timeNow.minus(removalInterval.toSeconds, SECONDS)
       )
-      val applicationUpdate                        = ApplicationCommandServiceMock.Update.verifyCalledWith(app.id)
-      val declineResponsibleIndividualDidNotVerify = applicationUpdate.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
+      val command                                  = ApplicationCommandServiceMock.Update.verifyCalledWith(app.id)
+      val declineResponsibleIndividualDidNotVerify = command.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
       declineResponsibleIndividualDidNotVerify.code shouldBe code
     }
 
@@ -123,8 +123,8 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
         REMINDERS_SENT,
         timeNow.minus(removalInterval.toSeconds, SECONDS)
       )
-      val applicationUpdate                        = ApplicationCommandServiceMock.Update.verifyCalledWith(app.id)
-      val declineResponsibleIndividualDidNotVerify = applicationUpdate.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
+      val command                                  = ApplicationCommandServiceMock.Update.verifyCalledWith(app.id)
+      val declineResponsibleIndividualDidNotVerify = command.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
       declineResponsibleIndividualDidNotVerify.code shouldBe code2
     }
   }

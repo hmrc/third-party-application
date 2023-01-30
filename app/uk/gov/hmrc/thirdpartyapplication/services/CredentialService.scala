@@ -66,12 +66,12 @@ class CredentialService @Inject() (
     }
 
     for {
-      existingApp        <- fetchApp(applicationId)
-      _                   = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
+      existingApp                <- fetchApp(applicationId)
+      _                           = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
       (clientSecret, secretValue) = clientSecretService.generateClientSecret()
-      addSecretCmd        = generateCommand(clientSecret)
-      _                  <- applicationUpdateService.update(applicationId, addSecretCmd).value
-      updatedApplication <- fetchApp(applicationId)
+      addSecretCmd                = generateCommand(clientSecret)
+      _                          <- applicationUpdateService.update(applicationId, addSecretCmd).value
+      updatedApplication         <- fetchApp(applicationId)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production, addSecretCmd.clientSecret.id, secretValue)
   }
 
@@ -87,7 +87,7 @@ class CredentialService @Inject() (
 
       updatedApplication    <- applicationRepository.addClientSecret(applicationId, newSecret)
       _                     <- apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication, newSecret.id)
-      _                     =  auditService.audit(ClientSecretAddedAudit, Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
+      _                      = auditService.audit(ClientSecretAddedAudit, Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
       notificationRecipients = existingApp.admins.map(_.emailAddress)
 
       _ = emailConnector.sendAddedClientSecretNotification(secretRequest.actorEmailAddress, newSecret.name, existingApp.name, notificationRecipients)

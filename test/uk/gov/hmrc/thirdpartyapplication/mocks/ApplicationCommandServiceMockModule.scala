@@ -23,7 +23,7 @@ import cats.implicits.catsStdInstancesForFuture
 import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationCommand}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, ApplicationId}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandService
 
@@ -56,8 +56,8 @@ trait ApplicationCommandServiceMockModule extends MockitoSugar with ArgumentMatc
         captor.value
       }
 
-      def verifyCalledWith(applicationId: ApplicationId, applicationUpdate: ApplicationCommand) = {
-        verify(aMock).update(eqTo(applicationId), eqTo(applicationUpdate))(*)
+      def verifyCalledWith(applicationId: ApplicationId, command: ApplicationCommand) = {
+        verify(aMock).update(eqTo(applicationId), eqTo(command))(*)
       }
     }
   }
