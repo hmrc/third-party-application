@@ -32,13 +32,13 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredenti
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandService
 
 @Singleton
 class ProductionCredentialsRequestExpiredJob @Inject() (
     productionCredentialsRequestExpiredLockService: ProductionCredentialsRequestExpiredJobLockService,
     applicationRepository: ApplicationRepository,
-    applicationUpdateService: ApplicationUpdateService,
+    applicationUpdateService: ApplicationCommandService,
     clock: Clock,
     jobConfig: ProductionCredentialsRequestExpiredJobConfig
   )(implicit val ec: ExecutionContext

@@ -27,10 +27,10 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
+import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandServiceUtils
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, _}
 
-class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
+class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
     with UpliftRequestSamples {
 
   trait Setup extends CommonSetup
@@ -122,12 +122,12 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       val app = anApplicationData(applicationId)
       ApplicationRepoMock.Fetch.thenReturn(app)
 
-      case class UnknownApplicationUpdate(timestamp: LocalDateTime, instigator: UserId) extends ApplicationUpdate
-      val unknownUpdate = UnknownApplicationUpdate(timestamp, instigator)
+      case class UnknownApplicationCommand(timestamp: LocalDateTime, instigator: UserId) extends ApplicationCommand
+      val unknownUpdate = UnknownApplicationCommand(timestamp, instigator)
 
       val result = await(underTest.update(applicationId, unknownUpdate).value)
 
-      result shouldBe Left(NonEmptyChain.one(s"Unknown ApplicationUpdate type $unknownUpdate"))
+      result shouldBe Left(NonEmptyChain.one(s"Unknown ApplicationCommand type $unknownUpdate"))
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled
     }
   }

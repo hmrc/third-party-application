@@ -63,7 +63,7 @@ class ApplicationServiceSpec
     with FixedClock {
 
   trait Setup extends AuditServiceMockModule
-      with ApplicationUpdateServiceMockModule
+      with ApplicationCommandServiceMockModule
       with ApiGatewayStoreMockModule
       with ApiSubscriptionFieldsConnectorMockModule
       with ApplicationRepositoryMockModule
@@ -118,7 +118,7 @@ class ApplicationServiceSpec
       TokenServiceMock.aMock,
       SubmissionsServiceMock.aMock,
       UpliftNamingServiceMock.aMock,
-      ApplicationUpdateServiceMock.aMock,
+      ApplicationCommandServiceMock.aMock,
       clock
     )
 
@@ -559,19 +559,19 @@ class ApplicationServiceSpec
 
     "send an audit event for each type of change" in new SetupForAuditTests {
       val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(updatedApplication)
+      ApplicationCommandServiceMock.Update.thenReturnSuccess(updatedApplication)
 
       await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
 
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
-      ApplicationUpdateServiceMock.Update.verifyCalledWith(updatedApplication.id, updateRedirectUris)
+      ApplicationCommandServiceMock.Update.verifyCalledWith(updatedApplication.id, updateRedirectUris)
     }
 
     "throw BadRequestException when UpdateRedirectUris command fails" in new SetupForAuditTests {
       val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
-      ApplicationUpdateServiceMock.Update.thenReturnError("Error message")
+      ApplicationCommandServiceMock.Update.thenReturnError("Error message")
 
       intercept[BadRequestException] {
         await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
@@ -580,17 +580,17 @@ class ApplicationServiceSpec
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
-      ApplicationUpdateServiceMock.Update.verifyCalledWith(updatedApplication.id, updateRedirectUris)
+      ApplicationCommandServiceMock.Update.verifyCalledWith(updatedApplication.id, updateRedirectUris)
     }
 
     "not update RedirectUris or audit TermsAndConditionsUrl or PrivacyPolicyUrl for a privileged app" in new SetupForAuditTests {
       val (updatedApplication, _) = setupAuditTests(Privileged())
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(updatedApplication)
+      ApplicationCommandServiceMock.Update.thenReturnSuccess(updatedApplication)
 
       await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name, access = Privileged())))
 
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
-      ApplicationUpdateServiceMock.Update.verifyNeverCalled
+      ApplicationCommandServiceMock.Update.verifyNeverCalled
     }
 
     "throw a NotFoundException if application doesn't exist in repository for the given application id" in new Setup {

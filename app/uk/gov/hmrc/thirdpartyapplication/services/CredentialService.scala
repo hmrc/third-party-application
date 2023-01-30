@@ -38,7 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 @Singleton
 class CredentialService @Inject() (
     applicationRepository: ApplicationRepository,
-    applicationUpdateService: ApplicationUpdateService,
+    applicationUpdateService: ApplicationCommandService,
     auditService: AuditService,
     clientSecretService: ClientSecretService,
     config: CredentialConfig,

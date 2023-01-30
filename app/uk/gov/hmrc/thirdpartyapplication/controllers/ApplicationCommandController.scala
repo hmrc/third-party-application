@@ -25,21 +25,21 @@ import play.api.libs.json.Json
 import play.api.mvc._
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationUpdate, ApplicationUpdateFormatters}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationCommand, ApplicationCommandFormatters}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services._
 
 @Singleton
-class ApplicationUpdateController @Inject() (
-    val applicationUpdateService: ApplicationUpdateService,
+class ApplicationCommandController @Inject() (
+    val applicationUpdateService: ApplicationCommandService,
     val applicationService: ApplicationService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
-    with ApplicationUpdateFormatters
+    with ApplicationCommandFormatters
     with ApplicationLogger {
 
   import cats.implicits._
@@ -54,7 +54,7 @@ class ApplicationUpdateController @Inject() (
       Ok(Json.toJson(ApplicationResponse(data = applicationData)))
     }
 
-    withJsonBody[ApplicationUpdate] { applicationUpdate =>
+    withJsonBody[ApplicationCommand] { applicationUpdate =>
       applicationUpdateService.update(applicationId, applicationUpdate).fold(fails(_), passes(_))
     }
   }

@@ -70,7 +70,7 @@ class ApplicationService @Inject() (
     tokenService: TokenService,
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
-    applicationUpdateService: ApplicationUpdateService,
+    applicationUpdateService: ApplicationCommandService,
     clock: Clock
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ActorHelper {

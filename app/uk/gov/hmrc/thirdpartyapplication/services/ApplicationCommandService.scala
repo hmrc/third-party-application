@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 
 @Singleton
-class ApplicationUpdateService @Inject() (
+class ApplicationCommandService @Inject() (
     applicationRepository: ApplicationRepository,
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     stateHistoryRepository: StateHistoryRepository,
@@ -70,7 +70,7 @@ class ApplicationUpdateService @Inject() (
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
 
-  def update(applicationId: ApplicationId, applicationUpdate: ApplicationUpdate)(implicit hc: HeaderCarrier): EitherT[Future, NonEmptyChain[String], ApplicationData] = {
+  def update(applicationId: ApplicationId, applicationUpdate: ApplicationCommand)(implicit hc: HeaderCarrier): EitherT[Future, NonEmptyChain[String], ApplicationData] = {
     for {
       app      <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
       events   <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
@@ -93,7 +93,7 @@ class ApplicationUpdateService @Inject() (
   }
 
   // scalastyle:off cyclomatic.complexity
-  private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationUpdate)(implicit hc: HeaderCarrier): CommandHandler.Result = {
+  private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationCommand)(implicit hc: HeaderCarrier): CommandHandler.Result = {
     applicationUpdate match {
       case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
       case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)
@@ -115,7 +115,7 @@ class ApplicationUpdateService @Inject() (
       case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
       case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
       case cmd: UpdateRedirectUris                                    => updateRedirectUrisCommandHandler.process(app, cmd)
-      case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
+      case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationCommand type $applicationUpdate"))
     }
   }
   // scalastyle:on cyclomatic.complexity

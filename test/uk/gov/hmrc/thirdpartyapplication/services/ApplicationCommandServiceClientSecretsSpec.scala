@@ -23,10 +23,10 @@ import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
+import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandServiceUtils
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateServiceUtils {
+class ApplicationCommandServiceClientSecretsSpec extends ApplicationCommandServiceUtils {
 
   trait Setup extends CommonSetup {
     ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()

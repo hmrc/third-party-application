@@ -39,7 +39,7 @@ class SubscriptionService @Inject() (
     subscriptionRepository: SubscriptionRepository,
     auditService: AuditService,
     apiPlatformEventService: ApiPlatformEventService,
-    applicationUpdateService: ApplicationUpdateService,
+    applicationUpdateService: ApplicationCommandService,
     apiGatewayStore: ApiGatewayStore
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ActorHelper {

@@ -27,14 +27,14 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndiv
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationCommandServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil
     with ApplicationTestData {
 
-  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationUpdateServiceMockModule
+  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationCommandServiceMockModule
       with SubmissionsTestData {
 
     val mockLockKeeper = mock[ResponsibleIndividualVerificationRemovalJobLockService]
@@ -69,7 +69,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
     val job = new ResponsibleIndividualVerificationRemovalJob(
       mockLockKeeper,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
-      ApplicationUpdateServiceMock.aMock,
+      ApplicationCommandServiceMock.aMock,
       fixedClock,
       jobConfig
     )
@@ -77,7 +77,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
 
   "ResponsibleIndividualVerificationRemovalJob" should {
     "send email and remove database record" in new Setup {
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(app)
+      ApplicationCommandServiceMock.Update.thenReturnSuccess(app)
 
       val code         = "123242423432432432"
       val verification =
@@ -91,15 +91,15 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
         REMINDERS_SENT,
         timeNow.minus(removalInterval.toSeconds, SECONDS)
       )
-      val applicationUpdate                        = ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
+      val applicationUpdate                        = ApplicationCommandServiceMock.Update.verifyCalledWith(app.id)
       val declineResponsibleIndividualDidNotVerify = applicationUpdate.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
       declineResponsibleIndividualDidNotVerify.code shouldBe code
     }
 
     "continue after invalid records" in new Setup {
       val badApp = app.copy(id = ApplicationId.random)
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(app.id, app)
-      ApplicationUpdateServiceMock.Update.thenReturnError(badApp.id, "Error")
+      ApplicationCommandServiceMock.Update.thenReturnSuccess(app.id, app)
+      ApplicationCommandServiceMock.Update.thenReturnError(badApp.id, "Error")
 
       val code1         = "123242423432432432"
       val verification1 =
@@ -123,7 +123,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
         REMINDERS_SENT,
         timeNow.minus(removalInterval.toSeconds, SECONDS)
       )
-      val applicationUpdate                        = ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
+      val applicationUpdate                        = ApplicationCommandServiceMock.Update.verifyCalledWith(app.id)
       val declineResponsibleIndividualDidNotVerify = applicationUpdate.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
       declineResponsibleIndividualDidNotVerify.code shouldBe code2
     }

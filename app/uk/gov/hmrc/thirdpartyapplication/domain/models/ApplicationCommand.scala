@@ -23,37 +23,37 @@ import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Actor
 
-trait ApplicationUpdate {
+trait ApplicationCommand {
   def timestamp: LocalDateTime
 }
-case class AddClientSecret(actor: Actor, clientSecret: ClientSecret, timestamp: LocalDateTime)                                     extends ApplicationUpdate
-case class RemoveClientSecret(actor: Actor, clientSecretId: String, timestamp: LocalDateTime)                                                           extends ApplicationUpdate
-case class AddCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                              extends ApplicationUpdate
-case class RemoveCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                           extends ApplicationUpdate
-case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation)           extends ApplicationUpdate
-case class ChangeProductionApplicationTermsAndConditionsLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: TermsAndConditionsLocation) extends ApplicationUpdate
-case class ChangeResponsibleIndividualToSelf(instigator: UserId, timestamp: LocalDateTime, name: String, email: String)                                 extends ApplicationUpdate
-case class ChangeResponsibleIndividualToOther(code: String, timestamp: LocalDateTime)                                                                   extends ApplicationUpdate
-case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, requesterName: String, riName: String, riEmail: String)            extends ApplicationUpdate
-case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime)                                                                         extends ApplicationUpdate
-case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime)                                                             extends ApplicationUpdate
-case class DeleteApplicationByCollaborator(instigator: UserId, reasons: String, timestamp: LocalDateTime)                                               extends ApplicationUpdate
-case class DeleteProductionCredentialsApplication(jobId: String, reasons: String, timestamp: LocalDateTime)                                             extends ApplicationUpdate
-case class DeleteUnusedApplication(jobId: String, authorisationKey: String, reasons: String, timestamp: LocalDateTime)                                  extends ApplicationUpdate
-case class SubscribeToApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime)                                                         extends ApplicationUpdate
-case class UnsubscribeFromApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime)                                                     extends ApplicationUpdate
-case class UpdateRedirectUris(actor: Actor, oldRedirectUris: List[String], newRedirectUris: List[String], timestamp: LocalDateTime)                     extends ApplicationUpdate
+case class AddClientSecret(actor: Actor, clientSecret: ClientSecret, timestamp: LocalDateTime)                                                          extends ApplicationCommand
+case class RemoveClientSecret(actor: Actor, clientSecretId: String, timestamp: LocalDateTime)                                                           extends ApplicationCommand
+case class AddCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                              extends ApplicationCommand
+case class RemoveCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                           extends ApplicationCommand
+case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation)           extends ApplicationCommand
+case class ChangeProductionApplicationTermsAndConditionsLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: TermsAndConditionsLocation) extends ApplicationCommand
+case class ChangeResponsibleIndividualToSelf(instigator: UserId, timestamp: LocalDateTime, name: String, email: String)                                 extends ApplicationCommand
+case class ChangeResponsibleIndividualToOther(code: String, timestamp: LocalDateTime)                                                                   extends ApplicationCommand
+case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, requesterName: String, riName: String, riEmail: String)            extends ApplicationCommand
+case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime)                                                                         extends ApplicationCommand
+case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime)                                                             extends ApplicationCommand
+case class DeleteApplicationByCollaborator(instigator: UserId, reasons: String, timestamp: LocalDateTime)                                               extends ApplicationCommand
+case class DeleteProductionCredentialsApplication(jobId: String, reasons: String, timestamp: LocalDateTime)                                             extends ApplicationCommand
+case class DeleteUnusedApplication(jobId: String, authorisationKey: String, reasons: String, timestamp: LocalDateTime)                                  extends ApplicationCommand
+case class SubscribeToApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime)                                                         extends ApplicationCommand
+case class UnsubscribeFromApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime)                                                     extends ApplicationCommand
+case class UpdateRedirectUris(actor: Actor, oldRedirectUris: List[String], newRedirectUris: List[String], timestamp: LocalDateTime)                     extends ApplicationCommand
 
-trait GatekeeperSpecificApplicationUpdate                                                                                         extends ApplicationUpdate {
+trait GatekeeperSpecificApplicationCommand                                                                                         extends ApplicationCommand {
   def gatekeeperUser: String
 }
-case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperSpecificApplicationUpdate
-case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime)                   extends GatekeeperSpecificApplicationUpdate
+case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperSpecificApplicationCommand
+case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime)                   extends GatekeeperSpecificApplicationCommand
 
 case class DeleteApplicationByGatekeeper(gatekeeperUser: String, requestedByEmailAddress: String, reasons: String, timestamp: LocalDateTime)
-    extends GatekeeperSpecificApplicationUpdate
+    extends GatekeeperSpecificApplicationCommand
 
-trait ApplicationUpdateFormatters {
+trait ApplicationCommandFormatters {
   implicit val addClientSecretFormatter                        = Json.format[AddClientSecret]
   implicit val removeClientSecretFormatter                     = Json.format[RemoveClientSecret]
   implicit val addCollaboratorFormatter                        = Json.format[AddCollaborator]
@@ -74,7 +74,7 @@ trait ApplicationUpdateFormatters {
   implicit val unsubscribeFromApiFormatter                     = Json.format[UnsubscribeFromApi]
   implicit val UpdateRedirectUrisFormatter                     = Json.format[UpdateRedirectUris]
 
-  implicit val applicationUpdateRequestFormatter = Union.from[ApplicationUpdate]("updateType")
+  implicit val applicationUpdateRequestFormatter = Union.from[ApplicationCommand]("updateType")
     .and[AddClientSecret]("addClientSecret")
     .and[RemoveClientSecret]("removeClientSecret")
     .and[AddCollaborator]("addCollaborator")

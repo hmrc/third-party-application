@@ -23,46 +23,46 @@ import cats.implicits.catsStdInstancesForFuture
 import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationUpdate}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationCommand}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandService
 
-trait ApplicationUpdateServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
+trait ApplicationCommandServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
-  protected trait BaseApplicationUpdateServiceMock {
+  protected trait BaseApplicationCommandServiceMock {
 
-    def aMock: ApplicationUpdateService
+    def aMock: ApplicationCommandService
 
     object Update {
 
       def thenReturnSuccess(applicationData: ApplicationData) =
-        when(aMock.update(*[ApplicationId], *[ApplicationUpdate])(*)).thenReturn(EitherT.rightT(applicationData))
+        when(aMock.update(*[ApplicationId], *[ApplicationCommand])(*)).thenReturn(EitherT.rightT(applicationData))
 
       def thenReturnSuccess(applicationId: ApplicationId, applicationData: ApplicationData) =
-        when(aMock.update(eqTo(applicationId), *[ApplicationUpdate])(*)).thenReturn(EitherT.rightT(applicationData))
+        when(aMock.update(eqTo(applicationId), *[ApplicationCommand])(*)).thenReturn(EitherT.rightT(applicationData))
 
       def thenReturnError(errorMsg: String) =
-        when(aMock.update(*[ApplicationId], *[ApplicationUpdate])(*)).thenReturn(EitherT.leftT(NonEmptyChain(errorMsg)))
+        when(aMock.update(*[ApplicationId], *[ApplicationCommand])(*)).thenReturn(EitherT.leftT(NonEmptyChain(errorMsg)))
 
       def thenReturnError(applicationId: ApplicationId, errorMsg: String) =
-        when(aMock.update(eqTo(applicationId), *[ApplicationUpdate])(*)).thenReturn(EitherT.leftT(NonEmptyChain(errorMsg)))
+        when(aMock.update(eqTo(applicationId), *[ApplicationCommand])(*)).thenReturn(EitherT.leftT(NonEmptyChain(errorMsg)))
 
       def verifyNeverCalled =
-        verify(aMock, never).update(*[ApplicationId], *[ApplicationUpdate])(*)
+        verify(aMock, never).update(*[ApplicationId], *[ApplicationCommand])(*)
 
       def verifyCalledWith(applicationId: ApplicationId) = {
-        val captor = ArgCaptor[ApplicationUpdate]
+        val captor = ArgCaptor[ApplicationCommand]
         verify(aMock).update(eqTo(applicationId), captor.capture)(*)
         captor.value
       }
 
-      def verifyCalledWith(applicationId: ApplicationId, applicationUpdate: ApplicationUpdate) = {
+      def verifyCalledWith(applicationId: ApplicationId, applicationUpdate: ApplicationCommand) = {
         verify(aMock).update(eqTo(applicationId), eqTo(applicationUpdate))(*)
       }
     }
   }
 
-  object ApplicationUpdateServiceMock extends BaseApplicationUpdateServiceMock {
-    val aMock = mock[ApplicationUpdateService]
+  object ApplicationCommandServiceMock extends BaseApplicationCommandServiceMock {
+    val aMock = mock[ApplicationCommandService]
   }
 }

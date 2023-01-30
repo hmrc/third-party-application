@@ -23,10 +23,10 @@ import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
+import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandServiceUtils
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServiceUtils with ApiIdentifierSyntax {
+class ApplicationCommandServiceApiSubscriptionsSpec extends ApplicationCommandServiceUtils with ApiIdentifierSyntax {
 
   trait Setup extends CommonSetup {
     ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
@@ -49,7 +49,7 @@ class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServ
     val apiIdentifier = "some-context".asIdentifier("1.1")
     val timestamp     = FixedClock.now
 
-    def testForSuccess(applicationUpdate: ApplicationUpdate, event: UpdateApplicationEvent with UpdatesSubscription): Unit = {
+    def testForSuccess(applicationUpdate: ApplicationCommand, event: UpdateApplicationEvent with UpdatesSubscription): Unit = {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.ApplyEvents.thenReturn(applicationData)
       SubscriptionRepoMock.ApplyEvents.succeeds()
@@ -63,7 +63,7 @@ class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServ
       AuditServiceMock.ApplyEvents.verifyCalledWith(applicationData, NonEmptyList.one(event))
     }
 
-    def testForMissingApplication(applicationUpdate: ApplicationUpdate): Unit = {
+    def testForMissingApplication(applicationUpdate: ApplicationCommand): Unit = {
       ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
 
       val result = await(underTest.update(applicationId, applicationUpdate).value)

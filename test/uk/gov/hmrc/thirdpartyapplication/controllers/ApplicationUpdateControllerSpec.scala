@@ -27,11 +27,11 @@ import play.api.test.{FakeRequest, Helpers}
 
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, ApplicationUpdateServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, ApplicationCommandServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
 
-class ApplicationUpdateControllerSpec
+class ApplicationCommandControllerSpec
     extends ControllerSpec
     with ApplicationStateUtil
     with ControllerTestData
@@ -41,13 +41,13 @@ class ApplicationUpdateControllerSpec
   import play.api.test.Helpers._
 
   trait Setup
-      extends ApplicationUpdateServiceMockModule with ApplicationServiceMockModule {
+      extends ApplicationCommandServiceMockModule with ApplicationServiceMockModule {
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
-    lazy val underTest = new ApplicationUpdateController(
-      ApplicationUpdateServiceMock.aMock,
+    lazy val underTest = new ApplicationCommandController(
+      ApplicationCommandServiceMock.aMock,
       ApplicationServiceMock.aMock,
       Helpers.stubControllerComponents()
     )
@@ -68,7 +68,7 @@ class ApplicationUpdateControllerSpec
     )
 
     "return success if application update request is valid" in new Setup {
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(anApplicationData(applicationId))
+      ApplicationCommandServiceMock.Update.thenReturnSuccess(anApplicationData(applicationId))
 
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody))
 
@@ -78,40 +78,40 @@ class ApplicationUpdateControllerSpec
     "return 422 error if application update request is missing updateType" in new Setup {
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "updateType"))
 
-      ApplicationUpdateServiceMock.Update.verifyNeverCalled
+      ApplicationCommandServiceMock.Update.verifyNeverCalled
       status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "return 422 error if application update request is missing instigator" in new Setup {
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "instigator"))
 
-      ApplicationUpdateServiceMock.Update.verifyNeverCalled
+      ApplicationCommandServiceMock.Update.verifyNeverCalled
       status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "return 422 error if application update request is missing timestamp" in new Setup {
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "timestamp"))
 
-      ApplicationUpdateServiceMock.Update.verifyNeverCalled
+      ApplicationCommandServiceMock.Update.verifyNeverCalled
       status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "return 422 error if application update request is missing gatekeeperUser" in new Setup {
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "gatekeeperUser"))
 
-      ApplicationUpdateServiceMock.Update.verifyNeverCalled
+      ApplicationCommandServiceMock.Update.verifyNeverCalled
       status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "return 422 error if application update request is missing newName" in new Setup {
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "newName"))
 
-      ApplicationUpdateServiceMock.Update.verifyNeverCalled
+      ApplicationCommandServiceMock.Update.verifyNeverCalled
       status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "return 400 error if application update request is valid but update fails" in new Setup {
-      ApplicationUpdateServiceMock.Update.thenReturnError("update failed!")
+      ApplicationCommandServiceMock.Update.thenReturnError("update failed!")
 
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody))
 

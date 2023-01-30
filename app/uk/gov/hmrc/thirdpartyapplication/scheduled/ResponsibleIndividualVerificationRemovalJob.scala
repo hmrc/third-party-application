@@ -33,13 +33,13 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.DeclineResponsibleIndividualDidNotVerify
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandService
 
 @Singleton
 class ResponsibleIndividualVerificationRemovalJob @Inject() (
     responsibleIndividualVerificationRemovalJobLockService: ResponsibleIndividualVerificationRemovalJobLockService,
     repository: ResponsibleIndividualVerificationRepository,
-    applicationUpdateService: ApplicationUpdateService,
+    applicationUpdateService: ApplicationCommandService,
     val clock: Clock,
     jobConfig: ResponsibleIndividualVerificationRemovalJobConfig
   )(implicit val ec: ExecutionContext

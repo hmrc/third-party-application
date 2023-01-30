@@ -24,11 +24,11 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandService
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
-abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
+abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
     with ApplicationStateUtil
     with ApplicationTestData {
 
@@ -75,7 +75,7 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
     val mockUnsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler                                             = mock[UnsubscribeFromApiCommandHandler]
     val mockUpdateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler                                             = mock[UpdateRedirectUrisCommandHandler]
 
-    val underTest = new ApplicationUpdateService(
+    val underTest = new ApplicationCommandService(
       ApplicationRepoMock.aMock,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       StateHistoryRepoMock.aMock,

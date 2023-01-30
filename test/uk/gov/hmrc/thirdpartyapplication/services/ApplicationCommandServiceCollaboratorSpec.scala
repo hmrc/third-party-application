@@ -26,10 +26,10 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
+import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandServiceUtils
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
 
-class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceUtils with ApplicationTestData {
+class ApplicationCommandServiceCollaboratorSpec extends ApplicationCommandServiceUtils with ApplicationTestData {
 
   trait Setup extends CommonSetup
 
