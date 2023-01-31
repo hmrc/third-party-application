@@ -16,24 +16,26 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import cats._
+import cats.implicits._
+import cats.data._
+
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
-import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
-
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{UpdateApplicationEvent, UpdateRedirectUris}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.ResultT
+
 
 @Singleton
-class UpdateRedirectUrisCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
+class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler2 {
 
-  import CommandHandler._
+  import CommandHandler2._
 
-  private def validate(app: ApplicationData): ValidatedNec[String, ApplicationData] = {
+  private def validate(app: ApplicationData): ValidatedNec[String, Unit] = {
     Apply[ValidatedNec[String, *]].map(isStandardAccess(app))(_ => app)
   }
-
   import UpdateApplicationEvent._
 
   private def asEvents(app: ApplicationData, cmd: UpdateRedirectUris): NonEmptyList[UpdateApplicationEvent] = {
@@ -49,11 +51,12 @@ class UpdateRedirectUrisCommandHandler @Inject() ()(implicit val ec: ExecutionCo
     )
   }
 
-  def process(app: ApplicationData, cmd: UpdateRedirectUris): CommandHandler.Result = {
-    Future.successful {
-      validate(app) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
+
+  def process(app: ApplicationData, cmd: UpdateRedirectUris): ResultT = {
+    for {
+      valid <- E.fromEither(validate(app).toEither)
+      savedApp <- E.liftF(applicationRepository.updateRedirectUris(app.id, cmd.newRedirectUris))
+      events = asEvents(savedApp, cmd)
+    } yield (savedApp, events)
   }
 }

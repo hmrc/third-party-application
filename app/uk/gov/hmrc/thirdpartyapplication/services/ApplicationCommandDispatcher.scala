@@ -39,7 +39,8 @@ class ApplicationCommandDispatcher @Inject() (
     auditService: AuditService,
 
     addClientSecretCommandHandler: AddClientSecretCommandHandler,
-    removeClientSecretCommandHandler: RemoveClientSecretCommandHandler
+    removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
+    updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler
     // changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
     // changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
     // changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
@@ -57,7 +58,7 @@ class ApplicationCommandDispatcher @Inject() (
     // removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
     // subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
     // unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
-    // updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler
+
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
     
@@ -101,7 +102,7 @@ class ApplicationCommandDispatcher @Inject() (
       // case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
       // case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
       // case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
-      // case cmd: UpdateRedirectUris                                    => updateRedirectUrisCommandHandler.process(app, cmd)
+      case cmd: UpdateRedirectUris                                    => updateRedirectUrisCommandHandler.process(app, cmd)
       case _                                                          => E.fromEither(Left(NonEmptyChain(s"Unknown ApplicationCommand type $command")))
     }
   }

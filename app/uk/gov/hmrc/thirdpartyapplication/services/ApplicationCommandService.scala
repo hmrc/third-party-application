@@ -112,7 +112,7 @@ class ApplicationCommandService @Inject() (
       case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
       case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
       case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
-      case cmd: UpdateRedirectUris                                    => updateRedirectUrisCommandHandler.process(app, cmd)
+      case cmd: UpdateRedirectUris                                    => throw new IllegalAccessError("Should not call here")
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationCommand type $command"))
     }
   }

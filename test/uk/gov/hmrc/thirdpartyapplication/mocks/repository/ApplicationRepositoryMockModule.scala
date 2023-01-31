@@ -327,6 +327,20 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         ApplicationRepoMock.verify.updateClientSecretHash(eqTo(applicationId), eqTo(clientSecretId), *)
     }
 
+    object UpdateRedirectUris {
+
+      def thenReturn(applicationId: ApplicationId, redirectUris: List[String])(updatedApplication: ApplicationData) = {
+        when(aMock.updateRedirectUris(eqTo(applicationId), eqTo(redirectUris))).thenReturn(successful(updatedApplication))
+      }
+
+      def verifyCalledWith(applicationId: ApplicationId,  redirectUris: List[String]) =
+        ApplicationRepoMock.verify.updateRedirectUris(eqTo(applicationId), eqTo(redirectUris))
+
+
+
+    }
+
+
     object DeleteClientSecret {
 
       def succeeds(application: ApplicationData, clientSecretId: String) = {

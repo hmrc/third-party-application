@@ -694,6 +694,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       )
     )
 
+
+ def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[String]) =
+    updateApplication(applicationId, Updates.set("access.redirectUris", Codecs.toBson(redirectUris)))
+
   private def updateRedirectUrisUpdated(evt: UpdateApplicationEvent.RedirectUrisUpdated) =
     updateApplication(
       evt.applicationId,
@@ -794,7 +798,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     import UpdateApplicationEvent._
 
     event match {
-      case evt: RedirectUrisUpdated                                                                               => updateRedirectUrisUpdated(evt)
       case evt: ProductionAppNameChanged                                                                          => updateApplicationName(evt.applicationId, evt.newAppName)
       case evt: ProductionAppPrivacyPolicyLocationChanged                                                         => updateApplicationPrivacyPolicyLocation(evt.applicationId, evt.newLocation)
       case evt: ProductionLegacyAppPrivacyPolicyLocationChanged                                                   => updateLegacyApplicationPrivacyPolicyLocation(evt.applicationId, evt.newUrl)
@@ -814,10 +817,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case _: ApplicationDeleted | _: ApplicationDeletedByGatekeeper | _: ProductionCredentialsApplicationDeleted => noOp(event)
       case _: ApiSubscribed                                                                                       => noOp(event)
       case _: ApiUnsubscribed                                                                                     => noOp(event)
-      
+
       // refactored to new ways
       case evt: ClientSecretAddedV3                                                                               => noOp(event)
       case evt: ClientSecretRemoved                                                                               => noOp(event)
+      case evt: RedirectUrisUpdated                                                                               => noOp(event)
 
       // Should never be seen by this route
       case _: ClientSecretAddedV2                                                                                 => noOp(event)

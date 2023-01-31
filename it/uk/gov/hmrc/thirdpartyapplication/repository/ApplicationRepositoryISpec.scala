@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
@@ -228,6 +228,26 @@ class ApplicationRepositoryISpec
       updatedApplication.grantLength mustBe updatedGrantLength
     }
   }
+
+  "updateRedirectUris" should {
+    "set the redirectUris on an Application document" in {
+      val applicationId = ApplicationId.random
+      await(applicationRepository.save(anApplicationDataForTest(applicationId)))
+
+      val updateRedirectUris =  List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
+      val updatedApplication = await(
+        applicationRepository.updateRedirectUris(
+          applicationId,
+          updateRedirectUris
+        )
+      )
+
+      updatedApplication.access match {
+        case access: Standard => access.redirectUris  mustBe updateRedirectUris
+      }
+    }
+  }
+
 
   "recordApplicationUsage" should {
 
