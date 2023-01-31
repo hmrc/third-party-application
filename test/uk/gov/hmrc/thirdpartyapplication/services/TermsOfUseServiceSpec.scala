@@ -32,7 +32,7 @@ class TermsOfUseServiceSpec extends AsyncHmrcSpec {
     val applicationId = ApplicationId.random
     val now           = Instant.now().truncatedTo(MILLIS)
 
-    val underTest = new TermsOfUseService(TermsOfUseRepositoryMock.aMock)
+    val underTest = new TermsOfUseInvitationService(TermsOfUseRepositoryMock.aMock)
   }
 
   "create invitation" should {
@@ -61,7 +61,7 @@ class TermsOfUseServiceSpec extends AsyncHmrcSpec {
 
       val result = await(underTest.fetchInvitation(applicationId))
 
-      result.value should equal(TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated))
+      result.value should equal(TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent))
     }
 
     "return nothing when no invitation is found in the repository" in new Setup {

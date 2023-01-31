@@ -22,12 +22,12 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
 
 trait TermsOfUseRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   protected trait BaseTermsOfUseRepositoryMock {
-    def aMock: TermsOfUseRepository
+    def aMock: TermsOfUseInvitationRepository
 
     object Create {
       def thenReturnSuccess() = when(aMock.create(*[TermsOfUseInvitation])).thenAnswer(successful(true))
@@ -45,6 +45,6 @@ trait TermsOfUseRepositoryMockModule extends MockitoSugar with ArgumentMatchersS
   }
 
   object TermsOfUseRepositoryMock extends BaseTermsOfUseRepositoryMock {
-    val aMock = mock[TermsOfUseRepository]
+    val aMock = mock[TermsOfUseInvitationRepository]
   }
 }

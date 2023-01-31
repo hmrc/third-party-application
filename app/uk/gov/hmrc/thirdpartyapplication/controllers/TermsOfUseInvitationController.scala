@@ -26,11 +26,11 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
-import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseService
+import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
 
 @Singleton
-class TermsOfUseController @Inject() (
-    termsOfUseService: TermsOfUseService,
+class TermsOfUseInvitationController @Inject() (
+    termsOfUseService: TermsOfUseInvitationService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils {

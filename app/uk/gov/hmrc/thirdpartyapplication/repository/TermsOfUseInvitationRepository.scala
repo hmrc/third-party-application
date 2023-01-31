@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
 @Singleton
-class TermsOfUseRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](
+class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](
       collectionName = "termsOfUseInvitation",
       mongoComponent = mongo,
       domainFormat = TermsOfUseInvitation.format,

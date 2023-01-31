@@ -29,13 +29,14 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
 
-class TermsOfUseControllerSpec extends ControllerSpec {
+class TermsOfUseInvitationControllerSpec extends ControllerSpec {
 
   trait Setup extends TermsOfUseServiceMockModule {
     val applicationId = ApplicationId.random
     val now           = Instant.now().truncatedTo(MILLIS)
+    val dueDate       = now.plus(60, DAYS)
 
-    lazy val underTest = new TermsOfUseController(
+    lazy val underTest = new TermsOfUseInvitationController(
       TermsOfUseServiceMock.aMock,
       stubControllerComponents()
     )
@@ -55,7 +56,9 @@ class TermsOfUseControllerSpec extends ControllerSpec {
       val response = TermsOfUseInvitationResponse(
         applicationId,
         now,
-        now
+        now,
+        dueDate,
+        None
       )
 
       TermsOfUseServiceMock.FetchInvitation.thenReturn(response)
@@ -77,7 +80,7 @@ class TermsOfUseControllerSpec extends ControllerSpec {
 
   "fetch invitation" should {
     "return an OK with a terms of use invitation response" in new Setup {
-      val response = TermsOfUseInvitationResponse(applicationId, now, now)
+      val response = TermsOfUseInvitationResponse(applicationId, now, now, dueDate, None)
 
       TermsOfUseServiceMock.FetchInvitation.thenReturn(response)
 
@@ -102,7 +105,9 @@ class TermsOfUseControllerSpec extends ControllerSpec {
         TermsOfUseInvitationResponse(
           applicationId,
           now,
-          now
+          now,
+          dueDate,
+          None
         )
       )
 

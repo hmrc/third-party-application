@@ -23,11 +23,11 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
 
 @Singleton
-class TermsOfUseService @Inject() (
-    termsOfUseRepository: TermsOfUseRepository
+class TermsOfUseInvitationService @Inject() (
+    termsOfUseRepository: TermsOfUseInvitationRepository
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -42,7 +42,7 @@ class TermsOfUseService @Inject() (
 
     for {
       inviteF  <- termsOfUseRepository.fetch(applicationId)
-      responseF = inviteF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated))
+      responseF = inviteF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent))
     } yield responseF
   }
 
@@ -51,7 +51,7 @@ class TermsOfUseService @Inject() (
 
     for {
       invitesF  <- termsOfUseRepository.fetchAll()
-      responsesF = invitesF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated))
+      responsesF = invitesF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent))
     } yield responsesF
   }
 }
