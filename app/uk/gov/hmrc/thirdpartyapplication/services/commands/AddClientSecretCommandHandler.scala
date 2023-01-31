@@ -17,42 +17,57 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats._
+import cats.implicits._
+import cats.data._
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddClientSecret, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+
+import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
+
 
 @Singleton
-class AddClientSecretCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
+class AddClientSecretCommandHandler @Inject() (
+    applicationRepository: ApplicationRepository,
+    config: CredentialConfig
+)(implicit val ec: ExecutionContext) extends CommandHandler2 {
 
-  import CommandHandler._
+  import CommandHandler2._
 
-  private def validate(app: ApplicationData, cmd: AddClientSecret): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map(isAdminIfInProduction(cmd.actor, app))(_ => app)
+  private val clientSecretLimit = config.clientSecretLimit
+
+  private def validate(app: ApplicationData, cmd: AddClientSecret): ValidatedNec[String, Unit] = {
+    Apply[ValidatedNec[String, *]].map2(
+      isAdminIfInProduction(cmd.actor, app),
+      appHasLessThanLimitOfSecrets(app, clientSecretLimit)
+    ) { case _ => () }
   }
 
   import UpdateApplicationEvent._
 
   private def asEvents(app: ApplicationData, cmd: AddClientSecret): NonEmptyList[UpdateApplicationEvent] = {
     NonEmptyList.of(
-      ClientSecretAddedV3(
+      ClientSecretAddedV2(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
-        clientSecret = cmd.clientSecret
+        clientSecretId = cmd.clientSecret.id,
+        clientSecretName = cmd.clientSecret.name
       )
     )
   }
 
-  def process(app: ApplicationData, cmd: AddClientSecret): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
+  def process(app: ApplicationData, cmd: AddClientSecret): ResultT = {
+    for {
+      valid    <- E.fromEither(validate(app, cmd).toEither)
+      savedApp <- E.liftF(applicationRepository.addClientSecret(app.id, cmd.clientSecret))
+      events    = asEvents(savedApp, cmd)
+    } yield (savedApp, events)
   }
 }

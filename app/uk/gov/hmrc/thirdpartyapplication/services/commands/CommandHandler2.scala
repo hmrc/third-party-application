@@ -18,21 +18,30 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats.data.{NonEmptyList, ValidatedNec, NonEmptyChain, EitherT}
 import cats.implicits._
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 
-abstract class CommandHandler {
+trait CommandHandler2 {
+  import CommandHandler2._
+
   implicit def ec: ExecutionContext
+
+  val E = EitherTHelper.make[CommandFailures]
 }
 
-object CommandHandler {
-  type Result = Future[ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]]]
+object CommandHandler2 {
+  type CommandSuccess = (ApplicationData, NonEmptyList[UpdateApplicationEvent])
+  type CommandFailures = NonEmptyChain[String]
 
-  def cond(cond: => Boolean, left: String): ValidatedNec[String, Unit] = {
+  type Result = Future[Either[CommandFailures, CommandSuccess]]
+  type ResultT = EitherT[Future, CommandFailures, CommandSuccess]
+
+    def cond(cond: => Boolean, left: String): ValidatedNec[String, Unit] = {
     if (cond) ().validNec[String] else left.invalidNec[Unit]
   }
 

@@ -211,7 +211,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
-  @deprecated("remove when no longer using old logic")
   def addClientSecret(applicationId: ApplicationId, clientSecret: ClientSecret): Future[ApplicationData] =
     updateApplication(applicationId, Updates.push("tokens.production.clientSecrets", Codecs.toBson(clientSecret)))
 
@@ -234,7 +233,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
-  @deprecated("remove when no longer using old logic")
   def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String): Future[ApplicationData] = {
     val query = equal("id", Codecs.toBson(applicationId))
 
@@ -676,23 +674,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     }
   }
 
-  private def updateClientSecretAdded(evt: UpdateApplicationEvent.ClientSecretAddedV3): Future[ApplicationData] =
-    updateApplication(
-      evt.applicationId,
-      Updates.push(
-        "tokens.production.clientSecrets",
-        Codecs.toBson(evt.clientSecret)
-      )
-    )
 
-  private def updateClientSecretRemoved(evt: UpdateApplicationEvent.ClientSecretRemoved): Future[ApplicationData] =
-    updateApplication(
-      evt.applicationId,
-      Updates.pull(
-        "tokens.production.clientSecrets",
-        Codecs.toBson(Json.obj("id" -> evt.clientSecretId))
-      )
-    )
 
   private def updateCollaboratorAdded(evt: UpdateApplicationEvent.CollaboratorAdded) =
     updateApplication(
@@ -812,8 +794,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     import UpdateApplicationEvent._
 
     event match {
-      case evt: ClientSecretAddedV3                                                                               => updateClientSecretAdded(evt)
-      case evt: ClientSecretRemoved                                                                               => updateClientSecretRemoved(evt)
       case evt: RedirectUrisUpdated                                                                               => updateRedirectUrisUpdated(evt)
       case evt: ProductionAppNameChanged                                                                          => updateApplicationName(evt.applicationId, evt.newAppName)
       case evt: ProductionAppPrivacyPolicyLocationChanged                                                         => updateApplicationPrivacyPolicyLocation(evt.applicationId, evt.newLocation)
@@ -834,6 +814,12 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case _: ApplicationDeleted | _: ApplicationDeletedByGatekeeper | _: ProductionCredentialsApplicationDeleted => noOp(event)
       case _: ApiSubscribed                                                                                       => noOp(event)
       case _: ApiUnsubscribed                                                                                     => noOp(event)
+      
+      // refactored to new ways
+      case evt: ClientSecretAddedV3                                                                               => noOp(event)
+      case evt: ClientSecretRemoved                                                                               => noOp(event)
+
+      // Should never be seen by this route
       case _: ClientSecretAddedV2                                                                                 => noOp(event)
     }
   }

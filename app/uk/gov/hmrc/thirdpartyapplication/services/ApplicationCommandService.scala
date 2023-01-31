@@ -93,8 +93,8 @@ class ApplicationCommandService @Inject() (
   // scalastyle:off cyclomatic.complexity
   private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): CommandHandler.Result = {
     command match {
-      case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
-      case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)
+      case cmd: AddClientSecret                                       => throw new IllegalAccessError("Should not call here")
+      case cmd: RemoveClientSecret                                    => throw new IllegalAccessError("Should not call here") // removeClientSecretCommandHandler.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)

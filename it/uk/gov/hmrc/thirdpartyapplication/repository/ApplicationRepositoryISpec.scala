@@ -2868,52 +2868,6 @@ class ApplicationRepositoryISpec
       appWithUpdatedName.normalisedName mustBe newestName.toLowerCase
     }
 
-    "handle AddClientSecret event correctly" in {
-      val applicationId = ApplicationId.random
-
-      val app = anApplicationData(applicationId)
-
-      val newClientSecret       = aClientSecret(name = "name", hashedSecret = "eulaVterces")
-      val event                 = ClientSecretAddedV3(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = FixedClock.now,
-        actor = CollaboratorActor(adminEmail),
-        clientSecret = newClientSecret
-      )
-      val existingClientSecrets = app.tokens.production.clientSecrets
-      await(applicationRepository.save(app))
-
-      val appWithNewClientSecret =
-        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithNewClientSecret.tokens.production.clientSecrets must contain only (existingClientSecrets ++ List(newClientSecret): _*)
-
-    }
-
-    "handle RemoveClientSecret event correctly" in {
-      val applicationId = ApplicationId.random
-
-      val app = anApplicationData(applicationId)
-
-      val clientSecretToRemove = app.tokens.production.clientSecrets.head
-
-      val event                 = ClientSecretRemoved(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = FixedClock.now,
-        actor = CollaboratorActor(adminEmail),
-        clientSecretId = clientSecretToRemove.id,
-        clientSecretName = clientSecretToRemove.name
-      )
-      val existingClientSecrets = app.tokens.production.clientSecrets
-      await(applicationRepository.save(app))
-
-      val appWithClientSecretRemoved =
-        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithClientSecretRemoved.tokens.production.clientSecrets must contain only (existingClientSecrets.filterNot(_.id == clientSecretToRemove.id): _*)
-
-    }
-
     "handle CollaboratorAdded event correctly" in {
       val applicationId = ApplicationId.random
 
@@ -2938,7 +2892,6 @@ class ApplicationRepositoryISpec
       val appWithNewCollaborator =
         await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithNewCollaborator.collaborators must contain only (existingCollaborators.toList ++ List(collaborator): _*)
-
     }
 
     "handle CollaboratorRemoved event correctly" in {

@@ -17,21 +17,28 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext}
 
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
+import cats.implicits._
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ClientSecret, RemoveClientSecret, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
-class RemoveClientSecretCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
+class RemoveClientSecretCommandHandler @Inject() (
+      applicationRepository: ApplicationRepository
+)(implicit val ec: ExecutionContext) extends CommandHandler2 {
 
-  import CommandHandler._
-
+  import CommandHandler2._
+  
   private def validate(app: ApplicationData, cmd: RemoveClientSecret): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map2(isAdminIfInProduction(cmd.actor, app), clientSecretExists(cmd.clientSecretId, app)) { case _ => app }
+    Apply[ValidatedNec[String, *]].map2(
+      isAdminIfInProduction(cmd.actor, app), 
+      clientSecretExists(cmd.clientSecretId, app)
+    ) { case _ => app }
   }
 
   import UpdateApplicationEvent._
@@ -50,11 +57,12 @@ class RemoveClientSecretCommandHandler @Inject() ()(implicit val ec: ExecutionCo
     )
   }
 
-  def process(app: ApplicationData, cmd: RemoveClientSecret): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
+  
+  def process(app: ApplicationData, cmd: RemoveClientSecret): ResultT = {
+    for {
+      valid    <- E.fromEither(validate(app, cmd).toEither)
+      savedApp <- E.liftF(applicationRepository.deleteClientSecret(app.id, cmd.clientSecretId))
+      events    = asEvents(app, cmd)
+    } yield (savedApp, events)
   }
 }
