@@ -17,31 +17,33 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext}
 
-import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats._
+import cats.implicits._
+import cats.data._
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorAdded, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
-class AddCollaboratorCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
+class AddCollaboratorCommandHandler @Inject() (
+  applicationRepository: ApplicationRepository
+)(implicit val ec: ExecutionContext) extends CommandHandler2 {
 
-  import CommandHandler._
+  import CommandHandler2._
 
-  import UpdateApplicationEvent._
-
-  private def validate(app: ApplicationData, cmd: AddCollaborator) = {
+  private def validate(app: ApplicationData, cmd: AddCollaborator): ValidatedNec[String, Unit] = {
     cmd.actor match {
       case CollaboratorActor(actorEmail: String) => Apply[ValidatedNec[String, *]].map2(
           isCollaboratorOnApp(actorEmail, app),
           collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)
-        ) { case _ => app }
+        ) { case _ => () }
       case _                                     => Apply[ValidatedNec[String, *]]
-          .map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app))(_ => app)
+          .map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app))(_ => ())
     }
-
   }
 
   private def asEvents(app: ApplicationData, cmd: AddCollaborator): NonEmptyList[UpdateApplicationEvent] = {
@@ -59,12 +61,11 @@ class AddCollaboratorCommandHandler @Inject() ()(implicit val ec: ExecutionConte
     )
   }
 
-  def process(app: ApplicationData, cmd: AddCollaborator): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
+  def process(app: ApplicationData, cmd: AddCollaborator): ResultT = {
+    for {
+      valid    <- E.fromEither(validate(app, cmd).toEither)
+      savedApp <- E.liftF(applicationRepository.addCollaborator(app.id, cmd.collaborator))
+      events    = asEvents(savedApp, cmd)
+    } yield (savedApp, events)
   }
-
 }

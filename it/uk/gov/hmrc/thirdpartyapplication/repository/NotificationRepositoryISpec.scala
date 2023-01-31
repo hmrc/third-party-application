@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{Notification, NotificationSt
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
 
-import java.time.{Clock, LocalDateTime, ZoneOffset}
+import java.time.{Clock}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class NotificationRepositoryISpec

@@ -28,23 +28,13 @@ class AddClientSecretCommandHandlerSpec
     extends AsyncHmrcSpec
     with ApplicationTestData
     with ApplicationRepositoryMockModule
-    with CommandActorExamples {
+    with CommandActorExamples
+    with CommandCollaboratorExamples
+    with CommandApplicationExamples {
 
   class Setup(limit: Int = 3) {
     val config = CredentialConfig(limit)
     val underTest = new AddClientSecretCommandHandler(ApplicationRepoMock.aMock, config)
-
-    val developerCollaborator = Collaborator(devEmail, Role.DEVELOPER, developerUserId)
-    val adminCollaborator = Collaborator(adminEmail, Role.ADMINISTRATOR, adminUserId)
-
-    val applicationId = ApplicationId.random
-    val principalApp = anApplicationData(applicationId).copy(
-      collaborators = Set(
-        developerCollaborator,
-        adminCollaborator
-      )
-    )
-    val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())
 
     val timestamp    = FixedClock.now
     val secretValue  = "secret"
@@ -71,7 +61,7 @@ class AddClientSecretCommandHandlerSpec
   }
 
   "given a principal application" should {
-    "succeed for an admin on a principal application" in new Setup {
+    "succeed for an admin" in new Setup {
       val updatedApp = principalApp // Don't need the ClientSecrets fixed here
       ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(updatedApp)
 
@@ -80,14 +70,14 @@ class AddClientSecretCommandHandlerSpec
       checkSuccessResult(adminActor)(result)
     }
 
-    "return an error for a non-admin developer on a production application" in new Setup {
+    "return an error for a non-admin developer" in new Setup {
       val result = await(underTest.process(principalApp, addClientSecretByDev).value).left.value.toNonEmptyList.toList
       
       result should have length 1
       result.head shouldBe "App is in PRODUCTION so User must be an ADMIN"
     }
 
-    "return an error for a non-admin developer on a production application with full secrets" in new Setup(1) {
+    "return an error for a non-admin developer and application with full secrets" in new Setup(1) {
       val result = await(underTest.process(principalApp, addClientSecretByDev).value).left.value.toNonEmptyList.toList
       
       result should have length 2
@@ -99,7 +89,7 @@ class AddClientSecretCommandHandlerSpec
   }
 
   "given a subordinate application" should {
-    "succeed for a developer on a subordinate application" in new Setup {
+    "succeed for a developer" in new Setup {
       val updatedApp = principalApp // Don't need the ClientSecrets fixed here
       ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(updatedApp)
 

@@ -36,7 +36,6 @@ class ApplicationCommandServiceCollaboratorSpec extends ApplicationCommandServic
   val timestamp             = FixedClock.now
   val gatekeeperUser        = "gkuser1"
   val adminName             = "Mr Admin"
-  val adminEmail            = "admin@example.com"
   val applicationId         = ApplicationId.random
   val submissionId          = Submission.Id.random
   val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
@@ -67,59 +66,6 @@ class ApplicationCommandServiceCollaboratorSpec extends ApplicationCommandServic
     adminEmail
   )
   val instigator     = applicationData.collaborators.head.userId
-
-  "update with AddCollaborator" should {
-
-    val requesterEmail = "bill.badger@rupert.com"
-
-    "return the updated application if the application exists" in new Setup {
-
-      val someAdmin         = "someAdmin@company"
-      val collaboratorEmail = "someone@somecompany"
-      val collaborator      = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
-
-      val adminsToEmail                              = Set("1@company.com", "2@company.com")
-      val appBefore                                  = applicationData
-      val appAfter                                   = appBefore.copy(collaborators = applicationData.collaborators ++ Set(collaborator))
-      val appCollaboratorAddedEvt: CollaboratorAdded = CollaboratorAdded(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        timestamp,
-        CollaboratorActor(requesterEmail),
-        collaborator.userId,
-        collaborator.emailAddress,
-        collaborator.role,
-        adminsToEmail
-      )
-
-      val addCollaborator = AddCollaborator(CollaboratorActor(someAdmin), collaborator, adminsToEmail, timestamp)
-
-      val events = NonEmptyList.of(appCollaboratorAddedEvt)
-
-      ApplicationRepoMock.Fetch.thenReturn(appBefore)
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      ApiPlatformEventServiceMock.ApplyEvents.succeeds
-      NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      SubmissionsServiceMock.ApplyEvents.succeeds()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      NotificationRepositoryMock.ApplyEvents.succeeds()
-      StateHistoryRepoMock.ApplyEvents.succeeds()
-      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
-      ApiGatewayStoreMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
-      AuditServiceMock.ApplyEvents.succeeds
-
-      when(mockAddCollaboratorCommandHandler.process(*[ApplicationData], *[AddCollaborator])).thenReturn(
-        Future.successful(Validated.valid(events).toValidatedNec)
-      )
-
-      val result = await(underTest.update(applicationId, addCollaborator).value)
-
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(appCollaboratorAddedEvt)
-      AuditServiceMock.ApplyEvents.verifyCalledWith(appAfter, NonEmptyList.one(appCollaboratorAddedEvt))
-      result shouldBe Right(appAfter)
-    }
-  }
 
   "update with RemoveCollaborator" should {
 

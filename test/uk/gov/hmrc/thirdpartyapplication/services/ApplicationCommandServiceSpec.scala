@@ -38,7 +38,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
   val timestamp             = FixedClock.now
   val gatekeeperUser        = "gkuser1"
   val adminName             = "Mr Admin"
-  val adminEmail            = "admin@example.com"
   val devHubUser            = CollaboratorActor(adminEmail)
   val applicationId         = ApplicationId.random
   val submissionId          = Submission.Id.random

@@ -16,18 +16,20 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{GatekeeperUserActor, CollaboratorActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
 
-trait CommandActorExamples {
-  self: ApplicationTestData =>
+trait CommandApplicationExamples {
+  self: ApplicationTestData with CommandCollaboratorExamples =>
 
-  val gkUserEmail = "admin@gatekeeper"
-  val gkUserActor = GatekeeperUserActor(gkUserEmail)
+    val applicationId = ApplicationId.random
+    val principalApp = anApplicationData(applicationId).copy(
+      collaborators = Set(
+        developerCollaborator,
+        adminCollaborator
+      )
+    )
+    val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())
 
-  val developerUserId       = idOf(devEmail)
-  val developerActor        = CollaboratorActor(devEmail)
-
-  val adminUserId       = idOf(adminEmail)
-  val adminActor        = CollaboratorActor(adminEmail)
 }

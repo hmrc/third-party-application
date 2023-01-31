@@ -18,68 +18,82 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import cats.data.{Chain, NonEmptyList, ValidatedNec}
-
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, CollaboratorAdded, GatekeeperUserActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
-class AddCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
+class AddCollaboratorCommandHandlerSpec
+    extends AsyncHmrcSpec
+    with ApplicationTestData
+    with ApplicationRepositoryMockModule
+    with CommandActorExamples
+    with CommandCollaboratorExamples
+    with CommandApplicationExamples {
 
   trait Setup {
-    val underTest = new AddCollaboratorCommandHandler()
-
-    val applicationId = ApplicationId.random
-    val adminEmail    = "admin@example.com"
-
-    val developerCollaborator = Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail))
-
-    val adminCollaborator = Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
-    val adminActor        = CollaboratorActor(adminEmail)
-
-    val gkUserEmail = "admin@gatekeeper"
-    val gkUserActor = GatekeeperUserActor(gkUserEmail)
-
-    val app = anApplicationData(applicationId).copy(
-      collaborators = Set(
-        developerCollaborator,
-        adminCollaborator
-      )
-    )
+    val underTest = new AddCollaboratorCommandHandler(ApplicationRepoMock.aMock)
 
     val timestamp         = FixedClock.now
-    val collaboratorEmail = "newdev@somecompany.com"
-    val collaborator      = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
+
+    val newCollaboratorEmail = "newdev@somecompany.com"
+    val newCollaborator      = Collaborator(newCollaboratorEmail, Role.DEVELOPER, idOf(newCollaboratorEmail))
+    
     val adminsToEmail     = Set(adminEmail, devEmail)
 
-    val addCollaborator = AddCollaborator(CollaboratorActor(adminActor.email), collaborator, adminsToEmail, timestamp)
+    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, adminsToEmail, timestamp)
+    val addCollaboratorAsDev = AddCollaborator(developerActor, newCollaborator, adminsToEmail, timestamp)
 
-  }
+    def checkSuccessResult(expectedActor: CollaboratorActor)(result: CommandHandler2.CommandSuccess) = {
+      inside(result) { case (app, events) =>
+        events should have size 1
+        val event = events.head
 
-  "process AddCollaborator" should {
-    "create a valid event for an admin on a production application" in new Setup {
-      val result = await(underTest.process(app, addCollaborator))
-
-      result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[CollaboratorAdded]
-      event.applicationId shouldBe applicationId
-      event.actor shouldBe adminActor
-      event.eventDateTime shouldBe timestamp
-      event.collaboratorEmail shouldBe collaborator.emailAddress
-      event.collaboratorId shouldBe collaborator.userId
-      event.collaboratorRole shouldBe collaborator.role
-    }
-
-    "return an error when collaborator already exists against the application" in new Setup {
-      val result: ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]] = await(underTest.process(app, addCollaborator.copy(collaborator = adminCollaborator)))
-
-      result.isValid shouldBe false
-      result.toEither match {
-        case Left(Chain(error: String)) => error shouldBe s"Collaborator already linked to Application ${app.id.asText}"
-        case _                          => fail()
+        inside(event) {
+          case CollaboratorAdded(_, appId, eventDateTime, actor, collaboratorId, collaboratorEmail, collaboratorRole, verifiedAdminsToEmail) => 
+            appId shouldBe applicationId
+            actor shouldBe expectedActor
+            eventDateTime shouldBe timestamp
+            Collaborator(collaboratorEmail, collaboratorRole, collaboratorId) shouldBe newCollaborator
+        }
       }
-
     }
   }
 
+  "given a principal application" should {
+    "succeed for an admin" in new Setup {
+      ApplicationRepoMock.AddCollaborator.succeeds(principalApp)  // Not modified
+
+      val result = await(underTest.process(principalApp, addCollaboratorAsAdmin).value).right.value
+      
+      checkSuccessResult(adminActor)(result)
+    }
+    
+    "succeed for a non-admin developer" in new Setup {
+      ApplicationRepoMock.AddCollaborator.succeeds(principalApp)  // Not modified
+
+      val result = await(underTest.process(principalApp, addCollaboratorAsDev).value).right.value
+
+      checkSuccessResult(developerActor)(result)
+    }
+
+    "return an error when collaborate already exists on the app" in new Setup {
+      val existingCollaboratorCmd = addCollaboratorAsAdmin.copy(collaborator = adminCollaborator)
+      
+      val result = await(underTest.process(principalApp, existingCollaboratorCmd).value).left.value.toNonEmptyList.toList
+
+      result should have length 1
+      result.head shouldBe s"Collaborator already linked to Application ${applicationId.value}"
+    }
+  }
+
+  "given a subordinate application" should {
+    "succeed for a non-admin developer" in new Setup {
+      ApplicationRepoMock.AddCollaborator.succeeds(subordinateApp)  // Not modified
+
+      val result = await(underTest.process(subordinateApp, addCollaboratorAsDev).value).right.value
+
+      checkSuccessResult(developerActor)(result)
+    }
+  }
 }

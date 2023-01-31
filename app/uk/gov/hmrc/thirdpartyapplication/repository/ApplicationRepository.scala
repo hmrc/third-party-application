@@ -676,12 +676,12 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
 
 
-  private def updateCollaboratorAdded(evt: UpdateApplicationEvent.CollaboratorAdded) =
+  def addCollaborator(applicationId: ApplicationId, collaborator: Collaborator) =
     updateApplication(
-      evt.applicationId,
+      applicationId,
       Updates.push(
         "collaborators",
-        Codecs.toBson(CollaboratorAdded.collaboratorFromEvent(evt))
+        Codecs.toBson(collaborator)
       )
     )
 
@@ -798,6 +798,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     import UpdateApplicationEvent._
 
     event match {
+      case evt: RedirectUrisUpdated                                                                               => updateRedirectUrisUpdated(evt)
       case evt: ProductionAppNameChanged                                                                          => updateApplicationName(evt.applicationId, evt.newAppName)
       case evt: ProductionAppPrivacyPolicyLocationChanged                                                         => updateApplicationPrivacyPolicyLocation(evt.applicationId, evt.newLocation)
       case evt: ProductionLegacyAppPrivacyPolicyLocationChanged                                                   => updateLegacyApplicationPrivacyPolicyLocation(evt.applicationId, evt.newUrl)
@@ -807,7 +808,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case evt: ResponsibleIndividualChanged                                                                      => updateApplicationChangeResponsibleIndividual(evt)
       case evt: ResponsibleIndividualChangedToSelf                                                                => updateApplicationChangeResponsibleIndividualToSelf(evt)
       case evt: ApplicationStateChanged                                                                           => updateApplicationState(evt)
-      case evt: CollaboratorAdded                                                                                 => updateCollaboratorAdded(evt)
       case evt: CollaboratorRemoved                                                                               => updateCollaboratorRemoved(evt)
       case _: ResponsibleIndividualVerificationStarted                                                            => noOp(event)
       case _: ResponsibleIndividualDeclined                                                                       => noOp(event)
@@ -817,11 +817,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case _: ApplicationDeleted | _: ApplicationDeletedByGatekeeper | _: ProductionCredentialsApplicationDeleted => noOp(event)
       case _: ApiSubscribed                                                                                       => noOp(event)
       case _: ApiUnsubscribed                                                                                     => noOp(event)
-
+      
       // refactored to new ways
       case evt: ClientSecretAddedV3                                                                               => noOp(event)
       case evt: ClientSecretRemoved                                                                               => noOp(event)
-      case evt: RedirectUrisUpdated                                                                               => noOp(event)
+      case evt: CollaboratorAdded                                                                                 => noOp(evt)
 
       // Should never be seen by this route
       case _: ClientSecretAddedV2                                                                                 => noOp(event)

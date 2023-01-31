@@ -2864,6 +2864,19 @@ class ApplicationRepositoryISpec
     }
   }
 
+  "handle addCollaborator correctly" in {
+      val applicationId = ApplicationId.random
+
+      val app                   = anApplicationData(applicationId)
+      await(applicationRepository.save(app))
+
+      val collaborator          = Collaborator("email", Role.DEVELOPER, idOf("email"))
+      val existingCollaborators = app.collaborators
+
+      val appWithNewCollaborator = await(applicationRepository.addCollaborator(applicationId ,collaborator))
+      appWithNewCollaborator.collaborators must contain only (existingCollaborators.toList ++ List(collaborator): _*)
+    }
+
   "applyEvents" should {
     val gkUserName = "Mr Gate Keeperr"
     val gkUser     = GatekeeperUserActor(gkUserName)
@@ -2888,31 +2901,6 @@ class ApplicationRepositoryISpec
       appWithUpdatedName.normalisedName mustBe newestName.toLowerCase
     }
 
-    "handle CollaboratorAdded event correctly" in {
-      val applicationId = ApplicationId.random
-
-      val app                   = anApplicationData(applicationId)
-      val collaborator          = Collaborator("email", Role.DEVELOPER, idOf("email"))
-      val adminsToEmail         = Set("email1", "email2", "email3")
-      val existingCollaborators = app.collaborators
-
-      val event = CollaboratorAdded(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = FixedClock.now,
-        actor = CollaboratorActor(adminEmail),
-        collaboratorId = collaborator.userId,
-        collaboratorRole = collaborator.role,
-        collaboratorEmail = collaborator.emailAddress,
-        verifiedAdminsToEmail = adminsToEmail
-      )
-
-      await(applicationRepository.save(app))
-
-      val appWithNewCollaborator =
-        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithNewCollaborator.collaborators must contain only (existingCollaborators.toList ++ List(collaborator): _*)
-    }
 
     "handle CollaboratorRemoved event correctly" in {
       val applicationId = ApplicationId.random

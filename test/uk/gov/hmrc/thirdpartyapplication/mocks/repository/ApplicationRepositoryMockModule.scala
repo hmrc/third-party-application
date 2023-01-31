@@ -361,6 +361,11 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def verifyNeverCalled() = ApplicationRepoMock.verify(never).deleteClientSecret(*[ApplicationId], *)
     }
 
+    object AddCollaborator {
+      def succeeds(applicationData: ApplicationData) =
+        when(aMock.addCollaborator(*[ApplicationId], *[Collaborator])).thenReturn(successful(applicationData))
+    }
+
     object AddApplicationTermsOfUseAcceptance {
 
       def thenReturn(applicationData: ApplicationData) =
