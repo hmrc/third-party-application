@@ -105,7 +105,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockAddClientSecretCommandHandler: AddClientSecretCommandHandler                                                   = mock[AddClientSecretCommandHandler]
     val mockRemoveClientSecretCommandHandler: RemoveClientSecretCommandHandler                                             = mock[RemoveClientSecretCommandHandler]
 
-    val underTest                                                                                                          = new ApplicationCommandDispatcher(
+    val underTest                                                                                                          
+    = new ApplicationCommandDispatcher(
       ApplicationRepoMock.aMock,
       NotificationServiceMock.aMock,
       ApiPlatformEventServiceMock.aMock,
@@ -130,6 +131,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockRemoveCollaboratorCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
       mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
+      mockSubscribeToApiCommandHandler,
+      mockUnsubscribeFromApiCommandHandler,
       mockUpdateRedirectUrisCommandHandler
     )
   }
