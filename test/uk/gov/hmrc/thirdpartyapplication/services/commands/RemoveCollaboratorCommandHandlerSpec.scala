@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor, CollaboratorRemoved, GatekeeperUserActor, ScheduledJobActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
-  with ApplicationRepositoryMockModule
-  with ApplicationTestData {
+    with ApplicationRepositoryMockModule
+    with ApplicationTestData {
 
   trait Setup {
     val underTest = new RemoveCollaboratorCommandHandler(ApplicationRepoMock.aMock)
@@ -37,8 +38,8 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
     val adminCollaborator = Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
     val adminActor        = CollaboratorActor(adminEmail)
 
-    val gkUserEmail = "admin@gatekeeper"
-    val gkUserActor = GatekeeperUserActor(gkUserEmail)
+    val gkUserEmail  = "admin@gatekeeper"
+    val gkUserActor  = GatekeeperUserActor(gkUserEmail)
     val unknownEmail = "someEmail"
 
     val jobId             = "theJobThatDeletesCollaborators"
@@ -99,10 +100,9 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
       checkSuccessResult(adminActor)(result)
     }
 
-
     "return an error when collaborator is not associated to the application" in new Setup {
 
-      val removeUnknownCollaboratorCommand = removeCollaborator.copy(collaborator =Collaborator(unknownEmail, Role.DEVELOPER, idOf(unknownEmail)))
+      val removeUnknownCollaboratorCommand = removeCollaborator.copy(collaborator = Collaborator(unknownEmail, Role.DEVELOPER, idOf(unknownEmail)))
 
       val result = await(underTest.process(app, removeUnknownCollaboratorCommand).value).left.value.toNonEmptyList.toList
 
@@ -129,8 +129,6 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
       result should have length 1
       result.head shouldBe s"Collaborator is last remaining admin for Application ${applicationId.value}"
     }
-
-
 
   }
 }

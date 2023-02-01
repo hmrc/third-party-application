@@ -33,15 +33,15 @@ class AddCollaboratorCommandHandlerSpec
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new AddCollaboratorCommandHandler(ApplicationRepoMock.aMock)
 
-    val timestamp         = FixedClock.now
+    val timestamp = FixedClock.now
 
     val newCollaboratorEmail = "newdev@somecompany.com"
     val newCollaborator      = Collaborator(newCollaboratorEmail, Role.DEVELOPER, idOf(newCollaboratorEmail))
-    
-    val adminsToEmail     = Set(adminEmail, devEmail)
+
+    val adminsToEmail = Set(adminEmail, devEmail)
 
     val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, adminsToEmail, timestamp)
-    val addCollaboratorAsDev = AddCollaborator(developerActor, newCollaborator, adminsToEmail, timestamp)
+    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, adminsToEmail, timestamp)
 
     def checkSuccessResult(expectedActor: CollaboratorActor)(result: CommandHandler2.CommandSuccess) = {
       inside(result) { case (app, events) =>
@@ -49,7 +49,7 @@ class AddCollaboratorCommandHandlerSpec
         val event = events.head
 
         inside(event) {
-          case CollaboratorAdded(_, appId, eventDateTime, actor, collaboratorId, collaboratorEmail, collaboratorRole, verifiedAdminsToEmail) => 
+          case CollaboratorAdded(_, appId, eventDateTime, actor, collaboratorId, collaboratorEmail, collaboratorRole, verifiedAdminsToEmail) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
@@ -61,15 +61,15 @@ class AddCollaboratorCommandHandlerSpec
 
   "given a principal application" should {
     "succeed for an admin" in new Setup {
-      ApplicationRepoMock.AddCollaborator.succeeds(principalApp)  // Not modified
+      ApplicationRepoMock.AddCollaborator.succeeds(principalApp) // Not modified
 
       val result = await(underTest.process(principalApp, addCollaboratorAsAdmin).value).right.value
-      
+
       checkSuccessResult(adminActor)(result)
     }
-    
+
     "succeed for a non-admin developer" in new Setup {
-      ApplicationRepoMock.AddCollaborator.succeeds(principalApp)  // Not modified
+      ApplicationRepoMock.AddCollaborator.succeeds(principalApp) // Not modified
 
       val result = await(underTest.process(principalApp, addCollaboratorAsDev).value).right.value
 
@@ -78,7 +78,7 @@ class AddCollaboratorCommandHandlerSpec
 
     "return an error when collaborate already exists on the app" in new Setup {
       val existingCollaboratorCmd = addCollaboratorAsAdmin.copy(collaborator = adminCollaborator)
-      
+
       val result = await(underTest.process(principalApp, existingCollaboratorCmd).value).left.value.toNonEmptyList.toList
 
       result should have length 1
@@ -88,7 +88,7 @@ class AddCollaboratorCommandHandlerSpec
 
   "given a subordinate application" should {
     "succeed for a non-admin developer" in new Setup {
-      ApplicationRepoMock.AddCollaborator.succeeds(subordinateApp)  // Not modified
+      ApplicationRepoMock.AddCollaborator.succeeds(subordinateApp) // Not modified
 
       val result = await(underTest.process(subordinateApp, addCollaboratorAsDev).value).right.value
 

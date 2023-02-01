@@ -18,22 +18,30 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
-
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredentialsApplication, State, UpdateApplicationEvent}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByGatekeeper, DeleteProductionCredentialsApplication, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.ResultT
 
 @Singleton
 class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
+    val authControlConfig: AuthControlConfig,
+    val applicationRepository: ApplicationRepository,
+    val apiGatewayStore: ApiGatewayStore,
+    val notificationRepository: NotificationRepository,
+    val stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler {
+  ) extends CommandHandler2 {
 
-  import CommandHandler._
+  import CommandHandler2._
   import UpdateApplicationEvent._
 
-  private def validate(app: ApplicationData, cmd: DeleteProductionCredentialsApplication): ValidatedNec[String, ApplicationData] = {
+  private def validate(app: ApplicationData): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]]
       .map(isInTesting(app)) { case _ => app }
   }
@@ -63,11 +71,15 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteProductionCredentialsApplication): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
+  def process(app: ApplicationData, cmd: DeleteProductionCredentialsApplication)(implicit hc: HeaderCarrier): ResultT = {
+    for {
+      valid    <- E.fromEither(validate(app).toEither)
+      savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
+      events    = asEvents(savedApp, cmd)
+      _        <- E.liftF(stateHistoryRepository.applyEvents(events))
+      _        <- E.liftF(apiGatewayStore.applyEvents(events))
+      _        <- E.liftF(notificationRepository.applyEvents(events))
+    } yield (savedApp, events)
   }
+
 }

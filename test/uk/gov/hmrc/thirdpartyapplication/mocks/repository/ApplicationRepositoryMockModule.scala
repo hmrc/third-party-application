@@ -18,15 +18,13 @@ package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-
 import cats.data.NonEmptyList
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-
 import uk.gov.hmrc.http.NotFoundException
-
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
@@ -333,13 +331,10 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.updateRedirectUris(eqTo(applicationId), eqTo(redirectUris))).thenReturn(successful(updatedApplication))
       }
 
-      def verifyCalledWith(applicationId: ApplicationId,  redirectUris: List[String]) =
+      def verifyCalledWith(applicationId: ApplicationId, redirectUris: List[String]) =
         ApplicationRepoMock.verify.updateRedirectUris(eqTo(applicationId), eqTo(redirectUris))
 
-
-
     }
-
 
     object DeleteClientSecret {
 
@@ -362,11 +357,13 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object AddCollaborator {
+
       def succeeds(applicationData: ApplicationData) =
         when(aMock.addCollaborator(*[ApplicationId], *[Collaborator])).thenReturn(successful(applicationData))
     }
 
     object RemoveCollaborator {
+
       def succeeds(applicationData: ApplicationData) =
         when(aMock.removeCollaborator(*[ApplicationId], *[UserId])).thenReturn(successful(applicationData))
     }
@@ -411,6 +408,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object UpdateApplicationName {
+
       def succeeds() =
         when(aMock.updateApplicationName(*[ApplicationId], *)).thenReturn(successful(mock[ApplicationData]))
 
@@ -418,24 +416,35 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.updateApplicationName(*[ApplicationId], *)).thenReturn(successful(app))
     }
 
+    object UpdateApplicationState {
+
+      def succeeds() =
+        when(aMock.updateApplicationState(*[ApplicationId], *[State], *, *, *)).thenReturn(successful(mock[ApplicationData]))
+
+      def thenReturn(app: ApplicationData) =
+        when(aMock.updateApplicationState(*[ApplicationId], *[State], *, *, *)).thenReturn(successful(app))
+    }
+
     object UpdatePrivacyPolicyLocation {
+
       def succeeds() =
         when(aMock.updateApplicationPrivacyPolicyLocation(*[ApplicationId], *[PrivacyPolicyLocation])).thenReturn(successful(mock[ApplicationData]))
     }
 
-
     object UpdateLegacyPrivacyPolicyLocation {
+
       def succeeds() =
         when(aMock.updateLegacyApplicationPrivacyPolicyLocation(*[ApplicationId], *)).thenReturn(successful(mock[ApplicationData]))
     }
 
     object UpdateTermsAndConditionsPolicyLocation {
+
       def succeeds() =
         when(aMock.updateApplicationTermsAndConditionsLocation(*[ApplicationId], *[TermsAndConditionsLocation])).thenReturn(successful(mock[ApplicationData]))
     }
 
-
     object UpdateLegacyTermsAndConditionsPolicyLocation {
+
       def succeeds() =
         when(aMock.updateLegacyApplicationTermsAndConditionsLocation(*[ApplicationId], *)).thenReturn(successful(mock[ApplicationData]))
     }

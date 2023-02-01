@@ -23,13 +23,14 @@ import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import cats.data.NonEmptyChain
+
 class CommandHandler2Spec extends HmrcSpec with ApplicationTestData {
 
-  val VALID = Validated.Valid(())
-  val applicationId  = ApplicationId.random
-  val timestamp      = FixedClock.now
-  val clientSecret = ClientSecret("name", timestamp, hashedSecret = "hashed")
-  val secretValue  = "somSecret"
+  val VALID         = Validated.Valid(())
+  val applicationId = ApplicationId.random
+  val timestamp     = FixedClock.now
+  val clientSecret  = ClientSecret("name", timestamp, hashedSecret = "hashed")
+  val secretValue   = "somSecret"
 
   "appHasLessThanLimitOfSecrets" should {
 

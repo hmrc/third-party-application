@@ -234,7 +234,7 @@ class ApplicationRepositoryISpec
       val applicationId = ApplicationId.random
       await(applicationRepository.save(anApplicationDataForTest(applicationId)))
 
-      val updateRedirectUris =  List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
+      val updateRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
       val updatedApplication = await(
         applicationRepository.updateRedirectUris(
           applicationId,
@@ -243,8 +243,8 @@ class ApplicationRepositoryISpec
       )
 
       updatedApplication.access match {
-        case access: Standard => access.redirectUris  mustBe updateRedirectUris
-        case _ => fail("Wrong access - expecting standard")
+        case access: Standard => access.redirectUris mustBe updateRedirectUris
+        case _                => fail("Wrong access - expecting standard")
       }
     }
   }
@@ -2865,34 +2865,32 @@ class ApplicationRepositoryISpec
   }
 
   "handle addCollaborator correctly" in {
-      val applicationId = ApplicationId.random
+    val applicationId = ApplicationId.random
 
-      val app                   = anApplicationData(applicationId)
-      await(applicationRepository.save(app))
+    val app = anApplicationData(applicationId)
+    await(applicationRepository.save(app))
 
-      val collaborator          = Collaborator("email", Role.DEVELOPER, idOf("email"))
-      val existingCollaborators = app.collaborators
+    val collaborator          = Collaborator("email", Role.DEVELOPER, idOf("email"))
+    val existingCollaborators = app.collaborators
 
-      val appWithNewCollaborator = await(applicationRepository.addCollaborator(applicationId ,collaborator))
-      appWithNewCollaborator.collaborators must contain only (existingCollaborators.toList ++ List(collaborator): _*)
-    }
+    val appWithNewCollaborator = await(applicationRepository.addCollaborator(applicationId, collaborator))
+    appWithNewCollaborator.collaborators must contain only (existingCollaborators.toList ++ List(collaborator): _*)
+  }
 
   "handle removeCollaborator correctly" in {
     val applicationId = ApplicationId.random
 
-    val developerCollaborator      = Collaborator("email", Role.DEVELOPER, idOf("email"))
-    val adminCollaborator          = Collaborator("email2", Role.ADMINISTRATOR, idOf("email2"))
-    val app = anApplicationData(applicationId,
-      collaborators = Set(developerCollaborator, adminCollaborator))
+    val developerCollaborator = Collaborator("email", Role.DEVELOPER, idOf("email"))
+    val adminCollaborator     = Collaborator("email2", Role.ADMINISTRATOR, idOf("email2"))
+    val app                   = anApplicationData(applicationId, collaborators = Set(developerCollaborator, adminCollaborator))
     await(applicationRepository.save(app))
 
     val existingCollaborators = app.collaborators
-    val userIdToDelete = existingCollaborators.head.userId
+    val userIdToDelete        = existingCollaborators.head.userId
 
     val appWithOutDeletedCollaborator = await(applicationRepository.removeCollaborator(applicationId, userIdToDelete))
     appWithOutDeletedCollaborator.collaborators must contain only (existingCollaborators.toList.filterNot(_.userId == userIdToDelete): _*)
   }
-
 
   "handle ProductionAppPrivacyPolicyLocationChanged correctly" in {
     val applicationId = ApplicationId.random
@@ -2940,7 +2938,6 @@ class ApplicationRepositoryISpec
     }
   }
 
-  
   "handle ProductionAppTermsConditionsLocationChanged event correctly" in {
     val applicationId = ApplicationId.random
     val oldLocation   = TermsAndConditionsLocation.InDesktopSoftware
@@ -2980,13 +2977,22 @@ class ApplicationRepositoryISpec
     }
   }
 
-  
+  "handle updateApplicationState correctly" in {
+    val applicationId = ApplicationId.random
+
+    val app             = anApplicationData(applicationId)
+    await(applicationRepository.save(app))
+    app.state.name mustBe State.PRODUCTION
+    val appWithNewState = await(applicationRepository.updateApplicationState(applicationId, State.DELETED, FixedClock.now, "adminEMail", "adminName"))
+    appWithNewState.state.name mustBe State.DELETED
+  }
+
   "handle NameChanged event correctly" in {
     val applicationId = ApplicationId.random
     val oldName       = "oldName"
     val newName       = "newName"
 
-    val app           = anApplicationData(applicationId).copy(name = oldName)
+    val app = anApplicationData(applicationId).copy(name = oldName)
     await(applicationRepository.save(app))
 
     val appWithUpdatedName = await(applicationRepository.updateApplicationName(applicationId, newName))
@@ -2995,7 +3001,6 @@ class ApplicationRepositoryISpec
 
     await(applicationRepository.hardDelete(applicationId))
   }
-
 
   "applyEvents" should {
     val gkUserName = "Mr Gate Keeperr"
@@ -3136,34 +3141,34 @@ class ApplicationRepositoryISpec
         case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
       }
     }
-
-    "handle ApplicationStateChanged event correctly" in {
-      val applicationId           = ApplicationId.random
-      val ts                      = FixedClock.now.truncatedTo(ChronoUnit.MILLIS)
-      val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
-      val importantSubmissionData =
-        ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
-      val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-      val app                     = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val devHubUser          = CollaboratorActor("admin@example.com")
-      val event               = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        ts,
-        devHubUser,
-        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
-        State.PENDING_GATEKEEPER_APPROVAL,
-        adminName,
-        adminEmail
-      )
-      val appWithUpdatedState = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedState.state.name mustBe State.PENDING_GATEKEEPER_APPROVAL
-      appWithUpdatedState.state.updatedOn mustBe ts
-      appWithUpdatedState.state.requestedByEmailAddress mustBe Some(adminEmail)
-      appWithUpdatedState.state.requestedByName mustBe Some(adminName)
-    }
+//
+//    "handle ApplicationStateChanged event correctly" in {
+//      val applicationId           = ApplicationId.random
+//      val ts                      = FixedClock.now.truncatedTo(ChronoUnit.MILLIS)
+//      val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
+//      val importantSubmissionData =
+//        ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
+//      val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+//      val app                     = anApplicationData(applicationId).copy(access = access)
+//      await(applicationRepository.save(app))
+//
+//      val devHubUser          = CollaboratorActor("admin@example.com")
+//      val event               = ApplicationStateChanged(
+//        UpdateApplicationEvent.Id.random,
+//        applicationId,
+//        ts,
+//        devHubUser,
+//        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
+//        State.PENDING_GATEKEEPER_APPROVAL,
+//        adminName,
+//        adminEmail
+//      )
+//      val appWithUpdatedState = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+//      appWithUpdatedState.state.name mustBe State.PENDING_GATEKEEPER_APPROVAL
+//      appWithUpdatedState.state.updatedOn mustBe ts
+//      appWithUpdatedState.state.requestedByEmailAddress mustBe Some(adminEmail)
+//      appWithUpdatedState.state.requestedByName mustBe Some(adminName)
+//    }
 
     "handle ResponsibleIndividualVerificationStarted event correctly" in {
       val app = anApplicationData(applicationId)

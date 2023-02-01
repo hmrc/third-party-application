@@ -62,7 +62,7 @@ class ApplicationServiceSpec
     with UpliftRequestSamples
     with FixedClock {
 
-  var actorSystem:Option[ActorSystem] = None
+  var actorSystem: Option[ActorSystem] = None
 
   override protected def beforeAll(): Unit = {
     actorSystem = Some(ActorSystem("ApplicationServiceSpec"))
@@ -74,7 +74,7 @@ class ApplicationServiceSpec
     )
   }
 
-  trait Setup 
+  trait Setup
       extends AuditServiceMockModule
       with ApplicationCommandServiceMockModule
       with ApiGatewayStoreMockModule
@@ -574,7 +574,7 @@ class ApplicationServiceSpec
       val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
       ApplicationCommandServiceMock.Update.thenReturnSuccess(updatedApplication)
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccessOn(updateRedirectUris)(updatedApplication)
-      
+
       await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
 
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)

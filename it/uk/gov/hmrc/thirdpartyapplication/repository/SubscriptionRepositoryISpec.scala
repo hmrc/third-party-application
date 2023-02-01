@@ -312,7 +312,6 @@ class SubscriptionRepositoryISpec
     }
   }
 
-  
   "handle ApiSubscribed event correctly" in {
     val applicationId = ApplicationId.random
     val apiIdentifier = "some-context".asIdentifier("1.0.0")
@@ -323,7 +322,6 @@ class SubscriptionRepositoryISpec
     await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier)) mustBe true
   }
 
-  
   "handle ApiUnsubscribed event correctly" in {
     val applicationId = ApplicationId.random
     val apiIdentifier = "some-context".asIdentifier("1.0.0")

@@ -46,7 +46,7 @@ class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTes
 
     def checkSuccessResult(expectedActor: GatekeeperUserActor)(fn: => CommandHandler2.ResultT) = {
       val testThis = await(fn.value).right.value
-      
+
       inside(testThis) { case (app, events) =>
         events should have size 1
         val event = events.head
@@ -126,7 +126,7 @@ class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTes
 
     "return invalid with an error message when adding a subscription to a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       SubscriptionRepoMock.IsSubscribed.isFalse()
-      
+
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
         applicationId,
         { app =>

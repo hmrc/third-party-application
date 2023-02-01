@@ -18,20 +18,28 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
 import cats.data.{NonEmptyList, Validated, ValidatedNec}
-
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByGatekeeper, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
 
 @Singleton
 class DeleteApplicationByGatekeeperCommandHandler @Inject() (
+    val authControlConfig: AuthControlConfig,
+    val applicationRepository: ApplicationRepository,
+    val apiGatewayStore: ApiGatewayStore,
+    val notificationRepository: NotificationRepository,
+    val stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler {
+  ) extends CommandHandler2 {
 
+  import CommandHandler2._
   import UpdateApplicationEvent._
 
-  private def validate(app: ApplicationData, cmd: DeleteApplicationByGatekeeper): ValidatedNec[String, ApplicationData] = {
+  private def validate(app: ApplicationData): ValidatedNec[String, ApplicationData] = {
     Validated.validNec(app)
   }
 
@@ -62,11 +70,22 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteApplicationByGatekeeper): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
+//  def process(app: ApplicationData, cmd: DeleteApplicationByGatekeeper): CommandHandler.Result = {
+//    Future.successful {
+//      validate(app, cmd) map { _ =>
+//        asEvents(app, cmd)
+//      }
+//    }
+//  }
+
+  def process(app: ApplicationData, cmd: DeleteApplicationByGatekeeper)(implicit hc: HeaderCarrier): ResultT = {
+    for {
+      valid    <- E.fromEither(validate(app).toEither)
+      savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.requestedByEmailAddress, cmd.requestedByEmailAddress))
+      events    = asEvents(savedApp, cmd)
+      _        <- E.liftF(stateHistoryRepository.applyEvents(events))
+      _        <- E.liftF(apiGatewayStore.applyEvents(events))
+      _        <- E.liftF(notificationRepository.applyEvents(events))
+    } yield (savedApp, events)
   }
 }

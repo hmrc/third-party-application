@@ -47,10 +47,10 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
 
     val response = mock[HttpResponse]
 
-    val mockChangeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler                                         = mock[ChangeResponsibleIndividualToSelfCommandHandler]
-    val mockChangeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler                                       = mock[ChangeResponsibleIndividualToOtherCommandHandler]
-    val mockVerifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler                                                     = mock[VerifyResponsibleIndividualCommandHandler]
-    val mockDeclineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler                                                   = mock[DeclineResponsibleIndividualCommandHandler]
+    val mockChangeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler   = mock[ChangeResponsibleIndividualToSelfCommandHandler]
+    val mockChangeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler = mock[ChangeResponsibleIndividualToOtherCommandHandler]
+    val mockVerifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler               = mock[VerifyResponsibleIndividualCommandHandler]
+    val mockDeclineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler             = mock[DeclineResponsibleIndividualCommandHandler]
 
     val mockDeclineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler =
       mock[DeclineResponsibleIndividualDidNotVerifyCommandHandler]
@@ -78,11 +78,7 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
       mockVerifyResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
-      mockDeclineApplicationApprovalRequestCommandHandler,
-      mockDeleteApplicationByCollaboratorCommandHandler,
-      mockDeleteApplicationByGatekeeperCommandHandler,
-      mockDeleteUnusedApplicationCommandHandler,
-      mockDeleteProductionCredentialsApplicationCommandHandler
+      mockDeclineApplicationApprovalRequestCommandHandler
     )
   }
 

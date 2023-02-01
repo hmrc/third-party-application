@@ -38,12 +38,12 @@ class ChangeProductionApplicationNameCommandHandlerSpec
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val oldName               = "old app name"
-    val newName               = "new app name"
-    val gatekeeperUser        = "gkuser"
-    val requester             = "requester"
+    val oldName        = "old app name"
+    val newName        = "new app name"
+    val gatekeeperUser = "gkuser"
+    val requester      = "requester"
 
-    val userId    = idsByEmail(adminEmail)
+    val userId = idsByEmail(adminEmail)
 
     val timestamp = FixedClock.now
     val update    = ChangeProductionApplicationName(userId, timestamp, gatekeeperUser, newName)
@@ -51,7 +51,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
     def checkSuccessResult(expectedActor: GatekeeperUserActor)(result: CommandHandler2.CommandSuccess) = {
-        inside(result) { case (app, events) =>
+      inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head
 
@@ -79,8 +79,8 @@ class ChangeProductionApplicationNameCommandHandlerSpec
   "process" should {
     "create correct events for a valid request with a standard app" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      ApplicationRepoMock.UpdateApplicationName.thenReturn(app)   // unmodified
-      
+      ApplicationRepoMock.UpdateApplicationName.thenReturn(app) // unmodified
+
       val result = await(underTest.process(app, update).value).right.value
 
       checkSuccessResult(GatekeeperUserActor(gatekeeperUser))(result)
@@ -89,7 +89,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
     "create correct events for a valid request with a priv app" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
       val priviledgedApp = app.copy(access = Privileged())
-      ApplicationRepoMock.UpdateApplicationName.thenReturn(priviledgedApp)   // unmodified
+      ApplicationRepoMock.UpdateApplicationName.thenReturn(priviledgedApp) // unmodified
 
       val result = await(underTest.process(priviledgedApp, update).value).right.value
 

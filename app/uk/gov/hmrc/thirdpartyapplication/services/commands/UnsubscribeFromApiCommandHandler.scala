@@ -34,18 +34,18 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.Future
 
-
 @Singleton
 class UnsubscribeFromApiCommandHandler @Inject() (
     subscriptionRepository: SubscriptionRepository,
     strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
-)(implicit val ec: ExecutionContext) extends CommandHandler2 {
+  )(implicit val ec: ExecutionContext
+  ) extends CommandHandler2 {
 
   import CommandHandler2._
   import UpdateApplicationEvent._
 
   private def validate(app: ApplicationData, cmd: UnsubscribeFromApi, rolePassed: Boolean, alreadySubcribed: Boolean): ValidatedNec[String, Unit] = {
-    def isGatekeeperUser = cond(rolePassed, s"Unauthorized to unsubscribe any API from app ${app.name}")
+    def isGatekeeperUser    = cond(rolePassed, s"Unauthorized to unsubscribe any API from app ${app.name}")
     def alreadySubscribedTo = cond(alreadySubcribed, s"Application ${app.name} is not subscribed to API ${cmd.apiIdentifier.asText(" v")}")
 
     Apply[ValidatedNec[String, *]].map2(
@@ -68,7 +68,7 @@ class UnsubscribeFromApiCommandHandler @Inject() (
   }
 
   private def performRoleCheckAsRequired(app: ApplicationData)(implicit hc: HeaderCarrier) = {
-    if(List(PRIVILEGED, ROPC).contains(app.access.accessType))
+    if (List(PRIVILEGED, ROPC).contains(app.access.accessType))
       strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole().map(_.isEmpty)
     else
       Future.successful(true)
@@ -76,10 +76,10 @@ class UnsubscribeFromApiCommandHandler @Inject() (
 
   def process(app: ApplicationData, cmd: UnsubscribeFromApi)(implicit hc: HeaderCarrier): ResultT = {
     for {
-      rolePassed <- E.liftF(performRoleCheckAsRequired(app))
+      rolePassed       <- E.liftF(performRoleCheckAsRequired(app))
       alreadySubcribed <- E.liftF(subscriptionRepository.isSubscribed(app.id, cmd.apiIdentifier))
-      valid <- E.fromEither(validate(app, cmd, rolePassed, alreadySubcribed).toEither)
-      _ <- E.liftF(subscriptionRepository.remove(app.id, cmd.apiIdentifier))
+      valid            <- E.fromEither(validate(app, cmd, rolePassed, alreadySubcribed).toEither)
+      _                <- E.liftF(subscriptionRepository.remove(app.id, cmd.apiIdentifier))
     } yield (app, asEvents(app, cmd))
   }
 }

@@ -21,12 +21,11 @@ import cats.implicits._
 import cats.data._
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext}
+import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{UpdateApplicationEvent, UpdateRedirectUris}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.ResultT
-
 
 @Singleton
 class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler2 {
@@ -36,7 +35,7 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
   private def validate(app: ApplicationData): ValidatedNec[String, Unit] = {
     Apply[ValidatedNec[String, *]].map(isStandardAccess(app))(_ => ())
   }
-  
+
   import UpdateApplicationEvent._
 
   private def asEvents(app: ApplicationData, cmd: UpdateRedirectUris): NonEmptyList[UpdateApplicationEvent] = {
@@ -54,9 +53,9 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
 
   def process(app: ApplicationData, cmd: UpdateRedirectUris): ResultT = {
     for {
-      valid <- E.fromEither(validate(app).toEither)
+      valid    <- E.fromEither(validate(app).toEither)
       savedApp <- E.liftF(applicationRepository.updateRedirectUris(app.id, cmd.newRedirectUris))
-      events = asEvents(savedApp, cmd)
+      events    = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }
 }

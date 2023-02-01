@@ -16,18 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApiGatewayStoreMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, NotificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor}
 
-trait CommandActorExamples {
-  self: ApplicationTestData =>
-
-  val gkUserEmail = "admin@gatekeeper"
-  val gkUserActor = GatekeeperUserActor(gkUserEmail)
-
-  val developerUserId = idOf(devEmail)
-  val developerActor  = CollaboratorActor(devEmail)
-
-  val adminUserId = idOf(adminEmail)
-  val adminActor  = CollaboratorActor(adminEmail)
-}
+trait DeleteApplicationCommandHandlers
+    extends ApplicationRepositoryMockModule
+    with StateHistoryRepositoryMockModule
+    with ApiGatewayStoreMockModule
+    with NotificationRepositoryMockModule
+    with ApplicationTestData

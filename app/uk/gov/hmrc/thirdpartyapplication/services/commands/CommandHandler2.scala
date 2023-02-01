@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.{NonEmptyList, ValidatedNec, NonEmptyChain, EitherT}
+import cats.data.{EitherT, NonEmptyChain, NonEmptyList, ValidatedNec}
 import cats.implicits._
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor}
@@ -35,13 +35,13 @@ trait CommandHandler2 {
 }
 
 object CommandHandler2 {
-  type CommandSuccess = (ApplicationData, NonEmptyList[UpdateApplicationEvent])
+  type CommandSuccess  = (ApplicationData, NonEmptyList[UpdateApplicationEvent])
   type CommandFailures = NonEmptyChain[String]
 
-  type Result = Future[Either[CommandFailures, CommandSuccess]]
+  type Result  = Future[Either[CommandFailures, CommandSuccess]]
   type ResultT = EitherT[Future, CommandFailures, CommandSuccess]
 
-    def cond(cond: => Boolean, left: String): ValidatedNec[String, Unit] = {
+  def cond(cond: => Boolean, left: String): ValidatedNec[String, Unit] = {
     if (cond) ().validNec[String] else left.invalidNec[Unit]
   }
 
@@ -157,6 +157,6 @@ object CommandHandler2 {
   def isRequesterNameDefined(app: ApplicationData) =
     cond(getRequesterName(app).isDefined, "The requestedByName has not been set for this application")
 
-  def appHasLessThanLimitOfSecrets(app: ApplicationData, clientSecretLimit: Int): ValidatedNec[String, Unit] = 
+  def appHasLessThanLimitOfSecrets(app: ApplicationData, clientSecretLimit: Int): ValidatedNec[String, Unit] =
     cond(app.tokens.production.clientSecrets.size < clientSecretLimit, "Client secret limit has been exceeded")
 }

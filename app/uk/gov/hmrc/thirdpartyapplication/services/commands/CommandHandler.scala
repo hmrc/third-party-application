@@ -148,6 +148,6 @@ object CommandHandler {
   def isRequesterNameDefined(app: ApplicationData) =
     cond(getRequesterName(app).isDefined, "The requestedByName has not been set for this application")
 
-  def appHasLessThanLimitOfSecrets(app: ApplicationData, clientSecretLimit: Int): ValidatedNec[String, Unit] = 
+  def appHasLessThanLimitOfSecrets(app: ApplicationData, clientSecretLimit: Int): ValidatedNec[String, Unit] =
     cond(app.tokens.production.clientSecrets.size < clientSecretLimit, "Client secret limit has been exceeded")
 }

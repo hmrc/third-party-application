@@ -17,29 +17,29 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import cats.data.NonEmptyChain
 import cats.data.Validated.Invalid
-
 import uk.gov.hmrc.http.HeaderCarrier
-
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
-class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
+import java.time.LocalDateTime
 
+class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
+
+//
   trait Setup {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId          = ApplicationId.random
-    val appAdminUserId = UserId.random
-    val appAdminEmail  = "admin@example.com"
-    val reasons        = "reasons description text"
-    val actor          = CollaboratorActor(appAdminEmail)
+    val appId = ApplicationId.random
+
+    val appAdminEmail = "admin@example.com"
+    val reasons       = "reasons description text"
+    val actor         = CollaboratorActor(appAdminEmail)
 
     val app               = anApplicationData(appId, environment = Environment.SANDBOX).copy(collaborators =
       Set(
@@ -48,42 +48,116 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
     )
     val ts                = FixedClock.now
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
-    val underTest         = new DeleteApplicationByCollaboratorCommandHandler(authControlConfig)
+
+    val underTest = new DeleteApplicationByCollaboratorCommandHandler(
+      authControlConfig,
+      ApplicationRepoMock.aMock,
+      ApiGatewayStoreMock.aMock,
+      NotificationRepositoryMock.aMock,
+      StateHistoryRepoMock.aMock
+    )
+
+    def checkSuccessResult()(result: CommandHandler2.CommandSuccess) = {
+      inside(result) { case (app, events) =>
+        val filteredEvents = events.toList.filter(evt =>
+          evt match {
+            case _: ApplicationStateChanged | _: ApplicationDeleted => true
+            case _                                                  => false
+          }
+        )
+        filteredEvents.size shouldBe 2
+        val event          = filteredEvents.head
+
+        inside(event) {
+          case ApplicationDeleted(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons) =>
+            appId shouldBe appId
+            actor shouldBe actor
+            eventDateTime shouldBe ts
+            clientId shouldBe app.tokens.production.clientId
+            evtReasons shouldBe reasons
+            wsoApplicationName shouldBe app.wso2ApplicationName
+
+          case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
+            appId shouldBe appId
+            evtActor shouldBe actor
+            eventDateTime shouldBe ts
+            oldAppState shouldBe app.state.name
+            newAppState shouldBe State.DELETED
+            requestingAdminEmail shouldBe actor.email
+            requestingAdminName shouldBe actor.email
+        }
+      }
+
+    }
   }
+  val appAdminUserId    = UserId.random
+  val reasons           = "reasons description text"
+  val ts: LocalDateTime = FixedClock.now
 
-  "process" should {
-    "create correct event for a valid request with a standard app" in new Setup {
+  "DeleteApplicationByCollaborator" should {
+    val cmd = DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)
+    "succeed as gkUserActor" in new Setup {
+      ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
+      StateHistoryRepoMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.ApplyEvents.succeeds()
+      NotificationRepositoryMock.ApplyEvents.succeeds()
 
-      val result = await(underTest.process(app, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
+      val result = await(underTest.process(app, cmd).value).right.value
 
-      result.isValid shouldBe true
-      result.toOption.get.length shouldBe 2
-
-      val applicationDeleted = result.toOption.get.head.asInstanceOf[ApplicationDeleted]
-      applicationDeleted.applicationId shouldBe appId
-      applicationDeleted.eventDateTime shouldBe ts
-      applicationDeleted.actor shouldBe actor
-      applicationDeleted.reasons shouldBe reasons
-      applicationDeleted.clientId shouldBe app.tokens.production.clientId
-      applicationDeleted.wso2ApplicationName shouldBe app.wso2ApplicationName
-
-      val stateEvent = result.toOption.get.tail.head.asInstanceOf[ApplicationStateChanged]
-      stateEvent.applicationId shouldBe appId
-      stateEvent.eventDateTime shouldBe ts
-      stateEvent.actor shouldBe actor
-      stateEvent.newAppState shouldBe State.DELETED
-      stateEvent.oldAppState shouldBe app.state.name
+      checkSuccessResult()(result)
     }
 
-    "return an error if the application is non-standard" in new Setup {
+    "return an error when app is NOT in testing state" in new Setup {
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
-      val result         = await(underTest.process(nonStandardApp, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
-      result shouldBe Invalid(NonEmptyChain.apply("App must have a STANDARD access type"))
+      val cmd            = DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)
+
+      val result = await(underTest.process(nonStandardApp, cmd).value).left.value.toNonEmptyList.toList
+
+      result should have length 1
+      result.head shouldBe "App must have a STANDARD access type"
     }
 
     "return an error if the actor is not an admin of the application" in new Setup {
-      val result = await(underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, ts)))
-      result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))
+      val result = await(underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, ts)).value).left.value.toNonEmptyList.toList
+      result.head shouldBe "User must be an ADMIN"
     }
+
   }
+
+  //
+//  "process" should {
+//    "create correct event for a valid request with a standard app" in new Setup {
+//
+//      val result = await(underTest.process(app, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
+//
+//      result.isValid shouldBe true
+//      result.toOption.get.length shouldBe 2
+//
+//      val applicationDeleted = result.toOption.get.head.asInstanceOf[ApplicationDeleted]
+//      applicationDeleted.applicationId shouldBe appId
+//      applicationDeleted.eventDateTime shouldBe ts
+//      applicationDeleted.actor shouldBe actor
+//      applicationDeleted.reasons shouldBe reasons
+//      applicationDeleted.clientId shouldBe app.tokens.production.clientId
+//      applicationDeleted.wso2ApplicationName shouldBe app.wso2ApplicationName
+//
+//      val stateEvent = result.toOption.get.tail.head.asInstanceOf[ApplicationStateChanged]
+//      stateEvent.applicationId shouldBe appId
+//      stateEvent.eventDateTime shouldBe ts
+//      stateEvent.actor shouldBe actor
+//      stateEvent.newAppState shouldBe State.DELETED
+//      stateEvent.oldAppState shouldBe app.state.name
+//    }
+//
+//    "return an error if the application is non-standard" in new Setup {
+//      val nonStandardApp = app.copy(access = Ropc(Set.empty))
+//      val result         = await(underTest.process(nonStandardApp, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
+//      result shouldBe Invalid(NonEmptyChain.apply("App must have a STANDARD access type"))
+//    }
+//
+//    "return an error if the actor is not an admin of the application" in new Setup {
+//      val result = await(underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, ts)))
+//      result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))
+//    }
+//  }
 }

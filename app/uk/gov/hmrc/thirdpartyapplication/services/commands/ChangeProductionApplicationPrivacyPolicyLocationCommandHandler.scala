@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext}
+import scala.concurrent.ExecutionContext
 
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
@@ -34,19 +34,19 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation.Url
 
 @Singleton
-class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject()(
-  applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext)
-    extends CommandHandler2 {
+class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
+    applicationRepository: ApplicationRepository
+  )(implicit val ec: ExecutionContext
+  ) extends CommandHandler2 {
 
   import CommandHandler2._
   import UpdateApplicationEvent._
 
   def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): ResultT = {
     def validate: ValidatedNec[String, String] = {
-      val newUrl = cmd.newLocation match {
+      val newUrl     = cmd.newLocation match {
         case Url(value) => Some(value)
-        case _ => None
+        case _          => None
       }
       val isJustAUrl = cond(newUrl.isDefined, "Unexpected new PrivacyPolicyLocation type specified for legacy application: " + cmd.newLocation)
 
@@ -70,11 +70,11 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject()(
         )
       )
     }
-    
+
     cmd.newLocation match {
-        case Url(value) => value
-        case _ => false
-      }
+      case Url(value) => value
+      case _          => false
+    }
 
     for {
       newUrl   <- E.fromEither(validate.toEither)
@@ -116,7 +116,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject()(
     app.access match {
       case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => processApp(privacyPolicyLocation, app, cmd)
       case Standard(_, _, maybePrivacyPolicyUrl, _, _, None)                                            => processLegacyApp(maybePrivacyPolicyUrl.getOrElse(""), app, cmd)
-      case _                                                                                            => processApp(PrivacyPolicyLocation.InDesktopSoftware, app, cmd)    // This will not valdate
+      case _                                                                                            => processApp(PrivacyPolicyLocation.InDesktopSoftware, app, cmd) // This will not valdate
     }
   }
 }

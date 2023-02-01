@@ -25,7 +25,7 @@ import cats.data._
 
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationName, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ProductionAppNameChanged, GatekeeperUserActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{GatekeeperUserActor, ProductionAppNameChanged}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
@@ -33,8 +33,8 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
 class ChangeProductionApplicationNameCommandHandler @Inject() (
-  applicationRepository: ApplicationRepository,
-  namingService: UpliftNamingService
+    applicationRepository: ApplicationRepository,
+    namingService: UpliftNamingService
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler2 {
 
@@ -67,9 +67,9 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
   def process(app: ApplicationData, cmd: ChangeProductionApplicationName): ResultT = {
     for {
       nameValidationResult <- E.liftF(namingService.validateApplicationName(cmd.newName, noExclusions))
-      valid    <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
-      savedApp <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName))
-      events    = asEvents(savedApp, cmd)
+      valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
+      savedApp             <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName))
+      events                = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }
 }

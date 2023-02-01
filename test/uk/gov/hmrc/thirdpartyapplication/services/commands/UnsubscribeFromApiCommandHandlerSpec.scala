@@ -46,7 +46,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
 
     def checkSuccessResult(expectedActor: GatekeeperUserActor)(fn: => CommandHandler2.ResultT) = {
       val testThis = await(fn.value).right.value
-      
+
       inside(testThis) { case (app, events) =>
         events should have size 1
         val event = events.head
@@ -126,7 +126,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
 
     "return invalid with an error message when removing a subscription from a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       SubscriptionRepoMock.IsSubscribed.isTrue()
-      
+
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
         applicationId,
         { app =>

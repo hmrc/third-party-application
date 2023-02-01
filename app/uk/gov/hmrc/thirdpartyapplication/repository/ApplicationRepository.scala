@@ -674,8 +674,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     }
   }
 
-
-
   def addCollaborator(applicationId: ApplicationId, collaborator: Collaborator) =
     updateApplication(
       applicationId,
@@ -693,7 +691,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
         Codecs.toBson(Json.obj("userId" -> userId))
       )
     )
-
 
   def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[String]) =
     updateApplication(applicationId, Updates.set("access.redirectUris", Codecs.toBson(redirectUris)))
@@ -780,14 +777,20 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       )
     )
 
-  private def updateApplicationState(event: ApplicationStateChanged): Future[ApplicationData] =
+  def updateApplicationState(
+      applicationId: ApplicationId,
+      newAppState: State,
+      timestamp: LocalDateTime,
+      requestingAdminEmail: String,
+      requestingAdminName: String
+    ): Future[ApplicationData] =
     updateApplication(
-      event.applicationId,
+      applicationId,
       Updates.combine(
-        Updates.set("state.name", Codecs.toBson(event.newAppState)),
-        Updates.set("state.updatedOn", event.eventDateTime),
-        Updates.set("state.requestedByEmailAddress", event.requestingAdminEmail),
-        Updates.set("state.requestedByName", event.requestingAdminName)
+        Updates.set("state.name", Codecs.toBson(newAppState)),
+        Updates.set("state.updatedOn", timestamp),
+        Updates.set("state.requestedByEmailAddress", requestingAdminEmail),
+        Updates.set("state.requestedByName", requestingAdminName)
       )
     )
 
@@ -798,33 +801,33 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     import UpdateApplicationEvent._
 
     event match {
-      case evt: ProductionAppNameChanged                                                                          => noOp(event)
-      case evt: ProductionAppPrivacyPolicyLocationChanged                                                         => noOp(event)
-      case evt: ProductionLegacyAppPrivacyPolicyLocationChanged                                                   => noOp(event)
-      case evt: ProductionAppTermsConditionsLocationChanged                                                       => noOp(event)
-      case evt: ProductionLegacyAppTermsConditionsLocationChanged                                                 => updateLegacyApplicationTermsAndConditionsLocation(evt.applicationId, evt.newUrl)
-      case evt: ResponsibleIndividualSet                                                                          => updateApplicationSetResponsibleIndividual(evt)
-      case evt: ResponsibleIndividualChanged                                                                      => updateApplicationChangeResponsibleIndividual(evt)
-      case evt: ResponsibleIndividualChangedToSelf                                                                => updateApplicationChangeResponsibleIndividualToSelf(evt)
-      case evt: ApplicationStateChanged                                                                           => updateApplicationState(evt)
-      case _: ResponsibleIndividualDeclined                                                                       => noOp(event)
-      case _: ResponsibleIndividualDeclinedUpdate                                                                 => noOp(event)
-      case _: ResponsibleIndividualDidNotVerify                                                                   => noOp(event)
-      case _: ApplicationApprovalRequestDeclined                                                                  => noOp(event)
-      case _: ApplicationDeleted | _: ApplicationDeletedByGatekeeper | _: ProductionCredentialsApplicationDeleted => noOp(event)
-      
+      case evt: ProductionAppNameChanged                          => noOp(event)
+      case evt: ProductionAppPrivacyPolicyLocationChanged         => noOp(event)
+      case evt: ProductionLegacyAppPrivacyPolicyLocationChanged   => noOp(event)
+      case evt: ProductionAppTermsConditionsLocationChanged       => noOp(event)
+      case evt: ProductionLegacyAppTermsConditionsLocationChanged => updateLegacyApplicationTermsAndConditionsLocation(evt.applicationId, evt.newUrl)
+      case evt: ResponsibleIndividualSet                          => updateApplicationSetResponsibleIndividual(evt)
+      case evt: ResponsibleIndividualChanged                      => updateApplicationChangeResponsibleIndividual(evt)
+      case evt: ResponsibleIndividualChangedToSelf                => updateApplicationChangeResponsibleIndividualToSelf(evt)
+      case evt: ApplicationStateChanged                           => noOp(evt)
+      case _: ResponsibleIndividualDeclined                       => noOp(event)
+      case _: ResponsibleIndividualDeclinedUpdate                 => noOp(event)
+      case _: ResponsibleIndividualDidNotVerify                   => noOp(event)
+      case _: ApplicationApprovalRequestDeclined                  => noOp(event)
       // refactored to new ways
-      case _: ClientSecretAddedV3                                                                               => noOp(event)
-      case _: ClientSecretRemoved                                                                               => noOp(event)
-      case _: RedirectUrisUpdated                                                                               => noOp(event)
-      case _: CollaboratorAdded                                                                                 => noOp(event)
-      case _: CollaboratorRemoved                                                                               => noOp(event)
+
+      case _: ClientSecretAddedV3                                                                                 => noOp(event)
+      case _: ClientSecretRemoved                                                                                 => noOp(event)
+      case _: RedirectUrisUpdated                                                                                 => noOp(event)
+      case _: CollaboratorAdded                                                                                   => noOp(event)
+      case _: CollaboratorRemoved                                                                                 => noOp(event)
       case _: ResponsibleIndividualVerificationStarted                                                            => noOp(event)
+      case _: ApplicationDeleted | _: ApplicationDeletedByGatekeeper | _: ProductionCredentialsApplicationDeleted => noOp(event)
       case _: ApiSubscribed                                                                                       => noOp(event)
       case _: ApiUnsubscribed                                                                                     => noOp(event)
-      
+
       // Should never be seen by this route
-      case _: ClientSecretAddedV2                                                                                 => noOp(event)
+      case _: ClientSecretAddedV2 => noOp(event)
     }
   }
   // scalastyle:on cyclomatic.complexity

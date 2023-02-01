@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext}
+import scala.concurrent.ExecutionContext
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
@@ -28,8 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.ResultT
 
 @Singleton
-class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: ApplicationRepository)
-                                                 (implicit val ec: ExecutionContext) extends CommandHandler2 {
+class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler2 {
 
   import CommandHandler2._
 
@@ -87,9 +86,9 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
 
   def process(app: ApplicationData, cmd: RemoveCollaborator): ResultT = {
     for {
-      valid <- E.fromEither(validate(app, cmd).toEither)
+      valid    <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.removeCollaborator(app.id, cmd.collaborator.userId))
-      events = asEvents(savedApp, cmd)
+      events    = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }
 }

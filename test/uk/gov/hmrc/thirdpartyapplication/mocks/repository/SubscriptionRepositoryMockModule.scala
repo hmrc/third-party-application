@@ -46,8 +46,10 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
     }
 
     object IsSubscribed {
-      def isTrue() =
+
+      def isTrue()  =
         when(aMock.isSubscribed(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(true))
+
       def isFalse() =
         when(aMock.isSubscribed(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(false))
     }
@@ -65,11 +67,13 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
     }
 
     object Add {
+
       def succeeds() =
         when(aMock.add(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(HasSucceeded))
     }
 
     object Remove {
+
       def succeeds() =
         when(aMock.remove(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(HasSucceeded))
 

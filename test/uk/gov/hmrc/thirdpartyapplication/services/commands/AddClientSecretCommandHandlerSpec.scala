@@ -32,7 +32,7 @@ class AddClientSecretCommandHandlerSpec
     with CommandApplicationExamples {
 
   class Setup(limit: Int = 3) extends ApplicationRepositoryMockModule {
-    val config = CredentialConfig(limit)
+    val config    = CredentialConfig(limit)
     val underTest = new AddClientSecretCommandHandler(ApplicationRepoMock.aMock, config)
 
     val timestamp    = FixedClock.now
@@ -43,12 +43,12 @@ class AddClientSecretCommandHandlerSpec
     val addClientSecretByAdmin = AddClientSecret(CollaboratorActor(adminEmail), clientSecret, timestamp)
 
     def checkSuccessResult(expectedActor: CollaboratorActor)(result: CommandHandler2.CommandSuccess) = {
-        inside(result) { case (app, events) =>
+      inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head
 
         inside(event) {
-          case ClientSecretAddedV2(_, appId, eventDateTime, actor, clientSecretId, clientSecretName) => 
+          case ClientSecretAddedV2(_, appId, eventDateTime, actor, clientSecretId, clientSecretName) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
@@ -71,16 +71,16 @@ class AddClientSecretCommandHandlerSpec
 
     "return an error for a non-admin developer" in new Setup {
       val result = await(underTest.process(principalApp, addClientSecretByDev).value).left.value.toNonEmptyList.toList
-      
+
       result should have length 1
       result.head shouldBe "App is in PRODUCTION so User must be an ADMIN"
     }
 
     "return an error for a non-admin developer and application with full secrets" in new Setup(1) {
       val result = await(underTest.process(principalApp, addClientSecretByDev).value).left.value.toNonEmptyList.toList
-      
+
       result should have length 2
-      result should contain allOf(
+      result should contain allOf (
         "App is in PRODUCTION so User must be an ADMIN",
         "Client secret limit has been exceeded"
       )

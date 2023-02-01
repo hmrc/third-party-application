@@ -17,9 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext}
+import scala.concurrent.ExecutionContext
 
-import cats.data.{NonEmptyChain}
+import cats.data.NonEmptyChain
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -33,11 +33,9 @@ import uk.gov.hmrc.thirdpartyapplication.repository._
 @Singleton
 class ApplicationCommandDispatcher @Inject() (
     applicationRepository: ApplicationRepository,
-
     notificationService: NotificationService,
     apiPlatformEventService: ApiPlatformEventService,
     auditService: AuditService,
-
     addClientSecretCommandHandler: AddClientSecretCommandHandler,
     removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
     changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
@@ -51,31 +49,31 @@ class ApplicationCommandDispatcher @Inject() (
     // declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
     // declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
     // declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler,
-    // deleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler,
-    // deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
-    // deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
-    // deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
+    deleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler,
+    deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
+    deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
+    deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
     subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
     unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
     updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
-    
+
   import cats.implicits._
   import CommandHandler2._
-  
+
   val E = EitherTHelper.make[CommandFailures]
 
   def dispatch(applicationId: ApplicationId, command: ApplicationCommand)(implicit hc: HeaderCarrier): ResultT = {
     for {
-      app           <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
-      updateResults <- processUpdate(app, command)
+      app               <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
+      updateResults     <- processUpdate(app, command)
       (savedApp, events) = updateResults
 
       _ <- E.liftF(apiPlatformEventService.applyEvents(events))
       _ <- E.liftF(auditService.applyEvents(savedApp, events))
       _ <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt }))
-    } yield (savedApp,events)
+    } yield (savedApp, events)
   }
 
   // scalastyle:off cyclomatic.complexity
@@ -92,10 +90,10 @@ class ApplicationCommandDispatcher @Inject() (
       // case cmd: DeclineResponsibleIndividual                          => declineResponsibleIndividualCommandHandler.process(app, cmd)
       // case cmd: DeclineResponsibleIndividualDidNotVerify              => declineResponsibleIndividualDidNotVerifyCommandHandler.process(app, cmd)
       // case cmd: DeclineApplicationApprovalRequest                     => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
-      // case cmd: DeleteApplicationByCollaborator                       => deleteApplicationByCollaboratorCommandHandler.process(app, cmd)
-      // case cmd: DeleteApplicationByGatekeeper                         => deleteApplicationByGatekeeperCommandHandler.process(app, cmd)
-      // case cmd: DeleteUnusedApplication                               => deleteUnusedApplicationCommandHandler.process(app, cmd)
-      // case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCommandHandler.process(app, cmd)
+      case cmd: DeleteApplicationByCollaborator                       => deleteApplicationByCollaboratorCommandHandler.process(app, cmd)
+      case cmd: DeleteApplicationByGatekeeper                         => deleteApplicationByGatekeeperCommandHandler.process(app, cmd)
+      case cmd: DeleteUnusedApplication                               => deleteUnusedApplicationCommandHandler.process(app, cmd)
+      case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCommandHandler.process(app, cmd)
       case cmd: AddCollaborator                                       => addCollaboratorCommandHandler.process(app, cmd)
       case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
       case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)

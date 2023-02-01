@@ -17,21 +17,22 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext}
+import scala.concurrent.ExecutionContext
 
 import cats._
 import cats.implicits._
 import cats.data._
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorAdded, CollaboratorActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, CollaboratorAdded}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
 class AddCollaboratorCommandHandler @Inject() (
-  applicationRepository: ApplicationRepository
-)(implicit val ec: ExecutionContext) extends CommandHandler2 {
+    applicationRepository: ApplicationRepository
+  )(implicit val ec: ExecutionContext
+  ) extends CommandHandler2 {
 
   import CommandHandler2._
 

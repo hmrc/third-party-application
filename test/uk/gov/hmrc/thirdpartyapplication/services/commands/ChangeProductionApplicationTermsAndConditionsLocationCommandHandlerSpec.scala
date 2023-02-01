@@ -36,9 +36,9 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val oldUrl                = "http://example.com/old"
-    val newUrl                = "http://example.com/new"
-    val newLocation           = TermsAndConditionsLocation.Url(newUrl)
+    val oldUrl      = "http://example.com/old"
+    val newUrl      = "http://example.com/new"
+    val newLocation = TermsAndConditionsLocation.Url(newUrl)
 
     val newJourneyApp = anApplicationData(applicationId).copy(
       collaborators = Set(
@@ -59,15 +59,15 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
     val userId    = idsByEmail(adminEmail)
     val timestamp = FixedClock.now
     val actor     = CollaboratorActor(adminEmail)
-    
-    val update    = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
-    
+
+    val update = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
+
     val underTest = new ChangeProductionApplicationTermsAndConditionsLocationCommandHandler(ApplicationRepoMock.aMock)
 
     def checkSuccessResult(expectedActor: Actor)(fn: => CommandHandler2.ResultT) = {
       val testThis = await(fn.value).right.value
 
-        inside(testThis) { case (app, events) =>
+      inside(testThis) { case (app, events) =>
         events should have size 1
         val event = events.head
 
@@ -85,7 +85,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
     def checkLegacySuccessResult(expectedActor: Actor)(fn: => CommandHandler2.ResultT) = {
       val testThis = await(fn.value).right.value
 
-        inside(testThis) { case (app, events) =>
+      inside(testThis) { case (app, events) =>
         events should have size 1
         val event = events.head
 
@@ -99,6 +99,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
         }
       }
     }
+
     def checkFailsWith(msg: String)(fn: => CommandHandler2.ResultT) = {
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 

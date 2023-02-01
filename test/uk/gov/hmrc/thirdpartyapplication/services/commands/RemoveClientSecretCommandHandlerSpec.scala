@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
- import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretRemoved, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -34,10 +34,11 @@ class RemoveClientSecretCommandHandlerSpec
     val underTest = new RemoveClientSecretCommandHandler(ApplicationRepoMock.aMock)
 
     val developerCollaborator = Collaborator(devEmail, Role.DEVELOPER, developerUserId)
-    val adminCollaborator = Collaborator(adminEmail, Role.ADMINISTRATOR, adminUserId)
+    val adminCollaborator     = Collaborator(adminEmail, Role.ADMINISTRATOR, adminUserId)
 
     val applicationId = ApplicationId.random
-    val principalApp = anApplicationData(applicationId).copy(
+
+    val principalApp   = anApplicationData(applicationId).copy(
       collaborators = Set(
         developerCollaborator,
         adminCollaborator
@@ -58,7 +59,7 @@ class RemoveClientSecretCommandHandlerSpec
         val event = events.head
 
         inside(event) {
-          case ClientSecretRemoved(_, appId, eventDateTime, actor, clientSecretId, clientSecretName) => 
+          case ClientSecretRemoved(_, appId, eventDateTime, actor, clientSecretId, clientSecretName) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
@@ -80,27 +81,27 @@ class RemoveClientSecretCommandHandlerSpec
 
     "return an error for a non-admin developer" in new Setup {
       val result = await(underTest.process(principalApp, removeClientSecretByDev).value).left.value.toNonEmptyList.toList
-      
+
       result should have length 1
       result.head shouldBe "App is in PRODUCTION so User must be an ADMIN"
     }
 
     "return an error for an admin where the client secret id is not valid" in new Setup {
       val invalidCommand = removeClientSecretByAdmin.copy(clientSecretId = "invalid")
-      val result = await(underTest.process(principalApp, invalidCommand).value).left.value.toNonEmptyList.toList
-      
+      val result         = await(underTest.process(principalApp, invalidCommand).value).left.value.toNonEmptyList.toList
+
       result should have length 1
       result should contain only (
         s"Client Secret Id invalid not found in Application ${principalApp.id.value}"
-        )
-      }
-      
-      "return errors for a non-admin developer where the client secret id is not valid" in new Setup {
-        val invalidCommand = removeClientSecretByDev.copy(clientSecretId = "invalid")
-        val result = await(underTest.process(principalApp, invalidCommand).value).left.value.toNonEmptyList.toList
-        
-        result should have length 2
-        result should contain allOf (
+      )
+    }
+
+    "return errors for a non-admin developer where the client secret id is not valid" in new Setup {
+      val invalidCommand = removeClientSecretByDev.copy(clientSecretId = "invalid")
+      val result         = await(underTest.process(principalApp, invalidCommand).value).left.value.toNonEmptyList.toList
+
+      result should have length 2
+      result should contain allOf (
         "App is in PRODUCTION so User must be an ADMIN",
         s"Client Secret Id invalid not found in Application ${principalApp.id.value}",
       )

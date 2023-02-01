@@ -105,8 +105,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockAddClientSecretCommandHandler: AddClientSecretCommandHandler                                                   = mock[AddClientSecretCommandHandler]
     val mockRemoveClientSecretCommandHandler: RemoveClientSecretCommandHandler                                             = mock[RemoveClientSecretCommandHandler]
 
-    val underTest                                                                                                          
-    = new ApplicationCommandDispatcher(
+    val underTest = new ApplicationCommandDispatcher(
       ApplicationRepoMock.aMock,
       NotificationServiceMock.aMock,
       ApiPlatformEventServiceMock.aMock,
@@ -119,11 +118,6 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       //      mockDeclineResponsibleIndividualCommandHandler,
       //      mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
       //      mockDeclineApplicationApprovalRequestCommandHandler,
-      //      mockDeleteApplicationByCollaboratorCommandHandler,
-      //      mockDeleteApplicationByGatekeeperCommandHandler,
-      //      mockDeleteUnusedApplicationCommandHandler,
-      //      mockDeleteProductionCredentialsApplicationCommandHandler,
-      //      mockRemoveCollaboratorCommandHandler,
       mockAddClientSecretCommandHandler,
       mockRemoveClientSecretCommandHandler,
       mockChangeProductionApplicationNameCommandHandler,
@@ -131,6 +125,10 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockRemoveCollaboratorCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
       mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
+      mockDeleteApplicationByCollaboratorCommandHandler,
+      mockDeleteApplicationByGatekeeperCommandHandler,
+      mockDeleteUnusedApplicationCommandHandler,
+      mockDeleteProductionCredentialsApplicationCommandHandler,
       mockSubscribeToApiCommandHandler,
       mockUnsubscribeFromApiCommandHandler,
       mockUpdateRedirectUrisCommandHandler

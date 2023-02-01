@@ -23,19 +23,18 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.CommandFailures
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.{collaboratorAlreadyOnApp, CommandFailures}
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 import java.util.UUID
-
 
 class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils {
 
   trait Setup extends CommonSetup {
     val applicationData: ApplicationData = anApplicationData(applicationId)
 
-    def primeCommonServiceSuccess() ={
+    def primeCommonServiceSuccess() = {
 
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
       AuditServiceMock.ApplyEvents.succeeds()
@@ -47,168 +46,169 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
       verifyZeroInteractions(AuditServiceMock.aMock)
       verifyZeroInteractions(NotificationServiceMock.aMock)
     }
+
     def verifyServicesCalledWithEvent(expectedEvent: UpdateApplicationEvent) = {
 
       verify(ApiPlatformEventServiceMock.aMock)
         .applyEvents(*[NonEmptyList[UpdateApplicationEvent]])(*[HeaderCarrier])
 
       verify(AuditServiceMock.aMock)
-        .applyEvents(eqTo(applicationData),eqTo(NonEmptyList.one(expectedEvent)))(*[HeaderCarrier])
+        .applyEvents(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)))(*[HeaderCarrier])
 
       expectedEvent match {
-        case e:  UpdateApplicationEvent with TriggersNotification => verify(NotificationServiceMock.aMock)
-          .sendNotifications(eqTo(applicationData), eqTo(List(e)))(*[HeaderCarrier])
-        case _ => succeed
+        case e: UpdateApplicationEvent with TriggersNotification => verify(NotificationServiceMock.aMock)
+            .sendNotifications(eqTo(applicationData), eqTo(List(e)))(*[HeaderCarrier])
+        case _                                                   => succeed
       }
 
     }
   }
 
-    val timestamp = FixedClock.now
-    val gatekeeperUser = "gkuser1"
-    val adminName = "Mr Admin"
-    val devHubUser = CollaboratorActor(adminEmail)
-    val applicationId = ApplicationId.random
+  val timestamp      = FixedClock.now
+  val gatekeeperUser = "gkuser1"
+  val adminName      = "Mr Admin"
+  val devHubUser     = CollaboratorActor(adminEmail)
+  val applicationId  = ApplicationId.random
 
-    val E = EitherTHelper.make[CommandFailures]
+  val E = EitherTHelper.make[CommandFailures]
 
+  "dispatch" when {
+    "AddClientSecret is received" should {
+      val clientSecret             = ClientSecret("name", FixedClock.now, None, UUID.randomUUID().toString, "hashedSecret")
+      val cmd: AddClientSecret     = AddClientSecret(devHubUser, clientSecret, FixedClock.now)
+      val evt: ClientSecretAddedV2 = ClientSecretAddedV2(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, clientSecret.name, clientSecret.id)
 
+      "call AddClientSecretCommand Handler and relevant common services if application exists" in new Setup {
+        ApplicationRepoMock.Fetch.thenReturn(applicationData)
+        primeCommonServiceSuccess()
 
- "dispatch" when {
-   "AddClientSecret is received" should {
-     val clientSecret = ClientSecret("name", FixedClock.now, None, UUID.randomUUID().toString, "hashedSecret")
-     val cmd: AddClientSecret = AddClientSecret(devHubUser, clientSecret,  FixedClock.now)
-     val evt: ClientSecretAddedV2 = ClientSecretAddedV2(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, clientSecret.name, clientSecret.id)
+        when(mockAddClientSecretCommandHandler.process(*[ApplicationData], *[AddClientSecret]))
+          .thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
-     "call AddClientSecretCommand Handler and relevant common services if application exists" in new Setup {
-         ApplicationRepoMock.Fetch.thenReturn(applicationData)
-       primeCommonServiceSuccess()
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
 
-       when(mockAddClientSecretCommandHandler.process(*[ApplicationData], *[AddClientSecret]))
-         .thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
+      }
 
-       await(underTest.dispatch(applicationId, cmd).value)
-       verifyServicesCalledWithEvent(evt)
+      "bubble up exception when application fetch fails" in new Setup {
+        ApplicationRepoMock.Fetch.thenFail(new RuntimeException("some error"))
 
-     }
+        intercept[RuntimeException] {
+          await(underTest.dispatch(applicationId, cmd).value)
+        }
+        verifyZeroInteractions(mockAddClientSecretCommandHandler)
+        verifyNoCommonServicesCalled
+      }
+    }
 
-     "bubble up exception when application fetch fails" in new Setup {
-       ApplicationRepoMock.Fetch.thenFail(new RuntimeException("some error"))
+    "RemoveClientSecret is received" should {
+      val cmd: RemoveClientSecret  = RemoveClientSecret(devHubUser, UUID.randomUUID().toString, FixedClock.now)
+      val evt: ClientSecretRemoved = ClientSecretRemoved(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, cmd.clientSecretId, "someName")
 
-       intercept[RuntimeException]{
-         await(underTest.dispatch(applicationId, cmd).value)
-       }
-       verifyZeroInteractions(mockAddClientSecretCommandHandler)
-       verifyNoCommonServicesCalled
-     }
-   }
+      "call RemoveClientSecretCommand Handler and relevant common services if application exists" in new Setup {
+        ApplicationRepoMock.Fetch.thenReturn(applicationData)
+        primeCommonServiceSuccess()
 
+        when(mockRemoveClientSecretCommandHandler.process(*[ApplicationData], *[RemoveClientSecret]))
+          .thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
-   "RemoveClientSecret is received" should {
-     val cmd: RemoveClientSecret = RemoveClientSecret(devHubUser, UUID.randomUUID().toString, FixedClock.now)
-     val evt: ClientSecretRemoved = ClientSecretRemoved(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, cmd.clientSecretId, "someName")
+        await(underTest.dispatch(applicationId, cmd).value)
+        verify(mockRemoveClientSecretCommandHandler).process(*[ApplicationData], *[RemoveClientSecret])
+        verifyServicesCalledWithEvent(evt)
 
-     "call RemoveClientSecretCommand Handler and relevant common services if application exists" in new Setup {
-       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-       primeCommonServiceSuccess()
+      }
 
-       when(mockRemoveClientSecretCommandHandler.process(*[ApplicationData], *[RemoveClientSecret]))
-         .thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
+      "bubble up exception when application fetch fails" in new Setup {
+        ApplicationRepoMock.Fetch.thenFail(new RuntimeException("some error"))
 
-       await(underTest.dispatch(applicationId, cmd).value)
-       verify(mockRemoveClientSecretCommandHandler).process(*[ApplicationData], *[RemoveClientSecret])
-       verifyServicesCalledWithEvent(evt)
+        intercept[RuntimeException] {
+          await(underTest.dispatch(applicationId, cmd).value)
+        }
+        verifyZeroInteractions(mockRemoveClientSecretCommandHandler)
+        verifyNoCommonServicesCalled
+      }
 
-     }
+    }
 
-     "bubble up exception when application fetch fails" in new Setup {
-       ApplicationRepoMock.Fetch.thenFail(new RuntimeException("some error"))
+    "AddCollaborator is received" should {
+      val collaborator           = Collaborator("email", Role.DEVELOPER, UserId.random)
+      val adminsToEmail          = Set("email1", "email2")
+      val cmd: AddCollaborator   = AddCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
+      val evt: CollaboratorAdded = CollaboratorAdded(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        FixedClock.now,
+        devHubUser,
+        collaborator.userId,
+        collaborator.emailAddress,
+        collaborator.role,
+        adminsToEmail
+      )
 
-       intercept[RuntimeException] {
-         await(underTest.dispatch(applicationId, cmd).value)
-       }
-       verifyZeroInteractions(mockRemoveClientSecretCommandHandler)
-       verifyNoCommonServicesCalled
-     }
+      "call AddCollaboratorCommand Handler and relevant common services if application exists" in new Setup {
+        ApplicationRepoMock.Fetch.thenReturn(applicationData)
+        primeCommonServiceSuccess()
 
-   }
+        when(mockAddCollaboratorCommandHandler.process(*[ApplicationData], *[AddCollaborator]))
+          .thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
 
-   "AddCollaborator is received" should {
-     val collaborator = Collaborator("email", Role.DEVELOPER, UserId.random)
-     val adminsToEmail = Set("email1", "email2")
-     val cmd: AddCollaborator = AddCollaborator(devHubUser,collaborator,  adminsToEmail, FixedClock.now)
-     val evt: CollaboratorAdded = CollaboratorAdded(UpdateApplicationEvent.Id.random,
-       applicationId,
-       FixedClock.now,
-       devHubUser,
-       collaborator.userId,
-       collaborator.emailAddress,
-       collaborator.role,
-       adminsToEmail)
+      }
 
-     "call AddCollaboratorCommand Handler and relevant common services if application exists" in new Setup {
-       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-       primeCommonServiceSuccess()
+      "bubble up exception when application fetch fails" in new Setup {
+        ApplicationRepoMock.Fetch.thenFail(new RuntimeException("some error"))
 
-       when(mockAddCollaboratorCommandHandler.process(*[ApplicationData], *[AddCollaborator]))
-         .thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
+        intercept[RuntimeException] {
+          await(underTest.dispatch(applicationId, cmd).value)
+        }
+        verifyZeroInteractions(mockAddCollaboratorCommandHandler)
+        verifyNoCommonServicesCalled
+      }
 
-       await(underTest.dispatch(applicationId, cmd).value)
-       verifyServicesCalledWithEvent(evt)
+    }
 
-     }
+    "RemoveCollaborator is received" should {
 
-     "bubble up exception when application fetch fails" in new Setup {
-       ApplicationRepoMock.Fetch.thenFail(new RuntimeException("some error"))
+      val collaborator             = Collaborator("email", Role.DEVELOPER, UserId.random)
+      val adminsToEmail            = Set("email1", "email2")
+      val cmd: RemoveCollaborator  = RemoveCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
+      val evt: CollaboratorRemoved = CollaboratorRemoved(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        FixedClock.now,
+        devHubUser,
+        collaborator.userId,
+        collaborator.emailAddress,
+        collaborator.role,
+        notifyCollaborator = true,
+        adminsToEmail
+      )
 
-       intercept[RuntimeException] {
-         await(underTest.dispatch(applicationId, cmd).value)
-       }
-       verifyZeroInteractions(mockAddCollaboratorCommandHandler)
-       verifyNoCommonServicesCalled
-     }
+      "call RemoveCollaboratorCommand Handler and relevant common services if application exists" in new Setup {
+        ApplicationRepoMock.Fetch.thenReturn(applicationData)
+        primeCommonServiceSuccess()
 
-   }
+        when(mockRemoveCollaboratorCommandHandler.process(*[ApplicationData], *[RemoveCollaborator]))
+          .thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
-   "RemoveCollaborator is received" should {
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
 
-     val collaborator = Collaborator("email", Role.DEVELOPER, UserId.random)
-     val adminsToEmail = Set("email1", "email2")
-     val cmd: RemoveCollaborator = RemoveCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
-     val evt: CollaboratorRemoved = CollaboratorRemoved(UpdateApplicationEvent.Id.random,
-       applicationId,
-       FixedClock.now,
-       devHubUser,
-       collaborator.userId,
-       collaborator.emailAddress,
-       collaborator.role,
-       notifyCollaborator = true,
-       adminsToEmail)
+      }
 
-     "call RemoveCollaboratorCommand Handler and relevant common services if application exists" in new Setup {
-       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-       primeCommonServiceSuccess()
+      "bubble up exception when application fetch fails" in new Setup {
+        ApplicationRepoMock.Fetch.thenFail(new RuntimeException("some error"))
 
-       when(mockRemoveCollaboratorCommandHandler.process(*[ApplicationData], *[RemoveCollaborator]))
-         .thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
+        intercept[RuntimeException] {
+          await(underTest.dispatch(applicationId, cmd).value)
+        }
+        verifyZeroInteractions(mockRemoveCollaboratorCommandHandler)
+        verifyNoCommonServicesCalled
+      }
 
-       await(underTest.dispatch(applicationId, cmd).value)
-       verifyServicesCalledWithEvent(evt)
-
-     }
-
-     "bubble up exception when application fetch fails" in new Setup {
-       ApplicationRepoMock.Fetch.thenFail(new RuntimeException("some error"))
-
-       intercept[RuntimeException] {
-         await(underTest.dispatch(applicationId, cmd).value)
-       }
-       verifyZeroInteractions(mockRemoveCollaboratorCommandHandler)
-       verifyNoCommonServicesCalled
-     }
-
-   }
- }
+    }
+  }
 
 }

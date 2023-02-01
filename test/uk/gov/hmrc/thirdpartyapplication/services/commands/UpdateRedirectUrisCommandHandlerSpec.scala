@@ -24,9 +24,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
-with ApplicationTestData
-
-with CommandActorExamples {
+    with ApplicationTestData
+    with CommandActorExamples {
 
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new UpdateRedirectUrisCommandHandler(ApplicationRepoMock.aMock)
@@ -35,14 +34,14 @@ with CommandActorExamples {
     val applicationData: ApplicationData = anApplicationData(applicationId)
 
     val nonStandardAccessApp = applicationData.copy(access = Privileged())
-    val developer      = applicationData.collaborators.head
-    val developerActor = CollaboratorActor(developer.emailAddress)
+    val developer            = applicationData.collaborators.head
+    val developerActor       = CollaboratorActor(developer.emailAddress)
 
     val oldRedirectUris = List.empty
     val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
 
-    val timestamp          = FixedClock.now
-    val cmd = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, timestamp)
+    val timestamp = FixedClock.now
+    val cmd       = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, timestamp)
 
     def checkSuccessResult(expectedActor: CollaboratorActor)(result: CommandHandler2.CommandSuccess) = {
       inside(result) { case (app, events) =>
@@ -68,7 +67,7 @@ with CommandActorExamples {
 
       val result = await(underTest.process(applicationData, cmd).value).right.value
 
-     checkSuccessResult(developerActor)(result)
+      checkSuccessResult(developerActor)(result)
 
     }
 

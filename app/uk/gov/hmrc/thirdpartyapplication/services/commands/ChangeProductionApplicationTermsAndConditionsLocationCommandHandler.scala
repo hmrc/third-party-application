@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext}
+import scala.concurrent.ExecutionContext
 
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
@@ -29,19 +29,19 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.TermsAndConditionsLocatio
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject()(
-  applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext)
-    extends CommandHandler2 {
+class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject() (
+    applicationRepository: ApplicationRepository
+  )(implicit val ec: ExecutionContext
+  ) extends CommandHandler2 {
 
   import CommandHandler2._
   import UpdateApplicationEvent._
 
   def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
     def validate: ValidatedNec[String, String] = {
-      val newUrl = cmd.newLocation match {
+      val newUrl     = cmd.newLocation match {
         case Url(value) => Some(value)
-        case _ => None
+        case _          => None
       }
       val isJustAUrl = cond(newUrl.isDefined, "Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
 
@@ -65,11 +65,11 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
         )
       )
     }
-    
+
     cmd.newLocation match {
-        case Url(value) => value
-        case _ => false
-      }
+      case Url(value) => value
+      case _          => false
+    }
 
     for {
       newUrl   <- E.fromEither(validate.toEither)
@@ -77,7 +77,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
       events    = asEvents(newUrl)
     } yield (savedApp, events)
   }
-  
+
   def processApp(oldLocation: TermsAndConditionsLocation, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
     def validate: ValidatedNec[String, ApplicationData] = {
       Apply[ValidatedNec[String, *]].map3(
@@ -110,8 +110,8 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
   def process(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
     app.access match {
       case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => processApp(termsAndConditionsLocation, app, cmd)
-      case Standard(_, maybeTermsAndConditionsLocation, _, _, _, None)                                            => processLegacyApp(maybeTermsAndConditionsLocation.getOrElse(""), app, cmd)
-      case _                                                                                            => processApp(TermsAndConditionsLocation.InDesktopSoftware, app, cmd)    // This will not valdate
+      case Standard(_, maybeTermsAndConditionsLocation, _, _, _, None)                                       => processLegacyApp(maybeTermsAndConditionsLocation.getOrElse(""), app, cmd)
+      case _                                                                                                 => processApp(TermsAndConditionsLocation.InDesktopSoftware, app, cmd) // This will not valdate
     }
   }
 }

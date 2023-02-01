@@ -18,21 +18,26 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
-
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByCollaborator, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
 
 @Singleton
 class DeleteApplicationByCollaboratorCommandHandler @Inject() (
-    val authControlConfig: AuthControlConfig
+    val authControlConfig: AuthControlConfig,
+    val applicationRepository: ApplicationRepository,
+    val apiGatewayStore: ApiGatewayStore,
+    val notificationRepository: NotificationRepository,
+    val stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler {
+  ) extends CommandHandler2 {
 
-  import CommandHandler._
+  import CommandHandler2._
   import UpdateApplicationEvent._
 
   def canDeleteApplicationsOrNotProductionApp(app: ApplicationData) =
@@ -69,11 +74,15 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteApplicationByCollaborator): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
+  def process(app: ApplicationData, cmd: DeleteApplicationByCollaborator)(implicit hc: HeaderCarrier): ResultT = {
+    for {
+      valid    <- E.fromEither(validate(app, cmd).toEither)
+      admin     = getRequester(app, cmd.instigator)
+      savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, admin, admin))
+      events    = asEvents(savedApp, cmd)
+      _        <- E.liftF(stateHistoryRepository.applyEvents(events))
+      _        <- E.liftF(apiGatewayStore.applyEvents(events))
+      _        <- E.liftF(notificationRepository.applyEvents(events))
+    } yield (savedApp, events)
   }
 }

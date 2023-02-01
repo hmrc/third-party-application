@@ -22,26 +22,26 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 trait CommandApplicationExamples {
   self: ApplicationTestData with CommandCollaboratorExamples =>
 
-    val applicationId = ApplicationId.random
-    val principalApp = anApplicationData(applicationId).copy(
-      collaborators = Set(
-        developerCollaborator,
-        adminCollaborator
-      )
-    )
-    val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())
+  val applicationId = ApplicationId.random
 
-     
-    val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val privicyPolicyLocation = PrivacyPolicyLocation.InDesktopSoftware
-    val termsAndConditionsLocation = TermsAndConditionsLocation.InDesktopSoftware
-
-    val testImportantSubmissionData = ImportantSubmissionData(
-      Some("organisationUrl.com"),
-      responsibleIndividual,
-      Set(ServerLocation.InUK),
-      termsAndConditionsLocation,
-      privicyPolicyLocation,
-      List.empty
+  val principalApp   = anApplicationData(applicationId).copy(
+    collaborators = Set(
+      developerCollaborator,
+      adminCollaborator
     )
+  )
+  val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())
+
+  val responsibleIndividual      = ResponsibleIndividual.build("bob example", "bob@example.com")
+  val privicyPolicyLocation      = PrivacyPolicyLocation.InDesktopSoftware
+  val termsAndConditionsLocation = TermsAndConditionsLocation.InDesktopSoftware
+
+  val testImportantSubmissionData = ImportantSubmissionData(
+    Some("organisationUrl.com"),
+    responsibleIndividual,
+    Set(ServerLocation.InUK),
+    termsAndConditionsLocation,
+    privicyPolicyLocation,
+    List.empty
+  )
 }

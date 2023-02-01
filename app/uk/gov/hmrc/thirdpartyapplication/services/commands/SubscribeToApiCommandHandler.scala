@@ -23,7 +23,7 @@ import cats._
 import cats.implicits._
 import cats.data._
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
@@ -36,19 +36,19 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.Future
 
-
 @Singleton
 class SubscribeToApiCommandHandler @Inject() (
     subscriptionRepository: SubscriptionRepository,
     strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
-)(implicit val ec: ExecutionContext) extends CommandHandler2 {
+  )(implicit val ec: ExecutionContext
+  ) extends CommandHandler2 {
 
   import CommandHandler2._
   import UpdateApplicationEvent._
 
   private def validate(app: ApplicationData, cmd: SubscribeToApi, rolePassed: Boolean, alreadySubcribed: Boolean): ValidatedNec[String, Unit] = {
-    def isGatekeeperUser = cond(rolePassed, s"Unauthorized to subscribe any API to app ${app.name}")
-    def notAlreadySubscribedTo = cond(! alreadySubcribed, s"Application ${app.name} is already subscribed to API ${cmd.apiIdentifier.asText(" v")}")
+    def isGatekeeperUser       = cond(rolePassed, s"Unauthorized to subscribe any API to app ${app.name}")
+    def notAlreadySubscribedTo = cond(!alreadySubcribed, s"Application ${app.name} is already subscribed to API ${cmd.apiIdentifier.asText(" v")}")
 
     Apply[ValidatedNec[String, *]].map2(
       isGatekeeperUser,
@@ -70,7 +70,7 @@ class SubscribeToApiCommandHandler @Inject() (
   }
 
   private def performRoleCheckAsRequired(app: ApplicationData)(implicit hc: HeaderCarrier) = {
-    if(List(PRIVILEGED, ROPC).contains(app.access.accessType))
+    if (List(PRIVILEGED, ROPC).contains(app.access.accessType))
       strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole().map(_.isEmpty)
     else
       Future.successful(true)
@@ -78,10 +78,10 @@ class SubscribeToApiCommandHandler @Inject() (
 
   def process(app: ApplicationData, cmd: SubscribeToApi)(implicit hc: HeaderCarrier): ResultT = {
     for {
-      rolePassed <- E.liftF(performRoleCheckAsRequired(app))
+      rolePassed       <- E.liftF(performRoleCheckAsRequired(app))
       alreadySubcribed <- E.liftF(subscriptionRepository.isSubscribed(app.id, cmd.apiIdentifier))
-      valid <- E.fromEither(validate(app, cmd, rolePassed, alreadySubcribed).toEither)
-      _ <- E.liftF(subscriptionRepository.add(app.id, cmd.apiIdentifier))
+      valid            <- E.fromEither(validate(app, cmd, rolePassed, alreadySubcribed).toEither)
+      _                <- E.liftF(subscriptionRepository.add(app.id, cmd.apiIdentifier))
     } yield (app, asEvents(app, cmd))
   }
 }

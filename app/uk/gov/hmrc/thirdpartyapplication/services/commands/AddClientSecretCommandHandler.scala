@@ -30,12 +30,12 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
 
-
 @Singleton
 class AddClientSecretCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     config: CredentialConfig
-)(implicit val ec: ExecutionContext) extends CommandHandler2 {
+  )(implicit val ec: ExecutionContext
+  ) extends CommandHandler2 {
 
   import CommandHandler2._
 
