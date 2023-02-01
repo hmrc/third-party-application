@@ -32,34 +32,33 @@ import uk.gov.hmrc.thirdpartyapplication.repository._
 
 @Singleton
 class ApplicationCommandDispatcher @Inject() (
-                                               applicationRepository: ApplicationRepository,
+    applicationRepository: ApplicationRepository,
 
-                                               notificationService: NotificationService,
-                                               apiPlatformEventService: ApiPlatformEventService,
-                                               auditService: AuditService,
+    notificationService: NotificationService,
+    apiPlatformEventService: ApiPlatformEventService,
+    auditService: AuditService,
 
-                                               addClientSecretCommandHandler: AddClientSecretCommandHandler,
-                                               removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
-                                               updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler,
-                                               changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-                                               addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
-                                               removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler
-                                               // changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-                                               // changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-                                               // changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
-                                               // changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
-                                               // changeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler,
-                                               // verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
-                                               // declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
-                                               // declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
-                                               // declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler,
-                                               // deleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler,
-                                               // deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
-                                               // deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
-                                               // deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
+    addClientSecretCommandHandler: AddClientSecretCommandHandler,
+    removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
+    changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
+    addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
+    removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
+    // changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
+    // changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
+    // changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
+    // changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
+    // changeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler,
+    // verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
+    // declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
+    // declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
+    // declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler,
+    // deleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler,
+    // deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
+    // deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
+    // deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
     // subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
     // unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
-
+    updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
     
