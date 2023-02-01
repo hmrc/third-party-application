@@ -128,6 +128,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockChangeProductionApplicationNameCommandHandler,
       mockAddCollaboratorCommandHandler,
       mockRemoveCollaboratorCommandHandler,
+      mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
+      mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
       mockUpdateRedirectUrisCommandHandler
     )
   }
