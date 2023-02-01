@@ -695,7 +695,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     )
 
 
- def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[String]) =
+  def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[String]) =
     updateApplication(applicationId, Updates.set("access.redirectUris", Codecs.toBson(redirectUris)))
 
   private def updateRedirectUrisUpdated(evt: UpdateApplicationEvent.RedirectUrisUpdated) =
@@ -722,10 +722,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def updateLegacyApplicationPrivacyPolicyLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.privacyPolicyUrl", url))
 
-  private def updateApplicationTermsAndConditionsLocation(applicationId: ApplicationId, location: TermsAndConditionsLocation): Future[ApplicationData] =
+  def updateApplicationTermsAndConditionsLocation(applicationId: ApplicationId, location: TermsAndConditionsLocation): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData.termsAndConditionsLocation", Codecs.toBson(location)))
 
-  private def updateLegacyApplicationTermsAndConditionsLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
+  def updateLegacyApplicationTermsAndConditionsLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.termsAndConditionsUrl", url))
 
   private def updateApplicationChangeResponsibleIndividual(event: ResponsibleIndividualChanged): Future[ApplicationData] =
@@ -800,8 +800,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     event match {
       case evt: ProductionAppNameChanged                                                                          => updateApplicationName(evt.applicationId, evt.newAppName)
       case evt: ProductionAppPrivacyPolicyLocationChanged                                                         => noOp(event)
-      case evt: ProductionLegacyAppPrivacyPolicyLocationChanged                                                   => updateLegacyApplicationPrivacyPolicyLocation(evt.applicationId, evt.newUrl)
-      case evt: ProductionAppTermsConditionsLocationChanged                                                       => updateApplicationTermsAndConditionsLocation(evt.applicationId, evt.newLocation)
+      case evt: ProductionLegacyAppPrivacyPolicyLocationChanged                                                   => noOp(event)
+      case evt: ProductionAppTermsConditionsLocationChanged                                                       => noOp(event)
       case evt: ProductionLegacyAppTermsConditionsLocationChanged                                                 => updateLegacyApplicationTermsAndConditionsLocation(evt.applicationId, evt.newUrl)
       case evt: ResponsibleIndividualSet                                                                          => updateApplicationSetResponsibleIndividual(evt)
       case evt: ResponsibleIndividualChanged                                                                      => updateApplicationChangeResponsibleIndividual(evt)

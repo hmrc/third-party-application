@@ -70,56 +70,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
   )
   val instigator     = applicationData.collaborators.head.userId
 
-  "update with ChangeProductionApplicationTermsAndConditionsLocation" should {
-    val oldLocation                   = TermsAndConditionsLocation.InDesktopSoftware
-    val newLocation                   = TermsAndConditionsLocation.Url("http://example.com")
-    val changeTermsConditionsLocation = ChangeProductionApplicationTermsAndConditionsLocation(instigator, timestamp, newLocation)
-    val event                         = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, devHubUser, oldLocation, newLocation)
-
-    def setTermsAndConditionsLocation(app: ApplicationData, location: TermsAndConditionsLocation) = {
-      app.access match {
-        case Standard(_, _, _, _, _, Some(importantSubmissionData)) =>
-          app.copy(access = app.access.asInstanceOf[Standard].copy(importantSubmissionData = Some(importantSubmissionData.copy(termsAndConditionsLocation = location))))
-        case _                                                      => fail("Unexpected access type: " + app.access)
-      }
-    }
-
-    "return the updated application if the application exists" in new Setup {
-      val appBefore = setTermsAndConditionsLocation(applicationData, oldLocation)
-      val appAfter  = setTermsAndConditionsLocation(applicationData, newLocation)
-      ApplicationRepoMock.Fetch.thenReturn(appBefore)
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      ApiPlatformEventServiceMock.ApplyEvents.succeeds
-      NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      SubmissionsServiceMock.ApplyEvents.succeeds()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      NotificationRepositoryMock.ApplyEvents.succeeds()
-      StateHistoryRepoMock.ApplyEvents.succeeds()
-      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
-      ApiGatewayStoreMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
-      AuditServiceMock.ApplyEvents.succeeds
-
-      when(mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationTermsAndConditionsLocation])).thenReturn(
-        Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
-      )
-
-      val result = await(underTest.update(applicationId, changeTermsConditionsLocation).value)
-
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
-      result shouldBe Right(appAfter)
-      ApiPlatformEventServiceMock.ApplyEvents.verifyCalledWith(NonEmptyList.one(event))
-    }
-
-    "return the error if the application does not exist" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
-      val result = await(underTest.update(applicationId, changeTermsConditionsLocation).value)
-
-      result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
-      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
-    }
-  }
-
   "update with ChangeResponsibleIndividualToSelf" should {
     val changeResponsibleIndividual = ChangeResponsibleIndividualToSelf(UserId.random, FixedClock.now, "name", "email")
 

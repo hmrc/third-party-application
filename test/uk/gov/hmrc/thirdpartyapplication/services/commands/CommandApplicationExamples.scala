@@ -33,13 +33,14 @@ trait CommandApplicationExamples {
 
      
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val privicyPolicyLocation           = PrivacyPolicyLocation.InDesktopSoftware
+    val privicyPolicyLocation = PrivacyPolicyLocation.InDesktopSoftware
+    val termsAndConditionsLocation = TermsAndConditionsLocation.InDesktopSoftware
 
     val testImportantSubmissionData = ImportantSubmissionData(
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),
-      TermsAndConditionsLocation.InDesktopSoftware,
+      termsAndConditionsLocation,
       privicyPolicyLocation,
       List.empty
     )

@@ -48,11 +48,6 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
 
     val response = mock[HttpResponse]
 
-    val mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler =
-      mock[ChangeProductionApplicationPrivacyPolicyLocationCommandHandler]
-
-    val mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler =
-      mock[ChangeProductionApplicationTermsAndConditionsLocationCommandHandler]
     val mockChangeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler                                         = mock[ChangeResponsibleIndividualToSelfCommandHandler]
     val mockChangeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler                                       = mock[ChangeResponsibleIndividualToOtherCommandHandler]
     val mockVerifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler                                                     = mock[VerifyResponsibleIndividualCommandHandler]
@@ -82,8 +77,6 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
       ThirdPartyDelegatedAuthorityServiceMock.aMock,
       ApiGatewayStoreMock.aMock,
       AuditServiceMock.aMock,
-      mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-      mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
       mockChangeResponsibleIndividualToSelfCommandHandler,
       mockChangeResponsibleIndividualToOtherCommandHandler,
       mockVerifyResponsibleIndividualCommandHandler,
