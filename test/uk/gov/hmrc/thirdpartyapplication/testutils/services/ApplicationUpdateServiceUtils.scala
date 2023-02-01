@@ -48,10 +48,6 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
 
     val response = mock[HttpResponse]
 
-    val mockAddClientSecretCommandHandler: AddClientSecretCommandHandler                                 = mock[AddClientSecretCommandHandler]
-    val mockRemoveClientSecretCommandHandler: RemoveClientSecretCommandHandler                           = mock[RemoveClientSecretCommandHandler]
-    val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
-
     val mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler =
       mock[ChangeProductionApplicationPrivacyPolicyLocationCommandHandler]
 
@@ -73,7 +69,6 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
     val mockRemoveCollaboratorCommandHandler: RemoveCollaboratorCommandHandler                                             = mock[RemoveCollaboratorCommandHandler]
     val mockSubscribeToApiCommandHandler: SubscribeToApiCommandHandler                                                     = mock[SubscribeToApiCommandHandler]
     val mockUnsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler                                             = mock[UnsubscribeFromApiCommandHandler]
-    val mockUpdateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler                                             = mock[UpdateRedirectUrisCommandHandler]
 
     val underTest = new ApplicationCommandService(
       ApplicationRepoMock.aMock,
@@ -87,9 +82,6 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
       ThirdPartyDelegatedAuthorityServiceMock.aMock,
       ApiGatewayStoreMock.aMock,
       AuditServiceMock.aMock,
-      mockAddClientSecretCommandHandler,
-      mockRemoveClientSecretCommandHandler,
-      mockChangeProductionApplicationNameCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
       mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
       mockChangeResponsibleIndividualToSelfCommandHandler,
@@ -102,11 +94,9 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
       mockDeleteApplicationByGatekeeperCommandHandler,
       mockDeleteUnusedApplicationCommandHandler,
       mockDeleteProductionCredentialsApplicationCommandHandler,
-      mockAddCollaboratorCommandHandler,
       mockRemoveCollaboratorCommandHandler,
       mockSubscribeToApiCommandHandler,
-      mockUnsubscribeFromApiCommandHandler,
-      mockUpdateRedirectUrisCommandHandler
+      mockUnsubscribeFromApiCommandHandler
     )
   }
 

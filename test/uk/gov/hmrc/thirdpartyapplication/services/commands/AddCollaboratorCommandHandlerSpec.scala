@@ -26,12 +26,11 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 class AddCollaboratorCommandHandlerSpec
     extends AsyncHmrcSpec
     with ApplicationTestData
-    with ApplicationRepositoryMockModule
     with CommandActorExamples
     with CommandCollaboratorExamples
     with CommandApplicationExamples {
 
-  trait Setup {
+  trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new AddCollaboratorCommandHandler(ApplicationRepoMock.aMock)
 
     val timestamp         = FixedClock.now

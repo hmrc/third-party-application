@@ -45,9 +45,6 @@ class ApplicationCommandService @Inject() (
     thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
     apiGatewayStore: ApiGatewayStore,
     auditService: AuditService,
-    addClientSecretCommandHandler: AddClientSecretCommandHandler,
-    removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
-    changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
     changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
     changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
     changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
@@ -60,11 +57,9 @@ class ApplicationCommandService @Inject() (
     deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
     deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
     deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
-    addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
     removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
     subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
     unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
-    updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
   import cats.implicits._
@@ -93,9 +88,9 @@ class ApplicationCommandService @Inject() (
   // scalastyle:off cyclomatic.complexity
   private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): CommandHandler.Result = {
     command match {
-      case cmd: AddClientSecret                                       => throw new IllegalAccessError("Should not call here 1")
-      case cmd: RemoveClientSecret                                    => throw new IllegalAccessError("Should not call here 2") // removeClientSecretCommandHandler.process(app, cmd)
-      case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
+      case cmd: AddClientSecret                                       => throw new IllegalAccessError("Should not call here")
+      case cmd: RemoveClientSecret                                    => throw new IllegalAccessError("Should not call here") // removeClientSecretCommandHandler.process(app, cmd)
+      case cmd: ChangeProductionApplicationName                       => throw new IllegalAccessError("Should not call here") // changeProductionApplicationNameCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeResponsibleIndividualToSelf                     => changeResponsibleIndividualToSelfCommandHandler.process(app, cmd)

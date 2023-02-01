@@ -707,7 +707,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       )
     )
 
-  private def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
+  def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
     updateApplication(
       applicationId,
       Updates.combine(

@@ -70,67 +70,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
   )
   val instigator     = applicationData.collaborators.head.userId
 
-  "update with ChangeProductionApplicationName" should {
-    val newName    = "robs new app"
-    val changeName = ChangeProductionApplicationName(instigator, timestamp, gatekeeperUser, newName)
-    val event      = ProductionAppNameChanged(
-      UpdateApplicationEvent.Id.random,
-      applicationId,
-      FixedClock.now,
-      UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser),
-      applicationData.name,
-      newName,
-      adminEmail
-    )
-
-    "return the updated application if the application exists" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      val appAfter = applicationData.copy(name = newName)
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      NotificationRepositoryMock.ApplyEvents.succeeds()
-      SubmissionsServiceMock.ApplyEvents.succeeds()
-      StateHistoryRepoMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
-      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
-      ApiGatewayStoreMock.ApplyEvents.succeeds()
-      ApiPlatformEventServiceMock.ApplyEvents.succeeds
-      AuditServiceMock.ApplyEvents.succeeds
-
-      when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
-        Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
-      )
-      NotificationServiceMock.SendNotifications.thenReturnSuccess()
-
-      val result = await(underTest.update(applicationId, changeName).value)
-
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
-      result shouldBe Right(appAfter)
-      ApiPlatformEventServiceMock.ApplyEvents.verifyCalledWith(NonEmptyList.one(event))
-    }
-
-    "return the error if the application does not exist" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
-      val result = await(underTest.update(applicationId, changeName).value)
-
-      result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
-      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
-    }
-
-    "return error for unknown update types" in new Setup {
-      val app = anApplicationData(applicationId)
-      ApplicationRepoMock.Fetch.thenReturn(app)
-
-      case class UnknownApplicationCommand(timestamp: LocalDateTime, instigator: UserId) extends ApplicationCommand
-      val unknownUpdate = UnknownApplicationCommand(timestamp, instigator)
-
-      val result = await(underTest.update(applicationId, unknownUpdate).value)
-
-      result shouldBe Left(NonEmptyChain.one(s"Unknown ApplicationCommand type $unknownUpdate"))
-      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
-    }
-  }
-
   "update with ChangeProductionApplicationPrivacyPolicyLocation" should {
     val oldLocation                 = PrivacyPolicyLocation.InDesktopSoftware
     val newLocation                 = PrivacyPolicyLocation.Url("http://example.com")

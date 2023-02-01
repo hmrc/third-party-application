@@ -40,8 +40,8 @@ class ApplicationCommandDispatcher @Inject() (
 
     addClientSecretCommandHandler: AddClientSecretCommandHandler,
     removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
+    changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
     updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler
-    // changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
     // changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
     // changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
     // changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
@@ -84,7 +84,7 @@ class ApplicationCommandDispatcher @Inject() (
     command match {
       case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
       case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)
-      // case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
+      case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
       // case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       // case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
       // case cmd: ChangeResponsibleIndividualToSelf                     => changeResponsibleIndividualToSelfCommandHandler.process(app, cmd)

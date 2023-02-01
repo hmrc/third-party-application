@@ -404,6 +404,15 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturn(apps: ApplicationData*) =
         when(aMock.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(*, *, *)).thenReturn(successful(apps.toList))
     }
+
+    object UpdateApplicationName {
+      def succeeds() =
+        when(aMock.updateApplicationName(*[ApplicationId], *)).thenReturn(successful(mock[ApplicationData]))
+
+      def thenReturn(app: ApplicationData) =
+        when(aMock.updateApplicationName(*[ApplicationId], *)).thenReturn(successful(app))
+
+    }
   }
 
   object ApplicationRepoMock extends BaseApplicationRepoMock {

@@ -27,12 +27,11 @@ import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
 class AddClientSecretCommandHandlerSpec
     extends AsyncHmrcSpec
     with ApplicationTestData
-    with ApplicationRepositoryMockModule
     with CommandActorExamples
     with CommandCollaboratorExamples
     with CommandApplicationExamples {
 
-  class Setup(limit: Int = 3) {
+  class Setup(limit: Int = 3) extends ApplicationRepositoryMockModule {
     val config = CredentialConfig(limit)
     val underTest = new AddClientSecretCommandHandler(ApplicationRepoMock.aMock, config)
 
