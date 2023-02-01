@@ -32,30 +32,31 @@ import uk.gov.hmrc.thirdpartyapplication.repository._
 
 @Singleton
 class ApplicationCommandDispatcher @Inject() (
-    applicationRepository: ApplicationRepository,
+                                               applicationRepository: ApplicationRepository,
 
-    notificationService: NotificationService,
-    apiPlatformEventService: ApiPlatformEventService,
-    auditService: AuditService,
+                                               notificationService: NotificationService,
+                                               apiPlatformEventService: ApiPlatformEventService,
+                                               auditService: AuditService,
 
-    addClientSecretCommandHandler: AddClientSecretCommandHandler,
-    removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
-    changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-    updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler
-    // changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-    // changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
-    // changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
-    // changeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler,
-    // verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
-    // declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
-    // declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
-    // declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler,
-    // deleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler,
-    // deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
-    // deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
-    // deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
-    // addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
-    // removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
+                                               addClientSecretCommandHandler: AddClientSecretCommandHandler,
+                                               removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
+                                               updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler,
+                                               changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
+                                               addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
+                                               removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler
+                                               // changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
+                                               // changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
+                                               // changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
+                                               // changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
+                                               // changeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler,
+                                               // verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
+                                               // declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
+                                               // declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
+                                               // declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler,
+                                               // deleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler,
+                                               // deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
+                                               // deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
+                                               // deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
     // subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
     // unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
 
@@ -97,8 +98,8 @@ class ApplicationCommandDispatcher @Inject() (
       // case cmd: DeleteApplicationByGatekeeper                         => deleteApplicationByGatekeeperCommandHandler.process(app, cmd)
       // case cmd: DeleteUnusedApplication                               => deleteUnusedApplicationCommandHandler.process(app, cmd)
       // case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCommandHandler.process(app, cmd)
-      // case cmd: AddCollaborator                                       => addCollaboratorCommandHandler.process(app, cmd)
-      // case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
+      case cmd: AddCollaborator                                       => addCollaboratorCommandHandler.process(app, cmd)
+      case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
       // case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
       // case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
       case cmd: UpdateRedirectUris                                    => updateRedirectUrisCommandHandler.process(app, cmd)

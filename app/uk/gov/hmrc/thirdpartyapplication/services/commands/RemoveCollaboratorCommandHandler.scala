@@ -19,18 +19,19 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
-
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, RemoveCollaborator, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.ResultT
 
 @Singleton
-class RemoveCollaboratorCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
+class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: ApplicationRepository)
+                                                 (implicit val ec: ExecutionContext) extends CommandHandler2 {
 
-  import CommandHandler._
+  import CommandHandler2._
 
   private def validate(app: ApplicationData, cmd: RemoveCollaborator) = {
 
@@ -76,12 +77,19 @@ class RemoveCollaboratorCommandHandler @Inject() ()(implicit val ec: ExecutionCo
     )
   }
 
-  def process(app: ApplicationData, cmd: RemoveCollaborator): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
-  }
+//  def process(app: ApplicationData, cmd: RemoveCollaborator): CommandHandler.Result = {
+//    Future.successful {
+//      validate(app, cmd) map { _ =>
+//        asEvents(app, cmd)
+//      }
+//    }
+//  }
 
+  def process(app: ApplicationData, cmd: RemoveCollaborator): ResultT = {
+    for {
+      valid <- E.fromEither(validate(app, cmd).toEither)
+      savedApp <- E.liftF(applicationRepository.removeCollaborator(app.id, cmd.collaborator.userId))
+      events = asEvents(savedApp, cmd)
+    } yield (savedApp, events)
+  }
 }

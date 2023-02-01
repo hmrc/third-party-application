@@ -366,6 +366,11 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.addCollaborator(*[ApplicationId], *[Collaborator])).thenReturn(successful(applicationData))
     }
 
+    object RemoveCollaborator {
+      def succeeds(applicationData: ApplicationData) =
+        when(aMock.removeCollaborator(*[ApplicationId], *[UserId])).thenReturn(successful(applicationData))
+    }
+
     object AddApplicationTermsOfUseAcceptance {
 
       def thenReturn(applicationData: ApplicationData) =

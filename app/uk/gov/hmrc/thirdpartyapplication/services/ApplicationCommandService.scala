@@ -104,10 +104,10 @@ class ApplicationCommandService @Inject() (
       case cmd: DeleteUnusedApplication                               => deleteUnusedApplicationCommandHandler.process(app, cmd)
       case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCommandHandler.process(app, cmd)
       case cmd: AddCollaborator                                       => throw new IllegalAccessError("Should not call here 3") // addCollaboratorCommandHandler.process(app, cmd)
-      case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
+      case cmd: RemoveCollaborator                                    => throw new IllegalAccessError("Should not call here 4") // add
       case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
       case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
-      case cmd: UpdateRedirectUris                                    => throw new IllegalAccessError("Should not call here 4")
+      case cmd: UpdateRedirectUris                                    => throw new IllegalAccessError("Should not call here 5")
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationCommand type $command"))
     }
   }

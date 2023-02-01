@@ -2877,6 +2877,21 @@ class ApplicationRepositoryISpec
       appWithNewCollaborator.collaborators must contain only (existingCollaborators.toList ++ List(collaborator): _*)
     }
 
+  "handle removeCollaborator correctly" in {
+    val applicationId = ApplicationId.random
+
+    val developerCollaborator      = Collaborator("email", Role.DEVELOPER, idOf("email"))
+    val adminCollaborator          = Collaborator("email2", Role.ADMINISTRATOR, idOf("email2"))
+    val app = anApplicationData(applicationId,
+      collaborators = Set(developerCollaborator, adminCollaborator))
+    await(applicationRepository.save(app))
+
+    val existingCollaborators = app.collaborators
+    val userIdToDelete = existingCollaborators.head.userId
+
+    val appWithOutDeletedCollaborator = await(applicationRepository.removeCollaborator(applicationId, userIdToDelete))
+    appWithOutDeletedCollaborator.collaborators must contain only (existingCollaborators.toList.filterNot(_.userId == userIdToDelete): _*)
+  }
   "applyEvents" should {
     val gkUserName = "Mr Gate Keeperr"
     val gkUser     = GatekeeperUserActor(gkUserName)
@@ -2901,33 +2916,6 @@ class ApplicationRepositoryISpec
       appWithUpdatedName.normalisedName mustBe newestName.toLowerCase
     }
 
-
-    "handle CollaboratorRemoved event correctly" in {
-      val applicationId = ApplicationId.random
-
-      val app           = anApplicationData(applicationId)
-      val collaborator  = Collaborator("email", Role.DEVELOPER, idOf("email"))
-      val adminsToEmail = Set("email1", "email2", "email3")
-
-      val event = CollaboratorRemoved(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = FixedClock.now,
-        actor = CollaboratorActor(adminEmail),
-        collaboratorId = collaborator.userId,
-        collaboratorRole = collaborator.role,
-        collaboratorEmail = collaborator.emailAddress,
-        notifyCollaborator = true,
-        verifiedAdminsToEmail = adminsToEmail
-      )
-
-      await(applicationRepository.save(app.copy(collaborators = app.collaborators ++ Set(collaborator))))
-
-      val appWithNewCollaborator =
-        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithNewCollaborator.collaborators must contain only (app.collaborators.toList: _*)
-
-    }
 
     "handle NameChanged event correctly" in {
       val applicationId = ApplicationId.random
