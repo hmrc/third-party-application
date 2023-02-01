@@ -716,10 +716,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       )
     )
 
-  private def updateApplicationPrivacyPolicyLocation(applicationId: ApplicationId, location: PrivacyPolicyLocation): Future[ApplicationData] =
+  def updateApplicationPrivacyPolicyLocation(applicationId: ApplicationId, location: PrivacyPolicyLocation): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData.privacyPolicyLocation", Codecs.toBson(location)))
 
-  private def updateLegacyApplicationPrivacyPolicyLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
+  def updateLegacyApplicationPrivacyPolicyLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.privacyPolicyUrl", url))
 
   private def updateApplicationTermsAndConditionsLocation(applicationId: ApplicationId, location: TermsAndConditionsLocation): Future[ApplicationData] =
@@ -799,7 +799,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
     event match {
       case evt: ProductionAppNameChanged                                                                          => updateApplicationName(evt.applicationId, evt.newAppName)
-      case evt: ProductionAppPrivacyPolicyLocationChanged                                                         => updateApplicationPrivacyPolicyLocation(evt.applicationId, evt.newLocation)
+      case evt: ProductionAppPrivacyPolicyLocationChanged                                                         => noOp(event)
       case evt: ProductionLegacyAppPrivacyPolicyLocationChanged                                                   => updateLegacyApplicationPrivacyPolicyLocation(evt.applicationId, evt.newUrl)
       case evt: ProductionAppTermsConditionsLocationChanged                                                       => updateApplicationTermsAndConditionsLocation(evt.applicationId, evt.newLocation)
       case evt: ProductionLegacyAppTermsConditionsLocationChanged                                                 => updateLegacyApplicationTermsAndConditionsLocation(evt.applicationId, evt.newUrl)

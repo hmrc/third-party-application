@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext}
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor

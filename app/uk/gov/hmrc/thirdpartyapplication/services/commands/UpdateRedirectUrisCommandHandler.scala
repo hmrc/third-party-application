@@ -21,7 +21,7 @@ import cats.implicits._
 import cats.data._
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{UpdateApplicationEvent, UpdateRedirectUris}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository

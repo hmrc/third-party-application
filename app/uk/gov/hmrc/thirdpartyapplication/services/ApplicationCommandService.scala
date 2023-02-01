@@ -91,7 +91,7 @@ class ApplicationCommandService @Inject() (
       case cmd: AddClientSecret                                       => throw new IllegalAccessError("Should not call here")
       case cmd: RemoveClientSecret                                    => throw new IllegalAccessError("Should not call here") // removeClientSecretCommandHandler.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => throw new IllegalAccessError("Should not call here") // changeProductionApplicationNameCmdHdlr.process(app, cmd)
-      case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
+      case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => throw new IllegalAccessError("Should not call here") // changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeResponsibleIndividualToSelf                     => changeResponsibleIndividualToSelfCommandHandler.process(app, cmd)
       case cmd: ChangeResponsibleIndividualToOther                    => changeResponsibleIndividualToOtherCommandHandler.process(app, cmd)

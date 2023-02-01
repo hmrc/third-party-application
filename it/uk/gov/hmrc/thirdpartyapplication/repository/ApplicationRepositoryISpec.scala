@@ -244,10 +244,10 @@ class ApplicationRepositoryISpec
 
       updatedApplication.access match {
         case access: Standard => access.redirectUris  mustBe updateRedirectUris
+        case _ => fail("Wrong access - expecting standard")
       }
     }
   }
-
 
   "recordApplicationUsage" should {
 
@@ -2892,6 +2892,54 @@ class ApplicationRepositoryISpec
     val appWithOutDeletedCollaborator = await(applicationRepository.removeCollaborator(applicationId, userIdToDelete))
     appWithOutDeletedCollaborator.collaborators must contain only (existingCollaborators.toList.filterNot(_.userId == userIdToDelete): _*)
   }
+
+
+  "handle ProductionAppPrivacyPolicyLocationChanged correctly" in {
+    val applicationId = ApplicationId.random
+    val oldLocation   = PrivacyPolicyLocation.InDesktopSoftware
+    val newLocation   = PrivacyPolicyLocation.Url("http://example.com")
+    val access        = Standard(
+      List.empty,
+      None,
+      None,
+      Set.empty,
+      None,
+      Some(
+        ImportantSubmissionData(
+          None,
+          ResponsibleIndividual.build("bob example", "bob@example.com"),
+          Set.empty,
+          TermsAndConditionsLocation.InDesktopSoftware,
+          oldLocation,
+          List.empty
+        )
+      )
+    )
+    val app           = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateApplicationPrivacyPolicyLocation(applicationId, newLocation))
+    appWithUpdatedPrivacyPolicyLocation.access match {
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
+      case _                                                                                            => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+    }
+  }
+
+  "handle ProductionLegacyAppPrivacyPolicyLocationChanged correctly" in {
+    val applicationId = ApplicationId.random
+    val oldUrl        = "http://example.com/old"
+    val newUrl        = "http://example.com/new"
+    val access        = Standard(List.empty, None, Some(oldUrl), Set.empty, None, None)
+    val app           = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateLegacyApplicationPrivacyPolicyLocation(applicationId, newUrl))
+    appWithUpdatedPrivacyPolicyLocation.access match {
+      case Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
+      case _                                                  => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+    }
+  }
+
   "applyEvents" should {
     val gkUserName = "Mr Gate Keeperr"
     val gkUser     = GatekeeperUserActor(gkUserName)
@@ -2929,54 +2977,6 @@ class ApplicationRepositoryISpec
         await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedName.name mustBe newName
       appWithUpdatedName.normalisedName mustBe newName.toLowerCase
-    }
-
-    "handle ProductionAppPrivacyPolicyLocationChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldLocation   = PrivacyPolicyLocation.InDesktopSoftware
-      val newLocation   = PrivacyPolicyLocation.Url("http://example.com")
-      val access        = Standard(
-        List.empty,
-        None,
-        None,
-        Set.empty,
-        None,
-        Some(
-          ImportantSubmissionData(
-            None,
-            ResponsibleIndividual.build("bob example", "bob@example.com"),
-            Set.empty,
-            TermsAndConditionsLocation.InDesktopSoftware,
-            oldLocation,
-            List.empty
-          )
-        )
-      )
-      val app           = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val event                               = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, oldLocation, newLocation)
-      val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedPrivacyPolicyLocation.access match {
-        case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
-        case _                                                                                            => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
-      }
-    }
-
-    "handle ProductionLegacyAppPrivacyPolicyLocationChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldUrl        = "http://example.com/old"
-      val newUrl        = "http://example.com/new"
-      val access        = Standard(List.empty, None, Some(oldUrl), Set.empty, None, None)
-      val app           = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val event                               = ProductionLegacyAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, oldUrl, newUrl)
-      val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedPrivacyPolicyLocation.access match {
-        case Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
-        case _                                                  => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
-      }
     }
 
     "handle ProductionAppTermsConditionsLocationChanged event correctly" in {

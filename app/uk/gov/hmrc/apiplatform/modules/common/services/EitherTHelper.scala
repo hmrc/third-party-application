@@ -25,6 +25,7 @@ trait EitherTHelper[E] {
   implicit val ec: ExecutionContext
 
   def pure[A](in: A)                                                            = EitherT.pure[Future, E](in)
+  def leftT[R](err: E)                                                          = EitherT.leftT[Future, R](err)
   def liftF[A](in: Future[A]): EitherT[Future, E, A]                            = EitherT.liftF(in)
   def fromOption[A](in: Option[A], error: => E): EitherT[Future, E, A]          = EitherT.fromOption(in, error)
   def fromOptionF[A](in: Future[Option[A]], error: => E): EitherT[Future, E, A] = EitherT.fromOptionF(in, error)

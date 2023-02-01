@@ -17,9 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext}
 
-import cats.data.{EitherT, NonEmptyChain}
+import cats.data.{NonEmptyChain}
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -43,8 +43,7 @@ class ApplicationCommandDispatcher @Inject() (
     changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
     addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
     removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
-    // changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-    // changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
+    changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
     // changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
     // changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
     // changeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler,
@@ -85,7 +84,7 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
       case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
-      // case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
+      case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       // case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
       // case cmd: ChangeResponsibleIndividualToSelf                     => changeResponsibleIndividualToSelfCommandHandler.process(app, cmd)
       // case cmd: ChangeResponsibleIndividualToOther                    => changeResponsibleIndividualToOtherCommandHandler.process(app, cmd)

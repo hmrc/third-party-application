@@ -32,15 +32,6 @@ class ChangeProductionApplicationNameCommandHandlerSpec
     with CommandCollaboratorExamples
     with CommandApplicationExamples {
 
-  val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-  val testImportantSubmissionData = ImportantSubmissionData(
-    Some("organisationUrl.com"),
-    responsibleIndividual,
-    Set(ServerLocation.InUK),
-    TermsAndConditionsLocation.InDesktopSoftware,
-    PrivacyPolicyLocation.InDesktopSoftware,
-    List.empty
-  )
   val app = principalApp.copy(access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftNamingServiceMockModule {
