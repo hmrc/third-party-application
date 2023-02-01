@@ -67,8 +67,8 @@ class ApplicationCommandDispatcher @Inject() (
   
   val E = EitherTHelper.make[CommandFailures]
 
-  def dispatch(applicationId: ApplicationId, command: ApplicationCommand)(implicit hc: HeaderCarrier): Result = {
-    (for {
+  def dispatch(applicationId: ApplicationId, command: ApplicationCommand)(implicit hc: HeaderCarrier): ResultT = {
+    for {
       app           <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
       updateResults <- processUpdate(app, command)
       (savedApp, events) = updateResults
@@ -76,8 +76,7 @@ class ApplicationCommandDispatcher @Inject() (
       _ <- E.liftF(apiPlatformEventService.applyEvents(events))
       _ <- E.liftF(auditService.applyEvents(savedApp, events))
       _ <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt }))
-    } yield (savedApp,events))
-    .value
+    } yield (savedApp,events)
   }
 
   // scalastyle:off cyclomatic.complexity

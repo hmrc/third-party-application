@@ -62,7 +62,20 @@ class ApplicationServiceSpec
     with UpliftRequestSamples
     with FixedClock {
 
-  trait Setup extends AuditServiceMockModule
+  var actorSystem:Option[ActorSystem] = None
+
+  override protected def beforeAll(): Unit = {
+    actorSystem = Some(ActorSystem("ApplicationServiceSpec"))
+  }
+
+  override protected def afterAll(): Unit = {
+    actorSystem.map(as =>
+      await(as.terminate())
+    )
+  }
+
+  trait Setup 
+      extends AuditServiceMockModule
       with ApplicationCommandServiceMockModule
       with ApiGatewayStoreMockModule
       with ApiSubscriptionFieldsConnectorMockModule
@@ -71,9 +84,8 @@ class ApplicationServiceSpec
       with SubmissionsServiceMockModule
       with UpliftNamingServiceMockModule
       with StateHistoryRepositoryMockModule
-      with SubscriptionRepositoryMockModule {
-
-    val actorSystem: ActorSystem = ActorSystem("System")
+      with SubscriptionRepositoryMockModule
+      with ApplicationCommandDispatcherMockModule {
 
     val applicationId: ApplicationId     = ApplicationId.random
     val applicationData: ApplicationData = anApplicationData(applicationId)
@@ -108,7 +120,7 @@ class ApplicationServiceSpec
       mockApiPlatformEventService,
       mockEmailConnector,
       mockTotpConnector,
-      actorSystem,
+      actorSystem.get,
       mockLockKeeper,
       ApiGatewayStoreMock.aMock,
       applicationResponseCreator,
@@ -119,6 +131,7 @@ class ApplicationServiceSpec
       SubmissionsServiceMock.aMock,
       UpliftNamingServiceMock.aMock,
       ApplicationCommandServiceMock.aMock,
+      ApplicationCommandDispatcherMock.aMock,
       clock
     )
 
@@ -560,18 +573,18 @@ class ApplicationServiceSpec
     "send an audit event for each type of change" in new SetupForAuditTests {
       val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
       ApplicationCommandServiceMock.Update.thenReturnSuccess(updatedApplication)
-
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccessOn(updateRedirectUris)(updatedApplication)
+      
       await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
 
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
-      ApplicationCommandServiceMock.Update.verifyCalledWith(updatedApplication.id, updateRedirectUris)
     }
 
     "throw BadRequestException when UpdateRedirectUris command fails" in new SetupForAuditTests {
-      val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
-      ApplicationCommandServiceMock.Update.thenReturnError("Error message")
+      val (updatedApplication, _) = setupAuditTests(Standard())
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnFailed("Error message")
 
       intercept[BadRequestException] {
         await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
@@ -580,7 +593,6 @@ class ApplicationServiceSpec
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
-      ApplicationCommandServiceMock.Update.verifyCalledWith(updatedApplication.id, updateRedirectUris)
     }
 
     "not update RedirectUris or audit TermsAndConditionsUrl or PrivacyPolicyUrl for a privileged app" in new SetupForAuditTests {

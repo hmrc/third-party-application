@@ -93,8 +93,8 @@ class ApplicationCommandService @Inject() (
   // scalastyle:off cyclomatic.complexity
   private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): CommandHandler.Result = {
     command match {
-      case cmd: AddClientSecret                                       => throw new IllegalAccessError("Should not call here")
-      case cmd: RemoveClientSecret                                    => throw new IllegalAccessError("Should not call here") // removeClientSecretCommandHandler.process(app, cmd)
+      case cmd: AddClientSecret                                       => throw new IllegalAccessError("Should not call here 1")
+      case cmd: RemoveClientSecret                                    => throw new IllegalAccessError("Should not call here 2") // removeClientSecretCommandHandler.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
@@ -108,11 +108,11 @@ class ApplicationCommandService @Inject() (
       case cmd: DeleteApplicationByGatekeeper                         => deleteApplicationByGatekeeperCommandHandler.process(app, cmd)
       case cmd: DeleteUnusedApplication                               => deleteUnusedApplicationCommandHandler.process(app, cmd)
       case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCommandHandler.process(app, cmd)
-      case cmd: AddCollaborator                                       => throw new IllegalAccessError("Should not call here") // addCollaboratorCommandHandler.process(app, cmd)
+      case cmd: AddCollaborator                                       => throw new IllegalAccessError("Should not call here 3") // addCollaboratorCommandHandler.process(app, cmd)
       case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
       case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
       case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
-      case cmd: UpdateRedirectUris                                    => throw new IllegalAccessError("Should not call here")
+      case cmd: UpdateRedirectUris                                    => throw new IllegalAccessError("Should not call here 4")
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationCommand type $command"))
     }
   }
