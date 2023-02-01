@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Eithe
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 
@@ -37,7 +37,6 @@ class ApplicationCommandService @Inject() (
     applicationRepository: ApplicationRepository,
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     stateHistoryRepository: StateHistoryRepository,
-    subscriptionRepository: SubscriptionRepository,
     notificationRepository: NotificationRepository,
     notificationService: NotificationService,
     apiPlatformEventService: ApiPlatformEventService,
@@ -56,10 +55,10 @@ class ApplicationCommandService @Inject() (
     deleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler,
     deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
     deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
-    deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
-    removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
-    subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
-    unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
+    deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler
+    // removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
+    // subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
+    // unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
   import cats.implicits._
@@ -72,7 +71,6 @@ class ApplicationCommandService @Inject() (
 
       savedApp <- E.liftF(applicationRepository.applyEvents(events))
       _        <- E.liftF(stateHistoryRepository.applyEvents(events))
-      _        <- E.liftF(subscriptionRepository.applyEvents(events.collect { case evt: UpdateApplicationEvent with UpdatesSubscription => evt }))
       _        <- E.liftF(submissionService.applyEvents(events))
       _        <- E.liftF(thirdPartyDelegatedAuthorityService.applyEvents(events))
       _        <- E.liftF(apiGatewayStore.applyEvents(events))
@@ -105,8 +103,8 @@ class ApplicationCommandService @Inject() (
       case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCommandHandler.process(app, cmd)
       case cmd: AddCollaborator                                       => throw new IllegalAccessError("Should not call here 3") // addCollaboratorCommandHandler.process(app, cmd)
       case cmd: RemoveCollaborator                                    => throw new IllegalAccessError("Should not call here 4") // add
-      case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
-      case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
+      case cmd: SubscribeToApi                                        => throw new IllegalAccessError("Should not call here 7")
+      case cmd: UnsubscribeFromApi                                    => throw new IllegalAccessError("Should not call here 6")
       case cmd: UpdateRedirectUris                                    => throw new IllegalAccessError("Should not call here 5")
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationCommand type $command"))
     }

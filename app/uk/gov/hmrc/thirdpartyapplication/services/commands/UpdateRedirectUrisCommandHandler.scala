@@ -34,8 +34,9 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
   import CommandHandler2._
 
   private def validate(app: ApplicationData): ValidatedNec[String, Unit] = {
-    Apply[ValidatedNec[String, *]].map(isStandardAccess(app))(_ => app)
+    Apply[ValidatedNec[String, *]].map(isStandardAccess(app))(_ => ())
   }
+  
   import UpdateApplicationEvent._
 
   private def asEvents(app: ApplicationData, cmd: UpdateRedirectUris): NonEmptyList[UpdateApplicationEvent] = {
@@ -50,7 +51,6 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
       )
     )
   }
-
 
   def process(app: ApplicationData, cmd: UpdateRedirectUris): ResultT = {
     for {

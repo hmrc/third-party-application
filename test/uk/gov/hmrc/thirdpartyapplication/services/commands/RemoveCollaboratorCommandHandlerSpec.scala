@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import cats.data.{Chain, NonEmptyList, ValidatedNec}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor, CollaboratorRemoved, GatekeeperUserActor, ScheduledJobActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule

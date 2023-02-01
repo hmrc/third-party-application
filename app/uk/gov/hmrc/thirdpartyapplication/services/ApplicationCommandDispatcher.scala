@@ -55,8 +55,8 @@ class ApplicationCommandDispatcher @Inject() (
     // deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
     // deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
     // deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
-    // subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
-    // unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
+    subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
+    unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
     updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
@@ -98,8 +98,8 @@ class ApplicationCommandDispatcher @Inject() (
       // case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCommandHandler.process(app, cmd)
       case cmd: AddCollaborator                                       => addCollaboratorCommandHandler.process(app, cmd)
       case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
-      // case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
-      // case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
+      case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
+      case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
       case cmd: UpdateRedirectUris                                    => updateRedirectUrisCommandHandler.process(app, cmd)
       case _                                                          => E.fromEither(Left(NonEmptyChain(s"Unknown ApplicationCommand type $command")))
     }

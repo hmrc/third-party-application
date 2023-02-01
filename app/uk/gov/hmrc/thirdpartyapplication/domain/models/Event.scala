@@ -41,10 +41,6 @@ trait TriggersNotification {
   self: UpdateApplicationEvent =>
 }
 
-trait UpdatesSubscription {
-  self: UpdateApplicationEvent =>
-}
-
 trait ApplicationDeletedBase {
   self: UpdateApplicationEvent =>
   def clientId: ClientId
@@ -95,7 +91,7 @@ object UpdateApplicationEvent {
       actor: Actor,
       context: String,
       version: String
-    ) extends UpdateApplicationEvent with UpdatesSubscription
+    ) extends UpdateApplicationEvent
 
   object ApiSubscribed {
     implicit val format: OFormat[ApiSubscribed] = Json.format[ApiSubscribed]
@@ -108,7 +104,7 @@ object UpdateApplicationEvent {
       actor: Actor,
       context: String,
       version: String
-    ) extends UpdateApplicationEvent with UpdatesSubscription
+    ) extends UpdateApplicationEvent
 
   object ApiUnsubscribed {
     implicit val format: OFormat[ApiUnsubscribed] = Json.format[ApiUnsubscribed]

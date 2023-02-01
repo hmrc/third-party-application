@@ -798,7 +798,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     import UpdateApplicationEvent._
 
     event match {
-      case evt: ProductionAppNameChanged                                                                          => updateApplicationName(evt.applicationId, evt.newAppName)
+      case evt: ProductionAppNameChanged                                                                          => noOp(event)
       case evt: ProductionAppPrivacyPolicyLocationChanged                                                         => noOp(event)
       case evt: ProductionLegacyAppPrivacyPolicyLocationChanged                                                   => noOp(event)
       case evt: ProductionAppTermsConditionsLocationChanged                                                       => noOp(event)
@@ -812,9 +812,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case _: ResponsibleIndividualDidNotVerify                                                                   => noOp(event)
       case _: ApplicationApprovalRequestDeclined                                                                  => noOp(event)
       case _: ApplicationDeleted | _: ApplicationDeletedByGatekeeper | _: ProductionCredentialsApplicationDeleted => noOp(event)
-      case _: ApiSubscribed                                                                                       => noOp(event)
-      case _: ApiUnsubscribed                                                                                     => noOp(event)
-
+      
       // refactored to new ways
       case _: ClientSecretAddedV3                                                                               => noOp(event)
       case _: ClientSecretRemoved                                                                               => noOp(event)
@@ -822,7 +820,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case _: CollaboratorAdded                                                                                 => noOp(event)
       case _: CollaboratorRemoved                                                                               => noOp(event)
       case _: ResponsibleIndividualVerificationStarted                                                            => noOp(event)
-
+      case _: ApiSubscribed                                                                                       => noOp(event)
+      case _: ApiUnsubscribed                                                                                     => noOp(event)
+      
       // Should never be seen by this route
       case _: ClientSecretAddedV2                                                                                 => noOp(event)
     }

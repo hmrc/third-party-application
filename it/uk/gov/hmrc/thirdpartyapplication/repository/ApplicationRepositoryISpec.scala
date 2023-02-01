@@ -2980,43 +2980,28 @@ class ApplicationRepositoryISpec
     }
   }
 
+  
+  "handle NameChanged event correctly" in {
+    val applicationId = ApplicationId.random
+    val oldName       = "oldName"
+    val newName       = "newName"
+
+    val app           = anApplicationData(applicationId).copy(name = oldName)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedName = await(applicationRepository.updateApplicationName(applicationId, newName))
+    appWithUpdatedName.name mustBe newName
+    appWithUpdatedName.normalisedName mustBe newName.toLowerCase
+
+    await(applicationRepository.hardDelete(applicationId))
+  }
+
+
   "applyEvents" should {
     val gkUserName = "Mr Gate Keeperr"
     val gkUser     = GatekeeperUserActor(gkUserName)
     val adminEmail = "admin@example.com"
     val adminName  = "Mr Admin"
-
-    "handle multiple events correctly" in {
-      val applicationId = ApplicationId.random
-      val oldName       = "oldName"
-      val newestName    = "name3"
-      val app           = anApplicationData(applicationId).copy(name = oldName)
-      await(applicationRepository.save(app))
-
-      val events             = List("name1", "name2", newestName).map(
-        ProductionAppNameChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, gkUser, oldName, _, adminEmail)
-      )
-      val appWithUpdatedName = await(
-        applicationRepository.applyEvents(NonEmptyList.fromList(events).get)
-      )
-      appWithUpdatedName.name mustBe newestName
-      appWithUpdatedName.normalisedName mustBe newestName.toLowerCase
-    }
-
-
-    "handle NameChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldName       = "oldName"
-      val newName       = "newName"
-      val app           = anApplicationData(applicationId).copy(name = oldName)
-      await(applicationRepository.save(app))
-
-      val event              = ProductionAppNameChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, gkUser, oldName, newName, adminEmail)
-      val appWithUpdatedName =
-        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedName.name mustBe newName
-      appWithUpdatedName.normalisedName mustBe newName.toLowerCase
-    }
 
     "handle ResponsibleIndividualChanged event correctly" in {
       val applicationId           = ApplicationId.random

@@ -36,7 +36,6 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
       with ApplicationRepositoryMockModule
       with ResponsibleIndividualVerificationRepositoryMockModule
       with StateHistoryRepositoryMockModule
-      with SubscriptionRepositoryMockModule
       with NotificationRepositoryMockModule
       with NotificationServiceMockModule
       with ApiPlatformEventServiceMockModule
@@ -62,14 +61,11 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
     val mockDeleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler     = mock[DeleteProductionCredentialsApplicationCommandHandler]
     val mockAddCollaboratorCommandHandler: AddCollaboratorCommandHandler                                                   = mock[AddCollaboratorCommandHandler]
     val mockRemoveCollaboratorCommandHandler: RemoveCollaboratorCommandHandler                                             = mock[RemoveCollaboratorCommandHandler]
-    val mockSubscribeToApiCommandHandler: SubscribeToApiCommandHandler                                                     = mock[SubscribeToApiCommandHandler]
-    val mockUnsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler                                             = mock[UnsubscribeFromApiCommandHandler]
 
     val underTest = new ApplicationCommandService(
       ApplicationRepoMock.aMock,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       StateHistoryRepoMock.aMock,
-      SubscriptionRepoMock.aMock,
       NotificationRepositoryMock.aMock,
       NotificationServiceMock.aMock,
       ApiPlatformEventServiceMock.aMock,
@@ -86,10 +82,7 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
       mockDeleteApplicationByCollaboratorCommandHandler,
       mockDeleteApplicationByGatekeeperCommandHandler,
       mockDeleteUnusedApplicationCommandHandler,
-      mockDeleteProductionCredentialsApplicationCommandHandler,
-      mockRemoveCollaboratorCommandHandler,
-      mockSubscribeToApiCommandHandler,
-      mockUnsubscribeFromApiCommandHandler
+      mockDeleteProductionCredentialsApplicationCommandHandler
     )
   }
 

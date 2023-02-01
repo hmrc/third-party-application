@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
 import scala.concurrent.Future
 
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
@@ -110,7 +109,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockChangeResponsibleIndividualToSelfCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToSelf])).thenReturn(
@@ -185,7 +183,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockChangeResponsibleIndividualToOtherCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToOther])).thenReturn(
@@ -240,7 +237,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockVerifyResponsibleIndividualCommandHandler.process(*[ApplicationData], *[VerifyResponsibleIndividual])).thenReturn(
@@ -329,7 +325,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockDeclineResponsibleIndividualCommandHandler.process(*[ApplicationData], *[DeclineResponsibleIndividual])).thenReturn(
@@ -410,7 +405,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockDeclineResponsibleIndividualDidNotVerifyCommandHandler.process(*[ApplicationData], *[DeclineResponsibleIndividualDidNotVerify])).thenReturn(
@@ -478,7 +472,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockDeclineApplicationApprovalRequestCommandHandler.process(*[ApplicationData], *[DeclineApplicationApprovalRequest])).thenReturn(
@@ -536,7 +529,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockDeleteApplicationByCollaboratorCommandHandler.process(*[ApplicationData], *[DeleteApplicationByCollaborator])).thenReturn(
@@ -595,7 +587,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockDeleteApplicationByGatekeeperCommandHandler.process(*[ApplicationData], *[DeleteApplicationByGatekeeper])).thenReturn(
@@ -653,7 +644,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockDeleteUnusedApplicationCommandHandler.process(*[ApplicationData], *[DeleteUnusedApplication])).thenReturn(
@@ -712,7 +702,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
-      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockDeleteProductionCredentialsApplicationCommandHandler.process(*[ApplicationData], *[DeleteProductionCredentialsApplication])).thenReturn(
