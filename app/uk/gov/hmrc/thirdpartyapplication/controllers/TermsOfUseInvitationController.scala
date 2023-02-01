@@ -27,15 +27,18 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
+import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitationActionBuilders
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 
 @Singleton
 class TermsOfUseInvitationController @Inject() (
     termsOfUseService: TermsOfUseInvitationService,
+    val applicationDataService: ApplicationDataService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
-  ) extends BackendController(cc) with JsonUtils {
+  ) extends BackendController(cc) with JsonUtils with TermsOfUseInvitationActionBuilders {
 
-  def createInvitation(applicationId: ApplicationId) = Action.async { _ =>
+  def createInvitation(applicationId: ApplicationId) = withProductionApplicationAdminUserAndNoSubmission()(applicationId) { _ =>
     def findExistingInvitation(applicationId: ApplicationId): Future[Option[TermsOfUseInvitationResponse]] = termsOfUseService.fetchInvitation(applicationId)
 
     def createNewInvitation(applicationId: ApplicationId): Future[Result] = {
