@@ -31,6 +31,13 @@ trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatche
 
     def aMock: ApiPlatformEventService
 
+    object Reset {
+
+      def resetMock(): Unit = {
+        reset(aMock)
+      }
+    }
+
     object ApplyEvents {
 
       def succeeds = {
