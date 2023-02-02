@@ -50,17 +50,8 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
     val mockChangeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler   = mock[ChangeResponsibleIndividualToSelfCommandHandler]
     val mockChangeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler = mock[ChangeResponsibleIndividualToOtherCommandHandler]
     val mockVerifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler               = mock[VerifyResponsibleIndividualCommandHandler]
-    val mockDeclineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler             = mock[DeclineResponsibleIndividualCommandHandler]
 
-    val mockDeclineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler =
-      mock[DeclineResponsibleIndividualDidNotVerifyCommandHandler]
-    val mockDeclineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler               = mock[DeclineApplicationApprovalRequestCommandHandler]
-    val mockDeleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler                   = mock[DeleteApplicationByCollaboratorCommandHandler]
-    val mockDeleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler                       = mock[DeleteApplicationByGatekeeperCommandHandler]
-    val mockDeleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler                                   = mock[DeleteUnusedApplicationCommandHandler]
-    val mockDeleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler     = mock[DeleteProductionCredentialsApplicationCommandHandler]
-    val mockAddCollaboratorCommandHandler: AddCollaboratorCommandHandler                                                   = mock[AddCollaboratorCommandHandler]
-    val mockRemoveCollaboratorCommandHandler: RemoveCollaboratorCommandHandler                                             = mock[RemoveCollaboratorCommandHandler]
+    val mockDeclineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler = mock[DeclineApplicationApprovalRequestCommandHandler]
 
     val underTest = new ApplicationCommandService(
       ApplicationRepoMock.aMock,
@@ -76,8 +67,6 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
       mockChangeResponsibleIndividualToSelfCommandHandler,
       mockChangeResponsibleIndividualToOtherCommandHandler,
       mockVerifyResponsibleIndividualCommandHandler,
-      mockDeclineResponsibleIndividualCommandHandler,
-      mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
       mockDeclineApplicationApprovalRequestCommandHandler
     )
   }

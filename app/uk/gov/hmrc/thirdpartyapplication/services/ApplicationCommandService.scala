@@ -44,13 +44,9 @@ class ApplicationCommandService @Inject() (
     thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
     apiGatewayStore: ApiGatewayStore,
     auditService: AuditService,
-    // changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-    // changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
     changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
     changeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler,
     verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
-    declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
-    declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
     declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
@@ -80,22 +76,22 @@ class ApplicationCommandService @Inject() (
   private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): CommandHandler.Result = {
     command match {
       case cmd: AddClientSecret                                       => throw new IllegalAccessError("Should not call here")
-      case cmd: RemoveClientSecret                                    => throw new IllegalAccessError("Should not call here")   // removeClientSecretCommandHandler.process(app, cmd)
-      case cmd: ChangeProductionApplicationName                       => throw new IllegalAccessError("Should not call here")   // changeProductionApplicationNameCmdHdlr.process(app, cmd)
-      case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => throw new IllegalAccessError("Should not call here")   // changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
-      case cmd: ChangeProductionApplicationTermsAndConditionsLocation => throw new IllegalAccessError("Should not call here")   // changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
+      case cmd: RemoveClientSecret                                    => throw new IllegalAccessError("Should not call here")    // removeClientSecretCommandHandler.process(app, cmd)
+      case cmd: ChangeProductionApplicationName                       => throw new IllegalAccessError("Should not call here")    // changeProductionApplicationNameCmdHdlr.process(app, cmd)
+      case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => throw new IllegalAccessError("Should not call here")    // changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
+      case cmd: ChangeProductionApplicationTermsAndConditionsLocation => throw new IllegalAccessError("Should not call here")    // changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeResponsibleIndividualToSelf                     => changeResponsibleIndividualToSelfCommandHandler.process(app, cmd)
       case cmd: ChangeResponsibleIndividualToOther                    => changeResponsibleIndividualToOtherCommandHandler.process(app, cmd)
       case cmd: VerifyResponsibleIndividual                           => verifyResponsibleIndividualCommandHandler.process(app, cmd)
-      case cmd: DeclineResponsibleIndividual                          => declineResponsibleIndividualCommandHandler.process(app, cmd)
-      case cmd: DeclineResponsibleIndividualDidNotVerify              => declineResponsibleIndividualDidNotVerifyCommandHandler.process(app, cmd)
-      case cmd: DeclineApplicationApprovalRequest                     => throw new IllegalAccessError("Should not call here")   // declineApplicationApprovalRequestCommandHandler.process(app, cmd)
+      case cmd: DeclineResponsibleIndividual                          => throw new IllegalAccessError("Should not call here 22") // declineResponsibleIndividualCommandHandler.process(app, cmd)
+      case cmd: DeclineResponsibleIndividualDidNotVerify              => throw new IllegalAccessError("Should not call here 20") // declineResponsibleIndividualDidNotVerifyCommandHandler.process(app, cmd)
+      case cmd: DeclineApplicationApprovalRequest                     => throw new IllegalAccessError("Should not call here 21") // declineApplicationApprovalRequestCommandHandler.process(app, cmd)
       case cmd: DeleteApplicationByCollaborator                       => throw new IllegalAccessError("Should not call here 3")
       case cmd: DeleteApplicationByGatekeeper                         => throw new IllegalAccessError("Should not call here 4")
       case cmd: DeleteUnusedApplication                               => throw new IllegalAccessError("Should not call here 5")
       case cmd: DeleteProductionCredentialsApplication                => throw new IllegalAccessError("Should not call here 6")
-      case cmd: AddCollaborator                                       => throw new IllegalAccessError("Should not call here 7") // addCollaboratorCommandHandler.process(app, cmd)
-      case cmd: RemoveCollaborator                                    => throw new IllegalAccessError("Should not call here 8") // add
+      case cmd: AddCollaborator                                       => throw new IllegalAccessError("Should not call here 7")  // addCollaboratorCommandHandler.process(app, cmd)
+      case cmd: RemoveCollaborator                                    => throw new IllegalAccessError("Should not call here 8")  // add
       case cmd: SubscribeToApi                                        => throw new IllegalAccessError("Should not call here 9")
       case cmd: UnsubscribeFromApi                                    => throw new IllegalAccessError("Should not call here 10")
       case cmd: UpdateRedirectUris                                    => throw new IllegalAccessError("Should not call here 11")

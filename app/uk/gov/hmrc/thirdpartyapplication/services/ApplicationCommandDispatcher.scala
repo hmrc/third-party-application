@@ -46,7 +46,7 @@ class ApplicationCommandDispatcher @Inject() (
     // changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
     // changeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler,
     // verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
-    // declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
+    declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
     declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
     declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler,
     deleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler,

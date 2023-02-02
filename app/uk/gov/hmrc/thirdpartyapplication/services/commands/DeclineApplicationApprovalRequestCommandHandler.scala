@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
+import cats.data.{NonEmptyList, Validated, ValidatedNec}
 import cats.syntax.validated._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService

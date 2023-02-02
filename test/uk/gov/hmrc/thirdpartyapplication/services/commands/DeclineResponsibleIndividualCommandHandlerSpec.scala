@@ -18,9 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import cats.data.NonEmptyChain
-import cats.data.Validated.Invalid
-
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
@@ -34,14 +31,24 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 
-class DeclineResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
+class DeclineResponsibleIndividualCommandHandlerSpec
+    extends AsyncHmrcSpec
+    with ApplicationTestData
+    with SubmissionsTestData
+    with CommandActorExamples
+    with CommandCollaboratorExamples
+    with CommandApplicationExamples {
 
-  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule {
+  trait Setup
+      extends ResponsibleIndividualVerificationRepositoryMockModule
+      with StateHistoryRepositoryMockModule
+      with SubmissionsServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId                    = ApplicationId.random
     val submission               = aSubmission
     val appAdminUserId           = UserId.random
     val appAdminEmail            = "admin@example.com"
@@ -61,7 +68,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with 
       List.empty
     )
 
-    val app  = anApplicationData(appId).copy(
+    val app  = anApplicationData(applicationId).copy(
       collaborators = Set(
         Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
       ),
@@ -73,7 +80,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with 
 
     val riVerificationToU = ResponsibleIndividualToUVerification(
       ResponsibleIndividualVerificationId(code),
-      appId,
+      applicationId,
       submission.id,
       submission.latestInstance.index,
       "App Name",
@@ -83,7 +90,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with 
 
     val riVerificationUpdate = ResponsibleIndividualUpdateVerification(
       ResponsibleIndividualVerificationId(code),
-      appId,
+      applicationId,
       submission.id,
       submission.latestInstance.index,
       "App Name",
@@ -93,87 +100,134 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with 
       requesterEmail,
       ResponsibleIndividualVerificationState.INITIAL
     )
-    val underTest            = new DeclineResponsibleIndividualCommandHandler(ResponsibleIndividualVerificationRepositoryMock.aMock)
+
+    val underTest            = new DeclineResponsibleIndividualCommandHandler(
+      ResponsibleIndividualVerificationRepositoryMock.aMock,
+      StateHistoryRepoMock.aMock,
+      SubmissionsServiceMock.aMock
+    )
+
+    def checkSuccessResultToU()(fn: => CommandHandler2.ResultT)    = {
+      val testMe = await(fn.value).right.value
+
+      inside(testMe) { case (app, events) =>
+        events should have size 3
+
+        events.collect {
+          case riDeclined: ResponsibleIndividualDeclined =>
+            riDeclined.applicationId shouldBe applicationId
+            riDeclined.eventDateTime shouldBe ts
+            riDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
+            riDeclined.responsibleIndividualName shouldBe riName
+            riDeclined.responsibleIndividualEmail shouldBe riEmail
+            riDeclined.submissionIndex shouldBe submission.latestInstance.index
+            riDeclined.submissionId shouldBe submission.id
+            riDeclined.requestingAdminEmail shouldBe appAdminEmail
+            riDeclined.code shouldBe code
+        }
+        events.collect {
+          case appApprovalRequestDeclined: ApplicationApprovalRequestDeclined =>
+            appApprovalRequestDeclined.applicationId shouldBe applicationId
+            appApprovalRequestDeclined.eventDateTime shouldBe ts
+            appApprovalRequestDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
+            appApprovalRequestDeclined.decliningUserName shouldBe riName
+            appApprovalRequestDeclined.decliningUserEmail shouldBe riEmail
+            appApprovalRequestDeclined.submissionIndex shouldBe submission.latestInstance.index
+            appApprovalRequestDeclined.submissionId shouldBe submission.id
+            appApprovalRequestDeclined.requestingAdminEmail shouldBe appAdminEmail
+            appApprovalRequestDeclined.reasons shouldBe "Responsible individual declined the terms of use."
+        }
+
+        events.collect {
+          case stateEvent: ApplicationStateChanged =>
+            stateEvent.applicationId shouldBe applicationId
+            stateEvent.eventDateTime shouldBe ts
+            stateEvent.actor shouldBe CollaboratorActor(appAdminEmail)
+            stateEvent.requestingAdminEmail shouldBe requesterEmail
+            stateEvent.requestingAdminName shouldBe requesterName
+            stateEvent.newAppState shouldBe State.TESTING
+            stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+        }
+      }
+    }
+
+    def checkSuccessResultUpdate()(fn: => CommandHandler2.ResultT) = {
+      val testMe = await(fn.value).right.value
+
+      inside(testMe) { case (app, events) =>
+        events should have size 1
+
+        events.collect {
+          case riDeclined: ResponsibleIndividualDeclinedUpdate =>
+            riDeclined.applicationId shouldBe applicationId
+            riDeclined.eventDateTime shouldBe ts
+            riDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
+            riDeclined.responsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
+            riDeclined.responsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress.value
+            riDeclined.submissionIndex shouldBe submission.latestInstance.index
+            riDeclined.submissionId shouldBe submission.id
+            riDeclined.requestingAdminEmail shouldBe appAdminEmail
+            riDeclined.code shouldBe code
+        }
+      }
+    }
+
+    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler2.ResultT) = {
+      val testThis = await(fn.value).left.value.toNonEmptyList.toList
+
+      testThis should have length 1 + msgs.length
+      testThis.head shouldBe msg
+      testThis.tail shouldBe msgs
+    }
   }
 
   "process" should {
     "create correct event for a valid request with a ToU responsibleIndividualVerification and a standard app" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
+      ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
+      SubmissionsServiceMock.DeclineApprovalRequest.succeeds()
+      StateHistoryRepoMock.AddRecord.succeeds()
 
-      val result = await(underTest.process(app, DeclineResponsibleIndividual(code, ts)))
-
-      result.isValid shouldBe true
-      result.toOption.get.length shouldBe 3
-      val riDeclined = result.toOption.get.head.asInstanceOf[ResponsibleIndividualDeclined]
-      riDeclined.applicationId shouldBe appId
-      riDeclined.eventDateTime shouldBe ts
-      riDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
-      riDeclined.responsibleIndividualName shouldBe riName
-      riDeclined.responsibleIndividualEmail shouldBe riEmail
-      riDeclined.submissionIndex shouldBe submission.latestInstance.index
-      riDeclined.submissionId shouldBe submission.id
-      riDeclined.requestingAdminEmail shouldBe appAdminEmail
-      riDeclined.code shouldBe code
-
-      val appApprovalRequestDeclined = result.toOption.get.tail.head.asInstanceOf[ApplicationApprovalRequestDeclined]
-      appApprovalRequestDeclined.applicationId shouldBe appId
-      appApprovalRequestDeclined.eventDateTime shouldBe ts
-      appApprovalRequestDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
-      appApprovalRequestDeclined.decliningUserName shouldBe riName
-      appApprovalRequestDeclined.decliningUserEmail shouldBe riEmail
-      appApprovalRequestDeclined.submissionIndex shouldBe submission.latestInstance.index
-      appApprovalRequestDeclined.submissionId shouldBe submission.id
-      appApprovalRequestDeclined.requestingAdminEmail shouldBe appAdminEmail
-      appApprovalRequestDeclined.reasons shouldBe "Responsible individual declined the terms of use."
-
-      val stateEvent = result.toOption.get.tail.tail.head.asInstanceOf[ApplicationStateChanged]
-      stateEvent.applicationId shouldBe appId
-      stateEvent.eventDateTime shouldBe ts
-      stateEvent.actor shouldBe CollaboratorActor(appAdminEmail)
-      stateEvent.requestingAdminEmail shouldBe requesterEmail
-      stateEvent.requestingAdminName shouldBe requesterName
-      stateEvent.newAppState shouldBe State.TESTING
-      stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+      checkSuccessResultToU() {
+        underTest.process(app, DeclineResponsibleIndividual(code, ts))
+      }
     }
 
     "create correct event for a valid request with an update responsibleIndividualVerification and a standard app" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
+      ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
 
       val prodApp = app.copy(state = ApplicationState.production(requesterEmail, requesterName))
-      val result  = await(underTest.process(prodApp, DeclineResponsibleIndividual(code, ts)))
 
-      result.isValid shouldBe true
-      result.toOption.get.length shouldBe 1
-      val riDeclined = result.toOption.get.head.asInstanceOf[ResponsibleIndividualDeclinedUpdate]
-      riDeclined.applicationId shouldBe appId
-      riDeclined.eventDateTime shouldBe ts
-      riDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
-      riDeclined.responsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
-      riDeclined.responsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress.value
-      riDeclined.submissionIndex shouldBe submission.latestInstance.index
-      riDeclined.submissionId shouldBe submission.id
-      riDeclined.requestingAdminEmail shouldBe appAdminEmail
-      riDeclined.code shouldBe code
+      checkSuccessResultUpdate() {
+        underTest.process(prodApp, DeclineResponsibleIndividual(code, ts))
+      }
     }
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturnNothing
-      val result = await(underTest.process(app, DeclineResponsibleIndividual(code, ts)))
-      result shouldBe Invalid(NonEmptyChain.one(s"No responsibleIndividualVerification found for code $code"))
+
+      checkFailsWith(s"No responsibleIndividualVerification found for code $code") {
+        underTest.process(app, DeclineResponsibleIndividual(code, ts))
+      }
     }
 
     "return an error if the application is non-standard" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
-      val result         = await(underTest.process(nonStandardApp, DeclineResponsibleIndividual(code, ts)))
-      result shouldBe Invalid(NonEmptyChain.apply("Must be a standard new journey application", "The responsible individual has not been set for this application"))
+
+      checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
+        underTest.process(nonStandardApp, DeclineResponsibleIndividual(code, ts))
+      }
     }
 
     "return an error if the application is old journey" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
-      val result        = await(underTest.process(oldJourneyApp, DeclineResponsibleIndividual(code, ts)))
-      result shouldBe Invalid(NonEmptyChain.apply("Must be a standard new journey application", "The responsible individual has not been set for this application"))
+
+      checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
+        underTest.process(oldJourneyApp, DeclineResponsibleIndividual(code, ts))
+      }
     }
 
     "return an error if the application is is different between the request and the responsibleIndividualVerification record" in new Setup {
@@ -187,15 +241,19 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with 
         ResponsibleIndividualVerificationState.INITIAL
       )
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification2)
-      val result          = await(underTest.process(app, DeclineResponsibleIndividual(code, ts)))
-      result shouldBe Invalid(NonEmptyChain.one("The given application id is different"))
+
+      checkFailsWith("The given application id is different") {
+        underTest.process(app, DeclineResponsibleIndividual(code, ts))
+      }
     }
 
     "return an error if the application state is not PendingResponsibleIndividualVerification" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail, requesterName))
-      val result               = await(underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividual(code, ts)))
-      result shouldBe Invalid(NonEmptyChain.one("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state"))
+
+      checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state") {
+        underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividual(code, ts))
+      }
     }
   }
 }
