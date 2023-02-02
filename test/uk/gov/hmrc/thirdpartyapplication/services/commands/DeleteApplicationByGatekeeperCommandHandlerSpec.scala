@@ -56,27 +56,28 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
           }
         )
         filteredEvents.size shouldBe 2
-        val event          = filteredEvents.head
 
-        inside(event) {
-          case ApplicationDeletedByGatekeeper(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons, requestingAdminEmail) =>
-            appId shouldBe appId
-            actor shouldBe actor
-            eventDateTime shouldBe ts
-            clientId shouldBe app.tokens.production.clientId
-            evtReasons shouldBe reasons
-            wsoApplicationName shouldBe app.wso2ApplicationName
-            requestingAdminEmail shouldBe requestedByEmail
+        filteredEvents.foreach(event =>
+          inside(event) {
+            case ApplicationDeletedByGatekeeper(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons, requestingAdminEmail) =>
+              appId shouldBe appId
+              actor shouldBe actor
+              eventDateTime shouldBe ts
+              clientId shouldBe app.tokens.production.clientId
+              evtReasons shouldBe reasons
+              wsoApplicationName shouldBe app.wso2ApplicationName
+              requestingAdminEmail shouldBe requestedByEmail
 
-          case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
-            appId shouldBe appId
-            evtActor shouldBe actor
-            eventDateTime shouldBe ts
-            oldAppState shouldBe app.state.name
-            newAppState shouldBe State.DELETED
-            requestingAdminEmail shouldBe requestedByEmail
-            requestingAdminName shouldBe requestedByEmail
-        }
+            case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
+              appId shouldBe appId
+              evtActor shouldBe actor
+              eventDateTime shouldBe ts
+              oldAppState shouldBe app.state.name
+              newAppState shouldBe State.DELETED
+              requestingAdminEmail shouldBe requestedByEmail
+              requestingAdminName shouldBe requestedByEmail
+          }
+        )
       }
 
     }

@@ -17,38 +17,53 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
-
+import scala.concurrent.{ExecutionContext, Future}
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated}
-
+import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
+import cats.syntax.validated._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineApplicationApprovalRequest, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 
 @Singleton
 class DeclineApplicationApprovalRequestCommandHandler @Inject() (
+    applicationRepository: ApplicationRepository,
+    stateHistoryRepository: StateHistoryRepository,
     submissionService: SubmissionsService
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler {
+  ) extends CommandHandler2 {
 
-  import CommandHandler._
+  import CommandHandler2._
 
-  private def validate(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): Validated[CommandFailures, ApplicationData] = {
-    Apply[Validated[CommandFailures, *]].map4(
-      isStandardNewJourneyApp(app),
-      isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app),
-      isRequesterEmailDefined(app),
-      isRequesterNameDefined(app)
-    ) { case _ => app }
+  private def validate(app: ApplicationData): Future[ValidatedNec[String, Submission]] = {
+
+    def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandFailures, Submission] =
+      maybeSubmission.fold(s"No submission found for application ${app.id.value}".invalidNec[Submission])(_.validNec[String])
+
+    submissionService.fetchLatest(app.id).map { maybeSubmission =>
+      Apply[Validated[CommandFailures, *]].map5(
+        isStandardNewJourneyApp(app),
+        isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app),
+        isRequesterEmailDefined(app),
+        isRequesterNameDefined(app),
+        checkSubmission(maybeSubmission)
+      ) { case (_, _, _, _, submission) => submission }
+    }
   }
 
   import UpdateApplicationEvent._
 
-  private def asEvents(app: ApplicationData, cmd: DeclineApplicationApprovalRequest, submission: Submission): NonEmptyList[UpdateApplicationEvent] = {
-    val requesterEmail = getRequesterEmail(app).get
-    val requesterName  = getRequesterName(app).get
+  private def asEvents(
+      app: ApplicationData,
+      cmd: DeclineApplicationApprovalRequest,
+      submission: Submission,
+      requesterEmail: String,
+      requesterName: String
+    ): NonEmptyList[UpdateApplicationEvent] = {
+
     NonEmptyList.of(
       ApplicationApprovalRequestDeclined(
         id = UpdateApplicationEvent.Id.random,
@@ -76,14 +91,14 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): CommandHandler.Result = {
-    submissionService.fetchLatest(app.id).map(maybeSubmission => {
-      maybeSubmission match {
-        case Some(submission) => validate(app, cmd) map { _ =>
-            asEvents(app, cmd, submission)
-          }
-        case _                => Validated.Invalid(NonEmptyChain.one(s"No submission found for application ${app.id}"))
-      }
-    })
+  def process(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): CommandHandler2.ResultT = {
+    val requesterEmail = getRequesterEmail(app).get
+    val requesterName  = getRequesterName(app).get
+    for {
+      submission <- E.fromValidatedF(validate(app))
+      savedApp   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requesterEmail, requesterName))
+      events      = asEvents(savedApp, cmd, submission, requesterEmail, requesterName)
+      _          <- E.liftF(stateHistoryRepository.applyEvents(events))
+    } yield (savedApp, events)
   }
 }

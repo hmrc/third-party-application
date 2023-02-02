@@ -60,26 +60,27 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
           }
         )
         filteredEvents.size shouldBe 2
-        val event          = filteredEvents.head
 
-        inside(event) {
-          case ProductionCredentialsApplicationDeleted(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons) =>
-            appId shouldBe appId
-            actor shouldBe actor
-            eventDateTime shouldBe ts
-            clientId shouldBe app.tokens.production.clientId
-            evtReasons shouldBe reasons
-            wsoApplicationName shouldBe app.wso2ApplicationName
+        filteredEvents.foreach(event =>
+          inside(event) {
+            case ProductionCredentialsApplicationDeleted(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons) =>
+              appId shouldBe appId
+              actor shouldBe actor
+              eventDateTime shouldBe ts
+              clientId shouldBe app.tokens.production.clientId
+              evtReasons shouldBe reasons
+              wsoApplicationName shouldBe app.wso2ApplicationName
 
-          case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
-            appId shouldBe appId
-            evtActor shouldBe actor
-            eventDateTime shouldBe ts
-            oldAppState shouldBe app.state.name
-            newAppState shouldBe State.DELETED
-            requestingAdminEmail shouldBe actor.jobId
-            requestingAdminName shouldBe actor.jobId
-        }
+            case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
+              appId shouldBe appId
+              evtActor shouldBe actor
+              eventDateTime shouldBe ts
+              oldAppState shouldBe app.state.name
+              newAppState shouldBe State.DELETED
+              requestingAdminEmail shouldBe actor.jobId
+              requestingAdminName shouldBe actor.jobId
+          }
+        )
       }
 
     }

@@ -18,7 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.common.services
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.EitherT
+import cats.data.{EitherT, NonEmptyChain, Validated}
 import cats.instances.future.catsStdInstancesForFuture
 
 trait EitherTHelper[E] {
@@ -32,6 +32,10 @@ trait EitherTHelper[E] {
   def fromEither[A](in: Either[E, A]): EitherT[Future, E, A]                    = EitherT.fromEither(in)
   def fromEitherF[A](in: Future[Either[E, A]]): EitherT[Future, E, A]           = EitherT.apply(in)
   def cond[A](in: => Boolean, right: => A, left: => E)                          = EitherT.cond[Future](in, right, left)
+
+  def fromValidatedF[A](in: Future[Validated[E, A]]): EitherT[Future, E, A] = EitherT(in.map(_.toEither))
+  def fromValidated[A](in: Validated[E, A]): EitherT[Future, E, A]          = EitherT.fromEither(in.toEither)
+
 }
 
 object EitherTHelper {
