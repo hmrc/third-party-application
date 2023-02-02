@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
 import cats.data.NonEmptyList
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.bson.BsonValue
@@ -31,12 +30,11 @@ import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{excludeId, fields, include}
 import org.mongodb.scala.model._
-
 import play.api.libs.json.Json._
 import play.api.libs.json._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
@@ -743,19 +741,26 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       )
     )
 
-  private def updateApplicationChangeResponsibleIndividualToSelf(event: ResponsibleIndividualChangedToSelf): Future[ApplicationData] =
+  def updateApplicationChangeResponsibleIndividualToSelf(
+      applicationId: ApplicationId,
+      requestingAdminName: String,
+      requestingAdminEmail: String,
+      timeOfChange: LocalDateTime,
+      submissionId: Submission.Id,
+      submissionIndex: Int
+    ): Future[ApplicationData] =
     updateApplication(
-      event.applicationId,
+      applicationId,
       Updates.combine(
-        Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", event.requestingAdminName),
-        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", event.requestingAdminEmail),
+        Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", requestingAdminName),
+        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", requestingAdminEmail),
         Updates.push(
           "access.importantSubmissionData.termsOfUseAcceptances",
           Codecs.toBson(TermsOfUseAcceptance(
-            ResponsibleIndividual.build(event.requestingAdminName, event.requestingAdminEmail),
-            event.eventDateTime,
-            event.submissionId,
-            event.submissionIndex
+            ResponsibleIndividual.build(requestingAdminName, requestingAdminEmail),
+            timeOfChange,
+            submissionId,
+            submissionIndex
           ))
         )
       )
@@ -808,7 +813,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case evt: ProductionLegacyAppTermsConditionsLocationChanged => updateLegacyApplicationTermsAndConditionsLocation(evt.applicationId, evt.newUrl)
       case evt: ResponsibleIndividualSet                          => updateApplicationSetResponsibleIndividual(evt)
       case evt: ResponsibleIndividualChanged                      => updateApplicationChangeResponsibleIndividual(evt)
-      case evt: ResponsibleIndividualChangedToSelf                => updateApplicationChangeResponsibleIndividualToSelf(evt)
+      case evt: ResponsibleIndividualChangedToSelf                => noOp(evt)
       case evt: ApplicationStateChanged                           => noOp(evt)
       case _: ResponsibleIndividualDeclined                       => noOp(event)
       case _: ResponsibleIndividualDeclinedUpdate                 => noOp(event)

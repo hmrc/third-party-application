@@ -113,7 +113,6 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
   val timestamp         = FixedClock.now
   val gatekeeperUser    = "gkuser1"
   val jobId             = "jobId"
-  val adminName         = "Mr Admin"
   val devHubUser        = CollaboratorActor(adminEmail)
   val scheduledJobActor = ScheduledJobActor(jobId)
   val reasons           = "some reason or other"
@@ -301,306 +300,340 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
       }
 
     }
-  }
 
-  "ChangeProductionApplicationTermsAndConditionsLocation is received" should {
+    "ChangeProductionApplicationTermsAndConditionsLocation is received" should {
 
-    val newUrl      = "http://example.com/new"
-    val newLocation = TermsAndConditionsLocation.Url(newUrl)
-    val userId      = idsByEmail(adminEmail)
-    val timestamp   = FixedClock.now
-    val actor       = CollaboratorActor(adminEmail)
+      val newUrl      = "http://example.com/new"
+      val newLocation = TermsAndConditionsLocation.Url(newUrl)
+      val userId      = idsByEmail(adminEmail)
+      val timestamp   = FixedClock.now
+      val actor       = CollaboratorActor(adminEmail)
 
-    val cmd = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
-    val evt = ProductionAppTermsConditionsLocationChanged(
-      UpdateApplicationEvent.Id.random,
-      applicationId,
-      FixedClock.now,
-      actor,
-      termsAndConditionsLocation,
-      newLocation
-    )
+      val cmd = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
+      val evt = ProductionAppTermsConditionsLocationChanged(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        FixedClock.now,
+        actor,
+        termsAndConditionsLocation,
+        newLocation
+      )
 
-    "call ChangeProductionApplicationTermsAndConditionsLocation Handler and relevant common services if application exists" in new Setup {
-      primeCommonServiceSuccess()
+      "call ChangeProductionApplicationTermsAndConditionsLocation Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
 
-      when(
-        mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationTermsAndConditionsLocation])
-      ).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
+        when(
+          mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationTermsAndConditionsLocation])
+        ).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
-      await(underTest.dispatch(applicationId, cmd).value)
-      verifyServicesCalledWithEvent(evt)
-      verifyNoneButGivenCmmandHandlerCalled[ChangeProductionApplicationTermsAndConditionsLocationCommandHandler]()
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[ChangeProductionApplicationTermsAndConditionsLocationCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
     }
 
-    "bubble up exception when application fetch fails" in new Setup {
-      testFailure(cmd)
+    " ChangeResponsibleIndividualToSelf is received" should {
+
+      val cmd = ChangeResponsibleIndividualToSelf(UserId.random, timestamp, requestedByName, requestedByEmail)
+      val evt = ResponsibleIndividualChangedToSelf(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        FixedClock.now,
+        devHubUser,
+        "previousRIName",
+        "previousRIEmail",
+        Submission.Id.random,
+        1,
+        requestedByName,
+        requestedByEmail
+      )
+
+      "call  ChangeResponsibleIndividualToSelf Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(
+          mockChangeResponsibleIndividualToSelfCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToSelf])
+        ).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
+
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[ChangeResponsibleIndividualToSelfCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
     }
 
-  }
+    "DeclineApplicationApprovalRequest is received" should {
 
-  "DeclineApplicationApprovalRequest is received" should {
+      val timestamp = FixedClock.now
+      val actor     = GatekeeperUserActor(adminEmail)
 
-    val timestamp = FixedClock.now
-    val actor     = GatekeeperUserActor(adminEmail)
+      val cmd = DeclineApplicationApprovalRequest(actor.user, reasons, timestamp)
+      val evt = ApplicationApprovalRequestDeclined(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
+        actor,
+        "someUserName",
+        "someUserEmail",
+        Submission.Id.random,
+        1,
+        "some reason or other",
+        "adminName",
+        "adminEmail"
+      )
 
-    val cmd = DeclineApplicationApprovalRequest(actor.user, reasons, timestamp)
-    val evt = ApplicationApprovalRequestDeclined(
-      UpdateApplicationEvent.Id.random,
-      applicationId,
-      timestamp,
-      actor,
-      "someUserName",
-      "someUserEmail",
-      Submission.Id.random,
-      1,
-      "some reason or other",
-      "adminName",
-      "adminEmail"
-    )
+      "call DeclineApplicationApprovalRequest Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
 
-    "call DeclineApplicationApprovalRequest Handler and relevant common services if application exists" in new Setup {
-      primeCommonServiceSuccess()
+        when(mockDeclineApplicationApprovalRequestCommandHandler.process(*[ApplicationData], *[DeclineApplicationApprovalRequest])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
 
-      when(mockDeclineApplicationApprovalRequestCommandHandler.process(*[ApplicationData], *[DeclineApplicationApprovalRequest])).thenReturn(E.pure((
-        applicationData,
-        NonEmptyList.one(evt)
-      )))
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[DeclineApplicationApprovalRequestCommandHandler]()
+      }
 
-      await(underTest.dispatch(applicationId, cmd).value)
-      verifyServicesCalledWithEvent(evt)
-      verifyNoneButGivenCmmandHandlerCalled[DeclineApplicationApprovalRequestCommandHandler]()
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
     }
 
-    "bubble up exception when application fetch fails" in new Setup {
-      testFailure(cmd)
+    " DeleteApplicationByCollaborator is received" should {
+
+      val cmd = DeleteApplicationByCollaborator(UserId.random, reasons, timestamp)
+      val evt = ApplicationDeleted(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
+        CollaboratorActor("someEmail"),
+        ClientId.random,
+        "wsoApplicationName",
+        reasons
+      )
+
+      "call  DeleteApplicationByCollaborator Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(mockDeleteApplicationByCollaboratorCommandHandler.process(*[ApplicationData], *[DeleteApplicationByCollaborator])(*[HeaderCarrier])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
+
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[DeleteApplicationByCollaboratorCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
     }
 
-  }
+    "DeleteApplicationByGatekeeper is received" should {
 
-  " DeleteApplicationByCollaborator is received" should {
+      val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, timestamp)
+      val evt = ApplicationDeletedByGatekeeper(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
+        GatekeeperUserActor(gatekeeperUser),
+        ClientId.random,
+        "wsoApplicationName",
+        reasons,
+        requestedByEmail
+      )
 
-    val cmd = DeleteApplicationByCollaborator(UserId.random, reasons, timestamp)
-    val evt = ApplicationDeleted(
-      UpdateApplicationEvent.Id.random,
-      applicationId,
-      timestamp,
-      CollaboratorActor("someEmail"),
-      ClientId.random,
-      "wsoApplicationName",
-      reasons
-    )
+      "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
 
-    "call  DeleteApplicationByCollaborator Handler and relevant common services if application exists" in new Setup {
-      primeCommonServiceSuccess()
+        when(mockDeleteApplicationByGatekeeperCommandHandler.process(*[ApplicationData], *[DeleteApplicationByGatekeeper])(*[HeaderCarrier])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
 
-      when(mockDeleteApplicationByCollaboratorCommandHandler.process(*[ApplicationData], *[DeleteApplicationByCollaborator])(*[HeaderCarrier])).thenReturn(E.pure((
-        applicationData,
-        NonEmptyList.one(evt)
-      )))
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[DeleteApplicationByGatekeeperCommandHandler]()
+      }
 
-      await(underTest.dispatch(applicationId, cmd).value)
-      verifyServicesCalledWithEvent(evt)
-      verifyNoneButGivenCmmandHandlerCalled[DeleteApplicationByCollaboratorCommandHandler]()
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
     }
 
-    "bubble up exception when application fetch fails" in new Setup {
-      testFailure(cmd)
+    " DeleteUnusedApplication is received" should {
+      val authKey = "kjghhjgdasijgdkgjhsa"
+      val cmd     = DeleteUnusedApplication(jobId, authKey, reasons, timestamp)
+      val evt     = ApplicationDeleted(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
+        scheduledJobActor,
+        ClientId.random,
+        "wsoApplicationName",
+        reasons
+      )
+
+      "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(mockDeleteUnusedApplicationCommandHandler.process(*[ApplicationData], *[DeleteUnusedApplication])(*[HeaderCarrier])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
+
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[DeleteUnusedApplicationCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
     }
 
-  }
+    "DeleteProductionCredentialsApplication is received" should {
+      val cmd = DeleteProductionCredentialsApplication(jobId, reasons, timestamp)
+      val evt = ProductionCredentialsApplicationDeleted(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
+        devHubUser,
+        ClientId.random,
+        "wsoApplicationName",
+        reasons
+      )
 
-  "DeleteApplicationByGatekeeper is received" should {
+      "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
 
-    val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, timestamp)
-    val evt = ApplicationDeletedByGatekeeper(
-      UpdateApplicationEvent.Id.random,
-      applicationId,
-      timestamp,
-      GatekeeperUserActor(gatekeeperUser),
-      ClientId.random,
-      "wsoApplicationName",
-      reasons,
-      requestedByEmail
-    )
+        when(mockDeleteProductionCredentialsApplicationCommandHandler.process(*[ApplicationData], *[DeleteProductionCredentialsApplication])(*[HeaderCarrier])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
 
-    "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
-      primeCommonServiceSuccess()
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[DeleteProductionCredentialsApplicationCommandHandler]()
+      }
 
-      when(mockDeleteApplicationByGatekeeperCommandHandler.process(*[ApplicationData], *[DeleteApplicationByGatekeeper])(*[HeaderCarrier])).thenReturn(E.pure((
-        applicationData,
-        NonEmptyList.one(evt)
-      )))
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
 
-      await(underTest.dispatch(applicationId, cmd).value)
-      verifyServicesCalledWithEvent(evt)
-      verifyNoneButGivenCmmandHandlerCalled[DeleteApplicationByGatekeeperCommandHandler]()
     }
 
-    "bubble up exception when application fetch fails" in new Setup {
-      testFailure(cmd)
+    "SubscribeToApi is received" should {
+      val context       = "context"
+      val version       = "version"
+      val apiIdentifier = ApiIdentifier(ApiContext(context), ApiVersion(version))
+      val cmd           = SubscribeToApi(devHubUser, apiIdentifier, timestamp)
+      val evt           = ApiSubscribed(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
+        devHubUser,
+        context,
+        version
+      )
+
+      "call SubscribeToApi Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(mockSubscribeToApiCommandHandler.process(*[ApplicationData], *[SubscribeToApi])(*[HeaderCarrier])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
+
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[SubscribeToApiCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
     }
 
-  }
+    "UnsubscribeFromApi is received" should {
+      val context       = "context"
+      val version       = "version"
+      val apiIdentifier = ApiIdentifier(ApiContext(context), ApiVersion(version))
+      val cmd           = UnsubscribeFromApi(devHubUser, apiIdentifier, timestamp)
+      val evt           = ApiUnsubscribed(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
+        devHubUser,
+        context,
+        version
+      )
 
-  " DeleteUnusedApplication is received" should {
-    val authKey = "kjghhjgdasijgdkgjhsa"
-    val cmd     = DeleteUnusedApplication(jobId, authKey, reasons, timestamp)
-    val evt     = ApplicationDeleted(
-      UpdateApplicationEvent.Id.random,
-      applicationId,
-      timestamp,
-      scheduledJobActor,
-      ClientId.random,
-      "wsoApplicationName",
-      reasons
-    )
+      "call UnsubscribeFromApi Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
 
-    "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
-      primeCommonServiceSuccess()
+        when(mockUnsubscribeFromApiCommandHandler.process(*[ApplicationData], *[UnsubscribeFromApi])(*[HeaderCarrier])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
 
-      when(mockDeleteUnusedApplicationCommandHandler.process(*[ApplicationData], *[DeleteUnusedApplication])(*[HeaderCarrier])).thenReturn(E.pure((
-        applicationData,
-        NonEmptyList.one(evt)
-      )))
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[UnsubscribeFromApiCommandHandler]()
+      }
 
-      await(underTest.dispatch(applicationId, cmd).value)
-      verifyServicesCalledWithEvent(evt)
-      verifyNoneButGivenCmmandHandlerCalled[DeleteUnusedApplicationCommandHandler]()
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
     }
 
-    "bubble up exception when application fetch fails" in new Setup {
-      testFailure(cmd)
+    " UpdateRedirectUris is received" should {
+      val oldUris = List("uri1", "uri2")
+      val newUris = List("uri3", "uri4")
+      val cmd     = UpdateRedirectUris(devHubUser, oldUris, newUris, timestamp)
+      val evt     = RedirectUrisUpdated(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
+        devHubUser,
+        oldUris,
+        newUris
+      )
+
+      "call UpdateRedirectUris Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(mockUpdateRedirectUrisCommandHandler.process(*[ApplicationData], *[UpdateRedirectUris])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
+
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[UpdateRedirectUrisCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
     }
-
-  }
-
-  "DeleteProductionCredentialsApplication is received" should {
-    val cmd = DeleteProductionCredentialsApplication(jobId, reasons, timestamp)
-    val evt = ProductionCredentialsApplicationDeleted(
-      UpdateApplicationEvent.Id.random,
-      applicationId,
-      timestamp,
-      devHubUser,
-      ClientId.random,
-      "wsoApplicationName",
-      reasons
-    )
-
-    "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
-      primeCommonServiceSuccess()
-
-      when(mockDeleteProductionCredentialsApplicationCommandHandler.process(*[ApplicationData], *[DeleteProductionCredentialsApplication])(*[HeaderCarrier])).thenReturn(E.pure((
-        applicationData,
-        NonEmptyList.one(evt)
-      )))
-
-      await(underTest.dispatch(applicationId, cmd).value)
-      verifyServicesCalledWithEvent(evt)
-      verifyNoneButGivenCmmandHandlerCalled[DeleteProductionCredentialsApplicationCommandHandler]()
-    }
-
-    "bubble up exception when application fetch fails" in new Setup {
-      testFailure(cmd)
-    }
-
-  }
-
-  "SubscribeToApi is received" should {
-    val context       = "context"
-    val version       = "version"
-    val apiIdentifier = ApiIdentifier(ApiContext(context), ApiVersion(version))
-    val cmd           = SubscribeToApi(devHubUser, apiIdentifier, timestamp)
-    val evt           = ApiSubscribed(
-      UpdateApplicationEvent.Id.random,
-      applicationId,
-      timestamp,
-      devHubUser,
-      context,
-      version
-    )
-
-    "call SubscribeToApi Handler and relevant common services if application exists" in new Setup {
-      primeCommonServiceSuccess()
-
-      when(mockSubscribeToApiCommandHandler.process(*[ApplicationData], *[SubscribeToApi])(*[HeaderCarrier])).thenReturn(E.pure((
-        applicationData,
-        NonEmptyList.one(evt)
-      )))
-
-      await(underTest.dispatch(applicationId, cmd).value)
-      verifyServicesCalledWithEvent(evt)
-      verifyNoneButGivenCmmandHandlerCalled[SubscribeToApiCommandHandler]()
-    }
-
-    "bubble up exception when application fetch fails" in new Setup {
-      testFailure(cmd)
-    }
-
-  }
-
-  "UnsubscribeFromApi is received" should {
-    val context       = "context"
-    val version       = "version"
-    val apiIdentifier = ApiIdentifier(ApiContext(context), ApiVersion(version))
-    val cmd           = UnsubscribeFromApi(devHubUser, apiIdentifier, timestamp)
-    val evt           = ApiUnsubscribed(
-      UpdateApplicationEvent.Id.random,
-      applicationId,
-      timestamp,
-      devHubUser,
-      context,
-      version
-    )
-
-    "call UnsubscribeFromApi Handler and relevant common services if application exists" in new Setup {
-      primeCommonServiceSuccess()
-
-      when(mockUnsubscribeFromApiCommandHandler.process(*[ApplicationData], *[UnsubscribeFromApi])(*[HeaderCarrier])).thenReturn(E.pure((
-        applicationData,
-        NonEmptyList.one(evt)
-      )))
-
-      await(underTest.dispatch(applicationId, cmd).value)
-      verifyServicesCalledWithEvent(evt)
-      verifyNoneButGivenCmmandHandlerCalled[UnsubscribeFromApiCommandHandler]()
-    }
-
-    "bubble up exception when application fetch fails" in new Setup {
-      testFailure(cmd)
-    }
-
-  }
-
-  " UpdateRedirectUris is received" should {
-    val oldUris = List("uri1", "uri2")
-    val newUris = List("uri3", "uri4")
-    val cmd     = UpdateRedirectUris(devHubUser, oldUris, newUris, timestamp)
-    val evt     = RedirectUrisUpdated(
-      UpdateApplicationEvent.Id.random,
-      applicationId,
-      timestamp,
-      devHubUser,
-      oldUris,
-      newUris
-    )
-
-    "call UpdateRedirectUris Handler and relevant common services if application exists" in new Setup {
-      primeCommonServiceSuccess()
-
-      when(mockUpdateRedirectUrisCommandHandler.process(*[ApplicationData], *[UpdateRedirectUris])).thenReturn(E.pure((
-        applicationData,
-        NonEmptyList.one(evt)
-      )))
-
-      await(underTest.dispatch(applicationId, cmd).value)
-      verifyServicesCalledWithEvent(evt)
-      verifyNoneButGivenCmmandHandlerCalled[UpdateRedirectUrisCommandHandler]()
-    }
-
-    "bubble up exception when application fetch fails" in new Setup {
-      testFailure(cmd)
-    }
-
   }
 }

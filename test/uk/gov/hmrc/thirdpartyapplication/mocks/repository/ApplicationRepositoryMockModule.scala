@@ -22,6 +22,7 @@ import cats.data.NonEmptyList
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
@@ -29,6 +30,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+
+import java.time.LocalDateTime
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -372,6 +375,14 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def thenReturn(applicationData: ApplicationData) =
         when(aMock.addApplicationTermsOfUseAcceptance(*[ApplicationId], *[TermsOfUseAcceptance])).thenReturn(successful(applicationData))
+    }
+
+    object UpdateApplicationChangeResponsibleIndividualToSelf {
+
+      def thenReturn(applicationData: ApplicationData) =
+        when(aMock.updateApplicationChangeResponsibleIndividualToSelf(*[ApplicationId], *[String], *[String], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
+          applicationData
+        ))
     }
 
     object ApplyEvents {

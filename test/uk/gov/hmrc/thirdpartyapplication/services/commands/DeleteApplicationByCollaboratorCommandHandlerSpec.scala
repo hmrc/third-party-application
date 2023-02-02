@@ -65,8 +65,6 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
           }
         )
         filteredEvents.size shouldBe 2
-        val event1         = filteredEvents.head
-        val event2         = filteredEvents.tail.head
 
         filteredEvents.foreach(event =>
           inside(event) {

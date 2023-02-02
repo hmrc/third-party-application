@@ -36,7 +36,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
 
   val timestamp             = FixedClock.now
   val gatekeeperUser        = "gkuser1"
-  val adminName             = "Mr Admin"
   val devHubUser            = CollaboratorActor(adminEmail)
   val applicationId         = ApplicationId.random
   val submissionId          = Submission.Id.random
@@ -68,67 +67,6 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
     adminEmail
   )
   val instigator     = applicationData.collaborators.head.userId
-
-  "update with ChangeResponsibleIndividualToSelf" should {
-    val changeResponsibleIndividual = ChangeResponsibleIndividualToSelf(UserId.random, FixedClock.now, "name", "email")
-
-    "return the updated application if the application exists" in new Setup {
-      val newRiName  = "Mr Responsible"
-      val newRiEmail = "ri@example.com"
-      val code       = "656474284925734543643"
-      val appBefore  = applicationData
-      val appAfter   = applicationData.copy(access =
-        Standard(
-          importantSubmissionData = Some(testImportantSubmissionData.copy(
-            responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)
-          ))
-        )
-      )
-      val event      = ResponsibleIndividualChanged(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        timestamp,
-        CollaboratorActor(changeResponsibleIndividual.email),
-        "bob example",
-        "bob@example.com",
-        newRiName,
-        newRiEmail,
-        Submission.Id.random,
-        1,
-        code,
-        changeResponsibleIndividual.name,
-        changeResponsibleIndividual.email
-      )
-      ApplicationRepoMock.Fetch.thenReturn(appBefore)
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      ApiPlatformEventServiceMock.ApplyEvents.succeeds
-      SubmissionsServiceMock.ApplyEvents.succeeds()
-      NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      NotificationRepositoryMock.ApplyEvents.succeeds()
-      StateHistoryRepoMock.ApplyEvents.succeeds()
-      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
-      ApiGatewayStoreMock.ApplyEvents.succeeds()
-      AuditServiceMock.ApplyEvents.succeeds
-
-      when(mockChangeResponsibleIndividualToSelfCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToSelf])).thenReturn(
-        Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
-      )
-
-      val result = await(underTest.update(applicationId, changeResponsibleIndividual).value)
-
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
-      result shouldBe Right(appAfter)
-    }
-
-    "return the error if the application does not exist" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
-      val result = await(underTest.update(applicationId, changeResponsibleIndividual).value)
-
-      result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
-      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
-    }
-  }
 
   "update with ChangeResponsibleIndividualToOther" should {
     val code                        = "235345t3874528745379534234234234"
@@ -255,6 +193,39 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
 
       result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled
+    }
+  }
+
+  "Not Handle Unsupported Commands" should {
+    val app = applicationData
+
+    val unsupportedCommands = List(
+      mock[AddClientSecret],
+      mock[RemoveClientSecret],
+      mock[AddCollaborator],
+      mock[RemoveCollaborator],
+      mock[ChangeProductionApplicationName],
+      mock[ChangeProductionApplicationPrivacyPolicyLocation],
+      mock[ChangeProductionApplicationTermsAndConditionsLocation],
+      mock[ChangeResponsibleIndividualToSelf],
+      mock[DeclineResponsibleIndividualDidNotVerify],
+      mock[DeclineApplicationApprovalRequest],
+      mock[DeleteApplicationByCollaborator],
+      mock[DeleteApplicationByGatekeeper],
+      mock[DeleteUnusedApplication],
+      mock[DeleteProductionCredentialsApplication],
+      mock[SubscribeToApi],
+      mock[UnsubscribeFromApi],
+      mock[UpdateRedirectUris]
+    )
+
+    "return invalid Nec" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturn(app)
+
+      unsupportedCommands.foreach(command => {
+        val result = await(underTest.update(applicationId, command).value).left.value
+        result.head should startWith("Unsupported ApplicationCommand type")
+      })
     }
   }
 
