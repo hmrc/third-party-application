@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.{EitherT, NonEmptyChain, NonEmptyList, ValidatedNec}
+import cats.data.{EitherT, NonEmptyChain, NonEmptyList, Validated}
 import cats.implicits._
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor}
@@ -41,15 +41,23 @@ object CommandHandler2 {
   type Result  = Future[Either[CommandFailures, CommandSuccess]]
   type ResultT = EitherT[Future, CommandFailures, CommandSuccess]
 
-  def cond(cond: => Boolean, left: String): ValidatedNec[String, Unit] = {
+  def cond(cond: => Boolean, left: String): Validated[CommandFailures, Unit] = {
     if (cond) ().validNec[String] else left.invalidNec[Unit]
   }
 
-  def isCollaboratorOnApp(email: String, app: ApplicationData): ValidatedNec[String, Unit] =
+  def cond[R](cond: => Boolean, left: String, rValue: R): Validated[CommandFailures, R] = {
+    if (cond) rValue.validNec[String] else left.invalidNec[R]
+  }
+
+  def mustBeDefined[R](value: Option[R], left: String): Validated[CommandFailures, R] = {
+    value.fold(left.invalidNec[R])(_.validNec[String])
+  }
+
+  def isCollaboratorOnApp(email: String, app: ApplicationData): Validated[CommandFailures, Unit] =
     cond(app.collaborators.exists(c => c.emailAddress == email), s"no collaborator found with email: $email")
 
-  private def isAdmin(userId: UserId, app: ApplicationData): Boolean =
-    app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.userId == userId)
+  // private def isAdmin(userId: UserId, app: ApplicationData): Boolean =
+  //   app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.userId == userId)
 
   private def isCollaboratorActorAndAdmin(actor: Actor, app: ApplicationData): Boolean =
     actor match {
@@ -61,22 +69,22 @@ object CommandHandler2 {
     updated.exists(_.role == Role.ADMINISTRATOR)
   }
 
-  def isAdminOnApp(userId: UserId, app: ApplicationData): ValidatedNec[String, Unit] =
-    cond(isAdmin(userId, app), "User must be an ADMIN")
+  def isAdminOnApp(userId: UserId, app: ApplicationData): Validated[CommandFailures, Collaborator] =
+    mustBeDefined(app.collaborators.find(c => c.role == Role.ADMINISTRATOR && c.userId == userId), "User must be an ADMIN")
 
-  def isAdminIfInProduction(actor: Actor, app: ApplicationData): ValidatedNec[String, Unit] =
+  def isAdminIfInProduction(actor: Actor, app: ApplicationData): Validated[CommandFailures, Unit] =
     cond(
       (app.environment == Environment.PRODUCTION.toString && isCollaboratorActorAndAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString),
       "App is in PRODUCTION so User must be an ADMIN"
     )
 
-  def isNotInProcessOfBeingApproved(app: ApplicationData): ValidatedNec[String, Unit] =
+  def isNotInProcessOfBeingApproved(app: ApplicationData): Validated[CommandFailures, Unit] =
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION || app.state.name == State.TESTING,
       "App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION"
     )
 
-  def isApproved(app: ApplicationData): ValidatedNec[String, Unit] =
+  def isApproved(app: ApplicationData): Validated[CommandFailures, Unit] =
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION,
       "App is not in PRE_PRODUCTION or in PRODUCTION state"
@@ -157,6 +165,6 @@ object CommandHandler2 {
   def isRequesterNameDefined(app: ApplicationData) =
     cond(getRequesterName(app).isDefined, "The requestedByName has not been set for this application")
 
-  def appHasLessThanLimitOfSecrets(app: ApplicationData, clientSecretLimit: Int): ValidatedNec[String, Unit] =
+  def appHasLessThanLimitOfSecrets(app: ApplicationData, clientSecretLimit: Int): Validated[CommandFailures, Unit] =
     cond(app.tokens.production.clientSecrets.size < clientSecretLimit, "Client secret limit has been exceeded")
 }

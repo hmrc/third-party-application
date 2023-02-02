@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
+import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
@@ -47,8 +47,8 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
       app: ApplicationData,
       cmd: DeclineResponsibleIndividualDidNotVerify,
       riVerification: ResponsibleIndividualToUVerification
-    ): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map6(
+    ): Validated[CommandFailures, ApplicationData] = {
+    Apply[Validated[CommandFailures, *]].map6(
       isStandardNewJourneyApp(app),
       isPendingResponsibleIndividualVerification(app),
       isApplicationIdTheSame(app, riVerification),
@@ -62,8 +62,8 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
       app: ApplicationData,
       cmd: DeclineResponsibleIndividualDidNotVerify,
       riVerification: ResponsibleIndividualUpdateVerification
-    ): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map4(
+    ): Validated[CommandFailures, ApplicationData] = {
+    Apply[Validated[CommandFailures, *]].map4(
       isStandardNewJourneyApp(app),
       isApproved(app),
       isApplicationIdTheSame(app, riVerification),

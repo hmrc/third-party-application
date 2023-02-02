@@ -17,8 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-import cats.data.{NonEmptyList, Validated, ValidatedNec}
+import scala.concurrent.ExecutionContext
+import cats.data.{NonEmptyList, Validated}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
@@ -37,12 +37,12 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
     val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
     val stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler2 {
+  ) extends DeleteApplicationCommandHandler {
 
   import CommandHandler2._
   import UpdateApplicationEvent._
 
-  private def validate(app: ApplicationData): ValidatedNec[String, ApplicationData] = {
+  private def validate(app: ApplicationData): Validated[CommandFailures, ApplicationData] = {
     Validated.validNec(app)
   }
 
@@ -78,11 +78,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
       valid    <- E.fromEither(validate(app).toEither)
       savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.requestedByEmailAddress, cmd.requestedByEmailAddress))
       events    = asEvents(savedApp, cmd)
-      _        <- E.liftF(stateHistoryRepository.applyEvents(events))
-      _        <- E.liftF(thirdPartyDelegatedAuthorityService.applyEvents(events))
-      _        <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
-      _        <- E.liftF(apiGatewayStore.applyEvents(events))
-      _        <- E.liftF(notificationRepository.applyEvents(events))
+      _        <- deleteApplication(app, cmd.timestamp, cmd.requestedByEmailAddress, cmd.requestedByEmailAddress, events)
     } yield (savedApp, events)
   }
 }

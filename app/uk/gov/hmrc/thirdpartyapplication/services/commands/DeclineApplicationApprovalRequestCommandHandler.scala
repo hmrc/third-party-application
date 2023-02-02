@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
+import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -35,8 +35,8 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map4(
+  private def validate(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): Validated[CommandFailures, ApplicationData] = {
+    Apply[Validated[CommandFailures, *]].map4(
       isStandardNewJourneyApp(app),
       isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app),
       isRequesterEmailDefined(app),

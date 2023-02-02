@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
+import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
@@ -46,8 +46,8 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
       s"The specified individual is already the RI for this application"
     )
 
-  private def validate(app: ApplicationData, cmd: VerifyResponsibleIndividual): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map4(
+  private def validate(app: ApplicationData, cmd: VerifyResponsibleIndividual): Validated[CommandFailures, ApplicationData] = {
+    Apply[Validated[CommandFailures, *]].map4(
       isStandardNewJourneyApp(app),
       isApproved(app),
       isAdminOnApp(cmd.instigator, app),

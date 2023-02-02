@@ -40,8 +40,12 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
 
   import CommandHandler2._
 
-  private def validate(app: ApplicationData, cmd: ChangeProductionApplicationName, nameValidationResult: ApplicationNameValidationResult): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map5(
+  private def validate(
+      app: ApplicationData,
+      cmd: ChangeProductionApplicationName,
+      nameValidationResult: ApplicationNameValidationResult
+    ): Validated[CommandFailures, ApplicationData] = {
+    Apply[Validated[CommandFailures, *]].map5(
       isAdminOnApp(cmd.instigator, app),
       isNotInProcessOfBeingApproved(app),
       cond(app.name != cmd.newName, "App already has that name"),

@@ -20,7 +20,7 @@ import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, RemoveCollaborator, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -35,13 +35,13 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
   private def validate(app: ApplicationData, cmd: RemoveCollaborator) = {
 
     cmd.actor match {
-      case CollaboratorActor(actorEmail: String) => Apply[ValidatedNec[String, *]]
+      case CollaboratorActor(actorEmail: String) => Apply[Validated[CommandFailures, *]]
           .map3(
             isCollaboratorOnApp(actorEmail, app),
             isCollaboratorOnApp(cmd.collaborator.emailAddress, app),
             applicationWillHaveAnAdmin(cmd.collaborator.emailAddress, app)
           ) { case _ => app }
-      case _                                     => Apply[ValidatedNec[String, *]]
+      case _                                     => Apply[Validated[CommandFailures, *]]
           .map2(isCollaboratorOnApp(cmd.collaborator.emailAddress, app), applicationWillHaveAnAdmin(cmd.collaborator.emailAddress, app)) { case _ => app }
     }
 

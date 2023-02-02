@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{
   ChangeProductionApplicationPrivacyPolicyLocation,
@@ -43,14 +43,14 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
   import UpdateApplicationEvent._
 
   def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): ResultT = {
-    def validate: ValidatedNec[String, String] = {
+    def validate: Validated[CommandFailures, String] = {
       val newUrl     = cmd.newLocation match {
         case Url(value) => Some(value)
         case _          => None
       }
       val isJustAUrl = cond(newUrl.isDefined, "Unexpected new PrivacyPolicyLocation type specified for legacy application: " + cmd.newLocation)
 
-      Apply[ValidatedNec[String, *]].map4(
+      Apply[Validated[CommandFailures, *]].map4(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         isStandardAccess(app),
@@ -84,8 +84,8 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
   }
 
   def processApp(oldLocation: PrivacyPolicyLocation, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): ResultT = {
-    def validate: ValidatedNec[String, ApplicationData] = {
-      Apply[ValidatedNec[String, *]].map3(
+    def validate: Validated[CommandFailures, ApplicationData] = {
+      Apply[Validated[CommandFailures, *]].map3(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         isStandardAccess(app)

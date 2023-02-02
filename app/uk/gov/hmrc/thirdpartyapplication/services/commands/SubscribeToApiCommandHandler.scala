@@ -46,11 +46,11 @@ class SubscribeToApiCommandHandler @Inject() (
   import CommandHandler2._
   import UpdateApplicationEvent._
 
-  private def validate(app: ApplicationData, cmd: SubscribeToApi, rolePassed: Boolean, alreadySubcribed: Boolean): ValidatedNec[String, Unit] = {
+  private def validate(app: ApplicationData, cmd: SubscribeToApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[CommandFailures, Unit] = {
     def isGatekeeperUser       = cond(rolePassed, s"Unauthorized to subscribe any API to app ${app.name}")
     def notAlreadySubscribedTo = cond(!alreadySubcribed, s"Application ${app.name} is already subscribed to API ${cmd.apiIdentifier.asText(" v")}")
 
-    Apply[ValidatedNec[String, *]].map2(
+    Apply[Validated[CommandFailures, *]].map2(
       isGatekeeperUser,
       notAlreadySubscribedTo
     ) { case _ => () }

@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ClientSecret, RemoveClientSecret, UpdateApplicationEvent}
@@ -35,8 +35,8 @@ class RemoveClientSecretCommandHandler @Inject() (
 
   import CommandHandler2._
 
-  private def validate(app: ApplicationData, cmd: RemoveClientSecret): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map2(
+  private def validate(app: ApplicationData, cmd: RemoveClientSecret): Validated[CommandFailures, ApplicationData] = {
+    Apply[Validated[CommandFailures, *]].map2(
       isAdminIfInProduction(cmd.actor, app),
       clientSecretExists(cmd.clientSecretId, app)
     ) { case _ => app }

@@ -17,9 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
@@ -39,13 +39,13 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
     val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
     val stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler2 {
+  ) extends DeleteApplicationCommandHandler {
 
   import CommandHandler2._
   import UpdateApplicationEvent._
 
-  private def validate(app: ApplicationData): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]]
+  private def validate(app: ApplicationData): Validated[CommandFailures, ApplicationData] = {
+    Apply[Validated[CommandFailures, *]]
       .map(isInTesting(app)) { case _ => app }
   }
 
@@ -79,11 +79,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
       valid    <- E.fromEither(validate(app).toEither)
       savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
       events    = asEvents(savedApp, cmd)
-      _        <- E.liftF(stateHistoryRepository.applyEvents(events))
-      _        <- E.liftF(thirdPartyDelegatedAuthorityService.applyEvents(events))
-      _        <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
-      _        <- E.liftF(apiGatewayStore.applyEvents(events))
-      _        <- E.liftF(notificationRepository.applyEvents(events))
+      _        <- deleteApplication(app, cmd.timestamp, cmd.jobId, cmd.jobId, events)
     } yield (savedApp, events)
   }
 

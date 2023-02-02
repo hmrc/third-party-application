@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -38,19 +38,19 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
   import UpdateApplicationEvent._
 
   def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
-    def validate: ValidatedNec[String, String] = {
-      val newUrl     = cmd.newLocation match {
+    def validate: Validated[CommandFailures, String] = {
+      val newUrl       = cmd.newLocation match {
         case Url(value) => Some(value)
         case _          => None
       }
-      val isJustAUrl = cond(newUrl.isDefined, "Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
+      val ensureIsAUrl = mustBeDefined(newUrl, s"Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
 
-      Apply[ValidatedNec[String, *]].map4(
+      Apply[Validated[CommandFailures, *]].map4(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         isStandardAccess(app),
-        isJustAUrl
-      ) { case _ => newUrl.get }
+        ensureIsAUrl
+      ) { case (_, _, _, url) => url }
     }
 
     def asEvents(newUrl: String): NonEmptyList[UpdateApplicationEvent] = {
@@ -66,11 +66,6 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
       )
     }
 
-    cmd.newLocation match {
-      case Url(value) => value
-      case _          => false
-    }
-
     for {
       newUrl   <- E.fromEither(validate.toEither)
       savedApp <- E.liftF(applicationRepository.updateLegacyApplicationTermsAndConditionsLocation(app.id, newUrl))
@@ -79,8 +74,8 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
   }
 
   def processApp(oldLocation: TermsAndConditionsLocation, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
-    def validate: ValidatedNec[String, ApplicationData] = {
-      Apply[ValidatedNec[String, *]].map3(
+    def validate: Validated[CommandFailures, ApplicationData] = {
+      Apply[Validated[CommandFailures, *]].map3(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         isStandardAccess(app)

@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
+import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
@@ -53,8 +53,12 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
   private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
-  private def validateToU(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualToUVerification): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map6(
+  private def validateToU(
+      app: ApplicationData,
+      cmd: ChangeResponsibleIndividualToOther,
+      riVerification: ResponsibleIndividualToUVerification
+    ): Validated[CommandFailures, ApplicationData] = {
+    Apply[Validated[CommandFailures, *]].map6(
       isStandardNewJourneyApp(app),
       isPendingResponsibleIndividualVerification(app),
       isApplicationIdTheSame(app, riVerification),
@@ -68,9 +72,9 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
       app: ApplicationData,
       cmd: ChangeResponsibleIndividualToOther,
       riVerification: ResponsibleIndividualUpdateVerification
-    ): ValidatedNec[String, ApplicationData] = {
+    ): Validated[CommandFailures, ApplicationData] = {
     val responsibleIndividual = riVerification.responsibleIndividual
-    Apply[ValidatedNec[String, *]].map5(
+    Apply[Validated[CommandFailures, *]].map5(
       isStandardNewJourneyApp(app),
       isApproved(app),
       isApplicationIdTheSame(app, riVerification),
