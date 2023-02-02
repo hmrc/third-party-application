@@ -24,27 +24,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{
-  AddClientSecretCommandHandler,
-  AddCollaboratorCommandHandler,
-  ChangeProductionApplicationNameCommandHandler,
-  ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-  ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
-  CommandApplicationExamples,
-  CommandCollaboratorExamples,
-  CommandHandler2,
-  DeclineApplicationApprovalRequestCommandHandler,
-  DeleteApplicationByCollaboratorCommandHandler,
-  DeleteApplicationByGatekeeperCommandHandler,
-  DeleteProductionCredentialsApplicationCommandHandler,
-  DeleteUnusedApplicationCommandHandler,
-  RemoveClientSecretCommandHandler,
-  RemoveCollaboratorCommandHandler,
-  SubscribeToApiCommandHandler,
-  UnsubscribeFromApiCommandHandler,
-  UpdateRedirectUrisCommandHandler
-}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.{collaboratorAlreadyOnApp, CommandFailures}
+import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.CommandFailures
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
 import uk.gov.hmrc.thirdpartyapplication.util._
 
