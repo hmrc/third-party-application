@@ -47,7 +47,7 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
 
     object IsSubscribed {
 
-      def isTrue()  =
+      def isTrue() =
         when(aMock.isSubscribed(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(true))
 
       def isFalse() =

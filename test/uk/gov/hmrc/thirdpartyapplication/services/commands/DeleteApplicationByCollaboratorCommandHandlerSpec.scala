@@ -54,6 +54,8 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
       ApplicationRepoMock.aMock,
       ApiGatewayStoreMock.aMock,
       NotificationRepositoryMock.aMock,
+      ResponsibleIndividualVerificationRepositoryMock.aMock,
+      ThirdPartyDelegatedAuthorityServiceMock.aMock,
       StateHistoryRepoMock.aMock
     )
 
@@ -100,6 +102,8 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       NotificationRepositoryMock.ApplyEvents.succeeds()
 
       val result = await(underTest.process(app, cmd).value).right.value
@@ -124,40 +128,4 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
 
   }
 
-  //
-//  "process" should {
-//    "create correct event for a valid request with a standard app" in new Setup {
-//
-//      val result = await(underTest.process(app, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
-//
-//      result.isValid shouldBe true
-//      result.toOption.get.length shouldBe 2
-//
-//      val applicationDeleted = result.toOption.get.head.asInstanceOf[ApplicationDeleted]
-//      applicationDeleted.applicationId shouldBe appId
-//      applicationDeleted.eventDateTime shouldBe ts
-//      applicationDeleted.actor shouldBe actor
-//      applicationDeleted.reasons shouldBe reasons
-//      applicationDeleted.clientId shouldBe app.tokens.production.clientId
-//      applicationDeleted.wso2ApplicationName shouldBe app.wso2ApplicationName
-//
-//      val stateEvent = result.toOption.get.tail.head.asInstanceOf[ApplicationStateChanged]
-//      stateEvent.applicationId shouldBe appId
-//      stateEvent.eventDateTime shouldBe ts
-//      stateEvent.actor shouldBe actor
-//      stateEvent.newAppState shouldBe State.DELETED
-//      stateEvent.oldAppState shouldBe app.state.name
-//    }
-//
-//    "return an error if the application is non-standard" in new Setup {
-//      val nonStandardApp = app.copy(access = Ropc(Set.empty))
-//      val result         = await(underTest.process(nonStandardApp, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
-//      result shouldBe Invalid(NonEmptyChain.apply("App must have a STANDARD access type"))
-//    }
-//
-//    "return an error if the actor is not an admin of the application" in new Setup {
-//      val result = await(underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, ts)))
-//      result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))
-//    }
-//  }
 }

@@ -45,6 +45,8 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
       ApplicationRepoMock.aMock,
       ApiGatewayStoreMock.aMock,
       NotificationRepositoryMock.aMock,
+      ResponsibleIndividualVerificationRepositoryMock.aMock,
+      ThirdPartyDelegatedAuthorityServiceMock.aMock,
       StateHistoryRepoMock.aMock
     )
 
@@ -90,9 +92,11 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
     val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, ts)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
-      StateHistoryRepoMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
       NotificationRepositoryMock.ApplyEvents.succeeds()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.ApplyEvents.succeeds()
 
       val result = await(underTest.process(app, cmd).value).right.value
 

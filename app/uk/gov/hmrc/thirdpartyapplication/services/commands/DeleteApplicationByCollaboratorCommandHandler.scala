@@ -20,12 +20,13 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByCollaborator, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
+import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 
 @Singleton
 class DeleteApplicationByCollaboratorCommandHandler @Inject() (
@@ -33,6 +34,8 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     val applicationRepository: ApplicationRepository,
     val apiGatewayStore: ApiGatewayStore,
     val notificationRepository: NotificationRepository,
+    val responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
+    val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
     val stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler2 {
@@ -81,6 +84,8 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
       savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, admin, admin))
       events    = asEvents(savedApp, cmd)
       _        <- E.liftF(stateHistoryRepository.applyEvents(events))
+      _        <- E.liftF(thirdPartyDelegatedAuthorityService.applyEvents(events))
+      _        <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
       _        <- E.liftF(apiGatewayStore.applyEvents(events))
       _        <- E.liftF(notificationRepository.applyEvents(events))
     } yield (savedApp, events)

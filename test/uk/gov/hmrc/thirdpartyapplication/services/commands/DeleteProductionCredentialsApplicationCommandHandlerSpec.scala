@@ -46,6 +46,8 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
       ApplicationRepoMock.aMock,
       ApiGatewayStoreMock.aMock,
       NotificationRepositoryMock.aMock,
+      ResponsibleIndividualVerificationRepositoryMock.aMock,
+      ThirdPartyDelegatedAuthorityServiceMock.aMock,
       StateHistoryRepoMock.aMock
     )
 
@@ -93,6 +95,8 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       NotificationRepositoryMock.ApplyEvents.succeeds()
 
       val result = await(underTest.process(app, cmd).value).right.value

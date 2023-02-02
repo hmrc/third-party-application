@@ -42,6 +42,8 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
       ApplicationRepoMock.aMock,
       ApiGatewayStoreMock.aMock,
       NotificationRepositoryMock.aMock,
+      ResponsibleIndividualVerificationRepositoryMock.aMock,
+      ThirdPartyDelegatedAuthorityServiceMock.aMock,
       StateHistoryRepoMock.aMock
     )
 
@@ -91,6 +93,8 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
       NotificationRepositoryMock.ApplyEvents.succeeds()
 
       val result = await(underTest.process(app, cmd).value).right.value
@@ -98,14 +102,6 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
       checkSuccessResult()(result)
     }
 
-//    "return an error when app is NOT in testing state" in new Setup {
-//      val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, ts)
-//
-//      val result = await(underTest.process(app, cmd).value).left.value.toNonEmptyList.toList
-//
-//      result should have length 1
-//      result.head shouldBe "App is not in TESTING state"
-//    }
   }
 
 }
