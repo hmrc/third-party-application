@@ -18,11 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.util.HasApplicationId
 
-trait CommandApplicationExamples {
+trait CommandApplicationExamples extends HasApplicationId {
   self: ApplicationTestData with CommandCollaboratorExamples =>
-
-  val applicationId = ApplicationId.random
 
   val principalApp   = anApplicationData(applicationId).copy(
     collaborators = Set(

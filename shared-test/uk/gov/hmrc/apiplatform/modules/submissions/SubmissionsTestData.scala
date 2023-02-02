@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.util.HasApplicationId
 
 trait StatusTestDataHelper {
 
@@ -86,10 +87,9 @@ trait ProgressTestDataHelper {
   }
 }
 
-trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper {
+trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper {
 
-  val submissionId  = Submission.Id.random
-  val applicationId = ApplicationId.random
+  val submissionId = Submission.Id.random
 
   val standardContext: AskWhen.Context = Map(
     AskWhen.Context.Keys.IN_HOUSE_SOFTWARE -> "No",

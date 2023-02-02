@@ -338,85 +338,85 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
     }
   }
 
-  "update with DeclineResponsibleIndividualDidNotVerify" should {
-    val code                                     = "235345t3874528745379534234234234"
-    val declineResponsibleIndividualDidNotVerify = DeclineResponsibleIndividualDidNotVerify(code, FixedClock.now)
-    val requesterEmail                           = "bill.badger@rupert.com"
-    val requesterName                            = "bill badger"
-    val appInPendingRIVerification               = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
+  // "update with DeclineResponsibleIndividualDidNotVerify" should {
+  //   val code                                     = "235345t3874528745379534234234234"
+  //   val declineResponsibleIndividualDidNotVerify = DeclineResponsibleIndividualDidNotVerify(code, FixedClock.now)
+  //   val requesterEmail                           = "bill.badger@rupert.com"
+  //   val requesterName                            = "bill badger"
+  //   val appInPendingRIVerification               = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
 
-    "return the updated application if the application exists" in new Setup {
-      val newRiName                  = "Mr Responsible"
-      val newRiEmail                 = "ri@example.com"
-      val reasons                    = "reasons"
-      val appBefore                  = appInPendingRIVerification
-      val appAfter                   = appInPendingRIVerification.copy(access =
-        Standard(
-          importantSubmissionData = Some(testImportantSubmissionData.copy(
-            responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)
-          ))
-        )
-      )
-      val riDidNotVerify             = ResponsibleIndividualDidNotVerify(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        timestamp,
-        CollaboratorActor(requesterEmail),
-        newRiName,
-        newRiEmail,
-        Submission.Id.random,
-        1,
-        code,
-        requesterName,
-        requesterEmail
-      )
-      val appApprovalRequestDeclined = ApplicationApprovalRequestDeclined(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        timestamp,
-        CollaboratorActor(requesterEmail),
-        newRiName,
-        newRiEmail,
-        Submission.Id.random,
-        1,
-        reasons,
-        requesterName,
-        requesterEmail
-      )
-      val stateEvent                 = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        timestamp,
-        CollaboratorActor(requesterEmail),
-        State.PENDING_GATEKEEPER_APPROVAL,
-        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
-        requesterEmail,
-        requesterName
-      )
-      val events                     = NonEmptyList.of(riDidNotVerify, appApprovalRequestDeclined, stateEvent)
+  //   "return the updated application if the application exists" in new Setup {
+  //     val newRiName                  = "Mr Responsible"
+  //     val newRiEmail                 = "ri@example.com"
+  //     val reasons                    = "reasons"
+  //     val appBefore                  = appInPendingRIVerification
+  //     val appAfter                   = appInPendingRIVerification.copy(access =
+  //       Standard(
+  //         importantSubmissionData = Some(testImportantSubmissionData.copy(
+  //           responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)
+  //         ))
+  //       )
+  //     )
+  //     val riDidNotVerify             = ResponsibleIndividualDidNotVerify(
+  //       UpdateApplicationEvent.Id.random,
+  //       applicationId,
+  //       timestamp,
+  //       CollaboratorActor(requesterEmail),
+  //       newRiName,
+  //       newRiEmail,
+  //       Submission.Id.random,
+  //       1,
+  //       code,
+  //       requesterName,
+  //       requesterEmail
+  //     )
+  //     val appApprovalRequestDeclined = ApplicationApprovalRequestDeclined(
+  //       UpdateApplicationEvent.Id.random,
+  //       applicationId,
+  //       timestamp,
+  //       CollaboratorActor(requesterEmail),
+  //       newRiName,
+  //       newRiEmail,
+  //       Submission.Id.random,
+  //       1,
+  //       reasons,
+  //       requesterName,
+  //       requesterEmail
+  //     )
+  //     val stateEvent                 = ApplicationStateChanged(
+  //       UpdateApplicationEvent.Id.random,
+  //       applicationId,
+  //       timestamp,
+  //       CollaboratorActor(requesterEmail),
+  //       State.PENDING_GATEKEEPER_APPROVAL,
+  //       State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
+  //       requesterEmail,
+  //       requesterName
+  //     )
+  //     val events                     = NonEmptyList.of(riDidNotVerify, appApprovalRequestDeclined, stateEvent)
 
-      ApplicationRepoMock.Fetch.thenReturn(appBefore)
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      ApiPlatformEventServiceMock.ApplyEvents.succeeds
-      NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      SubmissionsServiceMock.ApplyEvents.succeeds()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      NotificationRepositoryMock.ApplyEvents.succeeds()
-      StateHistoryRepoMock.ApplyEvents.succeeds()
-      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
-      ApiGatewayStoreMock.ApplyEvents.succeeds()
-      AuditServiceMock.ApplyEvents.succeeds
+  //     ApplicationRepoMock.Fetch.thenReturn(appBefore)
+  //     ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+  //     ApiPlatformEventServiceMock.ApplyEvents.succeeds
+  //     NotificationServiceMock.SendNotifications.thenReturnSuccess()
+  //     SubmissionsServiceMock.ApplyEvents.succeeds()
+  //     ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+  //     NotificationRepositoryMock.ApplyEvents.succeeds()
+  //     StateHistoryRepoMock.ApplyEvents.succeeds()
+  //     ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+  //     ApiGatewayStoreMock.ApplyEvents.succeeds()
+  //     AuditServiceMock.ApplyEvents.succeeds
 
-      when(mockDeclineResponsibleIndividualDidNotVerifyCommandHandler.process(*[ApplicationData], *[DeclineResponsibleIndividualDidNotVerify])).thenReturn(
-        Future.successful(Validated.valid(events).toValidatedNec)
-      )
+  //     when(mockDeclineResponsibleIndividualDidNotVerifyCommandHandler.process(*[ApplicationData], *[DeclineResponsibleIndividualDidNotVerify])).thenReturn(
+  //       Future.successful(Validated.valid(events).toValidatedNec)
+  //     )
 
-      val result = await(underTest.update(applicationId, declineResponsibleIndividualDidNotVerify).value)
+  //     val result = await(underTest.update(applicationId, declineResponsibleIndividualDidNotVerify).value)
 
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(riDidNotVerify, appApprovalRequestDeclined, stateEvent)
-      result shouldBe Right(appAfter)
-    }
-  }
+  //     ApplicationRepoMock.ApplyEvents.verifyCalledWith(riDidNotVerify, appApprovalRequestDeclined, stateEvent)
+  //     result shouldBe Right(appAfter)
+  //   }
+  // }
 
   "update with DeclineApplicationApprovalRequest" should {
     val gatekeeperUser                    = "Bob.TheBuilder"

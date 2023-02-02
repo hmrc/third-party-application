@@ -150,20 +150,20 @@ object CommandHandler2 {
       case _                                                                                            => None
     }
 
-  def isResponsibleIndividualDefined(app: ApplicationData) =
-    cond(getResponsibleIndividual(app).isDefined, "The responsible individual has not been set for this application")
+  def ensureResponsibleIndividualDefined(app: ApplicationData) =
+    mustBeDefined(getResponsibleIndividual(app), "The responsible individual has not been set for this application")
 
   def getRequesterEmail(app: ApplicationData) =
     app.state.requestedByEmailAddress
 
-  def isRequesterEmailDefined(app: ApplicationData) =
-    cond(getRequesterEmail(app).isDefined, "The requestedByEmailAddress has not been set for this application")
+  def ensureRequesterEmailDefined(app: ApplicationData) =
+    mustBeDefined(getRequesterEmail(app), "The requestedByEmailAddress has not been set for this application")
 
   def getRequesterName(app: ApplicationData) =
     app.state.requestedByName.orElse(getRequesterEmail(app))
 
-  def isRequesterNameDefined(app: ApplicationData) =
-    cond(getRequesterName(app).isDefined, "The requestedByName has not been set for this application")
+  def ensureRequesterNameDefined(app: ApplicationData) =
+    mustBeDefined(getRequesterName(app), "The requestedByName has not been set for this application")
 
   def appHasLessThanLimitOfSecrets(app: ApplicationData, clientSecretLimit: Int): Validated[CommandFailures, Unit] =
     cond(app.tokens.production.clientSecrets.size < clientSecretLimit, "Client secret limit has been exceeded")

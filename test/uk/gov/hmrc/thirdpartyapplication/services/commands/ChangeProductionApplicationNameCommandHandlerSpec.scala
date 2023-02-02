@@ -50,8 +50,10 @@ class ChangeProductionApplicationNameCommandHandlerSpec
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
-    def checkSuccessResult(expectedActor: GatekeeperUserActor)(result: CommandHandler2.CommandSuccess) = {
-      inside(result) { case (app, events) =>
+    def checkSuccessResult(expectedActor: GatekeeperUserActor)(fn: => CommandHandler2.ResultT) = {
+      val testMe = await(fn.value).right.value
+
+      inside(testMe) { case (app, events) =>
         events should have size 1
         val event = events.head
 
@@ -81,9 +83,9 @@ class ChangeProductionApplicationNameCommandHandlerSpec
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
       ApplicationRepoMock.UpdateApplicationName.thenReturn(app) // unmodified
 
-      val result = await(underTest.process(app, update).value).right.value
-
-      checkSuccessResult(GatekeeperUserActor(gatekeeperUser))(result)
+      checkSuccessResult(GatekeeperUserActor(gatekeeperUser)) {
+        underTest.process(app, update)
+      }
     }
 
     "create correct events for a valid request with a priv app" in new Setup {
@@ -91,9 +93,9 @@ class ChangeProductionApplicationNameCommandHandlerSpec
       val priviledgedApp = app.copy(access = Privileged())
       ApplicationRepoMock.UpdateApplicationName.thenReturn(priviledgedApp) // unmodified
 
-      val result = await(underTest.process(priviledgedApp, update).value).right.value
-
-      checkSuccessResult(GatekeeperUserActor(gatekeeperUser))(result)
+      checkSuccessResult(GatekeeperUserActor(gatekeeperUser)) {
+        underTest.process(priviledgedApp, update)
+      }
     }
 
     "return an error if instigator is not a collaborator on the application" in new Setup {

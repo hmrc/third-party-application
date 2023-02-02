@@ -43,8 +43,10 @@ class AddCollaboratorCommandHandlerSpec
     val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, adminsToEmail, timestamp)
     val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, adminsToEmail, timestamp)
 
-    def checkSuccessResult(expectedActor: CollaboratorActor)(result: CommandHandler2.CommandSuccess) = {
-      inside(result) { case (app, events) =>
+    def checkSuccessResult(expectedActor: CollaboratorActor)(fn: => CommandHandler2.ResultT) = {
+      val testThis = await(fn.value).right.value
+
+      inside(testThis) { case (app, events) =>
         events should have size 1
         val event = events.head
 
@@ -57,32 +59,34 @@ class AddCollaboratorCommandHandlerSpec
         }
       }
     }
+
+    def checkFailsWith(msg: String)(fn: => CommandHandler2.ResultT) = {
+      val testThis = await(fn.value).left.value.toNonEmptyList.toList
+
+      testThis should have length 1
+      testThis.head shouldBe msg
+    }
   }
 
   "given a principal application" should {
     "succeed for an admin" in new Setup {
       ApplicationRepoMock.AddCollaborator.succeeds(principalApp) // Not modified
 
-      val result = await(underTest.process(principalApp, addCollaboratorAsAdmin).value).right.value
-
-      checkSuccessResult(adminActor)(result)
+      checkSuccessResult(adminActor)(underTest.process(principalApp, addCollaboratorAsAdmin))
     }
 
     "succeed for a non-admin developer" in new Setup {
       ApplicationRepoMock.AddCollaborator.succeeds(principalApp) // Not modified
 
-      val result = await(underTest.process(principalApp, addCollaboratorAsDev).value).right.value
-
-      checkSuccessResult(developerActor)(result)
+      checkSuccessResult(developerActor)(underTest.process(principalApp, addCollaboratorAsDev))
     }
 
     "return an error when collaborate already exists on the app" in new Setup {
       val existingCollaboratorCmd = addCollaboratorAsAdmin.copy(collaborator = adminCollaborator)
 
-      val result = await(underTest.process(principalApp, existingCollaboratorCmd).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe s"Collaborator already linked to Application ${applicationId.value}"
+      checkFailsWith(s"Collaborator already linked to Application ${applicationId.value}") {
+        underTest.process(principalApp, existingCollaboratorCmd)
+      }
     }
   }
 
@@ -90,9 +94,7 @@ class AddCollaboratorCommandHandlerSpec
     "succeed for a non-admin developer" in new Setup {
       ApplicationRepoMock.AddCollaborator.succeeds(subordinateApp) // Not modified
 
-      val result = await(underTest.process(subordinateApp, addCollaboratorAsDev).value).right.value
-
-      checkSuccessResult(developerActor)(result)
+      checkSuccessResult(developerActor)(underTest.process(subordinateApp, addCollaboratorAsDev))
     }
   }
 }

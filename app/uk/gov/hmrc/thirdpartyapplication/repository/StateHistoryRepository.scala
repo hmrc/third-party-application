@@ -115,7 +115,7 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
     }
   }
 
-  private def addStateHistoryRecord(evt: ApplicationStateChanged) = {
+  def addStateHistoryRecord(evt: ApplicationStateChanged) = {
     val stateHistory = StateHistory(evt.applicationId, evt.newAppState, OldActor(evt.requestingAdminEmail, COLLABORATOR), Some(evt.oldAppState), changedAt = evt.eventDateTime)
     insert(stateHistory).map(_ => HasSucceeded)
   }

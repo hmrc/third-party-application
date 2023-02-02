@@ -25,6 +25,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 
 trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -109,6 +110,17 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
 
       def succeeds() = {
         when(aMock.applyEvents(*)).thenReturn(Future.successful(None))
+      }
+    }
+
+    object DeclineApprovalRequest {
+
+      def succeeds()                           = {
+        when(aMock.declineApplicationApprovalRequest(*)).thenReturn(successful(None))
+      }
+
+      def succeedsWith(submission: Submission) = {
+        when(aMock.declineApplicationApprovalRequest(*)).thenReturn(successful(Some(submission)))
       }
     }
   }
