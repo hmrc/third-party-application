@@ -16,13 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
-import cats.data.NonEmptyChain
-import cats.data.Validated.Invalid
-
-import uk.gov.hmrc.http.HeaderCarrier
-
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualUpdateVerification,
@@ -30,14 +23,17 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationState
 }
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
-  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule {
+  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationRepositoryMockModule with StateHistoryRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -93,78 +89,119 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       requesterEmail,
       ResponsibleIndividualVerificationState.INITIAL
     )
-    val underTest            = new ChangeResponsibleIndividualToOtherCommandHandler(ResponsibleIndividualVerificationRepositoryMock.aMock)
+
+    val underTest =
+      new ChangeResponsibleIndividualToOtherCommandHandler(ApplicationRepoMock.aMock, ResponsibleIndividualVerificationRepositoryMock.aMock, StateHistoryRepoMock.aMock)
+
+    def checkSuccessResultToU()(fn: => CommandHandler2.ResultT) = {
+      val testMe = await(fn.value).right.value
+
+      inside(testMe) { case (app, events) =>
+        events should have size 2
+
+        events.collect {
+          case riSet: ResponsibleIndividualSet =>
+            riSet.applicationId shouldBe appId
+            riSet.eventDateTime shouldBe ts
+            riSet.actor shouldBe CollaboratorActor(appAdminEmail)
+            riSet.responsibleIndividualName shouldBe riName
+            riSet.responsibleIndividualEmail shouldBe riEmail
+            riSet.submissionIndex shouldBe submission.latestInstance.index
+            riSet.submissionId shouldBe submission.id
+            riSet.requestingAdminEmail shouldBe appAdminEmail
+            riSet.code shouldBe code
+        }
+
+        events.collect {
+          case stateEvent: ApplicationStateChanged =>
+            stateEvent.applicationId shouldBe appId
+            stateEvent.eventDateTime shouldBe ts
+            stateEvent.actor shouldBe CollaboratorActor(appAdminEmail)
+            stateEvent.requestingAdminEmail shouldBe requesterEmail
+            stateEvent.requestingAdminName shouldBe requesterName
+            stateEvent.newAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL
+            stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+        }
+      }
+    }
+
+    def checkSuccessResultUpdate()(fn: => CommandHandler2.ResultT) = {
+      val testMe = await(fn.value).right.value
+
+      inside(testMe) { case (app, events) =>
+        events should have size 1
+
+        events.collect {
+          case riChanged: ResponsibleIndividualChanged =>
+            riChanged.applicationId shouldBe appId
+            riChanged.eventDateTime shouldBe ts
+            riChanged.actor shouldBe CollaboratorActor(appAdminEmail)
+            riChanged.newResponsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
+            riChanged.newResponsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress.value
+            riChanged.previousResponsibleIndividualName shouldBe riName
+            riChanged.previousResponsibleIndividualEmail shouldBe riEmail
+            riChanged.submissionIndex shouldBe submission.latestInstance.index
+            riChanged.submissionId shouldBe submission.id
+            riChanged.requestingAdminEmail shouldBe appAdminEmail
+            riChanged.code shouldBe code
+        }
+      }
+    }
+
+    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler2.ResultT) = {
+      val testThis = await(fn.value).left.value.toNonEmptyList.toList
+
+      testThis should have length 1 + msgs.length
+      testThis.head shouldBe msg
+      testThis.tail shouldBe msgs
+    }
+
   }
 
   "process" should {
     "create correct event for a valid request with a ToU responsibleIndividualVerification and a standard app" in new Setup {
+
+      val prodApp = app.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
+      ApplicationRepoMock.UpdateApplicationSetResponsibleIndividual.thenReturn(prodApp)
+      ApplicationRepoMock.UpdateApplicationState.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
+      ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
+      StateHistoryRepoMock.AddRecord.succeeds()
 
-      val result = await(underTest.process(app, ChangeResponsibleIndividualToOther(code, ts)))
-
-      result.isValid shouldBe true
-      result.toOption.get.length shouldBe 2
-      val riSetEvent = result.toOption.get.head.asInstanceOf[ResponsibleIndividualSet]
-      riSetEvent.applicationId shouldBe appId
-      riSetEvent.eventDateTime shouldBe ts
-      riSetEvent.actor shouldBe CollaboratorActor(appAdminEmail)
-      riSetEvent.responsibleIndividualName shouldBe riName
-      riSetEvent.responsibleIndividualEmail shouldBe riEmail
-      riSetEvent.submissionIndex shouldBe submission.latestInstance.index
-      riSetEvent.submissionId shouldBe submission.id
-      riSetEvent.requestingAdminEmail shouldBe appAdminEmail
-      riSetEvent.code shouldBe code
-
-      val stateEvent = result.toOption.get.tail.head.asInstanceOf[ApplicationStateChanged]
-      stateEvent.applicationId shouldBe appId
-      stateEvent.eventDateTime shouldBe ts
-      stateEvent.actor shouldBe CollaboratorActor(appAdminEmail)
-      stateEvent.requestingAdminEmail shouldBe requesterEmail
-      stateEvent.requestingAdminName shouldBe requesterName
-      stateEvent.newAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL
-      stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+      checkSuccessResultToU() {
+        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, ts))
+      }
     }
 
     "create correct event for a valid request with an update responsibleIndividualVerification and a standard app" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
-
+      ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
       val prodApp = app.copy(state = ApplicationState.production(requesterEmail, requesterName))
-      val result  = await(underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, ts)))
+      ApplicationRepoMock.UpdateApplicationChangeResponsibleIndividual.thenReturn(prodApp)
 
-      result.isValid shouldBe true
-      result.toOption.get.length shouldBe 1
-      val riChangedEvent = result.toOption.get.head.asInstanceOf[ResponsibleIndividualChanged]
-      riChangedEvent.applicationId shouldBe appId
-      riChangedEvent.eventDateTime shouldBe ts
-      riChangedEvent.actor shouldBe CollaboratorActor(appAdminEmail)
-      riChangedEvent.previousResponsibleIndividualName shouldBe riName
-      riChangedEvent.previousResponsibleIndividualEmail shouldBe riEmail
-      riChangedEvent.newResponsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
-      riChangedEvent.newResponsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress.value
-      riChangedEvent.submissionIndex shouldBe submission.latestInstance.index
-      riChangedEvent.submissionId shouldBe submission.id
-      riChangedEvent.requestingAdminEmail shouldBe appAdminEmail
-      riChangedEvent.code shouldBe code
+      checkSuccessResultUpdate() {
+        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, ts))
+      }
     }
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturnNothing
-      val result = await(underTest.process(app, ChangeResponsibleIndividualToOther(code, ts)))
-      result shouldBe Invalid(NonEmptyChain.one(s"No responsibleIndividualVerification found for code $code"))
+      val result = await(underTest.process(app, ChangeResponsibleIndividualToOther(code, ts)).value).left.value
+      result.head shouldBe s"No responsibleIndividualVerification found for code $code"
     }
 
     "return an error if the application is non-standard" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
-      val result         = await(underTest.process(nonStandardApp, ChangeResponsibleIndividualToOther(code, ts)))
-      result shouldBe Invalid(NonEmptyChain.apply("Must be a standard new journey application", "The responsible individual has not been set for this application"))
+      val result         = await(underTest.process(nonStandardApp, ChangeResponsibleIndividualToOther(code, ts)).value).left.value
+      result.toNonEmptyList.toList should contain only ("Must be a standard new journey application", "The responsible individual has not been set for this application")
     }
 
     "return an error if the application is old journey" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
-      val result        = await(underTest.process(oldJourneyApp, ChangeResponsibleIndividualToOther(code, ts)))
-      result shouldBe Invalid(NonEmptyChain.apply("Must be a standard new journey application", "The responsible individual has not been set for this application"))
+      val result        = await(underTest.process(oldJourneyApp, ChangeResponsibleIndividualToOther(code, ts)).value).left.value
+      result.toNonEmptyList.toList should contain only ("Must be a standard new journey application", "The responsible individual has not been set for this application")
     }
 
     "return an error if the application is is different between the request and the responsibleIndividualVerification record" in new Setup {
@@ -178,15 +215,17 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
         ResponsibleIndividualVerificationState.INITIAL
       )
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification2)
-      val result          = await(underTest.process(app, ChangeResponsibleIndividualToOther(code, ts)))
-      result shouldBe Invalid(NonEmptyChain.one("The given application id is different"))
+      val result          = await(underTest.process(app, ChangeResponsibleIndividualToOther(code, ts)).value).left.value
+      result.head shouldBe "The given application id is different"
     }
 
     "return an error if the application state is not PendingResponsibleIndividualVerification" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail, requesterName))
-      val result               = await(underTest.process(pendingGKApprovalApp, ChangeResponsibleIndividualToOther(code, ts)))
-      result shouldBe Invalid(NonEmptyChain.one("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state"))
+      val result               = await(underTest.process(pendingGKApprovalApp, ChangeResponsibleIndividualToOther(code, ts)).value).left.value
+      result.head shouldBe "App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state"
     }
+
   }
+
 }

@@ -385,6 +385,22 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         ))
     }
 
+    object UpdateApplicationSetResponsibleIndividual {
+
+      def thenReturn(applicationData: ApplicationData) =
+        when(aMock.updateApplicationSetResponsibleIndividual(*[ApplicationId], *[String], *[String], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
+          applicationData
+        ))
+    }
+
+    object UpdateApplicationChangeResponsibleIndividual {
+
+      def thenReturn(applicationData: ApplicationData) =
+        when(aMock.updateApplicationChangeResponsibleIndividual(*[ApplicationId], *[String], *[String], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
+          applicationData
+        ))
+    }
+
     object ApplyEvents {
 
       def thenReturn(applicationData: ApplicationData) =

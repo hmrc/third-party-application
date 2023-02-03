@@ -25,7 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.CommandFailures
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.{cond, CommandFailures}
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
 import uk.gov.hmrc.thirdpartyapplication.util._
 
@@ -363,6 +363,43 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
         await(underTest.dispatch(applicationId, cmd).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[ChangeResponsibleIndividualToSelfCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
+    }
+
+    " ChangeResponsibleIndividualToOther is received" should {
+      val code = "someCode"
+      val cmd  = ChangeResponsibleIndividualToOther(code, timestamp)
+      val evt  = ResponsibleIndividualChanged(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        FixedClock.now,
+        devHubUser,
+        "previousRIName",
+        "previousRIEmail",
+        "newRIName",
+        "newRIEmail",
+        Submission.Id.random,
+        1,
+        code,
+        requestedByName,
+        requestedByEmail
+      )
+
+      "call  ChangeResponsibleIndividualToOther Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(
+          mockChangeResponsibleIndividualToOtherCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToOther])
+        ).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
+
+        await(underTest.dispatch(applicationId, cmd).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[ChangeResponsibleIndividualToOtherCommandHandler]()
       }
 
       "bubble up exception when application fetch fails" in new Setup {

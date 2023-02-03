@@ -68,79 +68,79 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
   )
   val instigator     = applicationData.collaborators.head.userId
 
-  "update with ChangeResponsibleIndividualToOther" should {
-    val code                        = "235345t3874528745379534234234234"
-    val changeResponsibleIndividual = ChangeResponsibleIndividualToOther(code, FixedClock.now)
-    val requesterEmail              = "bill.badger@rupert.com"
-    val requesterName               = "bill badger"
-    val appInPendingRIVerification  = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
-
-    "return the updated application if the application exists" in new Setup {
-      val newRiName  = "Mr Responsible"
-      val newRiEmail = "ri@example.com"
-      val appBefore  = appInPendingRIVerification
-      val appAfter   = appInPendingRIVerification.copy(access =
-        Standard(
-          importantSubmissionData = Some(testImportantSubmissionData.copy(
-            responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)
-          ))
-        )
-      )
-      val riSetEvent = ResponsibleIndividualSet(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        timestamp,
-        CollaboratorActor(requesterEmail),
-        newRiName,
-        newRiEmail,
-        Submission.Id.random,
-        1,
-        code,
-        requesterName,
-        requesterEmail
-      )
-      val stateEvent = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        timestamp,
-        CollaboratorActor(requesterEmail),
-        State.PENDING_GATEKEEPER_APPROVAL,
-        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
-        requesterEmail,
-        requesterName
-      )
-      val events     = NonEmptyList.of(riSetEvent, stateEvent)
-
-      ApplicationRepoMock.Fetch.thenReturn(appBefore)
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      ApiPlatformEventServiceMock.ApplyEvents.succeeds
-      NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      SubmissionsServiceMock.ApplyEvents.succeeds()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      NotificationRepositoryMock.ApplyEvents.succeeds()
-      StateHistoryRepoMock.ApplyEvents.succeeds()
-      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
-      ApiGatewayStoreMock.ApplyEvents.succeeds()
-      AuditServiceMock.ApplyEvents.succeeds
-
-      when(mockChangeResponsibleIndividualToOtherCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToOther])).thenReturn(
-        Future.successful(Validated.valid(events).toValidatedNec)
-      )
-
-      val result = await(underTest.update(applicationId, changeResponsibleIndividual).value)
-
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(riSetEvent, stateEvent)
-      result shouldBe Right(appAfter)
-    }
-
-    "return the error if the application does not exist" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
-      val result = await(underTest.update(applicationId, changeResponsibleIndividual).value)
-
-      result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
-      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
-    }
-  }
+//  "update with ChangeResponsibleIndividualToOther" should {
+//    val code                        = "235345t3874528745379534234234234"
+//    val changeResponsibleIndividual = ChangeResponsibleIndividualToOther(code, FixedClock.now)
+//    val requesterEmail              = "bill.badger@rupert.com"
+//    val requesterName               = "bill badger"
+//    val appInPendingRIVerification  = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
+//
+//    "return the updated application if the application exists" in new Setup {
+//      val newRiName  = "Mr Responsible"
+//      val newRiEmail = "ri@example.com"
+//      val appBefore  = appInPendingRIVerification
+//      val appAfter   = appInPendingRIVerification.copy(access =
+//        Standard(
+//          importantSubmissionData = Some(testImportantSubmissionData.copy(
+//            responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)
+//          ))
+//        )
+//      )
+//      val riSetEvent = ResponsibleIndividualSet(
+//        UpdateApplicationEvent.Id.random,
+//        applicationId,
+//        timestamp,
+//        CollaboratorActor(requesterEmail),
+//        newRiName,
+//        newRiEmail,
+//        Submission.Id.random,
+//        1,
+//        code,
+//        requesterName,
+//        requesterEmail
+//      )
+//      val stateEvent = ApplicationStateChanged(
+//        UpdateApplicationEvent.Id.random,
+//        applicationId,
+//        timestamp,
+//        CollaboratorActor(requesterEmail),
+//        State.PENDING_GATEKEEPER_APPROVAL,
+//        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
+//        requesterEmail,
+//        requesterName
+//      )
+//      val events     = NonEmptyList.of(riSetEvent, stateEvent)
+//
+//      ApplicationRepoMock.Fetch.thenReturn(appBefore)
+//      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+//      ApiPlatformEventServiceMock.ApplyEvents.succeeds
+//      NotificationServiceMock.SendNotifications.thenReturnSuccess()
+//      SubmissionsServiceMock.ApplyEvents.succeeds()
+//      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+//      NotificationRepositoryMock.ApplyEvents.succeeds()
+//      StateHistoryRepoMock.ApplyEvents.succeeds()
+//      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+//      ApiGatewayStoreMock.ApplyEvents.succeeds()
+//      AuditServiceMock.ApplyEvents.succeeds
+//
+//      when(mockChangeResponsibleIndividualToOtherCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToOther])).thenReturn(
+//        Future.successful(Validated.valid(events).toValidatedNec)
+//      )
+//
+//      val result = await(underTest.update(applicationId, changeResponsibleIndividual).value)
+//
+//      ApplicationRepoMock.ApplyEvents.verifyCalledWith(riSetEvent, stateEvent)
+//      result shouldBe Right(appAfter)
+//    }
+//
+//    "return the error if the application does not exist" in new Setup {
+//      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
+//      val result = await(underTest.update(applicationId, changeResponsibleIndividual).value)
+//
+//      result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
+//      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
+//    }
+//  }
 
   // "update with VerifyResponsibleIndividual" should {
   //   val adminName                   = "Ms Admin"
@@ -208,6 +208,8 @@ class ApplicationCommandServiceSpec extends ApplicationCommandServiceUtils
       mock[ChangeProductionApplicationPrivacyPolicyLocation],
       mock[ChangeProductionApplicationTermsAndConditionsLocation],
       mock[ChangeResponsibleIndividualToSelf],
+      mock[ChangeResponsibleIndividualToOther],
+      mock[DeclineResponsibleIndividual],
       mock[DeclineResponsibleIndividualDidNotVerify],
       mock[DeclineApplicationApprovalRequest],
       mock[DeleteApplicationByCollaborator],

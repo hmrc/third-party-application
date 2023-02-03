@@ -65,7 +65,7 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
       ThirdPartyDelegatedAuthorityServiceMock.aMock,
       ApiGatewayStoreMock.aMock,
       AuditServiceMock.aMock,
-      mockChangeResponsibleIndividualToOtherCommandHandler
+      mockVerifyResponsibleIndividualCommandHandler
     )
   }
 

@@ -44,12 +44,7 @@ class ApplicationCommandService @Inject() (
     thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
     apiGatewayStore: ApiGatewayStore,
     auditService: AuditService,
-    // changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-    // changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
-    // changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
-    changeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler
-    // verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
-    // declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler
+    verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
   import cats.implicits._
@@ -83,8 +78,8 @@ class ApplicationCommandService @Inject() (
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => Future.successful(Validated.invalidNec(s"Unsupported ApplicationCommand type $command")) // changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => Future.successful(Validated.invalidNec(s"Unsupported ApplicationCommand type $command")) // changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeResponsibleIndividualToSelf                     => Future.successful(Validated.invalidNec(s"Unsupported ApplicationCommand type $command")) // changeResponsibleIndividualToSelfCommandHandler.process(app, cmd)
-      case cmd: ChangeResponsibleIndividualToOther                    => changeResponsibleIndividualToOtherCommandHandler.process(app, cmd)
-      case cmd: VerifyResponsibleIndividual                           => Future.successful(Validated.invalidNec(s"Unsupported ApplicationCommand type $command")) // verifyResponsibleIndividualCommandHandler.process(app, cmd)
+      case cmd: ChangeResponsibleIndividualToOther                    => Future.successful(Validated.invalidNec(s"Unsupported ApplicationCommand type $command")) // changeResponsibleIndividualToOtherCommandHandler.process(app, cmd)
+      case cmd: VerifyResponsibleIndividual                           => verifyResponsibleIndividualCommandHandler.process(app, cmd)
       case cmd: DeclineResponsibleIndividual                          => Future.successful(Validated.invalidNec(s"Unsupported ApplicationCommand type $command")) // declineResponsibleIndividualCommandHandler.process(app, cmd)
       case cmd: DeclineResponsibleIndividualDidNotVerify              => Future.successful(Validated.invalidNec(s"Unsupported ApplicationCommand type $command")) // declineResponsibleIndividualDidNotVerifyCommandHandler.process(app, cmd)
       case cmd: DeclineApplicationApprovalRequest                     => Future.successful(Validated.invalidNec(s"Unsupported ApplicationCommand type $command")) // declineApplicationApprovalRequestCommandHandler.process(app, cmd)

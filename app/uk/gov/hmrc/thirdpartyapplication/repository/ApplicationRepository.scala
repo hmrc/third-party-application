@@ -693,15 +693,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[String]) =
     updateApplication(applicationId, Updates.set("access.redirectUris", Codecs.toBson(redirectUris)))
 
-  private def updateRedirectUrisUpdated(evt: UpdateApplicationEvent.RedirectUrisUpdated) =
-    updateApplication(
-      evt.applicationId,
-      Updates.set(
-        "access.redirectUris",
-        Codecs.toBson(evt.newRedirectUris)
-      )
-    )
-
   def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
     updateApplication(
       applicationId,
@@ -723,19 +714,26 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def updateLegacyApplicationTermsAndConditionsLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.termsAndConditionsUrl", url))
 
-  private def updateApplicationChangeResponsibleIndividual(event: ResponsibleIndividualChanged): Future[ApplicationData] =
+  def updateApplicationChangeResponsibleIndividual(
+      applicationId: ApplicationId,
+      newResponsibleIndividualName: String,
+      newResponsibleIndividualEmail: String,
+      eventDateTime: LocalDateTime,
+      submissionId: Submission.Id,
+      submissionIndex: Int
+    ): Future[ApplicationData] =
     updateApplication(
-      event.applicationId,
+      applicationId,
       Updates.combine(
-        Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", event.newResponsibleIndividualName),
-        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", event.newResponsibleIndividualEmail),
+        Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", newResponsibleIndividualName),
+        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", newResponsibleIndividualEmail),
         Updates.push(
           "access.importantSubmissionData.termsOfUseAcceptances",
           Codecs.toBson(TermsOfUseAcceptance(
-            ResponsibleIndividual.build(event.newResponsibleIndividualName, event.newResponsibleIndividualEmail),
-            event.eventDateTime,
-            event.submissionId,
-            event.submissionIndex
+            ResponsibleIndividual.build(newResponsibleIndividualName, newResponsibleIndividualEmail),
+            eventDateTime,
+            submissionId,
+            submissionIndex
           ))
         )
       )
@@ -766,17 +764,24 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       )
     )
 
-  private def updateApplicationSetResponsibleIndividual(event: ResponsibleIndividualSet): Future[ApplicationData] =
+  def updateApplicationSetResponsibleIndividual(
+      applicationId: ApplicationId,
+      responsibleIndividualName: String,
+      responsibleIndividualEmail: String,
+      eventDateTime: LocalDateTime,
+      submissionId: Submission.Id,
+      submissionIndex: Int
+    ): Future[ApplicationData] =
     updateApplication(
-      event.applicationId,
+      applicationId,
       Updates.combine(
         Updates.push(
           "access.importantSubmissionData.termsOfUseAcceptances",
           Codecs.toBson(TermsOfUseAcceptance(
-            ResponsibleIndividual.build(event.responsibleIndividualName, event.responsibleIndividualEmail),
-            event.eventDateTime,
-            event.submissionId,
-            event.submissionIndex
+            ResponsibleIndividual.build(responsibleIndividualName, responsibleIndividualEmail),
+            eventDateTime,
+            submissionId,
+            submissionIndex
           ))
         )
       )
@@ -806,19 +811,19 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     import UpdateApplicationEvent._
 
     event match {
-      case evt: ProductionAppNameChanged                          => noOp(event)
-      case evt: ProductionAppPrivacyPolicyLocationChanged         => noOp(event)
-      case evt: ProductionLegacyAppPrivacyPolicyLocationChanged   => noOp(event)
-      case evt: ProductionAppTermsConditionsLocationChanged       => noOp(event)
-      case evt: ProductionLegacyAppTermsConditionsLocationChanged => updateLegacyApplicationTermsAndConditionsLocation(evt.applicationId, evt.newUrl)
-      case evt: ResponsibleIndividualSet                          => updateApplicationSetResponsibleIndividual(evt)
-      case evt: ResponsibleIndividualChanged                      => updateApplicationChangeResponsibleIndividual(evt)
-      case evt: ResponsibleIndividualChangedToSelf                => noOp(evt)
-      case evt: ApplicationStateChanged                           => noOp(evt)
-      case _: ResponsibleIndividualDeclined                       => noOp(event)
-      case _: ResponsibleIndividualDeclinedUpdate                 => noOp(event)
-      case _: ResponsibleIndividualDidNotVerify                   => noOp(event)
-      case _: ApplicationApprovalRequestDeclined                  => noOp(event)
+      case _: ProductionAppNameChanged                          => noOp(event)
+      case _: ProductionAppPrivacyPolicyLocationChanged         => noOp(event)
+      case _: ProductionLegacyAppPrivacyPolicyLocationChanged   => noOp(event)
+      case _: ProductionAppTermsConditionsLocationChanged       => noOp(event)
+      case _: ProductionLegacyAppTermsConditionsLocationChanged => noOp(event)
+      case _: ResponsibleIndividualSet                          => noOp(event)
+      case _: ResponsibleIndividualChanged                      => noOp(event)
+      case _: ResponsibleIndividualChangedToSelf                => noOp(event)
+      case _: ApplicationStateChanged                           => noOp(event)
+      case _: ResponsibleIndividualDeclined                     => noOp(event)
+      case _: ResponsibleIndividualDeclinedUpdate               => noOp(event)
+      case _: ResponsibleIndividualDidNotVerify                 => noOp(event)
+      case _: ApplicationApprovalRequestDeclined                => noOp(event)
       // refactored to new ways
 
       case _: ClientSecretAddedV3                                                                                 => noOp(event)

@@ -173,7 +173,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       .map(_ => HasSucceeded)
   }
 
-  private def deleteResponsibleIndividualVerification(code: String): Future[HasSucceeded] = {
+  def deleteResponsibleIndividualVerification(code: String): Future[HasSucceeded] = {
     delete(ResponsibleIndividualVerificationId(code))
   }
 

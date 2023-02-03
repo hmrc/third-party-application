@@ -79,6 +79,10 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
       def verifyCalledWith(defaultType: String) = verify(aMock).updateSetDefaultVerificationType(defaultType)
     }
 
+    object DeleteResponsibleIndividualVerification {
+      def thenReturnSuccess() = when(aMock.deleteResponsibleIndividualVerification(*)).thenReturn(successful(HasSucceeded))
+    }
+
     object ApplyEvents {
 
       def succeeds() = {

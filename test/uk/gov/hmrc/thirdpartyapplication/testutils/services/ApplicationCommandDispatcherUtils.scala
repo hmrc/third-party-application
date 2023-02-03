@@ -111,7 +111,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       ApiPlatformEventServiceMock.aMock,
       AuditServiceMock.aMock,
 
-      //      mockChangeResponsibleIndividualToOtherCommandHandler,
+      //      mockVerifyResponsibleIndividualCommandHandler,
       mockAddClientSecretCommandHandler,
       mockRemoveClientSecretCommandHandler,
       mockChangeProductionApplicationNameCommandHandler,
@@ -120,7 +120,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
       mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
       mockChangeResponsibleIndividualToSelfCommandHandler,
-      mockVerifyResponsibleIndividualCommandHandler,
+      mockChangeResponsibleIndividualToOtherCommandHandler,
       mockDeclineResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
       mockDeclineApplicationApprovalRequestCommandHandler,
