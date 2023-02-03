@@ -76,8 +76,8 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
   def process(app: ApplicationData, cmd: DeleteApplicationByGatekeeper)(implicit hc: HeaderCarrier): ResultT = {
     for {
       valid    <- E.fromEither(validate(app).toEither)
+      events    = asEvents(app, cmd)
       savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.requestedByEmailAddress, cmd.requestedByEmailAddress))
-      events    = asEvents(savedApp, cmd)
       _        <- deleteApplication(app, cmd.timestamp, cmd.requestedByEmailAddress, cmd.requestedByEmailAddress, events)
     } yield (savedApp, events)
   }

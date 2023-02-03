@@ -30,12 +30,13 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineResponsibleIndividualDidNotVerify, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
+import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 
 @Singleton
 class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
+    applicationRepository: ApplicationRepository,
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     stateHistoryRepository: StateHistoryRepository,
     submissionService: SubmissionsService
@@ -146,9 +147,10 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
     for {
       valid                         <- E.fromEither(validate().toEither)
       (riEvt, declinedEvt, stateEvt) = asEvents(valid._1, valid._2, valid._3)
+      _                             <- E.liftF(applicationRepository.updateApplicationState(app.id, stateEvt.newAppState, stateEvt.eventDateTime, stateEvt.requestingAdminEmail, stateEvt.requestingAdminName))
+      _                             <- E.liftF(stateHistoryRepository.addStateHistoryRecord(stateEvt))
       _                             <- E.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(riVerification.submissionId, riVerification.submissionInstance))
       _                             <- E.liftF(submissionService.declineApplicationApprovalRequest(declinedEvt))
-      _                             <- E.liftF(stateHistoryRepository.addStateHistoryRecord(stateEvt))
     } yield (app, NonEmptyList(riEvt, List(declinedEvt, stateEvt)))
   }
 

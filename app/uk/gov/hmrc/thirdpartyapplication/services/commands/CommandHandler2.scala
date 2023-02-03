@@ -38,7 +38,7 @@ object CommandHandler2 {
   type CommandSuccess  = (ApplicationData, NonEmptyList[UpdateApplicationEvent])
   type CommandFailures = NonEmptyChain[String]
 
-  type Result  = Future[Either[CommandFailures, CommandSuccess]]
+  // type Result  = Future[Either[CommandFailures, CommandSuccess]]
   type ResultT = EitherT[Future, CommandFailures, CommandSuccess]
 
   def cond(cond: => Boolean, left: String): Validated[CommandFailures, Unit] = {

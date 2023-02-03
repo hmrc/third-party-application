@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualV
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 class DeclineResponsibleIndividualCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -45,7 +46,8 @@ class DeclineResponsibleIndividualCommandHandlerSpec
   trait Setup
       extends ResponsibleIndividualVerificationRepositoryMockModule
       with StateHistoryRepositoryMockModule
-      with SubmissionsServiceMockModule {
+      with SubmissionsServiceMockModule
+      with ApplicationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -101,13 +103,14 @@ class DeclineResponsibleIndividualCommandHandlerSpec
       ResponsibleIndividualVerificationState.INITIAL
     )
 
-    val underTest            = new DeclineResponsibleIndividualCommandHandler(
+    val underTest = new DeclineResponsibleIndividualCommandHandler(
+      ApplicationRepoMock.aMock,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       StateHistoryRepoMock.aMock,
       SubmissionsServiceMock.aMock
     )
 
-    def checkSuccessResultToU()(fn: => CommandHandler2.ResultT)    = {
+    def checkSuccessResultToU()(fn: => CommandHandler2.ResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -183,6 +186,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec
 
   "process" should {
     "create correct event for a valid request with a ToU responsibleIndividualVerification and a standard app" in new Setup {
+      ApplicationRepoMock.UpdateApplicationState.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
       SubmissionsServiceMock.DeclineApprovalRequest.succeeds()

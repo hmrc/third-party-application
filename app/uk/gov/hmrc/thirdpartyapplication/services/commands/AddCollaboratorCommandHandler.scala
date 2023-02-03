@@ -64,7 +64,7 @@ class AddCollaboratorCommandHandler @Inject() (
 
   def process(app: ApplicationData, cmd: AddCollaborator): ResultT = {
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
+      _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.addCollaborator(app.id, cmd.collaborator))
       events    = asEvents(savedApp, cmd)
     } yield (savedApp, events)

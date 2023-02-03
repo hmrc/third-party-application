@@ -85,6 +85,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     for {
       instigator <- E.fromEither(validate(app, cmd).toEither)
       savedApp   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, instigator.emailAddress, instigator.emailAddress))
+      // TODO - need app state history change
       events      = asEvents(savedApp, cmd, instigator)
       _          <- deleteApplication(app, cmd.timestamp, instigator.emailAddress, instigator.emailAddress, events)
     } yield (savedApp, events)

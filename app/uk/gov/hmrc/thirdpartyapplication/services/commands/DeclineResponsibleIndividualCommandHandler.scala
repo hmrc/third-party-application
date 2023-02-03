@@ -28,15 +28,15 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerification,
   ResponsibleIndividualVerificationId
 }
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineResponsibleIndividual, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
-import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
+import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 
 @Singleton
 class DeclineResponsibleIndividualCommandHandler @Inject() (
+    applicationRepository: ApplicationRepository,
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     stateHistoryRepository: StateHistoryRepository,
     submissionService: SubmissionsService
@@ -110,9 +110,10 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
     for {
       valid                                   <- E.fromEither(validate().toEither)
       (riDeclined, approvalDeclined, stateEvt) = asEvents(valid._1, valid._2, valid._3)
+      _                                       <- E.liftF(applicationRepository.updateApplicationState(app.id, stateEvt.newAppState, stateEvt.eventDateTime, stateEvt.requestingAdminEmail, stateEvt.requestingAdminName))
+      _                                       <- E.liftF(stateHistoryRepository.addStateHistoryRecord(stateEvt))
       _                                       <- E.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(riVerification.submissionId, riVerification.submissionInstance))
       _                                       <- E.liftF(submissionService.declineApplicationApprovalRequest(approvalDeclined))
-      _                                       <- E.liftF(stateHistoryRepository.addStateHistoryRecord(stateEvt))
     } yield (app, NonEmptyList(riDeclined, List(approvalDeclined, stateEvt)))
   }
 
@@ -162,17 +163,4 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
       })
     )
   }
-
-  // def process(app: ApplicationData, cmd: DeclineResponsibleIndividual): CommandHandler.Result = {
-  //   responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).map(maybeRIVerification => {
-  //     maybeRIVerification match {
-  //       case Some(riVerificationToU: ResponsibleIndividualToUVerification)       => validateToU(app, cmd, riVerificationToU) map { _ =>
-  //           asEventsToU(app, cmd, riVerificationToU)
-  //         }
-  //       case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification) => validateUpdate(app, cmd, riVerificationUpdate) map { _ =>
-  //           asEventsUpdate(app, cmd, riVerificationUpdate)
-  //         }
-  //       case _                                                                   => Validated.Invalid(NonEmptyChain.one(s"No responsibleIndividualVerification found for code ${cmd.code}"))
-  //     }
-  //   })
 }
