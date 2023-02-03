@@ -49,7 +49,6 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
 
     val mockChangeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler = mock[ChangeResponsibleIndividualToOtherCommandHandler]
     val mockVerifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler               = mock[VerifyResponsibleIndividualCommandHandler]
-    val mockDeclineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler             = mock[DeclineResponsibleIndividualCommandHandler]
 
     val mockDeclineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler =
       mock[DeclineResponsibleIndividualDidNotVerifyCommandHandler]
@@ -66,11 +65,7 @@ abstract class ApplicationCommandServiceUtils extends AsyncHmrcSpec
       ThirdPartyDelegatedAuthorityServiceMock.aMock,
       ApiGatewayStoreMock.aMock,
       AuditServiceMock.aMock,
-      mockChangeResponsibleIndividualToOtherCommandHandler,
-      mockVerifyResponsibleIndividualCommandHandler,
-      mockDeclineResponsibleIndividualCommandHandler,
-      mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
-      mockDeclineApplicationApprovalRequestCommandHandler
+      mockChangeResponsibleIndividualToOtherCommandHandler
     )
   }
 

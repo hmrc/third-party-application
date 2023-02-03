@@ -18,7 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.common.services
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.{EitherT, NonEmptyChain, Validated}
+import cats.data.{EitherT, Validated}
 import cats.instances.future.catsStdInstancesForFuture
 
 trait EitherTHelper[E] {
