@@ -114,7 +114,7 @@ object UpdateApplicationEvent {
       id: UpdateApplicationEvent.Id,
       applicationId: ApplicationId,
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
+      actor: CollaboratorActor,
       clientSecretId: String,
       clientSecretName: String
     ) extends UpdateApplicationEvent
@@ -127,7 +127,7 @@ object UpdateApplicationEvent {
       id: UpdateApplicationEvent.Id,
       applicationId: ApplicationId,
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
+      actor: CollaboratorActor,
       clientSecret: ClientSecret
     ) extends UpdateApplicationEvent with TriggersNotification
 
@@ -139,7 +139,7 @@ object UpdateApplicationEvent {
       id: UpdateApplicationEvent.Id,
       applicationId: ApplicationId,
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
+      actor: CollaboratorActor,
       clientSecretId: String,
       clientSecretName: String
     ) extends UpdateApplicationEvent with TriggersNotification
@@ -375,7 +375,7 @@ object UpdateApplicationEvent {
       id: UpdateApplicationEvent.Id,
       applicationId: ApplicationId,
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
+      actor: GatekeeperUserActor,
       clientId: ClientId,
       wso2ApplicationName: String,
       reasons: String,
@@ -413,8 +413,6 @@ object UpdateApplicationEvent {
 
   object CollaboratorAdded {
     implicit val format: OFormat[CollaboratorAdded] = Json.format[CollaboratorAdded]
-
-    def collaboratorFromEvent(evt: CollaboratorAdded) = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
   }
 
   case class CollaboratorRemoved(
@@ -431,8 +429,6 @@ object UpdateApplicationEvent {
 
   object CollaboratorRemoved {
     implicit val format: OFormat[CollaboratorRemoved] = Json.format[CollaboratorRemoved]
-
-    def collaboratorFromEvent(evt: CollaboratorRemoved) = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
   }
 
   case class ApplicationApprovalRequestDeclined(

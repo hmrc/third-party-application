@@ -151,6 +151,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     val requesterName  = "bill badger"
     val appInTesting   = applicationData.copy(state = ApplicationState.testing)
 
+    val gatekeeperActor            = GatekeeperUserActor(gatekeeperUser)
     val collaboratorActor          = CollaboratorActor(applicationData.collaborators.head.emailAddress)
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -439,6 +440,42 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
 
       verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
     }
+
+    // "applyEvents with a ApplicationDeletedByGatekeeper event" in new Setup {
+
+    //   val event = ApplicationDeletedByGatekeeper(
+    //     UpdateApplicationEvent.Id.random,
+    //     applicationData.id,
+    //     timestamp,
+    //     gatekeeperActor,
+    //     ClientId.random,
+    //     "wso2name",
+    //     "a reason",
+    //     requesterEmail
+    //   )
+
+    //   val expectedDataEvent = DataEvent(
+    //     auditSource = "third-party-application",
+    //     auditType = AuditAction.ApplicationDeleted.auditType,
+    //     tags = hc.toAuditTags("gatekeeperId", gatekeeperActor.user),
+    //     detail = Map(
+    //       "applicationAdmins"       -> applicationData.admins.map(_.emailAddress).mkString(", "),
+    //       "applicationId"           -> applicationData.id.value.toString,
+    //       "applicationName"         -> applicationData.name,
+    //       "upliftRequestedByEmail"  -> "john.smith@example.com",
+    //       "requestedByEmailAddress" -> requesterEmail
+    //     )
+    //   )
+
+    //   when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+    //   val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(event)))
+
+    //   result shouldBe Some(AuditResult.Success)
+
+    //   verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    // }
+
   }
 
   "AuditHelper calculateAppChanges" should {

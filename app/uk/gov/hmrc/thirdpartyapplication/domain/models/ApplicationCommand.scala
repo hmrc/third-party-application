@@ -21,14 +21,14 @@ import java.time.LocalDateTime
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.json.Union
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Actor
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor}
 
 trait ApplicationCommand {
   def timestamp: LocalDateTime
 }
 
-case class AddClientSecret(actor: Actor, clientSecret: ClientSecret, timestamp: LocalDateTime)                                                          extends ApplicationCommand
-case class RemoveClientSecret(actor: Actor, clientSecretId: String, timestamp: LocalDateTime)                                                           extends ApplicationCommand
+case class AddClientSecret(actor: CollaboratorActor, clientSecret: ClientSecret, timestamp: LocalDateTime)                                              extends ApplicationCommand
+case class RemoveClientSecret(actor: CollaboratorActor, clientSecretId: String, timestamp: LocalDateTime)                                               extends ApplicationCommand
 case class AddCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                              extends ApplicationCommand
 case class RemoveCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                           extends ApplicationCommand
 case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation)           extends ApplicationCommand

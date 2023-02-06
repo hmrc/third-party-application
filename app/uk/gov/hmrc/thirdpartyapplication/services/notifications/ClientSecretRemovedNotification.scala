@@ -22,7 +22,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
@@ -34,9 +33,6 @@ object ClientSecretRemovedNotification {
       event: UpdateApplicationEvent.ClientSecretRemoved
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
-    event.actor match {
-      case CollaboratorActor(email: String) => emailConnector.sendRemovedClientSecretNotification(email, event.clientSecretName, app.name, app.admins.map(_.emailAddress))
-      case _                                => Future.successful(HasSucceeded)
-    }
+    emailConnector.sendRemovedClientSecretNotification(event.actor.email, event.clientSecretName, app.name, app.admins.map(_.emailAddress))
   }
 }
