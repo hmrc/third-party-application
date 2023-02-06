@@ -41,21 +41,12 @@ class TermsOfUseInvitationController @Inject() (
   ) extends BackendController(cc) with JsonUtils with TermsOfUseInvitationActionBuilders {
 
   def createInvitation(applicationId: ApplicationId) = withProductionApplicationAdminUserAndNoSubmission()(applicationId) { _ =>
-    // def findExistingInvitation(applicationId: ApplicationId): Future[Option[TermsOfUseInvitationResponse]] = termsOfUseInvitationService.fetchInvitation(applicationId)
-
-    // def createNewInvitation(applicationId: ApplicationId): Future[Result] = {
-      termsOfUseInvitationService
-        .createInvitation(applicationId)
-        .map {
-          case true => Created
-          case _    => InternalServerError
-        }.recover(recovery)
-    // }
-
-    // findExistingInvitation(applicationId).flatMap {
-      // case Some(response) => successful(Conflict)
-      // case None           => createNewInvitation(applicationId)
-    // }.recover(recovery)
+    termsOfUseInvitationService
+      .createInvitation(applicationId)
+      .map {
+        case true => Created
+        case _    => InternalServerError
+      }.recover(recovery)
   }
 
   def fetchInvitation(applicationId: ApplicationId) = Action.async { _ =>
