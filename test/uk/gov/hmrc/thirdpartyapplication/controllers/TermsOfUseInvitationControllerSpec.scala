@@ -28,8 +28,13 @@ import play.api.test.Helpers.{contentAsJson, status, stubControllerComponents}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationState
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 
-class TermsOfUseInvitationControllerSpec extends ControllerSpec {
+class TermsOfUseInvitationControllerSpec extends ControllerSpec with ApplicationDataServiceMockModule with SubmissionsServiceMockModule with ApplicationTestData with SubmissionsTestData {
 
   trait Setup extends TermsOfUseServiceMockModule {
     val applicationId = ApplicationId.random
@@ -38,13 +43,27 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec {
 
     lazy val underTest = new TermsOfUseInvitationController(
       TermsOfUseServiceMock.aMock,
+      ApplicationDataServiceMock.aMock,
+      SubmissionsServiceMock.aMock,
       stubControllerComponents()
     )
   }
 
   "create invitation" should {
-    "return CREATED when a terms of use invitation is created" in new Setup {
-      TermsOfUseServiceMock.FetchInvitation.thenReturnNone()
+    "return NOT_FOUND when an application for the given id is not found" in new Setup {
+      ApplicationDataServiceMock.FetchApp.thenReturnNone
+      
+      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
+
+      status(result) shouldBe NOT_FOUND
+    }
+
+    "return CREATED when an application exists with no submission and a terms of use invitation is created" in new Setup {
+      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationState.production("", "")))
+
+      SubmissionsServiceMock.FetchLatest.thenReturnNone()
+
+      TermsOfUseServiceMock.FetchInvitation.thenReturnNone
       TermsOfUseServiceMock.CreateInvitations.thenReturnSuccess()
 
       val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
@@ -53,6 +72,10 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec {
     }
 
     "return CONFLICT when a terms of use invitation already exists for the application" in new Setup {
+      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationState.production("", "")))
+
+      SubmissionsServiceMock.FetchLatest.thenReturnNone()
+
       val response = TermsOfUseInvitationResponse(
         applicationId,
         now,
@@ -68,8 +91,25 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec {
       status(result) shouldBe CONFLICT
     }
 
+    "return CONFLICT when an application exists with a submission" in new Setup {
+      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationState.production("", "")))
+
+      SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.hasCompletelyAnswered)
+
+      TermsOfUseServiceMock.FetchInvitation.thenReturnNone
+      TermsOfUseServiceMock.CreateInvitations.thenReturnSuccess()
+
+      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
+
+      status(result) shouldBe CONFLICT
+    }
+
     "return INTERNAL_SERVER_ERROR when a terms of use invitation is NOT created" in new Setup {
-      TermsOfUseServiceMock.FetchInvitation.thenReturnNone()
+      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationState.production("", "")))
+
+      SubmissionsServiceMock.FetchLatest.thenReturnNone()
+
+      TermsOfUseServiceMock.FetchInvitation.thenReturnNone
       TermsOfUseServiceMock.CreateInvitations.thenFail()
 
       val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
@@ -91,7 +131,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec {
     }
 
     "return an NOT_FOUND when no terms of use invitation exists for the given application id" in new Setup {
-      TermsOfUseServiceMock.FetchInvitation.thenReturnNone()
+      TermsOfUseServiceMock.FetchInvitation.thenReturnNone
 
       val result = underTest.fetchInvitation(applicationId)(FakeRequest.apply())
 

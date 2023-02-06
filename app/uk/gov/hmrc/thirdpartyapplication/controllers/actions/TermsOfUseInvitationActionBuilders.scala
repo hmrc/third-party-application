@@ -29,6 +29,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import play.api.mvc.WrappedRequest
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
 
 class ApplicationRequest[A](val applicationId: ApplicationId, val request: Request[A]) extends WrappedRequest[A](request)
 
@@ -55,10 +57,12 @@ trait TermsOfUseInvitationActionBuilders {
   import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 
   def applicationDataService: ApplicationDataService
+  def submissionsService: SubmissionsService
+  def termsOfUseInvitationService: TermsOfUseInvitationService
   
   private val E = EitherTHelper.make[Result]
 
-  def applicationRequestRefiner(applicationId: ApplicationId)(implicit ec: ExecutionContext): ActionRefiner[Request, ApplicationRequest] =
+  private def applicationRequestRefiner(applicationId: ApplicationId)(implicit ec: ExecutionContext): ActionRefiner[Request, ApplicationRequest] =
     new ActionRefiner[Request, ApplicationRequest] {
       def executionContext: ExecutionContext = ec
 
@@ -72,19 +76,45 @@ trait TermsOfUseInvitationActionBuilders {
         )
         .map(data => new ApplicationRequest[A](data.id, request))
         .value
+      }
     }
-  }
+
+  private def noSubmissionRefiner(applicationId: ApplicationId)(implicit ec: ExecutionContext): ActionRefiner[ApplicationRequest, ApplicationRequest] =
+    new ActionRefiner[ApplicationRequest, ApplicationRequest] {
+      def executionContext = ec
+
+      override def refine[A](input: ApplicationRequest[A]): Future[Either[Result, ApplicationRequest[A]]] = {
+        submissionsService.fetchLatest(applicationId).map {
+          case Some(value) => Left(Conflict)
+          case None => Right(input)
+        }
+      }
+    }
+
+  private def noInvitationRefiner(applicationId: ApplicationId)(implicit ec: ExecutionContext): ActionRefiner[ApplicationRequest, ApplicationRequest] = 
+    new ActionRefiner[ApplicationRequest, ApplicationRequest] {
+      def executionContext = ec
+
+      override def refine[A](input: ApplicationRequest[A]): Future[Either[Result, ApplicationRequest[A]]] = {
+        termsOfUseInvitationService.fetchInvitation(applicationId).map {
+          case Some(value) => Left(Conflict)
+          case None => Right(input)
+        }
+      }
+    }
 
   def withProductionApplicationAdminUserAndNoSubmission(
-    allowedStateFilter: ApplicationStateFilter.Type = ApplicationStateFilter.allAllowed
+    allowedStateFilter: ApplicationStateFilter.Type = ApplicationStateFilter.production
   )(
-    applicationid: ApplicationId
+    applicationId: ApplicationId
   )(
     block: ApplicationRequest[AnyContent] => Future[Result]
   ): Action[AnyContent] = {
     Action.async { implicit request =>
       (
-        applicationRequestRefiner(applicationid)
+        applicationRequestRefiner(applicationId) andThen
+          noSubmissionRefiner(applicationId) andThen
+          noInvitationRefiner(applicationId)
       ).invokeBlock(request, block)
     }
   }

@@ -29,41 +29,43 @@ import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitationActionBuilders
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 
 @Singleton
 class TermsOfUseInvitationController @Inject() (
-    termsOfUseService: TermsOfUseInvitationService,
+    val termsOfUseInvitationService: TermsOfUseInvitationService,
     val applicationDataService: ApplicationDataService,
+    val submissionsService: SubmissionsService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils with TermsOfUseInvitationActionBuilders {
 
   def createInvitation(applicationId: ApplicationId) = withProductionApplicationAdminUserAndNoSubmission()(applicationId) { _ =>
-    def findExistingInvitation(applicationId: ApplicationId): Future[Option[TermsOfUseInvitationResponse]] = termsOfUseService.fetchInvitation(applicationId)
+    // def findExistingInvitation(applicationId: ApplicationId): Future[Option[TermsOfUseInvitationResponse]] = termsOfUseInvitationService.fetchInvitation(applicationId)
 
-    def createNewInvitation(applicationId: ApplicationId): Future[Result] = {
-      termsOfUseService
+    // def createNewInvitation(applicationId: ApplicationId): Future[Result] = {
+      termsOfUseInvitationService
         .createInvitation(applicationId)
         .map {
           case true => Created
           case _    => InternalServerError
-        }
-    }
+        }.recover(recovery)
+    // }
 
-    findExistingInvitation(applicationId).flatMap {
-      case Some(response) => successful(Conflict)
-      case None           => createNewInvitation(applicationId)
-    }.recover(recovery)
+    // findExistingInvitation(applicationId).flatMap {
+      // case Some(response) => successful(Conflict)
+      // case None           => createNewInvitation(applicationId)
+    // }.recover(recovery)
   }
 
   def fetchInvitation(applicationId: ApplicationId) = Action.async { _ =>
-    termsOfUseService.fetchInvitation(applicationId).map {
+    termsOfUseInvitationService.fetchInvitation(applicationId).map {
       case Some(response) => Ok(toJson(response))
       case None           => NotFound
     }
   }
 
   def fetchInvitations() = Action.async { _ =>
-    termsOfUseService.fetchInvitations().map(res => Ok(toJson(res)))
+    termsOfUseInvitationService.fetchInvitations().map(res => Ok(toJson(res)))
   }
 }
