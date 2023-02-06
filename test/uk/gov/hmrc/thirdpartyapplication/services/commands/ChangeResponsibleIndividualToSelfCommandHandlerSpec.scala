@@ -64,7 +64,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
 
     val changeResponsibleIndividualToSelfCommand = ChangeResponsibleIndividualToSelf(appAdminUserId, ts, riName, riEmail)
 
-    def checkSuccessResult(expectedActor: Actor, expectedPreviousEmail: String, expectedPreviousName: String)(fn: => CommandHandler2.ResultT) = {
+    def checkSuccessResult(expectedActor: Actor, expectedPreviousEmail: String, expectedPreviousName: String)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>
@@ -97,7 +97,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
       }
     }
 
-    def checkFailsWith(msg: String)(fn: => CommandHandler2.ResultT) = {
+    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1

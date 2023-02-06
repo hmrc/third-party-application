@@ -41,9 +41,9 @@ class SubscribeToApiCommandHandler @Inject() (
     subscriptionRepository: SubscriptionRepository,
     strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler2 {
+  ) extends CommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
   import UpdateApplicationEvent._
 
   private def validate(app: ApplicationData, cmd: SubscribeToApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[CommandFailures, Unit] = {

@@ -31,9 +31,9 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 class RemoveClientSecretCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler2 {
+  ) extends CommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
 
   private def validate(app: ApplicationData, cmd: RemoveClientSecret): Validated[CommandFailures, ApplicationData] = {
     Apply[Validated[CommandFailures, *]].map2(

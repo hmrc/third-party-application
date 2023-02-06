@@ -37,9 +37,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation.Url
 class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler2 {
+  ) extends CommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
   import UpdateApplicationEvent._
 
   def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): ResultT = {

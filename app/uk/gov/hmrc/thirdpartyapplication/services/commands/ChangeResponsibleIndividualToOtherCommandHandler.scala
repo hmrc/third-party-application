@@ -37,9 +37,9 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler2 {
+  ) extends CommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
 
   private def isNotCurrentRi(name: String, email: String, app: ApplicationData) =
     cond(
@@ -161,7 +161,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     } yield (app, NonEmptyList.one(evt))
   }
 
-  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther): CommandHandler2.ResultT = {
+  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther): CommandHandler.ResultT = {
     E.fromEitherF(
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap {
         case Some(riVerificationToU: ResponsibleIndividualToUVerification)       => processTou(app, cmd, riVerificationToU).value

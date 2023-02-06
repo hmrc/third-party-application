@@ -44,7 +44,7 @@ class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTes
 
     val subscribeToApi = SubscribeToApi(gatekeeperUserActor, apiIdentifier, timestamp)
 
-    def checkSuccessResult(expectedActor: GatekeeperUserActor)(fn: => CommandHandler2.ResultT) = {
+    def checkSuccessResult(expectedActor: GatekeeperUserActor)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>
@@ -61,7 +61,7 @@ class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTes
       }
     }
 
-    def checkFailsWith(msg: String)(fn: => CommandHandler2.ResultT) = {
+    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1

@@ -41,9 +41,9 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
     stateHistoryRepository: StateHistoryRepository,
     submissionService: SubmissionsService
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler2 {
+  ) extends CommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
 
   import UpdateApplicationEvent._
 

@@ -26,7 +26,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
-trait DeleteApplicationCommandHandler extends CommandHandler2 {
+trait DeleteApplicationCommandHandler extends CommandHandler {
   val applicationRepository: ApplicationRepository
   val apiGatewayStore: ApiGatewayStore
   val notificationRepository: NotificationRepository

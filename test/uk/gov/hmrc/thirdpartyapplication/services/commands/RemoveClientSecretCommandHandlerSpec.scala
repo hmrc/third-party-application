@@ -22,7 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpe
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandActorExamples
 import uk.gov.hmrc.thirdpartyapplication.services.commands.RemoveClientSecretCommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 class RemoveClientSecretCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -53,7 +53,7 @@ class RemoveClientSecretCommandHandlerSpec
     val removeClientSecretByDev   = RemoveClientSecret(CollaboratorActor(devEmail), clientSecret.id, timestamp)
     val removeClientSecretByAdmin = RemoveClientSecret(CollaboratorActor(adminEmail), clientSecret.id, timestamp)
 
-    def checkSuccessResult(expectedActor: CollaboratorActor)(result: CommandHandler2.CommandSuccess) = {
+    def checkSuccessResult(expectedActor: CollaboratorActor)(result: CommandHandler.CommandSuccess) = {
       inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head

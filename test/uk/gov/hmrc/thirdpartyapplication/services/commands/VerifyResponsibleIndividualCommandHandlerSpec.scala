@@ -69,7 +69,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
 
     val underTest = new VerifyResponsibleIndividualCommandHandler(SubmissionsServiceMock.aMock)
 
-    def checkFailsWith(msg: String)(fn: => CommandHandler2.ResultT) = {
+    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1

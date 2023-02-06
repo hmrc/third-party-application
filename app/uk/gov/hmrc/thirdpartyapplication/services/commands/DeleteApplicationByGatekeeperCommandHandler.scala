@@ -39,7 +39,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends DeleteApplicationCommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
   import UpdateApplicationEvent._
 
   private def validate(app: ApplicationData): Validated[CommandFailures, ApplicationData] = {

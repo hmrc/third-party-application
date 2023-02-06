@@ -34,11 +34,11 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     stateHistoryRepository: StateHistoryRepository,
     submissionService: SubmissionsService
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler2 {
+  ) extends CommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
 
-  private def validate(app: ApplicationData): Future[ValidatedNec[String, Submission]] = {
+  private def validate(app: ApplicationData): Future[ValidatedNec[String, (String, String, Submission)]] = {
 
     def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandFailures, Submission] =
       maybeSubmission.fold(s"No submission found for application ${app.id.value}".invalidNec[Submission])(_.validNec[String])
@@ -47,10 +47,10 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
       Apply[Validated[CommandFailures, *]].map5(
         isStandardNewJourneyApp(app),
         isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app),
-        isRequesterEmailDefined(app),
-        isRequesterNameDefined(app),
+        ensureRequesterEmailDefined(app),
+        ensureRequesterNameDefined(app),
         checkSubmission(maybeSubmission)
-      ) { case (_, _, _, _, submission) => submission }
+      ) { case (_, _, requesterEmail, requesterName, submission) => (requesterEmail, requesterName, submission) }
     }
   }
 
@@ -91,14 +91,13 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): CommandHandler2.ResultT = {
-    val requesterEmail = getRequesterEmail(app).get
-    val requesterName  = getRequesterName(app).get
+  def process(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): CommandHandler.ResultT = {
     for {
-      submission <- E.fromValidatedF(validate(app))
-      savedApp   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requesterEmail, requesterName))
-      events      = asEvents(savedApp, cmd, submission, requesterEmail, requesterName)
-      _          <- E.liftF(stateHistoryRepository.applyEvents(events))
+      validated                                  <- E.fromValidatedF(validate(app))
+      (requesterEmail, requesterName, submission) = validated
+      savedApp                                   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requesterEmail, requesterName))
+      events                                      = asEvents(savedApp, cmd, submission, requesterEmail, requesterName)
+      _                                          <- E.liftF(stateHistoryRepository.applyEvents(events))
     } yield (savedApp, events)
   }
 }

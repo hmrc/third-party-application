@@ -52,7 +52,7 @@ class ApplicationCommandController @Inject() (
 
   import cats.implicits._
   import ApplicationCommandController._
-  import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.CommandSuccess
+  import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.CommandSuccess
 
   private def fails(applicationId: ApplicationId)(e: NonEmptyChain[String]) = {
     logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")

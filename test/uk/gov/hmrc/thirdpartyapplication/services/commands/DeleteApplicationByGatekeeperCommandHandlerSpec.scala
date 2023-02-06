@@ -47,7 +47,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
       StateHistoryRepoMock.aMock
     )
 
-    def checkSuccessResult()(result: CommandHandler2.CommandSuccess) = {
+    def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {

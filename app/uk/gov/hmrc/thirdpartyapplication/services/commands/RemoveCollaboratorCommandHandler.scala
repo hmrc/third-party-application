@@ -25,12 +25,12 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Co
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, RemoveCollaborator, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.ResultT
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
 
 @Singleton
-class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler2 {
+class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
 
   private def validate(app: ApplicationData, cmd: RemoveCollaborator) = {
 

@@ -93,7 +93,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
     val underTest =
       new ChangeResponsibleIndividualToOtherCommandHandler(ApplicationRepoMock.aMock, ResponsibleIndividualVerificationRepositoryMock.aMock, StateHistoryRepoMock.aMock)
 
-    def checkSuccessResultToU()(fn: => CommandHandler2.ResultT) = {
+    def checkSuccessResultToU()(fn: => CommandHandler.ResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -125,7 +125,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       }
     }
 
-    def checkSuccessResultUpdate()(fn: => CommandHandler2.ResultT) = {
+    def checkSuccessResultUpdate()(fn: => CommandHandler.ResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -148,7 +148,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       }
     }
 
-    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler2.ResultT) = {
+    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1 + msgs.length

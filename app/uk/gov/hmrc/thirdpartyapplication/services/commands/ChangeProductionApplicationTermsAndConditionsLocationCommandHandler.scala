@@ -32,9 +32,9 @@ import scala.concurrent.ExecutionContext
 class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler2 {
+  ) extends CommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
   import UpdateApplicationEvent._
 
   def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {

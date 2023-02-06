@@ -32,9 +32,9 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     submissionService: SubmissionsService
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler2 {
+  ) extends CommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
 
   private def isNotCurrentRi(name: String, email: String, app: ApplicationData) =
     cond(
@@ -90,7 +90,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): CommandHandler2.ResultT = {
+  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): CommandHandler.ResultT = {
 
     val requesterName = cmd.name
     for {

@@ -67,7 +67,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
     val ts              = FixedClock.now
     val underTest       = new DeclineApplicationApprovalRequestCommandHandler(ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
 
-    def checkSuccessResult()(result: CommandHandler2.CommandSuccess) = {
+    def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {

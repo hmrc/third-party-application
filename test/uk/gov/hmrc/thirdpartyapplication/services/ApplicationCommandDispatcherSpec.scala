@@ -25,12 +25,13 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.{cond, CommandFailures}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.{cond, CommandFailures}
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 import java.util.UUID
 import scala.collection.immutable.Set
+import scala.reflect.ClassTag
 
 class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils with CommandCollaboratorExamples with CommandApplicationExamples {
 
@@ -89,11 +90,12 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
       mockUpdateRedirectUrisCommandHandler
     )
 
-    def verifyNoneButGivenCmmandHandlerCalled[A]() = {
-      allCommandHandlers.filterNot {
-        case _: A => true
-        case _    => false
-      }.foreach(handler => verifyZeroInteractions(handler))
+    def verifyNoneButGivenCmmandHandlerCalled[A <: CommandHandler]()(implicit ct: ClassTag[A]) = {
+      allCommandHandlers.filter {
+        case a: A => false
+        case _    => true
+      }
+        .foreach(handler => verifyZeroInteractions(handler))
     }
 
     def testFailure(cmd: ApplicationCommand) = {

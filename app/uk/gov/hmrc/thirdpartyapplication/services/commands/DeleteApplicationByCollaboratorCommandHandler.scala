@@ -41,7 +41,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends DeleteApplicationCommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
   import UpdateApplicationEvent._
 
   def canDeleteApplicationsOrNotProductionApp(app: ApplicationData) =

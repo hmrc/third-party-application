@@ -43,7 +43,7 @@ class AddCollaboratorCommandHandlerSpec
     val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, adminsToEmail, timestamp)
     val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, adminsToEmail, timestamp)
 
-    def checkSuccessResult(expectedActor: CollaboratorActor)(fn: => CommandHandler2.ResultT) = {
+    def checkSuccessResult(expectedActor: CollaboratorActor)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>
@@ -60,7 +60,7 @@ class AddCollaboratorCommandHandlerSpec
       }
     }
 
-    def checkFailsWith(msg: String)(fn: => CommandHandler2.ResultT) = {
+    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1

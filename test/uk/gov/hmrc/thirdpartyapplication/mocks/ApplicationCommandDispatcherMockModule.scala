@@ -36,7 +36,7 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
 
     def aMock: ApplicationCommandDispatcher
 
-    import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.{CommandFailures, CommandSuccess}
+    import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.{CommandFailures, CommandSuccess}
 
     val mockEvents                  = NonEmptyList.of(mock[UpdateApplicationEvent])
     val mockErrors: CommandFailures = NonEmptyChain("Bang")

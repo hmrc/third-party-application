@@ -38,11 +38,11 @@ class CommandHandler2Spec extends HmrcSpec with ApplicationTestData {
     val applicationData: ApplicationData = anApplicationData(applicationId)
 
     "pass when existing secrets are less than the limit" in {
-      CommandHandler2.appHasLessThanLimitOfSecrets(applicationData, 3) shouldBe VALID
+      CommandHandler.appHasLessThanLimitOfSecrets(applicationData, 3) shouldBe VALID
 
     }
     "fail when existing secrets are at the limit" in {
-      CommandHandler2.appHasLessThanLimitOfSecrets(applicationData, 2) shouldBe Validated.Invalid(NonEmptyChain("Client secret limit has been exceeded"))
+      CommandHandler.appHasLessThanLimitOfSecrets(applicationData, 2) shouldBe Validated.Invalid(NonEmptyChain("Client secret limit has been exceeded"))
 
     }
   }

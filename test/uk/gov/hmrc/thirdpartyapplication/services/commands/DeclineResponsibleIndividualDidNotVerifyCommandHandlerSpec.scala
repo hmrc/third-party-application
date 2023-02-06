@@ -112,7 +112,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       SubmissionsServiceMock.aMock
     )
 
-    def checkSuccessResultToU(expectedActor: UpdateApplicationEvent.Actor)(fn: => CommandHandler2.ResultT) = {
+    def checkSuccessResultToU(expectedActor: UpdateApplicationEvent.Actor)(fn: => CommandHandler.ResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -156,7 +156,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       }
     }
 
-    def checkSuccessResultUpdate(expectedActor: UpdateApplicationEvent.Actor)(fn: => CommandHandler2.ResultT) = {
+    def checkSuccessResultUpdate(expectedActor: UpdateApplicationEvent.Actor)(fn: => CommandHandler.ResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -177,7 +177,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       }
     }
 
-    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler2.ResultT) = {
+    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1 + msgs.length

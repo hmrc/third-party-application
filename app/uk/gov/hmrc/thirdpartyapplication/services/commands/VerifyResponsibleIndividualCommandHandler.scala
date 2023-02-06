@@ -33,9 +33,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Collaborator
 class VerifyResponsibleIndividualCommandHandler @Inject() (
     submissionService: SubmissionsService
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler2 {
+  ) extends CommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
   import UpdateApplicationEvent._
 
   private def isNotCurrentRi(name: String, email: String, app: ApplicationData) =

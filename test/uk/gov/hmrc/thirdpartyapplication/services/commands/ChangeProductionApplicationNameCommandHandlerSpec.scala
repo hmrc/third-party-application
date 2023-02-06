@@ -50,7 +50,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
-    def checkSuccessResult(expectedActor: GatekeeperUserActor)(fn: => CommandHandler2.ResultT) = {
+    def checkSuccessResult(expectedActor: GatekeeperUserActor)(fn: => CommandHandler.ResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -69,7 +69,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
       }
     }
 
-    def checkFailsWith(msg: String)(fn: => CommandHandler2.ResultT) = {
+    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1

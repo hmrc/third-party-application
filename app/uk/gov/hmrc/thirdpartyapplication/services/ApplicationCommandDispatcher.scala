@@ -30,6 +30,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 import uk.gov.hmrc.thirdpartyapplication.repository._
 
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+
 @Singleton
 class ApplicationCommandDispatcher @Inject() (
     applicationRepository: ApplicationRepository,
@@ -60,7 +62,7 @@ class ApplicationCommandDispatcher @Inject() (
   ) extends ApplicationLogger {
 
   import cats.implicits._
-  import CommandHandler2._
+  import CommandHandler._
 
   val E = EitherTHelper.make[CommandFailures]
 

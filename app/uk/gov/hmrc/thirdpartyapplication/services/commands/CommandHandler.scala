@@ -26,15 +26,15 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 
-trait CommandHandler2 {
-  import CommandHandler2._
+trait CommandHandler {
+  import CommandHandler._
 
   implicit def ec: ExecutionContext
 
   val E = EitherTHelper.make[CommandFailures]
 }
 
-object CommandHandler2 {
+object CommandHandler {
   type CommandSuccess  = (ApplicationData, NonEmptyList[UpdateApplicationEvent])
   type CommandFailures = NonEmptyChain[String]
 
@@ -55,9 +55,6 @@ object CommandHandler2 {
 
   def isCollaboratorOnApp(email: String, app: ApplicationData): Validated[CommandFailures, Unit] =
     cond(app.collaborators.exists(c => c.emailAddress == email), s"no collaborator found with email: $email")
-
-  // private def isAdmin(userId: UserId, app: ApplicationData): Boolean =
-  //   app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.userId == userId)
 
   private def isCollaboratorActorAndAdmin(actor: Actor, app: ApplicationData): Boolean =
     actor match {

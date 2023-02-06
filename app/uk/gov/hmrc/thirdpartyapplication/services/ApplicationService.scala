@@ -49,7 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, HeaderCarrierHelper}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class ApplicationService @Inject() (
@@ -509,12 +509,12 @@ class ApplicationService @Inject() (
     )(implicit hc: HeaderCarrier
     ): Future[ApplicationData] = {
 
-    def fail(errorMessages: CommandHandler2.CommandFailures) = {
+    def fail(errorMessages: CommandHandler.CommandFailures) = {
       logger.warn(s"Command Process failed for $applicationId because ${errorMessages.toList.mkString("[", ",", "]")}")
       throw new BadRequestException("Failed to process UpdateRedirectUris command")
     }
 
-    def success(cmdSuccess: CommandHandler2.CommandSuccess) = {
+    def success(cmdSuccess: CommandHandler.CommandSuccess) = {
       cmdSuccess._1
     }
 

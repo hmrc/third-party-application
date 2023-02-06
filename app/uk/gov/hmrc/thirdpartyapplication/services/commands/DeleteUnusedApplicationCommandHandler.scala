@@ -43,7 +43,7 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends DeleteApplicationCommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
   import UpdateApplicationEvent._
 
   def base64Decode(stringToDecode: String): Try[String] = Try(new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8))

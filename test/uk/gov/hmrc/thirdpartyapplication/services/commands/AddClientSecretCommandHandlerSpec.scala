@@ -42,7 +42,7 @@ class AddClientSecretCommandHandlerSpec
     val addClientSecretByDev   = AddClientSecret(CollaboratorActor(devEmail), clientSecret, timestamp)
     val addClientSecretByAdmin = AddClientSecret(CollaboratorActor(adminEmail), clientSecret, timestamp)
 
-    def checkSuccessResult(expectedActor: CollaboratorActor)(result: CommandHandler2.CommandSuccess) = {
+    def checkSuccessResult(expectedActor: CollaboratorActor)(result: CommandHandler.CommandSuccess) = {
       inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head

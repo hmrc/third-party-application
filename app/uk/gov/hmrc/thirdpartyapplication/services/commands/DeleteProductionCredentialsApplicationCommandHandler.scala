@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredenti
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.ResultT
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
 
 @Singleton
 class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
@@ -41,7 +41,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends DeleteApplicationCommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
   import UpdateApplicationEvent._
 
   private def validate(app: ApplicationData): Validated[CommandFailures, ApplicationData] = {

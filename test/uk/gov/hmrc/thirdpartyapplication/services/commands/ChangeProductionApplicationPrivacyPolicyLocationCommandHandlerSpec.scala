@@ -64,7 +64,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
 
     val underTest = new ChangeProductionApplicationPrivacyPolicyLocationCommandHandler(ApplicationRepoMock.aMock)
 
-    def checkSuccessResult(expectedActor: Actor)(fn: => CommandHandler2.ResultT) = {
+    def checkSuccessResult(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>
@@ -82,7 +82,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
       }
     }
 
-    def checkLegacySuccessResult(expectedActor: Actor)(fn: => CommandHandler2.ResultT) = {
+    def checkLegacySuccessResult(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>
@@ -100,7 +100,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
       }
     }
 
-    def checkFailsWith(msg: String)(fn: => CommandHandler2.ResultT) = {
+    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1

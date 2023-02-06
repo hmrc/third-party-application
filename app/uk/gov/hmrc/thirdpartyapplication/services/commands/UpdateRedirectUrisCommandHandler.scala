@@ -25,12 +25,12 @@ import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{UpdateApplicationEvent, UpdateRedirectUris}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.ResultT
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
 
 @Singleton
-class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler2 {
+class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
 
-  import CommandHandler2._
+  import CommandHandler._
 
   private def validate(app: ApplicationData): Validated[CommandFailures, Unit] = {
     Apply[Validated[CommandFailures, *]].map(isStandardAccess(app))(_ => ())

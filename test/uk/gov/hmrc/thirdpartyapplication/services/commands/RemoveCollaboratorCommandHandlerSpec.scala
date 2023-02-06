@@ -62,7 +62,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
 
     val removeCollaborator = RemoveCollaborator(CollaboratorActor(adminActor.email), collaborator, adminsToEmail, timestamp)
 
-    def checkSuccessResult(expectedActor: Actor)(result: CommandHandler2.CommandSuccess) = {
+    def checkSuccessResult(expectedActor: Actor)(result: CommandHandler.CommandSuccess) = {
       inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head

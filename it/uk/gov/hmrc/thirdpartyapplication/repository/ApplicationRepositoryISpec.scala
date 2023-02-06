@@ -22,7 +22,6 @@ import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.play.json.Codecs
@@ -2986,8 +2985,6 @@ class ApplicationRepositoryISpec
     val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = anApplicationData(applicationId).copy(access = access)
 
-    val devHubUser = CollaboratorActor("admin@example.com")
-
     await(applicationRepository.save(app))
     app.state.name mustBe State.PRODUCTION
     val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, ts, adminEmail, adminName))
@@ -3015,7 +3012,6 @@ class ApplicationRepositoryISpec
     val app                     = anApplicationData(applicationId).copy(access = access)
     await(applicationRepository.save(app))
 
-    val devHubUser       = CollaboratorActor("admin@example.com")
     val appWithUpdatedRI =
       await(applicationRepository.updateApplicationChangeResponsibleIndividualToSelf(applicationId, adminName, adminEmail, FixedClock.now, submissionId, submissionIndex))
 
@@ -3083,13 +3079,9 @@ class ApplicationRepositoryISpec
     val gkUserName = "Mr Gate Keeperr"
     val gkUser     = GatekeeperUserActor(gkUserName)
     val adminEmail = "admin@example.com"
-    val adminName  = "Mr Admin"
-
-//
 
     "handle updateApplicationSetResponsibleIndividual correctly" in {
       val applicationId           = ApplicationId.random
-      val code                    = "23547235416352165129"
       val riName                  = "Mr Responsible"
       val riEmail                 = "ri@example.com"
       val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
