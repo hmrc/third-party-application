@@ -22,9 +22,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
 
 class VerifyResponsibleIndividualCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -34,7 +34,9 @@ class VerifyResponsibleIndividualCommandHandlerSpec
     with CommandCollaboratorExamples
     with CommandApplicationExamples {
 
-  trait Setup extends SubmissionsServiceMockModule {
+  import UpdateApplicationEvent._
+
+  trait Setup extends SubmissionsServiceMockModule with ResponsibleIndividualVerificationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -67,7 +69,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
     val riName  = "Mr Responsible"
     val riEmail = "ri@example.com"
 
-    val underTest = new VerifyResponsibleIndividualCommandHandler(SubmissionsServiceMock.aMock)
+    val underTest = new VerifyResponsibleIndividualCommandHandler(SubmissionsServiceMock.aMock, ResponsibleIndividualVerificationRepositoryMock.aMock)
 
     def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
@@ -80,6 +82,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
   "process" should {
     "create correct event for a valid request with a standard app" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
 
       val result = await(underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, ts, appAdminName, riName, riEmail)).value).right.value
 

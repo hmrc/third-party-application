@@ -28,10 +28,12 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 
 @Singleton
 class VerifyResponsibleIndividualCommandHandler @Inject() (
-    submissionService: SubmissionsService
+    submissionService: SubmissionsService,
+    responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
@@ -84,6 +86,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
       submission <- E.fromOptionF(submissionService.fetchLatest(app.id), noSubmission)
       instigator <- E.fromEither(validate(app, cmd).toEither)
       events      = asEvents(app, cmd, submission, instigator.emailAddress)
+      _          <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
     } yield (app, events)
   }
 }

@@ -108,12 +108,13 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
     }
 
     for {
-      valid                                   <- E.fromEither(validate().toEither)
-      (riDeclined, approvalDeclined, stateEvt) = asEvents(valid._1, valid._2, valid._3)
-      _                                       <- E.liftF(applicationRepository.updateApplicationState(app.id, stateEvt.newAppState, stateEvt.eventDateTime, stateEvt.requestingAdminEmail, stateEvt.requestingAdminName))
-      _                                       <- E.liftF(stateHistoryRepository.addStateHistoryRecord(stateEvt))
-      _                                       <- E.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(riVerification.submissionId, riVerification.submissionInstance))
-      _                                       <- E.liftF(submissionService.declineApplicationApprovalRequest(approvalDeclined))
+      valid                                                             <- E.fromEither(validate().toEither)
+      (responsibleIndividual, requestingAdminEmail, requestingAdminName) = valid
+      _                                                                 <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requestingAdminEmail, requestingAdminName))
+      _                                                                 <- E.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(riVerification.submissionId, riVerification.submissionInstance))
+      (riDeclined, approvalDeclined, stateEvt)                           = asEvents(responsibleIndividual, requestingAdminEmail, requestingAdminName)
+      _                                                                 <- E.liftF(stateHistoryRepository.addStateHistoryRecord(stateEvt))
+      _                                                                 <- E.liftF(submissionService.declineApplicationApprovalRequest(approvalDeclined))
     } yield (app, NonEmptyList(riDeclined, List(approvalDeclined, stateEvt)))
   }
 

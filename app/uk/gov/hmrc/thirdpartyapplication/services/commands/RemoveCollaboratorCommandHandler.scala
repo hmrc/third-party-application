@@ -76,14 +76,6 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
     )
   }
 
-//  def process(app: ApplicationData, cmd: RemoveCollaborator): CommandHandler.Result = {
-//    Future.successful {
-//      validate(app, cmd) map { _ =>
-//        asEvents(app, cmd)
-//      }
-//    }
-//  }
-
   def process(app: ApplicationData, cmd: RemoveCollaborator): ResultT = {
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
