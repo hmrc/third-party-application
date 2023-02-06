@@ -76,7 +76,6 @@ class ApplicationServiceSpec
 
   trait Setup
       extends AuditServiceMockModule
-      with ApplicationCommandServiceMockModule
       with ApiGatewayStoreMockModule
       with ApiSubscriptionFieldsConnectorMockModule
       with ApplicationRepositoryMockModule
@@ -130,7 +129,6 @@ class ApplicationServiceSpec
       TokenServiceMock.aMock,
       SubmissionsServiceMock.aMock,
       UpliftNamingServiceMock.aMock,
-      ApplicationCommandServiceMock.aMock,
       ApplicationCommandDispatcherMock.aMock,
       clock
     )
@@ -572,7 +570,6 @@ class ApplicationServiceSpec
 
     "send an audit event for each type of change" in new SetupForAuditTests {
       val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
-      ApplicationCommandServiceMock.Update.thenReturnSuccess(updatedApplication)
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccessOn(updateRedirectUris)(updatedApplication)
 
       await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
@@ -597,12 +594,12 @@ class ApplicationServiceSpec
 
     "not update RedirectUris or audit TermsAndConditionsUrl or PrivacyPolicyUrl for a privileged app" in new SetupForAuditTests {
       val (updatedApplication, _) = setupAuditTests(Privileged())
-      ApplicationCommandServiceMock.Update.thenReturnSuccess(updatedApplication)
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(updatedApplication)
 
       await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name, access = Privileged())))
 
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
-      ApplicationCommandServiceMock.Update.verifyNeverCalled
+      ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
     }
 
     "throw a NotFoundException if application doesn't exist in repository for the given application id" in new Setup {

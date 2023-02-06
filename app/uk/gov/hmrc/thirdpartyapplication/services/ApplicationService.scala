@@ -70,7 +70,6 @@ class ApplicationService @Inject() (
     tokenService: TokenService,
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
-    applicationUpdateService: ApplicationCommandService,
     applicationCommandDispatcher: ApplicationCommandDispatcher,
     clock: Clock
   )(implicit val ec: ExecutionContext

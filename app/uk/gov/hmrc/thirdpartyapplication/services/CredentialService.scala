@@ -38,7 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 @Singleton
 class CredentialService @Inject() (
     applicationRepository: ApplicationRepository,
-    applicationUpdateService: ApplicationCommandService,
+    applicationCommandDispatcher: ApplicationCommandDispatcher,
     auditService: AuditService,
     clientSecretService: ClientSecretService,
     config: CredentialConfig,
@@ -70,7 +70,7 @@ class CredentialService @Inject() (
       _                           = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
       (clientSecret, secretValue) = clientSecretService.generateClientSecret()
       addSecretCmd                = generateCommand(clientSecret)
-      _                          <- applicationUpdateService.update(applicationId, addSecretCmd).value
+      _                          <- applicationCommandDispatcher.dispatch(applicationId, addSecretCmd).value
       updatedApplication         <- fetchApp(applicationId)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production, addSecretCmd.clientSecret.id, secretValue)
   }

@@ -27,7 +27,7 @@ import play.api.test.{FakeRequest, Helpers}
 
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandServiceMockModule, ApplicationServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
 
@@ -41,13 +41,13 @@ class ApplicationCommandControllerSpec
   import play.api.test.Helpers._
 
   trait Setup
-      extends ApplicationCommandServiceMockModule with ApplicationServiceMockModule {
+      extends ApplicationCommandDispatcherMockModule with ApplicationServiceMockModule {
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
     lazy val underTest = new ApplicationCommandController(
-      ApplicationCommandServiceMock.aMock,
+      ApplicationCommandDispatcherMock.aMock,
       ApplicationServiceMock.aMock,
       Helpers.stubControllerComponents()
     )
@@ -68,7 +68,7 @@ class ApplicationCommandControllerSpec
     )
 
     "return success if application update request is valid" in new Setup {
-      ApplicationCommandServiceMock.Update.thenReturnSuccess(anApplicationData(applicationId))
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(anApplicationData(applicationId))
 
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody))
 
@@ -78,40 +78,40 @@ class ApplicationCommandControllerSpec
     "return 422 error if application update request is missing updateType" in new Setup {
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "updateType"))
 
-      ApplicationCommandServiceMock.Update.verifyNeverCalled
+      ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
       status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "return 422 error if application update request is missing instigator" in new Setup {
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "instigator"))
 
-      ApplicationCommandServiceMock.Update.verifyNeverCalled
+      ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
       status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "return 422 error if application update request is missing timestamp" in new Setup {
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "timestamp"))
 
-      ApplicationCommandServiceMock.Update.verifyNeverCalled
+      ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
       status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "return 422 error if application update request is missing gatekeeperUser" in new Setup {
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "gatekeeperUser"))
 
-      ApplicationCommandServiceMock.Update.verifyNeverCalled
+      ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
       status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "return 422 error if application update request is missing newName" in new Setup {
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "newName"))
 
-      ApplicationCommandServiceMock.Update.verifyNeverCalled
+      ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
       status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "return 400 error if application update request is valid but update fails" in new Setup {
-      ApplicationCommandServiceMock.Update.thenReturnError("update failed!")
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnFailed("update failed!")
 
       val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody))
 

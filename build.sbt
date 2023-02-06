@@ -11,8 +11,6 @@ lazy val appName = "third-party-application"
 lazy val plugins: Seq[Plugins]         = Seq(PlayScala, SbtDistributablesPlugin)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
-Global / bloopAggregateSourceDependencies := true
-
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 
 inThisBuild(
@@ -79,4 +77,6 @@ def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
       )
     )
   }
+
+Global / bloopAggregateSourceDependencies := true
 

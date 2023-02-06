@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import cats.data.NonEmptyList
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import org.mockito.captor.ArgCaptor
 
 trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -61,21 +62,24 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
       def thenReturnFailed() =
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand])(*)).thenReturn(EitherT.leftT(mockErrors))
 
+      def thenReturnFailedFor(appId: ApplicationId) =
+        when(aMock.dispatch(eqTo(appId), *[ApplicationCommand])(*)).thenReturn(EitherT.leftT(mockErrors))
+
       def thenReturnFailed(msg: String, otherMsgs: String*) =
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand])(*)).thenReturn(EitherT.leftT(NonEmptyChain(msg, otherMsgs: _*)))
 
-      // def verifyNeverCalled =
-      //   verify(aMock, never).update(*[ApplicationId], *[ApplicationCommand])(*)
+      def verifyNeverCalled =
+        verify(aMock, never).dispatch(*[ApplicationId], *[ApplicationCommand])(*)
 
-      // def verifyCalledWith(applicationId: ApplicationId) = {
-      //   val captor = ArgCaptor[ApplicationCommand]
-      //   verify(aMock).update(eqTo(applicationId), captor.capture)(*)
-      //   captor.value
-      // }
+      def verifyCalledWith(applicationId: ApplicationId) = {
+        val captor = ArgCaptor[ApplicationCommand]
+        verify(aMock).dispatch(eqTo(applicationId), captor.capture)(*)
+        captor.value
+      }
 
-      // def verifyCalledWith(applicationId: ApplicationId, command: ApplicationCommand) = {
-      //   verify(aMock).update(eqTo(applicationId), eqTo(command))(*)
-      // }
+      def verifyCalledWith(applicationId: ApplicationId, command: ApplicationCommand) = {
+        verify(aMock).dispatch(eqTo(applicationId), eqTo(command))(*)
+      }
     }
   }
 

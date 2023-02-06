@@ -28,12 +28,20 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, ApplicationCommandFormatters, ApplicationId}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+
+object ApplicationCommandController {
+  case class DispatchResult(applicationResponse: ApplicationResponse, events: List[UpdateApplicationEvent])
+
+  object DispatchResult {
+    implicit val format = Json.format[DispatchResult]
+  }
+}
 
 @Singleton
 class ApplicationCommandController @Inject() (
-    val applicationUpdateService: ApplicationCommandService,
+    val applicationCommandDispatcher: ApplicationCommandDispatcher,
     val applicationService: ApplicationService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
@@ -43,19 +51,32 @@ class ApplicationCommandController @Inject() (
     with ApplicationLogger {
 
   import cats.implicits._
+  import ApplicationCommandController._
+  import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler2.CommandSuccess
+
+  private def fails(applicationId: ApplicationId)(e: NonEmptyChain[String]) = {
+    logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")
+    BadRequest("Failed to process command")
+  }
 
   def update(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    def fails(e: NonEmptyChain[String]) = {
-      logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")
-      BadRequest("Failed to process command")
-    }
-
-    def passes(applicationData: ApplicationData) = {
-      Ok(Json.toJson(ApplicationResponse(data = applicationData)))
+    def passes(result: CommandSuccess) = {
+      Ok(Json.toJson(ApplicationResponse(data = result._1)))
     }
 
     withJsonBody[ApplicationCommand] { command =>
-      applicationUpdateService.update(applicationId, command).fold(fails(_), passes(_))
+      applicationCommandDispatcher.dispatch(applicationId, command).fold(fails(applicationId), passes(_))
+    }
+  }
+
+  def dispatch(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+    def passes(result: CommandSuccess) = {
+      val output = DispatchResult(ApplicationResponse(data = result._1), result._2.toList)
+      Ok(Json.toJson(output))
+    }
+
+    withJsonBody[ApplicationCommand] { command =>
+      applicationCommandDispatcher.dispatch(applicationId, command).fold(fails(applicationId), passes(_))
     }
   }
 

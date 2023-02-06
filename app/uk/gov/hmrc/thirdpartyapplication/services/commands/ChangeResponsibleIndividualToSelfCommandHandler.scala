@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
 import cats.syntax.validated._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -46,7 +46,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
       s"The specified individual is already the RI for this application"
     )
 
-  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): Future[ValidatedNec[String, Submission]] = {
+  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): Future[Validated[CommandFailures, Submission]] = {
 
     def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandFailures, Submission] =
       maybeSubmission.fold(s"No submission found for application ${app.id.value}".invalidNec[Submission])(_.validNec[String])

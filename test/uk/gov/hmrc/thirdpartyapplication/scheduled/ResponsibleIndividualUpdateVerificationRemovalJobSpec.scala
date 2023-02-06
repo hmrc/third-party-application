@@ -28,14 +28,14 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndiv
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationCommandServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationCommandDispatcherMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil
     with ApplicationTestData {
 
-  trait Setup extends ApplicationCommandServiceMockModule with ResponsibleIndividualVerificationRepositoryMockModule
+  trait Setup extends ApplicationCommandDispatcherMockModule with ResponsibleIndividualVerificationRepositoryMockModule
       with SubmissionsTestData {
 
     val mockLockKeeper = mock[ResponsibleIndividualUpdateVerificationRemovalJobLockService]
@@ -69,7 +69,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
     val job = new ResponsibleIndividualUpdateVerificationRemovalJob(
       mockLockKeeper,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
-      ApplicationCommandServiceMock.aMock,
+      ApplicationCommandDispatcherMock.aMock,
       fixedClock,
       jobConfig
     )
@@ -77,7 +77,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
 
   "ResponsibleIndividualUpdateVerificationRemovalJob" should {
     "remove database record" in new Setup {
-      ApplicationCommandServiceMock.Update.thenReturnSuccess(app)
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(app)
 
       val code         = "123242423432432432"
       val verification = ResponsibleIndividualUpdateVerification(
@@ -100,7 +100,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
         INITIAL,
         timeNow.minus(removalInterval.toSeconds, SECONDS)
       )
-      val command                                  = ApplicationCommandServiceMock.Update.verifyCalledWith(app.id)
+      val command                                  = ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(app.id)
       val declineResponsibleIndividualDidNotVerify = command.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
       declineResponsibleIndividualDidNotVerify.code shouldBe code
     }
