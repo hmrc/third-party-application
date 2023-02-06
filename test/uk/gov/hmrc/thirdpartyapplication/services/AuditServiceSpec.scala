@@ -216,12 +216,13 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
 
     "applyEvents with a ClientSecretAdded event" in new Setup {
 
-      val clientSecretAdded = ClientSecretAddedV3(
+      val clientSecretAdded = ClientSecretAddedV2(
         UpdateApplicationEvent.Id.random,
         applicationId,
         timestamp,
         collaboratorActor,
-        ClientSecret(name = "name", hashedSecret = "hashedSecret")
+        "name",
+        "hashedSecret"
       )
 
       val expectedDataEvent = DataEvent(
@@ -230,7 +231,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         tags = hc.toAuditTags(ClientSecretAddedAudit.name, "-"),
         detail = Map(
           "applicationId"    -> applicationId.value.toString,
-          "newClientSecret"  -> clientSecretAdded.clientSecret.name,
+          "newClientSecret"  -> clientSecretAdded.clientSecretName,
           "clientSecretType" -> "PRODUCTION"
         )
       )

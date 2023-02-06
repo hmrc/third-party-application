@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import cats.data.NonEmptyList
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
@@ -38,13 +37,6 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
-  ApplicationStateChanged,
-  CollaboratorAdded,
-  ResponsibleIndividualChanged,
-  ResponsibleIndividualChangedToSelf,
-  ResponsibleIndividualSet
-}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
@@ -663,15 +655,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
         .toMap)
   }
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[ApplicationData] = {
-    require(events.map(_.applicationId).toList.toSet.size == 1, "Events must all be for the same application")
-
-    events match {
-      case NonEmptyList(e, Nil)  => applyEvent(e)
-      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
-    }
-  }
-
   def addCollaborator(applicationId: ApplicationId, collaborator: Collaborator) =
     updateApplication(
       applicationId,
@@ -803,42 +786,4 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
         Updates.set("state.requestedByName", requestingAdminName)
       )
     )
-
-  private def noOp(event: UpdateApplicationEvent): Future[ApplicationData] = fetch(event.applicationId).map(_.get)
-
-  // scalastyle:off cyclomatic.complexity
-  private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
-    import UpdateApplicationEvent._
-
-    event match {
-      case _: ProductionAppNameChanged                          => noOp(event)
-      case _: ProductionAppPrivacyPolicyLocationChanged         => noOp(event)
-      case _: ProductionLegacyAppPrivacyPolicyLocationChanged   => noOp(event)
-      case _: ProductionAppTermsConditionsLocationChanged       => noOp(event)
-      case _: ProductionLegacyAppTermsConditionsLocationChanged => noOp(event)
-      case _: ResponsibleIndividualSet                          => noOp(event)
-      case _: ResponsibleIndividualChanged                      => noOp(event)
-      case _: ResponsibleIndividualChangedToSelf                => noOp(event)
-      case _: ApplicationStateChanged                           => noOp(event)
-      case _: ResponsibleIndividualDeclined                     => noOp(event)
-      case _: ResponsibleIndividualDeclinedUpdate               => noOp(event)
-      case _: ResponsibleIndividualDidNotVerify                 => noOp(event)
-      case _: ApplicationApprovalRequestDeclined                => noOp(event)
-      // refactored to new ways
-
-      case _: ClientSecretAddedV3                                                                                 => noOp(event)
-      case _: ClientSecretRemoved                                                                                 => noOp(event)
-      case _: RedirectUrisUpdated                                                                                 => noOp(event)
-      case _: CollaboratorAdded                                                                                   => noOp(event)
-      case _: CollaboratorRemoved                                                                                 => noOp(event)
-      case _: ResponsibleIndividualVerificationStarted                                                            => noOp(event)
-      case _: ApplicationDeleted | _: ApplicationDeletedByGatekeeper | _: ProductionCredentialsApplicationDeleted => noOp(event)
-      case _: ApiSubscribed                                                                                       => noOp(event)
-      case _: ApiUnsubscribed                                                                                     => noOp(event)
-
-      // Should never be seen by this route
-      case _: ClientSecretAddedV2 => noOp(event)
-    }
-  }
-  // scalastyle:on cyclomatic.complexity
 }

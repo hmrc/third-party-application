@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-import cats.data.NonEmptyList
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
@@ -399,21 +398,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.updateApplicationChangeResponsibleIndividual(*[ApplicationId], *[String], *[String], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
           applicationData
         ))
-    }
-
-    object ApplyEvents {
-
-      def thenReturn(applicationData: ApplicationData) =
-        when(aMock.applyEvents(*[NonEmptyList[UpdateApplicationEvent]])).thenReturn(successful(applicationData))
-
-      def failsWith(ex: Throwable) =
-        when(aMock.applyEvents(*[NonEmptyList[UpdateApplicationEvent]])).thenReturn(failed(ex))
-
-      def verifyCalledWith(events: UpdateApplicationEvent*) =
-        verify.applyEvents(NonEmptyList.fromList(events.toList).get)
-
-      def verifyNeverCalled =
-        ApplicationRepoMock.verify(never).applyEvents(*[NonEmptyList[UpdateApplicationEvent]])
     }
 
     object FetchProdAppStateHistories {

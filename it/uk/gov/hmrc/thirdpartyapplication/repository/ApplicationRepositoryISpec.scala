@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import cats.data.NonEmptyList
 import org.mockito.MockitoSugar.{mock, times, verify, verifyNoMoreInteractions}
 import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
@@ -29,7 +28,6 @@ import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
@@ -3073,82 +3071,6 @@ class ApplicationRepositoryISpec
         latestAcceptance.responsibleIndividual.emailAddress.value mustBe riEmail
       }
       case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
-    }
-  }
-  "applyEvents" should {
-    val gkUserName = "Mr Gate Keeperr"
-    val gkUser     = GatekeeperUserActor(gkUserName)
-    val adminEmail = "admin@example.com"
-
-    "handle updateApplicationSetResponsibleIndividual correctly" in {
-      val applicationId           = ApplicationId.random
-      val riName                  = "Mr Responsible"
-      val riEmail                 = "ri@example.com"
-      val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
-      val submissionId            = Submission.Id.random
-      val submissionIndex         = 1
-      val importantSubmissionData =
-        ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
-      val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-      val app                     = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val appWithUpdatedRI = await(applicationRepository.updateApplicationSetResponsibleIndividual(applicationId, riName, riEmail, FixedClock.now, submissionId, submissionIndex))
-      appWithUpdatedRI.access match {
-        case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
-          importantSubmissionData.termsOfUseAcceptances.size mustBe 1
-          val latestAcceptance = importantSubmissionData.termsOfUseAcceptances.head
-          latestAcceptance.responsibleIndividual.fullName.value mustBe riName
-          latestAcceptance.responsibleIndividual.emailAddress.value mustBe riEmail
-        }
-        case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
-      }
-    }
-
-//    "handle ResponsibleIndividualVerificationStarted event correctly" in {
-//      val app = anApplicationData(applicationId)
-//      await(applicationRepository.save(app))
-//
-//      val event                                 = ResponsibleIndividualVerificationStarted(
-//        UpdateApplicationEvent.Id.random,
-//        applicationId,
-//        "app name",
-//        FixedClock.now,
-//        CollaboratorActor("admin@example.com"),
-//        "ms admin",
-//        "admin@example.com",
-//        "ri name",
-//        "ri@example.com",
-//        Submission.Id.random,
-//        1,
-//        ResponsibleIndividualVerificationId.random
-//      )
-//      val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-//      appWithUpdatedTermsConditionsLocation mustBe app
-//    }
-
-    "throw an error if events relate to different applications" in {
-      val appId1 = ApplicationId.random
-      val appId2 = ApplicationId.random
-      val events = List(appId1, appId2).map(
-        ProductionAppNameChanged(UpdateApplicationEvent.Id.random, _, FixedClock.now, gkUser, "old name", "new name", adminEmail)
-      )
-      await(
-        applicationRepository.save(
-          anApplicationDataForTest(appId1, ClientId.random)
-        )
-      )
-      await(
-        applicationRepository.save(
-          anApplicationDataForTest(appId2, ClientId.random)
-        )
-      )
-
-      intercept[IllegalArgumentException] {
-        await(
-          applicationRepository.applyEvents(NonEmptyList.fromList(events).get)
-        )
-      }
     }
   }
 

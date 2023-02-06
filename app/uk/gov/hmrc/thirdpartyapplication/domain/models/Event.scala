@@ -117,22 +117,10 @@ object UpdateApplicationEvent {
       actor: CollaboratorActor,
       clientSecretId: String,
       clientSecretName: String
-    ) extends UpdateApplicationEvent
+    ) extends UpdateApplicationEvent with TriggersNotification
 
   object ClientSecretAddedV2 {
     implicit val format: OFormat[ClientSecretAddedV2] = Json.format[ClientSecretAddedV2]
-  }
-
-  case class ClientSecretAddedV3(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: CollaboratorActor,
-      clientSecret: ClientSecret
-    ) extends UpdateApplicationEvent with TriggersNotification
-
-  object ClientSecretAddedV3 {
-    implicit val format: OFormat[ClientSecretAddedV3] = Json.format[ClientSecretAddedV3]
   }
 
   case class ClientSecretRemoved(
@@ -466,7 +454,6 @@ object UpdateApplicationEvent {
     .and[ApiSubscribed](EventType.API_SUBSCRIBED_V2.toString)
     .and[ApiUnsubscribed](EventType.API_UNSUBSCRIBED_V2.toString)
     .and[ClientSecretAddedV2](EventType.CLIENT_SECRET_ADDED_V2.toString)
-    .and[ClientSecretAddedV3](EventType.CLIENT_SECRET_ADDED_V3.toString)
     .and[ClientSecretRemoved](EventType.CLIENT_SECRET_REMOVED_V2.toString)
     .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
     .and[ProductionAppPrivacyPolicyLocationChanged](EventType.PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)
