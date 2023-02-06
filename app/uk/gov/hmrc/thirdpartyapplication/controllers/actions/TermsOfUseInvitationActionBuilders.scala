@@ -16,42 +16,42 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers.actions
 
-import uk.gov.hmrc.thirdpartyapplication.controllers.TermsOfUseInvitationController
-import play.api.mvc.Action
-import play.api.mvc.AnyContent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import scala.concurrent.ExecutionContext
-import play.api.mvc.ActionRefiner
-import scala.concurrent.Future
-import play.api.mvc.Request
-import play.api.mvc.Result
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import play.api.mvc.WrappedRequest
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
+import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
+
+import play.api.mvc._
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
+
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationDataService, TermsOfUseInvitationService}
 
 class ApplicationRequest[A](val applicationId: ApplicationId, val request: Request[A]) extends WrappedRequest[A](request)
 
 object TermsOfUseInvitationActionBuilders {
+
   object ApplicationStateFilter {
     type Type = State => Boolean
-    
+
     val notProduction: Type   = _ != PRODUCTION
     val production: Type      = _ == PRODUCTION
     val preProduction: Type   = _ == PRE_PRODUCTION
     val inTesting: Type       = _ == TESTING
     val allAllowed: Type      = _ => true
-    val pendingApproval: Type = s => 
+
+    val pendingApproval: Type = s =>
       s == PENDING_GATEKEEPER_APPROVAL ||
-      s == PENDING_REQUESTER_VERIFICATION ||
-      s == PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+        s == PENDING_REQUESTER_VERIFICATION ||
+        s == PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
   }
 }
 
 trait TermsOfUseInvitationActionBuilders {
-  self: TermsOfUseInvitationController =>
+  self: BackendController =>
 
   import TermsOfUseInvitationActionBuilders.ApplicationStateFilter
   import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -59,8 +59,33 @@ trait TermsOfUseInvitationActionBuilders {
   def applicationDataService: ApplicationDataService
   def submissionsService: SubmissionsService
   def termsOfUseInvitationService: TermsOfUseInvitationService
-  
+  def ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService
+  def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
+
+  implicit def ec: ExecutionContext
+
   private val E = EitherTHelper.make[Result]
+
+  private def anyAuthenticatedUserRefiner()(implicit ec: ExecutionContext): ActionRefiner[Request, Request] =
+    new ActionRefiner[Request, Request] {
+      def executionContext: ExecutionContext = ec
+
+      override def refine[A](request: Request[A]): Future[Either[Result, Request[A]]] = {
+        implicit val hc = HeaderCarrierConverter.fromRequest(request)
+
+        ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
+          .recoverWith { case NonFatal(_) => ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE }
+          .flatMap(_ match {
+            case Some(failureToAuthorise) =>
+              strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
+                .flatMap(_ match {
+                  case None                     => successful(Right(request))
+                  case Some(failureToAuthorise) => successful(Left(failureToAuthorise))
+                })
+            case None                     => successful(Right(request))
+          })
+      }
+    }
 
   private def applicationRequestRefiner(applicationId: ApplicationId)(implicit ec: ExecutionContext): ActionRefiner[Request, ApplicationRequest] =
     new ActionRefiner[Request, ApplicationRequest] {
@@ -71,11 +96,11 @@ trait TermsOfUseInvitationActionBuilders {
 
         E.fromOptionF(
           applicationDataService
-          .fetchApp(applicationId),
+            .fetchApp(applicationId),
           NotFound
         )
-        .map(data => new ApplicationRequest[A](data.id, request))
-        .value
+          .map(data => new ApplicationRequest[A](data.id, request))
+          .value
       }
     }
 
@@ -86,33 +111,34 @@ trait TermsOfUseInvitationActionBuilders {
       override def refine[A](input: ApplicationRequest[A]): Future[Either[Result, ApplicationRequest[A]]] = {
         submissionsService.fetchLatest(applicationId).map {
           case Some(value) => Left(Conflict)
-          case None => Right(input)
+          case None        => Right(input)
         }
       }
     }
 
-  private def noInvitationRefiner(applicationId: ApplicationId)(implicit ec: ExecutionContext): ActionRefiner[ApplicationRequest, ApplicationRequest] = 
+  private def noInvitationRefiner(applicationId: ApplicationId)(implicit ec: ExecutionContext): ActionRefiner[ApplicationRequest, ApplicationRequest] =
     new ActionRefiner[ApplicationRequest, ApplicationRequest] {
       def executionContext = ec
 
       override def refine[A](input: ApplicationRequest[A]): Future[Either[Result, ApplicationRequest[A]]] = {
         termsOfUseInvitationService.fetchInvitation(applicationId).map {
           case Some(value) => Left(Conflict)
-          case None => Right(input)
+          case None        => Right(input)
         }
       }
     }
 
-  def withProductionApplicationAdminUserAndNoSubmission(
-    allowedStateFilter: ApplicationStateFilter.Type = ApplicationStateFilter.production
-  )(
-    applicationId: ApplicationId
-  )(
-    block: ApplicationRequest[AnyContent] => Future[Result]
-  ): Action[AnyContent] = {
+  def anyAuthenticatedGatekeeperUserWithProductionApplicationAndNoSubmissionAndNoInvitation(
+      allowedStateFilter: ApplicationStateFilter.Type = ApplicationStateFilter.production
+    )(
+      applicationId: ApplicationId
+    )(
+      block: Request[_] => Future[Result]
+    ): Action[AnyContent] = {
     Action.async { implicit request =>
       (
-        applicationRequestRefiner(applicationId) andThen
+        anyAuthenticatedUserRefiner andThen
+          applicationRequestRefiner(applicationId) andThen
           noSubmissionRefiner(applicationId) andThen
           noInvitationRefiner(applicationId)
       ).invokeBlock(request, block)
