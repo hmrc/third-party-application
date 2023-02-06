@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.submissions.services
 import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPrevention
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiIdentifier, State}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 object DeriveContext {
@@ -33,12 +33,17 @@ object DeriveContext {
 
   def deriveFor(application: ApplicationData, subscriptions: List[ApiIdentifier]): Context = {
 
-    val resell  = application.sellResellOrDistribute.fold("No")(s => s.answer)
-    val inHouse = if (resell == "Yes") "No" else "Yes"
+    val resell    = application.sellResellOrDistribute.fold("No")(s => s.answer)
+    val inHouse   = if (resell == "Yes") "No" else "Yes"
+    val newUplift = application.state.name match {
+      case State.PRODUCTION => "Yes"
+      case _                => "No"
+    }
 
     Map(
-      Keys.VAT_OR_ITSA       -> deriveFraudPrevention(subscriptions),
-      Keys.IN_HOUSE_SOFTWARE -> inHouse
+      Keys.VAT_OR_ITSA             -> deriveFraudPrevention(subscriptions),
+      Keys.IN_HOUSE_SOFTWARE       -> inHouse,
+      Keys.NEW_TERMS_OF_USE_UPLIFT -> newUplift
     )
   }
 }
