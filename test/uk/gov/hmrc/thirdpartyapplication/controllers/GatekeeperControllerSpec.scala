@@ -47,6 +47,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.{GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with ApplicationLogger
     with ControllerTestData with ApplicationTestData {
@@ -638,7 +639,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
 
       TermsOfUseServiceMock.FetchInvitation.thenReturnNone
-      TermsOfUseServiceMock.CreateInvitations.thenReturnSuccess()
+      TermsOfUseServiceMock.CreateInvitations.thenReturnSuccess(TermsOfUseInvitation(ApplicationId.random))
 
       val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
 
@@ -680,7 +681,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.hasCompletelyAnswered)
 
       TermsOfUseServiceMock.FetchInvitation.thenReturnNone
-      TermsOfUseServiceMock.CreateInvitations.thenReturnSuccess()
+      TermsOfUseServiceMock.CreateInvitations.thenReturnSuccess(TermsOfUseInvitation(ApplicationId.random))
 
       val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
 

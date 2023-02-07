@@ -29,8 +29,9 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationDataService, TermsOfUseInvitationService}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
-class ApplicationRequest[A](val applicationId: ApplicationId, val request: Request[A]) extends WrappedRequest[A](request)
+class ApplicationRequest[A](val application: ApplicationData, val request: Request[A]) extends WrappedRequest[A](request)
 
 object TermsOfUseInvitationActionBuilders {
 
@@ -99,7 +100,7 @@ trait TermsOfUseInvitationActionBuilders {
             .fetchApp(applicationId),
           NotFound
         )
-          .map(data => new ApplicationRequest[A](data.id, request))
+          .map(data => new ApplicationRequest[A](data, request))
           .value
       }
     }
@@ -133,7 +134,7 @@ trait TermsOfUseInvitationActionBuilders {
     )(
       applicationId: ApplicationId
     )(
-      block: Request[_] => Future[Result]
+      block: ApplicationRequest[_] => Future[Result]
     ): Action[AnyContent] = {
     Action.async { implicit request =>
       (

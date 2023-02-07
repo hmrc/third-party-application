@@ -24,14 +24,14 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
 
-trait TermsOfUseRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
+trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   protected trait BaseTermsOfUseRepositoryMock {
     def aMock: TermsOfUseInvitationRepository
 
     object Create {
-      def thenReturnSuccess() = when(aMock.create(*[TermsOfUseInvitation])).thenAnswer(successful(true))
-      def thenReturnFailure() = when(aMock.create(*[TermsOfUseInvitation])).thenAnswer(successful(false))
+      def thenReturnSuccess(invite: TermsOfUseInvitation) = when(aMock.create(*[TermsOfUseInvitation])).thenAnswer(successful(Some(invite)))
+      def thenReturnFailure() = when(aMock.create(*[TermsOfUseInvitation])).thenAnswer(successful(None))
     }
 
     object FetchInvitation {

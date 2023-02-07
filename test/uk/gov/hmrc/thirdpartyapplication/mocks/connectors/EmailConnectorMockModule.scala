@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import java.time.Instant
 
 trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -273,6 +274,10 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
         verify.sendRemovedCollaboratorConfirmation(eqTo(applicationName), eqTo(recipients))(*)
 
       def verifyNeverCalled() = EmailConnectorMock.verify(never).sendRemovedCollaboratorConfirmation(*, *)(*)
+    }
+
+    object SendNewTermsOfUseInvitation {
+      def thenReturnSuccess() = when(aMock.sendNewTermsOfUseInvitation(*[Instant], *, *)(*)).thenReturn(successful(HasSucceeded))
     }
 
   }
