@@ -18,10 +18,13 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
+
 import org.scalatest.prop.TableDrivenPropertyChecks
+
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.{FakeRequest, Helpers}
+
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}

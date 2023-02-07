@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor, CollaboratorRemoved, GatekeeperUserActor, ScheduledJobActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
     with ApplicationRepositoryMockModule

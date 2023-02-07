@@ -21,6 +21,7 @@ import scala.concurrent.ExecutionContext
 
 import cats.Apply
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
+
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualUpdateVerification,
@@ -28,11 +29,10 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationId
 }
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineResponsibleIndividualDidNotVerify, State, UpdateApplicationEvent}
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineResponsibleIndividualDidNotVerify, ResponsibleIndividual, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 
 @Singleton
 class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (

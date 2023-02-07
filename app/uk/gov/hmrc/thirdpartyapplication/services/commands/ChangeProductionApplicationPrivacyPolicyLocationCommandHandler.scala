@@ -22,6 +22,7 @@ import scala.concurrent.ExecutionContext
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
+import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation.Url
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{
   ChangeProductionApplicationPrivacyPolicyLocation,
   ImportantSubmissionData,
@@ -31,7 +32,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{
 }
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation.Url
 
 @Singleton
 class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (

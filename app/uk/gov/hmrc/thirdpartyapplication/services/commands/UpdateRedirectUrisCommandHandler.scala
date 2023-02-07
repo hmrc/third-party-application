@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats._
-import cats.implicits._
-import cats.data._
-
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+
+import cats._
+import cats.data._
+import cats.implicits._
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{UpdateApplicationEvent, UpdateRedirectUris}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository

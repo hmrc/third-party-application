@@ -25,11 +25,10 @@ import play.api.libs.json.Json
 import play.api.mvc._
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, ApplicationCommandFormatters, ApplicationId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, ApplicationCommandFormatters, ApplicationId, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 
 object ApplicationCommandController {
   case class DispatchResult(applicationResponse: ApplicationResponse, events: List[UpdateApplicationEvent])

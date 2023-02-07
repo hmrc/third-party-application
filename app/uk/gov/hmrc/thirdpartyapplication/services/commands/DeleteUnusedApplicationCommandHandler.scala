@@ -21,10 +21,13 @@ import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.util.Try
+
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+
 import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteUnusedApplication, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData

@@ -18,9 +18,11 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.validated._
+
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividualToSelf, ImportantSubmissionData, Standard, UpdateApplicationEvent}

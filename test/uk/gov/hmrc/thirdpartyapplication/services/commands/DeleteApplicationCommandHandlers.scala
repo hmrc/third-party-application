@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, ThirdPartyDelegatedAuthorityServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{
   ApplicationRepositoryMockModule,
   NotificationRepositoryMockModule,
   ResponsibleIndividualVerificationRepositoryMockModule,
   StateHistoryRepositoryMockModule
 }
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, ThirdPartyDelegatedAuthorityServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 trait DeleteApplicationCommandHandlers

@@ -18,11 +18,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretRemoved, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandActorExamples
-import uk.gov.hmrc.thirdpartyapplication.services.commands.RemoveClientSecretCommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandActorExamples, CommandHandler, RemoveClientSecretCommandHandler}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class RemoveClientSecretCommandHandlerSpec
     extends AsyncHmrcSpec

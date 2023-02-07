@@ -46,10 +46,10 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, HeaderCarrierHelper}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class ApplicationService @Inject() (

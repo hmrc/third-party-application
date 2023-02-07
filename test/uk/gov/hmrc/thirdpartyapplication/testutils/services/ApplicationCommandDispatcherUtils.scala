@@ -17,16 +17,11 @@
 package uk.gov.hmrc.thirdpartyapplication.testutils.services
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.mocks.{
-  ApiGatewayStoreMockModule,
-  ApiPlatformEventServiceMockModule,
-  AuditServiceMockModule,
-  NotificationServiceMockModule,
-  ThirdPartyDelegatedAuthorityServiceMockModule
-}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{
   ApplicationRepositoryMockModule,
   NotificationRepositoryMockModule,
@@ -34,29 +29,15 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{
   StateHistoryRepositoryMockModule,
   SubscriptionRepositoryMockModule
 }
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{
-  AddClientSecretCommandHandler,
-  AddCollaboratorCommandHandler,
-  ChangeProductionApplicationNameCommandHandler,
-  ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-  ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
-  ChangeResponsibleIndividualToOtherCommandHandler,
-  ChangeResponsibleIndividualToSelfCommandHandler,
-  DeclineApplicationApprovalRequestCommandHandler,
-  DeclineResponsibleIndividualCommandHandler,
-  DeclineResponsibleIndividualDidNotVerifyCommandHandler,
-  DeleteApplicationByCollaboratorCommandHandler,
-  DeleteApplicationByGatekeeperCommandHandler,
-  DeleteProductionCredentialsApplicationCommandHandler,
-  DeleteUnusedApplicationCommandHandler,
-  RemoveClientSecretCommandHandler,
-  RemoveCollaboratorCommandHandler,
-  SubscribeToApiCommandHandler,
-  UnsubscribeFromApiCommandHandler,
-  UpdateRedirectUrisCommandHandler,
-  VerifyResponsibleIndividualCommandHandler
+import uk.gov.hmrc.thirdpartyapplication.mocks.{
+  ApiGatewayStoreMockModule,
+  ApiPlatformEventServiceMockModule,
+  AuditServiceMockModule,
+  NotificationServiceMockModule,
+  ThirdPartyDelegatedAuthorityServiceMockModule
 }
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
+import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec

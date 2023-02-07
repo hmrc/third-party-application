@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Collaborator
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, Role}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role
 
 trait CommandCollaboratorExamples {
   self: ApplicationTestData =>

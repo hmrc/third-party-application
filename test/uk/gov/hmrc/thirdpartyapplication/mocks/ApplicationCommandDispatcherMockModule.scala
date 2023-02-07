@@ -17,17 +17,17 @@
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import cats.data.{EitherT, NonEmptyChain}
+
+import cats.data.{EitherT, NonEmptyChain, NonEmptyList}
 import cats.implicits.catsStdInstancesForFuture
+import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, ApplicationId}
+
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, RedirectUrisUpdated}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, ApplicationId, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import cats.data.NonEmptyList
-import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import org.mockito.captor.ArgCaptor
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, RedirectUrisUpdated}
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentMatchersSugar {

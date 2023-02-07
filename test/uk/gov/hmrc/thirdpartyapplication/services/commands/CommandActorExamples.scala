@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor}
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 trait CommandActorExamples {
   self: ApplicationTestData =>

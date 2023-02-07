@@ -16,22 +16,24 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.util.UUID
+import scala.collection.immutable.Set
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.reflect.ClassTag
+
 import cats.data._
+
+import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.CommandFailures
+import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
 import uk.gov.hmrc.thirdpartyapplication.util._
-
-import java.util.UUID
-import scala.collection.immutable.Set
-import scala.reflect.ClassTag
 
 class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils with CommandCollaboratorExamples with CommandApplicationExamples {
 

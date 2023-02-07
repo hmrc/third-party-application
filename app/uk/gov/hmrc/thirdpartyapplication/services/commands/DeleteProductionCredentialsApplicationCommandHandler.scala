@@ -18,16 +18,19 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+
 import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredentialsApplication, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
+import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 
 @Singleton
 class DeleteProductionCredentialsApplicationCommandHandler @Inject() (

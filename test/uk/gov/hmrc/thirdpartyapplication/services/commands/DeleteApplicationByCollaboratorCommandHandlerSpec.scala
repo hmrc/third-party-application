@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
+
 import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
-
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
 class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
 

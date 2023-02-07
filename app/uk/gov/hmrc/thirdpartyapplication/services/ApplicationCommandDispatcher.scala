@@ -26,11 +26,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
-import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 import uk.gov.hmrc.thirdpartyapplication.repository._
-
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, _}
+import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 
 @Singleton
 class ApplicationCommandDispatcher @Inject() (

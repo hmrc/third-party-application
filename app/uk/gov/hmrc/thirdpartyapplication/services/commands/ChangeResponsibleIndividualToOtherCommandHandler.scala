@@ -18,8 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+
 import cats.Apply
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
+
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualUpdateVerification,
@@ -27,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationId
 }
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividualToOther, ImportantSubmissionData, ResponsibleIndividual, Standard, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 

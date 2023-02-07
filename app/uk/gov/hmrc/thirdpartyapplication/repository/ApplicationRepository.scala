@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
@@ -29,11 +30,13 @@ import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{excludeId, fields, include}
 import org.mongodb.scala.model._
+
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State

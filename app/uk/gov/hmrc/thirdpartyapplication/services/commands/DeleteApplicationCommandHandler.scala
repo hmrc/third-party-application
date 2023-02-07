@@ -16,15 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.thirdpartyapplication.repository._
-import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import java.time.LocalDateTime
+
 import cats.data.NonEmptyList
+
 import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.thirdpartyapplication.services._
 
 trait DeleteApplicationCommandHandler extends CommandHandler {
   val applicationRepository: ApplicationRepository

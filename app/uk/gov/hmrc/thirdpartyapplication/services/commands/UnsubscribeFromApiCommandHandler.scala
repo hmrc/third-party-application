@@ -17,22 +17,19 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 import cats._
-import cats.implicits._
 import cats.data._
+import cats.implicits._
 
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
 import uk.gov.hmrc.thirdpartyapplication.repository._
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
-import uk.gov.hmrc.http.HeaderCarrier
-import scala.concurrent.Future
 
 @Singleton
 class UnsubscribeFromApiCommandHandler @Inject() (

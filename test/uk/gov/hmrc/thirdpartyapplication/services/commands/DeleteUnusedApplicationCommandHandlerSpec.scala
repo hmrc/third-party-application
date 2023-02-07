@@ -16,17 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.nio.charset.StandardCharsets.UTF_8
+import java.time.LocalDateTime
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import org.apache.commons.codec.binary.Base64.encodeBase64String
+
 import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
-
-import java.nio.charset.StandardCharsets.UTF_8
-import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
 

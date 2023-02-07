@@ -23,12 +23,11 @@ import cats.Apply
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 
 @Singleton
 class VerifyResponsibleIndividualCommandHandler @Inject() (

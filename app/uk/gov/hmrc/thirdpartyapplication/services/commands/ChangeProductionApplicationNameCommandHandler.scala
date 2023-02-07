@@ -20,16 +20,16 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats._
-import cats.implicits._
 import cats.data._
+import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationName, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{GatekeeperUserActor, ProductionAppNameChanged}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationName, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName}
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
 
 @Singleton
 class ChangeProductionApplicationNameCommandHandler @Inject() (

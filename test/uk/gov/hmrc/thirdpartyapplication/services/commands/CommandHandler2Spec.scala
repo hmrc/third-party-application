@@ -16,13 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.data.Validated
+import cats.data.{NonEmptyChain, Validated}
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import cats.data.NonEmptyChain
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock, HmrcSpec}
 
 class CommandHandler2Spec extends HmrcSpec with ApplicationTestData {
 

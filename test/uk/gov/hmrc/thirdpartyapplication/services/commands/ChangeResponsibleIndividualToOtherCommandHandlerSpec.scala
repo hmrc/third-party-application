@@ -16,6 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualUpdateVerification,
@@ -23,13 +27,10 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationState
 }
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
