@@ -32,7 +32,7 @@ object TermsOfUseInvitation extends MongoJavatimeFormats.Implicits {
 
   implicit val format: Format[TermsOfUseInvitation] = Json.format[TermsOfUseInvitation]
 
-  def apply(id: ApplicationId): TermsOfUseInvitation = 
+  def apply(id: ApplicationId): TermsOfUseInvitation =
     TermsOfUseInvitation(
       id,
       Instant.now().truncatedTo(MILLIS),

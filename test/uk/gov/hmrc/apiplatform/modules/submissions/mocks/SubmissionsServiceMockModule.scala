@@ -115,7 +115,7 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
 
     object DeclineApprovalRequest {
 
-      def succeeds()                           = {
+      def succeeds() = {
         when(aMock.declineApplicationApprovalRequest(*)).thenReturn(successful(None))
       }
 
