@@ -147,8 +147,8 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
     for {
       valid                                                             <- E.fromEither(validate().toEither)
       (responsibleIndividual, requestingAdminEmail, requestingAdminName) = valid
+      _                                                                 <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requestingAdminEmail, requestingAdminName))
       (riEvt, declinedEvt, stateEvt)                                     = asEvents(responsibleIndividual, requestingAdminEmail, requestingAdminName)
-      _                                                                 <- E.liftF(applicationRepository.updateApplicationState(app.id, stateEvt.newAppState, stateEvt.eventDateTime, stateEvt.requestingAdminEmail, stateEvt.requestingAdminName))
       _                                                                 <- E.liftF(stateHistoryRepository.addStateHistoryRecord(stateEvt))
       _                                                                 <- E.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(riVerification.submissionId, riVerification.submissionInstance))
       _                                                                 <- E.liftF(submissionService.declineApplicationApprovalRequest(declinedEvt))

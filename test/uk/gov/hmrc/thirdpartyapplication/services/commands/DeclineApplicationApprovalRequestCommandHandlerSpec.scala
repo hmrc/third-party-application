@@ -123,6 +123,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
 
     "succeed as gkUserActor" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
+      SubmissionsServiceMock.DeclineApprovalRequest.succeeds()
       ApplicationRepoMock.UpdateApplicationState.thenReturn(applicationData.copy(state = testingState()))
       StateHistoryRepoMock.ApplyEvents.succeeds()
 
