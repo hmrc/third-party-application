@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

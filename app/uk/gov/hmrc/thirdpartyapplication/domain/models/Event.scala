@@ -27,6 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 // scalastyle:off number.of.types number.of.methods
 

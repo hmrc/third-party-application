@@ -25,6 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 class VerifyResponsibleIndividualCommandHandlerSpec
     extends AsyncHmrcSpec

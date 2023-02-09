@@ -45,6 +45,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 object ApplicationRepository {
   case class SubsByUser(apiIdentifiers: List[ApiIdentifier])

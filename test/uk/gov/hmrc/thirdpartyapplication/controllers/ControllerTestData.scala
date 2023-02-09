@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 trait ControllerTestData {
 

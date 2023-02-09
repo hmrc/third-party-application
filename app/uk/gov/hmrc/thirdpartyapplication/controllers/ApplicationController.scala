@@ -49,6 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 @Singleton
 class ApplicationController @Inject() (

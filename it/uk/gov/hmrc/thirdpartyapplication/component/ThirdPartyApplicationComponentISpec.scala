@@ -32,6 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 import java.time.ZoneOffset
 import java.util.UUID

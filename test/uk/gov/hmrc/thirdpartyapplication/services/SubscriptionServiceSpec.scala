@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 

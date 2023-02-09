@@ -20,6 +20,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{Environment, _}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{HmrcSpec, UpliftRequestSamples}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
   import ApiIdentifierSyntax._

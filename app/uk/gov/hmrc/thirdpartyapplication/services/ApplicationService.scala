@@ -51,6 +51,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, HeaderCarrierHelper}
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 @Singleton
 class ApplicationService @Inject() (
