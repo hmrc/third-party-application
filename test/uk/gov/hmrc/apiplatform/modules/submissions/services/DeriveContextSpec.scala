@@ -18,7 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.submissions.services
 
 import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPrevention
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiContext, ApiIdentifierSyntax, SellResellOrDistribute}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiContext, ApiIdentifierSyntax, SellResellOrDistribute, ApplicationState}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{HmrcSpec, UpliftRequestSamples}
 
@@ -45,14 +45,23 @@ class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftReq
     "return the appropriate context when one subscription is a fraud prevention candidate" in {
       val aMock: ApplicationData = mock[ApplicationData]
       when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("Yes")))
+      when(aMock.state).thenReturn(ApplicationState.testing)
 
-      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "Yes", Keys.IN_HOUSE_SOFTWARE -> "No")
+      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "Yes", Keys.IN_HOUSE_SOFTWARE -> "No", Keys.NEW_TERMS_OF_USE_UPLIFT -> "No")
     }
     "return the appropriate context when no subscription is a fraud prevention candidate" in {
       val aMock: ApplicationData = mock[ApplicationData]
       when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("No")))
+      when(aMock.state).thenReturn(ApplicationState.testing)
 
-      DeriveContext.deriveFor(aMock, nonFpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "No", Keys.IN_HOUSE_SOFTWARE -> "Yes")
+      DeriveContext.deriveFor(aMock, nonFpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "No", Keys.IN_HOUSE_SOFTWARE -> "Yes", Keys.NEW_TERMS_OF_USE_UPLIFT -> "No")
+    }
+    "return the appropriate context when the application is already in production" in {
+      val aMock: ApplicationData = mock[ApplicationData]
+      when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("Yes")))
+      when(aMock.state).thenReturn(ApplicationState.production("requesterEmail", "requesterName"))
+
+      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "Yes", Keys.IN_HOUSE_SOFTWARE -> "No", Keys.NEW_TERMS_OF_USE_UPLIFT -> "Yes")
     }
   }
 }

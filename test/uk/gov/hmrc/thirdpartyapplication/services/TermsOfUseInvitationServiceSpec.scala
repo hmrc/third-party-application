@@ -21,35 +21,44 @@ import java.time.temporal.ChronoUnit._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.TermsOfUseRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.TermsOfUseInvitationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.http.HeaderCarrier
 
-class TermsOfUseServiceSpec extends AsyncHmrcSpec {
+class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
 
-  trait Setup extends TermsOfUseRepositoryMockModule {
+  trait Setup extends TermsOfUseInvitationRepositoryMockModule with EmailConnectorMockModule with ApplicationTestData {
+    implicit val hc     = HeaderCarrier()
+    
     val applicationId = ApplicationId.random
     val now           = Instant.now().truncatedTo(MILLIS)
 
-    val underTest = new TermsOfUseInvitationService(TermsOfUseRepositoryMock.aMock)
+    val underTest = new TermsOfUseInvitationService(
+      TermsOfUseRepositoryMock.aMock,
+      EmailConnectorMock.aMock
+    )
   }
 
   "create invitation" should {
     "return success when the terms of use invitiation can be created" in new Setup {
-      TermsOfUseRepositoryMock.Create.thenReturnSuccess()
+      EmailConnectorMock.SendNewTermsOfUseInvitation.thenReturnSuccess()
+      TermsOfUseRepositoryMock.Create.thenReturnSuccess(TermsOfUseInvitation(applicationId))
 
-      val result = await(underTest.createInvitation(applicationId))
+      val result = await(underTest.createInvitation(anApplicationData(applicationId)))
 
-      result shouldBe true
+      result shouldBe 'defined
     }
 
     "return failure when the terms of use invitiation cannot be created" in new Setup {
       TermsOfUseRepositoryMock.Create.thenReturnFailure()
 
-      val result = await(underTest.createInvitation(applicationId))
+      val result = await(underTest.createInvitation(anApplicationData(applicationId)))
 
-      result shouldBe false
+      result shouldBe None
     }
   }
 

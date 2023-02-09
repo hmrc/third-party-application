@@ -1,3 +1,3 @@
 GET       /                       uk.gov.hmrc.thirdpartyapplication.controllers.TermsOfUseInvitationController.fetchInvitations()
 GET       /application/:id        uk.gov.hmrc.thirdpartyapplication.controllers.TermsOfUseInvitationController.fetchInvitation(id: ApplicationId)
-POST      /application/:id        uk.gov.hmrc.thirdpartyapplication.controllers.TermsOfUseInvitationController.createInvitation(id: ApplicationId)
+POST      /application/:id        uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.createInvitation(id: ApplicationId)

@@ -29,28 +29,35 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 @Singleton
 class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](
-      collectionName = "termsOfUseInvitation",
-      mongoComponent = mongo,
-      domainFormat = TermsOfUseInvitation.format,
-      indexes = Seq(
-        IndexModel(
-          ascending("applicationId"),
-          IndexOptions()
-            .name("applicationIdIndex")
-            .unique(true)
-            .background(true)
-        )
-      ),
-      replaceIndexes = true
-    ) {
+  collectionName = "termsOfUseInvitation",
+  mongoComponent = mongo,
+  domainFormat = TermsOfUseInvitation.format,
+  indexes = Seq(
+    IndexModel(
+      ascending("applicationId"),
+      IndexOptions()
+        .name("applicationIdIndex")
+        .unique(true)
+        .background(true)
+    )
+  ),
+  replaceIndexes = true
+) with ApplicationLogger {
 
-  def create(termsOfUseInvitation: TermsOfUseInvitation): Future[Boolean] = {
+  def create(termsOfUseInvitation: TermsOfUseInvitation): Future[Option[TermsOfUseInvitation]] = {
     collection.find(equal("applicationId", Codecs.toBson(termsOfUseInvitation.applicationId))).headOption().flatMap {
-      case Some(value) => successful(false)
-      case None        => collection.insertOne(termsOfUseInvitation).toFuture().map(res => res.wasAcknowledged)
+      case Some(value) => {
+        logger.info(s"Cannot create terms of use invitation for application with id ${termsOfUseInvitation.applicationId.value} because an invitation already exists.")
+        successful(None)
+      }
+      case None        => {
+        logger.info(s"Creating terms of use invitation for application with id ${termsOfUseInvitation.applicationId.value}.")
+        collection.insertOne(termsOfUseInvitation).toFuture().map(_ => Some(termsOfUseInvitation))
+      }
     }
   }
 

@@ -28,6 +28,9 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.{ADMINISTRATOR, DEVELOPER, Role}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.time.ZoneId
 
 object EmailConnector {
   case class Config(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)
@@ -77,6 +80,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   val changeOfApplicationName                   = "apiChangeOfApplicationName"
   val changeOfApplicationDetails                = "apiChangeOfApplicationDetails"
   val changeOfResponsibleIndividual             = "apiChangeOfResponsibleIndividual"
+  val newTermsOfUseInvitation                   = "apiNewTermsOfUseInvitation"
 
   private def getRoleForDisplay(role: Role) =
     role match {
@@ -401,6 +405,24 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       )
     ))
   }
+
+  def sendNewTermsOfUseInvitation(
+    dueBy: Instant,
+    applicationName: String,
+    recipients: Set[String]
+  )(
+    implicit hc: HeaderCarrier
+  ): Future[HasSucceeded] = 
+    post(
+      SendEmailRequest(
+        recipients,
+        newTermsOfUseInvitation,
+        Map(
+          "completeBy" -> DateTimeFormatter.ofPattern("dd MMMM yyyy").withZone(ZoneId.systemDefault()).format(dueBy),
+          "applicationName" -> applicationName
+        )
+      )
+    )
 
   private def post(payload: SendEmailRequest)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val url = s"$serviceUrl/hmrc/email"

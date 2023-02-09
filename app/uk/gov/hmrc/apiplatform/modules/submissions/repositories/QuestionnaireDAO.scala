@@ -561,7 +561,7 @@ object QuestionnaireDAO {
         label = Questionnaire.Label("Customers authorising your software"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
-          QuestionItem(question2),
+          QuestionItem(question2, AskWhenContext(Keys.NEW_TERMS_OF_USE_UPLIFT, "No")),
           QuestionItem(question3, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question4),
           QuestionItem(question5, AskWhenAnswer(question4, "Yes")),

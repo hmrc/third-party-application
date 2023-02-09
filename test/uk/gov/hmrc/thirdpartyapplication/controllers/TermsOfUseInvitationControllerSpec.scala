@@ -25,11 +25,16 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{contentAsJson, status, stubControllerComponents}
 
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
-class TermsOfUseInvitationControllerSpec extends ControllerSpec {
+class TermsOfUseInvitationControllerSpec extends ControllerSpec with ApplicationDataServiceMockModule with SubmissionsServiceMockModule with ApplicationTestData
+    with SubmissionsTestData {
 
   trait Setup extends TermsOfUseServiceMockModule {
     val applicationId = ApplicationId.random
@@ -38,44 +43,10 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec {
 
     lazy val underTest = new TermsOfUseInvitationController(
       TermsOfUseServiceMock.aMock,
+      ApplicationDataServiceMock.aMock,
+      SubmissionsServiceMock.aMock,
       stubControllerComponents()
     )
-  }
-
-  "create invitation" should {
-    "return CREATED when a terms of use invitation is created" in new Setup {
-      TermsOfUseServiceMock.FetchInvitation.thenReturnNone()
-      TermsOfUseServiceMock.CreateInvitations.thenReturnSuccess()
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe CREATED
-    }
-
-    "return CONFLICT when a terms of use invitation already exists for the application" in new Setup {
-      val response = TermsOfUseInvitationResponse(
-        applicationId,
-        now,
-        now,
-        dueDate,
-        None
-      )
-
-      TermsOfUseServiceMock.FetchInvitation.thenReturn(response)
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe CONFLICT
-    }
-
-    "return INTERNAL_SERVER_ERROR when a terms of use invitation is NOT created" in new Setup {
-      TermsOfUseServiceMock.FetchInvitation.thenReturnNone()
-      TermsOfUseServiceMock.CreateInvitations.thenFail()
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
   }
 
   "fetch invitation" should {
@@ -91,7 +62,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec {
     }
 
     "return an NOT_FOUND when no terms of use invitation exists for the given application id" in new Setup {
-      TermsOfUseServiceMock.FetchInvitation.thenReturnNone()
+      TermsOfUseServiceMock.FetchInvitation.thenReturnNone
 
       val result = underTest.fetchInvitation(applicationId)(FakeRequest.apply())
 

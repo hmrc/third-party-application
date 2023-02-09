@@ -27,11 +27,13 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitationActionBuilders
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService, SubscriptionService}
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationDataService, ApplicationService, GatekeeperService, SubscriptionService, TermsOfUseInvitationService}
 
 @Singleton
 class GatekeeperController @Inject() (
@@ -40,12 +42,16 @@ class GatekeeperController @Inject() (
     val strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,
     gatekeeperService: GatekeeperService,
     subscriptionService: SubscriptionService,
+    val termsOfUseInvitationService: TermsOfUseInvitationService,
+    val applicationDataService: ApplicationDataService,
+    val submissionsService: SubmissionsService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc)
     with JsonUtils
     with AnyGatekeeperRoleAuthorisationAction
-    with OnlyStrideGatekeeperRoleAuthoriseAction {
+    with OnlyStrideGatekeeperRoleAuthoriseAction
+    with TermsOfUseInvitationActionBuilders {
 
   private lazy val badStateResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'")
@@ -140,4 +146,13 @@ class GatekeeperController @Inject() (
           .recover(recovery)
       }
     }
+
+  def createInvitation(applicationId: ApplicationId) = anyAuthenticatedGatekeeperUserWithProductionApplicationAndNoSubmissionAndNoInvitation()(applicationId) { implicit applicationRequest =>
+    termsOfUseInvitationService
+      .createInvitation(applicationRequest.application)
+      .map {
+        case Some(invite) => Created
+        case _            => InternalServerError
+      }.recover(recovery)
+  }
 }
