@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+
 case class SubscriptionData(apiIdentifier: ApiIdentifier, applications: Set[ApplicationId])
 
 object SubscriptionData {

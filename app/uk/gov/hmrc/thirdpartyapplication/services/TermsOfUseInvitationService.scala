@@ -42,8 +42,8 @@ class TermsOfUseInvitationService @Inject() (
 
     (
       for {
-        newInvite   <- OptionT(termsOfUseRepository.create(TermsOfUseInvitation(application.id)))
-        _           <- OptionT.liftF(emailConnector.sendNewTermsOfUseInvitation(newInvite.dueBy, application.name, application.admins.map(_.emailAddress)))
+        newInvite <- OptionT(termsOfUseRepository.create(TermsOfUseInvitation(application.id)))
+        _         <- OptionT.liftF(emailConnector.sendNewTermsOfUseInvitation(newInvite.dueBy, application.name, application.admins.map(_.emailAddress)))
       } yield newInvite
     ).value
   }

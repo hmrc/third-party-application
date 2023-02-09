@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 trait ApiGatewayStore extends EitherTHelper[String] {
 

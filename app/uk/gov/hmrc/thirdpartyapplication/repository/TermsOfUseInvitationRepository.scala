@@ -33,20 +33,20 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 @Singleton
 class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](
-  collectionName = "termsOfUseInvitation",
-  mongoComponent = mongo,
-  domainFormat = TermsOfUseInvitation.format,
-  indexes = Seq(
-    IndexModel(
-      ascending("applicationId"),
-      IndexOptions()
-        .name("applicationIdIndex")
-        .unique(true)
-        .background(true)
-    )
-  ),
-  replaceIndexes = true
-) with ApplicationLogger {
+      collectionName = "termsOfUseInvitation",
+      mongoComponent = mongo,
+      domainFormat = TermsOfUseInvitation.format,
+      indexes = Seq(
+        IndexModel(
+          ascending("applicationId"),
+          IndexOptions()
+            .name("applicationIdIndex")
+            .unique(true)
+            .background(true)
+        )
+      ),
+      replaceIndexes = true
+    ) with ApplicationLogger {
 
   def create(termsOfUseInvitation: TermsOfUseInvitation): Future[Option[TermsOfUseInvitation]] = {
     collection.find(equal("applicationId", Codecs.toBson(termsOfUseInvitation.applicationId))).headOption().flatMap {

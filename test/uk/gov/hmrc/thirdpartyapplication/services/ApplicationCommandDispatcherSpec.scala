@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.Comman
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
 import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils with CommandCollaboratorExamples with CommandApplicationExamples {
 
