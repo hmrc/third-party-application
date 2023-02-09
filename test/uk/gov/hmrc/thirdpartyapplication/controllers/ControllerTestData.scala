@@ -18,7 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._

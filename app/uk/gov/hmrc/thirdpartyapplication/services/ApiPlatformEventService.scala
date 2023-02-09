@@ -26,6 +26,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}

@@ -21,6 +21,7 @@ import java.time.LocalDateTime
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.json.Union
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor}
 
 trait ApplicationCommand {

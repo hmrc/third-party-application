@@ -43,7 +43,8 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor

@@ -31,7 +31,7 @@ trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with Argumen
 
     object Create {
       def thenReturnSuccess(invite: TermsOfUseInvitation) = when(aMock.create(*[TermsOfUseInvitation])).thenAnswer(successful(Some(invite)))
-      def thenReturnFailure() = when(aMock.create(*[TermsOfUseInvitation])).thenAnswer(successful(None))
+      def thenReturnFailure()                             = when(aMock.create(*[TermsOfUseInvitation])).thenAnswer(successful(None))
     }
 
     object FetchInvitation {

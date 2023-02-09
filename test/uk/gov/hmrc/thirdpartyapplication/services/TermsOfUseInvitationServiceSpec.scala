@@ -32,8 +32,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
 
   trait Setup extends TermsOfUseInvitationRepositoryMockModule with EmailConnectorMockModule with ApplicationTestData {
-    implicit val hc     = HeaderCarrier()
-    
+    implicit val hc = HeaderCarrier()
+
     val applicationId = ApplicationId.random
     val now           = Instant.now().truncatedTo(MILLIS)
 

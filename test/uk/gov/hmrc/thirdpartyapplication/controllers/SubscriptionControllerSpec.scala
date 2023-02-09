@@ -28,7 +28,8 @@ import play.api.libs.json.Json
 import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, SubscriptionRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}

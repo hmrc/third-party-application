@@ -26,6 +26,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 private[controllers] case class SubscribersResponse(subscribers: Set[ApplicationId])
 

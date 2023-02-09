@@ -24,13 +24,14 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 import java.time.Clock
 import scala.util.Random.nextString

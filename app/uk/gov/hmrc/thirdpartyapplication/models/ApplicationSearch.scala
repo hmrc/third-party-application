@@ -27,6 +27,7 @@ import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 // scalastyle:off number.of.types
 

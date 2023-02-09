@@ -41,6 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper

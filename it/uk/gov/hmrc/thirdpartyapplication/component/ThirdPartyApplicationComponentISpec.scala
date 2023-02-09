@@ -25,12 +25,13 @@ import play.api.libs.json.Json
 import scalaj.http.{Http, HttpResponse}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorResponse, DeleteCollaboratorRequest}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 import java.time.ZoneOffset
 import java.util.UUID

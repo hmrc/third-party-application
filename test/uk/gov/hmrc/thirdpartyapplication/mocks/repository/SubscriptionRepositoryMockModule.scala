@@ -24,6 +24,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
