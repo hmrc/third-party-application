@@ -24,17 +24,28 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import cats.data.OptionT
+import cats.implicits._
 
 @Singleton
 class TermsOfUseInvitationService @Inject() (
-    termsOfUseRepository: TermsOfUseInvitationRepository
+    termsOfUseRepository: TermsOfUseInvitationRepository,
+    emailConnector: EmailConnector
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def createInvitation(id: ApplicationId): Future[Boolean] = {
-    logger.info(s"Inviting application(${id.value}) to complete the new terms of use")
+  def createInvitation(application: ApplicationData)(implicit hc: HeaderCarrier): Future[Option[TermsOfUseInvitation]] = {
+    logger.info(s"Inviting application(${application.id.value}) to complete the new terms of use")
 
-    termsOfUseRepository.create(TermsOfUseInvitation(id))
+    (
+      for {
+        newInvite   <- OptionT(termsOfUseRepository.create(TermsOfUseInvitation(application.id)))
+        _           <- OptionT.liftF(emailConnector.sendNewTermsOfUseInvitation(newInvite.dueBy, application.name, application.admins.map(_.emailAddress)))
+      } yield newInvite
+    ).value
   }
 
   def fetchInvitation(applicationId: ApplicationId): Future[Option[TermsOfUseInvitationResponse]] = {

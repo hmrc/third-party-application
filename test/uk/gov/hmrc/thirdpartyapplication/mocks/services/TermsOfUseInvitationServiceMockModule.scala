@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
-trait TermsOfUseInvitationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
+trait TermsOfUseServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   protected trait BaseTermsOfUseServiceMock {
     def aMock: TermsOfUseInvitationService
