@@ -18,16 +18,17 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import cats.data.{Chain, NonEmptyList, ValidatedNec}
-
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, CollaboratorRemoved, GatekeeperUserActor, ScheduledJobActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor, CollaboratorRemoved, GatekeeperUserActor, ScheduledJobActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
-class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
+class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
+    with ApplicationRepositoryMockModule
+    with ApplicationTestData {
 
   trait Setup {
-    val underTest = new RemoveCollaboratorCommandHandler()
+    val underTest = new RemoveCollaboratorCommandHandler(ApplicationRepoMock.aMock)
 
     val applicationId = ApplicationId.random
     val adminEmail    = "admin@example.com"
@@ -37,8 +38,9 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
     val adminCollaborator = Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
     val adminActor        = CollaboratorActor(adminEmail)
 
-    val gkUserEmail = "admin@gatekeeper"
-    val gkUserActor = GatekeeperUserActor(gkUserEmail)
+    val gkUserEmail  = "admin@gatekeeper"
+    val gkUserActor  = GatekeeperUserActor(gkUserEmail)
+    val unknownEmail = "someEmail"
 
     val jobId             = "theJobThatDeletesCollaborators"
     val scheduledJobActor = ScheduledJobActor(jobId)
@@ -59,44 +61,74 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
     val adminsToEmail = Set(adminEmail, devEmail)
 
     val removeCollaborator = RemoveCollaborator(CollaboratorActor(adminActor.email), collaborator, adminsToEmail, timestamp)
+
+    def checkSuccessResult(expectedActor: Actor)(result: CommandHandler.CommandSuccess) = {
+      inside(result) { case (app, events) =>
+        events should have size 1
+        val event = events.head
+
+        inside(event) {
+          case CollaboratorRemoved(_, appId, eventDateTime, actor, collaboratorId, collaboratorEmail, collaboratorRole, notifyCollaborator: Boolean, verifiedAdminsToEmail) =>
+            appId shouldBe applicationId
+            actor shouldBe expectedActor
+            eventDateTime shouldBe timestamp
+            collaboratorId shouldBe collaborator.userId
+            collaboratorRole shouldBe collaborator.role
+            collaboratorEmail shouldBe collaborator.emailAddress
+            notifyCollaborator shouldBe app.collaborators.contains(removeCollaborator.collaborator)
+            verifiedAdminsToEmail shouldBe removeCollaborator.adminsToEmail
+        }
+      }
+    }
+
   }
 
-  "process RemoveCollaborator" should {
-    "create a valid event for a standard command with CollaboratorActor" in new Setup {
-      val result = await(underTest.process(app, removeCollaborator))
+  "RemoveCollaborator" should {
+    "succeed as gkUserActor" in new Setup {
+      ApplicationRepoMock.RemoveCollaborator.succeeds(app)
 
-      result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[CollaboratorRemoved]
-      event.applicationId shouldBe applicationId
-      event.actor shouldBe adminActor
-      event.eventDateTime shouldBe timestamp
-      event.collaboratorEmail shouldBe collaborator.emailAddress
-      event.collaboratorId shouldBe collaborator.userId
-      event.collaboratorRole shouldBe collaborator.role
+      val result = await(underTest.process(app, removeCollaborator.copy(actor = gkUserActor)).value).right.value
+
+      checkSuccessResult(gkUserActor)(result)
     }
 
-    "create a valid event for a standard command with GatekeeperActor" in new Setup {
-      val result: ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]] = await(underTest.process(app, removeCollaborator.copy(actor = gkUserActor)))
+    "succeed as collaboratorActor" in new Setup {
+      ApplicationRepoMock.RemoveCollaborator.succeeds(app)
 
-      result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[CollaboratorRemoved]
-      event.applicationId shouldBe applicationId
-      event.actor shouldBe gkUserActor
-      event.eventDateTime shouldBe timestamp
-      event.collaboratorEmail shouldBe collaborator.emailAddress
-      event.collaboratorId shouldBe collaborator.userId
-      event.collaboratorRole shouldBe collaborator.role
+      val result = await(underTest.process(app, removeCollaborator).value).right.value
+
+      checkSuccessResult(adminActor)(result)
     }
 
-    "return an error when trying to remove last admin for an application" in new Setup {
-      val result: ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]] = await(underTest.process(app, removeCollaborator.copy(collaborator = adminCollaborator)))
+    "return an error when collaborator is not associated to the application" in new Setup {
 
-      result.isValid shouldBe false
-      result.toEither match {
-        case Left(Chain(error: String)) => error shouldBe s"Collaborator is last remaining admin for Application ${app.id.asText}"
-        case _                          => fail()
-      }
+      val removeUnknownCollaboratorCommand = removeCollaborator.copy(collaborator = Collaborator(unknownEmail, Role.DEVELOPER, idOf(unknownEmail)))
 
+      val result = await(underTest.process(app, removeUnknownCollaboratorCommand).value).left.value.toNonEmptyList.toList
+
+      result should have length 1
+      result.head shouldBe s"no collaborator found with email: $unknownEmail"
     }
+
+    "return an error when actor is collaborator actor and is not associated to the application" in new Setup {
+
+      val removeCollaboratorActorUnknownCommand: RemoveCollaborator = removeCollaborator.copy(actor = CollaboratorActor(unknownEmail))
+
+      val result = await(underTest.process(app, removeCollaboratorActorUnknownCommand).value).left.value.toNonEmptyList.toList
+
+      result should have length 1
+      result.head shouldBe s"no collaborator found with email: $unknownEmail"
+    }
+
+    "return an error when collaborator is last admin associated with the application" in new Setup {
+
+      val removeLastAdminCollaboratorCommand = removeCollaborator.copy(collaborator = adminCollaborator)
+
+      val result = await(underTest.process(app, removeLastAdminCollaboratorCommand).value).left.value.toNonEmptyList.toList
+
+      result should have length 1
+      result.head shouldBe s"Collaborator is last remaining admin for Application ${applicationId.value}"
+    }
+
   }
 }

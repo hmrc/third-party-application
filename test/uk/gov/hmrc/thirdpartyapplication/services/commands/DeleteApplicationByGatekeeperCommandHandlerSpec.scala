@@ -16,54 +16,94 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
-class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
+class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
 
   trait Setup {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId            = ApplicationId.random
-    val requestedByEmail = "admin@example.com"
-    val gatekeeperUser   = "gatekeeperuser"
-    val actor            = GatekeeperUserActor(gatekeeperUser)
-    val reasons          = "reasons description text"
-    val app              = anApplicationData(appId, environment = Environment.SANDBOX)
-    val ts               = FixedClock.now
-    val underTest        = new DeleteApplicationByGatekeeperCommandHandler
-  }
+    val appId                                = ApplicationId.random
+    val reasons                              = "reasons description text"
+    val app                                  = anApplicationData(appId, environment = Environment.SANDBOX)
+    val ts                                   = FixedClock.now
+    val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
-  "process" should {
-    "create correct event for a valid request with a standard app" in new Setup {
+    val underTest = new DeleteApplicationByGatekeeperCommandHandler(
+      authControlConfig,
+      ApplicationRepoMock.aMock,
+      ApiGatewayStoreMock.aMock,
+      NotificationRepositoryMock.aMock,
+      ResponsibleIndividualVerificationRepositoryMock.aMock,
+      ThirdPartyDelegatedAuthorityServiceMock.aMock,
+      StateHistoryRepoMock.aMock
+    )
 
-      val result = await(underTest.process(app, DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, ts)))
+    def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
+      inside(result) { case (app, events) =>
+        val filteredEvents = events.toList.filter(evt =>
+          evt match {
+            case _: ApplicationStateChanged | _: ApplicationDeletedByGatekeeper => true
+            case _                                                              => false
+          }
+        )
+        filteredEvents.size shouldBe 2
 
-      result.isValid shouldBe true
-      result.toOption.get.length shouldBe 2
+        filteredEvents.foreach(event =>
+          inside(event) {
+            case ApplicationDeletedByGatekeeper(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons, requestingAdminEmail) =>
+              appId shouldBe appId
+              actor shouldBe actor
+              eventDateTime shouldBe ts
+              clientId shouldBe app.tokens.production.clientId
+              evtReasons shouldBe reasons
+              wsoApplicationName shouldBe app.wso2ApplicationName
+              requestingAdminEmail shouldBe requestedByEmail
 
-      val applicationDeleted = result.toOption.get.head.asInstanceOf[ApplicationDeletedByGatekeeper]
-      applicationDeleted.applicationId shouldBe appId
-      applicationDeleted.eventDateTime shouldBe ts
-      applicationDeleted.actor shouldBe actor
-      applicationDeleted.reasons shouldBe reasons
-      applicationDeleted.clientId shouldBe app.tokens.production.clientId
-      applicationDeleted.wso2ApplicationName shouldBe app.wso2ApplicationName
-      applicationDeleted.requestingAdminEmail shouldBe requestedByEmail
+            case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
+              appId shouldBe appId
+              evtActor shouldBe actor
+              eventDateTime shouldBe ts
+              oldAppState shouldBe app.state.name
+              newAppState shouldBe State.DELETED
+              requestingAdminEmail shouldBe requestedByEmail
+              requestingAdminName shouldBe requestedByEmail
+          }
+        )
+      }
 
-      val stateEvent = result.toOption.get.tail.head.asInstanceOf[ApplicationStateChanged]
-      stateEvent.applicationId shouldBe appId
-      stateEvent.eventDateTime shouldBe ts
-      stateEvent.actor shouldBe actor
-      stateEvent.newAppState shouldBe State.DELETED
-      stateEvent.oldAppState shouldBe app.state.name
     }
   }
+
+  val gatekeeperUser    = "gatekeeperuser"
+  val actor             = GatekeeperUserActor(gatekeeperUser)
+  val reasons           = "reasons description text"
+  val ts: LocalDateTime = FixedClock.now
+
+  "DeleteApplicationByGatekeeper" should {
+    val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, ts)
+    "succeed as gkUserActor" in new Setup {
+      ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
+      StateHistoryRepoMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.ApplyEvents.succeeds()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+      NotificationRepositoryMock.ApplyEvents.succeeds()
+
+      val result = await(underTest.process(app, cmd).value).right.value
+
+      checkSuccessResult()(result)
+    }
+
+  }
+
 }

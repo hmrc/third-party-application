@@ -23,13 +23,13 @@ import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationCommandDispatcherMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
-  trait Setup extends ApplicationRepositoryMockModule with ApplicationUpdateServiceMockModule with ApplicationTestData {
+  trait Setup extends ApplicationRepositoryMockModule with ApplicationCommandDispatcherMockModule with ApplicationTestData {
 
     val mockLockKeeper = mock[ProductionCredentialsRequestExpiredJobLockService]
     val timeNow        = FixedClock.now
@@ -59,18 +59,18 @@ class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with Befo
     val interval       = FiniteDuration(1, HOURS)
     val deleteInterval = FiniteDuration(10, DAYS)
     val jobConfig      = ProductionCredentialsRequestExpiredJobConfig(initialDelay, interval, true, deleteInterval)
-    val job            = new ProductionCredentialsRequestExpiredJob(mockLockKeeper, ApplicationRepoMock.aMock, ApplicationUpdateServiceMock.aMock, fixedClock, jobConfig)
+    val job            = new ProductionCredentialsRequestExpiredJob(mockLockKeeper, ApplicationRepoMock.aMock, ApplicationCommandDispatcherMock.aMock, fixedClock, jobConfig)
     val recipients     = app.collaborators.map(_.emailAddress)
   }
 
   "ProductionCredentialsRequestExpiredJob" should {
     "delete applications, send emails correctly and delete any notification records" in new Setup {
       ApplicationRepoMock.FetchByStatusDetailsAndEnvironment.thenReturn(app)
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(app)
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(app)
 
       await(job.runJob)
 
-      ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
+      ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(app.id)
     }
   }
 }

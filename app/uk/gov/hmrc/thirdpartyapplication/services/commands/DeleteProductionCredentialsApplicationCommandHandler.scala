@@ -17,24 +17,38 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
 
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredentialsApplication, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
+import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 
 @Singleton
 class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
+    val authControlConfig: AuthControlConfig,
+    val applicationRepository: ApplicationRepository,
+    val apiGatewayStore: ApiGatewayStore,
+    val notificationRepository: NotificationRepository,
+    val responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
+    val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
+    val stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler {
+  ) extends DeleteApplicationCommandHandler {
 
   import CommandHandler._
   import UpdateApplicationEvent._
 
-  private def validate(app: ApplicationData, cmd: DeleteProductionCredentialsApplication): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]]
+  private def validate(app: ApplicationData): Validated[CommandFailures, ApplicationData] = {
+    Apply[Validated[CommandFailures, *]]
       .map(isInTesting(app)) { case _ => app }
   }
 
@@ -63,11 +77,13 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteProductionCredentialsApplication): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
+  def process(app: ApplicationData, cmd: DeleteProductionCredentialsApplication)(implicit hc: HeaderCarrier): ResultT = {
+    for {
+      valid    <- E.fromEither(validate(app).toEither)
+      savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
+      events    = asEvents(savedApp, cmd)
+      _        <- deleteApplication(app, cmd.timestamp, cmd.jobId, cmd.jobId, events)
+    } yield (savedApp, events)
   }
+
 }

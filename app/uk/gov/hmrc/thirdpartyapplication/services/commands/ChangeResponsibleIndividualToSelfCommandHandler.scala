@@ -17,18 +17,21 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividualToSelf, ImportantSubmissionData, Standard, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
 class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
+    applicationRepository: ApplicationRepository,
     submissionService: SubmissionsService
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
@@ -45,21 +48,34 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
       s"The specified individual is already the RI for this application"
     )
 
-  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map5(
-      isStandardNewJourneyApp(app),
-      isApproved(app),
-      isAdminOnApp(cmd.instigator, app),
-      isResponsibleIndividualDefined(app),
-      isNotCurrentRi(cmd.name, cmd.email, app)
-    ) { case _ => app }
+  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): Future[Validated[CommandFailures, Submission]] = {
+
+    def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandFailures, Submission] =
+      maybeSubmission.fold(s"No submission found for application ${app.id.value}".invalidNec[Submission])(_.validNec[String])
+
+    submissionService.fetchLatest(app.id).map { maybeSubmission =>
+      Apply[Validated[CommandFailures, *]].map6(
+        isStandardNewJourneyApp(app),
+        isApproved(app),
+        isAdminOnApp(cmd.instigator, app),
+        ensureResponsibleIndividualDefined(app),
+        isNotCurrentRi(cmd.name, cmd.email, app),
+        checkSubmission(maybeSubmission)
+      ) { case (_, _, _, _, _, submission) => submission }
+    }
   }
 
   import UpdateApplicationEvent._
 
-  private def asEvents(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf, submission: Submission): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(
+      app: ApplicationData,
+      cmd: ChangeResponsibleIndividualToSelf,
+      submission: Submission,
+      requesterEmail: String,
+      requesterName: String
+    ): NonEmptyList[UpdateApplicationEvent] = {
     val previousResponsibleIndividual = getResponsibleIndividual(app).get
-    val requesterEmail                = getRequester(app, cmd.instigator)
+
     NonEmptyList.of(
       ResponsibleIndividualChangedToSelf(
         id = UpdateApplicationEvent.Id.random,
@@ -70,20 +86,27 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
         previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress.value,
         submissionId = submission.id,
         submissionIndex = submission.latestInstance.index,
-        requestingAdminName = cmd.name,
+        requestingAdminName = requesterName,
         requestingAdminEmail = requesterEmail
       )
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): CommandHandler.Result = {
-    submissionService.fetchLatest(app.id).map(maybeSubmission => {
-      maybeSubmission match {
-        case Some(submission) => validate(app, cmd) map { _ =>
-            asEvents(app, cmd, submission)
-          }
-        case _                => Validated.Invalid(NonEmptyChain.one(s"No submission found for application ${app.id}"))
-      }
-    })
+  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): CommandHandler.ResultT = {
+
+    val requesterName = cmd.name
+    for {
+      submission    <- E.fromValidatedF(validate(app, cmd))
+      requesterEmail = getRequester(app, cmd.instigator)
+      savedApp      <- E.liftF(applicationRepository.updateApplicationChangeResponsibleIndividualToSelf(
+                         app.id,
+                         requesterName,
+                         requesterEmail,
+                         cmd.timestamp,
+                         submission.id,
+                         submission.latestInstance.index
+                       ))
+      events         = asEvents(app, cmd, submission, requesterEmail, requesterName)
+    } yield (savedApp, events)
   }
 }

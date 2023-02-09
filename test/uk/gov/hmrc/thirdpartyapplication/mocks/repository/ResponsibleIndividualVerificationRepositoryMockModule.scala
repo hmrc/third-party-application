@@ -54,6 +54,10 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
       def verifyNeverCalledWith(submission: Submission) = verify(aMock, never).delete(submission)
     }
 
+    object DeleteSubmissionInstance {
+      def succeeds() = when(aMock.deleteSubmissionInstance(*[Submission.Id], *)).thenReturn(successful(HasSucceeded))
+    }
+
     object UpdateState {
       def thenReturnSuccess()                                                                                      = when(aMock.updateState(*[ResponsibleIndividualVerificationId], *[ResponsibleIndividualVerificationState])).thenReturn(successful(HasSucceeded))
       def verifyCalledWith(id: ResponsibleIndividualVerificationId, state: ResponsibleIndividualVerificationState) = verify(aMock).updateState(id, state)
@@ -73,6 +77,10 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
     object UpdateSetDefaultVerificationType {
       def thenReturnSuccess()                   = when(aMock.updateSetDefaultVerificationType(*)).thenReturn(successful(HasSucceeded))
       def verifyCalledWith(defaultType: String) = verify(aMock).updateSetDefaultVerificationType(defaultType)
+    }
+
+    object DeleteResponsibleIndividualVerification {
+      def thenReturnSuccess() = when(aMock.deleteResponsibleIndividualVerification(*)).thenReturn(successful(HasSucceeded))
     }
 
     object ApplyEvents {

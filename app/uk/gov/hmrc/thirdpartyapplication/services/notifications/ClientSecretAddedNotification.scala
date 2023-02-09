@@ -22,7 +22,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
@@ -31,13 +30,10 @@ object ClientSecretAddedNotification {
   def sendClientSecretAddedNotification(
       emailConnector: EmailConnector,
       app: ApplicationData,
-      event: UpdateApplicationEvent.ClientSecretAdded
+      event: UpdateApplicationEvent.ClientSecretAddedV2
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
-    event.actor match {
-      case CollaboratorActor(email: String) => emailConnector.sendAddedClientSecretNotification(email, event.clientSecret.name, app.name, app.admins.map(_.emailAddress))
-      case _                                => Future.successful(HasSucceeded)
-    }
+    emailConnector.sendAddedClientSecretNotification(event.actor.email, event.clientSecretName, app.name, app.admins.map(_.emailAddress))
   }
 
 }

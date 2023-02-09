@@ -16,13 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import cats.data.NonEmptyList
 import org.mockito.MockitoSugar.{mock, times, verify, verifyNoMoreInteractions}
 import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.play.json.Codecs
@@ -30,9 +28,8 @@ import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
@@ -226,6 +223,26 @@ class ApplicationRepositoryISpec
       )
 
       updatedApplication.grantLength mustBe updatedGrantLength
+    }
+  }
+
+  "updateRedirectUris" should {
+    "set the redirectUris on an Application document" in {
+      val applicationId = ApplicationId.random
+      await(applicationRepository.save(anApplicationDataForTest(applicationId)))
+
+      val updateRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
+      val updatedApplication = await(
+        applicationRepository.updateRedirectUris(
+          applicationId,
+          updateRedirectUris
+        )
+      )
+
+      updatedApplication.access match {
+        case access: Standard => access.redirectUris mustBe updateRedirectUris
+        case _                => fail("Wrong access - expecting standard")
+      }
     }
   }
 
@@ -2844,441 +2861,216 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "applyEvents" should {
-    val gkUserName = "Mr Gate Keeperr"
-    val gkUser     = GatekeeperUserActor(gkUserName)
-    val adminEmail = "admin@example.com"
-    val adminName  = "Mr Admin"
-    val devHubUser = CollaboratorActor(adminEmail)
+  "handle addCollaborator correctly" in {
+    val applicationId = ApplicationId.random
 
-    "handle multiple events correctly" in {
-      val applicationId = ApplicationId.random
-      val oldName       = "oldName"
-      val newestName    = "name3"
-      val app           = anApplicationData(applicationId).copy(name = oldName)
-      await(applicationRepository.save(app))
+    val app = anApplicationData(applicationId)
+    await(applicationRepository.save(app))
 
-      val events             = List("name1", "name2", newestName).map(
-        ProductionAppNameChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, gkUser, oldName, _, adminEmail)
-      )
-      val appWithUpdatedName = await(
-        applicationRepository.applyEvents(NonEmptyList.fromList(events).get)
-      )
-      appWithUpdatedName.name mustBe newestName
-      appWithUpdatedName.normalisedName mustBe newestName.toLowerCase
-    }
+    val collaborator          = Collaborator("email", Role.DEVELOPER, idOf("email"))
+    val existingCollaborators = app.collaborators
 
-    "handle AddClientSecret event correctly" in {
-      val applicationId = ApplicationId.random
+    val appWithNewCollaborator = await(applicationRepository.addCollaborator(applicationId, collaborator))
+    appWithNewCollaborator.collaborators must contain only (existingCollaborators.toList ++ List(collaborator): _*)
+  }
 
-      val app = anApplicationData(applicationId)
+  "handle removeCollaborator correctly" in {
+    val applicationId = ApplicationId.random
 
-      val newClientSecret       = aClientSecret(name = "name", hashedSecret = "eulaVterces")
-      val secretValue           = "secretValue"
-      val event                 = ClientSecretAdded(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = FixedClock.now,
-        actor = CollaboratorActor(adminEmail),
-        secretValue = secretValue,
-        clientSecret = newClientSecret
-      )
-      val existingClientSecrets = app.tokens.production.clientSecrets
-      await(applicationRepository.save(app))
+    val developerCollaborator = Collaborator("email", Role.DEVELOPER, idOf("email"))
+    val adminCollaborator     = Collaborator("email2", Role.ADMINISTRATOR, idOf("email2"))
+    val app                   = anApplicationData(applicationId, collaborators = Set(developerCollaborator, adminCollaborator))
+    await(applicationRepository.save(app))
 
-      val appWithNewClientSecret =
-        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithNewClientSecret.tokens.production.clientSecrets must contain only (existingClientSecrets ++ List(newClientSecret): _*)
+    val existingCollaborators = app.collaborators
+    val userIdToDelete        = existingCollaborators.head.userId
 
-    }
+    val appWithOutDeletedCollaborator = await(applicationRepository.removeCollaborator(applicationId, userIdToDelete))
+    appWithOutDeletedCollaborator.collaborators must contain only (existingCollaborators.toList.filterNot(_.userId == userIdToDelete): _*)
+  }
 
-    "handle RemoveClientSecret event correctly" in {
-      val applicationId = ApplicationId.random
-
-      val app = anApplicationData(applicationId)
-
-      val clientSecretToRemove = app.tokens.production.clientSecrets.head
-
-      val event                 = ClientSecretRemoved(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = FixedClock.now,
-        actor = CollaboratorActor(adminEmail),
-        clientSecretId = clientSecretToRemove.id,
-        clientSecretName = clientSecretToRemove.name
-      )
-      val existingClientSecrets = app.tokens.production.clientSecrets
-      await(applicationRepository.save(app))
-
-      val appWithClientSecretRemoved =
-        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithClientSecretRemoved.tokens.production.clientSecrets must contain only (existingClientSecrets.filterNot(_.id == clientSecretToRemove.id): _*)
-
-    }
-
-    "handle CollaboratorAdded event correctly" in {
-      val applicationId = ApplicationId.random
-
-      val app                   = anApplicationData(applicationId)
-      val collaborator          = Collaborator("email", Role.DEVELOPER, idOf("email"))
-      val adminsToEmail         = Set("email1", "email2", "email3")
-      val existingCollaborators = app.collaborators
-
-      val event = CollaboratorAdded(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = FixedClock.now,
-        actor = CollaboratorActor(adminEmail),
-        collaboratorId = collaborator.userId,
-        collaboratorRole = collaborator.role,
-        collaboratorEmail = collaborator.emailAddress,
-        verifiedAdminsToEmail = adminsToEmail
-      )
-
-      await(applicationRepository.save(app))
-
-      val appWithNewCollaborator =
-        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithNewCollaborator.collaborators must contain only (existingCollaborators.toList ++ List(collaborator): _*)
-
-    }
-
-    "handle CollaboratorRemoved event correctly" in {
-      val applicationId = ApplicationId.random
-
-      val app           = anApplicationData(applicationId)
-      val collaborator  = Collaborator("email", Role.DEVELOPER, idOf("email"))
-      val adminsToEmail = Set("email1", "email2", "email3")
-
-      val event = CollaboratorRemoved(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = FixedClock.now,
-        actor = CollaboratorActor(adminEmail),
-        collaboratorId = collaborator.userId,
-        collaboratorRole = collaborator.role,
-        collaboratorEmail = collaborator.emailAddress,
-        notifyCollaborator = true,
-        verifiedAdminsToEmail = adminsToEmail
-      )
-
-      await(applicationRepository.save(app.copy(collaborators = app.collaborators ++ Set(collaborator))))
-
-      val appWithNewCollaborator =
-        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithNewCollaborator.collaborators must contain only (app.collaborators.toList: _*)
-
-    }
-
-    "handle NameChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldName       = "oldName"
-      val newName       = "newName"
-      val app           = anApplicationData(applicationId).copy(name = oldName)
-      await(applicationRepository.save(app))
-
-      val event              = ProductionAppNameChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, gkUser, oldName, newName, adminEmail)
-      val appWithUpdatedName =
-        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedName.name mustBe newName
-      appWithUpdatedName.normalisedName mustBe newName.toLowerCase
-    }
-
-    "handle ProductionAppPrivacyPolicyLocationChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldLocation   = PrivacyPolicyLocation.InDesktopSoftware
-      val newLocation   = PrivacyPolicyLocation.Url("http://example.com")
-      val access        = Standard(
-        List.empty,
-        None,
-        None,
-        Set.empty,
-        None,
-        Some(
-          ImportantSubmissionData(
-            None,
-            ResponsibleIndividual.build("bob example", "bob@example.com"),
-            Set.empty,
-            TermsAndConditionsLocation.InDesktopSoftware,
-            oldLocation,
-            List.empty
-          )
+  "handle ProductionAppPrivacyPolicyLocationChanged correctly" in {
+    val applicationId = ApplicationId.random
+    val oldLocation   = PrivacyPolicyLocation.InDesktopSoftware
+    val newLocation   = PrivacyPolicyLocation.Url("http://example.com")
+    val access        = Standard(
+      List.empty,
+      None,
+      None,
+      Set.empty,
+      None,
+      Some(
+        ImportantSubmissionData(
+          None,
+          ResponsibleIndividual.build("bob example", "bob@example.com"),
+          Set.empty,
+          TermsAndConditionsLocation.InDesktopSoftware,
+          oldLocation,
+          List.empty
         )
       )
-      val app           = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
+    )
+    val app           = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
 
-      val event                               = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, oldLocation, newLocation)
-      val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedPrivacyPolicyLocation.access match {
-        case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
-        case _                                                                                            => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+    val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateApplicationPrivacyPolicyLocation(applicationId, newLocation))
+    appWithUpdatedPrivacyPolicyLocation.access match {
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
+      case _                                                                                            => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+    }
+  }
+
+  "handle ProductionLegacyAppPrivacyPolicyLocationChanged correctly" in {
+    val applicationId = ApplicationId.random
+    val oldUrl        = "http://example.com/old"
+    val newUrl        = "http://example.com/new"
+    val access        = Standard(List.empty, None, Some(oldUrl), Set.empty, None, None)
+    val app           = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateLegacyApplicationPrivacyPolicyLocation(applicationId, newUrl))
+    appWithUpdatedPrivacyPolicyLocation.access match {
+      case Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
+      case _                                                  => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+    }
+  }
+
+  "handle ProductionAppTermsConditionsLocationChanged event correctly" in {
+    val applicationId = ApplicationId.random
+    val oldLocation   = TermsAndConditionsLocation.InDesktopSoftware
+    val newLocation   = TermsAndConditionsLocation.Url("http://example.com")
+    val access        = Standard(
+      List.empty,
+      None,
+      None,
+      Set.empty,
+      None,
+      Some(
+        ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty, oldLocation, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
+      )
+    )
+    val app           = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateApplicationTermsAndConditionsLocation(applicationId, newLocation))
+    appWithUpdatedTermsConditionsLocation.access match {
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation mustBe newLocation
+      case _                                                                                                 => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
+    }
+  }
+
+  "handle ProductionLegacyAppTermsConditionsLocationChanged event correctly" in {
+    val applicationId = ApplicationId.random
+    val oldUrl        = "http://example.com/old"
+    val newUrl        = "http://example.com/new"
+    val access        = Standard(List.empty, Some(oldUrl), None, Set.empty, None, None)
+    val app           = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateLegacyApplicationTermsAndConditionsLocation(applicationId, newUrl))
+    appWithUpdatedTermsConditionsLocation.access match {
+      case Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
+      case _                                                       => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
+    }
+  }
+
+  "handle updateApplicationState correctly" in {
+    val applicationId           = ApplicationId.random
+    val ts                      = FixedClock.now.truncatedTo(ChronoUnit.MILLIS)
+    val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
+    val importantSubmissionData =
+      ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
+    val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+    val app                     = anApplicationData(applicationId).copy(access = access)
+
+    await(applicationRepository.save(app))
+    app.state.name mustBe State.PRODUCTION
+    val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, ts, adminEmail, adminName))
+    appWithUpdatedState.state.name mustBe State.PENDING_GATEKEEPER_APPROVAL
+    appWithUpdatedState.state.updatedOn mustBe ts
+    appWithUpdatedState.state.requestedByEmailAddress mustBe Some(adminEmail)
+    appWithUpdatedState.state.requestedByName mustBe Some(adminName)
+  }
+
+  "handle updateApplicationChangeResponsibleIndividualToSelf correctly" in {
+    val applicationId = ApplicationId.random
+
+    val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
+    val submissionId            = Submission.Id.random
+    val submissionIndex         = 1
+    val importantSubmissionData = ImportantSubmissionData(
+      None,
+      oldRi,
+      Set.empty,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
+      List(TermsOfUseAcceptance(oldRi, FixedClock.now, submissionId, submissionIndex))
+    )
+    val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+    val app                     = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedRI =
+      await(applicationRepository.updateApplicationChangeResponsibleIndividualToSelf(applicationId, adminName, adminEmail, FixedClock.now, submissionId, submissionIndex))
+
+    appWithUpdatedRI.access match {
+      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
+        importantSubmissionData.responsibleIndividual.fullName.value mustBe adminName
+        importantSubmissionData.responsibleIndividual.emailAddress.value mustBe adminEmail
+        importantSubmissionData.termsOfUseAcceptances.size mustBe 2
+        val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
+        latestAcceptance.responsibleIndividual.fullName.value mustBe adminName
+        latestAcceptance.responsibleIndividual.emailAddress.value mustBe adminEmail
       }
+      case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
     }
+  }
 
-    "handle ProductionLegacyAppPrivacyPolicyLocationChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldUrl        = "http://example.com/old"
-      val newUrl        = "http://example.com/new"
-      val access        = Standard(List.empty, None, Some(oldUrl), Set.empty, None, None)
-      val app           = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
+  "handle NameChanged event correctly" in {
+    val applicationId = ApplicationId.random
+    val oldName       = "oldName"
+    val newName       = "newName"
 
-      val event                               = ProductionLegacyAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, oldUrl, newUrl)
-      val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedPrivacyPolicyLocation.access match {
-        case Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
-        case _                                                  => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+    val app = anApplicationData(applicationId).copy(name = oldName)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedName = await(applicationRepository.updateApplicationName(applicationId, newName))
+    appWithUpdatedName.name mustBe newName
+    appWithUpdatedName.normalisedName mustBe newName.toLowerCase
+
+    await(applicationRepository.hardDelete(applicationId))
+  }
+
+  "handle updateApplicationChangeResponsibleIndividual" in {
+    val applicationId           = ApplicationId.random
+    val riName                  = "Mr Responsible"
+    val riEmail                 = "ri@example.com"
+    val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
+    val submissionId            = Submission.Id.random
+    val submissionIndex         = 1
+    val importantSubmissionData = ImportantSubmissionData(
+      None,
+      oldRi,
+      Set.empty,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
+      List(TermsOfUseAcceptance(oldRi, FixedClock.now, submissionId, submissionIndex))
+    )
+    val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+    val app                     = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedRI = await(applicationRepository.updateApplicationChangeResponsibleIndividual(applicationId, riName, riEmail, FixedClock.now, submissionId, submissionIndex))
+    appWithUpdatedRI.access match {
+      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
+        importantSubmissionData.responsibleIndividual.fullName.value mustBe riName
+        importantSubmissionData.responsibleIndividual.emailAddress.value mustBe riEmail
+        importantSubmissionData.termsOfUseAcceptances.size mustBe 2
+        val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
+        latestAcceptance.responsibleIndividual.fullName.value mustBe riName
+        latestAcceptance.responsibleIndividual.emailAddress.value mustBe riEmail
       }
-    }
-
-    "handle ProductionAppTermsConditionsLocationChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldLocation   = TermsAndConditionsLocation.InDesktopSoftware
-      val newLocation   = TermsAndConditionsLocation.Url("http://example.com")
-      val access        = Standard(
-        List.empty,
-        None,
-        None,
-        Set.empty,
-        None,
-        Some(
-          ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty, oldLocation, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
-        )
-      )
-      val app           = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val event                                 = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, oldLocation, newLocation)
-      val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedTermsConditionsLocation.access match {
-        case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation mustBe newLocation
-        case _                                                                                                 => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
-      }
-    }
-
-    "handle ProductionLegacyAppTermsConditionsLocationChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldUrl        = "http://example.com/old"
-      val newUrl        = "http://example.com/new"
-      val access        = Standard(List.empty, Some(oldUrl), None, Set.empty, None, None)
-      val app           = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val event                                 = ProductionLegacyAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, oldUrl, newUrl)
-      val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedTermsConditionsLocation.access match {
-        case Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
-        case _                                                       => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
-      }
-    }
-
-    "handle ResponsibleIndividualChanged event correctly" in {
-      val applicationId           = ApplicationId.random
-      val riName                  = "Mr Responsible"
-      val riEmail                 = "ri@example.com"
-      val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
-      val submissionId            = Submission.Id.random
-      val submissionIndex         = 1
-      val code                    = "code123456789"
-      val importantSubmissionData = ImportantSubmissionData(
-        None,
-        oldRi,
-        Set.empty,
-        TermsAndConditionsLocation.InDesktopSoftware,
-        PrivacyPolicyLocation.InDesktopSoftware,
-        List(TermsOfUseAcceptance(oldRi, FixedClock.now, submissionId, submissionIndex))
-      )
-      val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-      val app                     = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val devHubUser       = CollaboratorActor("admin@example.com")
-      val event            = ResponsibleIndividualChanged(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        FixedClock.now,
-        devHubUser,
-        oldRi.fullName.value,
-        oldRi.emailAddress.value,
-        riName,
-        riEmail,
-        submissionId,
-        submissionIndex,
-        code,
-        adminName,
-        adminEmail
-      )
-      val appWithUpdatedRI = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedRI.access match {
-        case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
-          importantSubmissionData.responsibleIndividual.fullName.value mustBe riName
-          importantSubmissionData.responsibleIndividual.emailAddress.value mustBe riEmail
-          importantSubmissionData.termsOfUseAcceptances.size mustBe 2
-          val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
-          latestAcceptance.responsibleIndividual.fullName.value mustBe riName
-          latestAcceptance.responsibleIndividual.emailAddress.value mustBe riEmail
-        }
-        case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
-      }
-    }
-
-    "handle ResponsibleIndividualChangedToSelf event correctly" in {
-      val applicationId           = ApplicationId.random
-      val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
-      val submissionId            = Submission.Id.random
-      val submissionIndex         = 1
-      val importantSubmissionData = ImportantSubmissionData(
-        None,
-        oldRi,
-        Set.empty,
-        TermsAndConditionsLocation.InDesktopSoftware,
-        PrivacyPolicyLocation.InDesktopSoftware,
-        List(TermsOfUseAcceptance(oldRi, FixedClock.now, submissionId, submissionIndex))
-      )
-      val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-      val app                     = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val devHubUser       = CollaboratorActor("admin@example.com")
-      val event            = ResponsibleIndividualChangedToSelf(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        FixedClock.now,
-        devHubUser,
-        oldRi.fullName.value,
-        oldRi.emailAddress.value,
-        submissionId,
-        submissionIndex,
-        adminName,
-        adminEmail
-      )
-      val appWithUpdatedRI = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedRI.access match {
-        case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
-          importantSubmissionData.responsibleIndividual.fullName.value mustBe adminName
-          importantSubmissionData.responsibleIndividual.emailAddress.value mustBe adminEmail
-          importantSubmissionData.termsOfUseAcceptances.size mustBe 2
-          val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
-          latestAcceptance.responsibleIndividual.fullName.value mustBe adminName
-          latestAcceptance.responsibleIndividual.emailAddress.value mustBe adminEmail
-        }
-        case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
-      }
-    }
-
-    "handle ResponsibleIndividualSet event correctly" in {
-      val applicationId           = ApplicationId.random
-      val code                    = "23547235416352165129"
-      val riName                  = "Mr Responsible"
-      val riEmail                 = "ri@example.com"
-      val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
-      val submissionId            = Submission.Id.random
-      val submissionIndex         = 1
-      val importantSubmissionData =
-        ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
-      val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-      val app                     = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val devHubUser       = CollaboratorActor("admin@example.com")
-      val event            = ResponsibleIndividualSet(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        FixedClock.now,
-        devHubUser,
-        riName,
-        riEmail,
-        submissionId,
-        submissionIndex,
-        code,
-        adminName,
-        adminEmail
-      )
-      val appWithUpdatedRI = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedRI.access match {
-        case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
-          importantSubmissionData.termsOfUseAcceptances.size mustBe 1
-          val latestAcceptance = importantSubmissionData.termsOfUseAcceptances.head
-          latestAcceptance.responsibleIndividual.fullName.value mustBe riName
-          latestAcceptance.responsibleIndividual.emailAddress.value mustBe riEmail
-        }
-        case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
-      }
-    }
-
-    "handle ApplicationStateChanged event correctly" in {
-      val applicationId           = ApplicationId.random
-      val ts                      = FixedClock.now.truncatedTo(ChronoUnit.MILLIS)
-      val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
-      val importantSubmissionData =
-        ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
-      val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-      val app                     = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val devHubUser          = CollaboratorActor("admin@example.com")
-      val event               = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        ts,
-        devHubUser,
-        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
-        State.PENDING_GATEKEEPER_APPROVAL,
-        adminName,
-        adminEmail
-      )
-      val appWithUpdatedState = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedState.state.name mustBe State.PENDING_GATEKEEPER_APPROVAL
-      appWithUpdatedState.state.updatedOn mustBe ts
-      appWithUpdatedState.state.requestedByEmailAddress mustBe Some(adminEmail)
-      appWithUpdatedState.state.requestedByName mustBe Some(adminName)
-    }
-
-    "handle ResponsibleIndividualVerificationStarted event correctly" in {
-      val app = anApplicationData(applicationId)
-      await(applicationRepository.save(app))
-
-      val event                                 = ResponsibleIndividualVerificationStarted(
-        UpdateApplicationEvent.Id.random,
-        applicationId,
-        "app name",
-        FixedClock.now,
-        CollaboratorActor("admin@example.com"),
-        "ms admin",
-        "admin@example.com",
-        "ri name",
-        "ri@example.com",
-        Submission.Id.random,
-        1,
-        ResponsibleIndividualVerificationId.random
-      )
-      val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedTermsConditionsLocation mustBe app
-    }
-
-    "throw an error if events relate to different applications" in {
-      val appId1 = ApplicationId.random
-      val appId2 = ApplicationId.random
-      val events = List(appId1, appId2).map(
-        ProductionAppNameChanged(UpdateApplicationEvent.Id.random, _, FixedClock.now, gkUser, "old name", "new name", adminEmail)
-      )
-      await(
-        applicationRepository.save(
-          anApplicationDataForTest(appId1, ClientId.random)
-        )
-      )
-      await(
-        applicationRepository.save(
-          anApplicationDataForTest(appId2, ClientId.random)
-        )
-      )
-
-      intercept[IllegalArgumentException] {
-        await(
-          applicationRepository.applyEvents(NonEmptyList.fromList(events).get)
-        )
-      }
+      case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
     }
   }
 

@@ -90,6 +90,13 @@ trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatcher
         when(aMock.applyEvents(*)).thenReturn(Future.successful(HasSucceeded))
       }
     }
+
+    object AddRecord {
+
+      def succeeds() = {
+        when(aMock.addStateHistoryRecord(*)).thenReturn(successful(HasSucceeded))
+      }
+    }
   }
 
   object StateHistoryRepoMock extends BaseStateHistoryRepoMock {

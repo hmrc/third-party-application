@@ -114,7 +114,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     deleteSubmissionInstance(submission.id, submission.latestInstance.index)
   }
 
-  private def deleteSubmissionInstance(id: Submission.Id, index: Int): Future[HasSucceeded] = {
+  def deleteSubmissionInstance(id: Submission.Id, index: Int): Future[HasSucceeded] = {
     collection.deleteOne(
       and(
         equal("submissionId", Codecs.toBson(id)),
@@ -173,7 +173,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       .map(_ => HasSucceeded)
   }
 
-  private def deleteResponsibleIndividualVerification(code: String): Future[HasSucceeded] = {
+  def deleteResponsibleIndividualVerification(code: String): Future[HasSucceeded] = {
     delete(ResponsibleIndividualVerificationId(code))
   }
 

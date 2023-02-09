@@ -17,20 +17,31 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
 
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByCollaborator, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, DeleteApplicationByCollaborator, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 
 @Singleton
 class DeleteApplicationByCollaboratorCommandHandler @Inject() (
-    val authControlConfig: AuthControlConfig
+    val authControlConfig: AuthControlConfig,
+    val applicationRepository: ApplicationRepository,
+    val apiGatewayStore: ApiGatewayStore,
+    val notificationRepository: NotificationRepository,
+    val responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
+    val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
+    val stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler {
+  ) extends DeleteApplicationCommandHandler {
 
   import CommandHandler._
   import UpdateApplicationEvent._
@@ -38,14 +49,17 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
   def canDeleteApplicationsOrNotProductionApp(app: ApplicationData) =
     cond(authControlConfig.canDeleteApplications || !app.state.isInPreProductionOrProduction, "Cannot delete this applicaton")
 
-  private def validate(app: ApplicationData, cmd: DeleteApplicationByCollaborator): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]]
-      .map3(isAdminOnApp(cmd.instigator, app), isStandardAccess(app), canDeleteApplicationsOrNotProductionApp(app)) { case _ => app }
+  private def validate(app: ApplicationData, cmd: DeleteApplicationByCollaborator): Validated[CommandFailures, Collaborator] = {
+    Apply[Validated[CommandFailures, *]].map3(
+      isAdminOnApp(cmd.instigator, app),
+      isStandardAccess(app),
+      canDeleteApplicationsOrNotProductionApp(app)
+    ) { case (admin, _, _) => admin }
   }
 
-  private def asEvents(app: ApplicationData, cmd: DeleteApplicationByCollaborator): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: DeleteApplicationByCollaborator, instigator: Collaborator): NonEmptyList[UpdateApplicationEvent] = {
     val clientId       = app.tokens.production.clientId
-    val requesterEmail = getRequester(app, cmd.instigator)
+    val requesterEmail = instigator.emailAddress
     NonEmptyList.of(
       ApplicationDeleted(
         id = UpdateApplicationEvent.Id.random,
@@ -69,11 +83,13 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteApplicationByCollaborator): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
+  def process(app: ApplicationData, cmd: DeleteApplicationByCollaborator)(implicit hc: HeaderCarrier): ResultT = {
+    for {
+      instigator <- E.fromEither(validate(app, cmd).toEither)
+      savedApp   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, instigator.emailAddress, instigator.emailAddress))
+      // TODO - need app state history change
+      events      = asEvents(savedApp, cmd, instigator)
+      _          <- deleteApplication(app, cmd.timestamp, instigator.emailAddress, instigator.emailAddress, events)
+    } yield (savedApp, events)
   }
 }

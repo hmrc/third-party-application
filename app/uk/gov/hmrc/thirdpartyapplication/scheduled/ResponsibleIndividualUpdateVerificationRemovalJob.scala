@@ -33,13 +33,13 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.DeclineResponsibleIndividualDidNotVerify
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 
 @Singleton
 class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
     responsibleIndividualUpdateVerificationRemovalJobLockService: ResponsibleIndividualUpdateVerificationRemovalJobLockService,
     repository: ResponsibleIndividualVerificationRepository,
-    applicationUpdateService: ApplicationUpdateService,
+    commandDispatcher: ApplicationCommandDispatcher,
     val clock: Clock,
     jobConfig: ResponsibleIndividualUpdateVerificationRemovalJobConfig
   )(implicit val ec: ExecutionContext
@@ -72,7 +72,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
 
     logger.info(s"Responsible individual update verification timed out for application ${verificationDueForRemoval.applicationName} (started at ${verificationDueForRemoval.createdOn})")
     (for {
-      savedApp <- applicationUpdateService.update(verificationDueForRemoval.applicationId, request)
+      savedApp <- commandDispatcher.dispatch(verificationDueForRemoval.applicationId, request)
     } yield HasSucceeded).value
   }
 }

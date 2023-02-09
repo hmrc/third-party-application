@@ -20,21 +20,24 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
+import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
 class VerifyResponsibleIndividualCommandHandler @Inject() (
-    submissionService: SubmissionsService
+    submissionService: SubmissionsService,
+    responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
   import CommandHandler._
+  import UpdateApplicationEvent._
 
   private def isNotCurrentRi(name: String, email: String, app: ApplicationData) =
     cond(
@@ -46,19 +49,17 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
       s"The specified individual is already the RI for this application"
     )
 
-  private def validate(app: ApplicationData, cmd: VerifyResponsibleIndividual): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map4(
+  private def validate(app: ApplicationData, cmd: VerifyResponsibleIndividual): Validated[CommandFailures, Collaborator] = {
+    Apply[Validated[CommandFailures, *]].map5(
       isStandardNewJourneyApp(app),
       isApproved(app),
       isAdminOnApp(cmd.instigator, app),
-      isNotCurrentRi(cmd.riName, cmd.riEmail, app)
-    ) { case _ => app }
+      isNotCurrentRi(cmd.riName, cmd.riEmail, app),
+      ensureRequesterEmailDefined(app)
+    ) { case (_, _, instigator, _, _) => instigator }
   }
 
-  import UpdateApplicationEvent._
-
-  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission): NonEmptyList[UpdateApplicationEvent] = {
-    val requesterEmail = getRequester(app, cmd.instigator)
+  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: String): NonEmptyList[UpdateApplicationEvent] = {
     NonEmptyList.of(
       ResponsibleIndividualVerificationStarted(
         id = UpdateApplicationEvent.Id.random,
@@ -77,14 +78,14 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: VerifyResponsibleIndividual): CommandHandler.Result = {
-    submissionService.fetchLatest(app.id).map(maybeSubmission => {
-      maybeSubmission match {
-        case Some(submission) => validate(app, cmd) map { _ =>
-            asEvents(app, cmd, submission)
-          }
-        case _                => Validated.Invalid(NonEmptyChain.one(s"No submission found for application ${app.id}"))
-      }
-    })
+  def process(app: ApplicationData, cmd: VerifyResponsibleIndividual): ResultT = {
+    lazy val noSubmission = NonEmptyChain.one(s"No submission found for application ${app.id}")
+
+    for {
+      submission <- E.fromOptionF(submissionService.fetchLatest(app.id), noSubmission)
+      instigator <- E.fromEither(validate(app, cmd).toEither)
+      events      = asEvents(app, cmd, submission, instigator.emailAddress)
+      _          <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
+    } yield (app, events)
   }
 }

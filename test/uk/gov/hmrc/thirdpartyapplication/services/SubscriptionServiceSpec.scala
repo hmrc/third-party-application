@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, GO
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationUpdateServiceMockModule, AuditServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
@@ -44,24 +44,24 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   private val loggedInUser    = "loggedin@example.com"
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
-  trait SetupWithoutHc extends AuditServiceMockModule with ApplicationUpdateServiceMockModule {
+  trait SetupWithoutHc extends AuditServiceMockModule with ApplicationCommandDispatcherMockModule {
 
-    lazy val locked                  = false
-    val mockApiGatewayStore          = mock[ApiGatewayStore](withSettings.lenient())
-    val mockApplicationRepository    = mock[ApplicationRepository](withSettings.lenient())
-    val mockStateHistoryRepository   = mock[StateHistoryRepository](withSettings.lenient())
-    val mockEmailConnector           = mock[EmailConnector](withSettings.lenient())
-    val mockSubscriptionRepository   = mock[SubscriptionRepository](withSettings.lenient())
-    val mockApiPlatformEventsService = mock[ApiPlatformEventService](withSettings.lenient())
-    val mockApplicationUpdateService = mock[ApplicationUpdateService](withSettings.lenient())
-    val response                     = mock[WSResponse]
+    lazy val locked                    = false
+    val mockApiGatewayStore            = mock[ApiGatewayStore](withSettings.lenient())
+    val mockApplicationRepository      = mock[ApplicationRepository](withSettings.lenient())
+    val mockStateHistoryRepository     = mock[StateHistoryRepository](withSettings.lenient())
+    val mockEmailConnector             = mock[EmailConnector](withSettings.lenient())
+    val mockSubscriptionRepository     = mock[SubscriptionRepository](withSettings.lenient())
+    val mockApiPlatformEventsService   = mock[ApiPlatformEventService](withSettings.lenient())
+    val mockApplicationCommandDispatch = mock[ApplicationCommandDispatcher](withSettings.lenient())
+    val response                       = mock[WSResponse]
 
     val underTest = new SubscriptionService(
       mockApplicationRepository,
       mockSubscriptionRepository,
       AuditServiceMock.aMock,
       mockApiPlatformEventsService,
-      ApplicationUpdateServiceMock.aMock,
+      ApplicationCommandDispatcherMock.aMock,
       mockApiGatewayStore
     )
 
@@ -137,12 +137,12 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       val application = anApplicationData(applicationId)
       val actor       = CollaboratorActor(loggedInUser)
 
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(applicationId, application)
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(application)
 
       val result = await(underTest.updateApplicationForApiSubscription(applicationId, application.name, application.collaborators, apiIdentifier))
 
       result shouldBe HasSucceeded
-      ApplicationUpdateServiceMock.Update.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
+      ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
     }
 
     "return successfully using a GatekeeperUserCollaborator if there are no developers in the header carrier" in new SetupWithoutHc {
@@ -150,31 +150,31 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       val applicationData = anApplicationData(applicationId)
       val actor           = GatekeeperUserActor("Gatekeeper Admin")
 
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(applicationId, applicationData)
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
 
       val result = await(underTest.updateApplicationForApiSubscription(applicationId, applicationData.name, applicationData.collaborators, apiIdentifier))
 
       result shouldBe HasSucceeded
-      ApplicationUpdateServiceMock.Update.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
+      ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
     }
 
     "return successfully using a GatekeeperUserCollaborator if the logged in user is not a member of the application" in new Setup {
       val applicationData = anApplicationData(applicationId, collaborators = Set.empty)
       val actor           = GatekeeperUserActor("Gatekeeper Admin")
 
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(applicationId, applicationData)
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
 
       val result = await(underTest.updateApplicationForApiSubscription(applicationId, applicationData.name, applicationData.collaborators, apiIdentifier))
 
       result shouldBe HasSucceeded
-      ApplicationUpdateServiceMock.Update.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
+      ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
     }
 
     "throw an exception if the application has not updated" in new Setup {
       val applicationData = anApplicationData(applicationId, collaborators = Set.empty)
       val errorMessage    = "Not valid"
 
-      ApplicationUpdateServiceMock.Update.thenReturnError(applicationId, errorMessage)
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnFailed(errorMessage)
 
       intercept[FailedToSubscribeException] {
         await(underTest.updateApplicationForApiSubscription(applicationId, applicationData.name, applicationData.collaborators, apiIdentifier))

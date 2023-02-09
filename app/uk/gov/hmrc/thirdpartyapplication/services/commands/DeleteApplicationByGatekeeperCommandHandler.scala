@@ -17,21 +17,35 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-import cats.data.{NonEmptyList, Validated, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
 
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByGatekeeper, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 
 @Singleton
 class DeleteApplicationByGatekeeperCommandHandler @Inject() (
+    val authControlConfig: AuthControlConfig,
+    val applicationRepository: ApplicationRepository,
+    val apiGatewayStore: ApiGatewayStore,
+    val notificationRepository: NotificationRepository,
+    val responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
+    val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
+    val stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler {
+  ) extends DeleteApplicationCommandHandler {
 
+  import CommandHandler._
   import UpdateApplicationEvent._
 
-  private def validate(app: ApplicationData, cmd: DeleteApplicationByGatekeeper): ValidatedNec[String, ApplicationData] = {
+  private def validate(app: ApplicationData): Validated[CommandFailures, ApplicationData] = {
     Validated.validNec(app)
   }
 
@@ -62,11 +76,12 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteApplicationByGatekeeper): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
+  def process(app: ApplicationData, cmd: DeleteApplicationByGatekeeper)(implicit hc: HeaderCarrier): ResultT = {
+    for {
+      valid    <- E.fromEither(validate(app).toEither)
+      events    = asEvents(app, cmd)
+      savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.requestedByEmailAddress, cmd.requestedByEmailAddress))
+      _        <- deleteApplication(app, cmd.timestamp, cmd.requestedByEmailAddress, cmd.requestedByEmailAddress, events)
+    } yield (savedApp, events)
   }
 }

@@ -38,11 +38,14 @@ trait ApplicationTestData extends ApplicationStateUtil {
 
   val loggedInUser = "loggedin@example.com"
   val devEmail     = "dev@example.com"
+  val adminEmail   = "admin@example.com"
+  val adminName    = "Admin Example"
 
   val serverToken           = "b3c83934c02df8b111e7f9f8700000"
   val serverTokenLastAccess = FixedClock.now
   val productionToken       = Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
+  val requestedByName  = "john smith"
   val requestedByEmail = "john.smith@example.com"
   val grantLength      = 547
 

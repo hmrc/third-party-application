@@ -79,7 +79,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   private def applyEvent(app: ApplicationData, event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     event match {
       case evt: ApplicationApprovalRequestDeclined => auditApplicationApprovalRequestDeclined(app, evt)
-      case evt: ClientSecretAdded                  => auditClientSecretAdded(app, evt)
+      case evt: ClientSecretAddedV2                => auditClientSecretAdded(app, evt)
       case evt: ClientSecretRemoved                => auditClientSecretRemoved(app, evt)
       case evt: CollaboratorAdded                  => auditAddCollaborator(app, evt)
       case evt: CollaboratorRemoved                => auditRemoveCollaborator(app, evt)
@@ -93,7 +93,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   // scalastyle:on cyclomatic.complexity
 
   private def auditApplicationDeletedByGatekeeper(app: ApplicationData, evt: ApplicationDeletedByGatekeeper)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
-    liftF(auditGatekeeperAction(evt.actor.toString, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail)))
+    liftF(auditGatekeeperAction(evt.actor.user, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail)))
       .toOption
       .value
   }
@@ -140,10 +140,10 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .toOption
       .value
 
-  private def auditClientSecretAdded(app: ApplicationData, evt: ClientSecretAdded)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditClientSecretAdded(app: ApplicationData, evt: ClientSecretAddedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       ClientSecretAddedAudit,
-      Map("applicationId" -> app.id.value.toString, "newClientSecret" -> evt.clientSecret.name, "clientSecretType" -> "PRODUCTION")
+      Map("applicationId" -> app.id.value.toString, "newClientSecret" -> evt.clientSecretName, "clientSecretType" -> "PRODUCTION")
     ))
       .toOption
       .value

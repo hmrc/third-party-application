@@ -347,13 +347,13 @@ class NotificationServiceSpec
       val obfuscatedSecret     = "********cret"
       val requestingAdminEmail = "admin@example.com"
       EmailConnectorMock.SendAddedClientSecretNotification.thenReturnOk()
-      val event                = ClientSecretAdded(
+      val event                = ClientSecretAddedV2(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
         CollaboratorActor(requestingAdminEmail),
-        "secret",
-        ClientSecret(obfuscatedSecret, FixedClock.now, hashedSecret = "hashed")
+        "someClientSecretId",
+        obfuscatedSecret
       )
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))

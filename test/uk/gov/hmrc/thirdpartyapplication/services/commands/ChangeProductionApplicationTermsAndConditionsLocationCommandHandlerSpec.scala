@@ -18,83 +18,158 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import cats.data.NonEmptyChain
-import cats.data.Validated.Invalid
-
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
-class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
+class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
+    extends AsyncHmrcSpec
+    with ApplicationTestData
+    with CommandActorExamples
+    with CommandCollaboratorExamples
+    with CommandApplicationExamples {
 
-  trait Setup {
+  trait Setup extends ApplicationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val applicationId         = ApplicationId.random
-    val devEmail              = "dev@example.com"
-    val adminEmail            = "admin@example.com"
-    val oldLocation           = TermsAndConditionsLocation.InDesktopSoftware
-    val newLocation           = TermsAndConditionsLocation.Url("http://example.com")
-    val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
+    val oldUrl      = "http://example.com/old"
+    val newUrl      = "http://example.com/new"
+    val newLocation = TermsAndConditionsLocation.Url(newUrl)
 
-    val testImportantSubmissionData = ImportantSubmissionData(
-      Some("organisationUrl.com"),
-      responsibleIndividual,
-      Set(ServerLocation.InUK),
-      oldLocation,
-      PrivacyPolicyLocation.InDesktopSoftware,
-      List.empty
-    )
-
-    val app       = anApplicationData(applicationId).copy(
+    val newJourneyApp = anApplicationData(applicationId).copy(
       collaborators = Set(
-        Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
-        Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
+        developerCollaborator,
+        adminCollaborator
       ),
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
+
+    val oldJourneyApp = anApplicationData(applicationId).copy(
+      collaborators = Set(
+        developerCollaborator,
+        adminCollaborator
+      ),
+      access = Standard(termsAndConditionsUrl = Some(oldUrl))
+    )
+
     val userId    = idsByEmail(adminEmail)
     val timestamp = FixedClock.now
-    val update    = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
     val actor     = CollaboratorActor(adminEmail)
 
-    val underTest = new ChangeProductionApplicationTermsAndConditionsLocationCommandHandler()
+    val update = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
+
+    val underTest = new ChangeProductionApplicationTermsAndConditionsLocationCommandHandler(ApplicationRepoMock.aMock)
+
+    def checkSuccessResult(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
+      val testThis = await(fn.value).right.value
+
+      inside(testThis) { case (app, events) =>
+        events should have size 1
+        val event = events.head
+
+        inside(event) {
+          case ProductionAppTermsConditionsLocationChanged(_, appId, eventDateTime, actor, oldLocation, eNewLocation) =>
+            appId shouldBe applicationId
+            actor shouldBe expectedActor
+            eventDateTime shouldBe timestamp
+            oldLocation shouldBe termsAndConditionsLocation
+            eNewLocation shouldBe newLocation
+        }
+      }
+    }
+
+    def checkLegacySuccessResult(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
+      val testThis = await(fn.value).right.value
+
+      inside(testThis) { case (app, events) =>
+        events should have size 1
+        val event = events.head
+
+        inside(event) {
+          case ProductionLegacyAppTermsConditionsLocationChanged(_, appId, eventDateTime, actor, eOldUrl, eNewUrl) =>
+            appId shouldBe applicationId
+            actor shouldBe expectedActor
+            eventDateTime shouldBe timestamp
+            eOldUrl shouldBe oldUrl
+            eNewUrl shouldBe newUrl
+        }
+      }
+    }
+
+    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
+      val testThis = await(fn.value).left.value.toNonEmptyList.toList
+
+      testThis should have length 1
+      testThis.head shouldBe msg
+    }
   }
 
-  "process" should {
+  "process with a new journey app" should {
+
     "create correct events for a valid request" in new Setup {
-      val result = await(underTest.process(app, update))
+      ApplicationRepoMock.UpdateTermsAndConditionsPolicyLocation.succeeds()
 
-      result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[ProductionAppTermsConditionsLocationChanged]
-      event.applicationId shouldBe applicationId
-      event.actor shouldBe actor
-      event.eventDateTime shouldBe timestamp
-      event.oldLocation shouldBe oldLocation
-      event.newLocation shouldBe newLocation
+      checkSuccessResult(actor)(underTest.process(newJourneyApp, update))
     }
+
     "return an error if instigator is not a collaborator on the application" in new Setup {
-      val result = await(underTest.process(app, update.copy(instigator = UserId.random)))
-
-      result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))
+      checkFailsWith("User must be an ADMIN") {
+        underTest.process(newJourneyApp, update.copy(instigator = UserId.random))
+      }
     }
+
     "return an error if instigator is not an admin on the application" in new Setup {
-      val result = await(underTest.process(app, update.copy(instigator = idsByEmail(devEmail))))
-
-      result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))
+      checkFailsWith("User must be an ADMIN") {
+        underTest.process(newJourneyApp, update.copy(instigator = idsByEmail(devEmail)))
+      }
     }
+
     "return an error if application is still in the process of being approved" in new Setup {
-      val result = await(underTest.process(app.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update))
-
-      result shouldBe Invalid(NonEmptyChain.one("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION"))
+      checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
+        underTest.process(newJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update)
+      }
     }
-    "return an error if application is non-standard" in new Setup {
-      val result = await(underTest.process(app.copy(access = Privileged()), update))
 
-      result shouldBe Invalid(NonEmptyChain.one("App must have a STANDARD access type"))
+    "return an error if application is non-standard" in new Setup {
+      checkFailsWith("App must have a STANDARD access type") {
+        underTest.process(newJourneyApp.copy(access = Privileged()), update)
+      }
+    }
+  }
+
+  "process with a legacy journey app" should {
+    "create correct events for a valid request" in new Setup {
+      ApplicationRepoMock.UpdateLegacyTermsAndConditionsPolicyLocation.succeeds()
+
+      checkLegacySuccessResult(actor)(underTest.process(oldJourneyApp, update))
+    }
+
+    "return an error if instigator is not a collaborator on the application" in new Setup {
+      checkFailsWith("User must be an ADMIN") {
+        underTest.process(oldJourneyApp, update.copy(instigator = UserId.random))
+      }
+    }
+
+    "return an error if instigator is not an admin on the application" in new Setup {
+      checkFailsWith("User must be an ADMIN") {
+        underTest.process(oldJourneyApp, update.copy(instigator = idsByEmail(devEmail)))
+      }
+    }
+
+    "return an error if application is still in the process of being approved" in new Setup {
+      checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
+        underTest.process(oldJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update)
+      }
+    }
+
+    "return an error if application is non-standard" in new Setup {
+      checkFailsWith("App must have a STANDARD access type") {
+        underTest.process(oldJourneyApp.copy(access = Privileged()), update)
+      }
     }
   }
 }

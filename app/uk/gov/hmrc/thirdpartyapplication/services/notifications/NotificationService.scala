@@ -36,7 +36,7 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
   def sendNotifications(app: ApplicationData, events: List[UpdateApplicationEvent with TriggersNotification])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
     def sendNotification(app: ApplicationData, event: UpdateApplicationEvent with TriggersNotification) = {
       event match {
-        case evt: ClientSecretAdded                                 => ClientSecretAddedNotification.sendClientSecretAddedNotification(emailConnector, app, evt)
+        case evt: ClientSecretAddedV2                               => ClientSecretAddedNotification.sendClientSecretAddedNotification(emailConnector, app, evt)
         case evt: ClientSecretRemoved                               => ClientSecretRemovedNotification.sendClientSecretRemovedNotification(emailConnector, app, evt)
         case evt: ProductionAppNameChanged                          => ProductionAppNameChangedNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ProductionAppPrivacyPolicyLocationChanged         => StandardChangedNotification.sendAdviceEmail(

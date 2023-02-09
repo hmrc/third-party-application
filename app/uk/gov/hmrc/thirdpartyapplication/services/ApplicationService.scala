@@ -25,7 +25,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
 import akka.actor.ActorSystem
-import cats.data.NonEmptyChain
 import org.apache.commons.net.util.SubnetUtils
 
 import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier, NotFoundException}
@@ -47,6 +46,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, HeaderCarrierHelper}
@@ -70,7 +70,7 @@ class ApplicationService @Inject() (
     tokenService: TokenService,
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
-    applicationUpdateService: ApplicationUpdateService,
+    applicationCommandDispatcher: ApplicationCommandDispatcher,
     clock: Clock
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ActorHelper {
@@ -509,9 +509,13 @@ class ApplicationService @Inject() (
     )(implicit hc: HeaderCarrier
     ): Future[ApplicationData] = {
 
-    def fail(errorMessages: NonEmptyChain[String]) = {
+    def fail(errorMessages: CommandHandler.CommandFailures) = {
       logger.warn(s"Command Process failed for $applicationId because ${errorMessages.toList.mkString("[", ",", "]")}")
       throw new BadRequestException("Failed to process UpdateRedirectUris command")
+    }
+
+    def success(cmdSuccess: CommandHandler.CommandSuccess) = {
+      cmdSuccess._1
     }
 
     val updateRedirectUris = UpdateRedirectUris(
@@ -521,7 +525,8 @@ class ApplicationService @Inject() (
       timestamp = LocalDateTime.now(clock)
     )
 
-    applicationUpdateService.update(applicationId, updateRedirectUris).fold(fail, identity)
+    applicationCommandDispatcher.dispatch(applicationId, updateRedirectUris)
+      .fold(fail, success)
   }
 
   private def fetchApp(applicationId: ApplicationId) = {

@@ -20,7 +20,6 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import cats.data.NonEmptyList
 import org.mockito.captor.ArgCaptor
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -30,7 +29,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.ActorType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretAdded, ClientSecretAddedObfuscated, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
@@ -82,27 +80,6 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
   val newRedirectUris = "123/,456/,789/,101112/"
 
   "ApiPlatformEventService" when {
-
-    "applyEvents" should {
-      val secretValue            = "secretValue"
-      val clientSecretAddedEvent = ClientSecretAdded(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = applicationData.id,
-        eventDateTime = FixedClock.now,
-        actor = CollaboratorActor(adminEmail),
-        secretValue = secretValue,
-        clientSecret = ClientSecret("name", FixedClock.now, None, UUID.randomUUID().toString, "eulaVterces")
-      )
-      "obfuscate ClientSecret Event when applied" in new Setup() {
-        val obfuscatedEvent = ClientSecretAddedObfuscated.fromClientSecretAdded(clientSecretAddedEvent)
-        when(mockConnector.sendApplicationEvent(eqTo(obfuscatedEvent))(*))
-          .thenReturn(Future.successful(true))
-
-        implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> adminEmail)
-        val result                        = await(objInTest.applyEvents(NonEmptyList.of(clientSecretAddedEvent)))
-        result shouldBe true
-      }
-    }
 
     "TeamMemberAdded" should {
 

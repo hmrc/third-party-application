@@ -131,7 +131,7 @@ class SubmissionsService @Inject() (
     }
   }
 
-  private def declineApplicationApprovalRequest(evt: ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
+  def declineApplicationApprovalRequest(evt: ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
     (
       for {
         extSubmission    <- fromOptionF(fetch(evt.submissionId), "submission not found")

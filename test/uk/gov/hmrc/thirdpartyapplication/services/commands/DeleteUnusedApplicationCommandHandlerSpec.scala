@@ -17,64 +17,103 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import java.nio.charset.StandardCharsets.UTF_8
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import cats.data.NonEmptyChain
-import cats.data.Validated.Invalid
 import org.apache.commons.codec.binary.Base64.encodeBase64String
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
-class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
+class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
 
   trait Setup {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId             = ApplicationId.random
-    val appAdminEmail     = loggedInUser
-    val actor             = ScheduledJobActor("DeleteUnusedApplicationsJob")
-    val reasons           = "reasons description text"
-    val app               = anApplicationData(appId, environment = Environment.SANDBOX)
-    val ts                = FixedClock.now
-    val authKey           = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
-    val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
-    val underTest         = new DeleteUnusedApplicationCommandHandler(authControlConfig)
+    val appId: ApplicationId                 = ApplicationId.random
+    val appAdminEmail: String                = loggedInUser
+    val actor: ScheduledJobActor             = ScheduledJobActor("DeleteUnusedApplicationsJob")
+    val app: ApplicationData                 = anApplicationData(appId, environment = Environment.SANDBOX)
+    val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
+
+    val underTest = new DeleteUnusedApplicationCommandHandler(
+      authControlConfig,
+      ApplicationRepoMock.aMock,
+      ApiGatewayStoreMock.aMock,
+      NotificationRepositoryMock.aMock,
+      ResponsibleIndividualVerificationRepositoryMock.aMock,
+      ThirdPartyDelegatedAuthorityServiceMock.aMock,
+      StateHistoryRepoMock.aMock
+    )
+
+    def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
+      inside(result) { case (app, events) =>
+        val filteredEvents = events.toList.filter(evt =>
+          evt match {
+            case _: ApplicationStateChanged | _: ApplicationDeleted => true
+            case _                                                  => false
+          }
+        )
+        filteredEvents.size shouldBe 2
+
+        filteredEvents.foreach(event =>
+          inside(event) {
+            case ApplicationDeleted(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons) =>
+              appId shouldBe appId
+              actor shouldBe actor
+              eventDateTime shouldBe ts
+              clientId shouldBe app.tokens.production.clientId
+              evtReasons shouldBe reasons
+              wsoApplicationName shouldBe app.wso2ApplicationName
+
+            case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
+              appId shouldBe appId
+              evtActor shouldBe actor
+              eventDateTime shouldBe ts
+              oldAppState shouldBe app.state.name
+              newAppState shouldBe State.DELETED
+              requestingAdminEmail shouldBe actor.jobId
+              requestingAdminName shouldBe actor.jobId
+          }
+        )
+      }
+
+    }
   }
 
-  "process" should {
-    "create correct event for a valid request with a standard app" in new Setup {
+  val reasons           = "reasons description text"
+  val ts: LocalDateTime = FixedClock.now
+  val authKey: String   = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
 
-      val result = await(underTest.process(app, DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, ts)))
+  "DeleteUnusedApplicationCommand" should {
+    val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, ts)
+    "succeed as gkUserActor" in new Setup {
+      ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
+      ApiGatewayStoreMock.ApplyEvents.succeeds()
+      NotificationRepositoryMock.ApplyEvents.succeeds()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.ApplyEvents.succeeds()
 
-      result.isValid shouldBe true
-      result.toOption.get.length shouldBe 2
+      val result = await(underTest.process(app, cmd).value).right.value
 
-      val applicationDeleted = result.toOption.get.head.asInstanceOf[ApplicationDeleted]
-      applicationDeleted.applicationId shouldBe appId
-      applicationDeleted.eventDateTime shouldBe ts
-      applicationDeleted.actor shouldBe actor
-      applicationDeleted.reasons shouldBe reasons
-      applicationDeleted.clientId shouldBe app.tokens.production.clientId
-      applicationDeleted.wso2ApplicationName shouldBe app.wso2ApplicationName
-
-      val stateEvent = result.toOption.get.tail.head.asInstanceOf[ApplicationStateChanged]
-      stateEvent.applicationId shouldBe appId
-      stateEvent.eventDateTime shouldBe ts
-      stateEvent.actor shouldBe actor
-      stateEvent.newAppState shouldBe State.DELETED
-      stateEvent.oldAppState shouldBe app.state.name
+      checkSuccessResult()(result)
     }
 
-    "return an error if the auth key is incorrect" in new Setup {
-      val result = await(underTest.process(app, DeleteUnusedApplication("DeleteUnusedApplicationsJob", encodeBase64String("incorrectAuthKey".getBytes(UTF_8)), reasons, ts)))
-      result shouldBe Invalid(NonEmptyChain.apply("Cannot delete this applicaton"))
+    "return an error when auth key doesnt match" in new Setup {
+      val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", "notAuthKey", reasons, ts)
+
+      val result = await(underTest.process(app, cmd).value).left.value.toNonEmptyList.toList
+
+      result should have length 1
+      result.head shouldBe "Cannot delete this applicaton"
     }
   }
+
 }

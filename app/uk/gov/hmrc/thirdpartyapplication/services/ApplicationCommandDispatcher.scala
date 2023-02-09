@@ -17,37 +17,30 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-import cats.data.{EitherT, NonEmptyChain, Validated}
+import cats.data.NonEmptyChain
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 
 @Singleton
-class ApplicationUpdateService @Inject() (
+class ApplicationCommandDispatcher @Inject() (
     applicationRepository: ApplicationRepository,
-    responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
-    stateHistoryRepository: StateHistoryRepository,
-    subscriptionRepository: SubscriptionRepository,
-    notificationRepository: NotificationRepository,
     notificationService: NotificationService,
     apiPlatformEventService: ApiPlatformEventService,
-    submissionService: SubmissionsService,
-    thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
-    apiGatewayStore: ApiGatewayStore,
     auditService: AuditService,
     addClientSecretCommandHandler: AddClientSecretCommandHandler,
     removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
     changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
+    addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
+    removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
     changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
     changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
     changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
@@ -60,37 +53,32 @@ class ApplicationUpdateService @Inject() (
     deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
     deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
     deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
-    addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
-    removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
     subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
     unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
     updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
-  import cats.implicits._
-  private val E = EitherTHelper.make[NonEmptyChain[String]]
 
-  def update(applicationId: ApplicationId, applicationUpdate: ApplicationUpdate)(implicit hc: HeaderCarrier): EitherT[Future, NonEmptyChain[String], ApplicationData] = {
+  import cats.implicits._
+  import CommandHandler._
+
+  val E = EitherTHelper.make[CommandFailures]
+
+  def dispatch(applicationId: ApplicationId, command: ApplicationCommand)(implicit hc: HeaderCarrier): ResultT = {
     for {
-      app      <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
-      events   <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
-      savedApp <- E.liftF(applicationRepository.applyEvents(events))
-      _        <- E.liftF(stateHistoryRepository.applyEvents(events))
-      _        <- E.liftF(subscriptionRepository.applyEvents(events.collect { case evt: UpdateApplicationEvent with UpdatesSubscription => evt }))
-      _        <- E.liftF(submissionService.applyEvents(events))
-      _        <- E.liftF(thirdPartyDelegatedAuthorityService.applyEvents(events))
-      _        <- E.liftF(apiGatewayStore.applyEvents(events))
-      _        <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
-      _        <- E.liftF(notificationRepository.applyEvents(events))
-      _        <- E.liftF(apiPlatformEventService.applyEvents(events))
-      _        <- E.liftF(auditService.applyEvents(savedApp, events))
-      _        <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt }))
-    } yield savedApp
+      app               <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
+      updateResults     <- processUpdate(app, command)
+      (savedApp, events) = updateResults
+
+      _ <- E.liftF(apiPlatformEventService.applyEvents(events))
+      _ <- E.liftF(auditService.applyEvents(savedApp, events))
+      _ <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt }))
+    } yield (savedApp, events)
   }
 
   // scalastyle:off cyclomatic.complexity
-  private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationUpdate)(implicit hc: HeaderCarrier): CommandHandler.Result = {
-    applicationUpdate match {
+  private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): ResultT = {
+    command match {
       case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
       case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
@@ -111,7 +99,7 @@ class ApplicationUpdateService @Inject() (
       case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
       case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
       case cmd: UpdateRedirectUris                                    => updateRedirectUrisCommandHandler.process(app, cmd)
-      case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
+      case _                                                          => E.fromEither(Left(NonEmptyChain(s"Unknown ApplicationCommand type $command")))
     }
   }
   // scalastyle:on cyclomatic.complexity

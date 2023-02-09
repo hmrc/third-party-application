@@ -20,7 +20,6 @@ import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.NonEmptyList
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
@@ -37,16 +36,10 @@ import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
-  ApplicationStateChanged,
-  CollaboratorAdded,
-  ResponsibleIndividualChanged,
-  ResponsibleIndividualChangedToSelf,
-  ResponsibleIndividualSet
-}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
@@ -211,7 +204,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
-  @deprecated("remove when no longer using old logic")
   def addClientSecret(applicationId: ApplicationId, clientSecret: ClientSecret): Future[ApplicationData] =
     updateApplication(applicationId, Updates.push("tokens.production.clientSecrets", Codecs.toBson(clientSecret)))
 
@@ -234,7 +226,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
-  @deprecated("remove when no longer using old logic")
   def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String): Future[ApplicationData] = {
     val query = equal("id", Codecs.toBson(applicationId))
 
@@ -667,61 +658,28 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
         .toMap)
   }
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[ApplicationData] = {
-    require(events.map(_.applicationId).toList.toSet.size == 1, "Events must all be for the same application")
-
-    events match {
-      case NonEmptyList(e, Nil)  => applyEvent(e)
-      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
-    }
-  }
-
-  private def updateClientSecretAdded(evt: UpdateApplicationEvent.ClientSecretAdded): Future[ApplicationData] =
+  def addCollaborator(applicationId: ApplicationId, collaborator: Collaborator) =
     updateApplication(
-      evt.applicationId,
-      Updates.push(
-        "tokens.production.clientSecrets",
-        Codecs.toBson(evt.clientSecret)
-      )
-    )
-
-  private def updateClientSecretRemoved(evt: UpdateApplicationEvent.ClientSecretRemoved): Future[ApplicationData] =
-    updateApplication(
-      evt.applicationId,
-      Updates.pull(
-        "tokens.production.clientSecrets",
-        Codecs.toBson(Json.obj("id" -> evt.clientSecretId))
-      )
-    )
-
-  private def updateCollaboratorAdded(evt: UpdateApplicationEvent.CollaboratorAdded) =
-    updateApplication(
-      evt.applicationId,
+      applicationId,
       Updates.push(
         "collaborators",
-        Codecs.toBson(CollaboratorAdded.collaboratorFromEvent(evt))
+        Codecs.toBson(collaborator)
       )
     )
 
-  private def updateCollaboratorRemoved(evt: UpdateApplicationEvent.CollaboratorRemoved) =
+  def removeCollaborator(applicationId: ApplicationId, userId: UserId) =
     updateApplication(
-      evt.applicationId,
+      applicationId,
       Updates.pull(
         "collaborators",
-        Codecs.toBson(Json.obj("userId" -> evt.collaboratorId))
+        Codecs.toBson(Json.obj("userId" -> userId))
       )
     )
 
-  private def updateRedirectUrisUpdated(evt: UpdateApplicationEvent.RedirectUrisUpdated) =
-    updateApplication(
-      evt.applicationId,
-      Updates.set(
-        "access.redirectUris",
-        Codecs.toBson(evt.newRedirectUris)
-      )
-    )
+  def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[String]) =
+    updateApplication(applicationId, Updates.set("access.redirectUris", Codecs.toBson(redirectUris)))
 
-  private def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
+  def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
     updateApplication(
       applicationId,
       Updates.combine(
@@ -730,112 +688,105 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       )
     )
 
-  private def updateApplicationPrivacyPolicyLocation(applicationId: ApplicationId, location: PrivacyPolicyLocation): Future[ApplicationData] =
+  def updateApplicationPrivacyPolicyLocation(applicationId: ApplicationId, location: PrivacyPolicyLocation): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData.privacyPolicyLocation", Codecs.toBson(location)))
 
-  private def updateLegacyApplicationPrivacyPolicyLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
+  def updateLegacyApplicationPrivacyPolicyLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.privacyPolicyUrl", url))
 
-  private def updateApplicationTermsAndConditionsLocation(applicationId: ApplicationId, location: TermsAndConditionsLocation): Future[ApplicationData] =
+  def updateApplicationTermsAndConditionsLocation(applicationId: ApplicationId, location: TermsAndConditionsLocation): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData.termsAndConditionsLocation", Codecs.toBson(location)))
 
-  private def updateLegacyApplicationTermsAndConditionsLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
+  def updateLegacyApplicationTermsAndConditionsLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.termsAndConditionsUrl", url))
 
-  private def updateApplicationChangeResponsibleIndividual(event: ResponsibleIndividualChanged): Future[ApplicationData] =
+  def updateApplicationChangeResponsibleIndividual(
+      applicationId: ApplicationId,
+      newResponsibleIndividualName: String,
+      newResponsibleIndividualEmail: String,
+      eventDateTime: LocalDateTime,
+      submissionId: Submission.Id,
+      submissionIndex: Int
+    ): Future[ApplicationData] =
     updateApplication(
-      event.applicationId,
+      applicationId,
       Updates.combine(
-        Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", event.newResponsibleIndividualName),
-        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", event.newResponsibleIndividualEmail),
+        Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", newResponsibleIndividualName),
+        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", newResponsibleIndividualEmail),
         Updates.push(
           "access.importantSubmissionData.termsOfUseAcceptances",
           Codecs.toBson(TermsOfUseAcceptance(
-            ResponsibleIndividual.build(event.newResponsibleIndividualName, event.newResponsibleIndividualEmail),
-            event.eventDateTime,
-            event.submissionId,
-            event.submissionIndex
+            ResponsibleIndividual.build(newResponsibleIndividualName, newResponsibleIndividualEmail),
+            eventDateTime,
+            submissionId,
+            submissionIndex
           ))
         )
       )
     )
 
-  private def updateApplicationChangeResponsibleIndividualToSelf(event: ResponsibleIndividualChangedToSelf): Future[ApplicationData] =
+  def updateApplicationChangeResponsibleIndividualToSelf(
+      applicationId: ApplicationId,
+      requestingAdminName: String,
+      requestingAdminEmail: String,
+      timeOfChange: LocalDateTime,
+      submissionId: Submission.Id,
+      submissionIndex: Int
+    ): Future[ApplicationData] =
     updateApplication(
-      event.applicationId,
+      applicationId,
       Updates.combine(
-        Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", event.requestingAdminName),
-        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", event.requestingAdminEmail),
+        Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", requestingAdminName),
+        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", requestingAdminEmail),
         Updates.push(
           "access.importantSubmissionData.termsOfUseAcceptances",
           Codecs.toBson(TermsOfUseAcceptance(
-            ResponsibleIndividual.build(event.requestingAdminName, event.requestingAdminEmail),
-            event.eventDateTime,
-            event.submissionId,
-            event.submissionIndex
+            ResponsibleIndividual.build(requestingAdminName, requestingAdminEmail),
+            timeOfChange,
+            submissionId,
+            submissionIndex
           ))
         )
       )
     )
 
-  private def updateApplicationSetResponsibleIndividual(event: ResponsibleIndividualSet): Future[ApplicationData] =
+  def updateApplicationSetResponsibleIndividual(
+      applicationId: ApplicationId,
+      responsibleIndividualName: String,
+      responsibleIndividualEmail: String,
+      eventDateTime: LocalDateTime,
+      submissionId: Submission.Id,
+      submissionIndex: Int
+    ): Future[ApplicationData] =
     updateApplication(
-      event.applicationId,
+      applicationId,
       Updates.combine(
         Updates.push(
           "access.importantSubmissionData.termsOfUseAcceptances",
           Codecs.toBson(TermsOfUseAcceptance(
-            ResponsibleIndividual.build(event.responsibleIndividualName, event.responsibleIndividualEmail),
-            event.eventDateTime,
-            event.submissionId,
-            event.submissionIndex
+            ResponsibleIndividual.build(responsibleIndividualName, responsibleIndividualEmail),
+            eventDateTime,
+            submissionId,
+            submissionIndex
           ))
         )
       )
     )
 
-  private def updateApplicationState(event: ApplicationStateChanged): Future[ApplicationData] =
+  def updateApplicationState(
+      applicationId: ApplicationId,
+      newAppState: State,
+      timestamp: LocalDateTime,
+      requestingAdminEmail: String,
+      requestingAdminName: String
+    ): Future[ApplicationData] =
     updateApplication(
-      event.applicationId,
+      applicationId,
       Updates.combine(
-        Updates.set("state.name", Codecs.toBson(event.newAppState)),
-        Updates.set("state.updatedOn", event.eventDateTime),
-        Updates.set("state.requestedByEmailAddress", event.requestingAdminEmail),
-        Updates.set("state.requestedByName", event.requestingAdminName)
+        Updates.set("state.name", Codecs.toBson(newAppState)),
+        Updates.set("state.updatedOn", timestamp),
+        Updates.set("state.requestedByEmailAddress", requestingAdminEmail),
+        Updates.set("state.requestedByName", requestingAdminName)
       )
     )
-
-  private def noOp(event: UpdateApplicationEvent): Future[ApplicationData] = fetch(event.applicationId).map(_.get)
-
-  // scalastyle:off cyclomatic.complexity
-  private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
-    import UpdateApplicationEvent._
-
-    event match {
-      case evt: ClientSecretAdded                                                                                 => updateClientSecretAdded(evt)
-      case evt: ClientSecretRemoved                                                                               => updateClientSecretRemoved(evt)
-      case evt: RedirectUrisUpdated                                                                               => updateRedirectUrisUpdated(evt)
-      case evt: ProductionAppNameChanged                                                                          => updateApplicationName(evt.applicationId, evt.newAppName)
-      case evt: ProductionAppPrivacyPolicyLocationChanged                                                         => updateApplicationPrivacyPolicyLocation(evt.applicationId, evt.newLocation)
-      case evt: ProductionLegacyAppPrivacyPolicyLocationChanged                                                   => updateLegacyApplicationPrivacyPolicyLocation(evt.applicationId, evt.newUrl)
-      case evt: ProductionAppTermsConditionsLocationChanged                                                       => updateApplicationTermsAndConditionsLocation(evt.applicationId, evt.newLocation)
-      case evt: ProductionLegacyAppTermsConditionsLocationChanged                                                 => updateLegacyApplicationTermsAndConditionsLocation(evt.applicationId, evt.newUrl)
-      case evt: ResponsibleIndividualSet                                                                          => updateApplicationSetResponsibleIndividual(evt)
-      case evt: ResponsibleIndividualChanged                                                                      => updateApplicationChangeResponsibleIndividual(evt)
-      case evt: ResponsibleIndividualChangedToSelf                                                                => updateApplicationChangeResponsibleIndividualToSelf(evt)
-      case evt: ApplicationStateChanged                                                                           => updateApplicationState(evt)
-      case evt: CollaboratorAdded                                                                                 => updateCollaboratorAdded(evt)
-      case evt: CollaboratorRemoved                                                                               => updateCollaboratorRemoved(evt)
-      case _: ResponsibleIndividualVerificationStarted                                                            => noOp(event)
-      case _: ResponsibleIndividualDeclined                                                                       => noOp(event)
-      case _: ResponsibleIndividualDeclinedUpdate                                                                 => noOp(event)
-      case _: ResponsibleIndividualDidNotVerify                                                                   => noOp(event)
-      case _: ApplicationApprovalRequestDeclined                                                                  => noOp(event)
-      case _: ApplicationDeleted | _: ApplicationDeletedByGatekeeper | _: ProductionCredentialsApplicationDeleted => noOp(event)
-      case _: ApiSubscribed                                                                                       => noOp(event)
-      case _: ApiUnsubscribed                                                                                     => noOp(event)
-      case _: ClientSecretAddedObfuscated                                                                         => noOp(event)
-    }
-  }
-  // scalastyle:on cyclomatic.complexity
 }

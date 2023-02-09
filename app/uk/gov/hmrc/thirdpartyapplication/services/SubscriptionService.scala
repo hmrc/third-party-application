@@ -39,7 +39,7 @@ class SubscriptionService @Inject() (
     subscriptionRepository: SubscriptionRepository,
     auditService: AuditService,
     apiPlatformEventService: ApiPlatformEventService,
-    applicationUpdateService: ApplicationUpdateService,
+    applicationCommandDispatcher: ApplicationCommandDispatcher,
     apiGatewayStore: ApiGatewayStore
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ActorHelper {
@@ -72,7 +72,7 @@ class SubscriptionService @Inject() (
     ): Future[HasSucceeded] = {
     val actor          = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators)
     val subscribeToApi = SubscribeToApi(actor, api, LocalDateTime.now())
-    applicationUpdateService.update(applicationId, subscribeToApi).value.map {
+    applicationCommandDispatcher.dispatch(applicationId, subscribeToApi).value.map {
       case Left(e)  =>
         logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")
         throw FailedToSubscribeException(applicationName, api)

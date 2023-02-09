@@ -46,7 +46,7 @@ class ResponsibleIndividualVerificationController @Inject() (
     with JsonUtils
     with JsonErrorResponse {
 
-  def getVerification(code: String) = Action.async { implicit request =>
+  def getVerification(code: String) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
     val success     = (responsibleIndividualVerification: ResponsibleIndividualVerification) => Ok(Json.toJson(responsibleIndividualVerification))
 

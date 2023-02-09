@@ -19,23 +19,37 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.{NonEmptyList, Validated}
+import cats._
+import cats.data._
+import cats.implicits._
 
-import play.api.mvc.Result
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{SubscribeToApi, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{SubscribeToApi, UpdateApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository._
 
 @Singleton
 class SubscribeToApiCommandHandler @Inject() (
+    subscriptionRepository: SubscriptionRepository,
     strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
+  import CommandHandler._
   import UpdateApplicationEvent._
+
+  private def validate(app: ApplicationData, cmd: SubscribeToApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[CommandFailures, Unit] = {
+    def isGatekeeperUser       = cond(rolePassed, s"Unauthorized to subscribe any API to app ${app.name}")
+    def notAlreadySubscribedTo = cond(!alreadySubcribed, s"Application ${app.name} is already subscribed to API ${cmd.apiIdentifier.asText(" v")}")
+
+    Apply[Validated[CommandFailures, *]].map2(
+      isGatekeeperUser,
+      notAlreadySubscribedTo
+    ) { case _ => () }
+  }
 
   private def asEvents(app: ApplicationData, cmd: SubscribeToApi): NonEmptyList[UpdateApplicationEvent] = {
     NonEmptyList.of(
@@ -50,14 +64,19 @@ class SubscribeToApiCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: SubscribeToApi)(implicit hc: HeaderCarrier): CommandHandler.Result = {
-    if (List(PRIVILEGED, ROPC).contains(app.access.accessType)) {
-      strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole().map {
-        case None            => Validated.valid(asEvents(app, cmd))
-        case Some(_: Result) => Validated.invalidNec(s"Unauthorized to subscribe any API to app ${app.name}")
-      }
-    } else {
-      Future.successful(Validated.valid(asEvents(app, cmd)))
-    }
+  private def performRoleCheckAsRequired(app: ApplicationData)(implicit hc: HeaderCarrier) = {
+    if (List(PRIVILEGED, ROPC).contains(app.access.accessType))
+      strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole().map(_.isEmpty)
+    else
+      Future.successful(true)
+  }
+
+  def process(app: ApplicationData, cmd: SubscribeToApi)(implicit hc: HeaderCarrier): ResultT = {
+    for {
+      rolePassed       <- E.liftF(performRoleCheckAsRequired(app))
+      alreadySubcribed <- E.liftF(subscriptionRepository.isSubscribed(app.id, cmd.apiIdentifier))
+      valid            <- E.fromEither(validate(app, cmd, rolePassed, alreadySubcribed).toEither)
+      _                <- E.liftF(subscriptionRepository.add(app.id, cmd.apiIdentifier))
+    } yield (app, asEvents(app, cmd))
   }
 }

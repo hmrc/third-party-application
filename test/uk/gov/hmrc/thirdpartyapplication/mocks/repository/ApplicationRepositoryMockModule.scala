@@ -16,17 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
+import java.time.LocalDateTime
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
-import cats.data.NonEmptyList
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.http.NotFoundException
 
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
@@ -327,6 +329,17 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         ApplicationRepoMock.verify.updateClientSecretHash(eqTo(applicationId), eqTo(clientSecretId), *)
     }
 
+    object UpdateRedirectUris {
+
+      def thenReturn(applicationId: ApplicationId, redirectUris: List[String])(updatedApplication: ApplicationData) = {
+        when(aMock.updateRedirectUris(eqTo(applicationId), eqTo(redirectUris))).thenReturn(successful(updatedApplication))
+      }
+
+      def verifyCalledWith(applicationId: ApplicationId, redirectUris: List[String]) =
+        ApplicationRepoMock.verify.updateRedirectUris(eqTo(applicationId), eqTo(redirectUris))
+
+    }
+
     object DeleteClientSecret {
 
       def succeeds(application: ApplicationData, clientSecretId: String) = {
@@ -347,25 +360,46 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def verifyNeverCalled() = ApplicationRepoMock.verify(never).deleteClientSecret(*[ApplicationId], *)
     }
 
+    object AddCollaborator {
+
+      def succeeds(applicationData: ApplicationData) =
+        when(aMock.addCollaborator(*[ApplicationId], *[Collaborator])).thenReturn(successful(applicationData))
+    }
+
+    object RemoveCollaborator {
+
+      def succeeds(applicationData: ApplicationData) =
+        when(aMock.removeCollaborator(*[ApplicationId], *[UserId])).thenReturn(successful(applicationData))
+    }
+
     object AddApplicationTermsOfUseAcceptance {
 
       def thenReturn(applicationData: ApplicationData) =
         when(aMock.addApplicationTermsOfUseAcceptance(*[ApplicationId], *[TermsOfUseAcceptance])).thenReturn(successful(applicationData))
     }
 
-    object ApplyEvents {
+    object UpdateApplicationChangeResponsibleIndividualToSelf {
 
       def thenReturn(applicationData: ApplicationData) =
-        when(aMock.applyEvents(*[NonEmptyList[UpdateApplicationEvent]])).thenReturn(successful(applicationData))
+        when(aMock.updateApplicationChangeResponsibleIndividualToSelf(*[ApplicationId], *[String], *[String], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
+          applicationData
+        ))
+    }
 
-      def failsWith(ex: Throwable) =
-        when(aMock.applyEvents(*[NonEmptyList[UpdateApplicationEvent]])).thenReturn(failed(ex))
+    object UpdateApplicationSetResponsibleIndividual {
 
-      def verifyCalledWith(events: UpdateApplicationEvent*) =
-        verify.applyEvents(NonEmptyList.fromList(events.toList).get)
+      def thenReturn(applicationData: ApplicationData) =
+        when(aMock.updateApplicationSetResponsibleIndividual(*[ApplicationId], *[String], *[String], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
+          applicationData
+        ))
+    }
 
-      def verifyNeverCalled =
-        ApplicationRepoMock.verify(never).applyEvents(*[NonEmptyList[UpdateApplicationEvent]])
+    object UpdateApplicationChangeResponsibleIndividual {
+
+      def thenReturn(applicationData: ApplicationData) =
+        when(aMock.updateApplicationChangeResponsibleIndividual(*[ApplicationId], *[String], *[String], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
+          applicationData
+        ))
     }
 
     object FetchProdAppStateHistories {
@@ -384,6 +418,48 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def thenReturn(apps: ApplicationData*) =
         when(aMock.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(*, *, *)).thenReturn(successful(apps.toList))
+    }
+
+    object UpdateApplicationName {
+
+      def succeeds() =
+        when(aMock.updateApplicationName(*[ApplicationId], *)).thenReturn(successful(mock[ApplicationData]))
+
+      def thenReturn(app: ApplicationData) =
+        when(aMock.updateApplicationName(*[ApplicationId], *)).thenReturn(successful(app))
+    }
+
+    object UpdateApplicationState {
+
+      def succeeds() =
+        when(aMock.updateApplicationState(*[ApplicationId], *[State], *, *, *)).thenReturn(successful(mock[ApplicationData]))
+
+      def thenReturn(app: ApplicationData) =
+        when(aMock.updateApplicationState(*[ApplicationId], *[State], *, *, *)).thenReturn(successful(app))
+    }
+
+    object UpdatePrivacyPolicyLocation {
+
+      def succeeds() =
+        when(aMock.updateApplicationPrivacyPolicyLocation(*[ApplicationId], *[PrivacyPolicyLocation])).thenReturn(successful(mock[ApplicationData]))
+    }
+
+    object UpdateLegacyPrivacyPolicyLocation {
+
+      def succeeds() =
+        when(aMock.updateLegacyApplicationPrivacyPolicyLocation(*[ApplicationId], *)).thenReturn(successful(mock[ApplicationData]))
+    }
+
+    object UpdateTermsAndConditionsPolicyLocation {
+
+      def succeeds() =
+        when(aMock.updateApplicationTermsAndConditionsLocation(*[ApplicationId], *[TermsAndConditionsLocation])).thenReturn(successful(mock[ApplicationData]))
+    }
+
+    object UpdateLegacyTermsAndConditionsPolicyLocation {
+
+      def succeeds() =
+        when(aMock.updateLegacyApplicationTermsAndConditionsLocation(*[ApplicationId], *)).thenReturn(successful(mock[ApplicationData]))
     }
   }
 

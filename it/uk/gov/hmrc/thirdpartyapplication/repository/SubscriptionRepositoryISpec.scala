@@ -25,7 +25,6 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiSubscribed, ApiUnsubscribed, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -313,47 +312,26 @@ class SubscriptionRepositoryISpec
     }
   }
 
-  "applyEvents" should {
+  "handle ApiSubscribed event correctly" in {
+    val applicationId = ApplicationId.random
+    val apiIdentifier = "some-context".asIdentifier("1.0.0")
 
-    "handle ApiSubscribed event correctly" in {
-      val applicationId = ApplicationId.random
-      val apiIdentifier = "some-context".asIdentifier("1.0.0")
-      val adminEmail    = "admin@example.com"
+    val result = await(subscriptionRepository.add(applicationId, apiIdentifier))
 
-      val event = ApiSubscribed(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = applicationId,
-        actor = CollaboratorActor(adminEmail),
-        context = apiIdentifier.context.value,
-        version = apiIdentifier.version.value
-      )
+    result mustBe HasSucceeded
+    await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier)) mustBe true
+  }
 
-      val result = await(subscriptionRepository.applyEvents(List(event)))
+  "handle ApiUnsubscribed event correctly" in {
+    val applicationId = ApplicationId.random
+    val apiIdentifier = "some-context".asIdentifier("1.0.0")
 
-      result mustBe HasSucceeded
-      await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier)) mustBe true
-    }
+    await(subscriptionRepository.add(applicationId, apiIdentifier))
 
-    "handle ApiUnsubscribed event correctly" in {
-      val applicationId = ApplicationId.random
-      val apiIdentifier = "some-context".asIdentifier("1.0.0")
-      val adminEmail    = "admin@example.com"
+    val result = await(subscriptionRepository.remove(applicationId, apiIdentifier))
 
-      val event = ApiUnsubscribed(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = applicationId,
-        actor = CollaboratorActor(adminEmail),
-        context = apiIdentifier.context.value,
-        version = apiIdentifier.version.value
-      )
-      await(subscriptionRepository.add(applicationId, apiIdentifier))
-
-      val result = await(subscriptionRepository.applyEvents(List(event)))
-
-      result mustBe HasSucceeded
-      await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier)) mustBe false
-    }
-
+    result mustBe HasSucceeded
+    await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier)) mustBe false
   }
 
   def subscriptionData(apiContext: ApiContext, version: ApiVersion, applicationIds: ApplicationId*): SubscriptionData = {

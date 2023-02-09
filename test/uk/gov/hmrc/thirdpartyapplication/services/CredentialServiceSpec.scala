@@ -34,7 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Co
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationUpdateServiceMockModule, AuditServiceMockModule, ClientSecretServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule, ClientSecretServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -44,7 +44,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
   trait Setup extends ApplicationRepositoryMockModule
       with AuditServiceMockModule
-      with ApplicationUpdateServiceMockModule
+      with ApplicationCommandDispatcherMockModule
       with ClientSecretServiceMockModule
       with EmailConnectorMockModule {
 
@@ -53,13 +53,13 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
     val clientSecretLimit                                    = 5
     val credentialConfig: CredentialConfig                   = CredentialConfig(clientSecretLimit)
     val mockApiPlatformEventService: ApiPlatformEventService = mock[ApiPlatformEventService]
-    when(mockApiPlatformEventService.sendClientSecretAddedEvent(any[ApplicationData], any[String])(any[HeaderCarrier])).thenReturn(Future.successful(true))
-    when(mockApiPlatformEventService.sendClientSecretRemovedEvent(any[ApplicationData], any[String])(any[HeaderCarrier])).thenReturn(Future.successful(true))
+    when(mockApiPlatformEventService.sendClientSecretAddedEvent(*[ApplicationData], *)(*)).thenReturn(Future.successful(true))
+    when(mockApiPlatformEventService.sendClientSecretRemovedEvent(*[ApplicationData], *)(*)).thenReturn(Future.successful(true))
 
     val underTest: CredentialService =
       new CredentialService(
         ApplicationRepoMock.aMock,
-        ApplicationUpdateServiceMock.aMock,
+        ApplicationCommandDispatcherMock.aMock,
         AuditServiceMock.aMock,
         ClientSecretServiceMock.aMock,
         credentialConfig,
@@ -189,7 +189,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
       ApplicationRepoMock.Fetch.thenReturn(updatedApplicationData)
 
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(updatedApplicationData)
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(updatedApplicationData)
 
       val result: ApplicationTokenResponse = await(underTest.addClientSecretNew(applicationId, secretRequestWithActor))
 
@@ -206,7 +206,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       ApplicationRepoMock.Fetch.thenReturnNone()
       intercept[NotFoundException](await(underTest.addClientSecretNew(applicationId, secretRequestWithActor)))
 
-      ApplicationUpdateServiceMock.Update.verifyNeverCalled
+      ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
     }
 
     "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {

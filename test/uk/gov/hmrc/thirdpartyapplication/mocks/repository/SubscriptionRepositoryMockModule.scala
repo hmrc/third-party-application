@@ -21,7 +21,7 @@ import scala.concurrent.Future.{failed, successful}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiIdentifier, ApplicationId, UpdateApplicationEvent, UpdatesSubscription}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
@@ -45,6 +45,15 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
         when(aMock.getSubscriptions(eqTo(id))).thenReturn(successful(subs.toList))
     }
 
+    object IsSubscribed {
+
+      def isTrue() =
+        when(aMock.isSubscribed(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(true))
+
+      def isFalse() =
+        when(aMock.isSubscribed(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(false))
+    }
+
     object GetSubscribers {
 
       def thenReturnWhen(apiIdentifier: ApiIdentifier)(subs: ApplicationId*) =
@@ -57,26 +66,21 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
         when(aMock.getSubscribers(*[ApiIdentifier])).thenReturn(failed(ex))
     }
 
+    object Add {
+
+      def succeeds() =
+        when(aMock.add(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(HasSucceeded))
+    }
+
     object Remove {
 
-      def thenReturnHasSucceeded() =
+      def succeeds() =
         when(aMock.remove(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(HasSucceeded))
+
+      def thenReturnHasSucceeded() = succeeds()
 
       def verifyCalledWith(appId: ApplicationId, apiIdentifier: ApiIdentifier) =
         verify.remove(eqTo(appId), eqTo(apiIdentifier))
-    }
-
-    object ApplyEvents {
-
-      def succeeds() = {
-        when(aMock.applyEvents(*)).thenReturn(successful(HasSucceeded))
-      }
-
-      def verifyCalledWith(events: (UpdateApplicationEvent with UpdatesSubscription)*) =
-        verify.applyEvents(events.toList)
-
-      def verifyNeverCalled =
-        SubscriptionRepoMock.verify(never).applyEvents(*[List[UpdateApplicationEvent with UpdatesSubscription]])
     }
   }
 
