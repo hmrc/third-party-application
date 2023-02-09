@@ -33,7 +33,8 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitatio
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationDataService, ApplicationService, GatekeeperService, SubscriptionService, TermsOfUseInvitationService}
+import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 @Singleton
 class GatekeeperController @Inject() (

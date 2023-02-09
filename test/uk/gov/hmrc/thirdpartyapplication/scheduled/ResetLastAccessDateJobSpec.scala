@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneAppPerSuite}
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 class ResetLastAccessDateJobSpec
     extends AsyncHmrcSpec

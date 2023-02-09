@@ -16,10 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
+import uk.gov.hmrc.apiplatform.modules.developers.domain
+
 case class Collaborator(
     emailAddress: String,
     role: Role.Role,
-    userId: UserId
+    userId: domain.models.UserId
   )
 
 object Collaborator {
