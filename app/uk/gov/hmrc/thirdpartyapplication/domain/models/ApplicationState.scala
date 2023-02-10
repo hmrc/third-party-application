@@ -48,6 +48,7 @@ case class ApplicationState(
   def isPendingRequesterVerification                                   = name == State.PENDING_REQUESTER_VERIFICATION
   def isInPreProductionOrProduction                                    = name == State.PRE_PRODUCTION || name == State.PRODUCTION
   def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification = name == State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION || name == State.PENDING_GATEKEEPER_APPROVAL
+  def isInProduction                                                   = name == State.PRE_PRODUCTION
   def isDeleted                                                        = name == State.DELETED
 
   def toProduction(clock: Clock) = {
