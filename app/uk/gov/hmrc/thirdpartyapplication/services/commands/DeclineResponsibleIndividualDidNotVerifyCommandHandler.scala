@@ -33,6 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineResponsibleIndividualDidNotVerify, ResponsibleIndividual, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
@@ -68,7 +69,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
           id = UpdateApplicationEvent.Id.random,
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(riVerification.requestingAdminEmail),
+          actor = Actors.Collaborator(riVerification.requestingAdminEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress.value,
           submissionId = riVerification.submissionId,
@@ -109,7 +110,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
           id = UpdateApplicationEvent.Id.random,
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(requesterEmail),
+          actor = Actors.Collaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress.value,
           submissionId = riVerification.submissionId,
@@ -122,7 +123,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
           id = UpdateApplicationEvent.Id.random,
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(requesterEmail),
+          actor = Actors.Collaborator(requesterEmail),
           decliningUserName = responsibleIndividual.fullName.value,
           decliningUserEmail = responsibleIndividual.emailAddress.value,
           submissionId = riVerification.submissionId,
@@ -135,7 +136,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
           id = UpdateApplicationEvent.Id.random,
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(requesterEmail),
+          actor = Actors.Collaborator(requesterEmail),
           app.state.name,
           State.TESTING,
           requestingAdminName = requesterName,

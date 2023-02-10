@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 
 class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -59,7 +60,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
 
     val userId    = idsByEmail(adminEmail)
     val timestamp = FixedClock.now
-    val actor     = CollaboratorActor(adminEmail)
+    val actor     = Actors.Collaborator(adminEmail)
 
     val update = ChangeProductionApplicationPrivacyPolicyLocation(userId, timestamp, newLocation)
 

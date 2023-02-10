@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
 
@@ -85,7 +86,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
   }
 
   val gatekeeperUser    = "gatekeeperuser"
-  val actor             = GatekeeperUserActor(gatekeeperUser)
+  val actor             = Actors.GatekeeperUser(gatekeeperUser)
   val reasons           = "reasons description text"
   val ts: LocalDateTime = FixedClock.now
 

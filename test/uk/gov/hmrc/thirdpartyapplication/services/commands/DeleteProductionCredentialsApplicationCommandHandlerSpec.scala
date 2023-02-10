@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
 
@@ -36,7 +37,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
     val appId                                = ApplicationId.random
     val appAdminEmail                        = loggedInUser
     val jobId                                = "DeleteUnusedApplicationsJob"
-    val actor                                = ScheduledJobActor(jobId)
+    val actor                                = Actors.ScheduledJob(jobId)
     val reasons                              = "reasons description text"
     val app                                  = anApplicationData(appId, environment = Environment.SANDBOX, state = ApplicationState.testing)
     val ts                                   = FixedClock.now

@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModu
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec
@@ -62,7 +63,7 @@ class NotificationServiceSpec
     )
 
     val adminEmail     = "admin@example.com"
-    val devHubUser     = CollaboratorActor(adminEmail)
+    val devHubUser     = Actors.Collaborator(adminEmail)
     val gatekeeperUser = "gkuser"
     val oldAppName     = "old name"
     val newAppName     = "new name"
@@ -76,7 +77,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         FixedClock.now,
-        UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser),
+        Actors.GatekeeperUser(gatekeeperUser),
         oldAppName,
         newAppName,
         adminEmail
@@ -194,7 +195,7 @@ class NotificationServiceSpec
         ApplicationId.random,
         "app name",
         FixedClock.now,
-        CollaboratorActor("admin@example.com"),
+        Actors.Collaborator("admin@example.com"),
         "admin name",
         "admin@example.com",
         "ri name",
@@ -221,7 +222,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        CollaboratorActor("admin@example.com"),
+        Actors.Collaborator("admin@example.com"),
         "old ri name",
         "oldri@example.com",
         "ri name",
@@ -250,7 +251,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        CollaboratorActor("admin@example.com"),
+        Actors.Collaborator("admin@example.com"),
         "old ri name",
         "oldri@example.com",
         Submission.Id.random,
@@ -276,7 +277,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        CollaboratorActor("admin@example.com"),
+        Actors.Collaborator("admin@example.com"),
         "ri name",
         "ri@example.com",
         Submission.Id.random,
@@ -302,7 +303,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        CollaboratorActor("admin@example.com"),
+        Actors.Collaborator("admin@example.com"),
         "ri name",
         "ri@example.com",
         Submission.Id.random,
@@ -323,7 +324,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        CollaboratorActor("admin@example.com"),
+        Actors.Collaborator("admin@example.com"),
         "ri name",
         "ri@example.com",
         Submission.Id.random,
@@ -351,7 +352,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        CollaboratorActor(requestingAdminEmail),
+        Actors.Collaborator(requestingAdminEmail),
         "someClientSecretId",
         obfuscatedSecret
       )
@@ -372,7 +373,7 @@ class NotificationServiceSpec
       val requestingAdminEmail = "dev@example.com"
       EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
       val event                =
-        ClientSecretRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, CollaboratorActor(requestingAdminEmail), clientSecretId, clientSecretName)
+        ClientSecretRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.Collaborator(requestingAdminEmail), clientSecretId, clientSecretName)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -396,7 +397,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        CollaboratorActor("dev@example.com"),
+        Actors.Collaborator("dev@example.com"),
         collaborator.userId,
         collaborator.emailAddress,
         collaborator.role,
@@ -430,7 +431,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        CollaboratorActor("dev@example.com"),
+        Actors.Collaborator("dev@example.com"),
         collaborator.userId,
         collaborator.emailAddress,
         collaborator.role,
@@ -458,7 +459,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         applicationData.id,
         FixedClock.now,
-        GatekeeperUserActor("gatekeeperuser"),
+        Actors.GatekeeperUser("gatekeeperuser"),
         ClientId("clientId"),
         "wso2AppName",
         "reasons",
@@ -476,7 +477,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         applicationData.id,
         FixedClock.now,
-        GatekeeperUserActor("gatekeeperuser"),
+        Actors.GatekeeperUser("gatekeeperuser"),
         ClientId("clientId"),
         "wso2AppName",
         "reasons"

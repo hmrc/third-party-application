@@ -44,7 +44,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{RateLimitTier, SILVER}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.GatekeeperUserActor
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
@@ -55,6 +54,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -191,7 +191,7 @@ class ApplicationServiceSpec
         }
       )
       val updateRedirectUris                  = UpdateRedirectUris(
-        actor = GatekeeperUserActor("Gatekeeper Admin"),
+        actor = Actors.GatekeeperUser("Gatekeeper Admin"),
         oldRedirectUris = List.empty,
         newRedirectUris = newRedirectUris,
         timestamp = FixedClock.now

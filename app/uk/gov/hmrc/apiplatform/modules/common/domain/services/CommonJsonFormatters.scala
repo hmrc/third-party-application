@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services.commands
+package uk.gov.hmrc.apiplatform.modules.common.domain.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import play.api.libs.json.EnvReads
+import java.time.format.DateTimeFormatter
 
-trait CommandActorExamples {
-  self: ApplicationTestData =>
+trait CommonJsonFormatters {
 
-  val gkUserEmail = "admin@gatekeeper"
-  val gkUserActor = Actors.GatekeeperUser(gkUserEmail)
+  private object READS extends EnvReads
 
-  val developerUserId = idOf(devEmail)
-  val developerActor  = Actors.Collaborator(devEmail)
-
-  val adminUserId = idOf(adminEmail)
-  val adminActor  = Actors.Collaborator(adminEmail)
+  implicit val tolerantInstantReader = READS.instantReads(DateTimeFormatter.ISO_INSTANT, (in) => if (in.last == 'Z') in else s"${in}Z")
 }
+
+object CommonJsonFormatters extends CommonJsonFormatters

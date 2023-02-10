@@ -28,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class VerifyResponsibleIndividualCommandHandler @Inject() (
@@ -66,7 +67,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
         applicationId = app.id,
         app.name,
         eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(requesterEmail),
+        actor = Actors.Collaborator(requesterEmail),
         cmd.requesterName,
         requestingAdminEmail = getRequester(app, cmd.instigator),
         responsibleIndividualName = cmd.riName,

@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor, GatekeeperUserActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, Collaborator, OldActor}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 
 trait ActorHelper {
 
@@ -38,12 +38,12 @@ trait ActorHelper {
   def getActorFromContext(userContext: Map[String, String], collaborators: Set[Collaborator]): Actor =
     userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
       .map(email => deriveActor(email, collaborators))
-      .getOrElse(GatekeeperUserActor("Gatekeeper Admin"))
+      .getOrElse(Actors.GatekeeperUser("Gatekeeper Admin"))
 
   private def deriveActor(userEmail: String, collaborators: Set[Collaborator]): Actor =
     collaborators.find(_.emailAddress.equalsIgnoreCase(userEmail)) match {
-      case None                  => GatekeeperUserActor("Gatekeeper Admin")
-      case Some(_: Collaborator) => CollaboratorActor(userEmail)
+      case None                  => Actors.GatekeeperUser("Gatekeeper Admin")
+      case Some(_: Collaborator) => Actors.Collaborator(userEmail)
     }
 
 }

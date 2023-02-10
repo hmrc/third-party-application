@@ -22,6 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class AddCollaboratorCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -43,7 +44,7 @@ class AddCollaboratorCommandHandlerSpec
     val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, adminsToEmail, timestamp)
     val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, adminsToEmail, timestamp)
 
-    def checkSuccessResult(expectedActor: CollaboratorActor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actors.Collaborator)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>

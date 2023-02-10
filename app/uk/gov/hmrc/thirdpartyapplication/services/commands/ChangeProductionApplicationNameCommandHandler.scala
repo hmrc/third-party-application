@@ -24,12 +24,13 @@ import cats.data._
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{GatekeeperUserActor, ProductionAppNameChanged}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ProductionAppNameChanged
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationName, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class ChangeProductionApplicationNameCommandHandler @Inject() (
@@ -60,7 +61,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = GatekeeperUserActor(cmd.gatekeeperUser),
+        actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         oldAppName = app.name,
         newAppName = cmd.newName,
         requestingAdminEmail = getRequester(app, cmd.instigator)

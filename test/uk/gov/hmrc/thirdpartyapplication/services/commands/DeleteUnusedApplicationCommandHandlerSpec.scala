@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
 
@@ -38,7 +39,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
 
     val appId: ApplicationId                 = ApplicationId.random
     val appAdminEmail: String                = loggedInUser
-    val actor: ScheduledJobActor             = ScheduledJobActor("DeleteUnusedApplicationsJob")
+    val actor: Actors.ScheduledJob             = Actors.ScheduledJob("DeleteUnusedApplicationsJob")
     val app: ApplicationData                 = anApplicationData(appId, environment = Environment.SANDBOX)
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 

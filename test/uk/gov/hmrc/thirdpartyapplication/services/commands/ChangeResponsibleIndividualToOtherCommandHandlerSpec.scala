@@ -32,6 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -105,7 +106,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
           case riSet: ResponsibleIndividualSet =>
             riSet.applicationId shouldBe appId
             riSet.eventDateTime shouldBe ts
-            riSet.actor shouldBe CollaboratorActor(appAdminEmail)
+            riSet.actor shouldBe Actors.Collaborator(appAdminEmail)
             riSet.responsibleIndividualName shouldBe riName
             riSet.responsibleIndividualEmail shouldBe riEmail
             riSet.submissionIndex shouldBe submission.latestInstance.index
@@ -118,7 +119,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
           case stateEvent: ApplicationStateChanged =>
             stateEvent.applicationId shouldBe appId
             stateEvent.eventDateTime shouldBe ts
-            stateEvent.actor shouldBe CollaboratorActor(appAdminEmail)
+            stateEvent.actor shouldBe Actors.Collaborator(appAdminEmail)
             stateEvent.requestingAdminEmail shouldBe requesterEmail
             stateEvent.requestingAdminName shouldBe requesterName
             stateEvent.newAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL
@@ -137,7 +138,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
           case riChanged: ResponsibleIndividualChanged =>
             riChanged.applicationId shouldBe appId
             riChanged.eventDateTime shouldBe ts
-            riChanged.actor shouldBe CollaboratorActor(appAdminEmail)
+            riChanged.actor shouldBe Actors.Collaborator(appAdminEmail)
             riChanged.newResponsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
             riChanged.newResponsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress.value
             riChanged.previousResponsibleIndividualName shouldBe riName

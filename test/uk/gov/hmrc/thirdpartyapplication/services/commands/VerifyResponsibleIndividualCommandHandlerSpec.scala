@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class VerifyResponsibleIndividualCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -95,7 +96,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
             event.applicationId shouldBe applicationId
             event.applicationName shouldBe app.name
             event.eventDateTime shouldBe ts
-            event.actor shouldBe CollaboratorActor(appAdminEmail)
+            event.actor shouldBe Actors.Collaborator(appAdminEmail)
             event.responsibleIndividualName shouldBe riName
             event.responsibleIndividualEmail shouldBe riEmail
             event.submissionIndex shouldBe submission.latestInstance.index

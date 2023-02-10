@@ -32,6 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{
 }
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
@@ -64,7 +65,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
           id = UpdateApplicationEvent.Id.random,
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(getRequester(app, cmd.instigator)),
+          actor = Actors.Collaborator(getRequester(app, cmd.instigator)),
           oldUrl = oldUrl,
           newUrl = newUrl
         )
@@ -98,7 +99,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
           id = UpdateApplicationEvent.Id.random,
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(getRequester(app, cmd.instigator)),
+          actor = Actors.Collaborator(getRequester(app, cmd.instigator)),
           oldLocation = oldLocation,
           newLocation = cmd.newLocation
         )

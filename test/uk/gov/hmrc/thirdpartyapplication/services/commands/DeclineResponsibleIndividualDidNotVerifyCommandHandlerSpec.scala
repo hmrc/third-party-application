@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 
 class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -111,7 +112,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       SubmissionsServiceMock.aMock
     )
 
-    def checkSuccessResultToU(expectedActor: UpdateApplicationEvent.Actor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultToU(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -121,7 +122,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
           case riDeclined: ResponsibleIndividualDeclined =>
             riDeclined.applicationId shouldBe applicationId
             riDeclined.eventDateTime shouldBe ts
-            riDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
+            riDeclined.actor shouldBe Actors.Collaborator(appAdminEmail)
             riDeclined.responsibleIndividualName shouldBe riName
             riDeclined.responsibleIndividualEmail shouldBe riEmail
             riDeclined.submissionIndex shouldBe submission.latestInstance.index
@@ -133,7 +134,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
           case appApprovalRequestDeclined: ApplicationApprovalRequestDeclined =>
             appApprovalRequestDeclined.applicationId shouldBe applicationId
             appApprovalRequestDeclined.eventDateTime shouldBe ts
-            appApprovalRequestDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
+            appApprovalRequestDeclined.actor shouldBe Actors.Collaborator(appAdminEmail)
             appApprovalRequestDeclined.decliningUserName shouldBe riName
             appApprovalRequestDeclined.decliningUserEmail shouldBe riEmail
             appApprovalRequestDeclined.submissionIndex shouldBe submission.latestInstance.index
@@ -146,7 +147,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
           case stateEvent: ApplicationStateChanged =>
             stateEvent.applicationId shouldBe applicationId
             stateEvent.eventDateTime shouldBe ts
-            stateEvent.actor shouldBe CollaboratorActor(appAdminEmail)
+            stateEvent.actor shouldBe Actors.Collaborator(appAdminEmail)
             stateEvent.requestingAdminEmail shouldBe requesterEmail
             stateEvent.requestingAdminName shouldBe requesterName
             stateEvent.newAppState shouldBe State.TESTING
@@ -155,7 +156,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       }
     }
 
-    def checkSuccessResultUpdate(expectedActor: UpdateApplicationEvent.Actor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultUpdate(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -165,7 +166,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
           case riDeclined: ResponsibleIndividualDeclinedUpdate =>
             riDeclined.applicationId shouldBe applicationId
             riDeclined.eventDateTime shouldBe ts
-            riDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
+            riDeclined.actor shouldBe Actors.Collaborator(appAdminEmail)
             riDeclined.responsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
             riDeclined.responsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress.value
             riDeclined.submissionIndex shouldBe submission.latestInstance.index
@@ -193,7 +194,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       SubmissionsServiceMock.DeclineApprovalRequest.succeeds()
       StateHistoryRepoMock.AddRecord.succeeds()
 
-      checkSuccessResultToU(CollaboratorActor(appAdminEmail)) {
+      checkSuccessResultToU(Actors.Collaborator(appAdminEmail)) {
         underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, ts))
       }
     }
@@ -204,7 +205,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
 
       val prodApp = app.copy(state = ApplicationState.production(requesterEmail, requesterName))
 
-      checkSuccessResultUpdate(CollaboratorActor(appAdminEmail)) {
+      checkSuccessResultUpdate(Actors.Collaborator(appAdminEmail)) {
         underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, ts))
       }
     }

@@ -47,7 +47,6 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -57,6 +56,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, Gatekeeper
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -551,7 +551,7 @@ class ApplicationControllerSpec
     val applicationId             = ApplicationId.random
     val applicationTokensResponse =
       ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
-    val secretRequest             = ClientSecretRequestWithActor(CollaboratorActor("actor@example.com"), FixedClock.now)
+    val secretRequest             = ClientSecretRequestWithActor(Actors.Collaborator("actor@example.com"), FixedClock.now)
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(
@@ -1477,7 +1477,7 @@ class ApplicationControllerSpec
   "temp" should {
     "dump some json" in {
       val e: UpdateApplicationEvent =
-        UpdateApplicationEvent.ApiSubscribed(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, UpdateApplicationEvent.CollaboratorActor("bob"), "bob", "1.0")
+        UpdateApplicationEvent.ApiSubscribed(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.Collaborator("bob"), "bob", "1.0")
 
       val txt = Json.toJson(e).toString.replace("447", "447Z")
 

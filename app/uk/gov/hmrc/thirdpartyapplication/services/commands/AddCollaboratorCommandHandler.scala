@@ -23,10 +23,11 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, CollaboratorAdded}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorAdded
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class AddCollaboratorCommandHandler @Inject() (
@@ -38,11 +39,11 @@ class AddCollaboratorCommandHandler @Inject() (
 
   private def validate(app: ApplicationData, cmd: AddCollaborator): Validated[CommandFailures, Unit] = {
     cmd.actor match {
-      case CollaboratorActor(actorEmail: String) => Apply[Validated[CommandFailures, *]].map2(
+      case Actors.Collaborator(actorEmail: String) => Apply[Validated[CommandFailures, *]].map2(
           isCollaboratorOnApp(actorEmail, app),
           collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)
         ) { case _ => () }
-      case _                                     => Apply[Validated[CommandFailures, *]]
+      case _                                       => Apply[Validated[CommandFailures, *]]
           .map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app))(_ => ())
     }
   }

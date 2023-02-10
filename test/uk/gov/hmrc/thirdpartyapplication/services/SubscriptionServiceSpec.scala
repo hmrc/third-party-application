@@ -30,7 +30,6 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, GOLD, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -40,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -135,9 +135,9 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val applicationId = ApplicationId.random
     val apiIdentifier = ApiIdentifier.random
 
-    "return successfully using the correct CollaboratorActor if the collaborator is a member of the application" in new Setup {
+    "return successfully using the correct Actors.Collaborator if the collaborator is a member of the application" in new Setup {
       val application = anApplicationData(applicationId)
-      val actor       = CollaboratorActor(loggedInUser)
+      val actor       = Actors.Collaborator(loggedInUser)
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(application)
 
@@ -150,7 +150,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     "return successfully using a GatekeeperUserCollaborator if there are no developers in the header carrier" in new SetupWithoutHc {
       implicit val hc     = HeaderCarrier()
       val applicationData = anApplicationData(applicationId)
-      val actor           = GatekeeperUserActor("Gatekeeper Admin")
+      val actor           = Actors.GatekeeperUser("Gatekeeper Admin")
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
 
@@ -162,7 +162,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
     "return successfully using a GatekeeperUserCollaborator if the logged in user is not a member of the application" in new Setup {
       val applicationData = anApplicationData(applicationId, collaborators = Set.empty)
-      val actor           = GatekeeperUserActor("Gatekeeper Admin")
+      val actor           = Actors.GatekeeperUser("Gatekeeper Admin")
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
 

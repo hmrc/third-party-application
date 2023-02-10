@@ -28,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividualToSelf, ImportantSubmissionData, Standard, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
@@ -81,7 +82,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(requesterEmail),
+        actor = Actors.Collaborator(requesterEmail),
         previousResponsibleIndividualName = previousResponsibleIndividual.fullName.value,
         previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress.value,
         submissionId = submission.id,

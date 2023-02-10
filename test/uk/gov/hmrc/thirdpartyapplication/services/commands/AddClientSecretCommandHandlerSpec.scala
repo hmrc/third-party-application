@@ -18,11 +18,12 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretAddedV2, CollaboratorActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ClientSecretAddedV2
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class AddClientSecretCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -39,10 +40,10 @@ class AddClientSecretCommandHandlerSpec
     val secretValue  = "secret"
     val clientSecret = ClientSecret("name", timestamp, hashedSecret = "hashed")
 
-    val addClientSecretByDev   = AddClientSecret(CollaboratorActor(devEmail), clientSecret, timestamp)
-    val addClientSecretByAdmin = AddClientSecret(CollaboratorActor(adminEmail), clientSecret, timestamp)
+    val addClientSecretByDev   = AddClientSecret(Actors.Collaborator(devEmail), clientSecret, timestamp)
+    val addClientSecretByAdmin = AddClientSecret(Actors.Collaborator(adminEmail), clientSecret, timestamp)
 
-    def checkSuccessResult(expectedActor: CollaboratorActor)(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult(expectedActor: Actors.Collaborator)(result: CommandHandler.CommandSuccess) = {
       inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head

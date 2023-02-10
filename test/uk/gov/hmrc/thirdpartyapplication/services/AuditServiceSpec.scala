@@ -42,6 +42,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with FixedClock
     with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
@@ -152,8 +153,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     val requesterName  = "bill badger"
     val appInTesting   = applicationData.copy(state = ApplicationState.testing)
 
-    val gatekeeperActor            = GatekeeperUserActor(gatekeeperUser)
-    val collaboratorActor          = CollaboratorActor(applicationData.collaborators.head.emailAddress)
+    val gatekeeperActor            = Actors.GatekeeperUser(gatekeeperUser)
+    val collaboratorActor          = Actors.Collaborator(applicationData.collaborators.head.emailAddress)
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     "applyEvents with a single ApplicationApprovalRequestDeclined event" in new Setup {
@@ -162,7 +163,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         UpdateApplicationEvent.Id.random,
         applicationId,
         timestamp,
-        GatekeeperUserActor(gatekeeperUser),
+        Actors.GatekeeperUser(gatekeeperUser),
         gatekeeperUser,
         gatekeeperUser,
         Submission.Id.random,

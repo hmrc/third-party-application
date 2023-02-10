@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByGatek
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class DeleteApplicationByGatekeeperCommandHandler @Inject() (
@@ -57,7 +58,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = GatekeeperUserActor(cmd.gatekeeperUser),
+        actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons,
@@ -67,7 +68,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = GatekeeperUserActor(cmd.gatekeeperUser),
+        actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         app.state.name,
         State.DELETED,
         requestingAdminName = requesterEmail,

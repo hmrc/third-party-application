@@ -22,15 +22,16 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.ActorJsonFormatters
 
 trait ApplicationCommand {
   def timestamp: LocalDateTime
 }
 
-case class AddClientSecret(actor: CollaboratorActor, clientSecret: ClientSecret, timestamp: LocalDateTime)                                              extends ApplicationCommand
-case class RemoveClientSecret(actor: CollaboratorActor, clientSecretId: String, timestamp: LocalDateTime)                                               extends ApplicationCommand
+case class AddClientSecret(actor: Actors.Collaborator, clientSecret: ClientSecret, timestamp: LocalDateTime)                                            extends ApplicationCommand
+case class RemoveClientSecret(actor: Actors.Collaborator, clientSecretId: String, timestamp: LocalDateTime)                                             extends ApplicationCommand
 case class AddCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                              extends ApplicationCommand
 case class RemoveCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                           extends ApplicationCommand
 case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation)           extends ApplicationCommand
@@ -56,7 +57,7 @@ case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: St
 case class DeleteApplicationByGatekeeper(gatekeeperUser: String, requestedByEmailAddress: String, reasons: String, timestamp: LocalDateTime)
     extends GatekeeperSpecificApplicationCommand
 
-trait ApplicationCommandFormatters {
+trait ApplicationCommandFormatters extends ActorJsonFormatters {
   implicit val addClientSecretFormatter                        = Json.format[AddClientSecret]
   implicit val removeClientSecretFormatter                     = Json.format[RemoveClientSecret]
   implicit val addCollaboratorFormatter                        = Json.format[AddCollaborator]
