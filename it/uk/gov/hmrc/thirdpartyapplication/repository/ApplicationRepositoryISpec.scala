@@ -44,6 +44,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import java.time.temporal.ChronoUnit
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
@@ -2534,7 +2535,7 @@ class ApplicationRepositoryISpec
         responsibleIndividual,
         Set.empty,
         TermsAndConditionsLocations.InDesktopSoftware,
-        PrivacyPolicyLocation.InDesktopSoftware,
+        PrivacyPolicyLocations.InDesktopSoftware,
         termsOfUseAcceptances = List()
       )
       val application             = anApplicationDataForTest(applicationId).copy(access =
@@ -2894,8 +2895,8 @@ class ApplicationRepositoryISpec
 
   "handle ProductionAppPrivacyPolicyLocationChanged correctly" in {
     val applicationId = ApplicationId.random
-    val oldLocation   = PrivacyPolicyLocation.InDesktopSoftware
-    val newLocation   = PrivacyPolicyLocation.Url("http://example.com")
+    val oldLocation   = PrivacyPolicyLocations.InDesktopSoftware
+    val newLocation   = PrivacyPolicyLocations.Url("http://example.com")
     val access        = Standard(
       List.empty,
       None,
@@ -2949,7 +2950,7 @@ class ApplicationRepositoryISpec
       Set.empty,
       None,
       Some(
-        ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty, oldLocation, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
+        ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty, oldLocation, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
       )
     )
     val app           = anApplicationData(applicationId).copy(access = access)
@@ -2982,7 +2983,7 @@ class ApplicationRepositoryISpec
     val ts                      = FixedClock.now.truncatedTo(ChronoUnit.MILLIS)
     val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
     val importantSubmissionData =
-      ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocations.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
+      ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocations.InDesktopSoftware, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
     val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = anApplicationData(applicationId).copy(access = access)
 
@@ -3006,7 +3007,7 @@ class ApplicationRepositoryISpec
       oldRi,
       Set.empty,
       TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List(TermsOfUseAcceptance(oldRi, FixedClock.now, submissionId, submissionIndex))
     )
     val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
@@ -3056,7 +3057,7 @@ class ApplicationRepositoryISpec
       oldRi,
       Set.empty,
       TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List(TermsOfUseAcceptance(oldRi, FixedClock.now, submissionId, submissionIndex))
     )
     val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
@@ -3088,7 +3089,7 @@ class ApplicationRepositoryISpec
               ResponsibleIndividual.build("ri name", "ri@example.com"),
               Set.empty,
               TermsAndConditionsLocations.InDesktopSoftware,
-              PrivacyPolicyLocation.InDesktopSoftware,
+              PrivacyPolicyLocations.InDesktopSoftware,
               List.empty
             ))
           case false => None

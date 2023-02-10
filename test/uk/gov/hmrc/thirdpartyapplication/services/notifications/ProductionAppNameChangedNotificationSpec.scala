@@ -24,6 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 
 class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -43,7 +44,7 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
       responsibleIndividual,
       Set(ServerLocation.InUK),
       TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )
 

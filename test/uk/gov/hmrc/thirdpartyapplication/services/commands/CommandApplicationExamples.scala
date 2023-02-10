@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, HasApplicationId}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 
 trait CommandApplicationExamples extends HasApplicationId {
   self: ApplicationTestData with CommandCollaboratorExamples =>
@@ -32,7 +33,7 @@ trait CommandApplicationExamples extends HasApplicationId {
   val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())
 
   val responsibleIndividual      = ResponsibleIndividual.build("bob example", "bob@example.com")
-  val privicyPolicyLocation      = PrivacyPolicyLocation.InDesktopSoftware
+  val privicyPolicyLocation      = PrivacyPolicyLocations.InDesktopSoftware
   val termsAndConditionsLocation = TermsAndConditionsLocations.InDesktopSoftware
 
   val testImportantSubmissionData = ImportantSubmissionData(
