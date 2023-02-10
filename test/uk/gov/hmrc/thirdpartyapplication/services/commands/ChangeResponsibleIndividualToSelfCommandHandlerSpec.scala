@@ -33,6 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -59,8 +60,8 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
 
     val app       = anApplicationData(appId).copy(
       collaborators = Set(
-        Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId),
-        Collaborator(oldRiEmail, Role.ADMINISTRATOR, oldRiUserId)
+        Collaborator(appAdminEmail, Roles.ADMINISTRATOR, appAdminUserId),
+        Collaborator(oldRiEmail, Roles.ADMINISTRATOR, oldRiUserId)
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )

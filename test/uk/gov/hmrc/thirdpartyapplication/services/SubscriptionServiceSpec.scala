@@ -29,7 +29,6 @@ import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, GOLD, RateLimitTier}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -42,6 +41,7 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -261,7 +261,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   private def anApplicationData(
       applicationId: ApplicationId,
       state: ApplicationState = productionState(requestedByEmail),
-      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random)),
+      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, Roles.ADMINISTRATOR, UserId.random)),
       rateLimitTier: Option[RateLimitTier] = Some(BRONZE)
     ) = {
     new ApplicationData(

@@ -23,6 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandActorExamples
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class RemoveClientSecretCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -33,8 +34,8 @@ class RemoveClientSecretCommandHandlerSpec
   trait Setup {
     val underTest = new RemoveClientSecretCommandHandler(ApplicationRepoMock.aMock)
 
-    val developerCollaborator = Collaborator(devEmail, Role.DEVELOPER, developerUserId)
-    val adminCollaborator     = Collaborator(adminEmail, Role.ADMINISTRATOR, adminUserId)
+    val developerCollaborator = Collaborator(devEmail, Roles.DEVELOPER, developerUserId)
+    val adminCollaborator     = Collaborator(adminEmail, Roles.ADMINISTRATOR, adminUserId)
 
     val applicationId = ApplicationId.random
 

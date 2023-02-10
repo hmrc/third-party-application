@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -51,8 +52,8 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
 
     val app                  = anApplicationData(applicationId).copy(
       collaborators = Set(
-        Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
-        Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
+        Collaborator(devEmail, Roles.DEVELOPER, idOf(devEmail)),
+        Collaborator(adminEmail, Roles.ADMINISTRATOR, idOf(adminEmail))
       ),
       name = oldName,
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))

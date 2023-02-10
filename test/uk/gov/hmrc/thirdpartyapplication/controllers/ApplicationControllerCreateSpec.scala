@@ -38,7 +38,6 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, _}
@@ -49,6 +48,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks
@@ -64,8 +64,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   implicit lazy val materializer: Materializer = NoMaterializer
 
   val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
-    Collaborator("dev@example.com", DEVELOPER, UserId.random)
+    Collaborator("admin@example.com", Roles.ADMINISTRATOR, UserId.random),
+    Collaborator("dev@example.com", Roles.DEVELOPER, UserId.random)
   )
 
   private val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
@@ -317,9 +317,17 @@ class ApplicationControllerCreateSpec extends ControllerSpec
            |"name" : "My Application",
            |"description" : "Description",
            |"environment": "PRODUCTION",
-           |"redirectUris": ["http://example.com/redirect"],
-           |"termsAndConditionsUrl": "http://example.com/terms",
-           |"privacyPolicyUrl": "http://example.com/privacy",
+           |"access" : {
+           |  "redirectUris" : [ "http://example.com/redirect" ],
+           |  "overrides" : [ ]
+           |},
+           |"upliftRequest" : {
+           |  "sellResellOrDistribute" : "Yes",
+           |  "subscriptions" : [ {
+           |    "context" : "itkdcZFWi4",
+           |    "version" : "477.148"
+           |  } ]
+           |},
            |"collaborators": [
            |{
            |"emailAddress": "admin@example.com",
@@ -333,16 +341,13 @@ class ApplicationControllerCreateSpec extends ControllerSpec
            |}]
            |}""".stripMargin.replaceAll("\n", "")
 
+      
       val result = underTest.create()(request.withBody(Json.parse(body)))
 
-      val expected: String =
-        s"""{
-           |"code": "INVALID_REQUEST_PAYLOAD",
-           |"message": "Enumeration expected of type: 'Role$$', but it does not contain 'developer'"
-           |}""".stripMargin.replaceAll("\n", "")
-
       status(result) shouldBe UNPROCESSABLE_ENTITY
-      contentAsJson(result) shouldBe Json.toJson(Json.parse(expected))
+      val content = contentAsJson(result).toString
+      content should include(""""code":"INVALID_REQUEST_PAYLOAD"""")
+      content should include(""""There is no role for 'developer'"""")
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -383,8 +388,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     Some("Description"),
     Environment.PRODUCTION,
     Set(
-      Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
-      Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
+      Collaborator("admin@example.com", Roles.ADMINISTRATOR, UserId.random),
+      Collaborator("dev@example.com", Roles.ADMINISTRATOR, UserId.random)
     ),
     Some(Set(ApiIdentifier.random))
   )
@@ -395,8 +400,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     Some("Description"),
     Environment.PRODUCTION,
     Set(
-      Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
-      Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
+      Collaborator("admin@example.com", Roles.ADMINISTRATOR, UserId.random),
+      Collaborator("dev@example.com", Roles.ADMINISTRATOR, UserId.random)
     ),
     makeUpliftRequest(ApiIdentifier.random),
     "bob@example.com",

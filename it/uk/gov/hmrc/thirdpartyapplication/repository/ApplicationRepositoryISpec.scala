@@ -47,6 +47,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndCondit
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
@@ -2688,7 +2689,7 @@ class ApplicationRepositoryISpec
       val userId         = UserId.random
 
       val collaborator     =
-        Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+        Collaborator("user@example.com", Roles.ADMINISTRATOR, userId)
       val testApplication1 = anApplicationDataForTest(applicationId1)
         .copy(collaborators = Set(collaborator))
       val testApplication2 =
@@ -2717,7 +2718,7 @@ class ApplicationRepositoryISpec
       val userId         = UserId.random
 
       val collaborator     =
-        Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+        Collaborator("user@example.com", Roles.ADMINISTRATOR, userId)
       val testApplication1 = anApplicationDataForTest(applicationId1)
         .copy(collaborators = Set(collaborator))
       val testApplication2 =
@@ -2749,7 +2750,7 @@ class ApplicationRepositoryISpec
       val productionEnv  = Environment.PRODUCTION.toString
 
       val collaborator =
-        Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+        Collaborator("user@example.com", Roles.ADMINISTRATOR, userId)
 
       val prodApplication1   = anApplicationDataForTest(applicationId1)
         .copy(environment = productionEnv, collaborators = Set(collaborator))
@@ -2790,7 +2791,7 @@ class ApplicationRepositoryISpec
       val productionEnv  = Environment.PRODUCTION.toString
 
       val collaborator =
-        Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+        Collaborator("user@example.com", Roles.ADMINISTRATOR, userId)
 
       val prodApplication1   = anApplicationDataForTest(applicationId1)
         .copy(environment = productionEnv, collaborators = Set(collaborator))
@@ -2873,7 +2874,7 @@ class ApplicationRepositoryISpec
     val app = anApplicationData(applicationId)
     await(applicationRepository.save(app))
 
-    val collaborator          = Collaborator("email", Role.DEVELOPER, idOf("email"))
+    val collaborator          = Collaborator("email", Roles.DEVELOPER, idOf("email"))
     val existingCollaborators = app.collaborators
 
     val appWithNewCollaborator = await(applicationRepository.addCollaborator(applicationId, collaborator))
@@ -2883,8 +2884,8 @@ class ApplicationRepositoryISpec
   "handle removeCollaborator correctly" in {
     val applicationId = ApplicationId.random
 
-    val developerCollaborator = Collaborator("email", Role.DEVELOPER, idOf("email"))
-    val adminCollaborator     = Collaborator("email2", Role.ADMINISTRATOR, idOf("email2"))
+    val developerCollaborator = Collaborator("email", Roles.DEVELOPER, idOf("email"))
+    val adminCollaborator     = Collaborator("email2", Roles.ADMINISTRATOR, idOf("email2"))
     val app                   = anApplicationData(applicationId, collaborators = Set(developerCollaborator, adminCollaborator))
     await(applicationRepository.save(app))
 
@@ -3176,8 +3177,8 @@ class ApplicationRepositoryISpec
     val developerEmail1 = "john.doe@example.com"
     val developerEmail2 = "someone-else@example.com"
 
-    val user1 = Collaborator(developerEmail1, Role.DEVELOPER, UserId.random)
-    val user2 = Collaborator(developerEmail2, Role.DEVELOPER, UserId.random)
+    val user1 = Collaborator(developerEmail1, Roles.DEVELOPER, UserId.random)
+    val user2 = Collaborator(developerEmail2, Roles.DEVELOPER, UserId.random)
 
     "return only the APIs that the user's apps are subscribed to, without duplicates" in {
       val app1            = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
@@ -3261,7 +3262,7 @@ class ApplicationRepositoryISpec
       access: Access = Standard(),
       grantLength: Int = defaultGrantLength,
       users: Set[Collaborator] = Set(
-        Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)
+        Collaborator("user@example.com", Roles.ADMINISTRATOR, UserId.random)
       ),
       checkInformation: Option[CheckInformation] = None,
       clientSecrets: List[ClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret"))
@@ -3287,7 +3288,7 @@ class ApplicationRepositoryISpec
       state: ApplicationState = testingState(),
       access: Access = Standard(),
       users: Set[Collaborator] = Set(
-        Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)
+        Collaborator("user@example.com", Roles.ADMINISTRATOR, UserId.random)
       ),
       checkInformation: Option[CheckInformation] = None,
       clientSecrets: List[ClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),

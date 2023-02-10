@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 import java.time.ZoneOffset
 import java.util.UUID
@@ -319,7 +320,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       Then("The collaborator is added")
       result shouldBe AddCollaboratorResponse(registeredUser = true)
       val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.collaborators should contain(Collaborator("test@example.com", Role.ADMINISTRATOR, testUserId))
+      fetchedApplication.collaborators should contain(Collaborator("test@example.com", Roles.ADMINISTRATOR, testUserId))
 
       apiPlatformEventsStub.verifyTeamMemberAddedEventSent()
     }
@@ -342,7 +343,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
 
       Then("The collaborator is removed")
       val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.collaborators should not contain Collaborator(emailAddress, Role.DEVELOPER, userId)
+      fetchedApplication.collaborators should not contain Collaborator(emailAddress, Roles.DEVELOPER, userId)
 
       apiPlatformEventsStub.verifyTeamMemberRemovedEventSent()
     }

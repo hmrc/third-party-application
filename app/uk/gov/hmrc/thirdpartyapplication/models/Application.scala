@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 trait CreateApplicationRequest {
   def name: String
@@ -42,7 +43,7 @@ trait CreateApplicationRequest {
 
   def validate(in: CreateApplicationRequest): Unit = {
     require(in.name.nonEmpty, "name is required")
-    require(in.collaborators.exists(_.role == Role.ADMINISTRATOR), "at least one ADMINISTRATOR collaborator is required")
+    require(in.collaborators.exists(_.role == Roles.ADMINISTRATOR), "at least one ADMINISTRATOR collaborator is required")
     require(in.collaborators.size == collaborators.map(_.emailAddress.toLowerCase).size, "duplicate email in collaborator")
   }
 }

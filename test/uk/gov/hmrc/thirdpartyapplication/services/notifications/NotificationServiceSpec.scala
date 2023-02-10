@@ -36,6 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndCondit
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec
@@ -396,7 +397,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendCollaboratorAddedConfirmation.thenReturnSuccess()
 
       val collaboratorEmail = "somedev@someCompany.com"
-      val collaborator      = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
+      val collaborator      = Collaborator(collaboratorEmail, Roles.DEVELOPER, idOf(collaboratorEmail))
       val event             = CollaboratorAdded(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
@@ -430,7 +431,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendCollaboratorRemovedConfirmation.thenReturnSuccess()
 
       val collaboratorEmail = "somedev@someCompany.com"
-      val collaborator      = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
+      val collaborator      = Collaborator(collaboratorEmail, Roles.DEVELOPER, idOf(collaboratorEmail))
       val event             = CollaboratorRemoved(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,

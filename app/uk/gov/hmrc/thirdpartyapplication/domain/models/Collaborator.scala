@@ -16,16 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import uk.gov.hmrc.apiplatform.modules.developers.domain
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
+import play.api.libs.json._
 
 case class Collaborator(
     emailAddress: String,
-    role: Role.Role,
-    userId: domain.models.UserId
+    role: Collaborators.Role,
+    userId: UserId
   )
 
 object Collaborator {
-  import play.api.libs.json.Json
-
-  implicit val format = Json.format[Collaborator]
+   implicit val format = Json.format[Collaborator]
 }

@@ -18,6 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.applications.domain.models
 
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
+
 sealed trait Collaborator {
   def userId: UserId
   def emailAddress: String
@@ -32,6 +33,18 @@ object Collaborator {
     case Collaborators.Roles.ADMINISTRATOR => Collaborators.Administrator(userId, emailAddress)
     case Collaborators.Roles.DEVELOPER     => Collaborators.Developer(userId, emailAddress)
   }
+
+  import play.api.libs.json.Json
+  import play.api.libs.json.OFormat
+  import uk.gov.hmrc.play.json.Union
+  
+  implicit val administratorJf = Json.format[Collaborators.Administrator]
+  implicit val developersJf    = Json.format[Collaborators.Developer]
+
+  implicit val collaboratorJf: OFormat[Collaborator] = Union.from[Collaborator]("role")
+    .and[Collaborators.Administrator](Collaborators.Roles.ADMINISTRATOR.toString)
+    .and[Collaborators.Developer](Collaborators.Roles.DEVELOPER.toString)
+    .format
 }
 
 object Collaborators {
@@ -48,5 +61,24 @@ object Collaborators {
 
   case class Developer(userId: UserId, emailAddress: String)     extends Collaborator {
     val isAdministrator = false
+  }
+
+  object Role {
+    import play.api.libs.json._
+
+    // implicit val developerJF      = Json.format[Collaborators.Roles.DEVELOPER.type]
+    // implicit val administratorsJF = Json.format[Collaborators.Roles.ADMINISTRATOR.type]
+
+    implicit val collaboratorsRoleJf: Format[Collaborators.Role] = new Format[Collaborators.Role] {
+
+      override def writes(o: Collaborators.Role): JsValue = JsString(o.toString)
+
+      override def reads(json: JsValue): JsResult[Collaborators.Role] = json match {
+        case JsString("DEVELOPER")     => JsSuccess(Collaborators.Roles.DEVELOPER)
+        case JsString("ADMINISTRATOR") => JsSuccess(Collaborators.Roles.ADMINISTRATOR)
+        case JsString(text)            => JsError(s"There is no role for '$text'")
+        case _                         => JsError(s"Cannot read role")
+      }
+    }
   }
 }

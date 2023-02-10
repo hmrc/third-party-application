@@ -26,11 +26,12 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.{ADMINISTRATOR, DEVELOPER, Role}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.time.ZoneId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
 
 object EmailConnector {
   case class Config(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)
@@ -82,14 +83,14 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   val changeOfResponsibleIndividual             = "apiChangeOfResponsibleIndividual"
   val newTermsOfUseInvitation                   = "apiNewTermsOfUseInvitation"
 
-  private def getRoleForDisplay(role: Role) =
+  private def getRoleForDisplay(role: Collaborators.Role) =
     role match {
-      case ADMINISTRATOR => "admin"
-      case DEVELOPER     => "developer"
+      case Roles.ADMINISTRATOR => "admin"
+      case Roles.DEVELOPER     => "developer"
     }
 
-  def sendCollaboratorAddedConfirmation(role: Role, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    val article = if (role == ADMINISTRATOR) "an" else "a"
+  def sendCollaboratorAddedConfirmation(role: Collaborators.Role, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    val article = if (role == Roles.ADMINISTRATOR) "an" else "a"
 
     post(SendEmailRequest(
       recipients,
@@ -104,7 +105,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       .map(_ => HasSucceeded)
   }
 
-  def sendCollaboratorAddedNotification(email: String, role: Role, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendCollaboratorAddedNotification(email: String, role: Collaborators.Role, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(
       recipients,
       addedCollaboratorNotification,

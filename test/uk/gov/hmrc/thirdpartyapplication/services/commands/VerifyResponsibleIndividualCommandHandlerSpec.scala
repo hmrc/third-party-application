@@ -29,6 +29,8 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+
 
 class VerifyResponsibleIndividualCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -63,8 +65,8 @@ class VerifyResponsibleIndividualCommandHandlerSpec
 
     val app = anApplicationData(applicationId).copy(
       collaborators = Set(
-        Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId),
-        Collaborator(oldRiEmail, Role.ADMINISTRATOR, oldRiUserId)
+        Collaborator(appAdminEmail, Roles.ADMINISTRATOR, appAdminUserId),
+        Collaborator(oldRiEmail, Roles.ADMINISTRATOR, oldRiUserId)
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )

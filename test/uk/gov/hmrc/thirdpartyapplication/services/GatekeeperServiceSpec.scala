@@ -28,7 +28,6 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.RejectUpliftRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.{COLLABORATOR, _}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
@@ -39,6 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil with FixedClock {
 
@@ -60,7 +60,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   private def anApplicationData(
       applicationId: ApplicationId,
       state: ApplicationState = productionState(requestedByEmail),
-      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random))
+      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, Roles.ADMINISTRATOR, UserId.random))
     ) = {
     ApplicationData(
       applicationId,
@@ -279,10 +279,10 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       AuditServiceMock.AuditWithTags.thenReturnSuccess()
       ApplicationRepoMock.Save.thenAnswer()
 
-      val admin1    = Collaborator("admin1@example.com", Role.ADMINISTRATOR, UserId.random)
-      val admin2    = Collaborator("admin2@example.com", Role.ADMINISTRATOR, UserId.random)
-      val requester = Collaborator(upliftRequestedBy, Role.ADMINISTRATOR, UserId.random)
-      val developer = Collaborator("somedev@example.com", Role.DEVELOPER, UserId.random)
+      val admin1    = Collaborator("admin1@example.com", Roles.ADMINISTRATOR, UserId.random)
+      val admin2    = Collaborator("admin2@example.com", Roles.ADMINISTRATOR, UserId.random)
+      val requester = Collaborator(upliftRequestedBy, Roles.ADMINISTRATOR, UserId.random)
+      val developer = Collaborator("somedev@example.com", Roles.DEVELOPER, UserId.random)
 
       val application = anApplicationData(
         applicationId,

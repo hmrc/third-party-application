@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneA
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class ResetLastAccessDateJobSpec
     extends AsyncHmrcSpec
@@ -136,7 +137,7 @@ class ResetLastAccessDateJobSpec
       id,
       s"myApp-${id.value}",
       s"myapp-${id.value}",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
+      Set(Collaborator("user@example.com", Roles.ADMINISTRATOR, UserId.random)),
       Some("description"),
       "myapplication",
       ApplicationTokens(
