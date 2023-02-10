@@ -23,6 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModu
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 
 class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -41,7 +42,7 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),
-      TermsAndConditionsLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )

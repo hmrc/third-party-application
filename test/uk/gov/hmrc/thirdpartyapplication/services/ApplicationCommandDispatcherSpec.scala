@@ -37,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 
 class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils with CommandCollaboratorExamples with CommandApplicationExamples {
 
@@ -311,7 +312,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
     "ChangeProductionApplicationTermsAndConditionsLocation is received" should {
 
       val newUrl      = "http://example.com/new"
-      val newLocation = TermsAndConditionsLocation.Url(newUrl)
+      val newLocation = TermsAndConditionsLocations.Url(newUrl)
       val userId      = idsByEmail(adminEmail)
       val timestamp   = FixedClock.now
       val actor       = Actors.Collaborator(adminEmail)

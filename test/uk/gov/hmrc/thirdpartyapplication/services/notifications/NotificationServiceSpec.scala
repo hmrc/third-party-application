@@ -32,6 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec
@@ -52,7 +53,7 @@ class NotificationServiceSpec
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),
-      TermsAndConditionsLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
@@ -140,8 +141,8 @@ class NotificationServiceSpec
 
     "when receive a ProductionAppTermsConditionsLocationChanged, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
-      val previousTermsAndConditionsUrl = TermsAndConditionsLocation.Url("https://example.com/old-terms-conds")
-      val newTermsAndConditionsUrl      = TermsAndConditionsLocation.Url("https://example.com/new-terms-conds")
+      val previousTermsAndConditionsUrl = TermsAndConditionsLocations.Url("https://example.com/old-terms-conds")
+      val newTermsAndConditionsUrl      = TermsAndConditionsLocations.Url("https://example.com/new-terms-conds")
       val event                         = ProductionAppTermsConditionsLocationChanged(
         UpdateApplicationEvent.Id.random,
         applicationId,

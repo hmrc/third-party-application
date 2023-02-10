@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 
 class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
     with ApplicationRepositoryMockModule
@@ -55,7 +56,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
       None,
       ResponsibleIndividual.build(riName, riEmail),
       Set.empty,
-      TermsAndConditionsLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )

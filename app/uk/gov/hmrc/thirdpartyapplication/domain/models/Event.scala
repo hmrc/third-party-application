@@ -30,6 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.EventType
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocation
 
 // scalastyle:off number.of.types number.of.methods
 
@@ -172,6 +173,7 @@ object UpdateApplicationEvent {
     ) extends UpdateApplicationEvent with TriggersNotification
 
   object ProductionAppTermsConditionsLocationChanged {
+
     implicit val format: OFormat[ProductionAppTermsConditionsLocationChanged] = Json.format[ProductionAppTermsConditionsLocationChanged]
   }
 

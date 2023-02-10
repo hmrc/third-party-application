@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -63,7 +64,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),
-      TermsAndConditionsLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocation.InDesktopSoftware,
       List(acceptance)
     )
