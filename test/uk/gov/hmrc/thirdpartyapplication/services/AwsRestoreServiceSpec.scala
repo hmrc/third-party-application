@@ -32,6 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock {
 

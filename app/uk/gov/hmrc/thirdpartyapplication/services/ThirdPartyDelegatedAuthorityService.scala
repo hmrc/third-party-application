@@ -27,6 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 @Singleton
 class ThirdPartyDelegatedAuthorityService @Inject() (

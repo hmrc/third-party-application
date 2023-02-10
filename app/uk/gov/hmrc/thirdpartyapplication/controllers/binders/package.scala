@@ -24,6 +24,7 @@ import play.api.mvc.{PathBindable, QueryStringBindable}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 package object binders {
 

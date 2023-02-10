@@ -23,8 +23,9 @@ import play.api.http.Status._
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
+
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 object ApiSubscriptionFieldsConnector {
   case class Config(baseUrl: String)

@@ -20,6 +20,7 @@ import java.security.SecureRandom
 import javax.inject.Singleton
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 @Singleton
 class TokenService {

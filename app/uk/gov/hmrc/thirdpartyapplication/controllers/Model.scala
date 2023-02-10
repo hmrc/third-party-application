@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{IpAllowlist, _}
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidGrantLengthException
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 case class ValidationRequest(clientId: ClientId, clientSecret: String)
 
