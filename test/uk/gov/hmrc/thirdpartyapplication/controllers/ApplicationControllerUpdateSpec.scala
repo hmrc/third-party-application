@@ -50,6 +50,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, Gatekeeper
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks {

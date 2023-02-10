@@ -49,6 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.{GatekeeperService, Subscripti
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with ApplicationLogger
     with ControllerTestData with ApplicationTestData {

@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec

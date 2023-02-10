@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTi
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 trait ApplicationTestData extends ApplicationStateUtil {
 

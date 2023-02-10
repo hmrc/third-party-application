@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils
 import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 import java.time.Clock
 import scala.util.Random.nextString
