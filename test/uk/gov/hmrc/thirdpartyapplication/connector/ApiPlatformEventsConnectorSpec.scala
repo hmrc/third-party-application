@@ -23,11 +23,12 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{GatekeeperUserActor, ProductionAppNameChanged}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ProductionAppNameChanged
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
@@ -91,7 +92,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
     id = UpdateApplicationEvent.Id.random,
     applicationId = ApplicationId.random,
     eventDateTime = FixedClock.now,
-    actor = GatekeeperUserActor("mr gatekeeper"),
+    actor = Actors.GatekeeperUser("mr gatekeeper"),
     oldAppName = "old name",
     newAppName = "new name",
     requestingAdminEmail = "admin@example.com"

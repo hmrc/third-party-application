@@ -26,10 +26,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationDeleted, CollaboratorActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApplicationDeleted
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -49,7 +50,7 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        CollaboratorActor("requester@example.com"),
+        Actors.Collaborator("requester@example.com"),
         clientId,
         "wso2ApplicationName",
         "reasons"

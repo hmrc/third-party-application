@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class ChangeProductionApplicationNameCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -52,7 +53,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
-    def checkSuccessResult(expectedActor: GatekeeperUserActor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.ResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -85,7 +86,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
       ApplicationRepoMock.UpdateApplicationName.thenReturn(app) // unmodified
 
-      checkSuccessResult(GatekeeperUserActor(gatekeeperUser)) {
+      checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
         underTest.process(app, update)
       }
     }
@@ -95,7 +96,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
       val priviledgedApp = app.copy(access = Privileged())
       ApplicationRepoMock.UpdateApplicationName.thenReturn(priviledgedApp) // unmodified
 
-      checkSuccessResult(GatekeeperUserActor(gatekeeperUser)) {
+      checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
         underTest.process(priviledgedApp, update)
       }
     }

@@ -28,6 +28,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 // scalastyle:off number.of.types number.of.methods
 
@@ -35,7 +37,7 @@ sealed trait UpdateApplicationEvent {
   def id: UpdateApplicationEvent.Id
   def applicationId: ApplicationId
   def eventDateTime: LocalDateTime
-  def actor: UpdateApplicationEvent.Actor
+  def actor: Actor
 }
 
 trait TriggersNotification {
@@ -50,32 +52,15 @@ trait ApplicationDeletedBase {
 }
 
 object UpdateApplicationEvent {
-  sealed trait Actor
-  case class GatekeeperUserActor(user: String) extends Actor
-  case class CollaboratorActor(email: String)  extends Actor
-  case class ScheduledJobActor(jobId: String)  extends Actor
-//  case class UnknownActor() extends Actor
+  import uk.gov.hmrc.apiplatform.modules.common.domain.services.ActorJsonFormatters._
 
-  object Actor {
-    implicit val gatekeeperUserActorFormat: OFormat[GatekeeperUserActor] = Json.format[GatekeeperUserActor]
-    implicit val collaboratorActorFormat: OFormat[CollaboratorActor]     = Json.format[CollaboratorActor]
-    implicit val scheduledJobActorFormat: OFormat[ScheduledJobActor]     = Json.format[ScheduledJobActor]
-//    implicit val unknownActorFormat: OFormat[UnknownActor] = Json.format[UnknownActor]
-
-    implicit val formatActor: OFormat[Actor] = Union.from[Actor]("actorType")
-//      .and[UnknownActor](ActorType.UNKNOWN.toString)
-      .and[ScheduledJobActor](ActorType.SCHEDULED_JOB.toString)
-      .and[GatekeeperUserActor](ActorType.GATEKEEPER.toString)
-      .and[CollaboratorActor](ActorType.COLLABORATOR.toString)
-      .format
-
-    def getActorIdentifier(actor: Actor): String =
-      actor match {
-        case CollaboratorActor(emailAddress) => emailAddress
-        case GatekeeperUserActor(userId)     => userId
-        case ScheduledJobActor(jobId)        => jobId
-      }
-  }
+  def getActorAsString(actor: Actor): String =
+    actor match {
+      case Actors.Collaborator(emailAddress) => emailAddress
+      case Actors.GatekeeperUser(userId)     => userId
+      case Actors.ScheduledJob(jobId)        => jobId
+      case Actors.Unknown                    => "Unknown"
+    }
 
   case class Id(value: UUID) extends AnyVal
 
@@ -478,5 +463,4 @@ object UpdateApplicationEvent {
     .and[RedirectUrisUpdated](EventType.REDIRECT_URIS_UPDATED_V2.toString)
     .format
 }
-
 // scalastyle:on number.of.types number.of.methods

@@ -21,12 +21,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiSubscribed, GatekeeperUserActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApiSubscribed
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with ApiIdentifierSyntax {
 
@@ -39,13 +40,13 @@ class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTes
     val underTest = new SubscribeToApiCommandHandler(SubscriptionRepoMock.aMock, StrideGatekeeperRoleAuthorisationServiceMock.aMock)
 
     val applicationId       = ApplicationId.random
-    val gatekeeperUserActor = GatekeeperUserActor("Gatekeeper Admin")
+    val gatekeeperUserActor = Actors.GatekeeperUser("Gatekeeper Admin")
     val apiIdentifier       = "some-context".asIdentifier("1.1")
     val timestamp           = FixedClock.now
 
     val subscribeToApi = SubscribeToApi(gatekeeperUserActor, apiIdentifier, timestamp)
 
-    def checkSuccessResult(expectedActor: GatekeeperUserActor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>

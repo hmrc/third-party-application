@@ -32,6 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
@@ -76,7 +77,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
           id = UpdateApplicationEvent.Id.random,
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(requesterEmail),
+          actor = Actors.Collaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress.value,
           submissionId = riVerificationToU.submissionId,
@@ -89,7 +90,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
           id = UpdateApplicationEvent.Id.random,
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(requesterEmail),
+          actor = Actors.Collaborator(requesterEmail),
           app.state.name,
           State.PENDING_GATEKEEPER_APPROVAL,
           requestingAdminName = requesterName,
@@ -135,7 +136,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(riVerification.requestingAdminEmail),
+        actor = Actors.Collaborator(riVerification.requestingAdminEmail),
         newResponsibleIndividualName = newResponsibleIndividual.fullName.value,
         newResponsibleIndividualEmail = newResponsibleIndividual.emailAddress.value,
         previousResponsibleIndividualName = previousResponsibleIndividual.fullName.value,

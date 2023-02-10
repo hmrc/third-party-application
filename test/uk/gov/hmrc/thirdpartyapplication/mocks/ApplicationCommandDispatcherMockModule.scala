@@ -24,11 +24,12 @@ import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, RedirectUrisUpdated}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.RedirectUrisUpdated
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, ApplicationId, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -56,7 +57,7 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
 
       def thenReturnCommandSuccess(applicationData: ApplicationData) = {
         val dummyEvents             =
-          NonEmptyList.one(RedirectUrisUpdated(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, CollaboratorActor("someuser"), List.empty, List("new URI")))
+          NonEmptyList.one(RedirectUrisUpdated(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.Collaborator("someuser"), List.empty, List("new URI")))
         val success: CommandSuccess = (applicationData, dummyEvents)
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand])(*)).thenReturn(E.pure(success))
       }

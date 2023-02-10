@@ -27,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
     with ApplicationRepositoryMockModule
@@ -95,7 +96,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
                   requestingAdminEmail
                 ) =>
               appId shouldBe app.id
-              actor shouldBe GatekeeperUserActor(gatekeeperUser)
+              actor shouldBe Actors.GatekeeperUser(gatekeeperUser)
               eventDateTime shouldBe ts
               decliningUserName shouldBe gatekeeperUser
               decliningUserEmail shouldBe gatekeeperUser
@@ -107,7 +108,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
 
             case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
               appId shouldBe app.id
-              evtActor shouldBe GatekeeperUserActor(gatekeeperUser)
+              evtActor shouldBe Actors.GatekeeperUser(gatekeeperUser)
               eventDateTime shouldBe ts
               oldAppState shouldBe app.state.name
               newAppState shouldBe State.TESTING

@@ -36,8 +36,6 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
   ApplicationDeleted,
-  CollaboratorActor,
-  GatekeeperUserActor,
   ProductionAppNameChanged,
   ProductionCredentialsApplicationDeleted,
   ResponsibleIndividualChanged,
@@ -52,6 +50,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 import java.time.{Clock, LocalDateTime}
 import java.util.UUID
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class ResponsibleIndividualVerificationRepositoryISpec
     extends ServerBaseISpec
@@ -225,7 +224,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         appId,
         appName,
         now,
-        CollaboratorActor("requester@example.com"),
+        Actors.Collaborator("requester@example.com"),
         "ms admin",
         "admin@example.com",
         "ri name",
@@ -240,7 +239,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         appId,
         now,
-        CollaboratorActor("requester@example.com"),
+        Actors.Collaborator("requester@example.com"),
         "Mr Previous Ri",
         "previous-ri@example.com",
         "Mr New Ri",
@@ -257,7 +256,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         appId,
         now,
-        CollaboratorActor("requester@example.com"),
+        Actors.Collaborator("requester@example.com"),
         "Mr New Ri",
         "ri@example.com",
         submissionId,
@@ -272,7 +271,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         appId,
         now,
-        CollaboratorActor("requester@example.com"),
+        Actors.Collaborator("requester@example.com"),
         "Mr New Ri",
         "ri@example.com",
         submissionId,
@@ -287,7 +286,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         appId,
         now,
-        CollaboratorActor("requester@example.com"),
+        Actors.Collaborator("requester@example.com"),
         "Mr New Ri",
         "ri@example.com",
         submissionId,
@@ -302,7 +301,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         appId,
         now,
-        CollaboratorActor("requester@example.com"),
+        Actors.Collaborator("requester@example.com"),
         "Mr New Ri",
         "ri@example.com",
         submissionId,
@@ -317,7 +316,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        CollaboratorActor("requester@example.com"),
+        Actors.Collaborator("requester@example.com"),
         ClientId("clientId"),
         "wso2ApplicationName",
         "reasons"
@@ -328,7 +327,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        CollaboratorActor("requester@example.com"),
+        Actors.Collaborator("requester@example.com"),
         ClientId("clientId"),
         "wso2ApplicationName",
         "reasons"
@@ -522,7 +521,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         FixedClock.now,
-        GatekeeperUserActor("gkuser@example.com"),
+        Actors.GatekeeperUser("gkuser@example.com"),
         "app name",
         "new name",
         "admin@example.com"

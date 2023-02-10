@@ -28,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineApplicationApprovalRequest, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class DeclineApplicationApprovalRequestCommandHandler @Inject() (
@@ -70,7 +71,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = GatekeeperUserActor(cmd.gatekeeperUser),
+        actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         decliningUserName = cmd.gatekeeperUser,
         decliningUserEmail = cmd.gatekeeperUser,
         submissionId = submission.id,
@@ -83,7 +84,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = GatekeeperUserActor(cmd.gatekeeperUser),
+        actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         app.state.name,
         State.TESTING,
         requestingAdminName = requesterName,

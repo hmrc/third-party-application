@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
@@ -59,7 +60,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = ScheduledJobActor(cmd.jobId),
+        actor = Actors.ScheduledJob(cmd.jobId),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons
@@ -68,7 +69,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = ScheduledJobActor(cmd.jobId),
+        actor = Actors.ScheduledJob(cmd.jobId),
         app.state.name,
         State.DELETED,
         requestingAdminName = cmd.jobId,

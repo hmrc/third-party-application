@@ -26,7 +26,7 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationDeleted, CollaboratorActor, ProductionCredentialsApplicationDeleted}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationDeleted, ProductionCredentialsApplicationDeleted}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{Notification, NotificationStatus, NotificationType}
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
@@ -34,6 +34,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class NotificationRepositoryISpec
     extends ServerBaseISpec
@@ -110,7 +111,7 @@ class NotificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        CollaboratorActor("requester@example.com"),
+        Actors.Collaborator("requester@example.com"),
         ClientId("clientId"),
         "wso2ApplicationName",
         "reasons"
@@ -121,7 +122,7 @@ class NotificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        CollaboratorActor("requester@example.com"),
+        Actors.Collaborator("requester@example.com"),
         ClientId("clientId"),
         "wso2ApplicationName",
         "reasons"

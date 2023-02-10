@@ -23,7 +23,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Actor._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
@@ -42,23 +41,23 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
         case evt: ProductionAppPrivacyPolicyLocationChanged         => StandardChangedNotification.sendAdviceEmail(
             emailConnector,
             app,
-            getActorIdentifier(evt.actor),
+            getActorAsString(evt.actor),
             "privacy policy URL",
             PrivacyPolicyLocation.describe(evt.oldLocation),
             PrivacyPolicyLocation.describe(evt.newLocation)
           )
         case evt: ProductionLegacyAppPrivacyPolicyLocationChanged   =>
-          StandardChangedNotification.sendAdviceEmail(emailConnector, app, getActorIdentifier(evt.actor), "privacy policy URL", evt.oldUrl, evt.newUrl)
+          StandardChangedNotification.sendAdviceEmail(emailConnector, app, getActorAsString(evt.actor), "privacy policy URL", evt.oldUrl, evt.newUrl)
         case evt: ProductionAppTermsConditionsLocationChanged       => StandardChangedNotification.sendAdviceEmail(
             emailConnector,
             app,
-            getActorIdentifier(evt.actor),
+            getActorAsString(evt.actor),
             "terms and conditions URL",
             TermsAndConditionsLocation.describe(evt.oldLocation),
             TermsAndConditionsLocation.describe(evt.newLocation)
           )
         case evt: ProductionLegacyAppTermsConditionsLocationChanged =>
-          StandardChangedNotification.sendAdviceEmail(emailConnector, app, getActorIdentifier(evt.actor), "terms and conditions URL", evt.oldUrl, evt.newUrl)
+          StandardChangedNotification.sendAdviceEmail(emailConnector, app, getActorAsString(evt.actor), "terms and conditions URL", evt.oldUrl, evt.newUrl)
         case evt: ResponsibleIndividualVerificationStarted          => VerifyResponsibleIndividualUpdateNotification.sendAdviceEmail(emailConnector, evt)
         case evt: ResponsibleIndividualChanged                      => ResponsibleIndividualChangedNotification.sendAdviceEmail(
             emailConnector,

@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithActor, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -40,6 +40,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with ApplicationTestData {
 
@@ -78,7 +79,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random), Collaborator(anotherAdminUser, ADMINISTRATOR, UserId.random))
     )
     val secretRequest          = ClientSecretRequest(loggedInUser)
-    val secretRequestWithActor = ClientSecretRequestWithActor(CollaboratorActor(loggedInUser), FixedClock.now)
+    val secretRequestWithActor = ClientSecretRequestWithActor(Actors.Collaborator(loggedInUser), FixedClock.now)
     val environmentToken       = applicationData.tokens.production
     val firstSecret            = environmentToken.clientSecrets.head
 

@@ -23,11 +23,11 @@ import scala.concurrent.ExecutionContext
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, RemoveCollaborator, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 
 @Singleton
 class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
@@ -37,13 +37,13 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
   private def validate(app: ApplicationData, cmd: RemoveCollaborator) = {
 
     cmd.actor match {
-      case CollaboratorActor(actorEmail: String) => Apply[Validated[CommandFailures, *]]
+      case Actors.Collaborator(actorEmail: String) => Apply[Validated[CommandFailures, *]]
           .map3(
             isCollaboratorOnApp(actorEmail, app),
             isCollaboratorOnApp(cmd.collaborator.emailAddress, app),
             applicationWillHaveAnAdmin(cmd.collaborator.emailAddress, app)
           ) { case _ => app }
-      case _                                     => Apply[Validated[CommandFailures, *]]
+      case _                                       => Apply[Validated[CommandFailures, *]]
           .map2(isCollaboratorOnApp(cmd.collaborator.emailAddress, app), applicationWillHaveAnAdmin(cmd.collaborator.emailAddress, app)) { case _ => app }
     }
 
@@ -58,8 +58,8 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
   private def asEvents(app: ApplicationData, actor: Actor, adminsToEmail: Set[String], eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[UpdateApplicationEvent] = {
     def notifyCollaborator() = {
       actor match {
-        case _: ScheduledJobActor => false
-        case _                    => true
+        case _: Actors.ScheduledJob => false
+        case _                      => true
       }
     }
 

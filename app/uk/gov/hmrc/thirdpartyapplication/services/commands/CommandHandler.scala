@@ -22,10 +22,10 @@ import cats.data.{EitherT, NonEmptyChain, NonEmptyList, Validated}
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 
 trait CommandHandler {
   import CommandHandler._
@@ -59,8 +59,8 @@ object CommandHandler {
 
   private def isCollaboratorActorAndAdmin(actor: Actor, app: ApplicationData): Boolean =
     actor match {
-      case CollaboratorActor(emailAddress) => app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.emailAddress == emailAddress)
-      case _                               => false
+      case Actors.Collaborator(emailAddress) => app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.emailAddress == emailAddress)
+      case _                                 => false
     }
 
   private def applicationHasAnAdmin(updated: Set[Collaborator]): Boolean = {

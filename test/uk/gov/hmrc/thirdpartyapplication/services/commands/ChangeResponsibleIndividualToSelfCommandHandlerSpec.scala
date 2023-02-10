@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 
 class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -89,7 +90,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
               ) =>
             applicationId shouldBe appId
             eventDateTime shouldBe ts
-            actor shouldBe CollaboratorActor(appAdminEmail)
+            actor shouldBe Actors.Collaborator(appAdminEmail)
             previousResponsibleIndividualName shouldBe oldRiName
             previousResponsibleIndividualEmail shouldBe oldRiEmail
             submissionIndex shouldBe submission.latestInstance.index
@@ -114,7 +115,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       ApplicationRepoMock.UpdateApplicationChangeResponsibleIndividualToSelf.thenReturn(app) // Not modified
 
-      checkSuccessResult(CollaboratorActor(adminEmail), oldRiName, oldRiEmail)(underTest.process(app, changeResponsibleIndividualToSelfCommand))
+      checkSuccessResult(Actors.Collaborator(adminEmail), oldRiName, oldRiEmail)(underTest.process(app, changeResponsibleIndividualToSelfCommand))
     }
 
     "return an error if no submission is found for the application" in new Setup {

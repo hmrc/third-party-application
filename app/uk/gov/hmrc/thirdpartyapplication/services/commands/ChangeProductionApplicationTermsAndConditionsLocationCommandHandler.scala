@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.TermsAndConditionsLocatio
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject() (
@@ -58,7 +59,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
           id = UpdateApplicationEvent.Id.random,
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(getRequester(app, cmd.instigator)),
+          actor = Actors.Collaborator(getRequester(app, cmd.instigator)),
           oldUrl = oldUrl,
           newUrl = newUrl
         )
@@ -87,7 +88,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
           id = UpdateApplicationEvent.Id.random,
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(getRequester(app, cmd.instigator)),
+          actor = Actors.Collaborator(getRequester(app, cmd.instigator)),
           oldLocation = oldLocation,
           newLocation = cmd.newLocation
         )

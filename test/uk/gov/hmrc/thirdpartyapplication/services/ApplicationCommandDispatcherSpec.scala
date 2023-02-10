@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDi
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils with CommandCollaboratorExamples with CommandApplicationExamples {
 
@@ -119,8 +120,8 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
   val timestamp         = FixedClock.now
   val gatekeeperUser    = "gkuser1"
   val jobId             = "jobId"
-  val devHubUser        = CollaboratorActor(adminEmail)
-  val scheduledJobActor = ScheduledJobActor(jobId)
+  val devHubUser        = Actors.Collaborator(adminEmail)
+  val scheduledJobActor = Actors.ScheduledJob(jobId)
   val reasons           = "some reason or other"
 
   val E = EitherTHelper.make[CommandFailures]
@@ -236,7 +237,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
       val newName        = "new app name"
       val gatekeeperUser = "gkuser"
       val requester      = "requester"
-      val actor          = GatekeeperUserActor(gatekeeperUser)
+      val actor          = Actors.GatekeeperUser(gatekeeperUser)
       val userId         = UserId.random
 
       val timestamp = FixedClock.now
@@ -276,7 +277,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
       val newLocation = PrivacyPolicyLocation.Url(newUrl)
       val userId      = idsByEmail(adminEmail)
       val timestamp   = FixedClock.now
-      val actor       = CollaboratorActor(adminEmail)
+      val actor       = Actors.Collaborator(adminEmail)
 
       val cmd = ChangeProductionApplicationPrivacyPolicyLocation(userId, timestamp, newLocation)
       val evt = ProductionAppPrivacyPolicyLocationChanged(
@@ -313,7 +314,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
       val newLocation = TermsAndConditionsLocation.Url(newUrl)
       val userId      = idsByEmail(adminEmail)
       val timestamp   = FixedClock.now
-      val actor       = CollaboratorActor(adminEmail)
+      val actor       = Actors.Collaborator(adminEmail)
 
       val cmd = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
       val evt = ProductionAppTermsConditionsLocationChanged(
@@ -417,7 +418,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
     "DeclineApplicationApprovalRequest is received" should {
 
       val timestamp = FixedClock.now
-      val actor     = GatekeeperUserActor(adminEmail)
+      val actor     = Actors.GatekeeperUser(adminEmail)
 
       val cmd = DeclineApplicationApprovalRequest(actor.user, reasons, timestamp)
       val evt = ApplicationApprovalRequestDeclined(
@@ -460,7 +461,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
         UpdateApplicationEvent.Id.random,
         applicationId,
         timestamp,
-        CollaboratorActor("someEmail"),
+        Actors.Collaborator("someEmail"),
         ClientId.random,
         "wsoApplicationName",
         reasons
@@ -492,7 +493,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
         UpdateApplicationEvent.Id.random,
         applicationId,
         timestamp,
-        GatekeeperUserActor(gatekeeperUser),
+        Actors.GatekeeperUser(gatekeeperUser),
         ClientId.random,
         "wsoApplicationName",
         reasons,
