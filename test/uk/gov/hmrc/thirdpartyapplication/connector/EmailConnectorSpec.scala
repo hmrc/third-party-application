@@ -25,9 +25,9 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector.SendEmailRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class EmailConnectorSpec extends ConnectorSpec {
 
@@ -83,7 +83,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendCollaboratorAddedConfirmation(Role.ADMINISTRATOR, applicationName, expectedToEmails))
+      await(connector.sendCollaboratorAddedConfirmation(Roles.ADMINISTRATOR, applicationName, expectedToEmails))
     }
 
     "send added collaborator confirmation email with article for developer" in new Setup {
@@ -99,7 +99,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendCollaboratorAddedConfirmation(Role.DEVELOPER, applicationName, expectedToEmails))
+      await(connector.sendCollaboratorAddedConfirmation(Roles.DEVELOPER, applicationName, expectedToEmails))
     }
 
     "send added collaborator notification email" in new Setup {
@@ -115,7 +115,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendCollaboratorAddedNotification(collaboratorEmail, Role.ADMINISTRATOR, applicationName, expectedToEmails))
+      await(connector.sendCollaboratorAddedNotification(collaboratorEmail, Roles.ADMINISTRATOR, applicationName, expectedToEmails))
     }
 
     "send removed collaborator confirmation email" in new Setup {

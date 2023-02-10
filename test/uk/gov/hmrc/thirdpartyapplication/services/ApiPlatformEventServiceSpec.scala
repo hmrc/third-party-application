@@ -38,6 +38,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach with TableDrivenPropertyChecks {
 
@@ -66,7 +67,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
   val teamMemberRole: String                        = "ADMIN"
   val context: ApiContext                           = "api/path/path2".asContext
   val version: ApiVersion                           = "2.0".asVersion
-  val appDataWithCollaboratorAdded: ApplicationData = applicationData.copy(collaborators = Set(Collaborator(adminEmail, Role.ADMINISTRATOR, UserId.random)))
+  val appDataWithCollaboratorAdded: ApplicationData = applicationData.copy(collaborators = Set(Collaborator(adminEmail, Roles.ADMINISTRATOR, UserId.random)))
 
   override def beforeEach(): Unit = {
     reset(mockConnector)

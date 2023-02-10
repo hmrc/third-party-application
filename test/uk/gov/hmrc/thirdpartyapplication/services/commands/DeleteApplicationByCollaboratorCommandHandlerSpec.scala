@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
 
@@ -44,7 +45,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
 
     val app               = anApplicationData(appId, environment = Environment.SANDBOX).copy(collaborators =
       Set(
-        Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
+        Collaborator(appAdminEmail, Roles.ADMINISTRATOR, appAdminUserId)
       )
     )
     val ts                = FixedClock.now

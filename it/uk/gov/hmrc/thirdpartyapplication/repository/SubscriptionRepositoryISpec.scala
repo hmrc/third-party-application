@@ -34,6 +34,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 import java.time.Clock
 import scala.util.Random.nextString
@@ -371,7 +372,7 @@ class SubscriptionRepositoryISpec
       checkInformation: Option[CheckInformation] = None
     ): ApplicationData = {
 
-    val collaborators = user.map(email => Collaborator(email, Role.ADMINISTRATOR, UserId.random)).toSet
+    val collaborators = user.map(email => Collaborator(email, Roles.ADMINISTRATOR, UserId.random)).toSet
 
     ApplicationData(
       id,

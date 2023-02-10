@@ -37,6 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -75,7 +76,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
 
     val app = anApplicationData(applicationId).copy(
       collaborators = Set(
-        Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
+        Collaborator(appAdminEmail, Roles.ADMINISTRATOR, appAdminUserId)
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName)

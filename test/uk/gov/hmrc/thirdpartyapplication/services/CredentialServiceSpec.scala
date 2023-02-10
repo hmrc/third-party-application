@@ -29,7 +29,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithActor, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
@@ -43,6 +42,7 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with ApplicationTestData {
 
@@ -78,7 +78,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
     val applicationData        = anApplicationData(
       applicationId,
-      collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random), Collaborator(anotherAdminUser, ADMINISTRATOR, UserId.random))
+      collaborators = Set(Collaborator(loggedInUser, Roles.ADMINISTRATOR, UserId.random), Collaborator(anotherAdminUser, Roles.ADMINISTRATOR, UserId.random))
     )
     val secretRequest          = ClientSecretRequest(loggedInUser)
     val secretRequestWithActor = ClientSecretRequestWithActor(Actors.AppCollaborator(loggedInUser), FixedClock.now)

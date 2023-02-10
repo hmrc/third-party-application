@@ -31,6 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
     with ApplicationRepositoryMockModule
@@ -65,7 +66,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
 
     val applicationData = anApplicationData(appId).copy(
       collaborators = Set(
-        Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
+        Collaborator(appAdminEmail, Roles.ADMINISTRATOR, appAdminUserId)
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationState.pendingGatekeeperApproval(requesterEmail, requesterName)

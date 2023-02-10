@@ -39,7 +39,6 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, Ad
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -54,6 +53,8 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator,
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 @Singleton
 class ApplicationService @Inject() (
@@ -109,7 +110,7 @@ class ApplicationService @Inject() (
   @deprecated("please use AddCollaboratorRequest command to application Update controller")
   def addCollaborator(applicationId: ApplicationId, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
 
-    def validateCollaborator(app: ApplicationData, email: String, role: Role, userId: UserId): Collaborator = {
+    def validateCollaborator(app: ApplicationData, email: String, role: Collaborators.Role, userId: UserId): Collaborator = {
       val normalised = email.toLowerCase
       if (app.collaborators.exists(_.emailAddress == normalised)) throw new UserAlreadyExists
 
@@ -283,7 +284,7 @@ class ApplicationService @Inject() (
   }
 
   private def hasAdmin(updated: Set[Collaborator]): Boolean = {
-    updated.exists(_.role == Role.ADMINISTRATOR)
+    updated.exists(_.role == Roles.ADMINISTRATOR)
   }
 
   def fetchByClientId(clientId: ClientId): Future[Option[ApplicationResponse]] = {

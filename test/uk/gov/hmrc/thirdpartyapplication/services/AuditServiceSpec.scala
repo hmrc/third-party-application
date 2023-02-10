@@ -34,7 +34,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submissi
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
@@ -47,6 +46,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndCondit
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with FixedClock
     with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
@@ -285,7 +285,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
 
       val newCollaborator = Collaborator(
         "emailaddress",
-        Role.DEVELOPER,
+        Roles.DEVELOPER,
         UserId.random
       )
 
@@ -488,7 +488,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
   "AuditHelper calculateAppChanges" should {
 
     val id          = ApplicationId.random
-    val admin       = Collaborator("test@example.com", ADMINISTRATOR, UserId.random)
+    val admin       = Collaborator("test@example.com", Roles.ADMINISTRATOR, UserId.random)
     val tokens      = ApplicationTokens(
       Token(ClientId("prodId"), "prodToken")
     )

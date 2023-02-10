@@ -24,9 +24,9 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import java.time.Instant
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
 
 trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -234,7 +234,7 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
         when(aMock.sendCollaboratorAddedNotification(*, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(requester: String, role: Role, applicationName: String, recipients: Set[String]) =
+      def verifyCalledWith(requester: String, role: Collaborators.Role, applicationName: String, recipients: Set[String]) =
         verify.sendCollaboratorAddedNotification(eqTo(requester), eqTo(role), eqTo(applicationName), eqTo(recipients))(*)
 
       def verifyNeverCalled() = EmailConnectorMock.verify(never).sendCollaboratorAddedNotification(*, *, *, *)(*)
@@ -246,7 +246,7 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
         when(aMock.sendCollaboratorAddedConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(role: Role, applicationName: String, recipients: Set[String]) =
+      def verifyCalledWith(role: Collaborators.Role, applicationName: String, recipients: Set[String]) =
         verify.sendCollaboratorAddedConfirmation(eqTo(role), eqTo(applicationName), eqTo(recipients))(*)
 
       def verifyNeverCalled() = EmailConnectorMock.verify(never).sendCollaboratorAddedConfirmation(*, *, *)(*)

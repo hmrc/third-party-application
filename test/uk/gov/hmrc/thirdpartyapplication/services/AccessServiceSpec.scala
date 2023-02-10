@@ -30,6 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class AccessServiceSpec extends AsyncHmrcSpec {
 
@@ -177,7 +178,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
+      Set(Collaborator("user@example.com", Roles.ADMINISTRATOR, UserId.random)),
       None,
       "wso2ApplicationName",
       ApplicationTokens(
@@ -194,7 +195,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
+      Set(Collaborator("user@example.com", Roles.ADMINISTRATOR, UserId.random)),
       None,
       "wso2ApplicationName",
       ApplicationTokens(
@@ -211,7 +212,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
+      Set(Collaborator("user@example.com", Roles.ADMINISTRATOR, UserId.random)),
       None,
       "wso2ApplicationName",
       ApplicationTokens(

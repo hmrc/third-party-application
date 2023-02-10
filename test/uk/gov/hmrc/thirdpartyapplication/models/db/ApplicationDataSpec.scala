@@ -23,6 +23,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
   import ApiIdentifierSyntax._
@@ -35,7 +36,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
         val request = CreateApplicationRequestV1(
           name = "bob",
           environment = Environment.PRODUCTION,
-          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+          collaborators = Set(Collaborator("jim@example.com", Roles.ADMINISTRATOR, UserId.random)),
           subscriptions = None
         )
 
@@ -48,7 +49,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
         val request = CreateApplicationRequestV1(
           name = "bob",
           environment = Environment.PRODUCTION,
-          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+          collaborators = Set(Collaborator("jim@example.com", Roles.ADMINISTRATOR, UserId.random)),
           subscriptions = Some(Set("context".asIdentifier))
         )
 
@@ -61,7 +62,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
         val request = CreateApplicationRequestV1(
           name = "bob",
           environment = Environment.PRODUCTION,
-          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+          collaborators = Set(Collaborator("jim@example.com", Roles.ADMINISTRATOR, UserId.random)),
           subscriptions = None
         )
 
@@ -76,7 +77,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
       val request = CreateApplicationRequestV2(
         name = "bob",
         environment = Environment.PRODUCTION,
-        collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+        collaborators = Set(Collaborator("jim@example.com", Roles.ADMINISTRATOR, UserId.random)),
         upliftRequest = makeUpliftRequest(ApiIdentifier.random),
         requestedBy = "user@example.com",
         sandboxApplicationId = ApplicationId.random

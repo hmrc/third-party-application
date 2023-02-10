@@ -46,7 +46,6 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -59,6 +58,7 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -253,7 +253,7 @@ class ApplicationControllerSpec
     val applicationId                                      = ApplicationId.random
     val admin                                              = "admin@example.com"
     val email                                              = "test@example.com"
-    val role                                               = DEVELOPER
+    val role                                               = Roles.DEVELOPER
     val isRegistered                                       = false
     val adminsToEmail                                      = Set.empty[String]
     val userId                                             = UserId.random
@@ -277,7 +277,7 @@ class ApplicationControllerSpec
   "add collaborators" should {
     val applicationId                                      = ApplicationId.random
     val email                                              = "test@example.com"
-    val role                                               = DEVELOPER
+    val role                                               = Roles.DEVELOPER
     val userId                                             = UserId.random
     val isRegistered                                       = false
     val adminsToEmail                                      = Set.empty[String]
@@ -384,7 +384,7 @@ class ApplicationControllerSpec
         eqTo(adminsToEmailSet),
         eqTo(notifyCollaborator)
       )(*))
-        .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
+        .thenReturn(successful(Set(Collaborator(admin, Roles.ADMINISTRATOR, UserId.random))))
 
       val result = underTest.deleteCollaborator(applicationId)(myRequest)
 
@@ -402,7 +402,7 @@ class ApplicationControllerSpec
             eqTo(adminsToEmailSet),
             eqTo(notifyCollaborator)
           )(*))
-            .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
+            .thenReturn(successful(Set(Collaborator(admin, Roles.ADMINISTRATOR, UserId.random))))
 
           val result = underTest.deleteCollaborator(applicationId)(myRequest)
 
@@ -420,7 +420,7 @@ class ApplicationControllerSpec
             eqTo(adminsToEmailSet),
             eqTo(notifyCollaborator)
           )(*))
-            .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
+            .thenReturn(successful(Set(Collaborator(admin, Roles.ADMINISTRATOR, UserId.random))))
 
           val result = underTest.deleteCollaborator(applicationId)(myRequest)
 

@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpe
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
     with ApplicationRepositoryMockModule
@@ -36,9 +37,9 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
     val applicationId = ApplicationId.random
     val adminEmail    = "admin@example.com"
 
-    val developerCollaborator = Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail))
+    val developerCollaborator = Collaborator(devEmail, Roles.DEVELOPER, idOf(devEmail))
 
-    val adminCollaborator = Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
+    val adminCollaborator = Collaborator(adminEmail, Roles.ADMINISTRATOR, idOf(adminEmail))
     val adminActor        = Actors.AppCollaborator(adminEmail)
 
     val gkUserEmail  = "admin@gatekeeper"
@@ -49,7 +50,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
     val scheduledJobActor = Actors.ScheduledJob(jobId)
     val collaboratorEmail = "newdev@somecompany.com"
 
-    val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
+    val collaborator = Collaborator(collaboratorEmail, Roles.DEVELOPER, idOf(collaboratorEmail))
 
     val app = anApplicationData(applicationId).copy(
       collaborators = Set(
@@ -105,7 +106,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
 
     "return an error when collaborator is not associated to the application" in new Setup {
 
-      val removeUnknownCollaboratorCommand = removeCollaborator.copy(collaborator = Collaborator(unknownEmail, Role.DEVELOPER, idOf(unknownEmail)))
+      val removeUnknownCollaboratorCommand = removeCollaborator.copy(collaborator = Collaborator(unknownEmail, Roles.DEVELOPER, idOf(unknownEmail)))
 
       val result = await(underTest.process(app, removeUnknownCollaboratorCommand).value).left.value.toNonEmptyList.toList
 
