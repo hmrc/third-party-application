@@ -82,7 +82,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = Actors.Collaborator(requesterEmail),
+        actor = Actors.AppCollaborator(requesterEmail),
         previousResponsibleIndividualName = previousResponsibleIndividual.fullName.value,
         previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress.value,
         submissionId = submission.id,

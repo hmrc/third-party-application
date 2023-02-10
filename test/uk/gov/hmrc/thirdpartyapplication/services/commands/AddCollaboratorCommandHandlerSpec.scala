@@ -44,7 +44,7 @@ class AddCollaboratorCommandHandlerSpec
     val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, adminsToEmail, timestamp)
     val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, adminsToEmail, timestamp)
 
-    def checkSuccessResult(expectedActor: Actors.Collaborator)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>

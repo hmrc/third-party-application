@@ -123,7 +123,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
   val timestamp         = FixedClock.now
   val gatekeeperUser    = "gkuser1"
   val jobId             = "jobId"
-  val devHubUser        = Actors.Collaborator(adminEmail)
+  val devHubUser        = Actors.AppCollaborator(adminEmail)
   val scheduledJobActor = Actors.ScheduledJob(jobId)
   val reasons           = "some reason or other"
 
@@ -280,7 +280,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
       val newLocation = PrivacyPolicyLocations.Url(newUrl)
       val userId      = idsByEmail(adminEmail)
       val timestamp   = FixedClock.now
-      val actor       = Actors.Collaborator(adminEmail)
+      val actor       = Actors.AppCollaborator(adminEmail)
 
       val cmd = ChangeProductionApplicationPrivacyPolicyLocation(userId, timestamp, newLocation)
       val evt = ProductionAppPrivacyPolicyLocationChanged(
@@ -317,7 +317,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
       val newLocation = TermsAndConditionsLocations.Url(newUrl)
       val userId      = idsByEmail(adminEmail)
       val timestamp   = FixedClock.now
-      val actor       = Actors.Collaborator(adminEmail)
+      val actor       = Actors.AppCollaborator(adminEmail)
 
       val cmd = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
       val evt = ProductionAppTermsConditionsLocationChanged(
@@ -464,7 +464,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
         UpdateApplicationEvent.Id.random,
         applicationId,
         timestamp,
-        Actors.Collaborator("someEmail"),
+        Actors.AppCollaborator("someEmail"),
         ClientId.random,
         "wsoApplicationName",
         reasons

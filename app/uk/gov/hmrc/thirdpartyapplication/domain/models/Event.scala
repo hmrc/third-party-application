@@ -59,7 +59,7 @@ object UpdateApplicationEvent {
 
   def getActorAsString(actor: Actor): String =
     actor match {
-      case Actors.Collaborator(emailAddress) => emailAddress
+      case Actors.AppCollaborator(emailAddress) => emailAddress
       case Actors.GatekeeperUser(userId)     => userId
       case Actors.ScheduledJob(jobId)        => jobId
       case Actors.Unknown                    => "Unknown"
@@ -103,7 +103,7 @@ object UpdateApplicationEvent {
       id: UpdateApplicationEvent.Id,
       applicationId: ApplicationId,
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actors.Collaborator,
+      actor: Actors.AppCollaborator,
       clientSecretId: String,
       clientSecretName: String
     ) extends UpdateApplicationEvent with TriggersNotification
@@ -116,7 +116,7 @@ object UpdateApplicationEvent {
       id: UpdateApplicationEvent.Id,
       applicationId: ApplicationId,
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actors.Collaborator,
+      actor: Actors.AppCollaborator,
       clientSecretId: String,
       clientSecretName: String
     ) extends UpdateApplicationEvent with TriggersNotification

@@ -109,7 +109,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
           case riSet: ResponsibleIndividualSet =>
             riSet.applicationId shouldBe appId
             riSet.eventDateTime shouldBe ts
-            riSet.actor shouldBe Actors.Collaborator(appAdminEmail)
+            riSet.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             riSet.responsibleIndividualName shouldBe riName
             riSet.responsibleIndividualEmail shouldBe riEmail
             riSet.submissionIndex shouldBe submission.latestInstance.index
@@ -122,7 +122,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
           case stateEvent: ApplicationStateChanged =>
             stateEvent.applicationId shouldBe appId
             stateEvent.eventDateTime shouldBe ts
-            stateEvent.actor shouldBe Actors.Collaborator(appAdminEmail)
+            stateEvent.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             stateEvent.requestingAdminEmail shouldBe requesterEmail
             stateEvent.requestingAdminName shouldBe requesterName
             stateEvent.newAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL
@@ -141,7 +141,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
           case riChanged: ResponsibleIndividualChanged =>
             riChanged.applicationId shouldBe appId
             riChanged.eventDateTime shouldBe ts
-            riChanged.actor shouldBe Actors.Collaborator(appAdminEmail)
+            riChanged.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             riChanged.newResponsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
             riChanged.newResponsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress.value
             riChanged.previousResponsibleIndividualName shouldBe riName

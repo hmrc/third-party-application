@@ -39,7 +39,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
     val developerCollaborator = Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail))
 
     val adminCollaborator = Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
-    val adminActor        = Actors.Collaborator(adminEmail)
+    val adminActor        = Actors.AppCollaborator(adminEmail)
 
     val gkUserEmail  = "admin@gatekeeper"
     val gkUserActor  = Actors.GatekeeperUser(gkUserEmail)
@@ -63,7 +63,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
 
     val adminsToEmail = Set(adminEmail, devEmail)
 
-    val removeCollaborator = RemoveCollaborator(Actors.Collaborator(adminActor.email), collaborator, adminsToEmail, timestamp)
+    val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), collaborator, adminsToEmail, timestamp)
 
     def checkSuccessResult(expectedActor: Actor)(result: CommandHandler.CommandSuccess) = {
       inside(result) { case (app, events) =>
@@ -95,7 +95,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
       checkSuccessResult(gkUserActor)(result)
     }
 
-    "succeed as Actors.Collaborator" in new Setup {
+    "succeed as Actors.AppCollaborator" in new Setup {
       ApplicationRepoMock.RemoveCollaborator.succeeds(app)
 
       val result = await(underTest.process(app, removeCollaborator).value).right.value
@@ -115,7 +115,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
 
     "return an error when actor is collaborator actor and is not associated to the application" in new Setup {
 
-      val removeCollaboratorActorUnknownCommand: RemoveCollaborator = removeCollaborator.copy(actor = Actors.Collaborator(unknownEmail))
+      val removeCollaboratorActorUnknownCommand: RemoveCollaborator = removeCollaborator.copy(actor = Actors.AppCollaborator(unknownEmail))
 
       val result = await(underTest.process(app, removeCollaboratorActorUnknownCommand).value).left.value.toNonEmptyList.toList
 

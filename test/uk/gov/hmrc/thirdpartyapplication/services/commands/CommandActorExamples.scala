@@ -26,8 +26,8 @@ trait CommandActorExamples {
   val gkUserActor = Actors.GatekeeperUser(gkUserEmail)
 
   val developerUserId = idOf(devEmail)
-  val developerActor  = Actors.Collaborator(devEmail)
+  val developerActor  = Actors.AppCollaborator(devEmail)
 
   val adminUserId = idOf(adminEmail)
-  val adminActor  = Actors.Collaborator(adminEmail)
+  val adminActor  = Actors.AppCollaborator(adminEmail)
 }

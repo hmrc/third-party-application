@@ -67,7 +67,7 @@ class NotificationServiceSpec
     )
 
     val adminEmail     = "admin@example.com"
-    val devHubUser     = Actors.Collaborator(adminEmail)
+    val devHubUser     = Actors.AppCollaborator(adminEmail)
     val gatekeeperUser = "gkuser"
     val oldAppName     = "old name"
     val newAppName     = "new name"
@@ -199,7 +199,7 @@ class NotificationServiceSpec
         ApplicationId.random,
         "app name",
         FixedClock.now,
-        Actors.Collaborator("admin@example.com"),
+        Actors.AppCollaborator("admin@example.com"),
         "admin name",
         "admin@example.com",
         "ri name",
@@ -226,7 +226,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.Collaborator("admin@example.com"),
+        Actors.AppCollaborator("admin@example.com"),
         "old ri name",
         "oldri@example.com",
         "ri name",
@@ -255,7 +255,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.Collaborator("admin@example.com"),
+        Actors.AppCollaborator("admin@example.com"),
         "old ri name",
         "oldri@example.com",
         Submission.Id.random,
@@ -281,7 +281,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.Collaborator("admin@example.com"),
+        Actors.AppCollaborator("admin@example.com"),
         "ri name",
         "ri@example.com",
         Submission.Id.random,
@@ -307,7 +307,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.Collaborator("admin@example.com"),
+        Actors.AppCollaborator("admin@example.com"),
         "ri name",
         "ri@example.com",
         Submission.Id.random,
@@ -328,7 +328,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.Collaborator("admin@example.com"),
+        Actors.AppCollaborator("admin@example.com"),
         "ri name",
         "ri@example.com",
         Submission.Id.random,
@@ -356,7 +356,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.Collaborator(requestingAdminEmail),
+        Actors.AppCollaborator(requestingAdminEmail),
         "someClientSecretId",
         obfuscatedSecret
       )
@@ -377,7 +377,7 @@ class NotificationServiceSpec
       val requestingAdminEmail = "dev@example.com"
       EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
       val event                =
-        ClientSecretRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.Collaborator(requestingAdminEmail), clientSecretId, clientSecretName)
+        ClientSecretRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.AppCollaborator(requestingAdminEmail), clientSecretId, clientSecretName)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -401,7 +401,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.Collaborator("dev@example.com"),
+        Actors.AppCollaborator("dev@example.com"),
         collaborator.userId,
         collaborator.emailAddress,
         collaborator.role,
@@ -435,7 +435,7 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.Collaborator("dev@example.com"),
+        Actors.AppCollaborator("dev@example.com"),
         collaborator.userId,
         collaborator.emailAddress,
         collaborator.role,

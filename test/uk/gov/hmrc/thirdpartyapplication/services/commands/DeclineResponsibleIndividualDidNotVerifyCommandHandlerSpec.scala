@@ -125,7 +125,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
           case riDeclined: ResponsibleIndividualDeclined =>
             riDeclined.applicationId shouldBe applicationId
             riDeclined.eventDateTime shouldBe ts
-            riDeclined.actor shouldBe Actors.Collaborator(appAdminEmail)
+            riDeclined.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             riDeclined.responsibleIndividualName shouldBe riName
             riDeclined.responsibleIndividualEmail shouldBe riEmail
             riDeclined.submissionIndex shouldBe submission.latestInstance.index
@@ -137,7 +137,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
           case appApprovalRequestDeclined: ApplicationApprovalRequestDeclined =>
             appApprovalRequestDeclined.applicationId shouldBe applicationId
             appApprovalRequestDeclined.eventDateTime shouldBe ts
-            appApprovalRequestDeclined.actor shouldBe Actors.Collaborator(appAdminEmail)
+            appApprovalRequestDeclined.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             appApprovalRequestDeclined.decliningUserName shouldBe riName
             appApprovalRequestDeclined.decliningUserEmail shouldBe riEmail
             appApprovalRequestDeclined.submissionIndex shouldBe submission.latestInstance.index
@@ -150,7 +150,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
           case stateEvent: ApplicationStateChanged =>
             stateEvent.applicationId shouldBe applicationId
             stateEvent.eventDateTime shouldBe ts
-            stateEvent.actor shouldBe Actors.Collaborator(appAdminEmail)
+            stateEvent.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             stateEvent.requestingAdminEmail shouldBe requesterEmail
             stateEvent.requestingAdminName shouldBe requesterName
             stateEvent.newAppState shouldBe State.TESTING
@@ -169,7 +169,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
           case riDeclined: ResponsibleIndividualDeclinedUpdate =>
             riDeclined.applicationId shouldBe applicationId
             riDeclined.eventDateTime shouldBe ts
-            riDeclined.actor shouldBe Actors.Collaborator(appAdminEmail)
+            riDeclined.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             riDeclined.responsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
             riDeclined.responsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress.value
             riDeclined.submissionIndex shouldBe submission.latestInstance.index
@@ -197,7 +197,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       SubmissionsServiceMock.DeclineApprovalRequest.succeeds()
       StateHistoryRepoMock.AddRecord.succeeds()
 
-      checkSuccessResultToU(Actors.Collaborator(appAdminEmail)) {
+      checkSuccessResultToU(Actors.AppCollaborator(appAdminEmail)) {
         underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, ts))
       }
     }
@@ -208,7 +208,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
 
       val prodApp = app.copy(state = ApplicationState.production(requesterEmail, requesterName))
 
-      checkSuccessResultUpdate(Actors.Collaborator(appAdminEmail)) {
+      checkSuccessResultUpdate(Actors.AppCollaborator(appAdminEmail)) {
         underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, ts))
       }
     }

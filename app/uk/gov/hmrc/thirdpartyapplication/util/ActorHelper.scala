@@ -43,7 +43,7 @@ trait ActorHelper {
   private def deriveActor(userEmail: String, collaborators: Set[Collaborator]): Actor =
     collaborators.find(_.emailAddress.equalsIgnoreCase(userEmail)) match {
       case None                  => Actors.GatekeeperUser("Gatekeeper Admin")
-      case Some(_: Collaborator) => Actors.Collaborator(userEmail)
+      case Some(_: Collaborator) => Actors.AppCollaborator(userEmail)
     }
 
 }

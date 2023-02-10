@@ -37,7 +37,7 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
   private def validate(app: ApplicationData, cmd: RemoveCollaborator) = {
 
     cmd.actor match {
-      case Actors.Collaborator(actorEmail: String) => Apply[Validated[CommandFailures, *]]
+      case Actors.AppCollaborator(actorEmail: String) => Apply[Validated[CommandFailures, *]]
           .map3(
             isCollaboratorOnApp(actorEmail, app),
             isCollaboratorOnApp(cmd.collaborator.emailAddress, app),

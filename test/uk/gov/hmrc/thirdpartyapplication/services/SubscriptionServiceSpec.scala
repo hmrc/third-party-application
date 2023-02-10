@@ -137,9 +137,9 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val applicationId = ApplicationId.random
     val apiIdentifier = ApiIdentifier.random
 
-    "return successfully using the correct Actors.Collaborator if the collaborator is a member of the application" in new Setup {
+    "return successfully using the correct Actors.AppCollaborator if the collaborator is a member of the application" in new Setup {
       val application = anApplicationData(applicationId)
-      val actor       = Actors.Collaborator(loggedInUser)
+      val actor       = Actors.AppCollaborator(loggedInUser)
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(application)
 

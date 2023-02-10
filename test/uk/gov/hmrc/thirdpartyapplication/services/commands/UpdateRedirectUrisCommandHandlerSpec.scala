@@ -38,7 +38,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
 
     val nonStandardAccessApp = applicationData.copy(access = Privileged())
     val developer            = applicationData.collaborators.head
-    val developerActor       = Actors.Collaborator(developer.emailAddress)
+    val developerActor       = Actors.AppCollaborator(developer.emailAddress)
 
     val oldRedirectUris = List.empty
     val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
@@ -46,7 +46,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
     val timestamp = FixedClock.now
     val cmd       = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, timestamp)
 
-    def checkSuccessResult(expectedActor: Actors.Collaborator)(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.CommandSuccess) = {
       inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head

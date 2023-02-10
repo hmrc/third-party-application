@@ -138,7 +138,7 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
         UpdateApplicationEvent.Id.random,
         appId,
         ts,
-        Actors.Collaborator(requesterEmail),
+        Actors.AppCollaborator(requesterEmail),
         State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
         State.PENDING_GATEKEEPER_APPROVAL,
         requesterName,

@@ -553,7 +553,7 @@ class ApplicationControllerSpec
     val applicationId             = ApplicationId.random
     val applicationTokensResponse =
       ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
-    val secretRequest             = ClientSecretRequestWithActor(Actors.Collaborator("actor@example.com"), FixedClock.now)
+    val secretRequest             = ClientSecretRequestWithActor(Actors.AppCollaborator("actor@example.com"), FixedClock.now)
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(
@@ -1479,7 +1479,7 @@ class ApplicationControllerSpec
   "temp" should {
     "dump some json" in {
       val e: UpdateApplicationEvent =
-        UpdateApplicationEvent.ApiSubscribed(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.Collaborator("bob"), "bob", "1.0")
+        UpdateApplicationEvent.ApiSubscribed(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.AppCollaborator("bob"), "bob", "1.0")
 
       val txt = Json.toJson(e).toString.replace("447", "447Z")
 

@@ -93,7 +93,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
               ) =>
             applicationId shouldBe appId
             eventDateTime shouldBe ts
-            actor shouldBe Actors.Collaborator(appAdminEmail)
+            actor shouldBe Actors.AppCollaborator(appAdminEmail)
             previousResponsibleIndividualName shouldBe oldRiName
             previousResponsibleIndividualEmail shouldBe oldRiEmail
             submissionIndex shouldBe submission.latestInstance.index
@@ -118,7 +118,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       ApplicationRepoMock.UpdateApplicationChangeResponsibleIndividualToSelf.thenReturn(app) // Not modified
 
-      checkSuccessResult(Actors.Collaborator(adminEmail), oldRiName, oldRiEmail)(underTest.process(app, changeResponsibleIndividualToSelfCommand))
+      checkSuccessResult(Actors.AppCollaborator(adminEmail), oldRiName, oldRiEmail)(underTest.process(app, changeResponsibleIndividualToSelfCommand))
     }
 
     "return an error if no submission is found for the application" in new Setup {

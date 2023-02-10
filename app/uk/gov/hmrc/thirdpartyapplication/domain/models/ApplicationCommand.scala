@@ -31,8 +31,8 @@ trait ApplicationCommand {
   def timestamp: LocalDateTime
 }
 
-case class AddClientSecret(actor: Actors.Collaborator, clientSecret: ClientSecret, timestamp: LocalDateTime)                                            extends ApplicationCommand
-case class RemoveClientSecret(actor: Actors.Collaborator, clientSecretId: String, timestamp: LocalDateTime)                                             extends ApplicationCommand
+case class AddClientSecret(actor: Actors.AppCollaborator, clientSecret: ClientSecret, timestamp: LocalDateTime)                                            extends ApplicationCommand
+case class RemoveClientSecret(actor: Actors.AppCollaborator, clientSecretId: String, timestamp: LocalDateTime)                                             extends ApplicationCommand
 case class AddCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                              extends ApplicationCommand
 case class RemoveCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                           extends ApplicationCommand
 case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation)           extends ApplicationCommand

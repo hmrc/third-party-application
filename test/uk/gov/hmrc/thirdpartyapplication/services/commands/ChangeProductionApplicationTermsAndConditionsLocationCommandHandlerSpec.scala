@@ -61,7 +61,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
 
     val userId    = idsByEmail(adminEmail)
     val timestamp = FixedClock.now
-    val actor     = Actors.Collaborator(adminEmail)
+    val actor     = Actors.AppCollaborator(adminEmail)
 
     val update = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
 

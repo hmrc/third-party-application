@@ -158,7 +158,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     val appInTesting   = applicationData.copy(state = ApplicationState.testing)
 
     val gatekeeperActor            = Actors.GatekeeperUser(gatekeeperUser)
-    val collaboratorActor          = Actors.Collaborator(applicationData.collaborators.head.emailAddress)
+    val collaboratorActor          = Actors.AppCollaborator(applicationData.collaborators.head.emailAddress)
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     "applyEvents with a single ApplicationApprovalRequestDeclined event" in new Setup {

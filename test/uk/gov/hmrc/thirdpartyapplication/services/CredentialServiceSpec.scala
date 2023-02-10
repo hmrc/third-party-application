@@ -81,7 +81,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random), Collaborator(anotherAdminUser, ADMINISTRATOR, UserId.random))
     )
     val secretRequest          = ClientSecretRequest(loggedInUser)
-    val secretRequestWithActor = ClientSecretRequestWithActor(Actors.Collaborator(loggedInUser), FixedClock.now)
+    val secretRequestWithActor = ClientSecretRequestWithActor(Actors.AppCollaborator(loggedInUser), FixedClock.now)
     val environmentToken       = applicationData.tokens.production
     val firstSecret            = environmentToken.clientSecrets.head
 
