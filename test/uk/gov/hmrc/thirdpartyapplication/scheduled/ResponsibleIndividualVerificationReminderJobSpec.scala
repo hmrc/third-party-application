@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 
 class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -51,7 +52,7 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
       None,
       ResponsibleIndividual.build(riName, riEmail),
       Set.empty,
-      TermsAndConditionsLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )

@@ -14,28 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.apiplatform.modules.applications.domain.models
 
-import play.api.libs.json._
-import uk.gov.hmrc.play.json.Union
 
-sealed trait TermsAndConditionsLocation
 
-object TermsAndConditionsLocation {
+sealed trait TermsAndConditionsLocation {
+  def describe() : String = TermsAndConditionsLocations.describe(this)
+}
+
+object TermsAndConditionsLocations {
   case object NoneProvided      extends TermsAndConditionsLocation
   case object InDesktopSoftware extends TermsAndConditionsLocation
   case class Url(value: String) extends TermsAndConditionsLocation
-
-  implicit val noneProvidedFormat      = Json.format[NoneProvided.type]
-  implicit val inDesktopSoftwareFormat = Json.format[InDesktopSoftware.type]
-  implicit val urlFormat               = Json.format[Url]
-
-  implicit val format = Union.from[TermsAndConditionsLocation]("termsAndConditionsType")
-    .and[NoneProvided.type]("noneProvided")
-    .and[InDesktopSoftware.type]("inDesktop")
-    .and[Url]("url")
-    .format
-
+  
   def describe(termsAndConditionsLocation: TermsAndConditionsLocation): String = {
     termsAndConditionsLocation match {
       case InDesktopSoftware => "In desktop software"
@@ -43,4 +34,19 @@ object TermsAndConditionsLocation {
       case _                 => "None provided"
     }
   }
+}
+
+object TermsAndConditionsLocation {
+  import play.api.libs.json.Json
+  import uk.gov.hmrc.play.json.Union
+  
+  private implicit val noneProvidedFormat      = Json.format[TermsAndConditionsLocations.NoneProvided.type]
+  private implicit val inDesktopSoftwareFormat = Json.format[TermsAndConditionsLocations.InDesktopSoftware.type]
+  private implicit val urlFormat               = Json.format[TermsAndConditionsLocations.Url]
+
+  implicit val termsAndConditionsLocationFormat = Union.from[TermsAndConditionsLocation]("termsAndConditionsType")
+    .and[TermsAndConditionsLocations.NoneProvided.type]("noneProvided")
+    .and[TermsAndConditionsLocations.InDesktopSoftware.type]("inDesktop")
+    .and[TermsAndConditionsLocations.Url]("url")
+    .format
 }

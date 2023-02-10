@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 
 class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -65,7 +66,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       None,
       ResponsibleIndividual.build(riName, riEmail),
       Set.empty,
-      TermsAndConditionsLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )

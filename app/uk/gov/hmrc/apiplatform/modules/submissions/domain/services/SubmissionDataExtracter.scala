@@ -20,7 +20,8 @@ import cats.Apply
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, PrivacyPolicyLocation, ResponsibleIndividual, ServerLocation, TermsAndConditionsLocation}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, PrivacyPolicyLocation, ResponsibleIndividual, ServerLocation}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{TermsAndConditionsLocation, TermsAndConditionsLocations}
 
 object SubmissionDataExtracter extends ApplicationLogger {
 
@@ -95,9 +96,9 @@ object SubmissionDataExtracter extends ApplicationLogger {
     lazy val urlIfChosen = getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.termsAndConditionsUrlId)
 
     yesNoOrDesktop.flatMap(_ match {
-      case "Yes"                                              => urlIfChosen.map(TermsAndConditionsLocation.Url(_))
-      case "No"                                               => TermsAndConditionsLocation.NoneProvided.some
-      case "The terms and conditions are in desktop software" => TermsAndConditionsLocation.InDesktopSoftware.some
+      case "Yes"                                              => urlIfChosen.map(TermsAndConditionsLocations.Url(_))
+      case "No"                                               => TermsAndConditionsLocations.NoneProvided.some
+      case "The terms and conditions are in desktop software" => TermsAndConditionsLocations.InDesktopSoftware.some
     })
   }
 

@@ -43,6 +43,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with FixedClock
     with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
@@ -59,7 +60,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     Some("organisationUrl.com"),
     responsibleIndividual,
     Set(ServerLocation.InUK),
-    TermsAndConditionsLocation.InDesktopSoftware,
+    TermsAndConditionsLocations.InDesktopSoftware,
     PrivacyPolicyLocation.InDesktopSoftware,
     List.empty
   )

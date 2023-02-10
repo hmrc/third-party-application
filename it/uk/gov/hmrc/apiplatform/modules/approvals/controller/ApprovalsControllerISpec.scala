@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import java.util.UUID
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 
 class ApprovalsControllerISpec
     extends ServerBaseISpec
@@ -102,7 +103,7 @@ class ApprovalsControllerISpec
         Some("organisationUrl.com"),
         responsibleIndividual,
         Set(ServerLocation.InUK),
-        TermsAndConditionsLocation.InDesktopSoftware,
+        TermsAndConditionsLocations.InDesktopSoftware,
         PrivacyPolicyLocation.InDesktopSoftware,
         List.empty
       )

@@ -53,8 +53,8 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
             app,
             getActorAsString(evt.actor),
             "terms and conditions URL",
-            TermsAndConditionsLocation.describe(evt.oldLocation),
-            TermsAndConditionsLocation.describe(evt.newLocation)
+            evt.oldLocation.describe,
+            evt.newLocation.describe
           )
         case evt: ProductionLegacyAppTermsConditionsLocationChanged =>
           StandardChangedNotification.sendAdviceEmail(emailConnector, app, getActorAsString(evt.actor), "terms and conditions URL", evt.oldUrl, evt.newUrl)

@@ -27,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualV
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 
 class VerifyResponsibleIndividualCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -54,7 +55,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
       None,
       ResponsibleIndividual.build(oldRiName, oldRiEmail),
       Set.empty,
-      TermsAndConditionsLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )

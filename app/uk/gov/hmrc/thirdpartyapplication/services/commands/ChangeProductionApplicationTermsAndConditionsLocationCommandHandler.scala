@@ -22,11 +22,11 @@ import scala.concurrent.ExecutionContext
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.TermsAndConditionsLocation.Url
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
 
 @Singleton
 class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject() (
@@ -40,7 +40,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
   def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
     def validate: Validated[CommandFailures, String] = {
       val newUrl       = cmd.newLocation match {
-        case Url(value) => Some(value)
+        case TermsAndConditionsLocations.Url(value) => Some(value)
         case _          => None
       }
       val ensureIsAUrl = mustBeDefined(newUrl, s"Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
@@ -106,7 +106,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
     app.access match {
       case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => processApp(termsAndConditionsLocation, app, cmd)
       case Standard(_, maybeTermsAndConditionsLocation, _, _, _, None)                                       => processLegacyApp(maybeTermsAndConditionsLocation.getOrElse(""), app, cmd)
-      case _                                                                                                 => processApp(TermsAndConditionsLocation.InDesktopSoftware, app, cmd) // This will not valdate
+      case _                                                                                                 => processApp(TermsAndConditionsLocations.InDesktopSoftware, app, cmd) // This will not valdate
     }
   }
 }
