@@ -25,8 +25,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{MarkedSubmission, Submission}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, SubmissionDataExtracter}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
@@ -158,6 +158,21 @@ class RequestApprovalsService @Inject() (
         access = updateStandardData(existing.access, importantSubmissionData)
       )
 
+    def deriveNewSubmissionsDetails(
+        isRequesterTheResponsibleIndividual: Boolean,
+        existing: MarkedSubmission
+    ): Submission = {
+      if (isRequesterTheResponsibleIndividual) {
+        if (existing.isPass) {
+          Submission.grant(LocalDateTime.now(clock), requestedByEmailAddress)(existing.submission)
+        } else {
+          existing.submission
+        }
+      } else {
+        existing.submission
+      }
+    }
+
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -175,7 +190,9 @@ class RequestApprovalsService @Inject() (
         updatedApp                          = deriveNewAppDetails(originalApp, importantSubmissionData)
         savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
         _                                  <- ET.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, updatedApp, submission, requestedByName, requestedByEmailAddress))
-        updatedSubmission                   = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
+        submittedSubmission                 = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
+        markedSubmission                    = MarkedSubmission(submittedSubmission, MarkAnswer.markSubmission(submittedSubmission))
+        updatedSubmission                   = deriveNewSubmissionsDetails(isRequesterTheResponsibleIndividual, markedSubmission) 
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
         _                                  <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
         _                                   = logCompletedApprovalRequest(savedApp)
