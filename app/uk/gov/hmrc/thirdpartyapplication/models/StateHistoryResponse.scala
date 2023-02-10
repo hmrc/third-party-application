@@ -22,6 +22,7 @@ import play.api.libs.json.Json
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 case class StateHistoryResponse(applicationId: ApplicationId, state: State, actor: OldActor, notes: Option[String], changedAt: LocalDateTime)
 

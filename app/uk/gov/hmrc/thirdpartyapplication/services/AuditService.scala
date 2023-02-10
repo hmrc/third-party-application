@@ -38,6 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, UpdateApplicat
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ApplicationDeleted, _}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 // scalastyle:off number.of.types
 

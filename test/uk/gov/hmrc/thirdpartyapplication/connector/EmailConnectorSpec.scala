@@ -25,8 +25,9 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector.SendEmailRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, Role}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class EmailConnectorSpec extends ConnectorSpec {
 

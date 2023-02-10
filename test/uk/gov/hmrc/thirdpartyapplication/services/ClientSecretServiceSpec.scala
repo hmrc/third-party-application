@@ -20,10 +20,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.github.t3hnar.bcrypt._
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ClientSecret}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMockModule with FixedClock {
 

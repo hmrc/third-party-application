@@ -37,6 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 import java.time.Clock
 import scala.util.Random.nextString
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class SubscriptionRepositoryISpec
     extends ServerBaseISpec

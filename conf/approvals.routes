@@ -1,4 +1,4 @@
-POST          /application/:id/request                     uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.requestApproval(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-POST          /application/:id/grant                       uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.grant(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+POST          /application/:id/request                     uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.requestApproval(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+POST          /application/:id/grant                       uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.grant(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
 GET           /responsible-individual-verification/:code   uk.gov.hmrc.apiplatform.modules.approvals.controllers.ResponsibleIndividualVerificationController.getVerification(code: String)

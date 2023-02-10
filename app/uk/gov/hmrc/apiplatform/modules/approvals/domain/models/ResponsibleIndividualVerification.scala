@@ -24,7 +24,8 @@ import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ResponsibleIndividual}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 sealed trait ResponsibleIndividualVerification {
   def id: ResponsibleIndividualVerificationId

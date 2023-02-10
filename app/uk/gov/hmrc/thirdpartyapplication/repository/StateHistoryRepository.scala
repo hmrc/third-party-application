@@ -30,8 +30,9 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApplicationStateChanged
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, OldActor, StateHistory, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{OldActor, StateHistory, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 @Singleton
 class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
