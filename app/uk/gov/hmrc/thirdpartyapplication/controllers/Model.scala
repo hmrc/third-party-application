@@ -35,7 +35,7 @@ case class ApplicationNameValidationRequest(applicationName: String, selfApplica
 
 case class ClientSecretRequest(actorEmailAddress: String)
 
-case class ClientSecretRequestWithActor(actor: Actors.Collaborator, timestamp: LocalDateTime)
+case class ClientSecretRequestWithActor(actor: Actors.AppCollaborator, timestamp: LocalDateTime)
 
 case class DeleteClientSecretRequest(actorEmailAddress: String)
 

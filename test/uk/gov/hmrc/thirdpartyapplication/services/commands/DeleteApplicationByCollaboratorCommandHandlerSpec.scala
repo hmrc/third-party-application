@@ -40,7 +40,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
 
     val appAdminEmail = "admin@example.com"
     val reasons       = "reasons description text"
-    val actor         = Actors.Collaborator(appAdminEmail)
+    val actor         = Actors.AppCollaborator(appAdminEmail)
 
     val app               = anApplicationData(appId, environment = Environment.SANDBOX).copy(collaborators =
       Set(

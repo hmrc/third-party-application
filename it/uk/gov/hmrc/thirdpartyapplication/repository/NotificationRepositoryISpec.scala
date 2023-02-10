@@ -113,7 +113,7 @@ class NotificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        Actors.Collaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com"),
         ClientId("clientId"),
         "wso2ApplicationName",
         "reasons"
@@ -124,7 +124,7 @@ class NotificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        Actors.Collaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com"),
         ClientId("clientId"),
         "wso2ApplicationName",
         "reasons"

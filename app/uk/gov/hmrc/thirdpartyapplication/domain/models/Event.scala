@@ -59,7 +59,7 @@ object UpdateApplicationEvent {
 
   def getActorAsString(actor: Actor): String =
     actor match {
-      case Actors.Collaborator(emailAddress) => emailAddress
+      case Actors.AppCollaborator(emailAddress) => emailAddress
       case Actors.GatekeeperUser(userId)     => userId
       case Actors.ScheduledJob(jobId)        => jobId
       case Actors.Unknown                    => "Unknown"

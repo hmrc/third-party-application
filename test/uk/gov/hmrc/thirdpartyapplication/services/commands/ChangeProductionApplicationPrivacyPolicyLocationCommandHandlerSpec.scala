@@ -61,7 +61,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
 
     val userId    = idsByEmail(adminEmail)
     val timestamp = FixedClock.now
-    val actor     = Actors.Collaborator(adminEmail)
+    val actor     = Actors.AppCollaborator(adminEmail)
 
     val update = ChangeProductionApplicationPrivacyPolicyLocation(userId, timestamp, newLocation)
 

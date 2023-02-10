@@ -67,7 +67,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
         applicationId = app.id,
         app.name,
         eventDateTime = cmd.timestamp,
-        actor = Actors.Collaborator(requesterEmail),
+        actor = Actors.AppCollaborator(requesterEmail),
         cmd.requesterName,
         requestingAdminEmail = getRequester(app, cmd.instigator),
         responsibleIndividualName = cmd.riName,

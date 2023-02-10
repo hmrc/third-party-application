@@ -98,7 +98,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
             event.applicationId shouldBe applicationId
             event.applicationName shouldBe app.name
             event.eventDateTime shouldBe ts
-            event.actor shouldBe Actors.Collaborator(appAdminEmail)
+            event.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             event.responsibleIndividualName shouldBe riName
             event.responsibleIndividualEmail shouldBe riEmail
             event.submissionIndex shouldBe submission.latestInstance.index

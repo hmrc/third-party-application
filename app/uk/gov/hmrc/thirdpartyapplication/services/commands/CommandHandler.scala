@@ -59,7 +59,7 @@ object CommandHandler {
 
   private def isCollaboratorActorAndAdmin(actor: Actor, app: ApplicationData): Boolean =
     actor match {
-      case Actors.Collaborator(emailAddress) => app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.emailAddress == emailAddress)
+      case Actors.AppCollaborator(emailAddress) => app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.emailAddress == emailAddress)
       case _                                 => false
     }
 

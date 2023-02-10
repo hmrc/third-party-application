@@ -52,7 +52,7 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        Actors.Collaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com"),
         clientId,
         "wso2ApplicationName",
         "reasons"

@@ -66,7 +66,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = Actors.Collaborator(requesterEmail),
+        actor = Actors.AppCollaborator(requesterEmail),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons
@@ -75,7 +75,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = Actors.Collaborator(requesterEmail),
+        actor = Actors.AppCollaborator(requesterEmail),
         app.state.name,
         State.DELETED,
         requestingAdminName = requesterEmail,
