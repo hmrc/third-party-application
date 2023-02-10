@@ -43,8 +43,8 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
             app,
             getActorAsString(evt.actor),
             "privacy policy URL",
-            PrivacyPolicyLocation.describe(evt.oldLocation),
-            PrivacyPolicyLocation.describe(evt.newLocation)
+            evt.oldLocation.describe(),
+            evt.newLocation.describe()
           )
         case evt: ProductionLegacyAppPrivacyPolicyLocationChanged   =>
           StandardChangedNotification.sendAdviceEmail(emailConnector, app, getActorAsString(evt.actor), "privacy policy URL", evt.oldUrl, evt.newUrl)

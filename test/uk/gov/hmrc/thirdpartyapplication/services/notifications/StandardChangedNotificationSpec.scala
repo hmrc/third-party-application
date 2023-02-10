@@ -24,6 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 
 class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -43,7 +44,7 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
       responsibleIndividual,
       Set(ServerLocation.InUK),
       TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )
 
@@ -64,8 +65,8 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
   "sendAdviceEmail" should {
     "successfully send email for PrivacyPolicyUrlChanged" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
-      val previousPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/old-privacy-policy")
-      val newPrivacyPolicyUrl      = PrivacyPolicyLocation.Url("https://example.com/new-privacy-policy")
+      val previousPrivacyPolicyUrl = PrivacyPolicyLocations.Url("https://example.com/old-privacy-policy")
+      val newPrivacyPolicyUrl      = PrivacyPolicyLocations.Url("https://example.com/new-privacy-policy")
 
       val result = await(StandardChangedNotification.sendAdviceEmail(
         EmailConnectorMock.aMock,

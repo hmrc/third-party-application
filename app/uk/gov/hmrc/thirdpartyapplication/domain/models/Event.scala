@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.EventType
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocation
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{TermsAndConditionsLocation, PrivacyPolicyLocation}
 
 // scalastyle:off number.of.types number.of.methods
 

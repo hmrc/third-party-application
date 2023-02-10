@@ -37,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import java.util.UUID
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 
 class ApprovalsControllerISpec
     extends ServerBaseISpec
@@ -104,7 +105,7 @@ class ApprovalsControllerISpec
         responsibleIndividual,
         Set(ServerLocation.InUK),
         TermsAndConditionsLocations.InDesktopSoftware,
-        PrivacyPolicyLocation.InDesktopSoftware,
+        PrivacyPolicyLocations.InDesktopSoftware,
         List.empty
       )
       val application: ApplicationData = anApplicationData(

@@ -38,6 +38,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 
 class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils with CommandCollaboratorExamples with CommandApplicationExamples {
 
@@ -275,7 +276,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
     "ChangeProductionApplicationPrivacyPolicyLocation is received" should {
 
       val newUrl      = "http://example.com/new"
-      val newLocation = PrivacyPolicyLocation.Url(newUrl)
+      val newLocation = PrivacyPolicyLocations.Url(newUrl)
       val userId      = idsByEmail(adminEmail)
       val timestamp   = FixedClock.now
       val actor       = Actors.Collaborator(adminEmail)

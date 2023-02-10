@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
 
@@ -57,7 +58,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       responsibleIndividual,
       Set(ServerLocation.InUK),
       TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )
 

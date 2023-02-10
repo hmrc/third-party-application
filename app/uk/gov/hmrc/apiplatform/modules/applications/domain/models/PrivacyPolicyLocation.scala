@@ -34,3 +34,18 @@ object PrivacyPolicyLocations {
     }
   }
 }
+
+object PrivacyPolicyLocation {
+  import play.api.libs.json.Json
+  import uk.gov.hmrc.play.json.Union
+  
+  private implicit val noneProvidedFormat      = Json.format[PrivacyPolicyLocations.NoneProvided.type]
+  private implicit val inDesktopSoftwareFormat = Json.format[PrivacyPolicyLocations.InDesktopSoftware.type]
+  private implicit val urlFormat               = Json.format[PrivacyPolicyLocations.Url]
+
+  implicit val privacyPolicyLocationFormat = Union.from[PrivacyPolicyLocation]("privacyPolicyType")
+    .and[PrivacyPolicyLocations.NoneProvided.type]("noneProvided")
+    .and[PrivacyPolicyLocations.InDesktopSoftware.type]("inDesktop")
+    .and[PrivacyPolicyLocations.Url]("url")
+    .format
+}

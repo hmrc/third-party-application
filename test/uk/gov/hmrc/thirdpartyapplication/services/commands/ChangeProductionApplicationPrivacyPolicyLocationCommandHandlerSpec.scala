@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 
 class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -40,7 +41,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
 
     val oldUrl      = "http://example.com/old"
     val newUrl      = "http://example.com/new"
-    val newLocation = PrivacyPolicyLocation.Url(newUrl)
+    val newLocation = PrivacyPolicyLocations.Url(newUrl)
 
     val newJourneyApp = anApplicationData(applicationId).copy(
       collaborators = Set(

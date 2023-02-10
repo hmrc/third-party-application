@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpe
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 
 class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -67,7 +68,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       ResponsibleIndividual.build(riName, riEmail),
       Set.empty,
       TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )
 
