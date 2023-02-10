@@ -16,6 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 case class UpliftLink(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId)

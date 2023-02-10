@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 trait ApplicationTypeAuthorisationActions {

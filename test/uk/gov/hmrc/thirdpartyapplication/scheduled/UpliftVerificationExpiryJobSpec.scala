@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock, NoMetricsGuiceOneAppPerSuite}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class UpliftVerificationExpiryJobSpec
     extends AsyncHmrcSpec

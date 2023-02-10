@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualV
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 

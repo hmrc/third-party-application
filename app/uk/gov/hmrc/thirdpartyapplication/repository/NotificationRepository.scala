@@ -27,9 +27,10 @@ import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationDeletedBase, ApplicationId, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationDeletedBase, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.Notification
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 @Singleton
 class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)

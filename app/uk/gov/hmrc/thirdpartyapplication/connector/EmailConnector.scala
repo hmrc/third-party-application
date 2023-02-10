@@ -25,7 +25,7 @@ import play.mvc.Http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.{ADMINISTRATOR, DEVELOPER, Role}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import java.time.Instant

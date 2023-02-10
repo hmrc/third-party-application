@@ -23,7 +23,8 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationStateChange, UpliftVerified}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, UpliftVerified}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 trait UpliftServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

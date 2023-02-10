@@ -39,6 +39,7 @@ import java.time.ZoneOffset
 import java.util.UUID
 import scala.concurrent.Await.{ready, result}
 import scala.util.Random
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10

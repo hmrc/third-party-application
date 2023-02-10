@@ -20,7 +20,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.TermsOfUseInvitationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation

@@ -28,11 +28,12 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AuditHelper, AuditService}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 @Singleton
 class UpliftService @Inject() (
@@ -45,7 +46,7 @@ class UpliftService @Inject() (
   )(implicit ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def requestUplift(applicationId: ApplicationId, applicationName: String, requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def requestUplift(applicationId:ApplicationId, applicationName: String, requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
 
     def uplift(existing: ApplicationData) = existing.copy(
       name = applicationName,

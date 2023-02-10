@@ -37,8 +37,9 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
 }
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationDeletedBase, ApplicationId, ResponsibleIndividual, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationDeletedBase, ResponsibleIndividual, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 @Singleton
 class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)

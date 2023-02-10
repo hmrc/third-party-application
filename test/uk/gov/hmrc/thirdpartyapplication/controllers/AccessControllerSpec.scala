@@ -37,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule {
   import play.api.test.Helpers._

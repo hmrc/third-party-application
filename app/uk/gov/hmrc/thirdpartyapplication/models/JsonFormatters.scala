@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.ActorJsonFormatters
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 trait JsonFormatters extends UtcMillisDateTimeFormatters with ActorJsonFormatters {
 

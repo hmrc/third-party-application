@@ -26,7 +26,7 @@ import play.api.mvc.ControllerComponents
 
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters
 
 @Singleton

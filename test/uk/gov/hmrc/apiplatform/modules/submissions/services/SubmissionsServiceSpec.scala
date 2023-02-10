@@ -29,10 +29,11 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
   ApplicationStateChanged,
   ResponsibleIndividualDidNotVerify
 }
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 

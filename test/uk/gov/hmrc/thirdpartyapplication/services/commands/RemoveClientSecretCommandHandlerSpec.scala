@@ -22,6 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandActorExamples, CommandHandler, RemoveClientSecretCommandHandler}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class RemoveClientSecretCommandHandlerSpec
     extends AsyncHmrcSpec

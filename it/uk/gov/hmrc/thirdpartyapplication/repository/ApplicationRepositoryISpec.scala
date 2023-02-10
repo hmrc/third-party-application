@@ -46,6 +46,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec

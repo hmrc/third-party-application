@@ -24,7 +24,7 @@ import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
 class ResponsibleIndividualVerificationControllerSpec extends AsyncHmrcSpec with FixedClock {

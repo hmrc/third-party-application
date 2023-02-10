@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 @Singleton
 class ApplicationCommandDispatcher @Inject() (

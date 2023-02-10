@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{NotificationStatus, Notifica
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class ProductionCredentialsRequestExpiryWarningJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 

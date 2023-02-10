@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, TESTIN
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 case class ApplicationTokens(production: Token)
 

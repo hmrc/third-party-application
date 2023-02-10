@@ -21,6 +21,7 @@ import cats.data.{NonEmptyChain, Validated}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock, HmrcSpec}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class CommandHandler2Spec extends HmrcSpec with ApplicationTestData {
 
