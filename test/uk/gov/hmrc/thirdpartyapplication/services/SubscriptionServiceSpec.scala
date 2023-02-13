@@ -37,13 +37,13 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
-class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
+class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with CollaboratorTestData {
 
   private val loggedInUser    = "loggedin@example.com"
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
@@ -261,7 +261,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   private def anApplicationData(
       applicationId: ApplicationId,
       state: ApplicationState = productionState(requestedByEmail),
-      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, Roles.ADMINISTRATOR, UserId.random)),
+      collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
       rateLimitTier: Option[RateLimitTier] = Some(BRONZE)
     ) = {
     new ApplicationData(

@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 trait CommandHandler {
   import CommandHandler._
@@ -60,16 +60,16 @@ object CommandHandler {
 
   private def isCollaboratorActorAndAdmin(actor: Actor, app: ApplicationData): Boolean =
     actor match {
-      case Actors.AppCollaborator(emailAddress) => app.collaborators.exists(c => c.role == Roles.ADMINISTRATOR && c.emailAddress == emailAddress)
+      case Actors.AppCollaborator(emailAddress) => app.collaborators.exists(c => c.isAdministrator && c.emailAddress == emailAddress)
       case _                                 => false
     }
 
   private def applicationHasAnAdmin(updated: Set[Collaborator]): Boolean = {
-    updated.exists(_.role == Roles.ADMINISTRATOR)
+    updated.exists(_.isAdministrator)
   }
 
   def isAdminOnApp(userId: UserId, app: ApplicationData): Validated[CommandFailures, Collaborator] =
-    mustBeDefined(app.collaborators.find(c => c.role == Roles.ADMINISTRATOR && c.userId == userId), "User must be an ADMIN")
+    mustBeDefined(app.collaborators.find(c => c.isAdministrator && c.userId == userId), "User must be an ADMIN")
 
   def isAdminIfInProduction(actor: Actor, app: ApplicationData): Validated[CommandFailures, Unit] =
     cond(

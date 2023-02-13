@@ -36,7 +36,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndCondit
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec
@@ -397,15 +396,13 @@ class NotificationServiceSpec
       EmailConnectorMock.SendCollaboratorAddedConfirmation.thenReturnSuccess()
 
       val collaboratorEmail = "somedev@someCompany.com"
-      val collaborator      = Collaborator(collaboratorEmail, Roles.DEVELOPER, idOf(collaboratorEmail))
+      val collaborator      = collaboratorEmail.developer()
       val event             = CollaboratorAdded(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
         Actors.AppCollaborator("dev@example.com"),
-        collaborator.userId,
-        collaborator.emailAddress,
-        collaborator.role,
+        collaborator,
         adminsToEmail
       )
 
@@ -413,14 +410,13 @@ class NotificationServiceSpec
       result shouldBe List(HasSucceeded)
 
       EmailConnectorMock.SendCollaboratorAddedNotification.verifyCalledWith(
-        collaboratorEmail,
-        collaborator.role,
+        collaborator,
         applicationData.name,
         recipients = adminsToEmail
       )
 
       EmailConnectorMock.SendCollaboratorAddedConfirmation
-        .verifyCalledWith(collaborator.role, applicationData.name, recipients = Set(collaboratorEmail))
+        .verifyCalledWith(collaborator, applicationData.name, recipients = Set(collaboratorEmail))
 
     }
 
@@ -431,15 +427,13 @@ class NotificationServiceSpec
       EmailConnectorMock.SendCollaboratorRemovedConfirmation.thenReturnSuccess()
 
       val collaboratorEmail = "somedev@someCompany.com"
-      val collaborator      = Collaborator(collaboratorEmail, Roles.DEVELOPER, idOf(collaboratorEmail))
+      val collaborator      = collaboratorEmail.developer()
       val event             = CollaboratorRemoved(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
         Actors.AppCollaborator("dev@example.com"),
-        collaborator.userId,
-        collaborator.emailAddress,
-        collaborator.role,
+        collaborator,
         true,
         adminsToEmail
       )

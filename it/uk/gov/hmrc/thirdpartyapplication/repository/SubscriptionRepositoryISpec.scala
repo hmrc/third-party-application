@@ -32,13 +32,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 import java.time.Clock
 import scala.util.Random.nextString
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 class SubscriptionRepositoryISpec
     extends ServerBaseISpec
@@ -51,7 +51,8 @@ class SubscriptionRepositoryISpec
     with Eventually
     with TableDrivenPropertyChecks
     with ApiIdentifierSyntax
-    with FixedClock {
+    with FixedClock
+    with CollaboratorTestData {
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -372,7 +373,7 @@ class SubscriptionRepositoryISpec
       checkInformation: Option[CheckInformation] = None
     ): ApplicationData = {
 
-    val collaborators = user.map(email => Collaborator(email, Roles.ADMINISTRATOR, UserId.random)).toSet
+    val collaborators: Set[Collaborator] = user.map(email => email.admin()).toSet
 
     ApplicationData(
       id,

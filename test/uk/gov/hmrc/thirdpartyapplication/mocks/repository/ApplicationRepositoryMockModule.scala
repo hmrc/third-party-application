@@ -39,6 +39,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndCondit
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocation
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

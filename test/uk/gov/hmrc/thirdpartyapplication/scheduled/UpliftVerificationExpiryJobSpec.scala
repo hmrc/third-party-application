@@ -34,17 +34,17 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock, NoMetricsGuiceOneAppPerSuite}
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 class UpliftVerificationExpiryJobSpec
     extends AsyncHmrcSpec
     with MongoSupport
     with BeforeAndAfterAll
     with ApplicationStateUtil
-    with NoMetricsGuiceOneAppPerSuite {
+    with NoMetricsGuiceOneAppPerSuite
+    with CollaboratorTestData {
 
   final val FixedTimeNow     = FixedClock.now
   final val expiryTimeInDays = 90
@@ -147,7 +147,7 @@ class UpliftVerificationExpiryJobSpec
       id,
       s"myApp-${id.value}",
       s"myapp-${id.value}",
-      Set(Collaborator("user@example.com", Roles.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       Some("description"),
       "myapplication",
       ApplicationTokens(

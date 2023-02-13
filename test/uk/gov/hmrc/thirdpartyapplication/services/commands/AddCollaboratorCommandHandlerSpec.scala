@@ -23,7 +23,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class AddCollaboratorCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -38,7 +37,7 @@ class AddCollaboratorCommandHandlerSpec
     val timestamp = FixedClock.now
 
     val newCollaboratorEmail = "newdev@somecompany.com"
-    val newCollaborator      = Collaborator(newCollaboratorEmail, Roles.DEVELOPER, idOf(newCollaboratorEmail))
+    val newCollaborator      = newCollaboratorEmail.developer()
 
     val adminsToEmail = Set(adminEmail, devEmail)
 
@@ -53,11 +52,11 @@ class AddCollaboratorCommandHandlerSpec
         val event = events.head
 
         inside(event) {
-          case CollaboratorAdded(_, appId, eventDateTime, actor, collaboratorId, collaboratorEmail, collaboratorRole, verifiedAdminsToEmail) =>
+          case CollaboratorAdded(_, appId, eventDateTime, actor, collaborator, verifiedAdminsToEmail) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            Collaborator(collaboratorEmail, collaboratorRole, collaboratorId) shouldBe newCollaborator
+            collaborator shouldBe newCollaborator
         }
       }
     }

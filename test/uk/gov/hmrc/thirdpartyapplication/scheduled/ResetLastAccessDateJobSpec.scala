@@ -33,17 +33,17 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneAppPerSuite}
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 class ResetLastAccessDateJobSpec
     extends AsyncHmrcSpec
     with MongoSupport
     with CleanMongoCollectionSupport
     with ApplicationStateUtil
-    with NoMetricsGuiceOneAppPerSuite {
+    with NoMetricsGuiceOneAppPerSuite
+    with CollaboratorTestData {
 
   implicit val m: Materializer                           = app.materializer
   implicit val dateTimeFormatters: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
@@ -137,7 +137,7 @@ class ResetLastAccessDateJobSpec
       id,
       s"myApp-${id.value}",
       s"myapp-${id.value}",
-      Set(Collaborator("user@example.com", Roles.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       Some("description"),
       "myapplication",
       ApplicationTokens(

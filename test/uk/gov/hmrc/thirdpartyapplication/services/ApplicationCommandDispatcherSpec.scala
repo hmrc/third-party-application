@@ -40,9 +40,11 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
-class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils with CommandCollaboratorExamples with CommandApplicationExamples {
+class ApplicationCommandDispatcherSpec
+    extends ApplicationCommandDispatcherUtils
+    with CommandCollaboratorExamples
+    with CommandApplicationExamples {
 
   trait Setup extends CommonSetup {
     val applicationData: ApplicationData = anApplicationData(applicationId)
@@ -172,7 +174,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
     }
 
     "AddCollaborator is received" should {
-      val collaborator           = Collaborator("email", Roles.DEVELOPER, UserId.random)
+      val collaborator           = "email".developer()
       val adminsToEmail          = Set("email1", "email2")
       val cmd: AddCollaborator   = AddCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
       val evt: CollaboratorAdded = CollaboratorAdded(
@@ -180,9 +182,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
         applicationId,
         FixedClock.now,
         devHubUser,
-        collaborator.userId,
-        collaborator.emailAddress,
-        collaborator.role,
+        collaborator,
         adminsToEmail
       )
 
@@ -204,7 +204,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
 
     "RemoveCollaborator is received" should {
 
-      val collaborator             = Collaborator("email", Roles.DEVELOPER, UserId.random)
+      val collaborator             = "email".developer()
       val adminsToEmail            = Set("email1", "email2")
       val cmd: RemoveCollaborator  = RemoveCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
       val evt: CollaboratorRemoved = CollaboratorRemoved(
@@ -212,9 +212,7 @@ class ApplicationCommandDispatcherSpec extends ApplicationCommandDispatcherUtils
         applicationId,
         FixedClock.now,
         devHubUser,
-        collaborator.userId,
-        collaborator.emailAddress,
-        collaborator.role,
+        collaborator,
         notifyCollaborator = true,
         adminsToEmail
       )

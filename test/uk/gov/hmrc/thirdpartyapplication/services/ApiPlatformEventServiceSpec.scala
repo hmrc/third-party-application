@@ -35,12 +35,11 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
-class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach with TableDrivenPropertyChecks {
+class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach with TableDrivenPropertyChecks with CollaboratorTestData {
 
   val mockConnector: ApiPlatformEventsConnector = mock[ApiPlatformEventsConnector]
 
@@ -67,7 +66,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
   val teamMemberRole: String                        = "ADMIN"
   val context: ApiContext                           = "api/path/path2".asContext
   val version: ApiVersion                           = "2.0".asVersion
-  val appDataWithCollaboratorAdded: ApplicationData = applicationData.copy(collaborators = Set(Collaborator(adminEmail, Roles.ADMINISTRATOR, UserId.random)))
+  val appDataWithCollaboratorAdded: ApplicationData = applicationData.copy(collaborators = Set(adminEmail.admin()))
 
   override def beforeEach(): Unit = {
     reset(mockConnector)

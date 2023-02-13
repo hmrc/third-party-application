@@ -38,11 +38,9 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with ApplicationTestData {
 
@@ -78,7 +76,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
     val applicationData        = anApplicationData(
       applicationId,
-      collaborators = Set(Collaborator(loggedInUser, Roles.ADMINISTRATOR, UserId.random), Collaborator(anotherAdminUser, Roles.ADMINISTRATOR, UserId.random))
+      collaborators = Set(loggedInUser.admin(), anotherAdminUser.admin())
     )
     val secretRequest          = ClientSecretRequest(loggedInUser)
     val secretRequestWithActor = ClientSecretRequestWithActor(Actors.AppCollaborator(loggedInUser), FixedClock.now)

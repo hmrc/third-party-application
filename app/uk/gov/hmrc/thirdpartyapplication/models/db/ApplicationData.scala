@@ -29,8 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, TESTIN
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator, ApplicationId}
 
 case class ApplicationTokens(production: Token)
 
@@ -58,7 +57,7 @@ case class ApplicationData(
     blocked: Boolean = false,
     ipAllowlist: IpAllowlist = IpAllowlist()
   ) {
-  lazy val admins = collaborators.filter(_.role == Roles.ADMINISTRATOR)
+  lazy val admins = collaborators.filter(_.isAdministrator)
 
   lazy val sellResellOrDistribute = access match {
     case Standard(_, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute

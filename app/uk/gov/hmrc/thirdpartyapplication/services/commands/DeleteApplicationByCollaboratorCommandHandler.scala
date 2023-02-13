@@ -26,11 +26,12 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, DeleteApplicationByCollaborator, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByCollaborator, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 @Singleton
 class DeleteApplicationByCollaboratorCommandHandler @Inject() (

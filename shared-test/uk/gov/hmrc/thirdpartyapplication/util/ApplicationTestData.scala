@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import scala.collection.mutable
-
 import com.github.t3hnar.bcrypt._
 
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -25,18 +23,12 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
-trait ApplicationTestData extends ApplicationStateUtil {
+trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData {
 
-  val idsByEmail = mutable.Map[String, UserId]()
-
-  def idOf(email: String) = {
-    idsByEmail.getOrElseUpdate(email, UserId.random)
-  }
 
   def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = FixedClock.now)
 
@@ -56,7 +48,7 @@ trait ApplicationTestData extends ApplicationStateUtil {
   def anApplicationData(
       applicationId: ApplicationId,
       state: ApplicationState = productionState(requestedByEmail),
-      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, Roles.ADMINISTRATOR, idOf(loggedInUser))),
+      collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
       access: Access = Standard(),
       rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
       environment: Environment = Environment.PRODUCTION,

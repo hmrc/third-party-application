@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, Collaborator, OldActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, OldActor}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 trait ActorHelper {
 

@@ -27,9 +27,12 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector.SendEmailRequest
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import play.api.libs.json.Json
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
-class EmailConnectorSpec extends ConnectorSpec {
+class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
   private val hubTestTitle       = "Unit Test Hub Title"
@@ -66,10 +69,11 @@ class EmailConnectorSpec extends ConnectorSpec {
     val adminEmail1       = "admin1@example.com"
     val adminEmail2       = "admin2@example.com"
     val gatekeeperEmail   = "gatekeeper@example.com"
-    val role              = "admin"
     val applicationName   = "Test Application"
     val applicationId     = ApplicationId.random
-
+    val developer = collaboratorEmail.developer()
+    val administrator = adminEmail1.admin()
+    
     "send added collaborator confirmation email" in new Setup {
       val role                                    = "admin"
       val expectedTemplateId                      = "apiAddedDeveloperAsCollaboratorConfirmation"
@@ -83,23 +87,22 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendCollaboratorAddedConfirmation(Roles.ADMINISTRATOR, applicationName, expectedToEmails))
+      await(connector.sendCollaboratorAddedConfirmation(administrator, applicationName, expectedToEmails))
     }
 
     "send added collaborator confirmation email with article for developer" in new Setup {
-      val role                                    = "developer"
       val expectedTemplateId                      = "apiAddedDeveloperAsCollaboratorConfirmation"
       val expectedToEmails                        = Set(collaboratorEmail)
       val expectedParameters: Map[String, String] = Map(
         "article"           -> "a",
-        "role"              -> role,
+        "role"              -> "developer",
         "applicationName"   -> applicationName,
         "developerHubTitle" -> hubTestTitle
       )
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendCollaboratorAddedConfirmation(Roles.DEVELOPER, applicationName, expectedToEmails))
+      await(connector.sendCollaboratorAddedConfirmation(developer, applicationName, expectedToEmails))
     }
 
     "send added collaborator notification email" in new Setup {
@@ -107,15 +110,15 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedTemplateId                      = "apiAddedDeveloperAsCollaboratorNotification"
       val expectedToEmails                        = Set(adminEmail1, adminEmail2)
       val expectedParameters: Map[String, String] = Map(
-        "email"             -> collaboratorEmail,
-        "role"              -> role,
+        "email"             -> developer.emailAddress,
+        "role"              -> "developer",
         "applicationName"   -> applicationName,
         "developerHubTitle" -> hubTestTitle
       )
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendCollaboratorAddedNotification(collaboratorEmail, Roles.ADMINISTRATOR, applicationName, expectedToEmails))
+      await(connector.sendCollaboratorAddedNotification(developer, applicationName, expectedToEmails))
     }
 
     "send removed collaborator confirmation email" in new Setup {

@@ -35,8 +35,8 @@ object CollaboratorRemovedNotification {
       ec: ExecutionContext
     ): Future[HasSucceeded] = {
     for {
-      _ <- emailConnector.sendRemovedCollaboratorNotification(event.collaboratorEmail, app.name, event.verifiedAdminsToEmail)
-      _ <- if (event.notifyCollaborator) emailConnector.sendRemovedCollaboratorConfirmation(app.name, Set(event.collaboratorEmail)) else Future.successful(HasSucceeded)
+      _ <- emailConnector.sendRemovedCollaboratorNotification(event.collaborator.emailAddress, app.name, event.verifiedAdminsToEmail)
+      _ <- if (event.notifyCollaborator) emailConnector.sendRemovedCollaboratorConfirmation(app.name, Set(event.collaborator.emailAddress)) else Future.successful(HasSucceeded)
     } yield HasSucceeded
   }
 }

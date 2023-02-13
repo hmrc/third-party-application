@@ -27,12 +27,11 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
-class AccessServiceSpec extends AsyncHmrcSpec {
+class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData {
 
   "Access service update scopes function" should {
 
@@ -178,7 +177,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Roles.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       None,
       "wso2ApplicationName",
       ApplicationTokens(
@@ -195,7 +194,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Roles.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       None,
       "wso2ApplicationName",
       ApplicationTokens(
@@ -212,7 +211,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Roles.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       None,
       "wso2ApplicationName",
       ApplicationTokens(

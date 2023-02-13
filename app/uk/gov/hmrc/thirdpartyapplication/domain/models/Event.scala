@@ -26,13 +26,12 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{TermsAndConditionsLocation, PrivacyPolicyLocation}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 // scalastyle:off number.of.types number.of.methods
 
@@ -383,9 +382,7 @@ object UpdateApplicationEvent {
       applicationId: ApplicationId,
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
       actor: Actor,
-      collaboratorId: UserId,
-      collaboratorEmail: String,
-      collaboratorRole: Collaborators.Role,
+      collaborator: Collaborator,
       verifiedAdminsToEmail: Set[String]
     ) extends UpdateApplicationEvent with TriggersNotification
 
@@ -398,9 +395,7 @@ object UpdateApplicationEvent {
       applicationId: ApplicationId,
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
       actor: Actor,
-      collaboratorId: UserId,
-      collaboratorEmail: String,
-      collaboratorRole: Collaborators.Role,
+      collaborator: Collaborator,
       notifyCollaborator: Boolean,
       verifiedAdminsToEmail: Set[String]
     ) extends UpdateApplicationEvent with TriggersNotification

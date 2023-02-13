@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ApplicationDeleted, _}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 // scalastyle:off number.of.types
 
@@ -113,15 +114,13 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   }
 
   private def auditAddCollaborator(app: ApplicationData, evt: CollaboratorAdded)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
-    val collaborator = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
-    liftF(audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator)))
+    liftF(audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(evt.collaborator)))
       .toOption
       .value
   }
 
   private def auditRemoveCollaborator(app: ApplicationData, evt: CollaboratorRemoved)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
-    val collaborator = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
-    liftF(audit(CollaboratorRemovedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorRemovedAudit.details(collaborator)))
+    liftF(audit(CollaboratorRemovedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorRemovedAudit.details(evt.collaborator)))
       .toOption
       .value
   }
@@ -280,7 +279,7 @@ object AuditAction {
 
     def details(collaborator: Collaborator) = Map(
       "newCollaboratorEmail" -> collaborator.emailAddress,
-      "newCollaboratorType"  -> collaborator.role.toString
+      "newCollaboratorType"  -> collaborator.describeRole
     )
   }
 
@@ -290,7 +289,7 @@ object AuditAction {
 
     def details(collaborator: Collaborator) = Map(
       "removedCollaboratorEmail" -> collaborator.emailAddress,
-      "removedCollaboratorType"  -> collaborator.role.toString
+      "removedCollaboratorType"  -> collaborator.describeRole
     )
   }
 

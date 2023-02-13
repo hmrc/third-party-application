@@ -23,12 +23,11 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
-class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples {
+class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples with CollaboratorTestData {
 
   "RateLimitTier" should {
     "have all rate limit tiers" in {
@@ -76,7 +75,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
           name = "an application",
           access = access,
           environment = environment,
-          collaborators = Set(Collaborator("jim@example.com", Roles.ADMINISTRATOR, UserId.random)),
+          collaborators = Set("jim@example.com".admin()),
           upliftRequest = makeUpliftRequest(ApiIdentifier.random),
           requestedBy = "user@example.com",
           sandboxApplicationId = ApplicationId.random
@@ -93,7 +92,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
           name = "an application",
           access = access,
           environment = environment,
-          collaborators = Set(Collaborator("jim@example.com", Roles.ADMINISTRATOR, UserId.random)),
+          collaborators = Set("jim@example.com".admin()),
           subscriptions = None
         ),
         wso2ApplicationName = "wso2ApplicationName",
