@@ -126,6 +126,12 @@ object Submission {
     addStatusHistory(Status.GrantedWithWarnings(timestamp, name, warnings, escalatedTo))
   }
 
+  val fail: (LocalDateTime, String) => Submission => Submission = (timestamp, name) => addStatusHistory(Status.Failed(timestamp, name))
+
+  val warnings: (LocalDateTime, String) => Submission => Submission = (timestamp, name) => addStatusHistory(Status.Warnings(timestamp, name))
+
+  val pendingResponsibleIndividual: (LocalDateTime, String) => Submission => Submission = (timestamp, name) => addStatusHistory(Status.PendingResponsibleIndividual(timestamp, name))
+
   val submit: (LocalDateTime, String) => Submission => Submission = (timestamp, requestedBy) => addStatusHistory(Status.Submitted(timestamp, requestedBy))
 
   sealed trait Status {
@@ -133,7 +139,7 @@ object Submission {
 
     def isOpenToAnswers = isCreated || isAnswering
 
-    def canBeMarked = isAnsweredCompletely || isSubmitted || isDeclined || isGranted || isGrantedWithWarnings
+    def canBeMarked = isAnsweredCompletely || isSubmitted || isDeclined || isGranted || isGrantedWithWarnings || isFailed || isWarnings || isPendingResponsibleIndividual
 
     def isAnsweredCompletely = this match {
       case Submission.Status.Answering(_, completed) => completed
@@ -175,6 +181,21 @@ object Submission {
       case _: Submission.Status.Declined => true
       case _                             => false
     }
+
+    def isFailed = this match {
+      case _: Submission.Status.Failed => true
+      case _                           => false
+    }
+
+    def isWarnings = this match {
+      case _: Submission.Status.Warnings => true
+      case _                             => false
+    }
+
+    def isPendingResponsibleIndividual = this match {
+      case _: Submission.Status.PendingResponsibleIndividual => true
+      case _                                                 => false
+    }
   }
 
   object Status {
@@ -197,6 +218,21 @@ object Submission {
         escalatedTo: Option[String]
       ) extends Status
 
+    case class Failed(
+        timestamp: LocalDateTime,
+        name: String
+      ) extends Status
+
+    case class Warnings(
+        timestamp: LocalDateTime,
+        name: String
+      ) extends Status
+
+    case class PendingResponsibleIndividual(
+        timestamp: LocalDateTime,
+        name: String
+      ) extends Status
+
     case class Submitted(
         timestamp: LocalDateTime,
         requestedBy: String
@@ -213,15 +249,23 @@ object Submission {
       ) extends Status
 
     def isLegalTransition(from: Submission.Status, to: Submission.Status): Boolean = (from, to) match {
-      case (c: Created, a: Answering)             => true
-      case (Answering(_, true), s: Submitted)     => true
-      case (a: Answering, b: Answering)           => true
-      case (s: Submitted, d: Declined)            => true
-      case (s: Submitted, g: Granted)             => true
-      case (s: Submitted, w: GrantedWithWarnings) => true
-      case (w: GrantedWithWarnings, d: Declined)  => true // ? Maybe
-      case (w: GrantedWithWarnings, g: Granted)   => true // ? Maybe
-      case _                                      => false
+      case (c: Created, a: Answering)                      => true
+      case (Answering(_, true), s: Submitted)              => true
+      case (a: Answering, b: Answering)                    => true
+      case (s: Submitted, d: Declined)                     => true
+      case (s: Submitted, g: Granted)                      => true
+      case (s: Submitted, w: GrantedWithWarnings)          => true
+      case (s: Submitted, f: Failed)                       => true
+      case (s: Submitted, w: Warnings)                     => true
+      case (s: Submitted, p: PendingResponsibleIndividual) => true
+      case (p: PendingResponsibleIndividual, f: Failed)    => true
+      case (p: PendingResponsibleIndividual, w: Warnings)  => true
+      case (p: PendingResponsibleIndividual, g: Granted)   => true
+      case (f: Failed, g: Granted)                         => true
+      case (w: Warnings, g: Granted)                       => true
+      case (w: GrantedWithWarnings, d: Declined)           => true // ? Maybe
+      case (w: GrantedWithWarnings, g: Granted)            => true // ? Maybe
+      case _                                               => false
     }
   }
 

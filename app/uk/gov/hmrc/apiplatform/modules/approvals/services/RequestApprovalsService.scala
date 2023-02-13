@@ -160,16 +160,20 @@ class RequestApprovalsService @Inject() (
 
     def deriveNewSubmissionsDetails(
         isRequesterTheResponsibleIndividual: Boolean,
-        existing: MarkedSubmission
+        existingSubmission: Submission
       ): Submission = {
+
+      val markedSubmission: MarkedSubmission = MarkedSubmission(existingSubmission, MarkAnswer.markSubmission(existingSubmission))
       if (isRequesterTheResponsibleIndividual) {
-        if (existing.isPass) {
-          Submission.grant(LocalDateTime.now(clock), requestedByEmailAddress)(existing.submission)
+        if (markedSubmission.isPass) {
+          Submission.grant(LocalDateTime.now(clock), requestedByEmailAddress)(markedSubmission.submission)
+        } else if (markedSubmission.isFail) {
+          Submission.fail(LocalDateTime.now(clock), requestedByEmailAddress)(markedSubmission.submission)
         } else {
-          existing.submission
+          Submission.warnings(LocalDateTime.now(clock), requestedByEmailAddress)(markedSubmission.submission)
         }
       } else {
-        existing.submission
+        Submission.pendingResponsibleIndividual(LocalDateTime.now(clock), requestedByEmailAddress)(markedSubmission.submission)
       }
     }
 
@@ -191,8 +195,7 @@ class RequestApprovalsService @Inject() (
         savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
         _                                  <- ET.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, updatedApp, submission, requestedByName, requestedByEmailAddress))
         submittedSubmission                 = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
-        markedSubmission                    = MarkedSubmission(submittedSubmission, MarkAnswer.markSubmission(submittedSubmission))
-        updatedSubmission                   = deriveNewSubmissionsDetails(isRequesterTheResponsibleIndividual, markedSubmission)
+        updatedSubmission                   = deriveNewSubmissionsDetails(isRequesterTheResponsibleIndividual, submittedSubmission)
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
         _                                  <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
         _                                   = logCompletedApprovalRequest(savedApp)

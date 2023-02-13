@@ -91,8 +91,9 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
   val submissionId = Submission.Id.random
 
   val standardContext: AskWhen.Context = Map(
-    AskWhen.Context.Keys.IN_HOUSE_SOFTWARE -> "No",
-    AskWhen.Context.Keys.VAT_OR_ITSA       -> "No"
+    AskWhen.Context.Keys.IN_HOUSE_SOFTWARE       -> "No",
+    AskWhen.Context.Keys.VAT_OR_ITSA             -> "No",
+    AskWhen.Context.Keys.NEW_TERMS_OF_USE_UPLIFT -> "No"
   )
   val now                              = FixedClock.now.truncatedTo(ChronoUnit.MILLIS)
 
