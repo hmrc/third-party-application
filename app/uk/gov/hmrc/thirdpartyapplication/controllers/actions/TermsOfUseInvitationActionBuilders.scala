@@ -38,11 +38,11 @@ object TermsOfUseInvitationActionBuilders {
   object ApplicationStateFilter {
     type Type = State => Boolean
 
-    val notProduction: Type   = _ != PRODUCTION
-    val production: Type      = _ == PRODUCTION
-    val preProduction: Type   = _ == PRE_PRODUCTION
-    val inTesting: Type       = _ == TESTING
-    val allAllowed: Type      = _ => true
+    val notProduction: Type = _ != PRODUCTION
+    val production: Type    = _ == PRODUCTION
+    val preProduction: Type = _ == PRE_PRODUCTION
+    val inTesting: Type     = _ == TESTING
+    val allAllowed: Type    = _ => true
 
     val pendingApproval: Type = s =>
       s == PENDING_GATEKEEPER_APPROVAL ||

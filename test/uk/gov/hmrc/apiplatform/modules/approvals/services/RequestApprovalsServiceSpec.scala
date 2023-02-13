@@ -151,6 +151,31 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         acceptance.submissionId shouldBe answeredSubmission.id
       }
 
+      "don't update state if production app" in new Setup {
+        namingServiceReturns(ValidName)
+        val prodApplication = anApplicationData(applicationId, productionState(requestedByEmail))
+        ApplicationRepoMock.Save.thenReturn(prodApplication)
+        StateHistoryRepoMock.Insert.thenAnswer()
+        AuditServiceMock.Audit.thenReturnSuccess()
+        SubmissionsServiceMock.Store.thenReturn()
+        ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(prodApplication)
+        EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
+        ResponsibleIndividualVerificationServiceMock.CreateNewVerification.thenCreateNewVerification()
+
+        val result = await(underTest.requestApproval(prodApplication, answeredSubmission, requestedByName, requestedByEmail))
+
+        result shouldBe RequestApprovalsService.ApprovalAccepted(prodApplication)
+        StateHistoryRepoMock.Insert.verifyNeverCalled()
+        AuditServiceMock.Audit.verifyCalled()
+        val savedAppData = ApplicationRepoMock.Save.verifyCalled()
+        savedAppData.state.name shouldBe State.PRODUCTION
+
+        val updatedSubmission = SubmissionsServiceMock.Store.verifyCalledWith()
+        updatedSubmission.status should matchPattern {
+          case Submission.Status.Submitted(_, requestedByEmail) =>
+        }
+      }
+
       "return duplicate application name if duplicate" in new Setup {
         namingServiceReturns(DuplicateName)
 
@@ -200,9 +225,9 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       "return application in incorrect state an application not in TESTING" in new Setup {
-        val prodApplication: ApplicationData = anApplicationData(applicationId, productionState(requestedByEmail))
+        val pendingApplication: ApplicationData = anApplicationData(applicationId, pendingGatekeeperApprovalState(requestedByEmail))
 
-        val result = await(underTest.requestApproval(prodApplication, answeringSubmission, requestedByName, requestedByEmail))
+        val result = await(underTest.requestApproval(pendingApplication, answeringSubmission, requestedByName, requestedByEmail))
 
         result shouldBe RequestApprovalsService.ApprovalRejectedDueToIncorrectApplicationState
         StateHistoryRepoMock.Insert.verifyNeverCalled()

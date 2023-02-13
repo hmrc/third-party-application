@@ -161,7 +161,7 @@ class RequestApprovalsService @Inject() (
     def deriveNewSubmissionsDetails(
         isRequesterTheResponsibleIndividual: Boolean,
         existing: MarkedSubmission
-    ): Submission = {
+      ): Submission = {
       if (isRequesterTheResponsibleIndividual) {
         if (existing.isPass) {
           Submission.grant(LocalDateTime.now(clock), requestedByEmailAddress)(existing.submission)
@@ -192,7 +192,7 @@ class RequestApprovalsService @Inject() (
         _                                  <- ET.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, updatedApp, submission, requestedByName, requestedByEmailAddress))
         submittedSubmission                 = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
         markedSubmission                    = MarkedSubmission(submittedSubmission, MarkAnswer.markSubmission(submittedSubmission))
-        updatedSubmission                   = deriveNewSubmissionsDetails(isRequesterTheResponsibleIndividual, markedSubmission) 
+        updatedSubmission                   = deriveNewSubmissionsDetails(isRequesterTheResponsibleIndividual, markedSubmission)
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
         _                                  <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
         _                                   = logCompletedApprovalRequest(savedApp)

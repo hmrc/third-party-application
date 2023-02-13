@@ -147,7 +147,9 @@ class GatekeeperController @Inject() (
       }
     }
 
-  def createInvitation(applicationId: ApplicationId) = anyAuthenticatedGatekeeperUserWithProductionApplicationAndNoSubmissionAndNoInvitation()(applicationId) { implicit applicationRequest =>
+  def createInvitation(
+      applicationId: ApplicationId
+    ) = anyAuthenticatedGatekeeperUserWithProductionApplicationAndNoSubmissionAndNoInvitation()(applicationId) { implicit applicationRequest =>
     termsOfUseInvitationService
       .createInvitation(applicationRequest.application)
       .map {
