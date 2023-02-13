@@ -279,12 +279,15 @@ object Submission {
     lazy val isOpenToAnswers      = status.isOpenToAnswers
     lazy val isAnsweredCompletely = status.isAnsweredCompletely
 
-    lazy val isCreated             = status.isCreated
-    lazy val isAnswering           = status.isAnswering
-    lazy val isGranted             = status.isGranted
-    lazy val isGrantedWithWarnings = status.isGrantedWithWarnings
-    lazy val isDeclined            = status.isDeclined
-    lazy val isSubmitted           = status.isSubmitted
+    lazy val isCreated                      = status.isCreated
+    lazy val isAnswering                    = status.isAnswering
+    lazy val isFailed                       = status.isFailed
+    lazy val isWarnings                     = status.isWarnings
+    lazy val isPendingResponsibleIndividual = status.isPendingResponsibleIndividual
+    lazy val isGranted                      = status.isGranted
+    lazy val isGrantedWithWarnings          = status.isGrantedWithWarnings
+    lazy val isDeclined                     = status.isDeclined
+    lazy val isSubmitted                    = status.isSubmitted
   }
 }
 
