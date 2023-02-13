@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Subs
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 @Singleton
 class SubscriptionService @Inject() (

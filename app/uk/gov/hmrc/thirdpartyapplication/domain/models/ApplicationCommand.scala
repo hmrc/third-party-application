@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.ActorJsonFormatters
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{TermsAndConditionsLocation, PrivacyPolicyLocation}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator, TermsAndConditionsLocation, PrivacyPolicyLocation}
 
 trait ApplicationCommand {
   def timestamp: LocalDateTime

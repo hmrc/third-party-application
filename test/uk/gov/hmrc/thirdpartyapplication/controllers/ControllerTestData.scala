@@ -24,16 +24,16 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
-trait ControllerTestData {
+trait ControllerTestData extends CollaboratorTestData {
 
   val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", Roles.ADMINISTRATOR, UserId.random),
-    Collaborator("dev@example.com", Roles.DEVELOPER, UserId.random)
+    "admin@example.com".admin(),
+    "dev@example.com".developer()    
   )
 
   val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))

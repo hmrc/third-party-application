@@ -16,14 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 trait CommandCollaboratorExamples {
   self: ApplicationTestData =>
 
-  val developerCollaborator = Collaborator(devEmail, Roles.DEVELOPER, idOf(devEmail))
+  val developerCollaborator = devEmail.developer()
 
-  val adminCollaborator = Collaborator(adminEmail, Roles.ADMINISTRATOR, idOf(adminEmail))
+  val adminCollaborator = adminEmail.admin()
 }

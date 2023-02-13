@@ -53,8 +53,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator,
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 @Singleton
 class ApplicationService @Inject() (
@@ -110,11 +109,13 @@ class ApplicationService @Inject() (
   @deprecated("please use AddCollaboratorRequest command to application Update controller")
   def addCollaborator(applicationId: ApplicationId, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
 
-    def validateCollaborator(app: ApplicationData, email: String, role: Collaborators.Role, userId: UserId): Collaborator = {
-      val normalised = email.toLowerCase
-      if (app.collaborators.exists(_.emailAddress == normalised)) throw new UserAlreadyExists
+    
+    def validateCollaborator(app: ApplicationData, collaborator: Collaborator): Collaborator = {
+      val normalisedCollaborator = request.collaborator.normalise
 
-      Collaborator(normalised, role, userId)
+      if (app.collaborators.exists(_.emailAddress == normalisedCollaborator.emailAddress)) throw new UserAlreadyExists
+
+      normalisedCollaborator
     }
 
     def addUser(app: ApplicationData, collaborator: Collaborator): Future[Set[Collaborator]] = {
@@ -130,18 +131,18 @@ class ApplicationService @Inject() (
       ): Future[HasSucceeded] = {
 
       if (adminsToEmail.nonEmpty) {
-        emailConnector.sendCollaboratorAddedNotification(collaborator.emailAddress, collaborator.role, applicationName, adminsToEmail)
+        emailConnector.sendCollaboratorAddedNotification(collaborator, applicationName, adminsToEmail)
       }
 
-      emailConnector.sendCollaboratorAddedConfirmation(collaborator.role, applicationName, Set(collaborator.emailAddress))
+      emailConnector.sendCollaboratorAddedConfirmation(collaborator, applicationName, Set(collaborator.emailAddress))
     }
 
     for {
       app         <- fetchApp(applicationId)
-      collaborator = validateCollaborator(app, request.collaborator.emailAddress, request.collaborator.role, request.collaborator.userId)
+      collaborator = validateCollaborator(app, request.collaborator)
       _           <- addUser(app, collaborator)
       _            = auditService.audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator))
-      _            = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)
+      _            = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.describeRole)
       _            = sendNotificationEmails(app.name, collaborator, request.adminsToEmail)
     } yield AddCollaboratorResponse(request.isRegistered)
   }
@@ -266,7 +267,7 @@ class ApplicationService @Inject() (
     def findCollaborator(app: ApplicationData): Option[Collaborator] = app.collaborators.find(_.emailAddress == collaborator.toLowerCase)
 
     def sendEvent(app: ApplicationData, maybeColab: Option[Collaborator]) = maybeColab match {
-      case Some(collaborator) => apiPlatformEventService.sendTeamMemberRemovedEvent(app, collaborator.emailAddress, collaborator.role.toString)
+      case Some(collaborator) => apiPlatformEventService.sendTeamMemberRemovedEvent(app, collaborator.emailAddress, collaborator.describeRole)
       case None               => logger.warn(s"Failed to send TeamMemberRemovedEvent for appId: ${app.id}")
     }
 
@@ -284,7 +285,7 @@ class ApplicationService @Inject() (
   }
 
   private def hasAdmin(updated: Set[Collaborator]): Boolean = {
-    updated.exists(_.role == Roles.ADMINISTRATOR)
+    updated.exists(_.isAdministrator)
   }
 
   def fetchByClientId(clientId: ClientId): Future[Option[ApplicationResponse]] = {

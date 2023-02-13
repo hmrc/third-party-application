@@ -23,11 +23,12 @@ import scala.concurrent.ExecutionContext
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, RemoveCollaborator, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{RemoveCollaborator, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 @Singleton
 class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
@@ -69,9 +70,7 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
         applicationId = app.id,
         eventDateTime = eventTime,
         actor = actor,
-        collaboratorId = collaborator.userId,
-        collaboratorEmail = collaborator.emailAddress,
-        collaboratorRole = collaborator.role,
+        collaborator,
         notifyCollaborator = notifyCollaborator(),
         verifiedAdminsToEmail = adminsToEmail
       )

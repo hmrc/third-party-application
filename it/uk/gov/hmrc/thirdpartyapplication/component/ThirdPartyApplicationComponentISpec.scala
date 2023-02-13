@@ -34,19 +34,19 @@ import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
 import java.time.ZoneOffset
 import java.util.UUID
 import scala.concurrent.Await.{ready, result}
 import scala.util.Random
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
 }
 
-class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
+class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with CollaboratorTestData {
 
   val configOverrides = Map[String, Any](
     "microservice.services.api-subscription-fields.port"         -> 19650,
@@ -320,7 +320,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       Then("The collaborator is added")
       result shouldBe AddCollaboratorResponse(registeredUser = true)
       val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.collaborators should contain(Collaborator("test@example.com", Roles.ADMINISTRATOR, testUserId))
+      fetchedApplication.collaborators should contain("test@example.com".admin(testUserId))
 
       apiPlatformEventsStub.verifyTeamMemberAddedEventSent()
     }
@@ -343,7 +343,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
 
       Then("The collaborator is removed")
       val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.collaborators should not contain Collaborator(emailAddress, Roles.DEVELOPER, userId)
+      fetchedApplication.collaborators should not contain emailAddress.developer(userId)
 
       apiPlatformEventsStub.verifyTeamMemberRemovedEventSent()
     }

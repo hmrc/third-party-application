@@ -38,9 +38,15 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
-class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil with FixedClock {
+class GatekeeperServiceSpec
+    extends AsyncHmrcSpec
+    with BeforeAndAfterAll
+    with ApplicationStateUtil
+    with CollaboratorTestData
+    with FixedClock {
 
   private val requestedByEmail = "john.smith@example.com"
 
@@ -60,7 +66,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   private def anApplicationData(
       applicationId: ApplicationId,
       state: ApplicationState = productionState(requestedByEmail),
-      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, Roles.ADMINISTRATOR, UserId.random))
+      collaborators: Set[Collaborator] = Set(loggedInUser.admin())
     ) = {
     ApplicationData(
       applicationId,
@@ -279,10 +285,10 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       AuditServiceMock.AuditWithTags.thenReturnSuccess()
       ApplicationRepoMock.Save.thenAnswer()
 
-      val admin1    = Collaborator("admin1@example.com", Roles.ADMINISTRATOR, UserId.random)
-      val admin2    = Collaborator("admin2@example.com", Roles.ADMINISTRATOR, UserId.random)
-      val requester = Collaborator(upliftRequestedBy, Roles.ADMINISTRATOR, UserId.random)
-      val developer = Collaborator("somedev@example.com", Roles.DEVELOPER, UserId.random)
+      val admin1    = "admin1@example.com".admin()
+      val admin2    = "admin2@example.com".admin()
+      val requester = upliftRequestedBy.admin()
+      val developer = "somedev@example.com".developer()
 
       val application = anApplicationData(
         applicationId,

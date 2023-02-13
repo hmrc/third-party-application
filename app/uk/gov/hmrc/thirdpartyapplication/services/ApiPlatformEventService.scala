@@ -30,6 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 // TODO - context and version probably should be strings in the events??
 @Singleton

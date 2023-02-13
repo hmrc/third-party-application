@@ -48,12 +48,14 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks
     with UpliftRequestSamples
-    with SubmissionsTestData {
+    with SubmissionsTestData 
+    with CollaboratorTestData {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
@@ -64,8 +66,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   implicit lazy val materializer: Materializer = NoMaterializer
 
   val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", Roles.ADMINISTRATOR, UserId.random),
-    Collaborator("dev@example.com", Roles.DEVELOPER, UserId.random)
+    "admin@example.com".admin(),
+    "dev@example.com".developer()
   )
 
   private val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
@@ -347,7 +349,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       status(result) shouldBe UNPROCESSABLE_ENTITY
       val content = contentAsJson(result).toString
       content should include(""""code":"INVALID_REQUEST_PAYLOAD"""")
-      content should include(""""There is no role for 'developer'"""")
+      content should include(""""developer is not a recognised role"""")
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -388,8 +390,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     Some("Description"),
     Environment.PRODUCTION,
     Set(
-      Collaborator("admin@example.com", Roles.ADMINISTRATOR, UserId.random),
-      Collaborator("dev@example.com", Roles.ADMINISTRATOR, UserId.random)
+      "admin@example.com".admin(),
+      "dev@example.com".developer()
     ),
     Some(Set(ApiIdentifier.random))
   )
@@ -400,8 +402,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     Some("Description"),
     Environment.PRODUCTION,
     Set(
-      Collaborator("admin@example.com", Roles.ADMINISTRATOR, UserId.random),
-      Collaborator("dev@example.com", Roles.ADMINISTRATOR, UserId.random)
+      "admin@example.com".admin(),
+      "dev@example.com".developer()
     ),
     makeUpliftRequest(ApiIdentifier.random),
     "bob@example.com",

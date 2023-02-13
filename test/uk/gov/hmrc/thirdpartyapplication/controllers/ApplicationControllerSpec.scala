@@ -58,7 +58,7 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -253,13 +253,12 @@ class ApplicationControllerSpec
     val applicationId                                      = ApplicationId.random
     val admin                                              = "admin@example.com"
     val email                                              = "test@example.com"
-    val role                                               = Roles.DEVELOPER
     val isRegistered                                       = false
     val adminsToEmail                                      = Set.empty[String]
     val userId                                             = UserId.random
-    val addCollaboratorRequestWithUserId                   = AddCollaboratorRequest(Collaborator(email, role, userId), isRegistered, adminsToEmail)
+    val addCollaboratorRequestWithUserId                   = AddCollaboratorRequest(email.developer(userId), isRegistered, adminsToEmail)
     val payload                                            =
-      s"""{"adminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"$role", "userId": "${userId.value}"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
+      s"""{"adminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"DEVELOPER", "userId": "${userId.value}"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
     val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.parse(payload))
 
     "succeed with a 200 (ok) for a STANDARD application" in new Setup {
@@ -277,11 +276,10 @@ class ApplicationControllerSpec
   "add collaborators" should {
     val applicationId                                      = ApplicationId.random
     val email                                              = "test@example.com"
-    val role                                               = Roles.DEVELOPER
     val userId                                             = UserId.random
     val isRegistered                                       = false
     val adminsToEmail                                      = Set.empty[String]
-    val addCollaboratorRequest                             = AddCollaboratorRequest(Collaborator(email, role, userId), isRegistered, adminsToEmail)
+    val addCollaboratorRequest                             = AddCollaboratorRequest(email.developer(userId), isRegistered, adminsToEmail)
     val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.toJson(addCollaboratorRequest))
 
     "succeed with a 200 (ok) for a STANDARD application" in new Setup {
@@ -384,7 +382,7 @@ class ApplicationControllerSpec
         eqTo(adminsToEmailSet),
         eqTo(notifyCollaborator)
       )(*))
-        .thenReturn(successful(Set(Collaborator(admin, Roles.ADMINISTRATOR, UserId.random))))
+        .thenReturn(successful(Set(Collaborators.Administrator(UserId.random, admin))))
 
       val result = underTest.deleteCollaborator(applicationId)(myRequest)
 
@@ -402,7 +400,7 @@ class ApplicationControllerSpec
             eqTo(adminsToEmailSet),
             eqTo(notifyCollaborator)
           )(*))
-            .thenReturn(successful(Set(Collaborator(admin, Roles.ADMINISTRATOR, UserId.random))))
+            .thenReturn(successful(Set(Collaborators.Administrator(UserId.random, admin))))
 
           val result = underTest.deleteCollaborator(applicationId)(myRequest)
 
@@ -420,7 +418,7 @@ class ApplicationControllerSpec
             eqTo(adminsToEmailSet),
             eqTo(notifyCollaborator)
           )(*))
-            .thenReturn(successful(Set(Collaborator(admin, Roles.ADMINISTRATOR, UserId.random))))
+            .thenReturn(successful(Set(Collaborators.Administrator(UserId.random, admin))))
 
           val result = underTest.deleteCollaborator(applicationId)(myRequest)
 

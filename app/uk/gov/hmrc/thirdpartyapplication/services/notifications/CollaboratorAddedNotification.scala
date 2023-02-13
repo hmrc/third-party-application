@@ -35,8 +35,8 @@ object CollaboratorAddedNotification {
       ec: ExecutionContext
     ): Future[HasSucceeded] = {
     for {
-      _ <- emailConnector.sendCollaboratorAddedNotification(event.collaboratorEmail, event.collaboratorRole, app.name, event.verifiedAdminsToEmail)
-      _ <- emailConnector.sendCollaboratorAddedConfirmation(event.collaboratorRole, app.name, Set(event.collaboratorEmail))
+      _ <- emailConnector.sendCollaboratorAddedNotification(event.collaborator, app.name, event.verifiedAdminsToEmail)
+      _ <- emailConnector.sendCollaboratorAddedConfirmation(event.collaborator, app.name, Set(event.collaborator.emailAddress))
     } yield HasSucceeded
   }
 }

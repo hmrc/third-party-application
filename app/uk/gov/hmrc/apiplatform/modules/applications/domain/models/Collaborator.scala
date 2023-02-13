@@ -24,14 +24,30 @@ sealed trait Collaborator {
   def emailAddress: String
 
   def isAdministrator: Boolean
-  def isDeveloper: Boolean = ! isAdministrator
+  final def isDeveloper: Boolean = ! isAdministrator
+
+  final def normalise: Collaborator = Collaborator.normalise(this)
+
+  final def describeRole: String = Collaborator.describeRole(this)
 }
 
 object Collaborator {
 
-  def apply(emailAddress: String, role: Collaborators.Role, userId: UserId): Collaborator = role match {
-    case Collaborators.Roles.ADMINISTRATOR => Collaborators.Administrator(userId, emailAddress)
-    case Collaborators.Roles.DEVELOPER     => Collaborators.Developer(userId, emailAddress)
+  private sealed trait Role
+
+  private object Roles {
+    case object ADMINISTRATOR extends Role
+    case object DEVELOPER     extends Role
+  }
+
+  def normalise(me: Collaborator): Collaborator = me match {
+    case a: Collaborators.Administrator => a.copy(emailAddress = a.emailAddress.toLowerCase())
+    case d: Collaborators.Developer => d.copy(emailAddress = d.emailAddress.toLowerCase())
+  }
+
+  def describeRole(me: Collaborator): String = me match {
+    case a: Collaborators.Administrator => Roles.ADMINISTRATOR.toString
+    case d: Collaborators.Developer => Roles.DEVELOPER.toString
   }
 
   import play.api.libs.json.Json
@@ -42,18 +58,12 @@ object Collaborator {
   implicit val developersJf    = Json.format[Collaborators.Developer]
 
   implicit val collaboratorJf: OFormat[Collaborator] = Union.from[Collaborator]("role")
-    .and[Collaborators.Administrator](Collaborators.Roles.ADMINISTRATOR.toString)
-    .and[Collaborators.Developer](Collaborators.Roles.DEVELOPER.toString)
+    .and[Collaborators.Administrator](Roles.ADMINISTRATOR.toString)
+    .and[Collaborators.Developer](Roles.DEVELOPER.toString)
     .format
 }
 
 object Collaborators {
-  sealed trait Role
-
-  object Roles {
-    case object ADMINISTRATOR extends Role
-    case object DEVELOPER     extends Role
-  }
 
   case class Administrator(userId: UserId, emailAddress: String) extends Collaborator {
     val isAdministrator = true
@@ -61,24 +71,5 @@ object Collaborators {
 
   case class Developer(userId: UserId, emailAddress: String)     extends Collaborator {
     val isAdministrator = false
-  }
-
-  object Role {
-    import play.api.libs.json._
-
-    // implicit val developerJF      = Json.format[Collaborators.Roles.DEVELOPER.type]
-    // implicit val administratorsJF = Json.format[Collaborators.Roles.ADMINISTRATOR.type]
-
-    implicit val collaboratorsRoleJf: Format[Collaborators.Role] = new Format[Collaborators.Role] {
-
-      override def writes(o: Collaborators.Role): JsValue = JsString(o.toString)
-
-      override def reads(json: JsValue): JsResult[Collaborators.Role] = json match {
-        case JsString("DEVELOPER")     => JsSuccess(Collaborators.Roles.DEVELOPER)
-        case JsString("ADMINISTRATOR") => JsSuccess(Collaborators.Roles.ADMINISTRATOR)
-        case JsString(text)            => JsError(s"There is no role for '$text'")
-        case _                         => JsError(s"Cannot read role")
-      }
-    }
   }
 }

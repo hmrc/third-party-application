@@ -48,14 +48,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
-
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
-    with ApplicationStateUtil with TableDrivenPropertyChecks {
+    with ApplicationStateUtil with TableDrivenPropertyChecks with CollaboratorTestData {
 
   import play.api.test.Helpers._
 
@@ -129,8 +128,8 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
     ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
 
   val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", Roles.ADMINISTRATOR, UserId.random),
-    Collaborator("dev@example.com", Roles.DEVELOPER, UserId.random)
+    "admin@example.com".admin(),
+    "dev@example.com".admin()
   )
 
   private val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))

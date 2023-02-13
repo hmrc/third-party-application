@@ -26,9 +26,11 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+
 
 @Singleton
 class VerifyResponsibleIndividualCommandHandler @Inject() (

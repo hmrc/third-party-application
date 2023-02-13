@@ -56,8 +56,7 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -163,7 +162,7 @@ class ApplicationServiceSpec
 
     def setupAuditTests(access: Access): (ApplicationData, UpdateRedirectUris) = {
       val testUserEmail = "test@example.com"
-      val admin         = Collaborator(testUserEmail, Roles.ADMINISTRATOR, idOf(testUserEmail))
+      val admin         = testUserEmail.admin()
       val tokens        = ApplicationTokens(
         Token(ClientId("prodId"), "prodToken")
       )
@@ -689,21 +688,21 @@ class ApplicationServiceSpec
 
   "add collaborator with userId" should {
     val admin2: String = "admin2@example.com"
-    val email: String  = "test@example.com"
+    val defaultEmail: String  = "test@example.com"
     val adminsToEmail  = Set(admin2)
 
-    def collaboratorRequest(email: String = email, role: Collaborators.Role = Roles.DEVELOPER, isRegistered: Boolean = false, adminsToEmail: Set[String] = adminsToEmail) = {
-      AddCollaboratorRequest(Collaborator(email, role, idOf(email)), isRegistered, adminsToEmail)
+    def developerRequest(email: String = defaultEmail, isRegistered: Boolean = false, adminsToEmail: Set[String] = adminsToEmail) = {
+      AddCollaboratorRequest(email.developer(), isRegistered, adminsToEmail)
     }
 
-    val request = collaboratorRequest()
+    val request = developerRequest()
 
     "update collaborators when application exists in the repository for the given application id" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       val expected = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
       ApplicationRepoMock.Save.thenReturn(expected)
 
-      private val addRequest              = collaboratorRequest(isRegistered = true)
+      private val addRequest              = developerRequest(isRegistered = true)
       val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, addRequest))
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
@@ -714,7 +713,7 @@ class ApplicationServiceSpec
       )
       result shouldBe AddCollaboratorResponse(registeredUser = true)
 
-      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.role.toString()))(
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.describeRole))(
         any[HeaderCarrier]
       )
     }
@@ -723,14 +722,18 @@ class ApplicationServiceSpec
   "add collaborator" should {
     val admin: String  = "admin@example.com"
     val admin2: String = "admin2@example.com"
-    val email: String  = "test@example.com"
+    val defaultEmail: String  = "test@example.com"
     val adminsToEmail  = Set(admin2)
 
-    def collaboratorRequest(email: String = email, role: Collaborators.Role = Roles.DEVELOPER, isRegistered: Boolean = false, adminsToEmail: Set[String] = adminsToEmail) = {
-      AddCollaboratorRequest(Collaborator(email, role, idOf(email)), isRegistered, adminsToEmail)
+    def developerRequest(email: String = defaultEmail, isRegistered: Boolean = false, adminsToEmail: Set[String] = adminsToEmail) = {
+      AddCollaboratorRequest(email.developer(), isRegistered, adminsToEmail)
     }
 
-    val request = collaboratorRequest()
+    def adminRequest(email: String, isRegistered: Boolean = false, adminsToEmail: Set[String] = adminsToEmail) = {
+      AddCollaboratorRequest(email.admin(), isRegistered, adminsToEmail)
+    }
+
+    val request = developerRequest()
 
     "throw notFoundException if no application exists in the repository for the given application id" in new Setup {
       ApplicationRepoMock.Fetch.thenReturnNone()
@@ -745,7 +748,7 @@ class ApplicationServiceSpec
       val expected = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
       ApplicationRepoMock.Save.thenReturn(expected)
 
-      private val addRequest              = collaboratorRequest(isRegistered = true)
+      private val addRequest              = developerRequest(isRegistered = true)
       val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, addRequest))
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
@@ -756,7 +759,7 @@ class ApplicationServiceSpec
       )
       result shouldBe AddCollaboratorResponse(registeredUser = true)
 
-      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.role.toString()))(
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.describeRole))(
         any[HeaderCarrier]
       )
     }
@@ -765,9 +768,9 @@ class ApplicationServiceSpec
       AuditServiceMock.Audit.thenReturnSuccess()
 
       val collaborators: Set[Collaborator]          = Set(
-        Collaborator(admin, Roles.ADMINISTRATOR, idOf(admin)),
-        Collaborator(admin2, Roles.ADMINISTRATOR, idOf(admin2)),
-        Collaborator(devEmail, Roles.DEVELOPER, idOf(devEmail))
+        admin.admin(),
+        admin2.admin(),
+        devEmail.developer()
       )
       override val applicationData: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
       val expected: ApplicationData                 = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
@@ -775,15 +778,15 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(expected)
 
-      val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, collaboratorRequest(isRegistered = true)))
+      val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, developerRequest(isRegistered = true)))
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
 
-      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.role.toString()))(
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.describeRole))(
         any[HeaderCarrier]
       )
-      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(Roles.DEVELOPER, applicationData.name, Set(email))
-      verify(mockEmailConnector).sendCollaboratorAddedNotification(email, Roles.DEVELOPER, applicationData.name, adminsToEmail)
+      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(request.collaborator, applicationData.name, Set(defaultEmail))
+      verify(mockEmailConnector).sendCollaboratorAddedNotification(request.collaborator, applicationData.name, adminsToEmail)
       result shouldBe AddCollaboratorResponse(registeredUser = true)
     }
 
@@ -791,9 +794,9 @@ class ApplicationServiceSpec
       AuditServiceMock.Audit.thenReturnSuccess()
 
       val collaborators: Set[Collaborator]          = Set(
-        Collaborator(admin, Roles.ADMINISTRATOR, idOf(admin)),
-        Collaborator(admin2, Roles.ADMINISTRATOR, idOf(admin2)),
-        Collaborator(devEmail, Roles.DEVELOPER, idOf(devEmail))
+        admin.admin(),
+        admin2.admin(),
+        devEmail.developer()
       )
       override val applicationData: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
       val expected: ApplicationData                 = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
@@ -801,24 +804,23 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(expected)
 
-      val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, collaboratorRequest()))
+      val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, developerRequest()))
 
-      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.role.toString()))(
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.describeRole))(
         any[HeaderCarrier]
       )
       ApplicationRepoMock.Save.verifyCalledWith(expected)
-      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(Roles.DEVELOPER, applicationData.name, Set(email))
-      verify(mockEmailConnector).sendCollaboratorAddedNotification(email, Roles.DEVELOPER, applicationData.name, adminsToEmail)
+      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(request.collaborator, applicationData.name, Set(defaultEmail))
+      verify(mockEmailConnector).sendCollaboratorAddedNotification(request.collaborator, applicationData.name, adminsToEmail)
       result shouldBe AddCollaboratorResponse(registeredUser = false)
     }
 
     "send email confirmation to the developer and no notifications when there are no admins to email" in new Setup {
       AuditServiceMock.Audit.thenReturnSuccess()
 
-      val admin                                     = "theonlyadmin@example.com"
       val collaborators: Set[Collaborator]          = Set(
-        Collaborator(admin, Roles.ADMINISTRATOR, idOf(admin)),
-        Collaborator(devEmail, Roles.DEVELOPER, idOf(devEmail))
+        admin2.admin(),
+        devEmail.developer()
       )
       override val applicationData: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
       val expected: ApplicationData                 = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
@@ -827,14 +829,14 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Save.thenReturn(expected)
 
       val result: AddCollaboratorResponse =
-        await(underTest.addCollaborator(applicationId, collaboratorRequest(isRegistered = true, adminsToEmail = Set.empty[String])))
+        await(underTest.addCollaborator(applicationId, developerRequest(isRegistered = true, adminsToEmail = Set.empty[String])))
 
-      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.role.toString))(
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.describeRole))(
         any[HeaderCarrier]
       )
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
-      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(Roles.DEVELOPER, expected.name, Set(email))
+      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(request.collaborator, expected.name, Set(defaultEmail))
       verifyNoMoreInteractions(mockEmailConnector)
       result shouldBe AddCollaboratorResponse(registeredUser = true)
     }
@@ -843,8 +845,8 @@ class ApplicationServiceSpec
       AuditServiceMock.Audit.thenReturnSuccess()
 
       val collaborators: Set[Collaborator]          = Set(
-        Collaborator(admin, Roles.ADMINISTRATOR, idOf(admin)),
-        Collaborator(devEmail,Roles.DEVELOPER, idOf(devEmail))
+        admin2.admin(),
+        devEmail.developer()
       )
       override val applicationData: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
       val expected: ApplicationData                 = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
@@ -854,7 +856,7 @@ class ApplicationServiceSpec
 
       when(mockEmailConnector.sendCollaboratorAddedConfirmation(*, *, *)(*)).thenReturn(failed(new RuntimeException))
 
-      val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, collaboratorRequest(isRegistered = true)))
+      val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, developerRequest(isRegistered = true)))
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
       verify(mockEmailConnector).sendCollaboratorAddedConfirmation(*, *, *)(*)
@@ -864,7 +866,7 @@ class ApplicationServiceSpec
     "throw UserAlreadyPresent error when adding an existing collaborator with the same role" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
-      intercept[UserAlreadyExists](await(underTest.addCollaborator(applicationId, collaboratorRequest(email = loggedInUser, role = Roles.ADMINISTRATOR))))
+      intercept[UserAlreadyExists](await(underTest.addCollaborator(applicationId, adminRequest(email = loggedInUser))))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
     }
@@ -872,7 +874,7 @@ class ApplicationServiceSpec
     "throw UserAlreadyPresent error when adding an existing collaborator with different role" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
-      intercept[UserAlreadyExists](await(underTest.addCollaborator(applicationId, collaboratorRequest(email = loggedInUser, role = Roles.DEVELOPER))))
+      intercept[UserAlreadyExists](await(underTest.addCollaborator(applicationId, developerRequest(email = loggedInUser))))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
     }
@@ -880,7 +882,7 @@ class ApplicationServiceSpec
     "throw UserAlreadyPresent error when adding an existing collaborator with different case" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
-      intercept[UserAlreadyExists](await(underTest.addCollaborator(applicationId, collaboratorRequest(email = loggedInUser.toUpperCase, role = Roles.DEVELOPER))))
+      intercept[UserAlreadyExists](await(underTest.addCollaborator(applicationId, developerRequest(email = loggedInUser.toUpperCase))))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
     }
@@ -893,13 +895,13 @@ class ApplicationServiceSpec
       val testEmail                = "test@example.com"
       val adminsToEmail            = Set(admin2)
       val notifyCollaborator       = true
-      val collaborators            = Set(
-        Collaborator(admin, Roles.ADMINISTRATOR, idOf(admin)),
-        Collaborator(admin2, Roles.ADMINISTRATOR, idOf(admin2)),
-        Collaborator(testEmail, Roles.DEVELOPER, idOf(testEmail))
+      val collaborators: Set[Collaborator]            = Set(
+        admin.admin(),
+        admin2.admin(),
+        testEmail.developer()
       )
       override val applicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
-      val updatedData              = applicationData.copy(collaborators = applicationData.collaborators - Collaborator(testEmail, Roles.DEVELOPER, idOf(testEmail)))
+      val updatedData              = applicationData.copy(collaborators = applicationData.collaborators - testEmail.developer())
     }
 
     "remove collaborator and send confirmation and notification emails" in new DeleteCollaboratorsSetup {
@@ -913,7 +915,7 @@ class ApplicationServiceSpec
       verify(mockEmailConnector).sendRemovedCollaboratorNotification(testEmail, applicationData.name, adminsToEmail)
       AuditServiceMock.Audit.verifyCalledWith(
         CollaboratorRemovedAudit,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(Collaborator(testEmail, Roles.DEVELOPER, idOf(testEmail))),
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(testEmail.developer()),
         hc
       )
       verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(testEmail), eqTo("DEVELOPER"))(any[HeaderCarrier])
@@ -929,11 +931,11 @@ class ApplicationServiceSpec
       val adminsToEmail      = Set(admin2)
       val notifyCollaborator = true
 
-      val c1 = Collaborator(admin, Roles.ADMINISTRATOR, idOf(admin))
-      val c2 = Collaborator(admin2, Roles.ADMINISTRATOR, idOf(admin2))
-      val c3 = Collaborator(collaborator, Roles.DEVELOPER, idOf(collaborator))
+      val c1 = admin.admin()
+      val c2 = admin2.admin()
+      val c3 = collaborator.developer()
 
-      val collaborators            = Set(c1, c2, c3)
+      val collaborators            = Set[Collaborator](c1, c2, c3)
       override val applicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
       val updatedData              = applicationData.copy(collaborators = Set(c1, c2))
     }
@@ -957,7 +959,7 @@ class ApplicationServiceSpec
       verify(mockEmailConnector).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       AuditServiceMock.Audit.verifyCalledWith(
         CollaboratorRemovedAudit,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(Collaborator(collaborator, Roles.DEVELOPER, idOf(collaborator))),
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(collaborator.developer()),
         hc
       )
       verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(collaborator), eqTo("DEVELOPER"))(any[HeaderCarrier])
@@ -975,7 +977,7 @@ class ApplicationServiceSpec
       verify(mockEmailConnector).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       AuditServiceMock.Audit.verifyCalledWith(
         CollaboratorRemovedAudit,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(Collaborator(collaborator, Roles.DEVELOPER, idOf(collaborator))),
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(collaborator.developer()),
         hc
       )
       verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(collaborator), eqTo("DEVELOPER"))(any[HeaderCarrier])
@@ -1001,8 +1003,8 @@ class ApplicationServiceSpec
 
     "fail to delete last remaining admin user" in new DeleteCollaboratorsSetup {
       val onlyOneAdmin: Set[Collaborator]          = Set(
-        Collaborator(admin,Roles.ADMINISTRATOR, idOf(admin)),
-        Collaborator(collaborator, Roles.DEVELOPER, idOf(collaborator))
+        admin.admin(),
+        collaborator.developer()
       )
       val applicationWithOneAdmin: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = onlyOneAdmin)
 
@@ -1392,7 +1394,7 @@ class ApplicationServiceSpec
       access,
       Some("description"),
       environment,
-      Set(Collaborator(loggedInUser, Roles.ADMINISTRATOR, idOf(loggedInUser))),
+      Set(loggedInUser.admin()),
       None
     )
   }
@@ -1400,7 +1402,7 @@ class ApplicationServiceSpec
   private def anApplicationDataWithCollaboratorWithUserId(
       applicationId: ApplicationId,
       state: ApplicationState,
-      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, Roles.ADMINISTRATOR, idOf(loggedInUser))),
+      collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
       access: Access = Standard(),
       rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
       environment: Environment
@@ -1424,7 +1426,7 @@ class ApplicationServiceSpec
   }
 
   private def aNewV1ApplicationRequest(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
-    CreateApplicationRequestV1("MyApp", access, Some("description"), environment, Set(Collaborator(loggedInUser, Roles.ADMINISTRATOR, idOf(loggedInUser))), None)
+    CreateApplicationRequestV1("MyApp", access, Some("description"), environment, Set(loggedInUser.admin()), None)
   }
 
   private def aNewV2ApplicationRequest(environment: Environment) = {
@@ -1433,7 +1435,7 @@ class ApplicationServiceSpec
       StandardAccessDataToCopy(),
       Some("description"),
       environment,
-      Set(Collaborator(loggedInUser, Roles.ADMINISTRATOR, idOf(loggedInUser))),
+      Set(loggedInUser.admin()),
       makeUpliftRequest(ApiIdentifier.random),
       loggedInUser,
       ApplicationId.random

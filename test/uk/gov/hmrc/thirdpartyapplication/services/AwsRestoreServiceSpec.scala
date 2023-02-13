@@ -31,11 +31,9 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators.Roles
 
-class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock {
+class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock with CollaboratorTestData {
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftRequestSamples {
 
@@ -44,7 +42,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
         CreateApplicationRequestV1(
           name = applicationName,
           environment = Environment.PRODUCTION,
-          collaborators = Set(Collaborator("foo@bar.com", Roles.ADMINISTRATOR, UserId.random)),
+          collaborators = Set("foo@bar.com".admin()),
           subscriptions = None
         ),
         applicationName,

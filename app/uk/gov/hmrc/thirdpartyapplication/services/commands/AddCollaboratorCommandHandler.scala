@@ -55,9 +55,7 @@ class AddCollaboratorCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
-        collaboratorId = cmd.collaborator.userId,
-        collaboratorEmail = cmd.collaborator.emailAddress.toLowerCase,
-        collaboratorRole = cmd.collaborator.role,
+        collaborator = cmd.collaborator,
         verifiedAdminsToEmail = cmd.adminsToEmail
       )
     )
