@@ -54,7 +54,6 @@ trait ApplicationDeletedBase {
 }
 
 object UpdateApplicationEvent {
-  import uk.gov.hmrc.apiplatform.modules.common.domain.services.ActorJsonFormatters._
 
   def getActorAsString(actor: Actor): String =
     actor match {

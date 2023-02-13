@@ -16,9 +16,36 @@
 
 package uk.gov.hmrc.apiplatform.modules.common.domain.models
 
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+import uk.gov.hmrc.play.json.Union
+
 /** Actor refers to actors that triggered an event
   */
 sealed trait Actor
+
+object Actor {
+  private sealed trait ActorType
+
+  private object ActorTypes {
+    case object COLLABORATOR  extends ActorType
+    case object GATEKEEPER    extends ActorType
+    case object SCHEDULED_JOB extends ActorType
+    case object UNKNOWN       extends ActorType
+  }
+
+  implicit val actorsCollaboratorJF   = Json.format[Actors.AppCollaborator]
+  implicit val actorsGatekeeperUserJF = Json.format[Actors.GatekeeperUser]
+  implicit val actorsScheduledJobJF   = Json.format[Actors.ScheduledJob]
+  implicit val actorsUnknownJF        = Json.format[Actors.Unknown.type]
+
+  implicit val formatNewStyleActor: OFormat[Actor] = Union.from[Actor]("actorType")
+    .and[Actors.AppCollaborator](ActorTypes.COLLABORATOR.toString)
+    .and[Actors.GatekeeperUser](ActorTypes.GATEKEEPER.toString)
+    .and[Actors.ScheduledJob](ActorTypes.SCHEDULED_JOB.toString)
+    .and[Actors.Unknown.type](ActorTypes.UNKNOWN.toString)
+    .format
+}
 
 object Actors {
 
@@ -46,5 +73,4 @@ object Actors {
   /** Unknown source - probably 3rd party code such as PPNS invocations
     */
   case object Unknown extends Actor
-
 }
