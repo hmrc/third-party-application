@@ -24,7 +24,6 @@ import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
-import uk.gov.hmrc.apiplatform.modules.common.domain.services.ActorJsonFormatters
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator, TermsAndConditionsLocation, PrivacyPolicyLocation}
 
 trait ApplicationCommand {
@@ -58,7 +57,7 @@ case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: St
 case class DeleteApplicationByGatekeeper(gatekeeperUser: String, requestedByEmailAddress: String, reasons: String, timestamp: LocalDateTime)
     extends GatekeeperSpecificApplicationCommand
 
-trait ApplicationCommandFormatters extends ActorJsonFormatters {
+trait ApplicationCommandFormatters {
   implicit val addClientSecretFormatter                        = Json.format[AddClientSecret]
   implicit val removeClientSecretFormatter                     = Json.format[RemoveClientSecret]
   implicit val addCollaboratorFormatter                        = Json.format[AddCollaborator]

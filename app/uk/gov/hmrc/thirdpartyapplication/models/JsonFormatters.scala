@@ -24,10 +24,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, R
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
-import uk.gov.hmrc.apiplatform.modules.common.domain.services.ActorJsonFormatters
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
-trait JsonFormatters extends UtcMillisDateTimeFormatters with ActorJsonFormatters {
+trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   // NOTE - these override the defaults in order to push dates in non-mongo format
   implicit val formatTermsOfUserAgreement    = Json.format[TermsOfUseAgreement]
