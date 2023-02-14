@@ -249,7 +249,7 @@ class SubscriptionRepositoryISpec
 
       val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.version, None))
 
-      val expectedEmails = app1.collaborators.map(c => c.emailAddress) ++ app2.collaborators.map(c => c.emailAddress)
+      val expectedEmails = (app1.collaborators.map(c => c.emailAddress) ++ app2.collaborators.map(c => c.emailAddress)).map(_.text)
       result.toSet mustBe expectedEmails
     }
 

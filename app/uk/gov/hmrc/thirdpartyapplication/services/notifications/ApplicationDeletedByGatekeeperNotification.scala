@@ -24,6 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 object ApplicationDeletedByGatekeeperNotification {
 
@@ -37,7 +38,7 @@ object ApplicationDeletedByGatekeeperNotification {
     emailConnector.sendApplicationDeletedNotification(app.name, app.id, event.requestingAdminEmail, recipients)
   }
 
-  private def getRecipients(app: ApplicationData): Set[String] = {
+  private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
     app.collaborators.map(_.emailAddress)
   }
 }

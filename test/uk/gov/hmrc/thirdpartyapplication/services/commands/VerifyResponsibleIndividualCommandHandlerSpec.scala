@@ -29,6 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class VerifyResponsibleIndividualCommandHandlerSpec
     extends AsyncHmrcSpec
@@ -46,15 +47,15 @@ class VerifyResponsibleIndividualCommandHandlerSpec
 
     val submission     = aSubmission
     val appAdminUserId = UserId.random
-    val appAdminEmail  = "admin@example.com"
+    val appAdminEmail  = "admin@example.com".toLaxEmail
     val appAdminName   = "Ms Admin"
     val oldRiUserId    = UserId.random
-    val oldRiEmail     = "oldri@example.com"
+    val oldRiEmail     = "oldri@example.com".toLaxEmail
     val oldRiName      = "old ri"
 
     val importantSubmissionData = ImportantSubmissionData(
       None,
-      ResponsibleIndividual.build(oldRiName, oldRiEmail),
+      ResponsibleIndividual.build(oldRiName, oldRiEmail.text),
       Set.empty,
       TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocations.InDesktopSoftware,
@@ -71,7 +72,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
 
     val ts      = FixedClock.now
     val riName  = "Mr Responsible"
-    val riEmail = "ri@example.com"
+    val riEmail = "ri@example.com".toLaxEmail
 
     val underTest = new VerifyResponsibleIndividualCommandHandler(SubmissionsServiceMock.aMock, ResponsibleIndividualVerificationRepositoryMock.aMock)
 

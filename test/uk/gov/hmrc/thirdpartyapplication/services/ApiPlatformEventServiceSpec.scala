@@ -38,6 +38,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach with TableDrivenPropertyChecks with CollaboratorTestData {
 
@@ -61,9 +62,9 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
     checkInformation = None
   )
 
-  val adminEmail: String                            = "admin@admin.com"
-  val teamMemberEmail: String                       = "bob@bob.com"
-  val teamMemberRole: String                        = "ADMIN"
+  val adminEmail                            = "admin@admin.com"
+  val teamMemberEmail                       = "bob@bob.com".toLaxEmail
+  val teamMemberRole                        = "ADMIN"
   val context: ApiContext                           = "api/path/path2".asContext
   val version: ApiVersion                           = "2.0".asVersion
   val appDataWithCollaboratorAdded: ApplicationData = applicationData.copy(collaborators = Set(adminEmail.admin()))
@@ -388,8 +389,9 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       else when(mockConnector.sendTeamMemberRemovedEvent(any[TeamMemberRemovedEvent])(any[HeaderCarrier])).thenReturn(Future.successful(connectorResult))
 
       val f: (ApplicationData, Map[String, String]) => Future[Boolean] = (appData: ApplicationData, data: Map[String, String]) => {
-        val teamMemberEmail = data.getOrElse("teamMemberEmail", "")
+        val teamMemberEmail = data.getOrElse("teamMemberEmail", "").toLaxEmail
         val teamMemberRole  = data.getOrElse("teamMemberRole", "")
+
         if (added) objInTest.sendTeamMemberAddedEvent(appData, teamMemberEmail, teamMemberRole)
         else objInTest.sendTeamMemberRemovedEvent(appData, teamMemberEmail, teamMemberRole)
       }
@@ -461,7 +463,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
 
     def testService(f: (ApplicationData, Map[String, String]) => Future[Boolean], expectedResult: Boolean) = {
       val data = Map(
-        "teamMemberEmail" -> teamMemberEmail,
+        "teamMemberEmail" -> teamMemberEmail.text,
         "teamMemberRole"  -> teamMemberRole,
         "clientSecretId"  -> clientSecretId,
         "oldRedirectUris" -> oldRedirectUris,
@@ -480,13 +482,13 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
         val actor = teamMemberAddedEvent.actor
         actor.id shouldBe loggedInUserEmail
         actor.actorType shouldBe expectedActorType
-        teamMemberAddedEvent.teamMemberEmail shouldBe teamMemberEmail
+        teamMemberAddedEvent.teamMemberEmail shouldBe teamMemberEmail.text
         teamMemberAddedEvent.teamMemberRole shouldBe teamMemberRole
       case teamMemberRemovedEvent: TeamMemberRemovedEvent     =>
         val actor = teamMemberRemovedEvent.actor
         actor.id shouldBe loggedInUserEmail
         actor.actorType shouldBe expectedActorType
-        teamMemberRemovedEvent.teamMemberEmail shouldBe teamMemberEmail
+        teamMemberRemovedEvent.teamMemberEmail shouldBe teamMemberEmail.text
         teamMemberRemovedEvent.teamMemberRole shouldBe teamMemberRole
       case clientSecretAddedEvent: ClientSecretAddedEvent     =>
         val actor = clientSecretAddedEvent.actor

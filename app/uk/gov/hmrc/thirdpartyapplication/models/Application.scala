@@ -43,7 +43,7 @@ trait CreateApplicationRequest {
   def validate(in: CreateApplicationRequest): Unit = {
     require(in.name.nonEmpty, "name is required")
     require(in.collaborators.exists(_.isAdministrator), "at least one ADMINISTRATOR collaborator is required")
-    require(in.collaborators.size == collaborators.map(_.emailAddress.toLowerCase).size, "duplicate email in collaborator")
+    require(in.collaborators.size == collaborators.map(_.normalise).size, "duplicate email in collaborator")
   }
 }
 

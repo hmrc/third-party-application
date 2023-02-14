@@ -17,11 +17,12 @@
 package uk.gov.hmrc.apiplatform.modules.applications.domain.models
 
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 
 sealed trait Collaborator {
   def userId: UserId
-  def emailAddress: String
+  def emailAddress: LaxEmailAddress
 
   def isAdministrator: Boolean
   final def isDeveloper: Boolean = ! isAdministrator
@@ -41,8 +42,8 @@ object Collaborator {
   }
 
   def normalise(me: Collaborator): Collaborator = me match {
-    case a: Collaborators.Administrator => a.copy(emailAddress = a.emailAddress.toLowerCase())
-    case d: Collaborators.Developer => d.copy(emailAddress = d.emailAddress.toLowerCase())
+    case a: Collaborators.Administrator => a.copy(emailAddress = a.emailAddress.normalise())
+    case d: Collaborators.Developer => d.copy(emailAddress = d.emailAddress.normalise())
   }
 
   def describeRole(me: Collaborator): String = me match {
@@ -65,11 +66,11 @@ object Collaborator {
 
 object Collaborators {
 
-  case class Administrator(userId: UserId, emailAddress: String) extends Collaborator {
+  case class Administrator(userId: UserId, emailAddress: LaxEmailAddress) extends Collaborator {
     val isAdministrator = true
   }
 
-  case class Developer(userId: UserId, emailAddress: String)     extends Collaborator {
+  case class Developer(userId: UserId, emailAddress: LaxEmailAddress)     extends Collaborator {
     val isAdministrator = false
   }
 }

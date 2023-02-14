@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditService
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 object GrantApprovalsService {
   sealed trait Result
@@ -163,9 +164,9 @@ class GrantApprovalsService @Inject() (
     insertStateHistory(snapshotApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL), name, GATEKEEPER, (a: ApplicationData) => applicationRepository.save(a))
 
   private def sendEmails(app: ApplicationData)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
+    val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found")).toLaxEmail
     val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
-    val recipients       = app.admins.map(_.emailAddress).filterNot(email => email.equals(requesterEmail))
+    val recipients       = app.admins.map(_.emailAddress).filterNot(email => email.equalsIgnoreCase(requesterEmail))
 
     if (recipients.nonEmpty) emailConnector.sendApplicationApprovedNotification(app.name, recipients)
 

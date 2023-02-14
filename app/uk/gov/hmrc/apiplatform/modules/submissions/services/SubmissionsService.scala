@@ -136,7 +136,7 @@ class SubmissionsService @Inject() (
     (
       for {
         extSubmission    <- fromOptionF(fetch(evt.submissionId), "submission not found")
-        updatedSubmission = Submission.decline(evt.eventDateTime, evt.decliningUserEmail, evt.reasons)(extSubmission.submission)
+        updatedSubmission = Submission.decline(evt.eventDateTime, evt.decliningUserEmail.text, evt.reasons)(extSubmission.submission)   // Is this correct use of email addresss or should we use decliningUserName ?
         savedSubmission  <- liftF(store(updatedSubmission))
       } yield savedSubmission
     )

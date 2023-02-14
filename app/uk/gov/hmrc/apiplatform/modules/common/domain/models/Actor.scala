@@ -54,7 +54,7 @@ object Actors {
     * @param email
     *   the developers email address at the time of the event
     */
-  case class AppCollaborator(email: String) extends Actor
+  case class AppCollaborator(email: LaxEmailAddress) extends Actor
 
   /** A gatekeeper stride user (typically SDST)
     *

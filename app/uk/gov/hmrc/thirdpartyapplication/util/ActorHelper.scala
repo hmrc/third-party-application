@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.util
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, OldActor}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 trait ActorHelper {
 
@@ -28,23 +29,23 @@ trait ActorHelper {
       Option(OldActor("admin@gatekeeper", ActorType.GATEKEEPER))
     } else {
       userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
-        .map(email => OldActor(email, deriveOldActorType(email, collaborators)))
+        .map(email => OldActor(email, deriveOldActorType(LaxEmailAddress(email), collaborators)))
     }
   }
 
-  private def deriveOldActorType(userEmail: String, collaborators: Set[Collaborator]): ActorType.Value =
+  private def deriveOldActorType(email: LaxEmailAddress, collaborators: Set[Collaborator]): ActorType.Value =
     collaborators
-      .find(_.emailAddress.equalsIgnoreCase(userEmail)).fold(ActorType.GATEKEEPER) { _: Collaborator => ActorType.COLLABORATOR }
+      .find(_.emailAddress.equalsIgnoreCase(email)).fold(ActorType.GATEKEEPER) { _: Collaborator => ActorType.COLLABORATOR }
 
   def getActorFromContext(userContext: Map[String, String], collaborators: Set[Collaborator]): Actor =
     userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
-      .map(email => deriveActor(email, collaborators))
+      .map(email => deriveActor(LaxEmailAddress(email), collaborators))
       .getOrElse(Actors.GatekeeperUser("Gatekeeper Admin"))
 
-  private def deriveActor(userEmail: String, collaborators: Set[Collaborator]): Actor =
-    collaborators.find(_.emailAddress.equalsIgnoreCase(userEmail)) match {
+  private def deriveActor(email: LaxEmailAddress, collaborators: Set[Collaborator]): Actor =
+    collaborators.find(_.emailAddress.equalsIgnoreCase(email)) match {
       case None                  => Actors.GatekeeperUser("Gatekeeper Admin")
-      case Some(_: Collaborator) => Actors.AppCollaborator(userEmail)
+      case Some(_: Collaborator) => Actors.AppCollaborator(email)
     }
 
 }

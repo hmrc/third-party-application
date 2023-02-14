@@ -79,8 +79,8 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
         actor = Actors.AppCollaborator(requesterEmail),
         app.state.name,
         State.DELETED,
-        requestingAdminName = requesterEmail,
-        requestingAdminEmail = requesterEmail
+        requestingAdminName = requesterEmail.text,
+        requestingAdminEmail = requesterEmail.text
       )
     )
   }
@@ -88,10 +88,11 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
   def process(app: ApplicationData, cmd: DeleteApplicationByCollaborator)(implicit hc: HeaderCarrier): ResultT = {
     for {
       instigator <- E.fromEither(validate(app, cmd).toEither)
-      savedApp   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, instigator.emailAddress, instigator.emailAddress))
+      kindOfRequesterEmail = instigator.emailAddress.text
+      savedApp   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail))
       // TODO - need app state history change
       events      = asEvents(savedApp, cmd, instigator)
-      _          <- deleteApplication(app, cmd.timestamp, instigator.emailAddress, instigator.emailAddress, events)
+      _          <- deleteApplication(app, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail, events)
     } yield (savedApp, events)
   }
 }

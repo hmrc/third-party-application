@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineApplicationApprovalRequest, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 
 @Singleton
 class DeclineApplicationApprovalRequestCommandHandler @Inject() (
@@ -40,7 +40,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData): Future[ValidatedNec[String, (String, String, Submission)]] = {
+  private def validate(app: ApplicationData): Future[ValidatedNec[String, (LaxEmailAddress, String, Submission)]] = {
 
     def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandFailures, Submission] =
       maybeSubmission.fold(s"No submission found for application ${app.id.value}".invalidNec[Submission])(_.validNec[String])
@@ -62,7 +62,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
       app: ApplicationData,
       cmd: DeclineApplicationApprovalRequest,
       submission: Submission,
-      requesterEmail: String,
+      requesterEmail: LaxEmailAddress,
       requesterName: String
     ): (ApplicationApprovalRequestDeclined, ApplicationStateChanged) = {
 
@@ -73,7 +73,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
         eventDateTime = cmd.timestamp,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         decliningUserName = cmd.gatekeeperUser,
-        decliningUserEmail = cmd.gatekeeperUser,
+        decliningUserEmail = LaxEmailAddress(cmd.gatekeeperUser),   // Not nice but we have nothing better
         submissionId = submission.id,
         submissionIndex = submission.latestInstance.index,
         reasons = cmd.reasons,
@@ -88,7 +88,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
         app.state.name,
         State.TESTING,
         requestingAdminName = requesterName,
-        requestingAdminEmail = requesterEmail
+        requestingAdminEmail = requesterEmail.text
       )
     )
   }
@@ -97,7 +97,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     for {
       validated                                  <- E.fromValidatedF(validate(app))
       (requesterEmail, requesterName, submission) = validated
-      savedApp                                   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requesterEmail, requesterName))
+      savedApp                                   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requesterEmail.text, requesterName))
       (approvalDeclined, stateChange)             = asEvents(savedApp, cmd, submission, requesterEmail, requesterName)
       events                                      = NonEmptyList.of(approvalDeclined, stateChange)
       _                                          <- E.liftF(stateHistoryRepository.applyEvents(events))

@@ -23,7 +23,7 @@ import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator, TermsAndConditionsLocation, PrivacyPolicyLocation}
 
 trait ApplicationCommand {
@@ -32,13 +32,13 @@ trait ApplicationCommand {
 
 case class AddClientSecret(actor: Actors.AppCollaborator, clientSecret: ClientSecret, timestamp: LocalDateTime)                                            extends ApplicationCommand
 case class RemoveClientSecret(actor: Actors.AppCollaborator, clientSecretId: String, timestamp: LocalDateTime)                                             extends ApplicationCommand
-case class AddCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                              extends ApplicationCommand
-case class RemoveCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[String], timestamp: LocalDateTime)                           extends ApplicationCommand
+case class AddCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[LaxEmailAddress], timestamp: LocalDateTime)                              extends ApplicationCommand
+case class RemoveCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[LaxEmailAddress], timestamp: LocalDateTime)                           extends ApplicationCommand
 case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation)           extends ApplicationCommand
 case class ChangeProductionApplicationTermsAndConditionsLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: TermsAndConditionsLocation) extends ApplicationCommand
-case class ChangeResponsibleIndividualToSelf(instigator: UserId, timestamp: LocalDateTime, name: String, email: String)                                 extends ApplicationCommand
+case class ChangeResponsibleIndividualToSelf(instigator: UserId, timestamp: LocalDateTime, name: String, email: LaxEmailAddress)                                 extends ApplicationCommand
 case class ChangeResponsibleIndividualToOther(code: String, timestamp: LocalDateTime)                                                                   extends ApplicationCommand
-case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, requesterName: String, riName: String, riEmail: String)            extends ApplicationCommand
+case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, requesterName: String, riName: String, riEmail: LaxEmailAddress)            extends ApplicationCommand
 case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime)                                                                         extends ApplicationCommand
 case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime)                                                             extends ApplicationCommand
 case class DeleteApplicationByCollaborator(instigator: UserId, reasons: String, timestamp: LocalDateTime)                                               extends ApplicationCommand
@@ -54,7 +54,7 @@ trait GatekeeperSpecificApplicationCommand                                      
 case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperSpecificApplicationCommand
 case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime)                   extends GatekeeperSpecificApplicationCommand
 
-case class DeleteApplicationByGatekeeper(gatekeeperUser: String, requestedByEmailAddress: String, reasons: String, timestamp: LocalDateTime)
+case class DeleteApplicationByGatekeeper(gatekeeperUser: String, requestedByEmailAddress: LaxEmailAddress, reasons: String, timestamp: LocalDateTime)
     extends GatekeeperSpecificApplicationCommand
 
 trait ApplicationCommandFormatters {

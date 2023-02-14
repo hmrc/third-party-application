@@ -35,11 +35,12 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, Audit
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens, ApplicationWithStateHistory}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 class GatekeeperServiceSpec
     extends AsyncHmrcSpec
@@ -107,12 +108,12 @@ class GatekeeperServiceSpec
     )
 
     StateHistoryRepoMock.Insert.thenAnswer()
-    when(mockEmailConnector.sendRemovedCollaboratorNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationRejectedNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationDeletedNotification(*, *[ApplicationId], *, *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationDeletedNotification(*, *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
   }
 
   "fetch nonTestingApps with submitted date" should {
@@ -277,7 +278,7 @@ class GatekeeperServiceSpec
       verify(mockEmailConnector).sendApplicationApprovedAdminConfirmation(
         eqTo(application.name),
         *,
-        eqTo(Set(application.state.requestedByEmailAddress.get))
+        eqTo(Set(application.state.requestedByEmailAddress.get.toLaxEmail))
       )(*)
     }
 
@@ -432,7 +433,7 @@ class GatekeeperServiceSpec
       verify(mockEmailConnector).sendApplicationApprovedAdminConfirmation(
         eqTo(application.name),
         *,
-        eqTo(Set(application.state.requestedByEmailAddress.get))
+        eqTo(Set(application.state.requestedByEmailAddress.get.toLaxEmail))
       )(*)
     }
   }

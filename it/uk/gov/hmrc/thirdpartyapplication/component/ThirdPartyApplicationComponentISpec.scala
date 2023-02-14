@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 import java.time.ZoneOffset
 import java.util.UUID
@@ -336,7 +337,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val application = createApplication()
 
       When("We request to remove a collaborator to the application")
-      val deleteRequest = DeleteCollaboratorRequest(emailAddress, Set("admin@example.com"), false)
+      val deleteRequest = DeleteCollaboratorRequest(emailAddress.toLaxEmail, Set("admin@example.com".toLaxEmail), false)
       val response      = postData(s"/application/${application.id.value}/collaborator/delete", Json.prettyPrint(Json.toJson(deleteRequest)))
 
       response.code shouldBe NO_CONTENT

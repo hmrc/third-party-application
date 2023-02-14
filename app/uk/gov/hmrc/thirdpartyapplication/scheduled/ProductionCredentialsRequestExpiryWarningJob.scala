@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Environment, State}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Notification, NotificationStatus, NotificationType}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 @Singleton
 class ProductionCredentialsRequestExpiryWarningJob @Inject() (
@@ -83,7 +84,7 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
     } yield sent
   }
 
-  private def getRecipients(app: ApplicationData): Set[String] = {
+  private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
     app.collaborators.map(_.emailAddress)
   }
 }

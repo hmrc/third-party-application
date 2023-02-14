@@ -54,6 +54,7 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 @Singleton
 class ApplicationService @Inject() (
@@ -126,7 +127,7 @@ class ApplicationService @Inject() (
     def sendNotificationEmails(
         applicationName: String,
         collaborator: Collaborator,
-        adminsToEmail: Set[String]
+        adminsToEmail: Set[LaxEmailAddress]
       )(implicit hc: HeaderCarrier
       ): Future[HasSucceeded] = {
 
@@ -243,18 +244,18 @@ class ApplicationService @Inject() (
   @deprecated("please use RemoveCollaboratorRequest command to application Update controller")
   def deleteCollaborator(
       applicationId: ApplicationId,
-      collaborator: String,
-      adminsToEmail: Set[String],
+      collaborator: LaxEmailAddress,
+      adminsToEmail: Set[LaxEmailAddress],
       notifyCollaborator: Boolean
     )(implicit hc: HeaderCarrier
     ): Future[Set[Collaborator]] = {
     def deleteUser(app: ApplicationData): Future[ApplicationData] = {
-      val updatedCollaborators = app.collaborators.filterNot(_.emailAddress equalsIgnoreCase collaborator)
+      val updatedCollaborators = app.collaborators.filterNot(_.emailAddress equalsIgnoreCase(collaborator))
       if (!hasAdmin(updatedCollaborators)) failed(new ApplicationNeedsAdmin)
       else applicationRepository.save(app.copy(collaborators = updatedCollaborators))
     }
 
-    def sendEmails(applicationName: String, collaboratorEmail: String, adminsToEmail: Set[String]): Future[Unit] = {
+    def sendEmails(applicationName: String, collaboratorEmail: LaxEmailAddress, adminsToEmail: Set[LaxEmailAddress]): Future[Unit] = {
       if (adminsToEmail.nonEmpty) emailConnector.sendRemovedCollaboratorNotification(collaboratorEmail, applicationName, adminsToEmail)
       if (notifyCollaborator) emailConnector.sendRemovedCollaboratorConfirmation(applicationName, Set(collaboratorEmail)).map(_ => ()) else successful(())
     }
@@ -264,7 +265,7 @@ class ApplicationService @Inject() (
       case None    => logger.warn(s"Failed to audit collaborator removal for: $collaborator")
     }
 
-    def findCollaborator(app: ApplicationData): Option[Collaborator] = app.collaborators.find(_.emailAddress == collaborator.toLowerCase)
+    def findCollaborator(app: ApplicationData): Option[Collaborator] = app.collaborators.find(_.emailAddress.normalise == collaborator.normalise)
 
     def sendEvent(app: ApplicationData, maybeColab: Option[Collaborator]) = maybeColab match {
       case Some(collaborator) => apiPlatformEventService.sendTeamMemberRemovedEvent(app, collaborator.emailAddress, collaborator.describeRole)
@@ -276,7 +277,7 @@ class ApplicationService @Inject() (
       updated <- deleteUser(app)
       _        = audit(findCollaborator(app))
       _        = sendEvent(app, findCollaborator(app))
-      _        = recoverAll(sendEmails(app.name, collaborator.toLowerCase, adminsToEmail))
+      _        = recoverAll(sendEmails(app.name, collaborator.normalise, adminsToEmail))
     } yield updated.collaborators
   }
 

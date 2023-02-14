@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndivid
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 @Singleton
 class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
@@ -39,11 +40,11 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def isNotCurrentRi(name: String, email: String, app: ApplicationData) =
+  private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
     cond(
       app.access match {
         case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
-          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.value.equalsIgnoreCase(email)
+          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.equalsIgnoreCase(email)
         case _                                                                                            => true
       },
       s"The specified individual is already the RI for this application"
@@ -72,7 +73,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
       app: ApplicationData,
       cmd: ChangeResponsibleIndividualToSelf,
       submission: Submission,
-      requesterEmail: String,
+      requesterEmail: LaxEmailAddress,
       requesterName: String
     ): NonEmptyList[UpdateApplicationEvent] = {
     val previousResponsibleIndividual = getResponsibleIndividual(app).get
@@ -84,7 +85,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
         eventDateTime = cmd.timestamp,
         actor = Actors.AppCollaborator(requesterEmail),
         previousResponsibleIndividualName = previousResponsibleIndividual.fullName.value,
-        previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress.value,
+        previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress,
         submissionId = submission.id,
         submissionIndex = submission.latestInstance.index,
         requestingAdminName = requesterName,

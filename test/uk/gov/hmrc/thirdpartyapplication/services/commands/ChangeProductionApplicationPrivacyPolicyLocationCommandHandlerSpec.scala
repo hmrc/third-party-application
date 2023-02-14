@@ -59,7 +59,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
       access = Standard(privacyPolicyUrl = Some(oldUrl))
     )
 
-    val userId    = idsByEmail(adminEmail)
+    val userId    = idOf(adminEmail)
     val timestamp = FixedClock.now
     val actor     = Actors.AppCollaborator(adminEmail)
 
@@ -127,7 +127,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
 
     "return an error if instigator is not an admin on the application" in new Setup {
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(newJourneyApp, update.copy(instigator = idsByEmail(devEmail)))
+        underTest.process(newJourneyApp, update.copy(instigator = idOf(devEmail)))
       }
     }
 
@@ -159,7 +159,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
 
     "return an error if instigator is not an admin on the application" in new Setup {
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(oldJourneyApp, update.copy(instigator = idsByEmail(devEmail)))
+        underTest.process(oldJourneyApp, update.copy(instigator = idOf(devEmail)))
       }
     }
 

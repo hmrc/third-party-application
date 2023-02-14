@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
@@ -72,7 +73,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       }
 
     val applicationId    = ApplicationId.random
-    val anotherAdminUser = "admin@example.com"
+    val anotherAdminUser = "admin@example.com".toLaxEmail
 
     val applicationData        = anApplicationData(
       applicationId,

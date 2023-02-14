@@ -40,6 +40,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
@@ -175,7 +176,7 @@ class ApplicationCommandDispatcherSpec
 
     "AddCollaborator is received" should {
       val collaborator           = "email".developer()
-      val adminsToEmail          = Set("email1", "email2")
+      val adminsToEmail          = Set("email1".toLaxEmail, "email2".toLaxEmail)
       val cmd: AddCollaborator   = AddCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
       val evt: CollaboratorAdded = CollaboratorAdded(
         UpdateApplicationEvent.Id.random,
@@ -205,7 +206,7 @@ class ApplicationCommandDispatcherSpec
     "RemoveCollaborator is received" should {
 
       val collaborator             = "email".developer()
-      val adminsToEmail            = Set("email1", "email2")
+      val adminsToEmail            = Set("email1".toLaxEmail, "email2".toLaxEmail)
       val cmd: RemoveCollaborator  = RemoveCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
       val evt: CollaboratorRemoved = CollaboratorRemoved(
         UpdateApplicationEvent.Id.random,
@@ -238,7 +239,7 @@ class ApplicationCommandDispatcherSpec
       val oldName        = "old app name"
       val newName        = "new app name"
       val gatekeeperUser = "gkuser"
-      val requester      = "requester"
+      val requester      = "requester".toLaxEmail
       val actor          = Actors.GatekeeperUser(gatekeeperUser)
       val userId         = UserId.random
 
@@ -277,7 +278,7 @@ class ApplicationCommandDispatcherSpec
 
       val newUrl      = "http://example.com/new"
       val newLocation = PrivacyPolicyLocations.Url(newUrl)
-      val userId      = idsByEmail(adminEmail)
+      val userId      = idOf(adminEmail)
       val timestamp   = FixedClock.now
       val actor       = Actors.AppCollaborator(adminEmail)
 
@@ -314,7 +315,7 @@ class ApplicationCommandDispatcherSpec
 
       val newUrl      = "http://example.com/new"
       val newLocation = TermsAndConditionsLocations.Url(newUrl)
-      val userId      = idsByEmail(adminEmail)
+      val userId      = idOf(adminEmail)
       val timestamp   = FixedClock.now
       val actor       = Actors.AppCollaborator(adminEmail)
 
@@ -348,18 +349,18 @@ class ApplicationCommandDispatcherSpec
 
     " ChangeResponsibleIndividualToSelf is received" should {
 
-      val cmd = ChangeResponsibleIndividualToSelf(UserId.random, timestamp, requestedByName, requestedByEmail)
+      val cmd = ChangeResponsibleIndividualToSelf(UserId.random, timestamp, requestedByName, requestedByEmail.toLaxEmail)
       val evt = ResponsibleIndividualChangedToSelf(
         UpdateApplicationEvent.Id.random,
         applicationId,
         FixedClock.now,
         devHubUser,
         "previousRIName",
-        "previousRIEmail",
+        "previousRIEmail".toLaxEmail,
         Submission.Id.random,
         1,
         requestedByName,
-        requestedByEmail
+        requestedByEmail.toLaxEmail
       )
 
       "call  ChangeResponsibleIndividualToSelf Handler and relevant common services if application exists" in new Setup {
@@ -389,14 +390,14 @@ class ApplicationCommandDispatcherSpec
         FixedClock.now,
         devHubUser,
         "previousRIName",
-        "previousRIEmail",
+        "previousRIEmail".toLaxEmail,
         "newRIName",
-        "newRIEmail",
+        "newRIEmail".toLaxEmail,
         Submission.Id.random,
         1,
         code,
         requestedByName,
-        requestedByEmail
+        requestedByEmail.toLaxEmail
       )
 
       "call  ChangeResponsibleIndividualToOther Handler and relevant common services if application exists" in new Setup {
@@ -420,7 +421,7 @@ class ApplicationCommandDispatcherSpec
     "DeclineApplicationApprovalRequest is received" should {
 
       val timestamp = FixedClock.now
-      val actor     = Actors.GatekeeperUser(adminEmail)
+      val actor     = Actors.GatekeeperUser(gatekeeperUser)
 
       val cmd = DeclineApplicationApprovalRequest(actor.user, reasons, timestamp)
       val evt = ApplicationApprovalRequestDeclined(
@@ -429,12 +430,12 @@ class ApplicationCommandDispatcherSpec
         timestamp,
         actor,
         "someUserName",
-        "someUserEmail",
+        "someUserEmail".toLaxEmail,
         Submission.Id.random,
         1,
         "some reason or other",
         "adminName",
-        "adminEmail"
+        "adminEmail".toLaxEmail
       )
 
       "call DeclineApplicationApprovalRequest Handler and relevant common services if application exists" in new Setup {
@@ -463,7 +464,7 @@ class ApplicationCommandDispatcherSpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         timestamp,
-        Actors.AppCollaborator("someEmail"),
+        Actors.AppCollaborator("someEmail".toLaxEmail),
         ClientId.random,
         "wsoApplicationName",
         reasons
@@ -490,7 +491,7 @@ class ApplicationCommandDispatcherSpec
 
     "DeleteApplicationByGatekeeper is received" should {
 
-      val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, timestamp)
+      val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail.toLaxEmail, reasons, timestamp)
       val evt = ApplicationDeletedByGatekeeper(
         UpdateApplicationEvent.Id.random,
         applicationId,
@@ -499,7 +500,7 @@ class ApplicationCommandDispatcherSpec
         ClientId.random,
         "wsoApplicationName",
         reasons,
-        requestedByEmail
+        requestedByEmail.toLaxEmail
       )
 
       "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {

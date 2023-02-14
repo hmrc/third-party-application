@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
@@ -96,7 +97,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
     actor = Actors.GatekeeperUser("mr gatekeeper"),
     oldAppName = "old name",
     newAppName = "new name",
-    requestingAdminEmail = "admin@example.com"
+    requestingAdminEmail = "admin@example.com".toLaxEmail
   )
 
   abstract class Setup(enabled: Boolean = true) {

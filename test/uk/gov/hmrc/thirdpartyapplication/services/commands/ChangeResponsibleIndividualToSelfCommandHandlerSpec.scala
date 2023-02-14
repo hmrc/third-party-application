@@ -30,9 +30,11 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -43,14 +45,14 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
     val appId          = ApplicationId.random
     val submission     = aSubmission
     val appAdminUserId = UserId.random
-    val appAdminEmail  = "admin@example.com"
+    val appAdminEmail  = "admin@example.com".toLaxEmail
     val oldRiUserId    = UserId.random
-    val oldRiEmail     = "oldri@example.com"
+    val oldRiEmail     = "oldri@example.com".toLaxEmail
     val oldRiName      = "old ri"
 
     val importantSubmissionData = ImportantSubmissionData(
       None,
-      ResponsibleIndividual.build(oldRiName, oldRiEmail),
+      ResponsibleIndividual.build(oldRiName, oldRiEmail.text),
       Set.empty,
       TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocations.InDesktopSoftware,
@@ -66,12 +68,12 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
     )
     val ts        = FixedClock.now
     val riName    = "Mr Responsible"
-    val riEmail   = "ri@example.com"
+    val riEmail   = "ri@example.com".toLaxEmail
     val underTest = new ChangeResponsibleIndividualToSelfCommandHandler(ApplicationRepoMock.aMock, SubmissionsServiceMock.aMock)
 
     val changeResponsibleIndividualToSelfCommand = ChangeResponsibleIndividualToSelf(appAdminUserId, ts, riName, riEmail)
 
-    def checkSuccessResult(expectedActor: Actor, expectedPreviousEmail: String, expectedPreviousName: String)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actor, expectedPreviousEmail: LaxEmailAddress, expectedPreviousName: String)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>
@@ -118,7 +120,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       ApplicationRepoMock.UpdateApplicationChangeResponsibleIndividualToSelf.thenReturn(app) // Not modified
 
-      checkSuccessResult(Actors.AppCollaborator(adminEmail), oldRiName, oldRiEmail)(underTest.process(app, changeResponsibleIndividualToSelfCommand))
+      checkSuccessResult(Actors.AppCollaborator(adminEmail), oldRiEmail, oldRiName)(underTest.process(app, changeResponsibleIndividualToSelfCommand))
     }
 
     "return an error if no submission is found for the application" in new Setup {

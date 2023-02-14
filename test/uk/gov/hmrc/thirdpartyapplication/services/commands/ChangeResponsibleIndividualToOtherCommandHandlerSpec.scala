@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
@@ -46,9 +47,9 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
     val appId                    = ApplicationId.random
     val submission               = aSubmission
     val appAdminUserId           = UserId.random
-    val appAdminEmail            = "admin@example.com"
+    val appAdminEmail            = "admin@example.com".toLaxEmail
     val riName                   = "Mr Responsible"
-    val riEmail                  = "ri@example.com"
+    val riEmail                  = "ri@example.com".toLaxEmail
     val newResponsibleIndividual = ResponsibleIndividual.build("New RI", "new-ri@example")
     val oldRiName                = "old ri"
     val requesterEmail           = appAdminEmail
@@ -56,7 +57,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
 
     val importantSubmissionData = ImportantSubmissionData(
       None,
-      ResponsibleIndividual.build(riName, riEmail),
+      ResponsibleIndividual.build(riName, riEmail.text),
       Set.empty,
       TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocations.InDesktopSoftware,
@@ -68,7 +69,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
         appAdminEmail.admin(appAdminUserId)
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
-      state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName)
+      state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName)
     )
     val ts   = FixedClock.now
     val code = "3242342387452384623549234"
@@ -123,7 +124,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
             stateEvent.applicationId shouldBe appId
             stateEvent.eventDateTime shouldBe ts
             stateEvent.actor shouldBe Actors.AppCollaborator(appAdminEmail)
-            stateEvent.requestingAdminEmail shouldBe requesterEmail
+            stateEvent.requestingAdminEmail shouldBe requesterEmail.text
             stateEvent.requestingAdminName shouldBe requesterName
             stateEvent.newAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL
             stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
@@ -143,7 +144,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
             riChanged.eventDateTime shouldBe ts
             riChanged.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             riChanged.newResponsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
-            riChanged.newResponsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress.value
+            riChanged.newResponsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress
             riChanged.previousResponsibleIndividualName shouldBe riName
             riChanged.previousResponsibleIndividualEmail shouldBe riEmail
             riChanged.submissionIndex shouldBe submission.latestInstance.index
@@ -167,7 +168,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
   "process" should {
     "create correct event for a valid request with a ToU responsibleIndividualVerification and a standard app" in new Setup {
 
-      val prodApp = app.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
+      val prodApp = app.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName))
       ApplicationRepoMock.UpdateApplicationSetResponsibleIndividual.thenReturn(prodApp)
       ApplicationRepoMock.UpdateApplicationState.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
@@ -182,7 +183,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
     "create correct event for a valid request with an update responsibleIndividualVerification and a standard app" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
       ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
-      val prodApp = app.copy(state = ApplicationState.production(requesterEmail, requesterName))
+      val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
       ApplicationRepoMock.UpdateApplicationChangeResponsibleIndividual.thenReturn(prodApp)
 
       checkSuccessResultUpdate() {
@@ -227,7 +228,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
 
     "return an error if the application state is not PendingResponsibleIndividualVerification" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
-      val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail, requesterName))
+      val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail.text, requesterName))
       val result               = await(underTest.process(pendingGKApprovalApp, ChangeResponsibleIndividualToOther(code, ts)).value).left.value
       result.head shouldBe "App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state"
     }

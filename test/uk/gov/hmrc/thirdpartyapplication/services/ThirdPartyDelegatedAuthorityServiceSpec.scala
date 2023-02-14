@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
@@ -52,7 +53,7 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        Actors.AppCollaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com".toLaxEmail),
         clientId,
         "wso2ApplicationName",
         "reasons"

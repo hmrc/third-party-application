@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 sealed trait ResponsibleIndividualVerification {
   def id: ResponsibleIndividualVerificationId
@@ -70,6 +71,6 @@ case class ResponsibleIndividualUpdateVerification(
     createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     responsibleIndividual: ResponsibleIndividual,
     requestingAdminName: String,
-    requestingAdminEmail: String,
+    requestingAdminEmail: LaxEmailAddress,
     state: ResponsibleIndividualVerificationState = INITIAL
   ) extends ResponsibleIndividualVerification

@@ -59,6 +59,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -254,7 +256,7 @@ class ApplicationControllerSpec
     val admin                                              = "admin@example.com"
     val email                                              = "test@example.com"
     val isRegistered                                       = false
-    val adminsToEmail                                      = Set.empty[String]
+    val adminsToEmail                                      = Set.empty[LaxEmailAddress]
     val userId                                             = UserId.random
     val addCollaboratorRequestWithUserId                   = AddCollaboratorRequest(email.developer(userId), isRegistered, adminsToEmail)
     val payload                                            =
@@ -278,7 +280,7 @@ class ApplicationControllerSpec
     val email                                              = "test@example.com"
     val userId                                             = UserId.random
     val isRegistered                                       = false
-    val adminsToEmail                                      = Set.empty[String]
+    val adminsToEmail                                      = Set.empty[LaxEmailAddress]
     val addCollaboratorRequest                             = AddCollaboratorRequest(email.developer(userId), isRegistered, adminsToEmail)
     val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.toJson(addCollaboratorRequest))
 
@@ -364,21 +366,21 @@ class ApplicationControllerSpec
 
   "remove collaborator" should {
     val applicationId      = ApplicationId.random
-    val admin              = "admin@example.com"
-    val collaborator       = "dev@example.com"
-    val adminsToEmailSet   = Set.empty[String]
+    val admin              = "admin@example.com".toLaxEmail
+    val collaboratorEmail  = "dev@example.com".toLaxEmail
+    val adminsToEmailSet   = Set.empty[LaxEmailAddress]
     val notifyCollaborator = true
     lazy val myRequest     =
       FakeRequest()
         .withMethod(POST)
         .withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
-        .withBody(Json.toJson(DeleteCollaboratorRequest(collaborator, adminsToEmailSet, notifyCollaborator)))
+        .withBody(Json.toJson(DeleteCollaboratorRequest(collaboratorEmail, adminsToEmailSet, notifyCollaborator)))
 
     "succeed with a 204 (No Content) for a STANDARD application" in new Setup {
       ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
       when(underTest.applicationService.deleteCollaborator(
         eqTo(applicationId),
-        eqTo(collaborator),
+        eqTo(collaboratorEmail),
         eqTo(adminsToEmailSet),
         eqTo(notifyCollaborator)
       )(*))
@@ -396,7 +398,7 @@ class ApplicationControllerSpec
         applicationId, {
           when(underTest.applicationService.deleteCollaborator(
             eqTo(applicationId),
-            eqTo(collaborator),
+            eqTo(collaboratorEmail),
             eqTo(adminsToEmailSet),
             eqTo(notifyCollaborator)
           )(*))
@@ -414,7 +416,7 @@ class ApplicationControllerSpec
         applicationId, {
           when(underTest.applicationService.deleteCollaborator(
             eqTo(applicationId),
-            eqTo(collaborator),
+            eqTo(collaboratorEmail),
             eqTo(adminsToEmailSet),
             eqTo(notifyCollaborator)
           )(*))
@@ -430,7 +432,7 @@ class ApplicationControllerSpec
     "fail with a 404 (not found) if no application exists for the given id" in new Setup {
       when(underTest.applicationService.deleteCollaborator(
         eqTo(applicationId),
-        eqTo(collaborator),
+        eqTo(collaboratorEmail),
         eqTo(adminsToEmailSet),
         eqTo(notifyCollaborator)
       )(*))
@@ -445,7 +447,7 @@ class ApplicationControllerSpec
       ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
       when(underTest.applicationService.deleteCollaborator(
         eqTo(applicationId),
-        eqTo(collaborator),
+        eqTo(collaboratorEmail),
         eqTo(adminsToEmailSet),
         eqTo(notifyCollaborator)
       )(*))
@@ -460,7 +462,7 @@ class ApplicationControllerSpec
       ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
       when(underTest.applicationService.deleteCollaborator(
         eqTo(applicationId),
-        eqTo(collaborator),
+        eqTo(collaboratorEmail),
         eqTo(adminsToEmailSet),
         eqTo(notifyCollaborator)
       )(*))
@@ -476,7 +478,7 @@ class ApplicationControllerSpec
     val applicationId             = ApplicationId.random
     val applicationTokensResponse =
       ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
-    val secretRequest             = ClientSecretRequest("actor@example.com")
+    val secretRequest             = ClientSecretRequest("actor@example.com".toLaxEmail)
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(
@@ -551,7 +553,7 @@ class ApplicationControllerSpec
     val applicationId             = ApplicationId.random
     val applicationTokensResponse =
       ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
-    val secretRequest             = ClientSecretRequestWithActor(Actors.AppCollaborator("actor@example.com"), FixedClock.now)
+    val secretRequest             = ClientSecretRequestWithActor(Actors.AppCollaborator("actor@example.com".toLaxEmail), FixedClock.now)
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(
@@ -626,7 +628,7 @@ class ApplicationControllerSpec
 
     val applicationId     = ApplicationId.random
     val clientSecretId    = ju.UUID.randomUUID().toString
-    val actorEmailAddress = "actor@example.com"
+    val actorEmailAddress = "actor@example.com".toLaxEmail
     val secretRequest     = DeleteClientSecretRequest(actorEmailAddress)
     val tokenResponse     = ApplicationTokenResponse(ClientId("aaa"), "bbb", List.empty)
 
@@ -1360,7 +1362,7 @@ class ApplicationControllerSpec
     val application             = aNewApplicationResponse(environment = SANDBOX, state = ApplicationState(State.PRODUCTION))
     val applicationId           = application.id
     val gatekeeperUserId        = "big.boss.gatekeeper"
-    val requestedByEmailAddress = "admin@example.com"
+    val requestedByEmailAddress = "admin@example.com".toLaxEmail
     val deleteRequest           = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
     "succeed when a sandbox application is successfully deleted" in new Setup with SandboxAuthSetup {
@@ -1477,7 +1479,7 @@ class ApplicationControllerSpec
   "temp" should {
     "dump some json" in {
       val e: UpdateApplicationEvent =
-        UpdateApplicationEvent.ApiSubscribed(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.AppCollaborator("bob"), "bob", "1.0")
+        UpdateApplicationEvent.ApiSubscribed(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.AppCollaborator("bob".toLaxEmail), "bob", "1.0")
 
       val txt = Json.toJson(e).toString.replace("447", "447Z")
 

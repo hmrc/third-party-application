@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{RemoveCollaborator, Upda
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 @Singleton
@@ -38,7 +38,7 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
   private def validate(app: ApplicationData, cmd: RemoveCollaborator) = {
 
     cmd.actor match {
-      case Actors.AppCollaborator(actorEmail: String) => Apply[Validated[CommandFailures, *]]
+      case Actors.AppCollaborator(actorEmail) => Apply[Validated[CommandFailures, *]]
           .map3(
             isCollaboratorOnApp(actorEmail, app),
             isCollaboratorOnApp(cmd.collaborator.emailAddress, app),
@@ -56,7 +56,7 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
     asEvents(app, cmd.actor, cmd.adminsToEmail, cmd.timestamp, cmd.collaborator)
   }
 
-  private def asEvents(app: ApplicationData, actor: Actor, adminsToEmail: Set[String], eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, actor: Actor, adminsToEmail: Set[LaxEmailAddress], eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[UpdateApplicationEvent] = {
     def notifyCollaborator() = {
       actor match {
         case _: Actors.ScheduledJob => false

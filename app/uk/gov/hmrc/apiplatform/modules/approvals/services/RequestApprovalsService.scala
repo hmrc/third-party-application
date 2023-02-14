@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, AuditHelper, AuditService}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 object RequestApprovalsService {
   sealed trait RequestApprovalResult
@@ -75,7 +76,7 @@ class RequestApprovalsService @Inject() (
       originalApp: ApplicationData,
       submission: Submission,
       requestedByName: String,
-      requestedByEmailAddress: String
+      requestedByEmailAddress: LaxEmailAddress
     )(implicit hc: HeaderCarrier
     ): Future[RequestApprovalResult] = {
     import cats.implicits._
@@ -97,8 +98,8 @@ class RequestApprovalsService @Inject() (
         updatedApp                          = deriveNewAppDetails(originalApp, isRequesterTheResponsibleIndividual, appName, requestedByEmailAddress, requestedByName, importantSubmissionData)
         savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
         _                                  <- ET.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, updatedApp, submission, requestedByName, requestedByEmailAddress))
-        _                                  <- ET.liftF(writeStateHistory(updatedApp, requestedByEmailAddress))
-        updatedSubmission                   = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
+        _                                  <- ET.liftF(writeStateHistory(updatedApp, requestedByEmailAddress.text))
+        updatedSubmission                   = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress.text)(submission)
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
         _                                  <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
         _                                   = logCompletedApprovalRequest(savedApp)
@@ -118,10 +119,10 @@ class RequestApprovalsService @Inject() (
       appWithoutTouAcceptance: ApplicationData,
       submission: Submission,
       requestedByName: String,
-      requestedByEmailAddress: String
+      requestedByEmailAddress: LaxEmailAddress
     ): Future[ApplicationData] = {
     if (isRequesterTheResponsibleIndividual) {
-      val responsibleIndividual = ResponsibleIndividual.build(requestedByName, requestedByEmailAddress)
+      val responsibleIndividual = ResponsibleIndividual.build(requestedByName, requestedByEmailAddress.text)
       val acceptance            = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submission.id, submission.latestInstance.index)
       applicationService.addTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
     } else {
@@ -139,7 +140,7 @@ class RequestApprovalsService @Inject() (
     ): Future[HasSucceeded] = {
     if (!isRequesterTheResponsibleIndividual) {
       val responsibleIndividualName  = importantSubmissionData.responsibleIndividual.fullName.value
-      val responsibleIndividualEmail = importantSubmissionData.responsibleIndividual.emailAddress.value
+      val responsibleIndividualEmail = importantSubmissionData.responsibleIndividual.emailAddress
 
       for {
         verification <- responsibleIndividualVerificationService.createNewToUVerification(application, submission.id, submission.latestInstance.index)
@@ -163,7 +164,7 @@ class RequestApprovalsService @Inject() (
       existing: ApplicationData,
       isRequesterTheResponsibleIndividual: Boolean,
       applicationName: String,
-      requestedByEmailAddress: String,
+      requestedByEmailAddress: LaxEmailAddress,
       requestedByName: String,
       importantSubmissionData: ImportantSubmissionData
     ): ApplicationData =
@@ -172,9 +173,9 @@ class RequestApprovalsService @Inject() (
       normalisedName = applicationName.toLowerCase,
       access = updateStandardData(existing.access, importantSubmissionData),
       state = if (isRequesterTheResponsibleIndividual) {
-        existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, requestedByName, clock)
+        existing.state.toPendingGatekeeperApproval(requestedByEmailAddress.text, requestedByName, clock)
       } else {
-        existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress, requestedByName, clock)
+        existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress.text, requestedByName, clock)
       }
     )
 

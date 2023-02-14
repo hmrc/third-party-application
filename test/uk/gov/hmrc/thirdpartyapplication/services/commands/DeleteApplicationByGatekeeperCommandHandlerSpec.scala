@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
@@ -69,7 +70,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
               clientId shouldBe app.tokens.production.clientId
               evtReasons shouldBe reasons
               wsoApplicationName shouldBe app.wso2ApplicationName
-              requestingAdminEmail shouldBe requestedByEmail
+              requestingAdminEmail shouldBe requestedByEmail.toLaxEmail
 
             case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
               appId shouldBe appId
@@ -92,7 +93,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
   val ts: LocalDateTime = FixedClock.now
 
   "DeleteApplicationByGatekeeper" should {
-    val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, ts)
+    val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail.toLaxEmail, reasons, ts)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.ApplyEvents.succeeds()

@@ -46,7 +46,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
     val gatekeeperUser = "gkuser"
     val requester      = "requester"
 
-    val userId = idsByEmail(adminEmail)
+    val userId = idOf(adminEmail)
 
     val timestamp = FixedClock.now
     val update    = ChangeProductionApplicationName(userId, timestamp, gatekeeperUser, newName)
@@ -112,7 +112,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
 
     "return an error if instigator is not an admin on the application" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val instigatorIsDev = update.copy(instigator = idsByEmail(devEmail))
+      val instigatorIsDev = update.copy(instigator = idOf(devEmail))
 
       checkFailsWith("User must be an ADMIN") {
         underTest.process(app, instigatorIsDev)

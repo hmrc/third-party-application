@@ -278,7 +278,7 @@ object AuditAction {
     val auditType = "CollaboratorAddedToApplication"
 
     def details(collaborator: Collaborator) = Map(
-      "newCollaboratorEmail" -> collaborator.emailAddress,
+      "newCollaboratorEmail" -> collaborator.emailAddress.text,
       "newCollaboratorType"  -> collaborator.describeRole
     )
   }
@@ -288,7 +288,7 @@ object AuditAction {
     val auditType = "CollaboratorRemovedFromApplication"
 
     def details(collaborator: Collaborator) = Map(
-      "removedCollaboratorEmail" -> collaborator.emailAddress,
+      "removedCollaboratorEmail" -> collaborator.emailAddress.text,
       "removedCollaboratorType"  -> collaborator.describeRole
     )
   }

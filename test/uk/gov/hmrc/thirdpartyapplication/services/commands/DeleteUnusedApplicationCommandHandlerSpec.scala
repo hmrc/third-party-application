@@ -39,7 +39,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val appId: ApplicationId                 = ApplicationId.random
-    val appAdminEmail: String                = loggedInUser
+    val appAdminEmail                = loggedInUser
     val actor: Actors.ScheduledJob             = Actors.ScheduledJob("DeleteUnusedApplicationsJob")
     val app: ApplicationData                 = anApplicationData(appId, environment = Environment.SANDBOX)
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")

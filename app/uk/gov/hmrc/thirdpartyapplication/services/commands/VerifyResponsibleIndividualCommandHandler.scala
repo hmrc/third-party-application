@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 
@@ -42,11 +42,11 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
   import CommandHandler._
   import UpdateApplicationEvent._
 
-  private def isNotCurrentRi(name: String, email: String, app: ApplicationData) =
+  private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
     cond(
       app.access match {
         case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
-          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.value.equalsIgnoreCase(email)
+          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.equalsIgnoreCase(email)
         case _                                                                                            => true
       },
       s"The specified individual is already the RI for this application"
@@ -62,7 +62,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
     ) { case (_, _, instigator, _, _) => instigator }
   }
 
-  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: String): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: LaxEmailAddress): NonEmptyList[UpdateApplicationEvent] = {
     NonEmptyList.of(
       ResponsibleIndividualVerificationStarted(
         id = UpdateApplicationEvent.Id.random,
