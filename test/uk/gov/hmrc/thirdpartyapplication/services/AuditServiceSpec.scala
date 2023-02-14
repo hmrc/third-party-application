@@ -41,6 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
@@ -166,12 +167,12 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         timestamp,
         Actors.GatekeeperUser(gatekeeperUser),
         gatekeeperUser,
-        gatekeeperUser,
+        gatekeeperUser.toLaxEmail,
         Submission.Id.random,
         1,
         reasons,
         requesterName,
-        requesterEmail
+        requesterEmail.toLaxEmail
       )
 
       val tags                       = Map("gatekeeperId" -> gatekeeperUser)
@@ -297,7 +298,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         tags = hc.toAuditTags(CollaboratorAddedAudit.name, "-"),
         detail = Map(
           "applicationId"        -> applicationId.value.toString,
-          "newCollaboratorEmail" -> newCollaborator.emailAddress,
+          "newCollaboratorEmail" -> newCollaborator.emailAddress.text,
           "newCollaboratorType"  -> newCollaborator.describeRole
         )
       )
@@ -331,7 +332,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         tags = hc.toAuditTags(CollaboratorRemovedAudit.name, "-"),
         detail = Map(
           "applicationId"            -> applicationId.value.toString,
-          "removedCollaboratorEmail" -> removedCollaborator.emailAddress,
+          "removedCollaboratorEmail" -> removedCollaborator.emailAddress.text,
           "removedCollaboratorType"  -> removedCollaborator.describeRole
         )
       )

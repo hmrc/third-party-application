@@ -22,6 +22,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, ResponsibleIndividual, ServerLocation}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{TermsAndConditionsLocation, TermsAndConditionsLocations, PrivacyPolicyLocation, PrivacyPolicyLocations}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 object SubmissionDataExtracter extends ApplicationLogger {
 
@@ -71,10 +72,10 @@ object SubmissionDataExtracter extends ApplicationLogger {
     })
   }
 
-  def getResponsibleIndividualEmail(submission: Submission, requestedByEmailAddress: String): Option[ResponsibleIndividual.EmailAddress] = {
+  def getResponsibleIndividualEmail(submission: Submission, requestedByEmailAddress: LaxEmailAddress): Option[LaxEmailAddress] = {
     getAnswerForYesOrNoResponsibleIndividualIsRequester(submission).flatMap(_ match {
-      case "Yes" => Some(ResponsibleIndividual.EmailAddress(requestedByEmailAddress))
-      case "No"  => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId).map(ResponsibleIndividual.EmailAddress)
+      case "Yes" => Some(requestedByEmailAddress)
+      case "No"  => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId).map(LaxEmailAddress(_))
     })
   }
 
@@ -114,7 +115,7 @@ object SubmissionDataExtracter extends ApplicationLogger {
     })
   }
 
-  def getImportantSubmissionData(submission: Submission, requestedByName: String, requestedByEmailAddress: String): Option[ImportantSubmissionData] = {
+  def getImportantSubmissionData(submission: Submission, requestedByName: String, requestedByEmailAddress: LaxEmailAddress): Option[ImportantSubmissionData] = {
     val organisationUrl            = getOrganisationUrl(submission)
     val responsibleIndividualName  = getResponsibleIndividualName(submission, requestedByName)
     val responsibleIndividualEmail = getResponsibleIndividualEmail(submission, requestedByEmailAddress)

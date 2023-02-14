@@ -36,6 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndCondit
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec
@@ -66,7 +67,7 @@ class NotificationServiceSpec
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
-    val adminEmail     = "admin@example.com"
+    val adminEmail     = "admin@example.com".toLaxEmail
     val devHubUser     = Actors.AppCollaborator(adminEmail)
     val gatekeeperUser = "gkuser"
     val oldAppName     = "old name"
@@ -89,7 +90,7 @@ class NotificationServiceSpec
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
-      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(adminEmail, oldAppName, newAppName, Set(responsibleIndividual.emailAddress.value, loggedInUser))
+      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(adminEmail.text, oldAppName, newAppName, Set(responsibleIndividual.emailAddress, loggedInUser))
     }
 
     "when receive a ProductionAppPrivacyPolicyLocationChanged, call the event handler and return successfully" in new Setup {
@@ -108,12 +109,12 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(
-        adminEmail,
+        adminEmail.text,
         applicationData.name,
         "privacy policy URL",
         previousPrivacyPolicyUrl.value,
         newPrivacyPolicyUrl.value,
-        Set(responsibleIndividual.emailAddress.value, loggedInUser)
+        Set(responsibleIndividual.emailAddress, loggedInUser)
       )
     }
 
@@ -133,12 +134,12 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(
-        adminEmail,
+        adminEmail.text,
         applicationData.name,
         "privacy policy URL",
         previousPrivacyPolicyUrl,
         newPrivacyPolicyUrl,
-        Set(responsibleIndividual.emailAddress.value, loggedInUser)
+        Set(responsibleIndividual.emailAddress, loggedInUser)
       )
     }
 
@@ -158,12 +159,12 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(
-        adminEmail,
+        adminEmail.text,
         applicationData.name,
         "terms and conditions URL",
         previousTermsAndConditionsUrl.value,
         newTermsAndConditionsUrl.value,
-        Set(responsibleIndividual.emailAddress.value, loggedInUser)
+        Set(responsibleIndividual.emailAddress, loggedInUser)
       )
     }
 
@@ -183,12 +184,12 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(
-        adminEmail,
+        adminEmail.text,
         applicationData.name,
         "terms and conditions URL",
         previousTermsAndConditionsUrl,
         newTermsAndConditionsUrl,
-        Set(responsibleIndividual.emailAddress.value, loggedInUser)
+        Set(responsibleIndividual.emailAddress, loggedInUser)
       )
     }
 
@@ -199,11 +200,11 @@ class NotificationServiceSpec
         ApplicationId.random,
         "app name",
         FixedClock.now,
-        Actors.AppCollaborator("admin@example.com"),
+        Actors.AppCollaborator("admin@example.com".toLaxEmail),
         "admin name",
-        "admin@example.com",
+        "admin@example.com".toLaxEmail,
         "ri name",
-        "ri@example.com",
+        "ri@example.com".toLaxEmail,
         Submission.Id.random,
         1,
         ResponsibleIndividualVerificationId.random
@@ -226,16 +227,16 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.AppCollaborator("admin@example.com"),
+        Actors.AppCollaborator("admin@example.com".toLaxEmail),
         "old ri name",
-        "oldri@example.com",
+        "oldri@example.com".toLaxEmail,
         "ri name",
-        "ri@example.com",
+        "ri@example.com".toLaxEmail,
         Submission.Id.random,
         1,
         "code12345678",
         "admin name",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
@@ -245,7 +246,7 @@ class NotificationServiceSpec
         applicationData.name,
         event.previousResponsibleIndividualName,
         event.newResponsibleIndividualName,
-        Set("oldri@example.com", loggedInUser)
+        Set("oldri@example.com".toLaxEmail, loggedInUser)
       )
     }
 
@@ -255,13 +256,13 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.AppCollaborator("admin@example.com"),
+        Actors.AppCollaborator("admin@example.com".toLaxEmail),
         "old ri name",
-        "oldri@example.com",
+        "oldri@example.com".toLaxEmail,
         Submission.Id.random,
         1,
         "admin name",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
@@ -271,7 +272,7 @@ class NotificationServiceSpec
         applicationData.name,
         event.previousResponsibleIndividualName,
         event.requestingAdminName,
-        Set("oldri@example.com", loggedInUser)
+        Set("oldri@example.com".toLaxEmail, loggedInUser)
       )
     }
 
@@ -281,14 +282,14 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.AppCollaborator("admin@example.com"),
+        Actors.AppCollaborator("admin@example.com".toLaxEmail),
         "ri name",
-        "ri@example.com",
+        "ri@example.com".toLaxEmail,
         Submission.Id.random,
         1,
         "code12345678",
         "admin name",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
@@ -307,14 +308,14 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.AppCollaborator("admin@example.com"),
+        Actors.AppCollaborator("admin@example.com".toLaxEmail),
         "ri name",
-        "ri@example.com",
+        "ri@example.com".toLaxEmail,
         Submission.Id.random,
         1,
         "code12345678",
         "admin name",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
@@ -328,14 +329,14 @@ class NotificationServiceSpec
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.AppCollaborator("admin@example.com"),
+        Actors.AppCollaborator("admin@example.com".toLaxEmail),
         "ri name",
-        "ri@example.com",
+        "ri@example.com".toLaxEmail,
         Submission.Id.random,
         1,
         "code12345678",
         "admin name",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
@@ -350,7 +351,7 @@ class NotificationServiceSpec
 
     "when receive a ClientSecretAdded, call the event handler and return successfully" in new Setup {
       val obfuscatedSecret     = "********cret"
-      val requestingAdminEmail = "admin@example.com"
+      val requestingAdminEmail = "admin@example.com".toLaxEmail
       EmailConnectorMock.SendAddedClientSecretNotification.thenReturnOk()
       val event                = ClientSecretAddedV2(
         UpdateApplicationEvent.Id.random,
@@ -374,7 +375,7 @@ class NotificationServiceSpec
     "when receive a ClientSecretRemoved, call the event handler and return successfully" in new Setup {
       val clientSecretId       = "the-id"
       val clientSecretName     = "********cret"
-      val requestingAdminEmail = "dev@example.com"
+      val requestingAdminEmail = "dev@example.com".toLaxEmail
       EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
       val event                =
         ClientSecretRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.AppCollaborator(requestingAdminEmail), clientSecretId, clientSecretName)
@@ -390,18 +391,18 @@ class NotificationServiceSpec
     }
 
     "when receive a AddCollaborator, call the event handler and return successfully" in new Setup {
-      val adminsToEmail = Set("anAdmin@someCompany.com", "anotherdev@someCompany.com")
+      val adminsToEmail = Set("anAdmin@someCompany.com".toLaxEmail, "anotherdev@someCompany.com".toLaxEmail)
 
       EmailConnectorMock.SendCollaboratorAddedNotification.thenReturnSuccess()
       EmailConnectorMock.SendCollaboratorAddedConfirmation.thenReturnSuccess()
 
-      val collaboratorEmail = "somedev@someCompany.com"
+      val collaboratorEmail = "somedev@someCompany.com".toLaxEmail
       val collaborator      = collaboratorEmail.developer()
       val event             = CollaboratorAdded(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.AppCollaborator("dev@example.com"),
+        Actors.AppCollaborator("dev@example.com".toLaxEmail),
         collaborator,
         adminsToEmail
       )
@@ -421,18 +422,18 @@ class NotificationServiceSpec
     }
 
     "when receive a RemoveCollaborator, call the event handler and return successfully" in new Setup {
-      val adminsToEmail = Set("anAdmin@someCompany.com", "anotherdev@someCompany.com")
+      val adminsToEmail = Set("anAdmin@someCompany.com".toLaxEmail, "anotherdev@someCompany.com".toLaxEmail)
 
       EmailConnectorMock.SendCollaboratorRemovedNotification.thenReturnSuccess()
       EmailConnectorMock.SendCollaboratorRemovedConfirmation.thenReturnSuccess()
 
-      val collaboratorEmail = "somedev@someCompany.com"
+      val collaboratorEmail = "somedev@someCompany.com".toLaxEmail
       val collaborator      = collaboratorEmail.developer()
       val event             = CollaboratorRemoved(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
         FixedClock.now,
-        Actors.AppCollaborator("dev@example.com"),
+        Actors.AppCollaborator("dev@example.com".toLaxEmail),
         collaborator,
         true,
         adminsToEmail
@@ -462,7 +463,7 @@ class NotificationServiceSpec
         ClientId("clientId"),
         "wso2AppName",
         "reasons",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))

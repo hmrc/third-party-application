@@ -32,12 +32,13 @@ import java.time.format.DateTimeFormatter
 import java.time.ZoneId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 object EmailConnector {
   case class Config(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)
 
   private[connector] case class SendEmailRequest(
-      to: Set[String],
+      to: Set[LaxEmailAddress],
       templateId: String,
       parameters: Map[String, String],
       force: Boolean = false,
@@ -89,7 +90,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       case _ : Collaborators.Developer     => "developer"
     }
 
-  def sendCollaboratorAddedConfirmation(collaborator: Collaborator, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendCollaboratorAddedConfirmation(collaborator: Collaborator, application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val article = if (collaborator.isAdministrator) "an" else "a"
 
     post(SendEmailRequest(
@@ -105,29 +106,29 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       .map(_ => HasSucceeded)
   }
 
-  def sendCollaboratorAddedNotification(collaborator: Collaborator, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendCollaboratorAddedNotification(collaborator: Collaborator, application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(
       recipients,
       addedCollaboratorNotification,
-      Map("email" -> collaborator.emailAddress, "role" -> s"${getRoleForDisplay(collaborator)}", "applicationName" -> application, "developerHubTitle" -> devHubTitle)
+      Map("email" -> collaborator.emailAddress.text, "role" -> s"${getRoleForDisplay(collaborator)}", "applicationName" -> application, "developerHubTitle" -> devHubTitle)
     ))
       .map(_ => HasSucceeded)
   }
 
-  def sendRemovedCollaboratorConfirmation(application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendRemovedCollaboratorConfirmation(application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(recipients, removedCollaboratorConfirmation, Map("applicationName" -> application, "developerHubTitle" -> devHubTitle)))
       .map(_ => HasSucceeded)
   }
 
-  def sendRemovedCollaboratorNotification(email: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, removedCollaboratorNotification, Map("email" -> email, "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
+  def sendRemovedCollaboratorNotification(email: LaxEmailAddress, application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    post(SendEmailRequest(recipients, removedCollaboratorNotification, Map("email" -> email.text, "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
   }
 
-  def sendApplicationApprovedGatekeeperConfirmation(email: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, applicationApprovedGatekeeperConfirmation, Map("email" -> email, "applicationName" -> application)))
+  def sendApplicationApprovedGatekeeperConfirmation(email: LaxEmailAddress, application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    post(SendEmailRequest(recipients, applicationApprovedGatekeeperConfirmation, Map("email" -> email.text, "applicationName" -> application)))
   }
 
-  def sendApplicationApprovedAdminConfirmation(application: String, code: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendApplicationApprovedAdminConfirmation(application: String, code: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(
       recipients,
       applicationApprovedAdminConfirmation,
@@ -135,11 +136,11 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
     ))
   }
 
-  def sendApplicationApprovedNotification(application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendApplicationApprovedNotification(application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(recipients, applicationApprovedNotification, Map("applicationName" -> application)))
   }
 
-  def sendApplicationRejectedNotification(application: String, recipients: Set[String], reason: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendApplicationRejectedNotification(application: String, recipients: Set[LaxEmailAddress], reason: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(
       recipients,
       applicationRejectedNotification,
@@ -155,22 +156,22 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   def sendApplicationDeletedNotification(
       applicationName: String,
       applicationId: ApplicationId,
-      requesterEmail: String,
-      recipients: Set[String]
+      requesterEmail: LaxEmailAddress,
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(
       SendEmailRequest(
         recipients,
         applicationDeletedNotification,
-        Map("applicationName" -> applicationName, "requestor" -> requesterEmail, "applicationId" -> applicationId.value.toString)
+        Map("applicationName" -> applicationName, "requestor" -> requesterEmail.text, "applicationId" -> applicationId.value.toString)
       )
     )
   }
 
   def sendProductionCredentialsRequestExpiryWarning(
       applicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(
@@ -184,7 +185,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
   def sendProductionCredentialsRequestExpired(
       applicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(
@@ -197,23 +198,23 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   }
 
   def sendAddedClientSecretNotification(
-      actorEmailAddress: String,
+      actorEmailAddress: LaxEmailAddress,
       clientSecretName: String,
       applicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
-    sendClientSecretNotification(addedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
+    sendClientSecretNotification(addedClientSecretNotification, actorEmailAddress.text, clientSecretName, applicationName, recipients)
   }
 
   def sendRemovedClientSecretNotification(
-      actorEmailAddress: String,
+      actorEmailAddress: LaxEmailAddress,
       clientSecretName: String,
       applicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
-    sendClientSecretNotification(removedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
+    sendClientSecretNotification(removedClientSecretNotification, actorEmailAddress.text, clientSecretName, applicationName, recipients)
   }
 
   private def sendClientSecretNotification(
@@ -221,7 +222,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       actorEmailAddress: String,
       clientSecretName: String,
       applicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(
@@ -239,7 +240,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
   def sendVerifyResponsibleIndividualNotification(
       responsibleIndividualName: String,
-      responsibleIndividualEmailAddress: String,
+      responsibleIndividualEmailAddress: LaxEmailAddress,
       applicationName: String,
       requesterName: String,
       verifyResponsibleIndividualUniqueId: String
@@ -259,7 +260,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
   def sendVerifyResponsibleIndividualUpdateNotification(
       responsibleIndividualName: String,
-      responsibleIndividualEmailAddress: String,
+      responsibleIndividualEmailAddress: LaxEmailAddress,
       applicationName: String,
       requesterName: String,
       verifyResponsibleIndividualUniqueId: String
@@ -279,7 +280,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
   def sendVerifyResponsibleIndividualReminderToAdmin(
       responsibleIndividualName: String,
-      adminEmailAddress: String,
+      adminEmailAddress: LaxEmailAddress,
       applicationName: String,
       requesterName: String
     )(implicit hc: HeaderCarrier
@@ -297,7 +298,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
   def sendResponsibleIndividualDidNotVerify(
       responsibleIndividualName: String,
-      adminEmailAddress: String,
+      adminEmailAddress: LaxEmailAddress,
       applicationName: String,
       requesterName: String
     )(implicit hc: HeaderCarrier
@@ -315,7 +316,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
   def sendResponsibleIndividualDeclined(
       responsibleIndividualName: String,
-      adminEmailAddress: String,
+      adminEmailAddress: LaxEmailAddress,
       applicationName: String,
       requesterName: String
     )(implicit hc: HeaderCarrier
@@ -334,7 +335,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   def sendResponsibleIndividualNotChanged(
       responsibleIndividualName: String,
       applicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(
@@ -351,7 +352,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       requesterName: String,
       previousApplicationName: String,
       newApplicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(
@@ -371,7 +372,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       fieldName: String,
       previousValue: String,
       newValue: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(
@@ -392,7 +393,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       applicationName: String,
       previousResponsibleIndividual: String,
       newResponsibleIndividual: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(
@@ -410,7 +411,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   def sendNewTermsOfUseInvitation(
       dueBy: Instant,
       applicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] =
     post(

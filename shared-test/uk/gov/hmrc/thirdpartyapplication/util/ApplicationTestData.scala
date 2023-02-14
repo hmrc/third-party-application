@@ -26,15 +26,15 @@ import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData {
 
-
   def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = FixedClock.now)
 
-  val loggedInUser = "loggedin@example.com"
-  val devEmail     = "dev@example.com"
-  val adminEmail   = "admin@example.com"
+  val loggedInUser = "loggedin@example.com".toLaxEmail
+  val devEmail     = "dev@example.com".toLaxEmail
+  val adminEmail   = "admin@example.com".toLaxEmail
   val adminName    = "Admin Example"
 
   val serverToken           = "b3c83934c02df8b111e7f9f8700000"
@@ -42,7 +42,7 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
   val productionToken       = Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   val requestedByName  = "john smith"
-  val requestedByEmail = "john.smith@example.com"
+  val requestedByEmail = "john.smith@example.com" // Used for old actor : TODO
   val grantLength      = 547
 
   def anApplicationData(

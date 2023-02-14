@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpe
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil
     with ApplicationTestData {
@@ -92,7 +93,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
         FixedClock.now,
         ResponsibleIndividual.build("ri name", "ri@example.com"),
         "Mr Admin",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
 

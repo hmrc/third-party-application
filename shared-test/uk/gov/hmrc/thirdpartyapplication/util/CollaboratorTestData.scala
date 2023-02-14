@@ -19,26 +19,44 @@ package uk.gov.hmrc.thirdpartyapplication.util
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import scala.collection.mutable
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 trait CollaboratorTestData {
-
-  val idsByEmail = mutable.Map[String, UserId]()
-
-  def idOf(email: String) = {
-    idsByEmail.getOrElseUpdate(email, UserId.random)
+  
+  private val idsByEmail = mutable.Map[String, UserId]()
+  
+  def idOf(email: Any): UserId = email match {
+    case s: String => idsByEmail.getOrElseUpdate(s, UserId.random)
+    case LaxEmailAddress(text) => idsByEmail.getOrElseUpdate(text, UserId.random)
   }
 
+  import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+
   implicit class CollaboratorStringSyntax(emailAddress: String) {
-    def admin() = Collaborators.Administrator(idOf(emailAddress), emailAddress)
-    def developer() = Collaborators.Developer(idOf(emailAddress), emailAddress)
+    def admin() = Collaborators.Administrator(idOf(emailAddress), emailAddress.toLaxEmail)
+    def developer() = Collaborators.Developer(idOf(emailAddress), emailAddress.toLaxEmail)
 
     def admin(userId: UserId) = {
       idsByEmail.put(emailAddress, userId)
-      Collaborators.Administrator(userId, emailAddress)
+      Collaborators.Administrator(userId, emailAddress.toLaxEmail)
     }
     
     def developer(userId: UserId) = {
       idsByEmail.put(emailAddress, userId)
+      Collaborators.Developer(userId, emailAddress.toLaxEmail)
+    }
+  }
+  implicit class CollaboratorLaxEmailSyntax(emailAddress: LaxEmailAddress) {
+    def admin() = Collaborators.Administrator(idOf(emailAddress.text), emailAddress)
+    def developer() = Collaborators.Developer(idOf(emailAddress.text), emailAddress)
+
+    def admin(userId: UserId) = {
+      idsByEmail.put(emailAddress.text, userId)
+      Collaborators.Administrator(userId, emailAddress)
+    }
+    
+    def developer(userId: UserId) = {
+      idsByEmail.put(emailAddress.text, userId)
       Collaborators.Developer(userId, emailAddress)
     }
   }

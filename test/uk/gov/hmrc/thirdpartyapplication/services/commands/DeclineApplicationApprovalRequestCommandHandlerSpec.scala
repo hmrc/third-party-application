@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
@@ -44,9 +45,9 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
 
     val appId                    = ApplicationId.random
     val appAdminUserId           = UserId.random
-    val appAdminEmail            = "admin@example.com"
+    val appAdminEmail            = "admin@example.com".toLaxEmail
     val riName                   = "Mr Responsible"
-    val riEmail                  = "ri@example.com"
+    val riEmail                  = "ri@example.com".toLaxEmail
     val newResponsibleIndividual = ResponsibleIndividual.build("New RI", "new-ri@example")
     val oldRiName                = "old ri"
     val requesterEmail           = appAdminEmail
@@ -56,7 +57,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
 
     val importantSubmissionData = ImportantSubmissionData(
       None,
-      ResponsibleIndividual.build(riName, riEmail),
+      ResponsibleIndividual.build(riName, riEmail.text),
       Set.empty,
       TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocations.InDesktopSoftware,
@@ -68,7 +69,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
         appAdminEmail.admin(appAdminUserId)
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
-      state = ApplicationState.pendingGatekeeperApproval(requesterEmail, requesterName)
+      state = ApplicationState.pendingGatekeeperApproval(requesterEmail.text, requesterName)
     )
     val ts              = FixedClock.now
     val underTest       = new DeclineApplicationApprovalRequestCommandHandler(ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
@@ -102,7 +103,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
               actor shouldBe Actors.GatekeeperUser(gatekeeperUser)
               eventDateTime shouldBe ts
               decliningUserName shouldBe gatekeeperUser
-              decliningUserEmail shouldBe gatekeeperUser
+              decliningUserEmail shouldBe gatekeeperUser.toLaxEmail
               submissionId shouldBe submittedSubmission.id
               submissionIndex shouldBe submittedSubmission.latestInstance.index
               evtReasons shouldBe reasons
@@ -115,7 +116,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
               eventDateTime shouldBe ts
               oldAppState shouldBe app.state.name
               newAppState shouldBe State.TESTING
-              requestingAdminEmail shouldBe requesterEmail
+              requestingAdminEmail shouldBe requesterEmail.text
               requestingAdminName shouldBe requesterName
           }
         )
@@ -159,7 +160,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
 
     "return an error if the application state is not PendingResponsibleIndividualVerification or PendingGatekeeperApproval" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      val pendingGKApprovalApp = applicationData.copy(state = ApplicationState.pendingRequesterVerification(requesterEmail, requesterName, "12345678"))
+      val pendingGKApprovalApp = applicationData.copy(state = ApplicationState.pendingRequesterVerification(requesterEmail.text, requesterName, "12345678"))
       val result               = await(underTest.process(pendingGKApprovalApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)).value).left.value.toNonEmptyList.toList
       result.head shouldBe "App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state"
     }

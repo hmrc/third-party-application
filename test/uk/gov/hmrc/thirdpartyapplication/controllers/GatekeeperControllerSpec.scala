@@ -51,6 +51,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with ApplicationLogger
     with ControllerTestData with ApplicationTestData {
@@ -590,7 +591,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   "strideUserDeleteApplication" should {
     val gatekeeperUserId        = "big.boss.gatekeeper"
-    val requestedByEmailAddress = "admin@example.com"
+    val requestedByEmailAddress = "admin@example.com".toLaxEmail
     val deleteRequest           = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
     "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {

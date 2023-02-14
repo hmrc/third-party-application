@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTime
 import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 import java.time.{Clock, Duration, LocalDateTime, ZoneOffset}
 import java.util.UUID
@@ -48,6 +49,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyL
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
@@ -2522,7 +2524,7 @@ class ApplicationRepositoryISpec
     "update the application correctly" in {
       val responsibleIndividual   = ResponsibleIndividual(
         ResponsibleIndividual.Name("bob"),
-        ResponsibleIndividual.EmailAddress("bob@example.com")
+        LaxEmailAddress("bob@example.com")
       )
       val acceptanceDate          = FixedClock.now
       val submissionId            = Submission.Id.random
@@ -2806,7 +2808,7 @@ class ApplicationRepositoryISpec
 
       val result = await(
         applicationRepository.fetchAllForEmailAddressAndEnvironment(
-          collaborator.emailAddress,
+          collaborator.emailAddress.text,
           productionEnv
         )
       )
@@ -2988,10 +2990,10 @@ class ApplicationRepositoryISpec
 
     await(applicationRepository.save(app))
     app.state.name mustBe State.PRODUCTION
-    val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, ts, adminEmail, adminName))
+    val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, ts, adminEmail.text, adminName))
     appWithUpdatedState.state.name mustBe State.PENDING_GATEKEEPER_APPROVAL
     appWithUpdatedState.state.updatedOn mustBe ts
-    appWithUpdatedState.state.requestedByEmailAddress mustBe Some(adminEmail)
+    appWithUpdatedState.state.requestedByEmailAddress mustBe Some(adminEmail.text)
     appWithUpdatedState.state.requestedByName mustBe Some(adminName)
   }
 
@@ -3019,11 +3021,11 @@ class ApplicationRepositoryISpec
     appWithUpdatedRI.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         importantSubmissionData.responsibleIndividual.fullName.value mustBe adminName
-        importantSubmissionData.responsibleIndividual.emailAddress.value mustBe adminEmail
+        importantSubmissionData.responsibleIndividual.emailAddress mustBe adminEmail
         importantSubmissionData.termsOfUseAcceptances.size mustBe 2
         val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
         latestAcceptance.responsibleIndividual.fullName.value mustBe adminName
-        latestAcceptance.responsibleIndividual.emailAddress.value mustBe adminEmail
+        latestAcceptance.responsibleIndividual.emailAddress mustBe adminEmail
       }
       case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
     }
@@ -3047,7 +3049,7 @@ class ApplicationRepositoryISpec
   "handle updateApplicationChangeResponsibleIndividual" in {
     val applicationId           = ApplicationId.random
     val riName                  = "Mr Responsible"
-    val riEmail                 = "ri@example.com"
+    val riEmail                 = "ri@example.com".toLaxEmail
     val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
     val submissionId            = Submission.Id.random
     val submissionIndex         = 1
@@ -3067,11 +3069,11 @@ class ApplicationRepositoryISpec
     appWithUpdatedRI.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         importantSubmissionData.responsibleIndividual.fullName.value mustBe riName
-        importantSubmissionData.responsibleIndividual.emailAddress.value mustBe riEmail
+        importantSubmissionData.responsibleIndividual.emailAddress mustBe riEmail
         importantSubmissionData.termsOfUseAcceptances.size mustBe 2
         val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
         latestAcceptance.responsibleIndividual.fullName.value mustBe riName
-        latestAcceptance.responsibleIndividual.emailAddress.value mustBe riEmail
+        latestAcceptance.responsibleIndividual.emailAddress mustBe riEmail
       }
       case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
     }

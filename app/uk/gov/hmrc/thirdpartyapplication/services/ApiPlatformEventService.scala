@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 // TODO - context and version probably should be strings in the events??
 @Singleton
@@ -77,24 +77,24 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     )
   }
 
-  def sendTeamMemberAddedEvent(appData: ApplicationData, teamMemberEmail: String, teamMemberRole: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
+  def sendTeamMemberAddedEvent(appData: ApplicationData, teamMemberEmail: LaxEmailAddress, teamMemberRole: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
     handleResult(
       appId,
       eventType = "TeamMemberAddedEvent",
       maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(TeamMemberAddedEvent(EventId.random, appId, actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
+        actor => sendEvent(TeamMemberAddedEvent(EventId.random, appId, actor = actor, teamMemberEmail = teamMemberEmail.text, teamMemberRole = teamMemberRole))
       }
     )
   }
 
-  def sendTeamMemberRemovedEvent(appData: ApplicationData, teamMemberEmail: String, teamMemberRole: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
+  def sendTeamMemberRemovedEvent(appData: ApplicationData, teamMemberEmail: LaxEmailAddress, teamMemberRole: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
     handleResult(
       appId,
       eventType = "TeamMemberRemovedEvent",
       maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(TeamMemberRemovedEvent(EventId.random, appId, actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
+        actor => sendEvent(TeamMemberRemovedEvent(EventId.random, appId, actor = actor, teamMemberEmail = teamMemberEmail.text, teamMemberRole = teamMemberRole))
       }
     )
   }

@@ -95,7 +95,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   // scalastyle:on cyclomatic.complexity
 
   private def auditApplicationDeletedByGatekeeper(app: ApplicationData, evt: ApplicationDeletedByGatekeeper)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
-    liftF(auditGatekeeperAction(evt.actor.user, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail)))
+    liftF(auditGatekeeperAction(evt.actor.user, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail.text)))
       .toOption
       .value
   }
@@ -277,7 +277,7 @@ object AuditAction {
     val auditType = "CollaboratorAddedToApplication"
 
     def details(collaborator: Collaborator) = Map(
-      "newCollaboratorEmail" -> collaborator.emailAddress,
+      "newCollaboratorEmail" -> collaborator.emailAddress.text,
       "newCollaboratorType"  -> collaborator.describeRole
     )
   }
@@ -287,7 +287,7 @@ object AuditAction {
     val auditType = "CollaboratorRemovedFromApplication"
 
     def details(collaborator: Collaborator) = Map(
-      "removedCollaboratorEmail" -> collaborator.emailAddress,
+      "removedCollaboratorEmail" -> collaborator.emailAddress.text,
       "removedCollaboratorType"  -> collaborator.describeRole
     )
   }

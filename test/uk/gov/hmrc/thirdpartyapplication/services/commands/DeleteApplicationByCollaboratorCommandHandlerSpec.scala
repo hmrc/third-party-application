@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
 
@@ -37,7 +38,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
 
     val appId = ApplicationId.random
 
-    val appAdminEmail = "admin@example.com"
+    val appAdminEmail = "admin@example.com".toLaxEmail
     val reasons       = "reasons description text"
     val actor         = Actors.AppCollaborator(appAdminEmail)
 
@@ -85,8 +86,8 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
               eventDateTime shouldBe ts
               oldAppState shouldBe app.state.name
               newAppState shouldBe State.DELETED
-              requestingAdminEmail shouldBe actor.email
-              requestingAdminName shouldBe actor.email
+              requestingAdminEmail shouldBe actor.email.text
+              requestingAdminName shouldBe actor.email.text
           }
         )
       }

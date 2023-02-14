@@ -92,7 +92,7 @@ object ApplicationData {
 
     val applicationState = (environment, accessType) match {
       case (Environment.SANDBOX, _) => ApplicationState(PRODUCTION, updatedOn = createdOn)
-      case (_, PRIVILEGED | ROPC)   => ApplicationState(PRODUCTION, collaborators.headOption.map(_.emailAddress), updatedOn = createdOn)
+      case (_, PRIVILEGED | ROPC)   => ApplicationState(PRODUCTION, collaborators.headOption.map(_.emailAddress.text), updatedOn = createdOn)
       case _                        => ApplicationState(TESTING, updatedOn = createdOn)
     }
 

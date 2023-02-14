@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
@@ -105,7 +106,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        Actors.AppCollaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com".toLaxEmail),
         ClientId("clientId"),
         "wso2ApplicationName",
         "reasons"

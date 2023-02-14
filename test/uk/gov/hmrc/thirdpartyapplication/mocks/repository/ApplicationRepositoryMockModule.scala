@@ -40,6 +40,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyL
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -388,7 +389,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object UpdateApplicationChangeResponsibleIndividualToSelf {
 
       def thenReturn(applicationData: ApplicationData) =
-        when(aMock.updateApplicationChangeResponsibleIndividualToSelf(*[ApplicationId], *[String], *[String], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
+        when(aMock.updateApplicationChangeResponsibleIndividualToSelf(*[ApplicationId], *[String], *[LaxEmailAddress], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
           applicationData
         ))
     }
@@ -396,7 +397,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object UpdateApplicationSetResponsibleIndividual {
 
       def thenReturn(applicationData: ApplicationData) =
-        when(aMock.updateApplicationSetResponsibleIndividual(*[ApplicationId], *[String], *[String], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
+        when(aMock.updateApplicationSetResponsibleIndividual(*[ApplicationId], *[String], *[LaxEmailAddress], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
           applicationData
         ))
     }
@@ -404,7 +405,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object UpdateApplicationChangeResponsibleIndividual {
 
       def thenReturn(applicationData: ApplicationData) =
-        when(aMock.updateApplicationChangeResponsibleIndividual(*[ApplicationId], *[String], *[String], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
+        when(aMock.updateApplicationChangeResponsibleIndividual(*[ApplicationId], *[String], *[LaxEmailAddress], *[LocalDateTime], *[Submission.Id], *[Int])).thenReturn(successful(
           applicationData
         ))
     }

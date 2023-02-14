@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -83,8 +84,8 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
 
       await(job.runJob)
 
-      EmailConnectorMock.SendVerifyResponsibleIndividualNotification.verifyCalledWith(riName, riEmail, appName, requesterName, verification.id.value)
-      EmailConnectorMock.SendVerifyResponsibleIndividualReminderToAdmin.verifyCalledWith(riName, requesterEmail, appName, requesterName)
+      EmailConnectorMock.SendVerifyResponsibleIndividualNotification.verifyCalledWith(riName, riEmail.toLaxEmail, appName, requesterName, verification.id.value)
+      EmailConnectorMock.SendVerifyResponsibleIndividualReminderToAdmin.verifyCalledWith(riName, requesterEmail.toLaxEmail, appName, requesterName)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
         ResponsibleIndividualVerification.VerificationTypeToU,
         INITIAL,

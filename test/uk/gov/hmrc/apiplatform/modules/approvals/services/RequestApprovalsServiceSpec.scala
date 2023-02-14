@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -93,7 +94,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
           .updated(testQuestionIdsOfInterest.responsibleIndividualNameId, TextAnswer(questionsRiName))
         val answeredSubmissionWithRIDetails = answeredSubmission.hasCompletelyAnsweredWith(answersWithRIDetails)
 
-        val result = await(underTest.requestApproval(application, answeredSubmissionWithRIDetails, requestedByName, requestedByEmail))
+        val result = await(underTest.requestApproval(application, answeredSubmissionWithRIDetails, requestedByName, requestedByEmail.toLaxEmail))
 
         result shouldBe RequestApprovalsService.ApprovalAccepted(fakeSavedApplication)
         val savedStateHistory     = StateHistoryRepoMock.Insert.verifyCalled()
@@ -105,7 +106,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         savedAppData.state.name shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
         val responsibleIndividual = savedAppData.access.asInstanceOf[Standard].importantSubmissionData.get.responsibleIndividual
         responsibleIndividual.fullName.value shouldBe questionsRiName
-        responsibleIndividual.emailAddress.value shouldBe questionsRiEmail
+        responsibleIndividual.emailAddress shouldBe questionsRiEmail.toLaxEmail
 
         val updatedSubmission = SubmissionsServiceMock.Store.verifyCalledWith()
         updatedSubmission.status should matchPattern {
@@ -128,7 +129,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
           .updated(testQuestionIdsOfInterest.responsibleIndividualNameId, NoAnswer)
         val answeredSubmissionWithoutRIDetails = answeredSubmission.hasCompletelyAnsweredWith(answersWithoutRIDetails)
 
-        val result = await(underTest.requestApproval(application, answeredSubmissionWithoutRIDetails, requestedByName, requestedByEmail))
+        val result = await(underTest.requestApproval(application, answeredSubmissionWithoutRIDetails, requestedByName, requestedByEmail.toLaxEmail))
 
         result shouldBe RequestApprovalsService.ApprovalAccepted(fakeSavedApplication)
         val savedStateHistory     = StateHistoryRepoMock.Insert.verifyCalled()
@@ -139,7 +140,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         savedAppData.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
         val responsibleIndividual = savedAppData.access.asInstanceOf[Standard].importantSubmissionData.get.responsibleIndividual
         responsibleIndividual.fullName.value shouldBe requestedByName
-        responsibleIndividual.emailAddress.value shouldBe requestedByEmail
+        responsibleIndividual.emailAddress shouldBe requestedByEmail.toLaxEmail
 
         val updatedSubmission = SubmissionsServiceMock.Store.verifyCalledWith()
         updatedSubmission.status should matchPattern {
@@ -155,7 +156,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       "return duplicate application name if duplicate" in new Setup {
         namingServiceReturns(DuplicateName)
 
-        val result = await(underTest.requestApproval(application, answeredSubmission, requestedByName, requestedByEmail))
+        val result = await(underTest.requestApproval(application, answeredSubmission, requestedByName, requestedByEmail.toLaxEmail))
 
         val generatedName = SubmissionDataExtracter.getApplicationName(submittedSubmission).get
 
@@ -170,7 +171,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
         val generatedName = SubmissionDataExtracter.getApplicationName(submittedSubmission).get
 
-        val result = await(underTest.requestApproval(application, answeredSubmission, requestedByName, requestedByEmail))
+        val result = await(underTest.requestApproval(application, answeredSubmission, requestedByName, requestedByEmail.toLaxEmail))
 
         result shouldBe RequestApprovalsService.ApprovalRejectedDueToIllegalName(generatedName)
         StateHistoryRepoMock.Insert.verifyNeverCalled()
@@ -179,7 +180,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       "return incomplete for an incomplete submission" in new Setup {
-        val result = await(underTest.requestApproval(application, answeringSubmission, requestedByName, requestedByEmail))
+        val result = await(underTest.requestApproval(application, answeringSubmission, requestedByName, requestedByEmail.toLaxEmail))
 
         result should matchPattern {
           case RequestApprovalsService.ApprovalRejectedDueToIncorrectSubmissionState(_) =>
@@ -190,7 +191,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       "return incomplete for an submitted submission" in new Setup {
-        val result = await(underTest.requestApproval(application, submittedSubmission, requestedByName, requestedByEmail))
+        val result = await(underTest.requestApproval(application, submittedSubmission, requestedByName, requestedByEmail.toLaxEmail))
 
         result should matchPattern {
           case RequestApprovalsService.ApprovalRejectedDueToIncorrectSubmissionState(_) =>
@@ -203,7 +204,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       "return application in incorrect state an application not in TESTING" in new Setup {
         val prodApplication: ApplicationData = anApplicationData(applicationId, productionState(requestedByEmail))
 
-        val result = await(underTest.requestApproval(prodApplication, answeringSubmission, requestedByName, requestedByEmail))
+        val result = await(underTest.requestApproval(prodApplication, answeringSubmission, requestedByName, requestedByEmail.toLaxEmail))
 
         result shouldBe RequestApprovalsService.ApprovalRejectedDueToIncorrectApplicationState
         StateHistoryRepoMock.Insert.verifyNeverCalled()

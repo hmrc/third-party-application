@@ -25,6 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsServic
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
 
@@ -33,20 +34,20 @@ trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatche
 
     object RequestApproval {
 
-      def thenRequestIsApprovedFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalAccepted(anApplicationData(applicationId))))
+      def thenRequestIsApprovedFor(applicationId: ApplicationId, emailAddress: LaxEmailAddress) =
+        when(aMock.requestApproval(*, *, *, *[LaxEmailAddress])(*)).thenReturn(successful(ApprovalAccepted(anApplicationData(applicationId))))
 
-      def thenRequestFailsWithInvalidStateTransitionErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectApplicationState))
+      def thenRequestFailsWithInvalidStateTransitionErrorFor(applicationId: ApplicationId, emailAddress: LaxEmailAddress) =
+        when(aMock.requestApproval(*, *, *, *[LaxEmailAddress])(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectApplicationState))
 
-      def thenRequestFailsWithApplicationNameAlreadyExistsErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToDuplicateName("my app")))
+      def thenRequestFailsWithApplicationNameAlreadyExistsErrorFor(applicationId: ApplicationId, emailAddress: LaxEmailAddress) =
+        when(aMock.requestApproval(*, *, *, *[LaxEmailAddress])(*)).thenReturn(successful(ApprovalRejectedDueToDuplicateName("my app")))
 
-      def thenRequestFailsWithIncorrectSubmissionErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectSubmissionState(Submission.Status.Created(FixedClock.now, "Bob@fake.com"))))
+      def thenRequestFailsWithIncorrectSubmissionErrorFor(applicationId: ApplicationId, emailAddress: LaxEmailAddress) =
+        when(aMock.requestApproval(*, *, *, *[LaxEmailAddress])(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectSubmissionState(Submission.Status.Created(FixedClock.now, "Bob@fake.com"))))
 
-      def thenRequestFailsWithIllegalNameErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIllegalName("my app")))
+      def thenRequestFailsWithIllegalNameErrorFor(applicationId: ApplicationId, emailAddress: LaxEmailAddress) =
+        when(aMock.requestApproval(*, *, *, *[LaxEmailAddress])(*)).thenReturn(successful(ApprovalRejectedDueToIllegalName("my app")))
     }
   }
 

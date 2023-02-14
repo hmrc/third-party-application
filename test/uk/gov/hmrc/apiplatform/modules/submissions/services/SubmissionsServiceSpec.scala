@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, UpdateApplication
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
@@ -244,14 +245,14 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
           UpdateApplicationEvent.Id.random,
           appId,
           now,
-          Actors.AppCollaborator("requester@example.com"),
+          Actors.AppCollaborator("requester@example.com".toLaxEmail),
           "Mr New Ri",
-          "ri@example.com",
+          "ri@example.com".toLaxEmail,
           submissionId,
           0,
           reasons,
           "Mr Admin",
-          "admin@example.com"
+          "admin@example.com".toLaxEmail
         )
 
       def buildResponsibleIndividualDidNotVerifyEvent() =
@@ -259,14 +260,14 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
           UpdateApplicationEvent.Id.random,
           appId,
           now,
-          Actors.AppCollaborator("requester@example.com"),
+          Actors.AppCollaborator("requester@example.com".toLaxEmail),
           "Mr New Ri",
-          "ri@example.com",
+          "ri@example.com".toLaxEmail,
           submissionId,
           0,
           code,
           "Mr Admin",
-          "admin@example.com"
+          "admin@example.com".toLaxEmail
         )
 
       def buildApplicationStateChangedEvent() =
@@ -274,7 +275,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
           UpdateApplicationEvent.Id.random,
           appId,
           now,
-          Actors.AppCollaborator("requester@example.com"),
+          Actors.AppCollaborator("requester@example.com".toLaxEmail),
           State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
           State.TESTING,
           "Mr Admin",

@@ -52,6 +52,7 @@ import java.time.{Clock, LocalDateTime}
 import java.util.UUID
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class ResponsibleIndividualVerificationRepositoryISpec
     extends ServerBaseISpec
@@ -71,7 +72,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
   val repository: ResponsibleIndividualVerificationRepository = app.injector.instanceOf[ResponsibleIndividualVerificationRepository]
   val responsibleIndividual                                   = ResponsibleIndividual.build("Bob Fleming", "bob@fleming.com")
   val requestingAdminName                                     = "Mr Admin"
-  val requestingAdminEmail                                    = "admin@fleming.com"
+  val requestingAdminEmail                                    = "admin@fleming.com".toLaxEmail
 
   override def beforeEach(): Unit = {
     await(repository.collection.drop().toFuture())
@@ -225,11 +226,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
         appId,
         appName,
         now,
-        Actors.AppCollaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "ms admin",
-        "admin@example.com",
+        "admin@example.com".toLaxEmail,
         "ri name",
-        "ri@example.com",
+        "ri@example.com".toLaxEmail,
         submissionId,
         submissionIndex,
         ResponsibleIndividualVerificationId.random
@@ -240,16 +241,16 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         appId,
         now,
-        Actors.AppCollaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr Previous Ri",
-        "previous-ri@example.com",
+        "previous-ri@example.com".toLaxEmail,
         "Mr New Ri",
-        "ri@example.com",
+        "ri@example.com".toLaxEmail,
         submissionId,
         submissionIndex,
         code,
         "Mr Admin",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
 
     def buildResponsibleIndividualDeclinedEvent(submissionId: Submission.Id, submissionIndex: Int) =
@@ -257,14 +258,14 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         appId,
         now,
-        Actors.AppCollaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr New Ri",
-        "ri@example.com",
+        "ri@example.com".toLaxEmail,
         submissionId,
         submissionIndex,
         code,
         "Mr Admin",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
 
     def buildResponsibleIndividualDeclinedUpdateEvent(submissionId: Submission.Id, submissionIndex: Int) =
@@ -272,14 +273,14 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         appId,
         now,
-        Actors.AppCollaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr New Ri",
-        "ri@example.com",
+        "ri@example.com".toLaxEmail,
         submissionId,
         submissionIndex,
         code,
         "Mr Admin",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
 
     def buildResponsibleIndividualDidNotVerifyEvent(submissionId: Submission.Id, submissionIndex: Int) =
@@ -287,14 +288,14 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         appId,
         now,
-        Actors.AppCollaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr New Ri",
-        "ri@example.com",
+        "ri@example.com".toLaxEmail,
         submissionId,
         submissionIndex,
         code,
         "Mr Admin",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
 
     def buildResponsibleIndividualSetEvent(submissionId: Submission.Id, submissionIndex: Int) =
@@ -302,14 +303,14 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         appId,
         now,
-        Actors.AppCollaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr New Ri",
-        "ri@example.com",
+        "ri@example.com".toLaxEmail,
         submissionId,
         submissionIndex,
         code,
         "Mr Admin",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
 
     def buildApplicationDeletedEvent(applicationId: ApplicationId) =
@@ -317,7 +318,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        Actors.AppCollaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com".toLaxEmail),
         ClientId("clientId"),
         "wso2ApplicationName",
         "reasons"
@@ -328,7 +329,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        Actors.AppCollaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com".toLaxEmail),
         ClientId("clientId"),
         "wso2ApplicationName",
         "reasons"
@@ -361,7 +362,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         now,
         ResponsibleIndividual.build("ri name", "ri@example.com"),
         "ms admin",
-        "admin@example.com",
+        "admin@example.com".toLaxEmail,
         INITIAL
       )
 
@@ -525,7 +526,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         Actors.GatekeeperUser("gkuser@example.com"),
         "app name",
         "new name",
-        "admin@example.com"
+        "admin@example.com".toLaxEmail
       )
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
       await(repository.findAll) mustBe List()

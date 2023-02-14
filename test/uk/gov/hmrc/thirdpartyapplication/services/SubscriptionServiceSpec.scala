@@ -38,6 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
@@ -45,7 +46,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with CollaboratorTestData {
 
-  private val loggedInUser    = "loggedin@example.com"
+  private val loggedInUser    = "loggedin@example.com".toLaxEmail
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   trait SetupWithoutHc extends AuditServiceMockModule with ApplicationCommandDispatcherMockModule {
@@ -103,7 +104,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
   trait Setup extends SetupWithoutHc {
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
-      LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
+      LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser.text,
       LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
     )
   }

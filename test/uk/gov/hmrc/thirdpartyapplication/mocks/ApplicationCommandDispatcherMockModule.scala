@@ -30,6 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -58,7 +59,7 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
 
       def thenReturnCommandSuccess(applicationData: ApplicationData) = {
         val dummyEvents             =
-          NonEmptyList.one(RedirectUrisUpdated(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.AppCollaborator("someuser"), List.empty, List("new URI")))
+          NonEmptyList.one(RedirectUrisUpdated(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.AppCollaborator("someuser".toLaxEmail), List.empty, List("new URI")))
         val success: CommandSuccess = (applicationData, dummyEvents)
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand])(*)).thenReturn(E.pure(success))
       }

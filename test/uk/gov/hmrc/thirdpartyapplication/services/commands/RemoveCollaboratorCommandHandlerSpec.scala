@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpe
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
     with ApplicationRepositoryMockModule
@@ -34,7 +35,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
     val underTest = new RemoveCollaboratorCommandHandler(ApplicationRepoMock.aMock)
 
     val applicationId = ApplicationId.random
-    val adminEmail    = "admin@example.com"
+    val adminEmail    = "admin@example.com".toLaxEmail
 
     val developerCollaborator = devEmail.developer()
 
@@ -113,7 +114,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
 
     "return an error when actor is collaborator actor and is not associated to the application" in new Setup {
 
-      val removeCollaboratorActorUnknownCommand: RemoveCollaborator = removeCollaborator.copy(actor = Actors.AppCollaborator(unknownEmail))
+      val removeCollaboratorActorUnknownCommand: RemoveCollaborator = removeCollaborator.copy(actor = Actors.AppCollaborator(unknownEmail.toLaxEmail))
 
       val result = await(underTest.process(app, removeCollaboratorActorUnknownCommand).value).left.value.toNonEmptyList.toList
 

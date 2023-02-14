@@ -25,12 +25,13 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApplicationStateChanged
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 import cats.data.NonEmptyList
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport
     with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
@@ -138,7 +139,7 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
         UpdateApplicationEvent.Id.random,
         appId,
         ts,
-        Actors.AppCollaborator(requesterEmail),
+        Actors.AppCollaborator(requesterEmail.toLaxEmail),
         State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
         State.PENDING_GATEKEEPER_APPROVAL,
         requesterName,

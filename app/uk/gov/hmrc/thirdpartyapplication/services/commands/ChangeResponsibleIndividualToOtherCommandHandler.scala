@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 @Singleton
 class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
@@ -44,11 +45,11 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def isNotCurrentRi(name: String, email: String, app: ApplicationData) =
+  private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
     cond(
       app.access match {
         case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
-          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.value.equalsIgnoreCase(email)
+          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.equalsIgnoreCase(email)
         case _                                                                                            => true
       },
       s"The specified individual is already the RI for this application"
@@ -60,7 +61,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
   import UpdateApplicationEvent._
 
   def processTou(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualToUVerification): ResultT = {
-    def validate(): Validated[CommandFailures, (ResponsibleIndividual, String, String)] = {
+    def validate(): Validated[CommandFailures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
       Apply[Validated[CommandFailures, *]].map6(
         isStandardNewJourneyApp(app),
         isPendingResponsibleIndividualVerification(app),
@@ -71,7 +72,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
       ) { case (_, _, _, responsibleIndividual, requesterEmail, requesterName) => (responsibleIndividual, requesterEmail, requesterName) }
     }
 
-    def asEvents(responsibleIndividual: ResponsibleIndividual, requesterEmail: String, requesterName: String): (ResponsibleIndividualSet, ApplicationStateChanged) = {
+    def asEvents(responsibleIndividual: ResponsibleIndividual, requesterEmail: LaxEmailAddress, requesterName: String): (ResponsibleIndividualSet, ApplicationStateChanged) = {
       (
         ResponsibleIndividualSet(
           id = UpdateApplicationEvent.Id.random,
@@ -79,7 +80,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
           eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
-          responsibleIndividualEmail = responsibleIndividual.emailAddress.value,
+          responsibleIndividualEmail = responsibleIndividual.emailAddress,
           submissionId = riVerificationToU.submissionId,
           submissionIndex = riVerificationToU.submissionInstance,
           code = cmd.code,
@@ -94,7 +95,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
           app.state.name,
           State.PENDING_GATEKEEPER_APPROVAL,
           requestingAdminName = requesterName,
-          requestingAdminEmail = requesterEmail
+          requestingAdminEmail = requesterEmail.text
         )
       )
     }
@@ -125,22 +126,23 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         isApproved(app),
         isApplicationIdTheSame(app, riVerification),
         ensureResponsibleIndividualDefined(app),
-        isNotCurrentRi(responsibleIndividual.fullName.value, responsibleIndividual.emailAddress.value, app)
+        isNotCurrentRi(responsibleIndividual.fullName.value, responsibleIndividual.emailAddress, app)
       ) { case _ => app }
     }
 
     def asEventsUpdate(): ResponsibleIndividualChanged = {
-      val newResponsibleIndividual      = riVerification.responsibleIndividual
-      val previousResponsibleIndividual = getResponsibleIndividual(app).get
+      val theNewResponsibleIndividual      = riVerification.responsibleIndividual
+      val thePreviousResponsibleIndividual = getResponsibleIndividual(app).get
+      
       ResponsibleIndividualChanged(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = Actors.AppCollaborator(riVerification.requestingAdminEmail),
-        newResponsibleIndividualName = newResponsibleIndividual.fullName.value,
-        newResponsibleIndividualEmail = newResponsibleIndividual.emailAddress.value,
-        previousResponsibleIndividualName = previousResponsibleIndividual.fullName.value,
-        previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress.value,
+        previousResponsibleIndividualName = thePreviousResponsibleIndividual.fullName.value,
+        previousResponsibleIndividualEmail = thePreviousResponsibleIndividual.emailAddress,
+        newResponsibleIndividualName = theNewResponsibleIndividual.fullName.value,
+        newResponsibleIndividualEmail = theNewResponsibleIndividual.emailAddress,
         submissionId = riVerification.submissionId,
         submissionIndex = riVerification.submissionInstance,
         code = cmd.code,

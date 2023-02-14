@@ -27,9 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector.SendEmailRequest
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
-import play.api.libs.json.Json
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
@@ -66,21 +64,20 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
   "emailConnector" should {
     val collaboratorEmail = "email@example.com"
-    val adminEmail1       = "admin1@example.com"
-    val adminEmail2       = "admin2@example.com"
-    val gatekeeperEmail   = "gatekeeper@example.com"
+    val adminEmail1       = "admin1@example.com".toLaxEmail
+    val adminEmail2       = "admin2@example.com".toLaxEmail
+    val gatekeeperEmail   = "gatekeeper@example.com".toLaxEmail
     val applicationName   = "Test Application"
     val applicationId     = ApplicationId.random
     val developer = collaboratorEmail.developer()
     val administrator = adminEmail1.admin()
     
     "send added collaborator confirmation email" in new Setup {
-      val role                                    = "admin"
       val expectedTemplateId                      = "apiAddedDeveloperAsCollaboratorConfirmation"
-      val expectedToEmails                        = Set(collaboratorEmail)
+      val expectedToEmails                        = Set(collaboratorEmail.toLaxEmail)
       val expectedParameters: Map[String, String] = Map(
         "article"           -> "an",
-        "role"              -> role,
+        "role"              -> "admin",
         "applicationName"   -> applicationName,
         "developerHubTitle" -> hubTestTitle
       )
@@ -92,7 +89,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
     "send added collaborator confirmation email with article for developer" in new Setup {
       val expectedTemplateId                      = "apiAddedDeveloperAsCollaboratorConfirmation"
-      val expectedToEmails                        = Set(collaboratorEmail)
+      val expectedToEmails                        = Set(collaboratorEmail.toLaxEmail)
       val expectedParameters: Map[String, String] = Map(
         "article"           -> "a",
         "role"              -> "developer",
@@ -110,7 +107,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       val expectedTemplateId                      = "apiAddedDeveloperAsCollaboratorNotification"
       val expectedToEmails                        = Set(adminEmail1, adminEmail2)
       val expectedParameters: Map[String, String] = Map(
-        "email"             -> developer.emailAddress,
+        "email"             -> developer.emailAddress.text,
         "role"              -> "developer",
         "applicationName"   -> applicationName,
         "developerHubTitle" -> hubTestTitle
@@ -124,7 +121,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
     "send removed collaborator confirmation email" in new Setup {
 
       val expectedTemplateId                      = "apiRemovedCollaboratorConfirmation"
-      val expectedToEmails                        = Set(collaboratorEmail)
+      val expectedToEmails                        = Set(collaboratorEmail.toLaxEmail)
       val expectedParameters: Map[String, String] = Map(
         "applicationName"   -> applicationName,
         "developerHubTitle" -> hubTestTitle
@@ -132,7 +129,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendRemovedCollaboratorConfirmation(applicationName, Set(collaboratorEmail)))
+      await(connector.sendRemovedCollaboratorConfirmation(applicationName, Set(collaboratorEmail.toLaxEmail)))
     }
 
     "send removed collaborator notification email" in new Setup {
@@ -147,7 +144,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendRemovedCollaboratorNotification(collaboratorEmail, applicationName, expectedToEmails))
+      await(connector.sendRemovedCollaboratorNotification(collaboratorEmail.toLaxEmail, applicationName, expectedToEmails))
     }
 
     "send application approved gatekeeper confirmation email" in new Setup {
@@ -155,7 +152,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       val expectedTemplateId                      = "apiApplicationApprovedGatekeeperConfirmation"
       val expectedToEmails                        = Set(gatekeeperEmail)
       val expectedParameters: Map[String, String] = Map(
-        "email"           -> adminEmail1,
+        "email"           -> adminEmail1.text,
         "applicationName" -> applicationName
       )
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
@@ -210,12 +207,11 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
     }
 
     "send application deleted notification email" in new Setup {
-
       val expectedTemplateId                      = "apiApplicationDeletedNotification"
       val expectedToEmails                        = Set(adminEmail1, adminEmail2)
       val expectedParameters: Map[String, String] = Map(
         "applicationName" -> applicationName,
-        "requestor"       -> s"$adminEmail1",
+        "requestor"       -> adminEmail1.text,
         "applicationId"   -> applicationId.value.toString()
       )
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
@@ -255,7 +251,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       val expectedToEmails                        = Set(adminEmail1, adminEmail2)
       val clientSecretName: String                = "***cret"
       val expectedParameters: Map[String, String] = Map(
-        "actorEmailAddress"  -> adminEmail1,
+        "actorEmailAddress"  -> adminEmail1.text,
         "clientSecretEnding" -> "cret",
         "applicationName"    -> applicationName,
         "environmentName"    -> environmentName,
@@ -272,7 +268,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       val expectedToEmails                        = Set(adminEmail1, adminEmail2)
       val clientSecretName: String                = "***cret"
       val expectedParameters: Map[String, String] = Map(
-        "actorEmailAddress"  -> adminEmail1,
+        "actorEmailAddress"  -> adminEmail1.text,
         "clientSecretEnding" -> "cret",
         "applicationName"    -> applicationName,
         "environmentName"    -> environmentName,
@@ -286,7 +282,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
     "send verify responsible individual notification email" in new Setup {
       val responsibleIndividualName               = "Bob Example"
-      val responsibleIndividualEmail              = "bob@example.com"
+      val responsibleIndividualEmail              = "bob@example.com".toLaxEmail
       val adminName                               = "John Admin"
       val appName                                 = "my app"
       val uniqueId                                = "abc123"
@@ -304,7 +300,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
     "send verify Responsible Individual reminder to admin" in new Setup {
       val responsibleIndividualName               = "Bob Example"
-      val adminEmail                              = "admin@example.com"
+      val adminEmail                              = "admin@example.com".toLaxEmail
       val adminName                               = "John Admin"
       val appName                                 = "my app"
       val expectedParameters: Map[String, String] = Map(
@@ -320,7 +316,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
     "send responsible individual did not verify" in new Setup {
       val responsibleIndividualName               = "Bob Example"
-      val adminEmail                              = "admin@example.com"
+      val adminEmail                              = "admin@example.com".toLaxEmail
       val adminName                               = "John Admin"
       val appName                                 = "my app"
       val expectedParameters: Map[String, String] = Map(
@@ -343,7 +339,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
         "previousApplicationName" -> previousAppName,
         "newApplicationName"      -> newAppName
       )
-      val recipients                              = Set("admin@example.com", "dev@example.com", "ri@example.com")
+      val recipients                              = Set("admin@example.com".toLaxEmail, "dev@example.com".toLaxEmail, "ri@example.com".toLaxEmail)
       val expectedRequest: SendEmailRequest       = SendEmailRequest(recipients, "apiChangeOfApplicationName", expectedParameters)
       emailWillReturn(expectedRequest)
 
@@ -363,7 +359,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
         "previousValue"   -> previousValue,
         "newValue"        -> newValue
       )
-      val recipients                              = Set("admin@example.com", "dev@example.com", "ri@example.com")
+      val recipients                              = Set("admin@example.com".toLaxEmail, "dev@example.com".toLaxEmail, "ri@example.com".toLaxEmail)
       val expectedRequest: SendEmailRequest       = SendEmailRequest(recipients, "apiChangeOfApplicationDetails", expectedParameters)
 
       emailWillReturn(expectedRequest)
@@ -376,7 +372,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
     "send verify responsible individual update notification" in new Setup {
       val responsibleIndividualName  = "Bob Example"
-      val responsibleIndividualEmail = "bob@example.com"
+      val responsibleIndividualEmail = "bob@example.com".toLaxEmail
       val adminName                  = "John Admin"
       val appName                    = "app name"
       val verificationId             = ResponsibleIndividualVerificationId.random.value

@@ -32,6 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{TermsAndCondi
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 // scalastyle:off number.of.types number.of.methods
 
@@ -57,7 +58,7 @@ object UpdateApplicationEvent {
 
   def getActorAsString(actor: Actor): String =
     actor match {
-      case Actors.AppCollaborator(emailAddress) => emailAddress
+      case Actors.AppCollaborator(emailAddress) => emailAddress.text
       case Actors.GatekeeperUser(userId)     => userId
       case Actors.ScheduledJob(jobId)        => jobId
       case Actors.Unknown                    => "Unknown"
@@ -130,7 +131,7 @@ object UpdateApplicationEvent {
       actor: Actor,
       oldAppName: String,
       newAppName: String,
-      requestingAdminEmail: String
+      requestingAdminEmail: LaxEmailAddress
     ) extends UpdateApplicationEvent with TriggersNotification
 
   object ProductionAppNameChanged {
@@ -196,14 +197,14 @@ object UpdateApplicationEvent {
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
       actor: Actor,
       previousResponsibleIndividualName: String,
-      previousResponsibleIndividualEmail: String,
+      previousResponsibleIndividualEmail: LaxEmailAddress,
       newResponsibleIndividualName: String,
-      newResponsibleIndividualEmail: String,
+      newResponsibleIndividualEmail: LaxEmailAddress,
       submissionId: Submission.Id,
       submissionIndex: Int,
       code: String,
       requestingAdminName: String,
-      requestingAdminEmail: String
+      requestingAdminEmail: LaxEmailAddress
     ) extends UpdateApplicationEvent with TriggersNotification
 
   object ResponsibleIndividualChanged {
@@ -216,11 +217,11 @@ object UpdateApplicationEvent {
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
       actor: Actor,
       previousResponsibleIndividualName: String,
-      previousResponsibleIndividualEmail: String,
+      previousResponsibleIndividualEmail: LaxEmailAddress,
       submissionId: Submission.Id,
       submissionIndex: Int,
       requestingAdminName: String,
-      requestingAdminEmail: String
+      requestingAdminEmail: LaxEmailAddress
     ) extends UpdateApplicationEvent with TriggersNotification
 
   object ResponsibleIndividualChangedToSelf {
@@ -233,12 +234,12 @@ object UpdateApplicationEvent {
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
       actor: Actor,
       responsibleIndividualName: String,
-      responsibleIndividualEmail: String,
+      responsibleIndividualEmail: LaxEmailAddress,
       submissionId: Submission.Id,
       submissionIndex: Int,
       code: String,
       requestingAdminName: String,
-      requestingAdminEmail: String
+      requestingAdminEmail: LaxEmailAddress
     ) extends UpdateApplicationEvent
 
   object ResponsibleIndividualSet {
@@ -267,9 +268,9 @@ object UpdateApplicationEvent {
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
       actor: Actor,
       requestingAdminName: String,
-      requestingAdminEmail: String,
+      requestingAdminEmail: LaxEmailAddress,
       responsibleIndividualName: String,
-      responsibleIndividualEmail: String,
+      responsibleIndividualEmail: LaxEmailAddress,
       submissionId: Submission.Id,
       submissionIndex: Int,
       verificationId: ResponsibleIndividualVerificationId
@@ -285,12 +286,12 @@ object UpdateApplicationEvent {
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
       actor: Actor,
       responsibleIndividualName: String,
-      responsibleIndividualEmail: String,
+      responsibleIndividualEmail: LaxEmailAddress,
       submissionId: Submission.Id,
       submissionIndex: Int,
       code: String,
       requestingAdminName: String,
-      requestingAdminEmail: String
+      requestingAdminEmail: LaxEmailAddress
     ) extends UpdateApplicationEvent with TriggersNotification
 
   object ResponsibleIndividualDeclined {
@@ -303,12 +304,12 @@ object UpdateApplicationEvent {
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
       actor: Actor,
       responsibleIndividualName: String,
-      responsibleIndividualEmail: String,
+      responsibleIndividualEmail: LaxEmailAddress,
       submissionId: Submission.Id,
       submissionIndex: Int,
       code: String,
       requestingAdminName: String,
-      requestingAdminEmail: String
+      requestingAdminEmail: LaxEmailAddress
     ) extends UpdateApplicationEvent with TriggersNotification
 
   object ResponsibleIndividualDeclinedUpdate {
@@ -321,12 +322,12 @@ object UpdateApplicationEvent {
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
       actor: Actor,
       responsibleIndividualName: String,
-      responsibleIndividualEmail: String,
+      responsibleIndividualEmail: LaxEmailAddress,
       submissionId: Submission.Id,
       submissionIndex: Int,
       code: String,
       requestingAdminName: String,
-      requestingAdminEmail: String
+      requestingAdminEmail: LaxEmailAddress
     ) extends UpdateApplicationEvent with TriggersNotification
 
   object ResponsibleIndividualDidNotVerify {
@@ -355,7 +356,7 @@ object UpdateApplicationEvent {
       clientId: ClientId,
       wso2ApplicationName: String,
       reasons: String,
-      requestingAdminEmail: String
+      requestingAdminEmail: LaxEmailAddress
     ) extends UpdateApplicationEvent with ApplicationDeletedBase with TriggersNotification
 
   object ApplicationDeletedByGatekeeper {
@@ -382,7 +383,7 @@ object UpdateApplicationEvent {
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
       actor: Actor,
       collaborator: Collaborator,
-      verifiedAdminsToEmail: Set[String]
+      verifiedAdminsToEmail: Set[LaxEmailAddress]
     ) extends UpdateApplicationEvent with TriggersNotification
 
   object CollaboratorAdded {
@@ -396,7 +397,7 @@ object UpdateApplicationEvent {
       actor: Actor,
       collaborator: Collaborator,
       notifyCollaborator: Boolean,
-      verifiedAdminsToEmail: Set[String]
+      verifiedAdminsToEmail: Set[LaxEmailAddress]
     ) extends UpdateApplicationEvent with TriggersNotification
 
   object CollaboratorRemoved {
@@ -409,12 +410,12 @@ object UpdateApplicationEvent {
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
       actor: Actor,
       decliningUserName: String,
-      decliningUserEmail: String,
+      decliningUserEmail: LaxEmailAddress,
       submissionId: Submission.Id,
       submissionIndex: Int,
       reasons: String,
       requestingAdminName: String,
-      requestingAdminEmail: String
+      requestingAdminEmail: LaxEmailAddress
     ) extends UpdateApplicationEvent
 
   object ApplicationApprovalRequestDeclined {

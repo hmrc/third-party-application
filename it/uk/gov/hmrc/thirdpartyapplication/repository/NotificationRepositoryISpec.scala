@@ -35,6 +35,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
@@ -113,7 +114,7 @@ class NotificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        Actors.AppCollaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com".toLaxEmail),
         ClientId("clientId"),
         "wso2ApplicationName",
         "reasons"
@@ -124,7 +125,7 @@ class NotificationRepositoryISpec
         UpdateApplicationEvent.Id.random,
         applicationId,
         now,
-        Actors.AppCollaborator("requester@example.com"),
+        Actors.AppCollaborator("requester@example.com".toLaxEmail),
         ClientId("clientId"),
         "wso2ApplicationName",
         "reasons"

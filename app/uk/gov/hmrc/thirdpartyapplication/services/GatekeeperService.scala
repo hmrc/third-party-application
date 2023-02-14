@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 @Singleton
 class GatekeeperService @Inject() (
@@ -97,11 +98,11 @@ class GatekeeperService @Inject() (
     def sendEmails(app: ApplicationData) = {
       val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
       val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
-      val recipients       = app.admins.map(_.emailAddress).filterNot(email => email.equals(requesterEmail))
+      val recipients       = app.admins.map(_.emailAddress).filterNot(email => email.equals(LaxEmailAddress(requesterEmail)))
 
       if (recipients.nonEmpty) emailConnector.sendApplicationApprovedNotification(app.name, recipients)
 
-      emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(requesterEmail))
+      emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(LaxEmailAddress(requesterEmail)))
     }
 
     for {
@@ -146,7 +147,7 @@ class GatekeeperService @Inject() (
     def sendEmails(app: ApplicationData) = {
       val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
       val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
-      emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(requesterEmail))
+      emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(LaxEmailAddress(requesterEmail)))
     }
 
     for {
@@ -160,7 +161,7 @@ class GatekeeperService @Inject() (
 
   def deleteApplication(applicationId: ApplicationId, request: DeleteApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def audit(app: ApplicationData): Future[AuditResult] = {
-      auditService.auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress))
+      auditService.auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress.text))
     }
     for {
       _ <- applicationService.deleteApplication(applicationId, Some(request), audit)
