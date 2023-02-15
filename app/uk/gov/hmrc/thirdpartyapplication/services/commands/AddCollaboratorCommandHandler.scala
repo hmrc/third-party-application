@@ -23,12 +23,12 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorAdded
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 @Singleton
 class AddCollaboratorCommandHandler @Inject() (
@@ -49,12 +49,12 @@ class AddCollaboratorCommandHandler @Inject() (
     }
   }
 
-  private def asEvents(app: ApplicationData, cmd: AddCollaborator): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: AddCollaborator): NonEmptyList[AbstractApplicationEvent] = {
     NonEmptyList.of(
-      CollaboratorAdded(
-        id = UpdateApplicationEvent.Id.random,
+      CollaboratorAddedV2(
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
+        eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
         collaborator = cmd.collaborator,
         verifiedAdminsToEmail = cmd.adminsToEmail

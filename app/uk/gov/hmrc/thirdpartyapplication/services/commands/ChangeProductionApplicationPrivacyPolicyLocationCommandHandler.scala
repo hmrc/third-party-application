@@ -21,12 +21,12 @@ import scala.concurrent.ExecutionContext
 
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{
   ChangeProductionApplicationPrivacyPolicyLocation,
   ImportantSubmissionData,
-  Standard,
-  UpdateApplicationEvent
+  Standard
 }
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -41,7 +41,6 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
   ) extends CommandHandler {
 
   import CommandHandler._
-  import UpdateApplicationEvent._
 
   def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): ResultT = {
     def validate: Validated[CommandFailures, String] = {
@@ -59,12 +58,12 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
       ) { case _ => newUrl.get }
     }
 
-    def asEvents(newUrl: String): NonEmptyList[UpdateApplicationEvent] = {
+    def asEvents(newUrl: String): NonEmptyList[AbstractApplicationEvent] = {
       NonEmptyList.one(
         ProductionLegacyAppPrivacyPolicyLocationChanged(
-          id = UpdateApplicationEvent.Id.random,
+          id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp,
+          eventDateTime = cmd.timestamp.instant,
           actor = Actors.AppCollaborator(getRequester(app, cmd.instigator)),
           oldUrl = oldUrl,
           newUrl = newUrl
@@ -93,12 +92,12 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
       ) { case _ => app }
     }
 
-    def asEvents: NonEmptyList[UpdateApplicationEvent] = {
+    def asEvents: NonEmptyList[AbstractApplicationEvent] = {
       NonEmptyList.one(
         ProductionAppPrivacyPolicyLocationChanged(
-          id = UpdateApplicationEvent.Id.random,
+          id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp,
+          eventDateTime = cmd.timestamp.instant,
           actor = Actors.AppCollaborator(getRequester(app, cmd.instigator)),
           oldLocation = oldLocation,
           newLocation = cmd.newLocation

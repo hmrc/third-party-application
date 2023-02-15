@@ -26,10 +26,11 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, VerifyResponsibleIndividual}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 
 @Singleton
@@ -40,7 +41,6 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
   ) extends CommandHandler {
 
   import CommandHandler._
-  import UpdateApplicationEvent._
 
   private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
     cond(
@@ -62,21 +62,21 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
     ) { case (_, _, instigator, _, _) => instigator }
   }
 
-  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: LaxEmailAddress): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: LaxEmailAddress): NonEmptyList[AbstractApplicationEvent] = {
     NonEmptyList.of(
       ResponsibleIndividualVerificationStarted(
-        id = UpdateApplicationEvent.Id.random,
+        id = EventId.random,
         applicationId = app.id,
         app.name,
-        eventDateTime = cmd.timestamp,
+        eventDateTime = cmd.timestamp.instant,
         actor = Actors.AppCollaborator(requesterEmail),
         cmd.requesterName,
         requestingAdminEmail = getRequester(app, cmd.instigator),
         responsibleIndividualName = cmd.riName,
         responsibleIndividualEmail = cmd.riEmail,
-        submission.id,
+        SubmissionId(submission.id.value),
         submission.latestInstance.index,
-        ResponsibleIndividualVerificationId.random
+        ResponsibleIndividualVerificationId.random.value
       )
     )
   }

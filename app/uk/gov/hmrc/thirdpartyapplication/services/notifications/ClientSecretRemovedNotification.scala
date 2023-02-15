@@ -21,17 +21,16 @@ import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Actor.getActorIdentifier
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ClientSecretRemovedV2
 
 object ClientSecretRemovedNotification {
 
   def sendClientSecretRemovedNotification(
       emailConnector: EmailConnector,
       app: ApplicationData,
-      event: UpdateApplicationEvent.ClientSecretRemoved
+      event: ClientSecretRemovedV2
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     emailConnector.sendRemovedClientSecretNotification(getActorIdentifier(event.actor), event.clientSecretName, app.name, app.admins.map(_.emailAddress))

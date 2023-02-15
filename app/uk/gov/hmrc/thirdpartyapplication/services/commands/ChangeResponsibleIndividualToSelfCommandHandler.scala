@@ -25,11 +25,14 @@ import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividualToSelf, ImportantSubmissionData, Standard, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ChangeResponsibleIndividualToSelf
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 
 @Singleton
 class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
@@ -67,26 +70,24 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     }
   }
 
-  import UpdateApplicationEvent._
-
   private def asEvents(
       app: ApplicationData,
       cmd: ChangeResponsibleIndividualToSelf,
       submission: Submission,
       requesterEmail: LaxEmailAddress,
       requesterName: String
-    ): NonEmptyList[UpdateApplicationEvent] = {
+    ): NonEmptyList[AbstractApplicationEvent] = {
     val previousResponsibleIndividual = getResponsibleIndividual(app).get
 
     NonEmptyList.of(
       ResponsibleIndividualChangedToSelf(
-        id = UpdateApplicationEvent.Id.random,
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
+        eventDateTime = cmd.timestamp.instant,
         actor = Actors.AppCollaborator(requesterEmail),
         previousResponsibleIndividualName = previousResponsibleIndividual.fullName.value,
         previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress,
-        submissionId = submission.id,
+        submissionId = SubmissionId(submission.id.value),
         submissionIndex = submission.latestInstance.index,
         requestingAdminName = requesterName,
         requestingAdminEmail = requesterEmail

@@ -36,10 +36,12 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationState
 }
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationDeletedBase, ResponsibleIndividual, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 @Singleton
 class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
@@ -148,28 +150,32 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       .map(_ => HasSucceeded)
   }
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[HasSucceeded] = {
+  
+  // TODO - remove this method and extract to command handlers
+  def applyEvents(events: NonEmptyList[AbstractApplicationEvent]): Future[HasSucceeded] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }
 
+   
+
   private def addResponsibleIndividualVerification(evt: ResponsibleIndividualVerificationStarted): Future[HasSucceeded] = {
     val verification = ResponsibleIndividualUpdateVerification(
-      evt.verificationId,
+      ResponsibleIndividualVerificationId(evt.verificationId),
       evt.applicationId,
-      evt.submissionId,
+      Submission.Id(evt.submissionId.value),
       evt.submissionIndex,
       evt.applicationName,
-      evt.eventDateTime,
+      LocalDateTime.ofInstant(evt.eventDateTime, ZoneOffset.UTC),
       ResponsibleIndividual.build(evt.responsibleIndividualName, evt.responsibleIndividualEmail.text),
       evt.requestingAdminName,
       evt.requestingAdminEmail,
       ResponsibleIndividualVerificationState.INITIAL
     )
 
-    deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
+    deleteSubmissionInstance(Submission.Id(evt.submissionId.value), evt.submissionIndex)
       .flatMap(_ => save(verification))
       .map(_ => HasSucceeded)
   }
@@ -178,15 +184,17 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     delete(ResponsibleIndividualVerificationId(code))
   }
 
-  private def applyEvent(event: UpdateApplicationEvent): Future[HasSucceeded] = {
+  private def applyEvent(event: AbstractApplicationEvent): Future[HasSucceeded] = {
     event match {
       case evt: ResponsibleIndividualVerificationStarted           => addResponsibleIndividualVerification(evt)
       case evt: ResponsibleIndividualSet                           => deleteResponsibleIndividualVerification(evt.code)
       case evt: ResponsibleIndividualChanged                       => deleteResponsibleIndividualVerification(evt.code)
-      case evt: ResponsibleIndividualDeclined                      => deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
+      case evt: ResponsibleIndividualDeclined                      => deleteSubmissionInstance(Submission.Id(evt.submissionId.value), evt.submissionIndex)
       case evt: ResponsibleIndividualDeclinedUpdate                => deleteResponsibleIndividualVerification(evt.code)
-      case evt: ResponsibleIndividualDidNotVerify                  => deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
-      case evt: UpdateApplicationEvent with ApplicationDeletedBase => deleteAllByApplicationId(evt.applicationId)
+      case evt: ResponsibleIndividualDidNotVerify                  => deleteSubmissionInstance(Submission.Id(evt.submissionId.value), evt.submissionIndex)
+      case _ : ApplicationDeleted                                  => deleteAllByApplicationId(event.applicationId)
+      case _ : ApplicationDeletedByGatekeeper                      => deleteAllByApplicationId(event.applicationId)
+      case _ : ProductionCredentialsApplicationDeleted             => deleteAllByApplicationId(event.applicationId)
       case _                                                       => Future.successful(HasSucceeded)
     }
   }

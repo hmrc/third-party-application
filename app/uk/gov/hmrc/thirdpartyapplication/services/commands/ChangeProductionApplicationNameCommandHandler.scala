@@ -24,12 +24,12 @@ import cats.data._
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ProductionAppNameChanged
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationName, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
@@ -55,12 +55,12 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
     ) { case _ => app }
   }
 
-  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationName): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationName): NonEmptyList[AbstractApplicationEvent] = {
     NonEmptyList.of(
-      ProductionAppNameChanged(
-        id = UpdateApplicationEvent.Id.random,
+      ProductionAppNameChangedEvent(
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
+        eventDateTime = cmd.timestamp.instant,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         oldAppName = app.name,
         newAppName = cmd.newName,

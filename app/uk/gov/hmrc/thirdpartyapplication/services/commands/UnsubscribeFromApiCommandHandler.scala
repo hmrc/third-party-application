@@ -30,6 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, R
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 @Singleton
 class UnsubscribeFromApiCommandHandler @Inject() (
@@ -39,7 +40,6 @@ class UnsubscribeFromApiCommandHandler @Inject() (
   ) extends CommandHandler {
 
   import CommandHandler._
-  import UpdateApplicationEvent._
 
   private def validate(app: ApplicationData, cmd: UnsubscribeFromApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[CommandFailures, Unit] = {
     def isGatekeeperUser    = cond(rolePassed, s"Unauthorized to unsubscribe any API from app ${app.name}")
@@ -51,15 +51,15 @@ class UnsubscribeFromApiCommandHandler @Inject() (
     ) { case _ => () }
   }
 
-  private def asEvents(app: ApplicationData, cmd: UnsubscribeFromApi): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: UnsubscribeFromApi): NonEmptyList[AbstractApplicationEvent] = {
     NonEmptyList.of(
-      ApiUnsubscribed(
-        id = UpdateApplicationEvent.Id.random,
+      ApiUnsubscribedV2(
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
+        eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
-        context = cmd.apiIdentifier.context.value,
-        version = cmd.apiIdentifier.version.value
+        context = cmd.apiIdentifier.context,
+        version = cmd.apiIdentifier.version
       )
     )
   }

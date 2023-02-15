@@ -26,7 +26,7 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationDeleted, ProductionCredentialsApplicationDeleted}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationEvent.{ApplicationDeleted, ProductionCredentialsApplicationDeleted}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{Notification, NotificationStatus, NotificationType}
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
@@ -111,7 +111,7 @@ class NotificationRepositoryISpec
 
     def buildApplicationDeletedEvent(applicationId: ApplicationId) =
       ApplicationDeleted(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         applicationId,
         now,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
@@ -122,7 +122,7 @@ class NotificationRepositoryISpec
 
     def buildProductionCredentialsApplicationDeletedEvent(applicationId: ApplicationId) =
       ProductionCredentialsApplicationDeleted(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         applicationId,
         now,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),

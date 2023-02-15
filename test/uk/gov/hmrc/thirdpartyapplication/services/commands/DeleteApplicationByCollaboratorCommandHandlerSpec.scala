@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
@@ -47,7 +46,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
         appAdminEmail.admin(appAdminUserId)
       )
     )
-    val ts                = FixedClock.now
+    val ts                = FixedClock.instant
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
 
     val underTest = new DeleteApplicationByCollaboratorCommandHandler(
@@ -84,9 +83,9 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
               appId shouldBe appId
               evtActor shouldBe actor
               eventDateTime shouldBe ts
-              oldAppState shouldBe app.state.name
-              newAppState shouldBe State.DELETED
-              requestingAdminEmail shouldBe actor.email.text
+              oldAppState shouldBe app.state.name.toString()
+              newAppState shouldBe State.DELETED.toString()
+              requestingAdminEmail shouldBe actor.email
               requestingAdminName shouldBe actor.email.text
           }
         )
@@ -96,13 +95,13 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
   }
   val appAdminUserId    = UserId.random
   val reasons           = "reasons description text"
-  val ts: LocalDateTime = FixedClock.now
+  val ts                = FixedClock.instant
 
   "DeleteApplicationByCollaborator" should {
-    val cmd = DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)
+    val cmd = DeleteApplicationByCollaborator(appAdminUserId, reasons, FixedClock.now)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
-      StateHistoryRepoMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.Insert.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
@@ -115,7 +114,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
 
     "return an error when app is NOT in testing state" in new Setup {
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
-      val cmd            = DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)
+      val cmd            = DeleteApplicationByCollaborator(appAdminUserId, reasons, FixedClock.now)
 
       val result = await(underTest.process(nonStandardApp, cmd).value).left.value.toNonEmptyList.toList
 
@@ -124,7 +123,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
     }
 
     "return an error if the actor is not an admin of the application" in new Setup {
-      val result = await(underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, ts)).value).left.value.toNonEmptyList.toList
+      val result = await(underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, FixedClock.now)).value).left.value.toNonEmptyList.toList
       result.head shouldBe "User must be an ADMIN"
     }
 

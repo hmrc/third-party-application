@@ -27,6 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
 
 class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -60,7 +61,7 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
     )
     val timestamp      = FixedClock.now
     val gatekeeperUser = "gkuser"
-    val eventId        = UpdateApplicationEvent.Id.random
+    val eventId        = EventId.random
     val actor          = Actors.GatekeeperUser(gatekeeperUser)
   }
 

@@ -26,9 +26,10 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApplicationApprovalRequestDeclined
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.AbstractApplicationEvent
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationApprovalRequestDeclined
+import java.time.ZoneOffset
 
 @Singleton
 class SubmissionsService @Inject() (
@@ -118,14 +119,14 @@ class SubmissionsService @Inject() (
   def store(submission: Submission): Future[Submission] =
     submissionsDAO.update(submission)
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[Option[Submission]] = {
+  def applyEvents(events: NonEmptyList[AbstractApplicationEvent]): Future[Option[Submission]] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }
 
-  private def applyEvent(event: UpdateApplicationEvent): Future[Option[Submission]] = {
+  private def applyEvent(event: AbstractApplicationEvent): Future[Option[Submission]] = {
     event match {
       case evt: ApplicationApprovalRequestDeclined => declineApplicationApprovalRequest(evt)
       case _                                       => Future.successful(None)
@@ -135,8 +136,8 @@ class SubmissionsService @Inject() (
   def declineApplicationApprovalRequest(evt: ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
     (
       for {
-        extSubmission    <- fromOptionF(fetch(evt.submissionId), "submission not found")
-        updatedSubmission = Submission.decline(evt.eventDateTime, evt.decliningUserEmail.text, evt.reasons)(extSubmission.submission)   // Is this correct use of email addresss or should we use decliningUserName ?
+        extSubmission    <- fromOptionF(fetch(Submission.Id(evt.submissionId.value)), "submission not found")
+        updatedSubmission = Submission.decline(LocalDateTime.ofInstant(evt.eventDateTime, ZoneOffset.UTC), evt.decliningUserEmail.text, evt.reasons)(extSubmission.submission)   // Is this correct use of email addresss or should we use decliningUserName ?
         savedSubmission  <- liftF(store(updatedSubmission))
       } yield savedSubmission
     )

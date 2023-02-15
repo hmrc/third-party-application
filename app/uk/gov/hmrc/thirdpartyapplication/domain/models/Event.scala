@@ -14,452 +14,468 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+// /*
+//  * Copyright 2023 HM Revenue & Customs
+//  *
+//  * Licensed under the Apache License, Version 2.0 (the "License");
+//  * you may not use this file except in compliance with the License.
+//  * You may obtain a copy of the License at
+//  *
+//  *     http://www.apache.org/licenses/LICENSE-2.0
+//  *
+//  * Unless required by applicable law or agreed to in writing, software
+//  * distributed under the License is distributed on an "AS IS" BASIS,
+//  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  * See the License for the specific language governing permissions and
+//  * limitations under the License.
+//  */
 
-import java.time.{LocalDateTime, ZoneOffset}
-import java.util.UUID
+// package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import play.api.libs.json._
-import uk.gov.hmrc.play.json.Union
+// import java.time.{LocalDateTime, ZoneOffset}
+// import java.util.UUID
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.models.EventType
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{TermsAndConditionsLocation, PrivacyPolicyLocation}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+// import play.api.libs.json._
+// import uk.gov.hmrc.play.json.Union
 
-// scalastyle:off number.of.types number.of.methods
+// import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
+// import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+// import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
+// import uk.gov.hmrc.thirdpartyapplication.models.EventType
+// import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
+// import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+// import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{TermsAndConditionsLocation, PrivacyPolicyLocation}
+// import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+// import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+// import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+// import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
-sealed trait UpdateApplicationEvent {
-  def id: UpdateApplicationEvent.Id
-  def applicationId: ApplicationId
-  def eventDateTime: LocalDateTime
-  def actor: Actor
-}
+// // scalastyle:off number.of.types number.of.methods
 
-trait TriggersNotification {
-  self: UpdateApplicationEvent =>
-}
+// sealed trait ApplicationEvent {
+//   def id: ApplicationEvent.Id
+//   def applicationId: ApplicationId
+//   def eventDateTime: LocalDateTime
+//   def actor: Actor
+// }
 
-trait ApplicationDeletedBase {
-  self: UpdateApplicationEvent =>
-  def clientId: ClientId
-  def wso2ApplicationName: String
-  def reasons: String
-}
+// trait TriggersNotification {
+//   self: ApplicationEvent =>
+// }
 
-object UpdateApplicationEvent {
+// trait ApplicationDeletedBase {
+//   self: ApplicationEvent =>
+//   def clientId: ClientId
+//   def wso2ApplicationName: String
+//   def reasons: String
+// }
 
-  def getActorAsString(actor: Actor): String =
-    actor match {
-      case Actors.AppCollaborator(emailAddress) => emailAddress.text
-      case Actors.GatekeeperUser(userId)     => userId
-      case Actors.ScheduledJob(jobId)        => jobId
-      case Actors.Unknown                    => "Unknown"
-    }
+// object ApplicationEvent {
 
-  case class Id(value: UUID) extends AnyVal
+//   def getActorAsString(actor: Actor): String =
+//     actor match {
+//       case Actors.AppCollaborator(emailAddress) => emailAddress.text
+//       case Actors.GatekeeperUser(userId)     => userId
+//       case Actors.ScheduledJob(jobId)        => jobId
+//       case Actors.Unknown                    => "Unknown"
+//     }
 
-  object Id {
-    implicit val format = Json.valueFormat[Id]
+//   case class Id(value: UUID) extends AnyVal
 
-    def random: Id = Id(UUID.randomUUID)
-  }
+//   object Id {
+//     implicit val format = Json.valueFormat[Id]
 
-  case class ApiSubscribed(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      context: String,
-      version: String
-    ) extends UpdateApplicationEvent
+//     def random: Id = Id(UUID.randomUUID)
+//   }
 
-  object ApiSubscribed {
-    implicit val format: OFormat[ApiSubscribed] = Json.format[ApiSubscribed]
-  }
+//   case class ApiSubscribedV2(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       context: String,
+//       version: String
+//     ) extends ApplicationEvent
 
-  case class ApiUnsubscribed(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      context: String,
-      version: String
-    ) extends UpdateApplicationEvent
+//   object ApiSubscribedV2 {
+//     implicit val format: OFormat[ApiSubscribedV2] = Json.format[ApiSubscribedV2]
+//   }
 
-  object ApiUnsubscribed {
-    implicit val format: OFormat[ApiUnsubscribed] = Json.format[ApiUnsubscribed]
-  }
+//   case class ApiUnsubscribedV2(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       context: String,
+//       version: String
+//     ) extends ApplicationEvent
 
-  case class ClientSecretAddedV2(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      clientSecretId: String,
-      clientSecretName: String
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ApiUnsubscribedV2 {
+//     implicit val format: OFormat[ApiUnsubscribedV2] = Json.format[ApiUnsubscribedV2]
+//   }
 
-  object ClientSecretAddedV2 {
-    implicit val format: OFormat[ClientSecretAddedV2] = Json.format[ClientSecretAddedV2]
-  }
+//   case class ClientSecretAddedV2(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actors.AppCollaborator,
+//       clientSecretId: String,
+//       clientSecretName: String
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ClientSecretRemoved(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      clientSecretId: String,
-      clientSecretName: String
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ClientSecretAddedV2 {
+//     implicit val format: OFormat[ClientSecretAddedV2] = Json.format[ClientSecretAddedV2]
+//   }
 
-  object ClientSecretRemoved {
-    implicit val format: OFormat[ClientSecretRemoved] = Json.format[ClientSecretRemoved]
-  }
+//   case class ClientSecretRemoved(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actors.AppCollaborator,
+//       clientSecretId: String,
+//       clientSecretName: String
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ProductionAppNameChanged(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      oldAppName: String,
-      newAppName: String,
-      requestingAdminEmail: LaxEmailAddress
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ClientSecretRemoved {
+//     implicit val format: OFormat[ClientSecretRemoved] = Json.format[ClientSecretRemoved]
+//   }
 
-  object ProductionAppNameChanged {
-    implicit val format: OFormat[ProductionAppNameChanged] = Json.format[ProductionAppNameChanged]
-  }
+//   case class ProductionAppNameChanged(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       oldAppName: String,
+//       newAppName: String,
+//       requestingAdminEmail: LaxEmailAddress
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ProductionAppPrivacyPolicyLocationChanged(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      oldLocation: PrivacyPolicyLocation,
-      newLocation: PrivacyPolicyLocation
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ProductionAppNameChanged {
+//     implicit val format: OFormat[ProductionAppNameChanged] = Json.format[ProductionAppNameChanged]
+//   }
 
-  object ProductionAppPrivacyPolicyLocationChanged {
-    implicit val format: OFormat[ProductionAppPrivacyPolicyLocationChanged] = Json.format[ProductionAppPrivacyPolicyLocationChanged]
-  }
+//   case class ProductionAppPrivacyPolicyLocationChanged(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       oldLocation: PrivacyPolicyLocation,
+//       newLocation: PrivacyPolicyLocation
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ProductionLegacyAppPrivacyPolicyLocationChanged(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      oldUrl: String,
-      newUrl: String
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ProductionAppPrivacyPolicyLocationChanged {
+//     implicit val format: OFormat[ProductionAppPrivacyPolicyLocationChanged] = Json.format[ProductionAppPrivacyPolicyLocationChanged]
+//   }
 
-  object ProductionLegacyAppPrivacyPolicyLocationChanged {
-    implicit val format: OFormat[ProductionLegacyAppPrivacyPolicyLocationChanged] = Json.format[ProductionLegacyAppPrivacyPolicyLocationChanged]
-  }
+//   case class ProductionLegacyAppPrivacyPolicyLocationChanged(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       oldUrl: String,
+//       newUrl: String
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ProductionAppTermsConditionsLocationChanged(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      oldLocation: TermsAndConditionsLocation,
-      newLocation: TermsAndConditionsLocation
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ProductionLegacyAppPrivacyPolicyLocationChanged {
+//     implicit val format: OFormat[ProductionLegacyAppPrivacyPolicyLocationChanged] = Json.format[ProductionLegacyAppPrivacyPolicyLocationChanged]
+//   }
 
-  object ProductionAppTermsConditionsLocationChanged {
+//   case class ProductionAppTermsConditionsLocationChanged(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       oldLocation: TermsAndConditionsLocation,
+//       newLocation: TermsAndConditionsLocation
+//     ) extends ApplicationEvent with TriggersNotification
 
-    implicit val format: OFormat[ProductionAppTermsConditionsLocationChanged] = Json.format[ProductionAppTermsConditionsLocationChanged]
-  }
+//   object ProductionAppTermsConditionsLocationChanged {
 
-  case class ProductionLegacyAppTermsConditionsLocationChanged(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      oldUrl: String,
-      newUrl: String
-    ) extends UpdateApplicationEvent with TriggersNotification
+//     implicit val format: OFormat[ProductionAppTermsConditionsLocationChanged] = Json.format[ProductionAppTermsConditionsLocationChanged]
+//   }
 
-  object ProductionLegacyAppTermsConditionsLocationChanged {
-    implicit val format: OFormat[ProductionLegacyAppTermsConditionsLocationChanged] = Json.format[ProductionLegacyAppTermsConditionsLocationChanged]
-  }
+//   case class ProductionLegacyAppTermsConditionsLocationChanged(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       oldUrl: String,
+//       newUrl: String
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ResponsibleIndividualChanged(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      previousResponsibleIndividualName: String,
-      previousResponsibleIndividualEmail: LaxEmailAddress,
-      newResponsibleIndividualName: String,
-      newResponsibleIndividualEmail: LaxEmailAddress,
-      submissionId: Submission.Id,
-      submissionIndex: Int,
-      code: String,
-      requestingAdminName: String,
-      requestingAdminEmail: LaxEmailAddress
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ProductionLegacyAppTermsConditionsLocationChanged {
+//     implicit val format: OFormat[ProductionLegacyAppTermsConditionsLocationChanged] = Json.format[ProductionLegacyAppTermsConditionsLocationChanged]
+//   }
 
-  object ResponsibleIndividualChanged {
-    implicit val format: OFormat[ResponsibleIndividualChanged] = Json.format[ResponsibleIndividualChanged]
-  }
+//   case class ResponsibleIndividualChanged(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       previousResponsibleIndividualName: String,
+//       previousResponsibleIndividualEmail: LaxEmailAddress,
+//       newResponsibleIndividualName: String,
+//       newResponsibleIndividualEmail: LaxEmailAddress,
+//       submissionId: Submission.Id,
+//       submissionIndex: Int,
+//       code: String,
+//       requestingAdminName: String,
+//       requestingAdminEmail: LaxEmailAddress
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ResponsibleIndividualChangedToSelf(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      previousResponsibleIndividualName: String,
-      previousResponsibleIndividualEmail: LaxEmailAddress,
-      submissionId: Submission.Id,
-      submissionIndex: Int,
-      requestingAdminName: String,
-      requestingAdminEmail: LaxEmailAddress
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ResponsibleIndividualChanged {
+//     implicit val format: OFormat[ResponsibleIndividualChanged] = Json.format[ResponsibleIndividualChanged]
+//   }
 
-  object ResponsibleIndividualChangedToSelf {
-    implicit val format: OFormat[ResponsibleIndividualChangedToSelf] = Json.format[ResponsibleIndividualChangedToSelf]
-  }
+//   case class ResponsibleIndividualChangedToSelf(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       previousResponsibleIndividualName: String,
+//       previousResponsibleIndividualEmail: LaxEmailAddress,
+//       submissionId: Submission.Id,
+//       submissionIndex: Int,
+//       requestingAdminName: String,
+//       requestingAdminEmail: LaxEmailAddress
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ResponsibleIndividualSet(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      responsibleIndividualName: String,
-      responsibleIndividualEmail: LaxEmailAddress,
-      submissionId: Submission.Id,
-      submissionIndex: Int,
-      code: String,
-      requestingAdminName: String,
-      requestingAdminEmail: LaxEmailAddress
-    ) extends UpdateApplicationEvent
+//   object ResponsibleIndividualChangedToSelf {
+//     implicit val format: OFormat[ResponsibleIndividualChangedToSelf] = Json.format[ResponsibleIndividualChangedToSelf]
+//   }
 
-  object ResponsibleIndividualSet {
-    implicit val format: OFormat[ResponsibleIndividualSet] = Json.format[ResponsibleIndividualSet]
-  }
+//   case class ResponsibleIndividualSet(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       responsibleIndividualName: String,
+//       responsibleIndividualEmail: LaxEmailAddress,
+//       submissionId: Submission.Id,
+//       submissionIndex: Int,
+//       code: String,
+//       requestingAdminName: String,
+//       requestingAdminEmail: LaxEmailAddress
+//     ) extends ApplicationEvent
 
-  case class ApplicationStateChanged(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      oldAppState: State,
-      newAppState: State,
-      requestingAdminName: String,
-      requestingAdminEmail: String
-    ) extends UpdateApplicationEvent
+//   object ResponsibleIndividualSet {
+//     implicit val format: OFormat[ResponsibleIndividualSet] = Json.format[ResponsibleIndividualSet]
+//   }
 
-  object ApplicationStateChanged {
-    implicit val format: OFormat[ApplicationStateChanged] = Json.format[ApplicationStateChanged]
-  }
+//   case class ApplicationStateChanged(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       oldAppState: State,
+//       newAppState: State,
+//       requestingAdminName: String,
+//       requestingAdminEmail: String
+//     ) extends ApplicationEvent
 
-  case class ResponsibleIndividualVerificationStarted(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      applicationName: String,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      requestingAdminName: String,
-      requestingAdminEmail: LaxEmailAddress,
-      responsibleIndividualName: String,
-      responsibleIndividualEmail: LaxEmailAddress,
-      submissionId: Submission.Id,
-      submissionIndex: Int,
-      verificationId: ResponsibleIndividualVerificationId
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ApplicationStateChanged {
+//     implicit val format: OFormat[ApplicationStateChanged] = Json.format[ApplicationStateChanged]
+//   }
 
-  object ResponsibleIndividualVerificationStarted {
-    implicit val format: OFormat[ResponsibleIndividualVerificationStarted] = Json.format[ResponsibleIndividualVerificationStarted]
-  }
+//   case class ResponsibleIndividualVerificationStarted(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       applicationName: String,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       requestingAdminName: String,
+//       requestingAdminEmail: LaxEmailAddress,
+//       responsibleIndividualName: String,
+//       responsibleIndividualEmail: LaxEmailAddress,
+//       submissionId: Submission.Id,
+//       submissionIndex: Int,
+//       verificationId: ResponsibleIndividualVerificationId
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ResponsibleIndividualDeclined(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      responsibleIndividualName: String,
-      responsibleIndividualEmail: LaxEmailAddress,
-      submissionId: Submission.Id,
-      submissionIndex: Int,
-      code: String,
-      requestingAdminName: String,
-      requestingAdminEmail: LaxEmailAddress
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ResponsibleIndividualVerificationStarted {
+//     implicit val format: OFormat[ResponsibleIndividualVerificationStarted] = Json.format[ResponsibleIndividualVerificationStarted]
+//   }
 
-  object ResponsibleIndividualDeclined {
-    implicit val format: OFormat[ResponsibleIndividualDeclined] = Json.format[ResponsibleIndividualDeclined]
-  }
+//   case class ResponsibleIndividualDeclined(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       responsibleIndividualName: String,
+//       responsibleIndividualEmail: LaxEmailAddress,
+//       submissionId: Submission.Id,
+//       submissionIndex: Int,
+//       code: String,
+//       requestingAdminName: String,
+//       requestingAdminEmail: LaxEmailAddress
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ResponsibleIndividualDeclinedUpdate(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      responsibleIndividualName: String,
-      responsibleIndividualEmail: LaxEmailAddress,
-      submissionId: Submission.Id,
-      submissionIndex: Int,
-      code: String,
-      requestingAdminName: String,
-      requestingAdminEmail: LaxEmailAddress
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ResponsibleIndividualDeclined {
+//     implicit val format: OFormat[ResponsibleIndividualDeclined] = Json.format[ResponsibleIndividualDeclined]
+//   }
 
-  object ResponsibleIndividualDeclinedUpdate {
-    implicit val format: OFormat[ResponsibleIndividualDeclinedUpdate] = Json.format[ResponsibleIndividualDeclinedUpdate]
-  }
+//   case class ResponsibleIndividualDeclinedUpdate(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       responsibleIndividualName: String,
+//       responsibleIndividualEmail: LaxEmailAddress,
+//       submissionId: Submission.Id,
+//       submissionIndex: Int,
+//       code: String,
+//       requestingAdminName: String,
+//       requestingAdminEmail: LaxEmailAddress
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ResponsibleIndividualDidNotVerify(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      responsibleIndividualName: String,
-      responsibleIndividualEmail: LaxEmailAddress,
-      submissionId: Submission.Id,
-      submissionIndex: Int,
-      code: String,
-      requestingAdminName: String,
-      requestingAdminEmail: LaxEmailAddress
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ResponsibleIndividualDeclinedUpdate {
+//     implicit val format: OFormat[ResponsibleIndividualDeclinedUpdate] = Json.format[ResponsibleIndividualDeclinedUpdate]
+//   }
 
-  object ResponsibleIndividualDidNotVerify {
-    implicit val format: OFormat[ResponsibleIndividualDidNotVerify] = Json.format[ResponsibleIndividualDidNotVerify]
-  }
+//   case class ResponsibleIndividualDidNotVerify(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       responsibleIndividualName: String,
+//       responsibleIndividualEmail: LaxEmailAddress,
+//       submissionId: Submission.Id,
+//       submissionIndex: Int,
+//       code: String,
+//       requestingAdminName: String,
+//       requestingAdminEmail: LaxEmailAddress
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ApplicationDeleted(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      clientId: ClientId,
-      wso2ApplicationName: String,
-      reasons: String
-    ) extends UpdateApplicationEvent with ApplicationDeletedBase
+//   object ResponsibleIndividualDidNotVerify {
+//     implicit val format: OFormat[ResponsibleIndividualDidNotVerify] = Json.format[ResponsibleIndividualDidNotVerify]
+//   }
 
-  object ApplicationDeleted {
-    implicit val format: OFormat[ApplicationDeleted] = Json.format[ApplicationDeleted]
-  }
+//   case class ApplicationDeleted(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       clientId: ClientId,
+//       wso2ApplicationName: String,
+//       reasons: String
+//     ) extends ApplicationEvent with ApplicationDeletedBase
 
-  case class ApplicationDeletedByGatekeeper(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      clientId: ClientId,
-      wso2ApplicationName: String,
-      reasons: String,
-      requestingAdminEmail: LaxEmailAddress
-    ) extends UpdateApplicationEvent with ApplicationDeletedBase with TriggersNotification
+//   object ApplicationDeleted {
+//     implicit val format: OFormat[ApplicationDeleted] = Json.format[ApplicationDeleted]
+//   }
 
-  object ApplicationDeletedByGatekeeper {
-    implicit val format: OFormat[ApplicationDeletedByGatekeeper] = Json.format[ApplicationDeletedByGatekeeper]
-  }
+//   case class ApplicationDeletedByGatekeeper(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actors.GatekeeperUser,
+//       clientId: ClientId,
+//       wso2ApplicationName: String,
+//       reasons: String,
+//       requestingAdminEmail: LaxEmailAddress
+//     ) extends ApplicationEvent with ApplicationDeletedBase with TriggersNotification
 
-  case class ProductionCredentialsApplicationDeleted(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      clientId: ClientId,
-      wso2ApplicationName: String,
-      reasons: String
-    ) extends UpdateApplicationEvent with ApplicationDeletedBase with TriggersNotification
+//   object ApplicationDeletedByGatekeeper {
+//     implicit val format: OFormat[ApplicationDeletedByGatekeeper] = Json.format[ApplicationDeletedByGatekeeper]
+//   }
 
-  object ProductionCredentialsApplicationDeleted {
-    implicit val format: OFormat[ProductionCredentialsApplicationDeleted] = Json.format[ProductionCredentialsApplicationDeleted]
-  }
+//   case class ProductionCredentialsApplicationDeleted(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       clientId: ClientId,
+//       wso2ApplicationName: String,
+//       reasons: String
+//     ) extends ApplicationEvent with ApplicationDeletedBase with TriggersNotification
 
-  case class CollaboratorAdded(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      collaborator: Collaborator,
-      verifiedAdminsToEmail: Set[LaxEmailAddress]
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object ProductionCredentialsApplicationDeleted {
+//     implicit val format: OFormat[ProductionCredentialsApplicationDeleted] = Json.format[ProductionCredentialsApplicationDeleted]
+//   }
 
-  object CollaboratorAdded {
-    implicit val format: OFormat[CollaboratorAdded] = Json.format[CollaboratorAdded]
-  }
+//   case class CollaboratorAdded(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       collaborator: Collaborator,
+//       verifiedAdminsToEmail: Set[LaxEmailAddress]
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class CollaboratorRemoved(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      collaborator: Collaborator,
-      notifyCollaborator: Boolean,
-      verifiedAdminsToEmail: Set[LaxEmailAddress]
-    ) extends UpdateApplicationEvent with TriggersNotification
+//   object CollaboratorAdded {
+//     implicit val format: OFormat[CollaboratorAdded] = Json.format[CollaboratorAdded]
+//   }
 
-  object CollaboratorRemoved {
-    implicit val format: OFormat[CollaboratorRemoved] = Json.format[CollaboratorRemoved]
-  }
+//   case class CollaboratorRemoved(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       collaborator: Collaborator,
+//       notifyCollaborator: Boolean,
+//       verifiedAdminsToEmail: Set[LaxEmailAddress]
+//     ) extends ApplicationEvent with TriggersNotification
 
-  case class ApplicationApprovalRequestDeclined(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: Actor,
-      decliningUserName: String,
-      decliningUserEmail: LaxEmailAddress,
-      submissionId: Submission.Id,
-      submissionIndex: Int,
-      reasons: String,
-      requestingAdminName: String,
-      requestingAdminEmail: LaxEmailAddress
-    ) extends UpdateApplicationEvent
+//   object CollaboratorRemoved {
+//     implicit val format: OFormat[CollaboratorRemoved] = Json.format[CollaboratorRemoved]
+//   }
 
-  object ApplicationApprovalRequestDeclined {
-    implicit val format: OFormat[ApplicationApprovalRequestDeclined] = Json.format[ApplicationApprovalRequestDeclined]
-  }
+//   case class ApplicationApprovalRequestDeclined(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//       actor: Actor,
+//       decliningUserName: String,
+//       decliningUserEmail: LaxEmailAddress,
+//       submissionId: Submission.Id,
+//       submissionIndex: Int,
+//       reasons: String,
+//       requestingAdminName: String,
+//       requestingAdminEmail: LaxEmailAddress
+//     ) extends ApplicationEvent
 
-  case class RedirectUrisUpdated(
-      id: UpdateApplicationEvent.Id,
-      applicationId: ApplicationId,
-      eventDateTime: LocalDateTime,
-      actor: Actor,
-      oldRedirectUris: List[String],
-      newRedirectUris: List[String]
-    ) extends UpdateApplicationEvent
+//   object ApplicationApprovalRequestDeclined {
+//     implicit val format: OFormat[ApplicationApprovalRequestDeclined] = Json.format[ApplicationApprovalRequestDeclined]
+//   }
 
-  object RedirectUrisUpdated {
-    implicit val format: OFormat[RedirectUrisUpdated] = Json.format[RedirectUrisUpdated]
-  }
+//   case class RedirectUrisUpdated(
+//       id: ApplicationEvent.Id,
+//       applicationId: ApplicationId,
+//       eventDateTime: LocalDateTime,
+//       actor: Actor,
+//       oldRedirectUris: List[String],
+//       newRedirectUris: List[String]
+//     ) extends ApplicationEvent
 
-  implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
-    .and[ApiSubscribed](EventType.API_SUBSCRIBED_V2.toString)
-    .and[ApiUnsubscribed](EventType.API_UNSUBSCRIBED_V2.toString)
-    .and[ClientSecretAddedV2](EventType.CLIENT_SECRET_ADDED_V2.toString)
-    .and[ClientSecretRemoved](EventType.CLIENT_SECRET_REMOVED_V2.toString)
-    .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
-    .and[ProductionAppPrivacyPolicyLocationChanged](EventType.PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)
-    .and[ProductionLegacyAppPrivacyPolicyLocationChanged](EventType.PROD_LEGACY_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)
-    .and[ProductionAppTermsConditionsLocationChanged](EventType.PROD_APP_TERMS_CONDITIONS_LOCATION_CHANGED.toString)
-    .and[ProductionLegacyAppTermsConditionsLocationChanged](EventType.PROD_LEGACY_APP_TERMS_CONDITIONS_LOCATION_CHANGED.toString)
-    .and[ResponsibleIndividualSet](EventType.RESPONSIBLE_INDIVIDUAL_SET.toString)
-    .and[ResponsibleIndividualChanged](EventType.RESPONSIBLE_INDIVIDUAL_CHANGED.toString)
-    .and[ResponsibleIndividualChangedToSelf](EventType.RESPONSIBLE_INDIVIDUAL_CHANGED_TO_SELF.toString)
-    .and[ApplicationStateChanged](EventType.APPLICATION_STATE_CHANGED.toString)
-    .and[ResponsibleIndividualVerificationStarted](EventType.RESPONSIBLE_INDIVIDUAL_VERIFICATION_STARTED.toString)
-    .and[ResponsibleIndividualDeclined](EventType.RESPONSIBLE_INDIVIDUAL_DECLINED.toString)
-    .and[ResponsibleIndividualDeclinedUpdate](EventType.RESPONSIBLE_INDIVIDUAL_DECLINED_UPDATE.toString)
-    .and[ResponsibleIndividualDidNotVerify](EventType.RESPONSIBLE_INDIVIDUAL_DID_NOT_VERIFY.toString)
-    .and[ApplicationApprovalRequestDeclined](EventType.APPLICATION_APPROVAL_REQUEST_DECLINED.toString)
-    .and[ApplicationDeleted](EventType.APPLICATION_DELETED.toString)
-    .and[ApplicationDeletedByGatekeeper](EventType.APPLICATION_DELETED_BY_GATEKEEPER.toString)
-    .and[ProductionCredentialsApplicationDeleted](EventType.PRODUCTION_CREDENTIALS_APPLICATION_DELETED.toString)
-    .and[CollaboratorAdded](EventType.COLLABORATOR_ADDED.toString)
-    .and[CollaboratorRemoved](EventType.COLLABORATOR_REMOVED.toString)
-    .and[RedirectUrisUpdated](EventType.REDIRECT_URIS_UPDATED_V2.toString)
-    .format
-}
-// scalastyle:on number.of.types number.of.methods
+//   object RedirectUrisUpdated {
+//     implicit val format: OFormat[RedirectUrisUpdated] = Json.format[RedirectUrisUpdated]
+//   }
+
+//   implicit val formatUpdatepplicationEvent: OFormat[ApplicationEvent] = Union.from[ApplicationEvent]("eventType")
+//     .and[ApiSubscribedV2](EventType.API_SUBSCRIBED_V2.toString)
+//     .and[ApiUnsubscribedV2](EventType.API_UNSUBSCRIBED_V2.toString)
+//     .and[ClientSecretAddedV2](EventType.CLIENT_SECRET_ADDED_V2.toString)
+//     .and[ClientSecretRemoved](EventType.CLIENT_SECRET_REMOVED_V2.toString)
+//     .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
+//     .and[ProductionAppPrivacyPolicyLocationChanged](EventType.PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)
+//     .and[ProductionLegacyAppPrivacyPolicyLocationChanged](EventType.PROD_LEGACY_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)
+//     .and[ProductionAppTermsConditionsLocationChanged](EventType.PROD_APP_TERMS_CONDITIONS_LOCATION_CHANGED.toString)
+//     .and[ProductionLegacyAppTermsConditionsLocationChanged](EventType.PROD_LEGACY_APP_TERMS_CONDITIONS_LOCATION_CHANGED.toString)
+//     .and[ResponsibleIndividualSet](EventType.RESPONSIBLE_INDIVIDUAL_SET.toString)
+//     .and[ResponsibleIndividualChanged](EventType.RESPONSIBLE_INDIVIDUAL_CHANGED.toString)
+//     .and[ResponsibleIndividualChangedToSelf](EventType.RESPONSIBLE_INDIVIDUAL_CHANGED_TO_SELF.toString)
+//     .and[ApplicationStateChanged](EventType.APPLICATION_STATE_CHANGED.toString)
+//     .and[ResponsibleIndividualVerificationStarted](EventType.RESPONSIBLE_INDIVIDUAL_VERIFICATION_STARTED.toString)
+//     .and[ResponsibleIndividualDeclined](EventType.RESPONSIBLE_INDIVIDUAL_DECLINED.toString)
+//     .and[ResponsibleIndividualDeclinedUpdate](EventType.RESPONSIBLE_INDIVIDUAL_DECLINED_UPDATE.toString)
+//     .and[ResponsibleIndividualDidNotVerify](EventType.RESPONSIBLE_INDIVIDUAL_DID_NOT_VERIFY.toString)
+//     .and[ApplicationApprovalRequestDeclined](EventType.APPLICATION_APPROVAL_REQUEST_DECLINED.toString)
+//     .and[ApplicationDeleted](EventType.APPLICATION_DELETED.toString)
+//     .and[ApplicationDeletedByGatekeeper](EventType.APPLICATION_DELETED_BY_GATEKEEPER.toString)
+//     .and[ProductionCredentialsApplicationDeleted](EventType.PRODUCTION_CREDENTIALS_APPLICATION_DELETED.toString)
+//     .and[CollaboratorAdded](EventType.COLLABORATOR_ADDED.toString)
+//     .and[CollaboratorRemoved](EventType.COLLABORATOR_REMOVED.toString)
+//     .and[RedirectUrisUpdated](EventType.REDIRECT_URIS_UPDATED_V2.toString)
+//     .format
+// }
+// // scalastyle:on number.of.types number.of.methods

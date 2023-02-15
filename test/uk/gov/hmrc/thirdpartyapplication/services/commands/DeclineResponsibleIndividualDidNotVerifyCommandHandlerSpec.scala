@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
 }
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
@@ -82,7 +82,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName)
     )
 
-    val ts      = FixedClock.now
+    val ts      = FixedClock.instant
     val code    = "3242342387452384623549234"
     val reasons = "The responsible individual did not accept the terms of use in 20 days."
 
@@ -92,7 +92,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      ts,
+      FixedClock.now,
       ResponsibleIndividualVerificationState.INITIAL
     )
 
@@ -102,7 +102,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      ts,
+      FixedClock.now,
       newResponsibleIndividual,
       requesterName,
       requesterEmail,
@@ -130,7 +130,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
             riDeclined.responsibleIndividualName shouldBe riName
             riDeclined.responsibleIndividualEmail shouldBe riEmail
             riDeclined.submissionIndex shouldBe submission.latestInstance.index
-            riDeclined.submissionId shouldBe submission.id
+            riDeclined.submissionId.value shouldBe submission.id.value
             riDeclined.requestingAdminEmail shouldBe appAdminEmail
             riDeclined.code shouldBe code
         }
@@ -142,7 +142,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
             appApprovalRequestDeclined.decliningUserName shouldBe riName
             appApprovalRequestDeclined.decliningUserEmail shouldBe riEmail
             appApprovalRequestDeclined.submissionIndex shouldBe submission.latestInstance.index
-            appApprovalRequestDeclined.submissionId shouldBe submission.id
+            appApprovalRequestDeclined.submissionId.value shouldBe submission.id.value
             appApprovalRequestDeclined.requestingAdminEmail shouldBe appAdminEmail
             appApprovalRequestDeclined.reasons shouldBe reasons
         }
@@ -152,10 +152,10 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
             stateEvent.applicationId shouldBe applicationId
             stateEvent.eventDateTime shouldBe ts
             stateEvent.actor shouldBe Actors.AppCollaborator(appAdminEmail)
-            stateEvent.requestingAdminEmail shouldBe requesterEmail.text
+            stateEvent.requestingAdminEmail shouldBe requesterEmail
             stateEvent.requestingAdminName shouldBe requesterName
-            stateEvent.newAppState shouldBe State.TESTING
-            stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+            stateEvent.newAppState shouldBe State.TESTING.toString()
+            stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION.toString()
         }
       }
     }
@@ -174,7 +174,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
             riDeclined.responsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
             riDeclined.responsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress
             riDeclined.submissionIndex shouldBe submission.latestInstance.index
-            riDeclined.submissionId shouldBe submission.id
+            riDeclined.submissionId.value shouldBe submission.id.value
             riDeclined.requestingAdminEmail shouldBe appAdminEmail
             riDeclined.code shouldBe code
         }
@@ -196,10 +196,10 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
       SubmissionsServiceMock.DeclineApprovalRequest.succeeds()
-      StateHistoryRepoMock.AddRecord.succeeds()
+      StateHistoryRepoMock.Insert.succeeds()
 
       checkSuccessResultToU(Actors.AppCollaborator(appAdminEmail)) {
-        underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, ts))
+        underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, FixedClock.now))
       }
     }
 
@@ -210,14 +210,14 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
 
       checkSuccessResultUpdate(Actors.AppCollaborator(appAdminEmail)) {
-        underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, ts))
+        underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, FixedClock.now))
       }
     }
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturnNothing
       checkFailsWith(s"No responsibleIndividualVerification found for code $code") {
-        underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, ts))
+        underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, FixedClock.now))
       }
     }
 
@@ -225,7 +225,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(nonStandardApp, DeclineResponsibleIndividualDidNotVerify(code, ts))
+        underTest.process(nonStandardApp, DeclineResponsibleIndividualDidNotVerify(code, FixedClock.now))
       }
     }
 
@@ -233,7 +233,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(oldJourneyApp, DeclineResponsibleIndividualDidNotVerify(code, ts))
+        underTest.process(oldJourneyApp, DeclineResponsibleIndividualDidNotVerify(code, FixedClock.now))
       }
     }
 
@@ -244,12 +244,12 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
         submission.id,
         submission.latestInstance.index,
         "App Name",
-        ts,
+        FixedClock.now,
         ResponsibleIndividualVerificationState.INITIAL
       )
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification2)
       checkFailsWith("The given application id is different") {
-        underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, ts))
+        underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, FixedClock.now))
       }
     }
 
@@ -257,7 +257,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail.text, requesterName))
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state") {
-        underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividualDidNotVerify(code, ts))
+        underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividualDidNotVerify(code, FixedClock.now))
       }
     }
   }

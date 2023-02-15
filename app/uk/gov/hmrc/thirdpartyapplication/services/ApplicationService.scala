@@ -37,7 +37,6 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest, FixCollaboratorRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -55,6 +54,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActor
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActors
 
 @Singleton
 class ApplicationService @Inject() (
@@ -161,7 +162,7 @@ class ApplicationService @Inject() (
       newState        = app.state.toProduction(clock)
       appWithNewState = app.copy(state = newState)
       updatedApp     <- applicationRepository.save(appWithNewState)
-      stateHistory    = StateHistory(applicationId, newState.name, OldActor(requesterEmailAddress, COLLABORATOR), Some(oldState.name), None, app.state.updatedOn)
+      stateHistory    = StateHistory(applicationId, newState.name, OldStyleActors.Collaborator(requesterEmailAddress), Some(oldState.name), None, app.state.updatedOn)
       _              <- stateHistoryRepository.insert(stateHistory)
     } yield updatedApp
   }
@@ -446,10 +447,10 @@ class ApplicationService @Inject() (
 
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {
     val actor = appData.access.accessType match {
-      case PRIVILEGED | ROPC => OldActor("", GATEKEEPER)
-      case _                 => OldActor(loggedInUser, COLLABORATOR)
+      case PRIVILEGED | ROPC => OldStyleActors.Unknown
+      case _                 => OldStyleActors.Collaborator(loggedInUser)
     }
-    insertStateHistory(appData, appData.state.name, None, actor.id, actor.actorType, (a: ApplicationData) => applicationRepository.hardDelete(a.id))
+    insertStateHistory(appData, appData.state.name, None, actor, (a: ApplicationData) => applicationRepository.hardDelete(a.id))
   }
 
   private def auditAppCreated(app: ApplicationData)(implicit hc: HeaderCarrier) =
@@ -548,11 +549,10 @@ class ApplicationService @Inject() (
       snapshotApp: ApplicationData,
       newState: State,
       oldState: Option[State],
-      requestedBy: String,
-      actorType: ActorType.ActorType,
+      actor: OldStyleActor,
       rollback: ApplicationData => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, OldActor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)

@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActors
 
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples with CollaboratorTestData {
 
@@ -51,7 +52,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         FixedClock.now,
         Some(FixedClock.now)
       )
-    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, OldActor("1", ActorType.COLLABORATOR), changedAt = FixedClock.now)
+    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, OldStyleActors.Collaborator("1"), changedAt = FixedClock.now)
 
     "create object" in {
       val result = ApplicationWithUpliftRequest.create(app, history)

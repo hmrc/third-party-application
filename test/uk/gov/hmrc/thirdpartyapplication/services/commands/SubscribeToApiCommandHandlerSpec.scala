@@ -21,7 +21,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApiSubscribed
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -29,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpe
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApiSubscribedV2
 
 class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with ApiIdentifierSyntax {
 
@@ -43,9 +43,9 @@ class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTes
     val applicationId       = ApplicationId.random
     val gatekeeperUserActor = Actors.GatekeeperUser("Gatekeeper Admin")
     val apiIdentifier       = "some-context".asIdentifier("1.1")
-    val timestamp           = FixedClock.now
+    val timestamp           = FixedClock.instant
 
-    val subscribeToApi = SubscribeToApi(gatekeeperUserActor, apiIdentifier, timestamp)
+    val subscribeToApi = SubscribeToApi(gatekeeperUserActor, apiIdentifier, FixedClock.now)
 
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
@@ -55,11 +55,11 @@ class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTes
         val event = events.head
 
         inside(event) {
-          case ApiSubscribed(_, appId, eventDateTime, actor, context, version) =>
+          case ApiSubscribedV2(_, appId, eventDateTime, actor, context, version) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            ApiIdentifier(ApiContext(context), ApiVersion(version)) shouldBe apiIdentifier
+            ApiIdentifier(context, version) shouldBe apiIdentifier
         }
       }
     }

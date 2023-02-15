@@ -37,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock, NoMetr
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActors
 
 class UpliftVerificationExpiryJobSpec
     extends AsyncHmrcSpec
@@ -93,14 +94,14 @@ class UpliftVerificationExpiryJobSpec
       verify(mockStateHistoryRepository).insert(StateHistory(
         app1.id,
         State.TESTING,
-        OldActor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
+        OldStyleActors.ScheduledJob("UpliftVerificationExpiryJob"),
         Some(PENDING_REQUESTER_VERIFICATION),
         changedAt = FixedClock.now
       ))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app2.id,
         State.TESTING,
-        OldActor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
+        OldStyleActors.ScheduledJob("UpliftVerificationExpiryJob"),
         Some(PENDING_REQUESTER_VERIFICATION),
         changedAt = FixedClock.now
       ))

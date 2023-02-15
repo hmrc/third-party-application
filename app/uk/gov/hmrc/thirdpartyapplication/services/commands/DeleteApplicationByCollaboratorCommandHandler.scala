@@ -26,12 +26,14 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByCollaborator, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByCollaborator, State}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 
 @Singleton
 class DeleteApplicationByCollaboratorCommandHandler @Inject() (
@@ -46,7 +48,6 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
   ) extends DeleteApplicationCommandHandler {
 
   import CommandHandler._
-  import UpdateApplicationEvent._
 
   def canDeleteApplicationsOrNotProductionApp(app: ApplicationData) =
     cond(authControlConfig.canDeleteApplications || !app.state.isInPreProductionOrProduction, "Cannot delete this applicaton")
@@ -59,29 +60,20 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     ) { case (admin, _, _) => admin }
   }
 
-  private def asEvents(app: ApplicationData, cmd: DeleteApplicationByCollaborator, instigator: Collaborator): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: DeleteApplicationByCollaborator, instigator: Collaborator, stateHistory: StateHistory): NonEmptyList[AbstractApplicationEvent] = {
     val clientId       = app.tokens.production.clientId
     val requesterEmail = instigator.emailAddress
     NonEmptyList.of(
       ApplicationDeleted(
-        id = UpdateApplicationEvent.Id.random,
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
+        eventDateTime = cmd.timestamp.instant,
         actor = Actors.AppCollaborator(requesterEmail),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons
       ),
-      ApplicationStateChanged(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = Actors.AppCollaborator(requesterEmail),
-        app.state.name,
-        State.DELETED,
-        requestingAdminName = requesterEmail.text,
-        requestingAdminEmail = requesterEmail.text
-      )
+      fromStateHistory(stateHistory, requesterEmail.text, requesterEmail)
     )
   }
 
@@ -91,8 +83,9 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
       kindOfRequesterEmail = instigator.emailAddress.text
       savedApp   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail))
       // TODO - need app state history change
-      events      = asEvents(savedApp, cmd, instigator)
-      _          <- deleteApplication(app, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail, events)
+      stateHistory = StateHistory(app.id, State.DELETED, OldStyleActors.Collaborator(kindOfRequesterEmail), Some(app.state.name), changedAt = cmd.timestamp)
+      events      = asEvents(savedApp, cmd, instigator, stateHistory)
+      _          <- deleteApplication(app, stateHistory, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail, events)
     } yield (savedApp, events)
   }
 }

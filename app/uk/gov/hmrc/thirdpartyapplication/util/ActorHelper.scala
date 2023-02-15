@@ -16,26 +16,29 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, OldActor}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActor
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 trait ActorHelper {
 
   @deprecated("use getActorFromContext instead")
-  def getOldActorFromContext(userContext: Map[String, String], collaborators: Set[Collaborator]): Option[OldActor] = {
+  def getOldActorFromContext(userContext: Map[String, String], collaborators: Set[Collaborator]): Option[OldStyleActor] = {
     if (userContext.isEmpty) {
-      Option(OldActor("admin@gatekeeper", ActorType.GATEKEEPER))
+      Some(OldStyleActors.GatekeeperUser("admin@gatekeeper"))
     } else {
-      userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
-        .map(email => OldActor(email, deriveOldActorType(LaxEmailAddress(email), collaborators)))
+    userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
+        .map(userKey =>deriveOldActorType(userKey, collaborators))
     }
   }
 
-  private def deriveOldActorType(email: LaxEmailAddress, collaborators: Set[Collaborator]): ActorType.Value =
+  private def deriveOldActorType(userKey: String, collaborators: Set[Collaborator]): OldStyleActor =
     collaborators
-      .find(_.emailAddress.equalsIgnoreCase(email)).fold(ActorType.GATEKEEPER) { _: Collaborator => ActorType.COLLABORATOR }
+      .find(_.emailAddress.equalsIgnoreCase(LaxEmailAddress(userKey))).fold[OldStyleActor](OldStyleActors.GatekeeperUser(userKey))(_ => OldStyleActors.Collaborator(userKey))
+
 
   def getActorFromContext(userContext: Map[String, String], collaborators: Set[Collaborator]): Actor =
     userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)

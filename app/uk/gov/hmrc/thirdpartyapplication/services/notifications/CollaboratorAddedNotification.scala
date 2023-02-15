@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.CollaboratorAddedV2
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
@@ -30,7 +30,7 @@ object CollaboratorAddedNotification {
   def sendCollaboratorAddedNotification(
       emailConnector: EmailConnector,
       app: ApplicationData,
-      event: UpdateApplicationEvent.CollaboratorAdded
+      event: CollaboratorAddedV2
     )(implicit hc: HeaderCarrier,
       ec: ExecutionContext
     ): Future[HasSucceeded] = {

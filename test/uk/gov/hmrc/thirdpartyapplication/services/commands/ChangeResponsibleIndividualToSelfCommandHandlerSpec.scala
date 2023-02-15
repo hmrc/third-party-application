@@ -24,7 +24,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
@@ -66,12 +66,12 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
-    val ts        = FixedClock.now
+    val ts        = FixedClock.instant
     val riName    = "Mr Responsible"
     val riEmail   = "ri@example.com".toLaxEmail
     val underTest = new ChangeResponsibleIndividualToSelfCommandHandler(ApplicationRepoMock.aMock, SubmissionsServiceMock.aMock)
 
-    val changeResponsibleIndividualToSelfCommand = ChangeResponsibleIndividualToSelf(appAdminUserId, ts, riName, riEmail)
+    val changeResponsibleIndividualToSelfCommand = ChangeResponsibleIndividualToSelf(appAdminUserId, FixedClock.now, riName, riEmail)
 
     def checkSuccessResult(expectedActor: Actor, expectedPreviousEmail: LaxEmailAddress, expectedPreviousName: String)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
@@ -99,7 +99,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
             previousResponsibleIndividualName shouldBe oldRiName
             previousResponsibleIndividualEmail shouldBe oldRiEmail
             submissionIndex shouldBe submission.latestInstance.index
-            submissionId shouldBe submission.id
+            submissionId.value shouldBe submission.id.value
             requestingName shouldBe riName
             requestingEmail shouldBe appAdminEmail
         }
@@ -125,40 +125,40 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
 
     "return an error if no submission is found for the application" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
-      val result = await(underTest.process(app, ChangeResponsibleIndividualToSelf(appAdminUserId, ts, riName, riEmail)).value).left.value
+      val result = await(underTest.process(app, ChangeResponsibleIndividualToSelf(appAdminUserId, FixedClock.now, riName, riEmail)).value).left.value
       result.head shouldBe s"No submission found for application ${app.id.value}"
     }
 
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
-      val result         = await(underTest.process(nonStandardApp, ChangeResponsibleIndividualToSelf(appAdminUserId, ts, riName, riEmail)).value).left.value
+      val result         = await(underTest.process(nonStandardApp, ChangeResponsibleIndividualToSelf(appAdminUserId, FixedClock.now, riName, riEmail)).value).left.value
       result shouldBe NonEmptyChain.apply("Must be a standard new journey application", "The responsible individual has not been set for this application")
     }
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
-      val result        = await(underTest.process(oldJourneyApp, ChangeResponsibleIndividualToSelf(appAdminUserId, ts, riName, riEmail)).value).left.value
+      val result        = await(underTest.process(oldJourneyApp, ChangeResponsibleIndividualToSelf(appAdminUserId, FixedClock.now, riName, riEmail)).value).left.value
       result shouldBe NonEmptyChain.apply("Must be a standard new journey application", "The responsible individual has not been set for this application")
     }
 
     "return an error if the application is not approved" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val notApprovedApp = app.copy(state = ApplicationState.pendingGatekeeperApproval("someone@example.com", "Someone"))
-      val result         = await(underTest.process(notApprovedApp, ChangeResponsibleIndividualToSelf(appAdminUserId, ts, riName, riEmail)).value).left.value
+      val result         = await(underTest.process(notApprovedApp, ChangeResponsibleIndividualToSelf(appAdminUserId, FixedClock.now, riName, riEmail)).value).left.value
       result.head shouldBe "App is not in PRE_PRODUCTION or in PRODUCTION state"
     }
 
     "return an error if the requester is not an admin for the application" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val result = await(underTest.process(app, ChangeResponsibleIndividualToSelf(UserId.random, ts, riName, riEmail)).value).left.value
+      val result = await(underTest.process(app, ChangeResponsibleIndividualToSelf(UserId.random, FixedClock.now, riName, riEmail)).value).left.value
       result.head shouldBe "User must be an ADMIN"
     }
 
     "return an error if the requester is already the RI for the application" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val result = await(underTest.process(app, ChangeResponsibleIndividualToSelf(oldRiUserId, ts, oldRiName, oldRiEmail)).value).left.value
+      val result = await(underTest.process(app, ChangeResponsibleIndividualToSelf(oldRiUserId, FixedClock.now, oldRiName, oldRiEmail)).value).left.value
       result.head shouldBe s"The specified individual is already the RI for this application"
     }
 

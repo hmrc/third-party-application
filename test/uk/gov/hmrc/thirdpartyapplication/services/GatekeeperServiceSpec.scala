@@ -27,7 +27,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.RejectUpliftRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.{COLLABORATOR, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
@@ -41,6 +40,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActors
 
 class GatekeeperServiceSpec
     extends AsyncHmrcSpec
@@ -51,17 +51,19 @@ class GatekeeperServiceSpec
 
   private val requestedByEmail = "john.smith@example.com"
 
+  private val bobTheGKUser = OldStyleActors.GatekeeperUser("bob")
+
   private def aSecret(secret: String) = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   private val loggedInUser    = "loggedin@example.com"
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   private def aHistory(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
-    StateHistory(appId, state, OldActor("anEmail", COLLABORATOR), Some(TESTING), changedAt = FixedClock.now)
+    StateHistory(appId, state, OldStyleActors.Collaborator("anEmail"), Some(TESTING), changedAt = FixedClock.now)
   }
 
   private def aStateHistoryResponse(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, OldActor("anEmail", COLLABORATOR), None, FixedClock.now)
+    StateHistoryResponse(appId, state, OldStyleActors.Collaborator("anEmail"), None, FixedClock.now)
   }
 
   private def anApplicationData(
@@ -200,7 +202,7 @@ class GatekeeperServiceSpec
       val expectedStateHistory = StateHistory(
         applicationId = expectedApplication.id,
         state = PENDING_REQUESTER_VERIFICATION,
-        actor = OldActor(gatekeeperUserId, GATEKEEPER),
+        actor = OldStyleActors.GatekeeperUser(gatekeeperUserId),
         previousState = Some(PENDING_GATEKEEPER_APPROVAL),
         changedAt = FixedClock.now
       )
@@ -321,7 +323,7 @@ class GatekeeperServiceSpec
       val expectedStateHistory = StateHistory(
         applicationId = application.id,
         state = TESTING,
-        actor = OldActor(gatekeeperUserId, GATEKEEPER),
+        actor = OldStyleActors.GatekeeperUser(gatekeeperUserId),
         previousState = Some(PENDING_GATEKEEPER_APPROVAL),
         notes = Some(rejectReason),
         changedAt = FixedClock.now
@@ -488,8 +490,8 @@ class GatekeeperServiceSpec
         "app1",
         2,
         List(
-          StateHistory(appId1, State.TESTING, OldActor("bob", ActorType.GATEKEEPER), None, None, ts1),
-          StateHistory(appId1, State.PRODUCTION, OldActor("bob", ActorType.GATEKEEPER), Some(State.TESTING), None, ts2)
+          StateHistory(appId1, State.TESTING, bobTheGKUser, None, None, ts1),
+          StateHistory(appId1, State.PRODUCTION, bobTheGKUser, Some(State.TESTING), None, ts2)
         )
       )
       val history2 = ApplicationWithStateHistory(
@@ -497,7 +499,7 @@ class GatekeeperServiceSpec
         "app2",
         2,
         List(
-          StateHistory(appId2, State.TESTING, OldActor("bob", ActorType.GATEKEEPER), None, None, ts3)
+          StateHistory(appId2, State.TESTING, bobTheGKUser, None, None, ts3)
         )
       )
       ApplicationRepoMock.FetchProdAppStateHistories.thenReturn(history1, history2)

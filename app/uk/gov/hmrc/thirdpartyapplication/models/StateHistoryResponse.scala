@@ -23,12 +23,15 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActor
 
-case class StateHistoryResponse(applicationId: ApplicationId, state: State, actor: OldActor, notes: Option[String], changedAt: LocalDateTime)
+case class StateHistoryResponse(applicationId: ApplicationId, state: State, actor: OldStyleActor, notes: Option[String], changedAt: LocalDateTime)
 
 object StateHistoryResponse {
   def from(sh: StateHistory) = StateHistoryResponse(sh.applicationId, sh.state, sh.actor, sh.notes, sh.changedAt)
 
   import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters._
+  import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters.formatOldStyleActor
+  
   implicit val format = Json.format[StateHistoryResponse]
 }

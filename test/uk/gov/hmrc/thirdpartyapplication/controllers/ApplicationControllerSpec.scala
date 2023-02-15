@@ -61,6 +61,9 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.AbstractApplicationEvent
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApiSubscribedV2
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -1478,12 +1481,14 @@ class ApplicationControllerSpec
 
   "temp" should {
     "dump some json" in {
-      val e: UpdateApplicationEvent =
-        UpdateApplicationEvent.ApiSubscribed(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.AppCollaborator("bob".toLaxEmail), "bob", "1.0")
+      import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
+      
+      val e: AbstractApplicationEvent =
+        ApiSubscribedV2(EventId.random, ApplicationId.random, FixedClock.instant, Actors.AppCollaborator("bob".toLaxEmail), "bob".asContext, "1.0".asVersion)
 
       val txt = Json.toJson(e).toString.replace("447", "447Z")
 
-      val e2 = Json.parse(txt).as[UpdateApplicationEvent]
+      val e2 = Json.parse(txt).as[AbstractApplicationEvent]
 
       println(e2)
 

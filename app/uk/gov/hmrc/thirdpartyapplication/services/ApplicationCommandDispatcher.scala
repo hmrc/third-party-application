@@ -73,7 +73,7 @@ class ApplicationCommandDispatcher @Inject() (
 
       _ <- E.liftF(apiPlatformEventService.applyEvents(events))
       _ <- E.liftF(auditService.applyEvents(savedApp, events))
-      _ <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt }))
+      _ <- E.liftF(notificationService.sendNotifications(savedApp, events))
     } yield (savedApp, events)
   }
 

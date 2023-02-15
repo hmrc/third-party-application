@@ -28,6 +28,11 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.AbstractApplicationEvent
+import java.time.LocalDateTime
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import java.time.Instant
+import java.time.ZoneOffset
 
 trait CommandHandler {
   import CommandHandler._
@@ -38,12 +43,33 @@ trait CommandHandler {
 }
 
 object CommandHandler {
-  type CommandSuccess  = (ApplicationData, NonEmptyList[UpdateApplicationEvent])
+  type CommandSuccess  = (ApplicationData, NonEmptyList[AbstractApplicationEvent])
   type CommandFailures = NonEmptyChain[String]
 
   // type Result  = Future[Either[CommandFailures, CommandSuccess]]
   type ResultT = EitherT[Future, CommandFailures, CommandSuccess]
 
+  implicit class InstantSyntax(value: LocalDateTime) {
+    def instant: Instant = value.toInstant(ZoneOffset.UTC)
+  }
+
+  def fromStateHistory(stateHistory: StateHistory, requestingAdminName: String, requestingAdminEmail: LaxEmailAddress) =
+      ApplicationStateChanged(
+        id = EventId.random,
+        applicationId = stateHistory.applicationId,
+        eventDateTime = stateHistory.changedAt.instant,
+        actor = stateHistory.actor match {
+          case OldStyleActors.Collaborator(id) => Actors.AppCollaborator(LaxEmailAddress(id))
+          case OldStyleActors.GatekeeperUser(id) => Actors.GatekeeperUser(id)
+          case OldStyleActors.ScheduledJob(id) => Actors.ScheduledJob(id)
+          case OldStyleActors.Unknown => Actors.Unknown
+        },
+        stateHistory.previousState.fold("")(_.toString),
+        stateHistory.state.toString,
+        requestingAdminName,
+        requestingAdminEmail
+      )
+        
   def cond(cond: => Boolean, left: String): Validated[CommandFailures, Unit] = {
     if (cond) ().validNec[String] else left.invalidNec[Unit]
   }

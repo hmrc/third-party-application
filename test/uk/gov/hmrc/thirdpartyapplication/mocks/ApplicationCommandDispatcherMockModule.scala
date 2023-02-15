@@ -24,14 +24,16 @@ import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.RedirectUrisUpdated
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationCommand
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.AbstractApplicationEvent
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.RedirectUrisUpdatedV2
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
 
 trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -41,7 +43,7 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
 
     import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.{CommandFailures, CommandSuccess}
 
-    val mockEvents                  = NonEmptyList.of(mock[UpdateApplicationEvent])
+    val mockEvents                  = NonEmptyList.of(mock[AbstractApplicationEvent])
     val mockErrors: CommandFailures = NonEmptyChain("Bang")
     val E                           = EitherTHelper.make[CommandFailures]
 
@@ -59,12 +61,12 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
 
       def thenReturnCommandSuccess(applicationData: ApplicationData) = {
         val dummyEvents             =
-          NonEmptyList.one(RedirectUrisUpdated(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now, Actors.AppCollaborator("someuser".toLaxEmail), List.empty, List("new URI")))
+          NonEmptyList.one(RedirectUrisUpdatedV2(EventId.random, ApplicationId.random, FixedClock.instant, Actors.AppCollaborator("someuser".toLaxEmail), List.empty, List("new URI")))
         val success: CommandSuccess = (applicationData, dummyEvents)
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand])(*)).thenReturn(E.pure(success))
       }
 
-      def thenReturnSuccess(applicationData: ApplicationData, event: UpdateApplicationEvent, moreEvents: UpdateApplicationEvent*) = {
+      def thenReturnSuccess(applicationData: ApplicationData, event: AbstractApplicationEvent, moreEvents: AbstractApplicationEvent*) = {
         val success: CommandSuccess = (applicationData, NonEmptyList.of(event, moreEvents: _*))
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand])(*)).thenReturn(E.pure(success))
       }

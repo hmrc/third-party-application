@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -48,8 +48,8 @@ class ChangeProductionApplicationNameCommandHandlerSpec
 
     val userId = idOf(adminEmail)
 
-    val timestamp = FixedClock.now
-    val update    = ChangeProductionApplicationName(userId, timestamp, gatekeeperUser, newName)
+    val timestamp = FixedClock.instant
+    val update    = ChangeProductionApplicationName(userId, FixedClock.now, gatekeeperUser, newName)
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
@@ -61,7 +61,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
         val event = events.head
 
         inside(event) {
-          case ProductionAppNameChanged(_, appId, eventDateTime, actor, oldName, eNewName, requestingAdminEmail) =>
+          case ProductionAppNameChangedEvent(_, appId, eventDateTime, actor, oldName, eNewName, requestingAdminEmail) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp

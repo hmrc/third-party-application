@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
@@ -60,10 +60,10 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
     )
 
     val userId    = idOf(adminEmail)
-    val timestamp = FixedClock.now
+    val timestamp = FixedClock.instant
     val actor     = Actors.AppCollaborator(adminEmail)
 
-    val update = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
+    val update = ChangeProductionApplicationTermsAndConditionsLocation(userId, FixedClock.now, newLocation)
 
     val underTest = new ChangeProductionApplicationTermsAndConditionsLocationCommandHandler(ApplicationRepoMock.aMock)
 

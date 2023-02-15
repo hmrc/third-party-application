@@ -24,17 +24,13 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.{SubmissionsDAOMockModule, _}
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
-  ApplicationApprovalRequestDeclined,
-  ApplicationStateChanged,
-  ResponsibleIndividualDidNotVerify
-}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
@@ -234,7 +230,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
     }
 
     "applyEvents" should {
-      val now          = FixedClock.now
+    
       val appId        = ApplicationId.random
       val submissionId = Submission.Id.random
       val reasons      = "reasons description"
@@ -242,13 +238,13 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
       def buildApplicationApprovalRequestDeclinedEvent() =
         ApplicationApprovalRequestDeclined(
-          UpdateApplicationEvent.Id.random,
+          EventId.random,
           appId,
-          now,
+          FixedClock.instant,
           Actors.AppCollaborator("requester@example.com".toLaxEmail),
           "Mr New Ri",
           "ri@example.com".toLaxEmail,
-          submissionId,
+          SubmissionId(submissionId.value),
           0,
           reasons,
           "Mr Admin",
@@ -257,13 +253,13 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
       def buildResponsibleIndividualDidNotVerifyEvent() =
         ResponsibleIndividualDidNotVerify(
-          UpdateApplicationEvent.Id.random,
+          EventId.random,
           appId,
-          now,
+          FixedClock.instant,
           Actors.AppCollaborator("requester@example.com".toLaxEmail),
           "Mr New Ri",
           "ri@example.com".toLaxEmail,
-          submissionId,
+          SubmissionId(submissionId.value),
           0,
           code,
           "Mr Admin",
@@ -272,14 +268,14 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
       def buildApplicationStateChangedEvent() =
         ApplicationStateChanged(
-          UpdateApplicationEvent.Id.random,
+          EventId.random,
           appId,
-          now,
+          FixedClock.instant,
           Actors.AppCollaborator("requester@example.com".toLaxEmail),
-          State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
-          State.TESTING,
+          State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION.toString,
+          State.TESTING.toString,
           "Mr Admin",
-          "admin@example.com"
+          "admin@example.com".toLaxEmail
         )
 
       "decline a submission given an ApplicationApprovalRequestDeclined event" in new Setup {

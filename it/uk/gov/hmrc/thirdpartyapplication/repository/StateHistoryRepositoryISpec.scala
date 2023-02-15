@@ -23,8 +23,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, OldActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApplicationStateChanged
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationEvent.ApplicationStateChanged
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
@@ -136,7 +136,7 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
       val ts              = FixedClock.now
       val actor: OldActor = OldActor(requesterEmail, ActorType.COLLABORATOR)
       val event           = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         appId,
         ts,
         Actors.AppCollaborator(requesterEmail.toLaxEmail),

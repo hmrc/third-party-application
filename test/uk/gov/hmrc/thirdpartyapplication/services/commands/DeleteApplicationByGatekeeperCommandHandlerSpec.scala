@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
@@ -38,7 +38,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
     val appId                                = ApplicationId.random
     val reasons                              = "reasons description text"
     val app                                  = anApplicationData(appId, environment = Environment.SANDBOX)
-    val ts                                   = FixedClock.now
+    val ts                                   = FixedClock.instant
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
     val underTest = new DeleteApplicationByGatekeeperCommandHandler(
@@ -76,9 +76,9 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
               appId shouldBe appId
               evtActor shouldBe actor
               eventDateTime shouldBe ts
-              oldAppState shouldBe app.state.name
-              newAppState shouldBe State.DELETED
-              requestingAdminEmail shouldBe requestedByEmail
+              oldAppState shouldBe app.state.name.toString()
+              newAppState shouldBe State.DELETED.toString()
+              requestingAdminEmail.text shouldBe requestedByEmail
               requestingAdminName shouldBe requestedByEmail
           }
         )
@@ -96,7 +96,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
     val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail.toLaxEmail, reasons, ts)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
-      StateHistoryRepoMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.Insert.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()

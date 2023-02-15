@@ -30,11 +30,11 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationEvent
 import uk.gov.hmrc.utils.ServerBaseISpec
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationEvent.{
   ApplicationDeleted,
   ProductionAppNameChanged,
   ProductionCredentialsApplicationDeleted,
@@ -222,7 +222,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
     def buildRiVerificationStartedEvent(submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualVerificationStarted(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         appId,
         appName,
         now,
@@ -238,7 +238,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
     def buildResponsibleIndividualChangedEvent(submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualChanged(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         appId,
         now,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
@@ -255,7 +255,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
     def buildResponsibleIndividualDeclinedEvent(submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualDeclined(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         appId,
         now,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
@@ -270,7 +270,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
     def buildResponsibleIndividualDeclinedUpdateEvent(submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualDeclinedUpdate(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         appId,
         now,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
@@ -285,7 +285,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
     def buildResponsibleIndividualDidNotVerifyEvent(submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualDidNotVerify(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         appId,
         now,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
@@ -300,7 +300,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
     def buildResponsibleIndividualSetEvent(submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualSet(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         appId,
         now,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
@@ -315,7 +315,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
     def buildApplicationDeletedEvent(applicationId: ApplicationId) =
       ApplicationDeleted(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         applicationId,
         now,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
@@ -326,7 +326,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
     def buildProductionCredentialsApplicationDeletedEvent(applicationId: ApplicationId) =
       ProductionCredentialsApplicationDeleted(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         applicationId,
         now,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
@@ -520,7 +520,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
     "handle other events correctly" in {
       val event = ProductionAppNameChanged(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         applicationId,
         FixedClock.now,
         Actors.GatekeeperUser("gkuser@example.com"),

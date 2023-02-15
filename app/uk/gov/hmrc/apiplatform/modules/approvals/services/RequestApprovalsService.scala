@@ -30,7 +30,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDat
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -40,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, AuditHelper, AuditService}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActors
 
 object RequestApprovalsService {
   sealed trait RequestApprovalResult
@@ -98,7 +98,7 @@ class RequestApprovalsService @Inject() (
         updatedApp                          = deriveNewAppDetails(originalApp, isRequesterTheResponsibleIndividual, appName, requestedByEmailAddress, requestedByName, importantSubmissionData)
         savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
         _                                  <- ET.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, updatedApp, submission, requestedByName, requestedByEmailAddress))
-        _                                  <- ET.liftF(writeStateHistory(updatedApp, requestedByEmailAddress.text))
+        _                                  <- ET.liftF(writeStateHistory(updatedApp, requestedByEmailAddress))
         updatedSubmission                   = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress.text)(submission)
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
         _                                  <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
@@ -192,6 +192,6 @@ class RequestApprovalsService @Inject() (
   private def auditCompletedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData)(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditService.audit(ApplicationUpliftRequested, AuditHelper.applicationId(applicationId) ++ Map("newApplicationName" -> updatedApp.name))
 
-  private def writeStateHistory(snapshotApp: ApplicationData, requestedByEmailAddress: String) =
-    insertStateHistory(snapshotApp, snapshotApp.state.name, Some(TESTING), requestedByEmailAddress, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
+  private def writeStateHistory(snapshotApp: ApplicationData, requestedByEmailAddress: LaxEmailAddress) =
+    insertStateHistory(snapshotApp, snapshotApp.state.name, Some(TESTING), OldStyleActors.Collaborator(requestedByEmailAddress.text), (a: ApplicationData) => applicationRepository.save(a))
 }

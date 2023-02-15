@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
@@ -34,15 +34,15 @@ class AddCollaboratorCommandHandlerSpec
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new AddCollaboratorCommandHandler(ApplicationRepoMock.aMock)
 
-    val timestamp = FixedClock.now
+    val timestamp = FixedClock.instant
 
     val newCollaboratorEmail = "newdev@somecompany.com"
     val newCollaborator      = newCollaboratorEmail.developer()
 
     val adminsToEmail = Set(adminEmail, devEmail)
 
-    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, adminsToEmail, timestamp)
-    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, adminsToEmail, timestamp)
+    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, adminsToEmail, FixedClock.now)
+    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, adminsToEmail, FixedClock.now)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
@@ -52,7 +52,7 @@ class AddCollaboratorCommandHandlerSpec
         val event = events.head
 
         inside(event) {
-          case CollaboratorAdded(_, appId, eventDateTime, actor, collaborator, verifiedAdminsToEmail) =>
+          case CollaboratorAddedV2(_, appId, eventDateTime, actor, collaborator, verifiedAdminsToEmail) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp

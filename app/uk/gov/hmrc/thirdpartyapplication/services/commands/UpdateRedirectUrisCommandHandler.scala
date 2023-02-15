@@ -23,10 +23,11 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{UpdateApplicationEvent, UpdateRedirectUris}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateRedirectUris
 
 @Singleton
 class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
@@ -37,14 +38,12 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
     Apply[Validated[CommandFailures, *]].map(isStandardAccess(app))(_ => ())
   }
 
-  import UpdateApplicationEvent._
-
-  private def asEvents(app: ApplicationData, cmd: UpdateRedirectUris): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: UpdateRedirectUris): NonEmptyList[AbstractApplicationEvent] = {
     NonEmptyList.of(
-      RedirectUrisUpdated(
-        id = UpdateApplicationEvent.Id.random,
+      RedirectUrisUpdatedV2(
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
+        eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
         oldRedirectUris = cmd.oldRedirectUris,
         newRedirectUris = cmd.newRedirectUris

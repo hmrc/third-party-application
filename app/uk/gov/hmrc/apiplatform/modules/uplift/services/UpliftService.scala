@@ -26,14 +26,15 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AuditHelper, AuditService}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator, ApplicationId}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActor
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 @Singleton
 class UpliftService @Inject() (
@@ -63,8 +64,7 @@ class UpliftService @Inject() (
                       app,
                       PENDING_GATEKEEPER_APPROVAL,
                       Some(TESTING),
-                      requestedByEmailAddress,
-                      COLLABORATOR,
+                      OldStyleActors.Collaborator(requestedByEmailAddress),
                       (a: ApplicationData) => applicationRepository.save(a)
                     )
       _           = logger.info(s"UPLIFT01: uplift request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} " +
@@ -97,8 +97,7 @@ class UpliftService @Inject() (
              app,
              State.PRE_PRODUCTION,
              Some(PENDING_REQUESTER_VERIFICATION),
-             app.state.requestedByEmailAddress.get,
-             COLLABORATOR,
+             OldStyleActors.Collaborator(app.state.requestedByEmailAddress.get),
              (a: ApplicationData) => applicationRepository.save(a)
            )
       _  = logger.info(s"UPLIFT02: Application uplift for application:${app.name} appId:${app.id} has been verified successfully")
@@ -121,11 +120,10 @@ class UpliftService @Inject() (
       snapshotApp: ApplicationData,
       newState: State,
       oldState: Option[State],
-      requestedBy: String,
-      actorType: ActorType.ActorType,
+      actor: OldStyleActor,
       rollback: ApplicationData => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, OldActor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = LocalDateTime.now(clock))
 
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>

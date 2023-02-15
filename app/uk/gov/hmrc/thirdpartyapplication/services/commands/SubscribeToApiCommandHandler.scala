@@ -27,9 +27,10 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{SubscribeToApi, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.SubscribeToApi
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 @Singleton
 class SubscribeToApiCommandHandler @Inject() (
@@ -39,27 +40,26 @@ class SubscribeToApiCommandHandler @Inject() (
   ) extends CommandHandler {
 
   import CommandHandler._
-  import UpdateApplicationEvent._
 
   private def validate(app: ApplicationData, cmd: SubscribeToApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[CommandFailures, Unit] = {
-    def isGatekeeperUser       = cond(rolePassed, s"Unauthorized to subscribe any API to app ${app.name}")
+    def isAuthorisedUser       = cond(rolePassed, s"Unauthorized to subscribe any API to app ${app.name}")
     def notAlreadySubscribedTo = cond(!alreadySubcribed, s"Application ${app.name} is already subscribed to API ${cmd.apiIdentifier.asText(" v")}")
 
     Apply[Validated[CommandFailures, *]].map2(
-      isGatekeeperUser,
+      isAuthorisedUser,
       notAlreadySubscribedTo
     ) { case _ => () }
   }
 
-  private def asEvents(app: ApplicationData, cmd: SubscribeToApi): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: SubscribeToApi): NonEmptyList[AbstractApplicationEvent] = {
     NonEmptyList.of(
-      ApiSubscribed(
-        id = UpdateApplicationEvent.Id.random,
+      ApiSubscribedV2(
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
+        eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
-        context = cmd.apiIdentifier.context.value,
-        version = cmd.apiIdentifier.version.value
+        context = cmd.apiIdentifier.context,
+        version = cmd.apiIdentifier.version
       )
     )
   }

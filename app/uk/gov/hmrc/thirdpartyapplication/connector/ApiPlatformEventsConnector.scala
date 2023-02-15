@@ -23,9 +23,8 @@ import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats.formatApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
 
 object ApiPlatformEventsConnector {
   case class Config(baseUrl: String, enabled: Boolean)
@@ -64,36 +63,13 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
   @deprecated("remove after client is no longer using the old endpoint")
   def sendApiUnsubscribedEvent(event: ApiUnsubscribedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiUnsubscribedUri)(hc)
 
-  private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
+  def sendApplicationEvent(event: AbstractApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, updateApplicationUri)(hc)
 
-    implicit val headersWithoutAuthorization: HeaderCarrier = hc
-      .copy(authorization = None)
-
-    if (config.enabled) {
-      http.POST[ApplicationEvent, ErrorOr[Unit]](
-        addEventURI(uri),
-        event
-      ).map {
-        case Right(_) =>
-          logger.info(s"calling platform event service for application ${event.applicationId}")
-          true
-        case Left(e)  =>
-          logger.warn(s"calling platform event service failed for application ${event.applicationId} $e")
-          false
-      }
-    } else {
-      logger.info("call to platform events disabled")
-      Future.successful(true)
-    }
-  }
-
-  def sendApplicationEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, updateApplicationUri)(hc)
-
-  private def postEvent(event: UpdateApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
+  private def postEvent(event: AbstractApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
 
     if (config.enabled) {
-      http.POST[UpdateApplicationEvent, ErrorOr[Unit]](
+      http.POST[AbstractApplicationEvent, ErrorOr[Unit]](
         addEventURI(uri),
         event
       ).map {

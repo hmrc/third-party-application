@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 @Singleton
 class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
@@ -58,8 +59,6 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
   private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
-  import UpdateApplicationEvent._
-
   def processTou(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualToUVerification): ResultT = {
     def validate(): Validated[CommandFailures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
       Apply[Validated[CommandFailures, *]].map6(
@@ -72,78 +71,77 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
       ) { case (_, _, _, responsibleIndividual, requesterEmail, requesterName) => (responsibleIndividual, requesterEmail, requesterName) }
     }
 
-    def asEvents(responsibleIndividual: ResponsibleIndividual, requesterEmail: LaxEmailAddress, requesterName: String): (ResponsibleIndividualSet, ApplicationStateChanged) = {
+    def asEvents(stateHistory: StateHistory, responsibleIndividual: ResponsibleIndividual, requesterEmail: LaxEmailAddress, requesterName: String): (ResponsibleIndividualSet, ApplicationStateChanged) = {
       (
         ResponsibleIndividualSet(
-          id = UpdateApplicationEvent.Id.random,
+          id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp,
+          eventDateTime = cmd.timestamp.instant,
           actor = Actors.AppCollaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress,
-          submissionId = riVerificationToU.submissionId,
+          submissionId = SubmissionId(riVerificationToU.submissionId.value),
           submissionIndex = riVerificationToU.submissionInstance,
           code = cmd.code,
           requestingAdminName = requesterName,
           requestingAdminEmail = requesterEmail
         ),
         ApplicationStateChanged(
-          id = UpdateApplicationEvent.Id.random,
+          id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp,
+          eventDateTime = cmd.timestamp.instant,
           actor = Actors.AppCollaborator(requesterEmail),
-          app.state.name,
-          State.PENDING_GATEKEEPER_APPROVAL,
+          app.state.name.toString,
+          State.PENDING_GATEKEEPER_APPROVAL.toString,
           requestingAdminName = requesterName,
-          requestingAdminEmail = requesterEmail.text
+          requestingAdminEmail = requesterEmail
         )
       )
     }
 
     for {
-      valid            <- E.fromEither(validate().toEither)
-      (riEvt, stateEvt) = asEvents(valid._1, valid._2, valid._3)
+      valid <- E.fromEither(validate().toEither)
+      (responsibleIndividual, requesterEmail, requesterName) = valid
       _                <- E.liftF(applicationRepository.updateApplicationSetResponsibleIndividual(
-                            app.id,
-                            riEvt.responsibleIndividualName,
-                            riEvt.responsibleIndividualEmail,
-                            riEvt.eventDateTime,
-                            riEvt.submissionId,
-                            riEvt.submissionIndex
-                          ))
-      savedApp         <-
-        E.liftF(applicationRepository.updateApplicationState(app.id, State.PENDING_GATEKEEPER_APPROVAL, cmd.timestamp, stateEvt.requestingAdminEmail, stateEvt.requestingAdminName))
-      _                <- E.liftF(responsibleIndividualVerificationRepository.deleteResponsibleIndividualVerification(riEvt.code))
-      _                <- E.liftF(stateHistoryRepository.addStateHistoryRecord(stateEvt))
+        app.id,
+        responsibleIndividual.fullName.value,
+        responsibleIndividual.emailAddress,
+        cmd.timestamp,
+        riVerificationToU.submissionId,
+        riVerificationToU.submissionInstance
+        ))
+      savedApp         <- E.liftF(applicationRepository.updateApplicationState(app.id, State.PENDING_GATEKEEPER_APPROVAL, cmd.timestamp, requesterEmail.text, requesterName))
+      _                <- E.liftF(responsibleIndividualVerificationRepository.deleteResponsibleIndividualVerification(cmd.code))
+      stateHistory      = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, OldStyleActors.Collaborator(requesterEmail.text), Some(app.state.name), changedAt = cmd.timestamp)
+      _                <- E.liftF(stateHistoryRepository.insert(stateHistory))
+      (riEvt, stateEvt) = asEvents(stateHistory, responsibleIndividual, requesterEmail, requesterName)
     } yield (savedApp, NonEmptyList(riEvt, List(stateEvt)))
   }
 
   def processUpdate(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualUpdateVerification): ResultT = {
-    def validateUpdate(): Validated[CommandFailures, ApplicationData] = {
-      val responsibleIndividual = riVerification.responsibleIndividual
+    val newResponsibleIndividual = riVerification.responsibleIndividual
+    
+    def validateUpdate(): Validated[CommandFailures, ResponsibleIndividual] = {
       Apply[Validated[CommandFailures, *]].map5(
         isStandardNewJourneyApp(app),
         isApproved(app),
         isApplicationIdTheSame(app, riVerification),
         ensureResponsibleIndividualDefined(app),
-        isNotCurrentRi(responsibleIndividual.fullName.value, responsibleIndividual.emailAddress, app)
-      ) { case _ => app }
+        isNotCurrentRi(newResponsibleIndividual.fullName.value, newResponsibleIndividual.emailAddress, app)
+      ) { case (_,_,_,currentResponsibleIndividual,_) => currentResponsibleIndividual }
     }
 
-    def asEventsUpdate(): ResponsibleIndividualChanged = {
-      val theNewResponsibleIndividual      = riVerification.responsibleIndividual
-      val thePreviousResponsibleIndividual = getResponsibleIndividual(app).get
-      
+    def asEventsUpdate(currentResponsibleIndividual: ResponsibleIndividual): ResponsibleIndividualChanged = {
       ResponsibleIndividualChanged(
-        id = UpdateApplicationEvent.Id.random,
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
+        eventDateTime = cmd.timestamp.instant,
         actor = Actors.AppCollaborator(riVerification.requestingAdminEmail),
-        previousResponsibleIndividualName = thePreviousResponsibleIndividual.fullName.value,
-        previousResponsibleIndividualEmail = thePreviousResponsibleIndividual.emailAddress,
-        newResponsibleIndividualName = theNewResponsibleIndividual.fullName.value,
-        newResponsibleIndividualEmail = theNewResponsibleIndividual.emailAddress,
-        submissionId = riVerification.submissionId,
+        previousResponsibleIndividualName = currentResponsibleIndividual.fullName.value,
+        previousResponsibleIndividualEmail = currentResponsibleIndividual.emailAddress,
+        newResponsibleIndividualName = newResponsibleIndividual.fullName.value,
+        newResponsibleIndividualEmail = newResponsibleIndividual.emailAddress,
+        submissionId = SubmissionId(riVerification.submissionId.value),
         submissionIndex = riVerification.submissionInstance,
         code = cmd.code,
         requestingAdminName = riVerification.requestingAdminName,
@@ -152,17 +150,17 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     }
 
     for {
-      valid <- E.fromEither(validateUpdate().toEither)
-      evt    = asEventsUpdate()
-      _     <- E.liftF(applicationRepository.updateApplicationChangeResponsibleIndividual(
-                 app.id,
-                 evt.newResponsibleIndividualName,
-                 evt.newResponsibleIndividualEmail,
-                 evt.eventDateTime,
-                 evt.submissionId,
-                 evt.submissionIndex
-               ))
-      _     <- E.liftF(responsibleIndividualVerificationRepository.deleteResponsibleIndividualVerification(evt.code))
+      currentRI <- E.fromEither(validateUpdate().toEither)
+      _         <- E.liftF(applicationRepository.updateApplicationChangeResponsibleIndividual(
+        app.id,
+        newResponsibleIndividual.fullName.value,
+        newResponsibleIndividual.emailAddress,
+        cmd.timestamp,
+        submissionId = riVerification.submissionId,
+        submissionIndex = riVerification.submissionInstance,
+        ))
+        _     <- E.liftF(responsibleIndividualVerificationRepository.deleteResponsibleIndividualVerification(cmd.code))
+        evt    = asEventsUpdate(currentRI)
     } yield (app, NonEmptyList.one(evt))
   }
 

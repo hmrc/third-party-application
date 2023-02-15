@@ -22,7 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
@@ -71,7 +71,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationState.pendingGatekeeperApproval(requesterEmail.text, requesterName)
     )
-    val ts              = FixedClock.now
+    val ts              = FixedClock.instant
     val underTest       = new DeclineApplicationApprovalRequestCommandHandler(ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
 
     def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
@@ -104,7 +104,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
               eventDateTime shouldBe ts
               decliningUserName shouldBe gatekeeperUser
               decliningUserEmail shouldBe gatekeeperUser.toLaxEmail
-              submissionId shouldBe submittedSubmission.id
+              submissionId.value shouldBe submittedSubmission.id.value
               submissionIndex shouldBe submittedSubmission.latestInstance.index
               evtReasons shouldBe reasons
               requestingAdminEmail shouldBe requesterEmail
@@ -114,9 +114,9 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
               appId shouldBe app.id
               evtActor shouldBe Actors.GatekeeperUser(gatekeeperUser)
               eventDateTime shouldBe ts
-              oldAppState shouldBe app.state.name
-              newAppState shouldBe State.TESTING
-              requestingAdminEmail shouldBe requesterEmail.text
+              oldAppState shouldBe applicationData.state.name.toString()
+              newAppState shouldBe State.TESTING.toString()
+              requestingAdminEmail shouldBe requesterEmail
               requestingAdminName shouldBe requesterName
           }
         )
@@ -131,37 +131,37 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       SubmissionsServiceMock.DeclineApprovalRequest.succeeds()
       ApplicationRepoMock.UpdateApplicationState.thenReturn(applicationData.copy(state = testingState()))
-      StateHistoryRepoMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.Insert.succeeds()
 
-      val result = await(underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)).value).right.value
+      val result = await(underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now)).value).right.value
 
       checkSuccessResult()(result)
     }
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturnNone
-      val result = await(underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)).value).left.value.toNonEmptyList.toList
+      val result = await(underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now)).value).left.value.toNonEmptyList.toList
       result.head shouldBe s"No submission found for application ${applicationData.id.value}"
     }
 
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       val nonStandardApp = applicationData.copy(access = Ropc(Set.empty))
-      val result         = await(underTest.process(nonStandardApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)).value).left.value.toNonEmptyList.toList
+      val result         = await(underTest.process(nonStandardApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now)).value).left.value.toNonEmptyList.toList
       result.head shouldBe "Must be a standard new journey application"
     }
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       val oldJourneyApp = applicationData.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
-      val result        = await(underTest.process(oldJourneyApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)).value).left.value.toNonEmptyList.toList
+      val result        = await(underTest.process(oldJourneyApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now)).value).left.value.toNonEmptyList.toList
       result.head shouldBe "Must be a standard new journey application"
     }
 
     "return an error if the application state is not PendingResponsibleIndividualVerification or PendingGatekeeperApproval" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       val pendingGKApprovalApp = applicationData.copy(state = ApplicationState.pendingRequesterVerification(requesterEmail.text, requesterName, "12345678"))
-      val result               = await(underTest.process(pendingGKApprovalApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)).value).left.value.toNonEmptyList.toList
+      val result               = await(underTest.process(pendingGKApprovalApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now)).value).left.value.toNonEmptyList.toList
       result.head shouldBe "App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state"
     }
 

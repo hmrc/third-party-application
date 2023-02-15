@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorRemoved
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
@@ -26,6 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.CollaboratorRemovedV2
 
 class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
     with ApplicationRepositoryMockModule
@@ -60,11 +60,11 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
       )
     )
 
-    val timestamp = FixedClock.now
+    val timestamp = FixedClock.instant
 
     val adminsToEmail = Set(adminEmail, devEmail)
 
-    val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), collaborator, adminsToEmail, timestamp)
+    val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), collaborator, adminsToEmail, FixedClock.now)
 
     def checkSuccessResult(expectedActor: Actor)(result: CommandHandler.CommandSuccess) = {
       inside(result) { case (app, events) =>
@@ -72,12 +72,11 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
         val event = events.head
 
         inside(event) {
-          case CollaboratorRemoved(_, appId, eventDateTime, actor, evtCollaborator, notifyCollaborator: Boolean, verifiedAdminsToEmail) =>
+          case CollaboratorRemovedV2(_, appId, eventDateTime, actor, evtCollaborator, verifiedAdminsToEmail) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
             evtCollaborator shouldBe collaborator
-            notifyCollaborator shouldBe app.collaborators.contains(removeCollaborator.collaborator)
             verifiedAdminsToEmail shouldBe removeCollaborator.adminsToEmail
         }
       }

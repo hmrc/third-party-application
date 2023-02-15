@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+// package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
+// import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
-object ActorType extends Enumeration {
-  type ActorType = Value
-  val COLLABORATOR, GATEKEEPER, SCHEDULED_JOB = Value
+// object ActorType extends Enumeration {
+//   type ActorType = Value
+//   val COLLABORATOR, GATEKEEPER, SCHEDULED_JOB = Value
 
-  implicit val format = EnumJson.enumFormat(ActorType)
-}
+//   implicit val format = EnumJson.enumFormat(ActorType)
+// }
 
-case class OldActor(id: String, actorType: ActorType.ActorType)
+// case class OldActor(id: String, actorType: ActorType.ActorType)
 
-object OldActor {
-  import play.api.libs.json.{Json, OFormat}
+// object OldActor {
+//   import play.api.libs.json.{Json, OFormat}
 
-  implicit val format: OFormat[OldActor] = Json.format[OldActor]
-}
+//   implicit val format: OFormat[OldActor] = Json.format[OldActor]
+// }

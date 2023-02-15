@@ -27,7 +27,6 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -37,6 +36,8 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActor
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActors
 
 @Singleton
 class GatekeeperService @Inject() (
@@ -108,7 +109,7 @@ class GatekeeperService @Inject() (
     for {
       app    <- fetchApp(applicationId)
       newApp <- applicationRepository.save(approve(app))
-      _      <- insertStateHistory(newApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL), gatekeeperUserId, GATEKEEPER, applicationRepository.save)
+      _      <- insertStateHistory(newApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL), OldStyleActors.GatekeeperUser(gatekeeperUserId), applicationRepository.save)
       _       = logger.info(s"UPLIFT04: Approved uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
                   s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} gatekeeperUserId:$gatekeeperUserId")
       _       = auditService.auditGatekeeperAction(gatekeeperUserId, newApp, ApplicationUpliftApproved)
@@ -129,7 +130,7 @@ class GatekeeperService @Inject() (
     for {
       app    <- fetchApp(applicationId)
       newApp <- applicationRepository.save(reject(app))
-      _      <- insertStateHistory(app, TESTING, Some(PENDING_GATEKEEPER_APPROVAL), request.gatekeeperUserId, GATEKEEPER, applicationRepository.save, Some(request.reason))
+      _      <- insertStateHistory(app, TESTING, Some(PENDING_GATEKEEPER_APPROVAL), OldStyleActors.GatekeeperUser(request.gatekeeperUserId), applicationRepository.save, Some(request.reason))
       _       = logger.info(s"UPLIFT03: Rejected uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
                   s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} reason:${request.reason}" +
                   s" gatekeeperUserId:${request.gatekeeperUserId}")
@@ -203,12 +204,11 @@ class GatekeeperService @Inject() (
       snapshotApp: ApplicationData,
       newState: State,
       oldState: Option[State],
-      requestedBy: String,
-      actorType: ActorType.ActorType,
+      actor: OldStyleActor,
       rollback: ApplicationData => Any,
       notes: Option[String] = None
     ): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, OldActor(requestedBy, actorType), oldState, notes, LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, notes, LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)

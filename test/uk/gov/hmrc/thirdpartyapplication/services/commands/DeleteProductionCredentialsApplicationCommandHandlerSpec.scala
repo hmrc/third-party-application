@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
@@ -41,7 +41,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
     val actor                                = Actors.ScheduledJob(jobId)
     val reasons                              = "reasons description text"
     val app                                  = anApplicationData(appId, environment = Environment.SANDBOX, state = ApplicationState.testing)
-    val ts                                   = FixedClock.now
+    val ts                                   = FixedClock.instant
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
     val underTest = new DeleteProductionCredentialsApplicationCommandHandler(
@@ -78,9 +78,9 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
               appId shouldBe appId
               evtActor shouldBe actor
               eventDateTime shouldBe ts
-              oldAppState shouldBe app.state.name
-              newAppState shouldBe State.DELETED
-              requestingAdminEmail shouldBe actor.jobId
+              oldAppState shouldBe app.state.name.toString()
+              newAppState shouldBe State.DELETED.toString()
+              requestingAdminEmail.text shouldBe actor.jobId
               requestingAdminName shouldBe actor.jobId
           }
         )
@@ -97,7 +97,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
     val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, ts)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
-      StateHistoryRepoMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.Insert.succeeds()
       ApiGatewayStoreMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
@@ -109,7 +109,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
     }
 
     "return an error when app is NOT in testing state" in new Setup {
-      val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, ts)
+      val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, FixedClock.now)
 
       val result = await(underTest.process(app.copy(state = app.state.copy(name = State.PRE_PRODUCTION)), cmd).value).left.value.toNonEmptyList.toList
 

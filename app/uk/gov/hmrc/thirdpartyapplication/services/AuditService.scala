@@ -32,14 +32,14 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Actor.getActorIdentifier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, UpdateApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ApplicationDeleted, _}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.OverrideFlag
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 
 // scalastyle:off number.of.types
 
@@ -71,7 +71,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
     audit(action, AuditHelper.gatekeeperActionDetails(app) ++ extra, tags)
   }
 
-  def applyEvents(app: ApplicationData, events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+  def applyEvents(app: ApplicationData, events: NonEmptyList[AbstractApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(app, e)
       case NonEmptyList(e, tail) => applyEvent(app, e).flatMap(_ => applyEvents(app, NonEmptyList.fromListUnsafe(tail)))
@@ -79,17 +79,17 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   }
 
   // scalastyle:off cyclomatic.complexity
-  private def applyEvent(app: ApplicationData, event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+  private def applyEvent(app: ApplicationData, event: AbstractApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     event match {
       case evt: ApplicationApprovalRequestDeclined => auditApplicationApprovalRequestDeclined(app, evt)
       case evt: ClientSecretAddedV2                => auditClientSecretAdded(app, evt)
-      case evt: ClientSecretRemoved                => auditClientSecretRemoved(app, evt)
-      case evt: CollaboratorAdded                  => auditAddCollaborator(app, evt)
-      case evt: CollaboratorRemoved                => auditRemoveCollaborator(app, evt)
+      case evt: ClientSecretRemovedV2              => auditClientSecretRemoved(app, evt)
+      case evt: CollaboratorAddedV2                => auditAddCollaborator(app, evt)
+      case evt: CollaboratorRemovedV2              => auditRemoveCollaborator(app, evt)
       case evt: ApplicationDeletedByGatekeeper     => auditApplicationDeletedByGatekeeper(app, evt)
-      case evt: ApiSubscribed                      => auditApiSubscribed(app, evt)
-      case evt: ApiUnsubscribed                    => auditApiUnsubscribed(app, evt)
-      case evt: RedirectUrisUpdated                => auditRedirectUrisUpdated(app, evt)
+      case evt: ApiSubscribedV2                    => auditApiSubscribed(app, evt)
+      case evt: ApiUnsubscribedV2                  => auditApiUnsubscribed(app, evt)
+      case evt: RedirectUrisUpdatedV2              => auditRedirectUrisUpdated(app, evt)
       case _                                       => Future.successful(None)
     }
   }
@@ -113,30 +113,30 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .value
   }
 
-  private def auditAddCollaborator(app: ApplicationData, evt: CollaboratorAdded)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+  private def auditAddCollaborator(app: ApplicationData, evt: CollaboratorAddedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     liftF(audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(evt.collaborator)))
       .toOption
       .value
   }
 
-  private def auditRemoveCollaborator(app: ApplicationData, evt: CollaboratorRemoved)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+  private def auditRemoveCollaborator(app: ApplicationData, evt: CollaboratorRemovedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     liftF(audit(CollaboratorRemovedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorRemovedAudit.details(evt.collaborator)))
       .toOption
       .value
   }
 
-  private def auditApiSubscribed(app: ApplicationData, evt: ApiSubscribed)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditApiSubscribed(app: ApplicationData, evt: ApiSubscribedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       Subscribed,
-      Map("applicationId" -> app.id.value.toString, "apiVersion" -> evt.version, "apiContext" -> evt.context)
+      Map("applicationId" -> app.id.value.toString, "apiVersion" -> evt.version.value, "apiContext" -> evt.context.value)
     ))
       .toOption
       .value
 
-  private def auditApiUnsubscribed(app: ApplicationData, evt: ApiUnsubscribed)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditApiUnsubscribed(app: ApplicationData, evt: ApiUnsubscribedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       Unsubscribed,
-      Map("applicationId" -> app.id.value.toString, "apiVersion" -> evt.version, "apiContext" -> evt.context)
+      Map("applicationId" -> app.id.value.toString, "apiVersion" -> evt.version.value, "apiContext" -> evt.context.value)
     ))
       .toOption
       .value
@@ -149,7 +149,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .toOption
       .value
 
-  private def auditClientSecretRemoved(app: ApplicationData, evt: ClientSecretRemoved)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditClientSecretRemoved(app: ApplicationData, evt: ClientSecretRemovedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       ClientSecretRemovedAudit,
       Map("applicationId" -> app.id.value.toString, "removedClientSecret" -> evt.clientSecretId)
@@ -157,7 +157,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .toOption
       .value
 
-  private def auditRedirectUrisUpdated(app: ApplicationData, evt: RedirectUrisUpdated)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditRedirectUrisUpdated(app: ApplicationData, evt: RedirectUrisUpdatedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       AppRedirectUrisChanged,
       Map("applicationId" -> app.id.value.toString, "newRedirectUris" -> evt.newRedirectUris.mkString(","))

@@ -21,17 +21,18 @@ import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationDeletedByGatekeeper
 
 object ApplicationDeletedByGatekeeperNotification {
 
   def sendAdviceEmail(
       emailConnector: EmailConnector,
       app: ApplicationData,
-      event: UpdateApplicationEvent.ApplicationDeletedByGatekeeper
+      event: ApplicationDeletedByGatekeeper
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     val recipients = getRecipients(app)

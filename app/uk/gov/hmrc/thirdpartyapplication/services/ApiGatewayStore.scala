@@ -28,10 +28,13 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.AbstractApplicationEvent
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationDeletedByGatekeeper
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationDeleted
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ProductionCredentialsApplicationDeleted
 
 trait ApiGatewayStore extends EitherTHelper[String] {
 
@@ -47,30 +50,21 @@ trait ApiGatewayStore extends EitherTHelper[String] {
 
   def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded]
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+  // TODO - remove this method and extract to command handlers
+  def applyEvents(events: NonEmptyList[AbstractApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }
 
-  private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+  private def applyEvent(event: AbstractApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     event match {
-      case evt: UpdateApplicationEvent with ApplicationDeletedBase => deleteApplication(evt)
-      case _                                                       => Future.successful(None)
+      case ApplicationDeleted(_,_,_,_,_,wso2ApplicationName,_)                      => deleteApplication(wso2ApplicationName).map(Some(_))
+      case ApplicationDeletedByGatekeeper(_,_,_,_,_,wso2ApplicationName,_,_)        => deleteApplication(wso2ApplicationName).map(Some(_))
+      case ProductionCredentialsApplicationDeleted(_,_,_,_,_,wso2ApplicationName,_) => deleteApplication(wso2ApplicationName).map(Some(_))
+      case _                                                                        => Future.successful(None)
     }
-  }
-
-  import cats.instances.future.catsStdInstancesForFuture
-
-  private def deleteApplication(event: UpdateApplicationEvent with ApplicationDeletedBase)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
-    (
-      for {
-        result <- liftF(deleteApplication(event.wso2ApplicationName)(hc))
-      } yield result
-    )
-      .toOption
-      .value
   }
 }
 

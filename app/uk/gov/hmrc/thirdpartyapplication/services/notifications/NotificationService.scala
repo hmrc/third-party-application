@@ -23,21 +23,32 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import cats.data.NonEmptyList
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 
 @Singleton
 class NotificationService @Inject() (emailConnector: EmailConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
+    def getActorAsString(actor: Actor): String =
+    actor match {
+      case Actors.AppCollaborator(emailAddress) => emailAddress.text
+      case Actors.GatekeeperUser(userId)     => userId
+      case Actors.ScheduledJob(jobId)        => jobId
+      case Actors.Unknown                    => "Unknown"
+    }
+
+
   // scalastyle:off cyclomatic.complexity method.length
-  def sendNotifications(app: ApplicationData, events: List[UpdateApplicationEvent with TriggersNotification])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
-    def sendNotification(app: ApplicationData, event: UpdateApplicationEvent with TriggersNotification) = {
+  def sendNotifications(app: ApplicationData, events: NonEmptyList[AbstractApplicationEvent])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
+    def sendNotification(app: ApplicationData, event: AbstractApplicationEvent) = {
       event match {
         case evt: ClientSecretAddedV2                               => ClientSecretAddedNotification.sendClientSecretAddedNotification(emailConnector, app, evt)
-        case evt: ClientSecretRemoved                               => ClientSecretRemovedNotification.sendClientSecretRemovedNotification(emailConnector, app, evt)
-        case evt: ProductionAppNameChanged                          => ProductionAppNameChangedNotification.sendAdviceEmail(emailConnector, app, evt)
+        case evt: ClientSecretRemovedV2                             => ClientSecretRemovedNotification.sendClientSecretRemovedNotification(emailConnector, app, evt)
+        case evt: ProductionAppNameChangedEvent                     => ProductionAppNameChangedNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ProductionAppPrivacyPolicyLocationChanged         => StandardChangedNotification.sendAdviceEmail(
             emailConnector,
             app,
@@ -80,12 +91,13 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
         case evt: ResponsibleIndividualDidNotVerify                 => ResponsibleIndividualDidNotVerifyNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ProductionCredentialsApplicationDeleted           => ProductionCredentialsApplicationDeletedNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ApplicationDeletedByGatekeeper                    => ApplicationDeletedByGatekeeperNotification.sendAdviceEmail(emailConnector, app, evt)
-        case evt: CollaboratorAdded                                 => CollaboratorAddedNotification.sendCollaboratorAddedNotification(emailConnector, app, evt)
-        case evt: CollaboratorRemoved                               => CollaboratorRemovedNotification.sendCollaboratorRemovedNotification(emailConnector, app, evt)
+        case evt: CollaboratorAddedV2                               => CollaboratorAddedNotification.sendCollaboratorAddedNotification(emailConnector, app, evt)
+        case evt: CollaboratorRemovedV2                             => CollaboratorRemovedNotification.sendCollaboratorRemovedNotification(emailConnector, app, evt)
+        case _ => Future.successful(HasSucceeded)
       }
     }
 
-    Future.sequence(events.map(evt => sendNotification(app, evt)))
+    Future.sequence(events.toList.map(evt => sendNotification(app, evt)))
   }
   // scalastyle:on cyclomatic.complexity method.length
 
