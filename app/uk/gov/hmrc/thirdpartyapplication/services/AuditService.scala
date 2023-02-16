@@ -32,6 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Actor.getActorIdentifier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, UpdateApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -93,7 +94,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   // scalastyle:on cyclomatic.complexity
 
   private def auditApplicationDeletedByGatekeeper(app: ApplicationData, evt: ApplicationDeletedByGatekeeper)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
-    liftF(auditGatekeeperAction(evt.actor.user, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail)))
+    liftF(auditGatekeeperAction(getActorIdentifier(evt.actor), app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail)))
       .toOption
       .value
   }

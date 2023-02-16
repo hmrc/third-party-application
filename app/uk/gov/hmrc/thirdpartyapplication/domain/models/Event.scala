@@ -68,7 +68,7 @@ object UpdateApplicationEvent {
       .and[CollaboratorActor](ActorType.COLLABORATOR.toString)
       .format
 
-    def getCollaboratorAsString(actor: Actor): String =
+    def getActorIdentifier(actor: Actor): String =
       actor match {
         case CollaboratorActor(emailAddress) => emailAddress
         case GatekeeperUserActor(userId)     => userId
@@ -114,7 +114,7 @@ object UpdateApplicationEvent {
       id: UpdateApplicationEvent.Id,
       applicationId: ApplicationId,
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: CollaboratorActor,
+      actor: Actor,
       clientSecretId: String,
       clientSecretName: String
     ) extends UpdateApplicationEvent with TriggersNotification
@@ -127,7 +127,7 @@ object UpdateApplicationEvent {
       id: UpdateApplicationEvent.Id,
       applicationId: ApplicationId,
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: CollaboratorActor,
+      actor: Actor,
       clientSecretId: String,
       clientSecretName: String
     ) extends UpdateApplicationEvent with TriggersNotification
@@ -363,7 +363,7 @@ object UpdateApplicationEvent {
       id: UpdateApplicationEvent.Id,
       applicationId: ApplicationId,
       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-      actor: GatekeeperUserActor,
+      actor: Actor,
       clientId: ClientId,
       wso2ApplicationName: String,
       reasons: String,

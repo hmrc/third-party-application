@@ -42,23 +42,23 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
         case evt: ProductionAppPrivacyPolicyLocationChanged         => StandardChangedNotification.sendAdviceEmail(
             emailConnector,
             app,
-            getCollaboratorAsString(evt.actor),
+            getActorIdentifier(evt.actor),
             "privacy policy URL",
             PrivacyPolicyLocation.describe(evt.oldLocation),
             PrivacyPolicyLocation.describe(evt.newLocation)
           )
         case evt: ProductionLegacyAppPrivacyPolicyLocationChanged   =>
-          StandardChangedNotification.sendAdviceEmail(emailConnector, app, getCollaboratorAsString(evt.actor), "privacy policy URL", evt.oldUrl, evt.newUrl)
+          StandardChangedNotification.sendAdviceEmail(emailConnector, app, getActorIdentifier(evt.actor), "privacy policy URL", evt.oldUrl, evt.newUrl)
         case evt: ProductionAppTermsConditionsLocationChanged       => StandardChangedNotification.sendAdviceEmail(
             emailConnector,
             app,
-            getCollaboratorAsString(evt.actor),
+            getActorIdentifier(evt.actor),
             "terms and conditions URL",
             TermsAndConditionsLocation.describe(evt.oldLocation),
             TermsAndConditionsLocation.describe(evt.newLocation)
           )
         case evt: ProductionLegacyAppTermsConditionsLocationChanged =>
-          StandardChangedNotification.sendAdviceEmail(emailConnector, app, getCollaboratorAsString(evt.actor), "terms and conditions URL", evt.oldUrl, evt.newUrl)
+          StandardChangedNotification.sendAdviceEmail(emailConnector, app, getActorIdentifier(evt.actor), "terms and conditions URL", evt.oldUrl, evt.newUrl)
         case evt: ResponsibleIndividualVerificationStarted          => VerifyResponsibleIndividualUpdateNotification.sendAdviceEmail(emailConnector, evt)
         case evt: ResponsibleIndividualChanged                      => ResponsibleIndividualChangedNotification.sendAdviceEmail(
             emailConnector,
