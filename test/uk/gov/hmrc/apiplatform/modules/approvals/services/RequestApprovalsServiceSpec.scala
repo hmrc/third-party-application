@@ -179,7 +179,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         }
       }
 
-      "update submission state but not app state if production app requester is RI" in new Setup {
+      "update submission state but not app state if production app requester is RI and submission passed" in new Setup {
         namingServiceReturns(ValidName)
         val prodApplication = anApplicationData(applicationId, productionState(requestedByEmail))
         ApplicationRepoMock.Save.thenReturn(prodApplication)
@@ -201,10 +201,42 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         AuditServiceMock.Audit.verifyCalled()
         val savedAppData = ApplicationRepoMock.Save.verifyCalled()
         savedAppData.state.name shouldBe State.PRODUCTION
+        ApplicationServiceMock.AddTermsOfUseAcceptance.verifyCalledWith(prodApplication.id)
 
         val updatedSubmission = SubmissionsServiceMock.Store.verifyCalledWith()
         updatedSubmission.status should matchPattern {
           case Submission.Status.Granted(_, requestedByEmail) =>
+        }
+      }
+
+      "update submission state but not app state if production app requester is RI and submission has warnings" in new Setup {
+        namingServiceReturns(ValidName)
+        val prodApplication = anApplicationData(applicationId, productionState(requestedByEmail))
+        ApplicationRepoMock.Save.thenReturn(prodApplication)
+        StateHistoryRepoMock.Insert.thenAnswer()
+        AuditServiceMock.Audit.thenReturnSuccess()
+        SubmissionsServiceMock.Store.thenReturn()
+        ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(prodApplication)
+        EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
+        ResponsibleIndividualVerificationServiceMock.CreateNewVerification.thenCreateNewVerification()
+
+        val answersWithoutRIDetails            = sampleAnswersToQuestions
+          .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("Yes"))
+          .updated(testQuestionIdsOfInterest.identifyYourOrganisationId, SingleChoiceAnswer("My organisation is outside the UK and doesn't have any of these"))
+        val answeredSubmissionWithoutRIDetails = testPassAnsweredSubmission.hasCompletelyAnsweredWith(answersWithoutRIDetails)
+
+        val result = await(underTest.requestApproval(prodApplication, answeredSubmissionWithoutRIDetails, requestedByName, requestedByEmail))
+
+        result shouldBe RequestApprovalsService.ApprovalAccepted(prodApplication)
+        StateHistoryRepoMock.Insert.verifyNeverCalled()
+        AuditServiceMock.Audit.verifyCalled()
+        val savedAppData = ApplicationRepoMock.Save.verifyCalled()
+        savedAppData.state.name shouldBe State.PRODUCTION
+        ApplicationServiceMock.AddTermsOfUseAcceptance.verifyNeverCalled()
+
+        val updatedSubmission = SubmissionsServiceMock.Store.verifyCalledWith()
+        updatedSubmission.status should matchPattern {
+          case Submission.Status.Warnings(_, requestedByEmail) =>
         }
       }
 

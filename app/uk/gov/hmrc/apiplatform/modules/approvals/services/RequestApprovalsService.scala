@@ -193,10 +193,11 @@ class RequestApprovalsService @Inject() (
         importantSubmissionData             = getImportantSubmissionData(submission, requestedByName, requestedByEmailAddress).get // Safe at this point
         updatedApp                          = deriveNewAppDetails(originalApp, importantSubmissionData)
         savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
-        _                                  <- ET.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, updatedApp, submission, requestedByName, requestedByEmailAddress))
         submittedSubmission                 = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
         updatedSubmission                   = deriveNewSubmissionsDetails(isRequesterTheResponsibleIndividual, submittedSubmission)
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
+        addTouAcceptance                    = isRequesterTheResponsibleIndividual && savedSubmission.status.isGranted
+        _                                  <- ET.liftF(addTouAcceptanceIfNeeded(addTouAcceptance, updatedApp, submission, requestedByName, requestedByEmailAddress))
         _                                  <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
         _                                   = logCompletedApprovalRequest(savedApp)
         _                                  <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
@@ -211,13 +212,13 @@ class RequestApprovalsService @Inject() (
   }
 
   private def addTouAcceptanceIfNeeded(
-      isRequesterTheResponsibleIndividual: Boolean,
+      addTouAcceptance: Boolean,
       appWithoutTouAcceptance: ApplicationData,
       submission: Submission,
       requestedByName: String,
       requestedByEmailAddress: String
     ): Future[ApplicationData] = {
-    if (isRequesterTheResponsibleIndividual) {
+    if (addTouAcceptance) {
       val responsibleIndividual = ResponsibleIndividual.build(requestedByName, requestedByEmailAddress)
       val acceptance            = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submission.id, submission.latestInstance.index)
       applicationService.addTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
