@@ -21,6 +21,7 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 sealed trait QuestionnaireState
@@ -108,6 +109,18 @@ object Submission {
         changeLatestInstance(_.copy(statusHistory = NonEmptyList(newStatus, currentHistory.tail)))(s)
       } else {
         changeLatestInstance(_.copy(statusHistory = newStatus :: currentHistory))(s)
+      }
+    }
+
+  val automaticallyMark: (LocalDateTime, String) => Submission => Submission = (timestamp, name) =>
+    s => {
+      val markedSubmission: MarkedSubmission = MarkedSubmission(s, MarkAnswer.markSubmission(s))
+      if (markedSubmission.isPass) {
+        Submission.grant(timestamp, name)(s)
+      } else if (markedSubmission.isFail) {
+        Submission.fail(timestamp, name)(s)
+      } else {
+        Submission.warnings(timestamp, name)(s)
       }
     }
 

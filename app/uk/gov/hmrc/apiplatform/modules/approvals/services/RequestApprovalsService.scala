@@ -25,8 +25,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{MarkedSubmission, Submission}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, SubmissionDataExtracter}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
@@ -163,17 +163,10 @@ class RequestApprovalsService @Inject() (
         existingSubmission: Submission
       ): Submission = {
 
-      val markedSubmission: MarkedSubmission = MarkedSubmission(existingSubmission, MarkAnswer.markSubmission(existingSubmission))
       if (isRequesterTheResponsibleIndividual) {
-        if (markedSubmission.isPass) {
-          Submission.grant(LocalDateTime.now(clock), requestedByEmailAddress)(markedSubmission.submission)
-        } else if (markedSubmission.isFail) {
-          Submission.fail(LocalDateTime.now(clock), requestedByEmailAddress)(markedSubmission.submission)
-        } else {
-          Submission.warnings(LocalDateTime.now(clock), requestedByEmailAddress)(markedSubmission.submission)
-        }
+        Submission.automaticallyMark(LocalDateTime.now(clock), requestedByEmailAddress)(existingSubmission)
       } else {
-        Submission.pendingResponsibleIndividual(LocalDateTime.now(clock), requestedByEmailAddress)(markedSubmission.submission)
+        Submission.pendingResponsibleIndividual(LocalDateTime.now(clock), requestedByEmailAddress)(existingSubmission)
       }
     }
 
