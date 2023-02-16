@@ -1486,8 +1486,8 @@ class ApplicationControllerSpec
       val e: AbstractApplicationEvent =
         ApiSubscribedV2(EventId.random, ApplicationId.random, FixedClock.instant, Actors.AppCollaborator("bob".toLaxEmail), "bob".asContext, "1.0".asVersion)
 
-      val txt = Json.toJson(e).toString.replace("447", "447Z")
-
+      val txt = Json.toJson(e).toString
+      println(txt)
       val e2 = Json.parse(txt).as[AbstractApplicationEvent]
 
       println(e2)

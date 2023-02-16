@@ -50,6 +50,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActors
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
@@ -3106,7 +3107,7 @@ class ApplicationRepositoryISpec
     def saveHistoryStatePair(appId: ApplicationId, oldState: State, newState: State, timeOffset: Duration)     = saveHistory(appId, Some(oldState), newState, timeOffset)
     def saveHistory(appId: ApplicationId, maybeOldState: Option[State], newState: State, timeOffset: Duration) = {
       val stateHistory =
-        StateHistory(appId, newState, OldActor("actor", ActorType.GATEKEEPER), maybeOldState, None, FixedClock.now.plus(timeOffset).truncatedTo(ChronoUnit.MILLIS))
+        StateHistory(appId, newState, OldStyleActors.GatekeeperUser("actor"), maybeOldState, None, FixedClock.now.plus(timeOffset).truncatedTo(ChronoUnit.MILLIS))
       await(stateHistoryRepository.insert(stateHistory))
       stateHistory
     }

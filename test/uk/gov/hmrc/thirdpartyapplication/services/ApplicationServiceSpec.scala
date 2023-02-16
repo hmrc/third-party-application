@@ -366,7 +366,7 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, OldStyleActors.GatekeeperUser(""), changedAt = FixedClock.now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, OldStyleActors.Unknown, changedAt = FixedClock.now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -397,7 +397,7 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, OldStyleActors.GatekeeperUser(""), changedAt = FixedClock.now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, OldStyleActors.Unknown, changedAt = FixedClock.now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(

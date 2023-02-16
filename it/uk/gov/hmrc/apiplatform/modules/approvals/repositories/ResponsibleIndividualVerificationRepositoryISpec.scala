@@ -20,39 +20,23 @@ import cats.data.NonEmptyList
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
-  ResponsibleIndividualToUVerification,
-  ResponsibleIndividualUpdateVerification,
-  ResponsibleIndividualVerification,
-  ResponsibleIndividualVerificationId
-}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationEvent
 import uk.gov.hmrc.utils.ServerBaseISpec
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationEvent.{
-  ApplicationDeleted,
-  ProductionAppNameChanged,
-  ProductionCredentialsApplicationDeleted,
-  ResponsibleIndividualChanged,
-  ResponsibleIndividualDeclined,
-  ResponsibleIndividualDeclinedUpdate,
-  ResponsibleIndividualDidNotVerify,
-  ResponsibleIndividualSet,
-  ResponsibleIndividualVerificationStarted
-}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.util.UUID
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 class ResponsibleIndividualVerificationRepositoryISpec
     extends ServerBaseISpec
@@ -225,58 +209,59 @@ class ResponsibleIndividualVerificationRepositoryISpec
         EventId.random,
         appId,
         appName,
-        now,
+      FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "ms admin",
         "admin@example.com".toLaxEmail,
         "ri name",
         "ri@example.com".toLaxEmail,
-        submissionId,
+        SubmissionId(submissionId.value),
         submissionIndex,
-        ResponsibleIndividualVerificationId.random
+        ResponsibleIndividualVerificationId.random.value
       )
 
     def buildResponsibleIndividualChangedEvent(submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualChanged(
         EventId.random,
         appId,
-        now,
+      FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr Previous Ri",
         "previous-ri@example.com".toLaxEmail,
         "Mr New Ri",
         "ri@example.com".toLaxEmail,
-        submissionId,
+       SubmissionId(submissionId.value),
         submissionIndex,
         code,
         "Mr Admin",
         "admin@example.com".toLaxEmail
       )
 
-    def buildResponsibleIndividualDeclinedEvent(submissionId: Submission.Id, submissionIndex: Int) =
+    def buildResponsibleIndividualDeclinedEvent(submissionId: Submission.Id, submissionIndex: Int) = {
       ResponsibleIndividualDeclined(
         EventId.random,
         appId,
-        now,
+      FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr New Ri",
         "ri@example.com".toLaxEmail,
-        submissionId,
-        submissionIndex,
+       SubmissionId(submissionId.value),
+         submissionIndex,
         code,
         "Mr Admin",
         "admin@example.com".toLaxEmail
       )
+    }
 
     def buildResponsibleIndividualDeclinedUpdateEvent(submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualDeclinedUpdate(
         EventId.random,
         appId,
-        now,
+      FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr New Ri",
         "ri@example.com".toLaxEmail,
-        submissionId,
+       SubmissionId(submissionId.value),
         submissionIndex,
         code,
         "Mr Admin",
@@ -287,11 +272,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ResponsibleIndividualDidNotVerify(
         EventId.random,
         appId,
-        now,
+      FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr New Ri",
         "ri@example.com".toLaxEmail,
-        submissionId,
+       SubmissionId(submissionId.value),
         submissionIndex,
         code,
         "Mr Admin",
@@ -302,11 +287,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ResponsibleIndividualSet(
         EventId.random,
         appId,
-        now,
+      FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr New Ri",
         "ri@example.com".toLaxEmail,
-        submissionId,
+       SubmissionId(submissionId.value),
         submissionIndex,
         code,
         "Mr Admin",
@@ -317,7 +302,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ApplicationDeleted(
         EventId.random,
         applicationId,
-        now,
+      FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         ClientId("clientId"),
         "wso2ApplicationName",
@@ -328,7 +313,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ProductionCredentialsApplicationDeleted(
         EventId.random,
         applicationId,
-        now,
+      FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         ClientId("clientId"),
         "wso2ApplicationName",
@@ -373,7 +358,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
 
-      val expectedRecord = buildRiVerificationRecord(event.verificationId, submissionId, submissionIndex)
+      val expectedRecord = buildRiVerificationRecord(ResponsibleIndividualVerificationId(event.verificationId), submissionId, submissionIndex)
       await(repository.findAll) mustBe List(expectedRecord)
     }
 
@@ -390,11 +375,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.save(existingRecordNotMatchingSubmissionIndex))
 
       val updateTimestamp = FixedClock.now.plusHours(1)
-      val event           = buildRiVerificationStartedEvent(existingSubmissionId, existingSubmissionIndex).copy(eventDateTime = updateTimestamp)
+      val event           = buildRiVerificationStartedEvent(existingSubmissionId, existingSubmissionIndex).copy(eventDateTime = updateTimestamp.toInstant(ZoneOffset.UTC))
 
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
 
-      val expectedNewRecord = existingRecordMatchingSubmission.copy(id = event.verificationId, createdOn = updateTimestamp)
+      val expectedNewRecord = existingRecordMatchingSubmission.copy(id = ResponsibleIndividualVerificationId(event.verificationId), createdOn = updateTimestamp)
       await(repository.findAll).toSet mustBe Set(existingRecordNotMatchingSubmissionId, existingRecordNotMatchingSubmissionIndex, expectedNewRecord)
     }
 
@@ -519,10 +504,10 @@ class ResponsibleIndividualVerificationRepositoryISpec
     }
 
     "handle other events correctly" in {
-      val event = ProductionAppNameChanged(
+      val event = ProductionAppNameChangedEvent(
         EventId.random,
         applicationId,
-        FixedClock.now,
+        FixedClock.instant,
         Actors.GatekeeperUser("gkuser@example.com"),
         "app name",
         "new name",

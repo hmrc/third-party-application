@@ -19,25 +19,19 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, OldActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationEvent.ApplicationStateChanged
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
-import cats.data.NonEmptyList
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{OldStyleActor, OldStyleActors}
 
 class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport
     with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
 
   private val repository = new StateHistoryRepository(mongoComponent)
-  val actor: OldActor    = OldActor("admin@example.com", ActorType.COLLABORATOR)
+  val actor: OldStyleActor    = OldStyleActors.Collaborator("admin@example.com")
 
   "insert" should {
 
@@ -127,29 +121,19 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
     }
   }
 
-  "applyEvents" should {
+  "insert" should {
 
-    "apply a ApplicationStateChanged event" in {
+    "insert a StateHistory record" in {
       val requesterEmail  = "bill.badger@rupert.com"
-      val requesterName   = "bill badger"
       val appId           = ApplicationId.random
       val ts              = FixedClock.now
-      val actor: OldActor = OldActor(requesterEmail, ActorType.COLLABORATOR)
-      val event           = ApplicationStateChanged(
-        EventId.random,
-        appId,
-        ts,
-        Actors.AppCollaborator(requesterEmail.toLaxEmail),
-        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
-        State.PENDING_GATEKEEPER_APPROVAL,
-        requesterName,
-        requesterEmail
-      )
+      val actor: OldStyleActor = OldStyleActors.Collaborator(requesterEmail)
+
       val stateHistory    = StateHistory(appId, State.PENDING_GATEKEEPER_APPROVAL, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
 
-      val result = await(repository.applyEvents(NonEmptyList.one(event)))
+      val result = await(repository.insert(stateHistory))
 
-      result shouldBe HasSucceeded
+      result shouldBe stateHistory
       val savedStateHistories = await(repository.findAll)
       savedStateHistories shouldBe List(stateHistory)
     }

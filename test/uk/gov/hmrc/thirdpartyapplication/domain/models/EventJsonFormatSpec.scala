@@ -18,26 +18,27 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.{Format, Json, OFormat}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor, GatekeeperUserActor, ScheduledJobActor}
+import play.api.libs.json.Json
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
+
 
 class EventJsonFormatSpec extends AnyWordSpec with Matchers {
 
   "Actor" should {
     "read to correctJson Format for Collaborator" in {
-      val collaborator: Actor = CollaboratorActor("some value")
+      val collaborator: Actor =  Actors.AppCollaborator(LaxEmailAddress("some value"))
       val collaboratorJson    = Json.toJson(collaborator).toString()
       collaboratorJson shouldBe """{"email":"some value","actorType":"COLLABORATOR"}"""
     }
 
     "read to correctJson Format for GatekeeperUserActor" in {
-      val gkUserActor: Actor = GatekeeperUserActor("some value")
+      val gkUserActor: Actor = Actors.GatekeeperUser("some value")
       val gkUserJson         = Json.toJson(gkUserActor).toString()
       gkUserJson shouldBe """{"user":"some value","actorType":"GATEKEEPER"}"""
     }
 
     "read to correctJson Format for ScheduledJobActor" in {
-      val scheduledJobActor: Actor = ScheduledJobActor("some value")
+      val scheduledJobActor: Actor = Actors.ScheduledJob("some value")
       val scheduledJobActorJson    = Json.toJson(scheduledJobActor).toString()
       scheduledJobActorJson shouldBe """{"jobId":"some value","actorType":"SCHEDULED_JOB"}"""
     }
