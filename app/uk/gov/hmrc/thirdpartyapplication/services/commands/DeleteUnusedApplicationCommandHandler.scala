@@ -38,6 +38,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.DeleteUnusedApplication
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
 
 @Singleton
 class DeleteUnusedApplicationCommandHandler @Inject() (

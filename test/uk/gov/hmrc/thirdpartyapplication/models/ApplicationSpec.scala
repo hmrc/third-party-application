@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
 
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples with CollaboratorTestData {
 

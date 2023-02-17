@@ -33,6 +33,7 @@ import java.time.LocalDateTime
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import java.time.Instant
 import java.time.ZoneOffset
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
 
 trait CommandHandler {
   import CommandHandler._

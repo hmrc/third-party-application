@@ -25,7 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{OldStyleActor, OldStyleActors}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{OldStyleActor, OldStyleActors}
 
 class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport
     with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {

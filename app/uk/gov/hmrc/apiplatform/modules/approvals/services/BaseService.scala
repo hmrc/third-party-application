@@ -24,7 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActor
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActor
 
 abstract class BaseService(stateHistoryRepository: StateHistoryRepository, clock: Clock)(implicit ec: ExecutionContext) {
 

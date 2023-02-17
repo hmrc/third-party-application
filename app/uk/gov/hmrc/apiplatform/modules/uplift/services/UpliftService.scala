@@ -32,8 +32,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AuditHelper, AuditService}
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActor
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActor
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 @Singleton

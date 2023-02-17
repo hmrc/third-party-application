@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
 
 class UpliftServiceSpec extends AsyncHmrcSpec {
 

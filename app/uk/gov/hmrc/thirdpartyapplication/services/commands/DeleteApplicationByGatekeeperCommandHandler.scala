@@ -32,6 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDe
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
 
 @Singleton
 class DeleteApplicationByGatekeeperCommandHandler @Inject() (
