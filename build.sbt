@@ -76,6 +76,10 @@ lazy val microservice = Project(appName, file("."))
     )
   )
 
+  commands += Command.command("testAll") { state =>
+      "test" :: "it:test" :: state
+  }
+  
 def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
   tests map { test =>
     Group(

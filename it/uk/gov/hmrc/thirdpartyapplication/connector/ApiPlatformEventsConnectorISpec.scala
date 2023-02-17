@@ -27,11 +27,11 @@ import uk.gov.hmrc.thirdpartyapplication.component.stubs.ApiPlatformEventsStub
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.utils.ServerBaseISpec
 
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import uk.gov.hmrc.thirdpartyapplication.util.WiremockSugar
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
-class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar {
+class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar with ApplicationLogger {
 
   override protected def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
@@ -43,8 +43,8 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
     val inTest      = app.injector.instanceOf[ApiPlatformEventsConnector]
     val appId       = ApplicationId.random
     val eventId     = EventId.random
-    val now         = FixedClock.now
-    val nowAsString = now.format(DateTimeFormatter.ISO_DATE_TIME)
+    val now         = FixedClock.instant
+    val nowAsString = DateTimeFormatter.ISO_INSTANT.format(now)
     val email       = "someemail@somewhere.com"
     val userName    = "bobby fingers"
 
@@ -60,8 +60,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
     "sending event to api-platform-events" should {
 
       "send correct json for ApiSubscribed" in new Setup {
-
-        val apiSubscribed = ApiSubscribedV2(eventId, appId, now.toInstant(ZoneOffset.UTC), Actors.AppCollaborator(email.toLaxEmail), ApiContext("contextValue"), ApiVersion("1.0"))
+        val apiSubscribed = ApiSubscribedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), ApiContext("contextValue"), ApiVersion("1.0"))
 
         val expectedApiSubscribedRequestBody =
           s"""
@@ -81,7 +80,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
 
       "send correct json for ApiUnSubscribed" in new Setup {
 
-        val apiUnSubscribed = ApiUnsubscribedV2(eventId, appId, now.toInstant(ZoneOffset.UTC), Actors.AppCollaborator(email.toLaxEmail),  ApiContext("contextValue"), ApiVersion("1.0"))
+        val apiUnSubscribed = ApiUnsubscribedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail),  ApiContext("contextValue"), ApiVersion("1.0"))
 
         val expectedApiUnSubscribedRequestBody =
           s"""
@@ -101,7 +100,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
 
       "send correct json for ClientSecretAddedV2" in new Setup {
 
-        val clientSecretAddedV2 = ClientSecretAddedV2(eventId, appId, now.toInstant(ZoneOffset.UTC), Actors.AppCollaborator(email.toLaxEmail), "secretName", "secretValue")
+        val clientSecretAddedV2 = ClientSecretAddedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), "secretName", "secretValue")
 
         val expectedClientSecretAddedV2RequestBody =
           s"""
@@ -109,8 +108,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
              |"id" : "${eventId.value.toString}",
              |"applicationId" : "${appId.value.toString}",
              |"eventDateTime": "$nowAsString",
-             |"actor" : {"email" :"$email",
-             |"actorType": "COLLABORATOR"},
+             |"actor" : {"email" :"$email"},
              |"clientSecretId" :"secretName",
              |"clientSecretName" : "secretValue",
              |"eventType" : "CLIENT_SECRET_ADDED_V2"
@@ -121,7 +119,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
 
       "send correct json for ClientSecretRemovedV2" in new Setup {
 
-        val clientSecretAddedV2 = ClientSecretRemovedV2(eventId, appId, now.toInstant(ZoneOffset.UTC), Actors.AppCollaborator(email.toLaxEmail), "secretName", "secretValue")
+        val clientSecretAddedV2 = ClientSecretRemovedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), "secretName", "secretValue")
 
         val expectedClientSecretAddedV2RequestBody =
           s"""
@@ -129,8 +127,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
              |"id" : "${eventId.value.toString}",
              |"applicationId" : "${appId.value.toString}",
              |"eventDateTime": "$nowAsString",
-             |"actor" : {"email" :"$email",
-             |"actorType": "COLLABORATOR"},
+             |"actor" : {"email" :"$email"},
              |"clientSecretId" :"secretName",
              |"clientSecretName" : "secretValue",
              |"eventType" : "CLIENT_SECRET_REMOVED_V2"
@@ -142,7 +139,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
       "send correct json for ApplicationDeletedByGatekeeper" in new Setup {
         val clientId                       = ClientId.random
         val applicationDeletedByGatekeeper =
-          ApplicationDeletedByGatekeeper(eventId, appId, now.toInstant(ZoneOffset.UTC), Actors.GatekeeperUser(userName), clientId, "wso2ApplicationName", "Some reason", email.toLaxEmail)
+          ApplicationDeletedByGatekeeper(eventId, appId, FixedClock.instant, Actors.GatekeeperUser(userName), clientId, "wso2ApplicationName", "Some reason", email.toLaxEmail)
 
         val applicationDeletedByGatekeeperRequestBody =
           s"""
@@ -150,8 +147,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
              |"id" : "${eventId.value.toString}",
              |"applicationId" : "${appId.value.toString}",
              |"eventDateTime": "$nowAsString",
-             |"actor" : {"user" :"$userName",
-             |"actorType": "GATEKEEPER"},
+             |"actor" : {"user" :"$userName"},
              |"clientId" : "${clientId.value}",
              |"wso2ApplicationName" : "wso2ApplicationName",
              |"reasons" : "Some reason",
