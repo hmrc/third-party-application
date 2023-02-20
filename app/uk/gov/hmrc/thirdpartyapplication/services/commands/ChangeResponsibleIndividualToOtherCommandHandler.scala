@@ -158,7 +158,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         newResponsibleIndividual.emailAddress,
         cmd.timestamp,
         submissionId = riVerification.submissionId,
-        submissionIndex = riVerification.submissionInstance,
+        submissionIndex = riVerification.submissionInstance
         ))
         _     <- E.liftF(responsibleIndividualVerificationRepository.deleteResponsibleIndividualVerification(cmd.code))
         evt    = asEventsUpdate(currentRI)
