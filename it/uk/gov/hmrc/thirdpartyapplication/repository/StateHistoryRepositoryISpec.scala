@@ -25,13 +25,15 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{OldStyleActor, OldStyleActors}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport
     with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
 
   private val repository = new StateHistoryRepository(mongoComponent)
-  val actor: OldStyleActor    = OldStyleActors.Collaborator("admin@example.com")
+  val actor: Actor    = Actors.AppCollaborator("admin@example.com".toLaxEmail)
 
   "insert" should {
 
@@ -124,10 +126,10 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
   "insert" should {
 
     "insert a StateHistory record" in {
-      val requesterEmail  = "bill.badger@rupert.com"
+      val requesterEmail  = "bill.badger@rupert.com".toLaxEmail
       val appId           = ApplicationId.random
       val ts              = FixedClock.now
-      val actor: OldStyleActor = OldStyleActors.Collaborator(requesterEmail)
+      val actor: Actor = Actors.AppCollaborator(requesterEmail)
 
       val stateHistory    = StateHistory(appId, State.PENDING_GATEKEEPER_APPROVAL, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
 

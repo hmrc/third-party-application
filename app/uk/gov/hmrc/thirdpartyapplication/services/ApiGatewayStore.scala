@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.AbstractApplicationEvent
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationDeletedByGatekeeper
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationDeleted
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ProductionCredentialsApplicationDeleted
@@ -51,14 +51,14 @@ trait ApiGatewayStore extends EitherTHelper[String] {
   def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded]
 
   // TODO - remove this method and extract to command handlers
-  def applyEvents(events: NonEmptyList[AbstractApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+  def applyEvents(events: NonEmptyList[ApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }
 
-  private def applyEvent(event: AbstractApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+  private def applyEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     event match {
       case ApplicationDeleted(_,_,_,_,_,wso2ApplicationName,_)                      => deleteApplication(wso2ApplicationName).map(Some(_))
       case ApplicationDeletedByGatekeeper(_,_,_,_,_,wso2ApplicationName,_,_)        => deleteApplication(wso2ApplicationName).map(Some(_))

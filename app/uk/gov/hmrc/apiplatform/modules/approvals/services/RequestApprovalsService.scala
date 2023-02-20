@@ -39,7 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, AuditHelper, AuditService}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 object RequestApprovalsService {
   sealed trait RequestApprovalResult
@@ -193,5 +193,5 @@ class RequestApprovalsService @Inject() (
     auditService.audit(ApplicationUpliftRequested, AuditHelper.applicationId(applicationId) ++ Map("newApplicationName" -> updatedApp.name))
 
   private def writeStateHistory(snapshotApp: ApplicationData, requestedByEmailAddress: LaxEmailAddress) =
-    insertStateHistory(snapshotApp, snapshotApp.state.name, Some(TESTING), OldStyleActors.Collaborator(requestedByEmailAddress.text), (a: ApplicationData) => applicationRepository.save(a))
+    insertStateHistory(snapshotApp, snapshotApp.state.name, Some(TESTING), Actors.AppCollaborator(requestedByEmailAddress), (a: ApplicationData) => applicationRepository.save(a))
 }

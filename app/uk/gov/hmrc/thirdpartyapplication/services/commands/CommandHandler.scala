@@ -28,12 +28,11 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.AbstractApplicationEvent
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import java.time.LocalDateTime
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import java.time.Instant
 import java.time.ZoneOffset
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
 
 trait CommandHandler {
   import CommandHandler._
@@ -44,7 +43,7 @@ trait CommandHandler {
 }
 
 object CommandHandler {
-  type CommandSuccess  = (ApplicationData, NonEmptyList[AbstractApplicationEvent])
+  type CommandSuccess  = (ApplicationData, NonEmptyList[ApplicationEvent])
   type CommandFailures = NonEmptyChain[String]
 
   // type Result  = Future[Either[CommandFailures, CommandSuccess]]
@@ -59,12 +58,7 @@ object CommandHandler {
         id = EventId.random,
         applicationId = stateHistory.applicationId,
         eventDateTime = stateHistory.changedAt.instant,
-        actor = stateHistory.actor match {
-          case OldStyleActors.Collaborator(id) => Actors.AppCollaborator(LaxEmailAddress(id))
-          case OldStyleActors.GatekeeperUser(id) => Actors.GatekeeperUser(id)
-          case OldStyleActors.ScheduledJob(id) => Actors.ScheduledJob(id)
-          case OldStyleActors.Unknown => Actors.Unknown
-        },
+        actor = stateHistory.actor,
         stateHistory.previousState.fold("")(_.toString),
         stateHistory.state.toString,
         requestingAdminName,

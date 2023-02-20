@@ -38,7 +38,7 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
     Apply[Validated[CommandFailures, *]].map(isStandardAccess(app))(_ => ())
   }
 
-  private def asEvents(app: ApplicationData, cmd: UpdateRedirectUris): NonEmptyList[AbstractApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: UpdateRedirectUris): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       RedirectUrisUpdatedV2(
         id = EventId.random,

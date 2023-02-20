@@ -62,7 +62,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
     ) { case (_, _, instigator, _, _) => instigator }
   }
 
-  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: LaxEmailAddress): NonEmptyList[AbstractApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: LaxEmailAddress): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ResponsibleIndividualVerificationStarted(
         id = EventId.random,
@@ -74,7 +74,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
         requestingAdminEmail = getRequester(app, cmd.instigator),
         responsibleIndividualName = cmd.riName,
         responsibleIndividualEmail = cmd.riEmail,
-        SubmissionId(submission.id.value),
+        submission.id,
         submission.latestInstance.index,
         ResponsibleIndividualVerificationId.random.value
       )

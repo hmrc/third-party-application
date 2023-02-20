@@ -66,14 +66,14 @@ class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
   }
 
   // TODO - remove this method and extract to command handlers
-  def applyEvents(events: NonEmptyList[AbstractApplicationEvent]): Future[HasSucceeded] = {
+  def applyEvents(events: NonEmptyList[ApplicationEvent]): Future[HasSucceeded] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }
 
-  private def applyEvent(event: AbstractApplicationEvent): Future[HasSucceeded] = {
+  private def applyEvent(event: ApplicationEvent): Future[HasSucceeded] = {
     event match {
       case _ : ApplicationDeleted                       => deleteAllByApplicationId(event.applicationId)
       case _ : ApplicationDeletedByGatekeeper           => deleteAllByApplicationId(event.applicationId)

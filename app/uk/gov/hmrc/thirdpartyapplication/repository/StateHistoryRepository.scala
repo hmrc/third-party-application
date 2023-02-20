@@ -94,7 +94,7 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
   }
 
   def deleteByApplicationId(applicationId: ApplicationId): Future[HasSucceeded] = {
-    collection.deleteOne(equal("applicationId", Codecs.toBson(applicationId)))
+    collection.deleteOne(equal("applicationId", Codecs.toBson(applicationId)))  // TODO - deleteMany ???
       .toFuture()
       .map(_ => HasSucceeded)
   }

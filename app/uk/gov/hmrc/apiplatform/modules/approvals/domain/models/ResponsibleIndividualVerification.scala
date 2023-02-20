@@ -23,15 +23,15 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, ResponsibleIndividualVerificationState}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
 sealed trait ResponsibleIndividualVerification {
   def id: ResponsibleIndividualVerificationId
   def applicationId: ApplicationId
-  def submissionId: Submission.Id
+  def submissionId: SubmissionId
   def submissionInstance: Int
   def applicationName: String
   def createdOn: LocalDateTime
@@ -55,7 +55,7 @@ object ResponsibleIndividualVerification {
 case class ResponsibleIndividualToUVerification(
     id: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random,
     applicationId: ApplicationId,
-    submissionId: Submission.Id,
+    submissionId: SubmissionId,
     submissionInstance: Int,
     applicationName: String,
     createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
@@ -65,7 +65,7 @@ case class ResponsibleIndividualToUVerification(
 case class ResponsibleIndividualUpdateVerification(
     id: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random,
     applicationId: ApplicationId,
-    submissionId: Submission.Id,
+    submissionId: SubmissionId,
     submissionInstance: Int,
     applicationName: String,
     createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),

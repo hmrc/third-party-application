@@ -24,7 +24,6 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationWithDetails
 }
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
@@ -34,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
 
@@ -83,7 +83,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     val riVerification            = ResponsibleIndividualToUVerification(
       riVerificationId,
       application.id,
-      Submission.Id.random,
+      SubmissionId.random,
       0,
       appName,
       FixedClock.now

@@ -39,7 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditService
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 object GrantApprovalsService {
   sealed trait Result
@@ -161,7 +161,7 @@ class GrantApprovalsService @Inject() (
   }
 
   private def writeStateHistory(snapshotApp: ApplicationData, name: String) =
-    insertStateHistory(snapshotApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL), OldStyleActors.GatekeeperUser(name), (a: ApplicationData) => applicationRepository.save(a))
+    insertStateHistory(snapshotApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL), Actors.GatekeeperUser(name), (a: ApplicationData) => applicationRepository.save(a))
 
   private def sendEmails(app: ApplicationData)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found")).toLaxEmail

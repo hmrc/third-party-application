@@ -36,7 +36,7 @@ import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
@@ -712,7 +712,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       newResponsibleIndividualName: String,
       newResponsibleIndividualEmail: LaxEmailAddress,
       eventDateTime: LocalDateTime,
-      submissionId: Submission.Id,
+      submissionId: SubmissionId,
       submissionIndex: Int
     ): Future[ApplicationData] =
     updateApplication(
@@ -737,7 +737,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       requestingAdminName: String,
       requestingAdminEmail: LaxEmailAddress,
       timeOfChange: LocalDateTime,
-      submissionId: Submission.Id,
+      submissionId: SubmissionId,
       submissionIndex: Int
     ): Future[ApplicationData] =
     updateApplication(
@@ -762,7 +762,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       responsibleIndividualName: String,
       responsibleIndividualEmail: LaxEmailAddress,
       eventDateTime: LocalDateTime,
-      submissionId: Submission.Id,
+      submissionId: SubmissionId,
       submissionIndex: Int
     ): Future[ApplicationData] =
     updateApplication(

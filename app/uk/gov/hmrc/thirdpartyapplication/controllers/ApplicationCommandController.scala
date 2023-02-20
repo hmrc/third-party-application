@@ -30,10 +30,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.AbstractApplicationEvent
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 
 object ApplicationCommandController {
-  case class DispatchResult(applicationResponse: ApplicationResponse, events: List[AbstractApplicationEvent])
+  case class DispatchResult(applicationResponse: ApplicationResponse, events: List[ApplicationEvent])
   
   object DispatchResult {
     import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._

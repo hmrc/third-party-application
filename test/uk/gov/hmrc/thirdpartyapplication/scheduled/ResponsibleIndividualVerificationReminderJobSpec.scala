@@ -24,7 +24,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
@@ -78,7 +78,7 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
       EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
       EmailConnectorMock.SendVerifyResponsibleIndividualReminderToAdmin.thenReturnSuccess()
 
-      val verification = ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, Submission.Id.random, 0, appName, FixedClock.now)
+      val verification = ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, SubmissionId.random, 0, appName, FixedClock.now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
       ResponsibleIndividualVerificationRepositoryMock.UpdateState.thenReturnSuccess()
 

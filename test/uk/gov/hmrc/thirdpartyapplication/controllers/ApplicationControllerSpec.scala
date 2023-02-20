@@ -61,9 +61,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.AbstractApplicationEvent
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApiSubscribedV2
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -243,7 +240,7 @@ class ApplicationControllerSpec
   "confirmSetupComplete" should {
     "call applicationService correctly" in new Setup {
       val applicationId               = ApplicationId.random
-      val emailAddress                = "bob@example.com"
+      val emailAddress                = "bob@example.com".toLaxEmail
       val confirmSetupCompleteRequest = ConfirmSetupCompleteRequest(emailAddress)
 
       when(underTest.applicationService.confirmSetupComplete(eqTo(applicationId), eqTo(emailAddress))).thenReturn(successful(mock[ApplicationData]))
@@ -1479,21 +1476,22 @@ class ApplicationControllerSpec
     }
   }
 
-  "temp" should {
-    "dump some json" in {
-      import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
+  // "temp" should {
+  //   "dump some json" in {
+  //     import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
       
-      val e: AbstractApplicationEvent =
-        ApiSubscribedV2(EventId.random, ApplicationId.random, FixedClock.instant, Actors.AppCollaborator("bob".toLaxEmail), "bob".asContext, "1.0".asVersion)
+  //     val e: ApplicationEvent =
+  //       ApiSubscribedV2(EventId.random, ApplicationId.random, FixedClock.instant, Actors.AppCollaborator("bob".toLaxEmail), "bob".asContext, "1.0".asVersion)
 
-      val txt = Json.toJson(e).toString
-      println(txt)
-      val e2 = Json.parse(txt).as[AbstractApplicationEvent]
+  //     Json.toJson[Actor](e.actor).toString
+  //     val txt = Json.toJson(e).toString
+  //     println(txt)
+  //     val e2 = Json.parse(txt).as[ApplicationEvent]
 
-      println(e2)
+  //     println(e2)
 
-      e shouldBe e2
-    }
+  //     e shouldBe e2
+  //   }
 
-  }
+  // }
 }

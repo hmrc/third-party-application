@@ -36,8 +36,8 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActor
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 
 @Singleton
 class GatekeeperService @Inject() (
@@ -109,7 +109,7 @@ class GatekeeperService @Inject() (
     for {
       app    <- fetchApp(applicationId)
       newApp <- applicationRepository.save(approve(app))
-      _      <- insertStateHistory(newApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL), OldStyleActors.GatekeeperUser(gatekeeperUserId), applicationRepository.save)
+      _      <- insertStateHistory(newApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL), Actors.GatekeeperUser(gatekeeperUserId), applicationRepository.save)
       _       = logger.info(s"UPLIFT04: Approved uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
                   s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} gatekeeperUserId:$gatekeeperUserId")
       _       = auditService.auditGatekeeperAction(gatekeeperUserId, newApp, ApplicationUpliftApproved)
@@ -130,7 +130,7 @@ class GatekeeperService @Inject() (
     for {
       app    <- fetchApp(applicationId)
       newApp <- applicationRepository.save(reject(app))
-      _      <- insertStateHistory(app, TESTING, Some(PENDING_GATEKEEPER_APPROVAL), OldStyleActors.GatekeeperUser(request.gatekeeperUserId), applicationRepository.save, Some(request.reason))
+      _      <- insertStateHistory(app, TESTING, Some(PENDING_GATEKEEPER_APPROVAL), Actors.GatekeeperUser(request.gatekeeperUserId), applicationRepository.save, Some(request.reason))
       _       = logger.info(s"UPLIFT03: Rejected uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
                   s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} reason:${request.reason}" +
                   s" gatekeeperUserId:${request.gatekeeperUserId}")
@@ -204,7 +204,7 @@ class GatekeeperService @Inject() (
       snapshotApp: ApplicationData,
       newState: State,
       oldState: Option[State],
-      actor: OldStyleActor,
+      actor: Actor,
       rollback: ApplicationData => Any,
       notes: Option[String] = None
     ): Future[StateHistory] = {

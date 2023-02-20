@@ -51,7 +51,7 @@ class SubscribeToApiCommandHandler @Inject() (
     ) { case _ => () }
   }
 
-  private def asEvents(app: ApplicationData, cmd: SubscribeToApi): NonEmptyList[AbstractApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: SubscribeToApi): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApiSubscribedV2(
         id = EventId.random,

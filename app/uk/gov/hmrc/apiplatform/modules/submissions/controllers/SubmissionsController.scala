@@ -58,7 +58,7 @@ class SubmissionsController @Inject() (
     }
   }
 
-  def fetchSubmission(id: Submission.Id) = Action.async { _ =>
+  def fetchSubmission(id: SubmissionId) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
 
     val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
@@ -90,7 +90,7 @@ class SubmissionsController @Inject() (
     service.fetchLatestMarkedSubmission(applicationId).map(_.fold(failed, success))
   }
 
-  def recordAnswers(submissionId: Submission.Id, questionId: Question.Id) = Action.async(parse.json) { implicit request =>
+  def recordAnswers(submissionId: SubmissionId, questionId: Question.Id) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
     val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))

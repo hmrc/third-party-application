@@ -22,7 +22,6 @@ import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
@@ -50,7 +49,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
@@ -2528,7 +2528,7 @@ class ApplicationRepositoryISpec
         LaxEmailAddress("bob@example.com")
       )
       val acceptanceDate          = FixedClock.now
-      val submissionId            = Submission.Id.random
+      val submissionId            = SubmissionId.random
       val acceptance              = TermsOfUseAcceptance(
         responsibleIndividual,
         acceptanceDate,
@@ -3002,7 +3002,7 @@ class ApplicationRepositoryISpec
     val applicationId = ApplicationId.random
 
     val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
-    val submissionId            = Submission.Id.random
+    val submissionId            = SubmissionId.random
     val submissionIndex         = 1
     val importantSubmissionData = ImportantSubmissionData(
       None,
@@ -3052,7 +3052,7 @@ class ApplicationRepositoryISpec
     val riName                  = "Mr Responsible"
     val riEmail                 = "ri@example.com".toLaxEmail
     val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
-    val submissionId            = Submission.Id.random
+    val submissionId            = SubmissionId.random
     val submissionIndex         = 1
     val importantSubmissionData = ImportantSubmissionData(
       None,
@@ -3107,7 +3107,7 @@ class ApplicationRepositoryISpec
     def saveHistoryStatePair(appId: ApplicationId, oldState: State, newState: State, timeOffset: Duration)     = saveHistory(appId, Some(oldState), newState, timeOffset)
     def saveHistory(appId: ApplicationId, maybeOldState: Option[State], newState: State, timeOffset: Duration) = {
       val stateHistory =
-        StateHistory(appId, newState, OldStyleActors.GatekeeperUser("actor"), maybeOldState, None, FixedClock.now.plus(timeOffset).truncatedTo(ChronoUnit.MILLIS))
+        StateHistory(appId, newState, Actors.GatekeeperUser("actor"), maybeOldState, None, FixedClock.now.plus(timeOffset).truncatedTo(ChronoUnit.MILLIS))
       await(stateHistoryRepository.insert(stateHistory))
       stateHistory
     }

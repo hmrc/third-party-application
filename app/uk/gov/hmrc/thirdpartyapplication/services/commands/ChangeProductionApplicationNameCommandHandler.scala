@@ -55,7 +55,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
     ) { case _ => app }
   }
 
-  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationName): NonEmptyList[AbstractApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationName): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ProductionAppNameChangedEvent(
         id = EventId.random,

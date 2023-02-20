@@ -32,7 +32,6 @@ import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier,
 import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
@@ -58,7 +57,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -195,7 +194,7 @@ class ApplicationServiceSpec
         }
       )
       val updateRedirectUris                  = UpdateRedirectUris(
-        actor = Actors.GatekeeperUser("Gatekeeper Admin"),
+        actor = Actors.GatekeeperUser(loggedInUser.text),
         oldRedirectUris = List.empty,
         newRedirectUris = newRedirectUris,
         timestamp = FixedClock.now
@@ -237,7 +236,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, OldStyleActors.Collaborator(loggedInUser.text), changedAt = FixedClock.now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = FixedClock.now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -271,7 +270,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, OldStyleActors.Collaborator(loggedInUser.text), changedAt = FixedClock.now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = FixedClock.now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -297,7 +296,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, OldStyleActors.Collaborator(loggedInUser.text), changedAt = FixedClock.now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = FixedClock.now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -327,7 +326,7 @@ class ApplicationServiceSpec
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(
         createdApp.application.id,
         State.PRODUCTION,
-        OldStyleActors.Collaborator(loggedInUser.text),
+        Actors.AppCollaborator(loggedInUser),
         changedAt = FixedClock.now
       ))
       AuditServiceMock.Audit.verifyCalledWith(
@@ -366,7 +365,7 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, OldStyleActors.Unknown, changedAt = FixedClock.now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = FixedClock.now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -397,7 +396,7 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, OldStyleActors.Unknown, changedAt = FixedClock.now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = FixedClock.now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -483,7 +482,7 @@ class ApplicationServiceSpec
       val termsOfUseAcceptance = TermsOfUseAcceptance(
         ResponsibleIndividual.build("bob", "bob@example.com"),
         FixedClock.now,
-        Submission.Id.random,
+        SubmissionId.random,
         0
       )
       val appData              = anApplicationData(ApplicationId.random)
@@ -526,7 +525,7 @@ class ApplicationServiceSpec
       stateHistory.state shouldBe State.PRODUCTION
       stateHistory.previousState shouldBe Some(State.PRE_PRODUCTION)
       stateHistory.applicationId shouldBe applicationId
-      stateHistory.actor shouldBe OldStyleActors.Collaborator(requestedByEmail)
+      stateHistory.actor shouldBe Actors.AppCollaborator(requestedByEmail)
     }
 
     "not update application in wrong state" in new Setup {

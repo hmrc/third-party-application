@@ -42,12 +42,12 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
   val productionToken       = Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   val requestedByName  = "john smith"
-  val requestedByEmail = "john.smith@example.com" // Used for old actor : TODO
+  val requestedByEmail = "john.smith@example.com".toLaxEmail
   val grantLength      = 547
 
   def anApplicationData(
       applicationId: ApplicationId,
-      state: ApplicationState = productionState(requestedByEmail),
+      state: ApplicationState = productionState(requestedByEmail.text),
       collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
       access: Access = Standard(),
       rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),

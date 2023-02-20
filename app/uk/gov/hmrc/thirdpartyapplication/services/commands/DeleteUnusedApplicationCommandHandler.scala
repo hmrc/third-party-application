@@ -38,7 +38,6 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.DeleteUnusedApplication
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
 
 @Singleton
 class DeleteUnusedApplicationCommandHandler @Inject() (
@@ -64,7 +63,7 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
       .map(matchesAuthorisationKey(cmd)) { case _ => app }
   }
 
-  private def asEvents(app: ApplicationData, cmd: DeleteUnusedApplication, stateHistory: StateHistory): NonEmptyList[AbstractApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: DeleteUnusedApplication, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
     val clientId = app.tokens.production.clientId
     NonEmptyList.of(
       ApplicationDeleted(
@@ -85,7 +84,7 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
-     stateHistory = StateHistory(app.id, State.DELETED, OldStyleActors.ScheduledJob(cmd.jobId), Some(app.state.name), changedAt = cmd.timestamp)
+     stateHistory = StateHistory(app.id, State.DELETED, Actors.ScheduledJob(cmd.jobId), Some(app.state.name), changedAt = cmd.timestamp)
       events    = asEvents(savedApp, cmd, stateHistory)
       _        <- deleteApplication(app, stateHistory, cmd.timestamp, cmd.jobId, cmd.jobId, events)
     } yield (savedApp, events)

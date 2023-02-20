@@ -63,13 +63,13 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
   @deprecated("remove after client is no longer using the old endpoint")
   def sendApiUnsubscribedEvent(event: ApiUnsubscribedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiUnsubscribedUri)(hc)
 
-  def sendApplicationEvent(event: AbstractApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, updateApplicationUri)(hc)
+  def sendApplicationEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, updateApplicationUri)(hc)
 
-  private def postEvent(event: AbstractApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
+  private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
 
     if (config.enabled) {
-      http.POST[AbstractApplicationEvent, ErrorOr[Unit]](
+      http.POST[ApplicationEvent, ErrorOr[Unit]](
         addEventURI(uri),
         event
       ).map {

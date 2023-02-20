@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
 @Singleton
 class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
@@ -113,7 +113,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         ))
       savedApp         <- E.liftF(applicationRepository.updateApplicationState(app.id, State.PENDING_GATEKEEPER_APPROVAL, cmd.timestamp, requesterEmail.text, requesterName))
       _                <- E.liftF(responsibleIndividualVerificationRepository.deleteResponsibleIndividualVerification(cmd.code))
-      stateHistory      = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, OldStyleActors.Collaborator(requesterEmail.text), Some(app.state.name), changedAt = cmd.timestamp)
+      stateHistory      = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator(requesterEmail), Some(app.state.name), changedAt = cmd.timestamp)
       _                <- E.liftF(stateHistoryRepository.insert(stateHistory))
       (riEvt, stateEvt) = asEvents(stateHistory, responsibleIndividual, requesterEmail, requesterName)
     } yield (savedApp, NonEmptyList(riEvt, List(stateEvt)))

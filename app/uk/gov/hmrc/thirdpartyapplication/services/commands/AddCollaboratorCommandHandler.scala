@@ -49,7 +49,7 @@ class AddCollaboratorCommandHandler @Inject() (
     }
   }
 
-  private def asEvents(app: ApplicationData, cmd: AddCollaborator): NonEmptyList[AbstractApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: AddCollaborator): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       CollaboratorAddedV2(
         id = EventId.random,

@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.AbstractApplicationEvent
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.RedirectUrisUpdatedV2
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
 
@@ -43,11 +43,15 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
 
     import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.{CommandFailures, CommandSuccess}
 
-    val mockEvents                  = NonEmptyList.of(mock[AbstractApplicationEvent])
+    val mockEvents                  = NonEmptyList.of(mock[ApplicationEvent])
     val mockErrors: CommandFailures = NonEmptyChain("Bang")
     val E                           = EitherTHelper.make[CommandFailures]
 
     object Dispatch {
+      def succeedsWith(applicationData: ApplicationData) = {
+        val success: CommandSuccess = (applicationData, mockEvents)
+        when(aMock.dispatch(*[ApplicationId], *)(*)).thenReturn(E.pure(success))
+      }
 
       def thenReturnSuccessOn(cmd: ApplicationCommand)(applicationData: ApplicationData) = {
         val success: CommandSuccess = (applicationData, mockEvents)
@@ -66,7 +70,7 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand])(*)).thenReturn(E.pure(success))
       }
 
-      def thenReturnSuccess(applicationData: ApplicationData, event: AbstractApplicationEvent, moreEvents: AbstractApplicationEvent*) = {
+      def thenReturnSuccess(applicationData: ApplicationData, event: ApplicationEvent, moreEvents: ApplicationEvent*) = {
         val success: CommandSuccess = (applicationData, NonEmptyList.of(event, moreEvents: _*))
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand])(*)).thenReturn(E.pure(success))
       }

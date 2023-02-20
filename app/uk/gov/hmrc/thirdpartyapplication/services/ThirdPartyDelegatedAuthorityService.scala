@@ -48,14 +48,14 @@ class ThirdPartyDelegatedAuthorityService @Inject() (
   }
 
   // TODO - remove this method and extract to command handlers
-  def applyEvents(events: NonEmptyList[AbstractApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+  def applyEvents(events: NonEmptyList[ApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }
 
-  private def applyEvent(event: AbstractApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+  private def applyEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     event match {
       case e : ApplicationDeleted                                  => revokeApplicationAuthorities(e.clientId)
       case e : ApplicationDeletedByGatekeeper                      => revokeApplicationAuthorities(e.clientId)

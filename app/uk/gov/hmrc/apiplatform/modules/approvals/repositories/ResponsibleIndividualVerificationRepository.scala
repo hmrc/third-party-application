@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 
 @Singleton
 class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
@@ -108,7 +109,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     deleteSubmissionInstance(submission.id, submission.latestInstance.index)
   }
 
-  def deleteSubmissionInstance(id: Submission.Id, index: Int): Future[HasSucceeded] = {
+  def deleteSubmissionInstance(id: SubmissionId, index: Int): Future[HasSucceeded] = {
     collection.deleteOne(
       and(
         equal("submissionId", Codecs.toBson(id)),
@@ -143,7 +144,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
 
   
   // TODO - remove this method and extract to command handlers
-  def applyEvents(events: NonEmptyList[AbstractApplicationEvent]): Future[HasSucceeded] = {
+  def applyEvents(events: NonEmptyList[ApplicationEvent]): Future[HasSucceeded] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
@@ -156,7 +157,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     val verification = ResponsibleIndividualUpdateVerification(
       ResponsibleIndividualVerificationId(evt.verificationId),
       evt.applicationId,
-      Submission.Id(evt.submissionId.value),
+      SubmissionId(evt.submissionId.value),
       evt.submissionIndex,
       evt.applicationName,
       LocalDateTime.ofInstant(evt.eventDateTime, ZoneOffset.UTC),
@@ -166,7 +167,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       ResponsibleIndividualVerificationState.INITIAL
     )
 
-    deleteSubmissionInstance(Submission.Id(evt.submissionId.value), evt.submissionIndex)
+    deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
       .flatMap(_ => save(verification))
       .map(_ => HasSucceeded)
   }
@@ -175,14 +176,14 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     delete(ResponsibleIndividualVerificationId(code))
   }
 
-  private def applyEvent(event: AbstractApplicationEvent): Future[HasSucceeded] = {
+  private def applyEvent(event: ApplicationEvent): Future[HasSucceeded] = {
     event match {
       case evt: ResponsibleIndividualVerificationStarted           => addResponsibleIndividualVerification(evt)
       case evt: ResponsibleIndividualSet                           => deleteResponsibleIndividualVerification(evt.code)
       case evt: ResponsibleIndividualChanged                       => deleteResponsibleIndividualVerification(evt.code)
-      case evt: ResponsibleIndividualDeclined                      => deleteSubmissionInstance(Submission.Id(evt.submissionId.value), evt.submissionIndex)
+      case evt: ResponsibleIndividualDeclined                      => deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
       case evt: ResponsibleIndividualDeclinedUpdate                => deleteResponsibleIndividualVerification(evt.code)
-      case evt: ResponsibleIndividualDidNotVerify                  => deleteSubmissionInstance(Submission.Id(evt.submissionId.value), evt.submissionIndex)
+      case evt: ResponsibleIndividualDidNotVerify                  => deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
       case _ : ApplicationDeleted                                  => deleteAllByApplicationId(event.applicationId)
       case _ : ApplicationDeletedByGatekeeper                      => deleteAllByApplicationId(event.applicationId)
       case _ : ProductionCredentialsApplicationDeleted             => deleteAllByApplicationId(event.applicationId)

@@ -47,6 +47,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with FixedClock
     with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {

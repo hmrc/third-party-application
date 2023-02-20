@@ -33,6 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ChangeResponsibleIndividualToSelf
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
 @Singleton
 class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
@@ -76,7 +77,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
       submission: Submission,
       requesterEmail: LaxEmailAddress,
       requesterName: String
-    ): NonEmptyList[AbstractApplicationEvent] = {
+    ): NonEmptyList[ApplicationEvent] = {
     val previousResponsibleIndividual = getResponsibleIndividual(app).get
 
     NonEmptyList.of(

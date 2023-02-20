@@ -25,8 +25,9 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 
 trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -55,7 +56,7 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
     }
 
     object DeleteSubmissionInstance {
-      def succeeds() = when(aMock.deleteSubmissionInstance(*[Submission.Id], *)).thenReturn(successful(HasSucceeded))
+      def succeeds() = when(aMock.deleteSubmissionInstance(*[SubmissionId], *)).thenReturn(successful(HasSucceeded))
     }
 
     object UpdateState {

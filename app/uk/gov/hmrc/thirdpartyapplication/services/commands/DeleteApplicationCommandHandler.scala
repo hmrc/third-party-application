@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.AbstractApplicationEvent
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 
 trait DeleteApplicationCommandHandler extends CommandHandler {
@@ -44,7 +44,7 @@ trait DeleteApplicationCommandHandler extends CommandHandler {
       timestamp: LocalDateTime,
       requestingAdminEmail: String,
       requestingAdminName: String,
-      events: NonEmptyList[AbstractApplicationEvent]
+      events: NonEmptyList[ApplicationEvent]
     )(implicit hc: HeaderCarrier
     ) = {
     for {

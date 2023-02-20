@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, Inval
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class UpliftControllerSpec
     extends ControllerSpec
@@ -67,12 +68,12 @@ class UpliftControllerSpec
 
   "requestUplift" should {
     val applicationId           = ApplicationId.random
-    val requestedByEmailAddress = "big.boss@example.com"
+    val requestedByEmailAddress = "big.boss@example.com".toLaxEmail
     val requestedName           = "Application Name"
     val upliftRequest           = UpliftApplicationRequest(requestedName, requestedByEmailAddress)
 
     "return updated application if successful" in new Setup {
-      aNewApplicationResponse().copy(state = pendingGatekeeperApprovalState(requestedByEmailAddress))
+      aNewApplicationResponse().copy(state = pendingGatekeeperApprovalState(requestedByEmailAddress.text))
 
       UpliftServiceMock.RequestUplift.thenReturn(UpliftRequested)
 

@@ -4,5 +4,5 @@ GET         /application/:aid/extended                uk.gov.hmrc.apiplatform.mo
 GET         /latestiscompleted/:aid                   uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.latestSubmissionIsCompleted(aid: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 GET         /marked/application/:aid                  uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.fetchLatestMarkedSubmission(aid: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
-GET         /:sid                                     uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.fetchSubmission(sid: Submission.Id)
-POST        /:sid/question/:qid                       uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.recordAnswers(sid: Submission.Id, qid: Question.Id)
+GET         /:sid                                     uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.fetchSubmission(sid: SubmissionId)
+POST        /:sid/question/:qid                       uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.recordAnswers(sid: SubmissionId, qid: Question.Id)

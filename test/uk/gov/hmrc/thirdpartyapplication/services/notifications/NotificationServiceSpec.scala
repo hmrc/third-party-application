@@ -37,6 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import cats.data.NonEmptyList
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec

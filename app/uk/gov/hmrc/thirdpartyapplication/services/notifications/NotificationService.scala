@@ -43,8 +43,8 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
 
 
   // scalastyle:off cyclomatic.complexity method.length
-  def sendNotifications(app: ApplicationData, events: NonEmptyList[AbstractApplicationEvent])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
-    def sendNotification(app: ApplicationData, event: AbstractApplicationEvent) = {
+  def sendNotifications(app: ApplicationData, events: NonEmptyList[ApplicationEvent])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
+    def sendNotification(app: ApplicationData, event: ApplicationEvent) = {
       event match {
         case evt: ClientSecretAddedV2                               => ClientSecretAddedNotification.sendClientSecretAddedNotification(emailConnector, app, evt)
         case evt: ClientSecretRemovedV2                             => ClientSecretRemovedNotification.sendClientSecretRemovedNotification(emailConnector, app, evt)

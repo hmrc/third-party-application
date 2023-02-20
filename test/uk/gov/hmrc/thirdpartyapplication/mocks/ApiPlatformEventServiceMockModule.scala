@@ -23,7 +23,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.thirdpartyapplication.services.ApiPlatformEventService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.AbstractApplicationEvent
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 
 trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
 
@@ -44,7 +44,7 @@ trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatche
         when(aMock.applyEvents(*)(*)).thenReturn(Future.successful(true))
       }
 
-      def verifyCalledWith(events: NonEmptyList[AbstractApplicationEvent]) = {
+      def verifyCalledWith(events: NonEmptyList[ApplicationEvent]) = {
         verify(aMock).applyEvents(eqTo(events))(*)
       }
     }

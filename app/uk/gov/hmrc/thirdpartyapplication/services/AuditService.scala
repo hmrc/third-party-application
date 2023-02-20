@@ -71,7 +71,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
     audit(action, AuditHelper.gatekeeperActionDetails(app) ++ extra, tags)
   }
 
-  def applyEvents(app: ApplicationData, events: NonEmptyList[AbstractApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+  def applyEvents(app: ApplicationData, events: NonEmptyList[ApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(app, e)
       case NonEmptyList(e, tail) => applyEvent(app, e).flatMap(_ => applyEvents(app, NonEmptyList.fromListUnsafe(tail)))
@@ -79,7 +79,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   }
 
   // scalastyle:off cyclomatic.complexity
-  private def applyEvent(app: ApplicationData, event: AbstractApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+  private def applyEvent(app: ApplicationData, event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     event match {
       case evt: ApplicationApprovalRequestDeclined => auditApplicationApprovalRequestDeclined(app, evt)
       case evt: ClientSecretAddedV2                => auditClientSecretAdded(app, evt)

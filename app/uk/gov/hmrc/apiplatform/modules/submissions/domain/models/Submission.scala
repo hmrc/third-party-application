@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.models
 
 import java.time.LocalDateTime
-import java.util.UUID
 
 import cats.data.NonEmptyList
 
@@ -63,17 +62,9 @@ case class QuestionIdsOfInterest(
 object Submission {
   type AnswersToQuestions = Map[Question.Id, ActualAnswer]
 
-  case class Id(value: String) extends AnyVal
-
-  object Id {
-    implicit val format = play.api.libs.json.Json.valueFormat[Id]
-
-    def random: Id = Id(UUID.randomUUID().toString())
-  }
-
   val create: (
       String,
-      Submission.Id,
+      SubmissionId,
       ApplicationId,
       LocalDateTime,
       NonEmptyList[GroupOfQuestionnaires],
@@ -245,7 +236,7 @@ object Submission {
 }
 
 case class Submission(
-    id: Submission.Id,
+    id: SubmissionId,
     applicationId: ApplicationId,
     startedOn: LocalDateTime,
     groups: NonEmptyList[GroupOfQuestionnaires],

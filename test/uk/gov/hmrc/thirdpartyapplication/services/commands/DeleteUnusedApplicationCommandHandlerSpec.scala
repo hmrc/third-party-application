@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import java.nio.charset.StandardCharsets.UTF_8
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.apache.commons.codec.binary.Base64.encodeBase64String

@@ -165,7 +165,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
 
     "return successfully using a GatekeeperUserCollaborator if the logged in user is not a member of the application" in new Setup {
       val applicationData = anApplicationData(applicationId, collaborators = Set.empty)
-      val actor           = Actors.GatekeeperUser("Gatekeeper Admin")
+      val actor           = Actors.GatekeeperUser(loggedInUser.text)
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
 

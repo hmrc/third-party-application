@@ -26,7 +26,7 @@ import cats.data._
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.CommandFailures
@@ -64,10 +64,10 @@ class ApplicationCommandDispatcherSpec
       verifyZeroInteractions(NotificationServiceMock.aMock)
     }
 
-    def verifyServicesCalledWithEvent(expectedEvent: AbstractApplicationEvent) = {
+    def verifyServicesCalledWithEvent(expectedEvent: ApplicationEvent) = {
 
       verify(ApiPlatformEventServiceMock.aMock)
-        .applyEvents(*[NonEmptyList[AbstractApplicationEvent]])(*[HeaderCarrier])
+        .applyEvents(*[NonEmptyList[ApplicationEvent]])(*[HeaderCarrier])
 
       verify(AuditServiceMock.aMock)
         .applyEvents(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)))(*[HeaderCarrier])
@@ -345,7 +345,7 @@ class ApplicationCommandDispatcherSpec
 
     " ChangeResponsibleIndividualToSelf is received" should {
 
-      val cmd = ChangeResponsibleIndividualToSelf(UserId.random, timestamp, requestedByName, requestedByEmail.toLaxEmail)
+      val cmd = ChangeResponsibleIndividualToSelf(UserId.random, timestamp, requestedByName, requestedByEmail)
       val evt = ResponsibleIndividualChangedToSelf(
         EventId.random,
         applicationId,
@@ -353,10 +353,10 @@ class ApplicationCommandDispatcherSpec
         devHubUser,
         "previousRIName",
         "previousRIEmail".toLaxEmail,
-        SubmissionId(Submission.Id.random.value),
+        SubmissionId(SubmissionId.random.value),
         1,
         requestedByName,
-        requestedByEmail.toLaxEmail
+        requestedByEmail
       )
 
       "call  ChangeResponsibleIndividualToSelf Handler and relevant common services if application exists" in new Setup {
@@ -389,11 +389,11 @@ class ApplicationCommandDispatcherSpec
         "previousRIEmail".toLaxEmail,
         "newRIName",
         "newRIEmail".toLaxEmail,
-        SubmissionId(Submission.Id.random.value),
+        SubmissionId(SubmissionId.random.value),
         1,
         code,
         requestedByName,
-        requestedByEmail.toLaxEmail
+        requestedByEmail
       )
 
       "call  ChangeResponsibleIndividualToOther Handler and relevant common services if application exists" in new Setup {
@@ -427,7 +427,7 @@ class ApplicationCommandDispatcherSpec
         actor,
         "someUserName",
         "someUserEmail".toLaxEmail,
-        SubmissionId(Submission.Id.random.value),
+        SubmissionId(SubmissionId.random.value),
         1,
         "some reason or other",
         "adminName",
@@ -487,7 +487,7 @@ class ApplicationCommandDispatcherSpec
 
     "DeleteApplicationByGatekeeper is received" should {
 
-      val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail.toLaxEmail, reasons, timestamp)
+      val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, timestamp)
       val evt = ApplicationDeletedByGatekeeper(
         EventId.random,
         applicationId,
@@ -496,7 +496,7 @@ class ApplicationCommandDispatcherSpec
         ClientId.random,
         "wsoApplicationName",
         reasons,
-        requestedByEmail.toLaxEmail
+        requestedByEmail
       )
 
       "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {

@@ -51,7 +51,7 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with ApplicationLogger
     with ControllerTestData with ApplicationTestData {
@@ -710,7 +710,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, OldStyleActors.Collaborator("anEmail"), None, FixedClock.now)
+    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, FixedClock.now)
   }
 
   private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: LocalDateTime = FixedClock.now, state: ApplicationState = testingState()) = {

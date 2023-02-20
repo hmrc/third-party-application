@@ -40,7 +40,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class GatekeeperServiceSpec
     extends AsyncHmrcSpec
@@ -51,7 +51,7 @@ class GatekeeperServiceSpec
 
   private val requestedByEmail = "john.smith@example.com"
 
-  private val bobTheGKUser = OldStyleActors.GatekeeperUser("bob")
+  private val bobTheGKUser = Actors.GatekeeperUser("bob")
 
   private def aSecret(secret: String) = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
@@ -59,11 +59,11 @@ class GatekeeperServiceSpec
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   private def aHistory(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
-    StateHistory(appId, state, OldStyleActors.Collaborator("anEmail"), Some(TESTING), changedAt = FixedClock.now)
+    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(TESTING), changedAt = FixedClock.now)
   }
 
   private def aStateHistoryResponse(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, OldStyleActors.Collaborator("anEmail"), None, FixedClock.now)
+    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, FixedClock.now)
   }
 
   private def anApplicationData(
@@ -202,7 +202,7 @@ class GatekeeperServiceSpec
       val expectedStateHistory = StateHistory(
         applicationId = expectedApplication.id,
         state = PENDING_REQUESTER_VERIFICATION,
-        actor = OldStyleActors.GatekeeperUser(gatekeeperUserId),
+        actor = Actors.GatekeeperUser(gatekeeperUserId),
         previousState = Some(PENDING_GATEKEEPER_APPROVAL),
         changedAt = FixedClock.now
       )
@@ -323,7 +323,7 @@ class GatekeeperServiceSpec
       val expectedStateHistory = StateHistory(
         applicationId = application.id,
         state = TESTING,
-        actor = OldStyleActors.GatekeeperUser(gatekeeperUserId),
+        actor = Actors.GatekeeperUser(gatekeeperUserId),
         previousState = Some(PENDING_GATEKEEPER_APPROVAL),
         notes = Some(rejectReason),
         changedAt = FixedClock.now

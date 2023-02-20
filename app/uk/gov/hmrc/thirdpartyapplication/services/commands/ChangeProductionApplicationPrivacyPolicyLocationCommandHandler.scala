@@ -58,7 +58,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
       ) { case _ => newUrl.get }
     }
 
-    def asEvents(newUrl: String): NonEmptyList[AbstractApplicationEvent] = {
+    def asEvents(newUrl: String): NonEmptyList[ApplicationEvent] = {
       NonEmptyList.one(
         ProductionLegacyAppPrivacyPolicyLocationChanged(
           id = EventId.random,
@@ -92,7 +92,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
       ) { case _ => app }
     }
 
-    def asEvents: NonEmptyList[AbstractApplicationEvent] = {
+    def asEvents: NonEmptyList[ApplicationEvent] = {
       NonEmptyList.one(
         ProductionAppPrivacyPolicyLocationChanged(
           id = EventId.random,

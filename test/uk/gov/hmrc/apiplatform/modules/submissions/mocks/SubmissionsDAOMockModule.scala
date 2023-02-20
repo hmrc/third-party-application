@@ -41,10 +41,10 @@ trait SubmissionsDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {
     object Fetch {
 
       def thenReturn(submission: Submission) =
-        when(aMock.fetch(*[Submission.Id])).thenReturn(successful(Some(submission)))
+        when(aMock.fetch(*[SubmissionId])).thenReturn(successful(Some(submission)))
 
       def thenReturnNothing() =
-        when(aMock.fetch(*[Submission.Id])).thenReturn(successful(None))
+        when(aMock.fetch(*[SubmissionId])).thenReturn(successful(None))
     }
 
     object FetchLatest {

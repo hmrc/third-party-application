@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
-import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
 import org.mockito.captor.ArgCaptor

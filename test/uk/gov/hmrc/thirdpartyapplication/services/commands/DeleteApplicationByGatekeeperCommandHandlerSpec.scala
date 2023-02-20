@@ -26,7 +26,6 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
@@ -70,7 +69,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
               clientId shouldBe app.tokens.production.clientId
               evtReasons shouldBe reasons
               wsoApplicationName shouldBe app.wso2ApplicationName
-              requestingAdminEmail shouldBe requestedByEmail.toLaxEmail
+              requestingAdminEmail shouldBe requestedByEmail
 
             case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
               appId shouldBe appId
@@ -78,8 +77,8 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
               eventDateTime shouldBe ts
               oldAppState shouldBe app.state.name.toString()
               newAppState shouldBe State.DELETED.toString()
-              requestingAdminEmail.text shouldBe requestedByEmail
-              requestingAdminName shouldBe requestedByEmail
+              requestingAdminEmail shouldBe requestedByEmail
+              requestingAdminName shouldBe requestedByEmail.text
           }
         )
       }
@@ -93,7 +92,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
   val ts: LocalDateTime = FixedClock.now
 
   "DeleteApplicationByGatekeeper" should {
-    val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail.toLaxEmail, reasons, ts)
+    val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, ts)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()

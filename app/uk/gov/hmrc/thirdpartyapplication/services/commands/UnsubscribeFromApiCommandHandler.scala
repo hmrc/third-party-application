@@ -51,7 +51,7 @@ class UnsubscribeFromApiCommandHandler @Inject() (
     ) { case _ => () }
   }
 
-  private def asEvents(app: ApplicationData, cmd: UnsubscribeFromApi): NonEmptyList[AbstractApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: UnsubscribeFromApi): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApiUnsubscribedV2(
         id = EventId.random,

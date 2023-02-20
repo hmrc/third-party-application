@@ -32,7 +32,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDe
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
 
 @Singleton
 class DeleteApplicationByGatekeeperCommandHandler @Inject() (
@@ -52,7 +51,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
     Validated.validNec(app)
   }
 
-  private def asEvents(app: ApplicationData, cmd: DeleteApplicationByGatekeeper, stateHistory: StateHistory): NonEmptyList[AbstractApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: DeleteApplicationByGatekeeper, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
     val requesterEmail = cmd.requestedByEmailAddress
     val clientId       = app.tokens.production.clientId
     NonEmptyList.of(
@@ -74,7 +73,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
     for {
       valid    <- E.fromEither(validate(app).toEither)
       kindOfRequesterName = cmd.requestedByEmailAddress.text
-      stateHistory = StateHistory(app.id, State.DELETED, OldStyleActors.GatekeeperUser(cmd.gatekeeperUser), Some(app.state.name), changedAt = cmd.timestamp)
+      stateHistory = StateHistory(app.id, State.DELETED, Actors.GatekeeperUser(cmd.gatekeeperUser), Some(app.state.name), changedAt = cmd.timestamp)
       savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, kindOfRequesterName, kindOfRequesterName))
       events    = asEvents(app, cmd, stateHistory)
       _        <- deleteApplication(app, stateHistory, cmd.timestamp, kindOfRequesterName, kindOfRequesterName, events)

@@ -28,14 +28,13 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   val eventAppId = ApplicationId.random
-  val eventCollaborator = OldStyleActors.Collaborator("bob@bob.com")
+  val eventCollaborator = Actors.AppCollaborator("bob@bob.com".toLaxEmail)
   
   val teamMemberAddedEvent: TeamMemberAddedEvent = TeamMemberAddedEvent(
     id = EventId.random,
@@ -117,7 +116,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
     val underTest = new ApiPlatformEventsConnector(http, config)
 
-    def apiApplicationEventsWillReturnCreated(request: AbstractApplicationEvent) =
+    def apiApplicationEventsWillReturnCreated(request: ApplicationEvent) =
       stubFor(
         post(urlMatching("/application-events/.*"))
           .withJsonRequestBody(request)
@@ -136,7 +135,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
           )
       )
 
-    def apiApplicationEventWillReturnCreated(request: AbstractApplicationEvent) =
+    def apiApplicationEventWillReturnCreated(request: ApplicationEvent) =
       stubFor(
         post(urlEqualTo("/application-event"))
           .withJsonRequestBody(request)

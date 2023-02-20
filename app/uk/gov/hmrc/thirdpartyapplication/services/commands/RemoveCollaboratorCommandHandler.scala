@@ -52,11 +52,11 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
   }
 
 
-  private def asEvents(app: ApplicationData, cmd: RemoveCollaborator): NonEmptyList[AbstractApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: RemoveCollaborator): NonEmptyList[ApplicationEvent] = {
     asEvents(app, cmd.actor, cmd.adminsToEmail, cmd.timestamp, cmd.collaborator)
   }
 
-  private def asEvents(app: ApplicationData, actor: Actor, adminsToEmail: Set[LaxEmailAddress], eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[AbstractApplicationEvent] = {
+  private def asEvents(app: ApplicationData, actor: Actor, adminsToEmail: Set[LaxEmailAddress], eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       CollaboratorRemovedV2(
         id = EventId.random,

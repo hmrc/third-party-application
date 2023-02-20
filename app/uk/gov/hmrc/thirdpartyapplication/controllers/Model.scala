@@ -21,7 +21,6 @@ import java.time.LocalDateTime
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{IpAllowlist, _}
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidGrantLengthException
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
@@ -30,6 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
 case class ValidationRequest(clientId: ClientId, clientSecret: String)
 
@@ -96,9 +96,9 @@ case class DeleteCollaboratorRequest(
     notifyCollaborator: Boolean
   )
 
-case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: LocalDateTime, submissionId: Submission.Id)
+case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: LocalDateTime, submissionId: SubmissionId)
 
-case class ConfirmSetupCompleteRequest(requesterEmailAddress: String)
+case class ConfirmSetupCompleteRequest(requesterEmailAddress: LaxEmailAddress)
 
 object ErrorCode extends Enumeration {
   type ErrorCode = Value

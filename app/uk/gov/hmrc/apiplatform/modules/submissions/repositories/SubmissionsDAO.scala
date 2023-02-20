@@ -60,7 +60,7 @@ class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(im
       .headOption()
   }
 
-  def fetch(id: Submission.Id): Future[Option[Submission]] = {
+  def fetch(id: SubmissionId): Future[Option[Submission]] = {
     collection.find(equal("id", Codecs.toBson(id)))
       .headOption()
   }

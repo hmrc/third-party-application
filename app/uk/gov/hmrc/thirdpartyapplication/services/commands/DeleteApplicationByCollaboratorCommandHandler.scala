@@ -34,7 +34,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
 
 @Singleton
 class DeleteApplicationByCollaboratorCommandHandler @Inject() (
@@ -61,7 +60,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     ) { case (admin, _, _) => admin }
   }
 
-  private def asEvents(app: ApplicationData, cmd: DeleteApplicationByCollaborator, instigator: Collaborator, stateHistory: StateHistory): NonEmptyList[AbstractApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: DeleteApplicationByCollaborator, instigator: Collaborator, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
     val clientId       = app.tokens.production.clientId
     val requesterEmail = instigator.emailAddress
     NonEmptyList.of(
@@ -84,7 +83,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
       kindOfRequesterEmail = instigator.emailAddress.text
       savedApp   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail))
       // TODO - need app state history change
-      stateHistory = StateHistory(app.id, State.DELETED, OldStyleActors.Collaborator(kindOfRequesterEmail), Some(app.state.name), changedAt = cmd.timestamp)
+      stateHistory = StateHistory(app.id, State.DELETED, Actors.AppCollaborator(instigator.emailAddress), Some(app.state.name), changedAt = cmd.timestamp)
       events      = asEvents(savedApp, cmd, instigator, stateHistory)
       _          <- deleteApplication(app, stateHistory, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail, events)
     } yield (savedApp, events)

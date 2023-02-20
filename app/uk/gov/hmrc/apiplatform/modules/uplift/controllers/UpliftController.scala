@@ -28,11 +28,12 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, Js
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, InvalidStateTransition}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 object UpliftController {
   import play.api.libs.json.Json
 
-  case class UpliftApplicationRequest(applicationName: String, requestedByEmailAddress: String)
+  case class UpliftApplicationRequest(applicationName: String, requestedByEmailAddress: LaxEmailAddress)
   implicit val formatUpliftApplicationRequest = Json.format[UpliftApplicationRequest]
 }
 

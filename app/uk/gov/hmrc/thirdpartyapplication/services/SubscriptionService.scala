@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class SubscriptionService @Inject() (
@@ -74,7 +75,7 @@ class SubscriptionService @Inject() (
       api: ApiIdentifier
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
-    val actor          = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators)
+    val actor          = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators).getOrElse(Actors.Unknown)
     val subscribeToApi = SubscribeToApi(actor, api, LocalDateTime.now())
     applicationCommandDispatcher.dispatch(applicationId, subscribeToApi).value.map {
       case Left(e)  =>

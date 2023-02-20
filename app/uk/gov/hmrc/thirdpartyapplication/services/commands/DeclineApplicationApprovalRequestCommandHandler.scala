@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
 @Singleton
 class DeclineApplicationApprovalRequestCommandHandler @Inject() (
@@ -91,7 +91,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
       applicationId = app.id,
       state = State.TESTING,
       previousState = Some(app.state.name),
-      actor = OldStyleActors.GatekeeperUser(cmd.gatekeeperUser),
+      actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
       changedAt = cmd.timestamp
     )
 

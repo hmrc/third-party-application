@@ -19,13 +19,14 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class StateHistorySpec extends HmrcSpec {
 
   val applicationId = ApplicationId.random
   val now           = FixedClock.now
-  val actor         = OldStyleActors.Collaborator("admin@example.com")
+  val actor         = Actors.AppCollaborator("admin@example.com".toLaxEmail)
 
   "State history" should {
     "sort by date" in {

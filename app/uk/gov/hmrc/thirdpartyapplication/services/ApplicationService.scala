@@ -54,8 +54,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.OldStyleActor
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 
 @Singleton
 class ApplicationService @Inject() (
@@ -155,14 +155,14 @@ class ApplicationService @Inject() (
     } yield updatedApp
   }
 
-  def confirmSetupComplete(applicationId: ApplicationId, requesterEmailAddress: String): Future[ApplicationData] = {
+  def confirmSetupComplete(applicationId: ApplicationId, requesterEmailAddress: LaxEmailAddress): Future[ApplicationData] = {
     for {
       app            <- fetchApp(applicationId)
       oldState        = app.state
       newState        = app.state.toProduction(clock)
       appWithNewState = app.copy(state = newState)
       updatedApp     <- applicationRepository.save(appWithNewState)
-      stateHistory    = StateHistory(applicationId, newState.name, OldStyleActors.Collaborator(requesterEmailAddress), Some(oldState.name), None, app.state.updatedOn)
+      stateHistory    = StateHistory(applicationId, newState.name, Actors.AppCollaborator(requesterEmailAddress), Some(oldState.name), None, app.state.updatedOn)
       _              <- stateHistoryRepository.insert(stateHistory)
     } yield updatedApp
   }
@@ -447,8 +447,8 @@ class ApplicationService @Inject() (
 
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {
     val actor = appData.access.accessType match {
-      case PRIVILEGED | ROPC => OldStyleActors.Unknown
-      case _                 => OldStyleActors.Collaborator(loggedInUser)
+      case PRIVILEGED | ROPC => Actors.Unknown
+      case _                 => loggedInActor
     }
     insertStateHistory(appData, appData.state.name, None, actor, (a: ApplicationData) => applicationRepository.hardDelete(a.id))
   }
@@ -527,7 +527,7 @@ class ApplicationService @Inject() (
     }
 
     val updateRedirectUris = UpdateRedirectUris(
-      actor = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators),
+      actor = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators).getOrElse(Actors.Unknown),
       oldRedirectUris,
       newRedirectUris,
       timestamp = LocalDateTime.now(clock)
@@ -549,7 +549,7 @@ class ApplicationService @Inject() (
       snapshotApp: ApplicationData,
       newState: State,
       oldState: Option[State],
-      actor: OldStyleActor,
+      actor: Actor,
       rollback: ApplicationData => Any
     ) = {
     val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = LocalDateTime.now(clock))
@@ -565,9 +565,8 @@ class ApplicationService @Inject() (
     }
   }
 
-  private def loggedInUser(implicit hc: HeaderCarrier) =
-    hc.valueOf(LOGGED_IN_USER_EMAIL_HEADER)
-      .getOrElse("")
+  private def loggedInActor(implicit hc: HeaderCarrier): Actor =
+    hc.valueOf(LOGGED_IN_USER_EMAIL_HEADER).fold[Actor](Actors.Unknown)(text => Actors.AppCollaborator(LaxEmailAddress(text)))
 }
 
 @Singleton
