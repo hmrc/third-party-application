@@ -33,7 +33,7 @@ trait TermsOfUseInvitationServiceMockModule extends MockitoSugar with ArgumentMa
 
     object CreateInvitations {
       def thenReturnSuccess(invite: TermsOfUseInvitation) = when(aMock.createInvitation(*[ApplicationData])(*)).thenAnswer(successful(Some(invite)))
-      def thenFail()          = when(aMock.createInvitation(*[ApplicationData])(*)).thenAnswer(successful(None))
+      def thenFail()                                      = when(aMock.createInvitation(*[ApplicationData])(*)).thenAnswer(successful(None))
     }
 
     object FetchInvitation {

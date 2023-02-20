@@ -408,8 +408,8 @@ trait QuestionnaireTestData {
 
   val sampleAnswersToQuestions = Map(
     (DevelopmentPractices.question1.id             -> SingleChoiceAnswer("Yes")),
-    (DevelopmentPractices.question2.id             -> SingleChoiceAnswer("No")),
-    (DevelopmentPractices.question3.id             -> SingleChoiceAnswer("No")),
+    (DevelopmentPractices.question2.id             -> SingleChoiceAnswer("Yes")),
+    (DevelopmentPractices.question3.id             -> SingleChoiceAnswer("Yes")),
     (OrganisationDetails.question1.id              -> TextAnswer("https://example.com")),
     (OrganisationDetails.questionRI1.id            -> SingleChoiceAnswer("No")),
     (OrganisationDetails.questionRI2.id            -> TextAnswer("Bob Cratchett")),
@@ -421,7 +421,7 @@ trait QuestionnaireTestData {
     (CustomersAuthorisingYourSoftware.question4.id -> SingleChoiceAnswer("Yes")),
     (CustomersAuthorisingYourSoftware.question5.id -> TextAnswer("https://example.com/privacy-policy")),
     (CustomersAuthorisingYourSoftware.question6.id -> SingleChoiceAnswer("Yes")),
-    (CustomersAuthorisingYourSoftware.question7.id -> NoAnswer)
+    (CustomersAuthorisingYourSoftware.question7.id -> TextAnswer("https://example.com/terms-and-conds"))
   )
 
   def firstQuestion(questionnaire: Questionnaire) = questionnaire.questions.head.question.id

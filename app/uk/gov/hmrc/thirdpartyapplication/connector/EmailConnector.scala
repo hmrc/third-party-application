@@ -407,18 +407,17 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   }
 
   def sendNewTermsOfUseInvitation(
-    dueBy: Instant,
-    applicationName: String,
-    recipients: Set[String]
-  )(
-    implicit hc: HeaderCarrier
-  ): Future[HasSucceeded] = 
+      dueBy: Instant,
+      applicationName: String,
+      recipients: Set[String]
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] =
     post(
       SendEmailRequest(
         recipients,
         newTermsOfUseInvitation,
         Map(
-          "completeBy" -> DateTimeFormatter.ofPattern("dd MMMM yyyy").withZone(ZoneId.systemDefault()).format(dueBy),
+          "completeBy"      -> DateTimeFormatter.ofPattern("dd MMMM yyyy").withZone(ZoneId.systemDefault()).format(dueBy),
           "applicationName" -> applicationName
         )
       )
