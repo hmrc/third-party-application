@@ -22,7 +22,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, ResponsibleIndividual, ServerLocation}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{TermsAndConditionsLocation, TermsAndConditionsLocations, PrivacyPolicyLocation, PrivacyPolicyLocations}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 object SubmissionDataExtracter extends ApplicationLogger {
 
@@ -72,10 +72,10 @@ object SubmissionDataExtracter extends ApplicationLogger {
     })
   }
 
-  def getResponsibleIndividualEmail(submission: Submission, requestedByEmailAddress: LaxEmailAddress): Option[LaxEmailAddress] = {
+  def getResponsibleIndividualEmail(submission: Submission, requestedByEmailAddress: String): Option[String] = {
     getAnswerForYesOrNoResponsibleIndividualIsRequester(submission).flatMap(_ match {
       case "Yes" => Some(requestedByEmailAddress)
-      case "No"  => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId).map(LaxEmailAddress(_))
+      case "No"  => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId)
     })
   }
 
@@ -115,7 +115,7 @@ object SubmissionDataExtracter extends ApplicationLogger {
     })
   }
 
-  def getImportantSubmissionData(submission: Submission, requestedByName: String, requestedByEmailAddress: LaxEmailAddress): Option[ImportantSubmissionData] = {
+  def getImportantSubmissionData(submission: Submission, requestedByName: String, requestedByEmailAddress: String): Option[ImportantSubmissionData] = {
     val organisationUrl            = getOrganisationUrl(submission)
     val responsibleIndividualName  = getResponsibleIndividualName(submission, requestedByName)
     val responsibleIndividualEmail = getResponsibleIndividualEmail(submission, requestedByEmailAddress)
@@ -133,7 +133,7 @@ object SubmissionDataExtracter extends ApplicationLogger {
     import cats.implicits._
     Apply[Option].map4(responsibleIndividualName, responsibleIndividualEmail, termsAndConditionsLocation, privacyPolicyLocation) {
       case (name, email, tnc, pp) =>
-        ImportantSubmissionData(organisationUrl, ResponsibleIndividual(name, email), serverLocations, tnc, pp, List.empty)
+        ImportantSubmissionData(organisationUrl, ResponsibleIndividual(name, email.toLaxEmail), serverLocations, tnc, pp, List.empty)
     }
   }
 }

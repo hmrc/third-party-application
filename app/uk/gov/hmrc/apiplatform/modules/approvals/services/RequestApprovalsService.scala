@@ -38,7 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, AuditHelper, AuditService}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 object RequestApprovalsService {
@@ -73,12 +73,47 @@ class RequestApprovalsService @Inject() (
   import RequestApprovalsService._
 
   def requestApproval(
+      app: ApplicationData,
+      submission: Submission,
+      requestedByName: String,
+      requestedByEmailAddress: String
+    )(implicit hc: HeaderCarrier
+    ): Future[RequestApprovalResult] = {
+
+    if (app.isInProduction) {
+      requestToUUpliftApproval(app, submission, requestedByName, requestedByEmailAddress)
+    } else {
+      requestProductionCredentialApproval(app, submission, requestedByName, requestedByEmailAddress)
+    }
+  }
+
+  private def requestProductionCredentialApproval(
       originalApp: ApplicationData,
       submission: Submission,
       requestedByName: String,
-      requestedByEmailAddress: LaxEmailAddress
+      requestedByEmailAddress: String
     )(implicit hc: HeaderCarrier
     ): Future[RequestApprovalResult] = {
+
+    def deriveNewAppDetails(
+        existing: ApplicationData,
+        isRequesterTheResponsibleIndividual: Boolean,
+        applicationName: String,
+        requestedByEmailAddress: String,
+        requestedByName: String,
+        importantSubmissionData: ImportantSubmissionData
+      ): ApplicationData =
+      existing.copy(
+        name = applicationName,
+        normalisedName = applicationName.toLowerCase,
+        access = updateStandardData(existing.access, importantSubmissionData),
+        state = if (isRequesterTheResponsibleIndividual) {
+          existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, requestedByName, clock)
+        } else {
+          existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress, requestedByName, clock)
+        }
+      )
+
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -99,8 +134,65 @@ class RequestApprovalsService @Inject() (
         savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
         _                                  <- ET.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, updatedApp, submission, requestedByName, requestedByEmailAddress))
         _                                  <- ET.liftF(writeStateHistory(updatedApp, requestedByEmailAddress))
-        updatedSubmission                   = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress.text)(submission)
+        updatedSubmission                   = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
+        _                                  <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
+        _                                   = logCompletedApprovalRequest(savedApp)
+        _                                  <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
+      } yield ApprovalAccepted(savedApp)
+    )
+      .fold[RequestApprovalResult](identity, identity)
+  }
+
+  private def requestToUUpliftApproval(
+      originalApp: ApplicationData,
+      submission: Submission,
+      requestedByName: String,
+      requestedByEmailAddress: String
+    )(implicit hc: HeaderCarrier
+    ): Future[RequestApprovalResult] = {
+
+    def deriveNewAppDetails(
+        existing: ApplicationData,
+        importantSubmissionData: ImportantSubmissionData
+      ): ApplicationData =
+      existing.copy(
+        access = updateStandardData(existing.access, importantSubmissionData)
+      )
+
+    def deriveNewSubmissionsDetails(
+        isRequesterTheResponsibleIndividual: Boolean,
+        existingSubmission: Submission
+      ): Submission = {
+
+      if (isRequesterTheResponsibleIndividual) {
+        Submission.automaticallyMark(LocalDateTime.now(clock), requestedByEmailAddress)(existingSubmission)
+      } else {
+        Submission.pendingResponsibleIndividual(LocalDateTime.now(clock), requestedByEmailAddress)(existingSubmission)
+      }
+    }
+
+    import cats.implicits._
+    import cats.instances.future.catsStdInstancesForFuture
+
+    val ET = EitherTHelper.make[ApprovalRejectedResult]
+
+    import SubmissionDataExtracter._
+
+    (
+      for {
+        _                                  <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
+        _                                  <- ET.cond(originalApp.isInProduction, (), ApprovalRejectedDueToIncorrectApplicationState)
+        _                                  <- ET.cond(submission.status.isAnsweredCompletely, (), ApprovalRejectedDueToIncorrectSubmissionState(submission.status))
+        isRequesterTheResponsibleIndividual = SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission)
+        importantSubmissionData             = getImportantSubmissionData(submission, requestedByName, requestedByEmailAddress).get // Safe at this point
+        updatedApp                          = deriveNewAppDetails(originalApp, importantSubmissionData)
+        savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
+        submittedSubmission                 = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
+        updatedSubmission                   = deriveNewSubmissionsDetails(isRequesterTheResponsibleIndividual, submittedSubmission)
+        savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
+        addTouAcceptance                    = isRequesterTheResponsibleIndividual && savedSubmission.status.isGranted
+        _                                  <- ET.liftF(addTouAcceptanceIfNeeded(addTouAcceptance, updatedApp, submission, requestedByName, requestedByEmailAddress))
         _                                  <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
         _                                   = logCompletedApprovalRequest(savedApp)
         _                                  <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
@@ -115,14 +207,14 @@ class RequestApprovalsService @Inject() (
   }
 
   private def addTouAcceptanceIfNeeded(
-      isRequesterTheResponsibleIndividual: Boolean,
+      addTouAcceptance: Boolean,
       appWithoutTouAcceptance: ApplicationData,
       submission: Submission,
       requestedByName: String,
-      requestedByEmailAddress: LaxEmailAddress
+      requestedByEmailAddress: String
     ): Future[ApplicationData] = {
-    if (isRequesterTheResponsibleIndividual) {
-      val responsibleIndividual = ResponsibleIndividual.build(requestedByName, requestedByEmailAddress.text)
+    if (addTouAcceptance) {
+      val responsibleIndividual = ResponsibleIndividual.build(requestedByName, requestedByEmailAddress)
       val acceptance            = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submission.id, submission.latestInstance.index)
       applicationService.addTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
     } else {
@@ -160,25 +252,6 @@ class RequestApprovalsService @Inject() (
     }
   }
 
-  private def deriveNewAppDetails(
-      existing: ApplicationData,
-      isRequesterTheResponsibleIndividual: Boolean,
-      applicationName: String,
-      requestedByEmailAddress: LaxEmailAddress,
-      requestedByName: String,
-      importantSubmissionData: ImportantSubmissionData
-    ): ApplicationData =
-    existing.copy(
-      name = applicationName,
-      normalisedName = applicationName.toLowerCase,
-      access = updateStandardData(existing.access, importantSubmissionData),
-      state = if (isRequesterTheResponsibleIndividual) {
-        existing.state.toPendingGatekeeperApproval(requestedByEmailAddress.text, requestedByName, clock)
-      } else {
-        existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress.text, requestedByName, clock)
-      }
-    )
-
   private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] =
     approvalsNamingService.validateApplicationNameAndAudit(appName, appId, accessType).map(_ match {
       case ValidName     => Right(ApprovalAccepted)
@@ -192,6 +265,6 @@ class RequestApprovalsService @Inject() (
   private def auditCompletedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData)(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditService.audit(ApplicationUpliftRequested, AuditHelper.applicationId(applicationId) ++ Map("newApplicationName" -> updatedApp.name))
 
-  private def writeStateHistory(snapshotApp: ApplicationData, requestedByEmailAddress: LaxEmailAddress) =
-    insertStateHistory(snapshotApp, snapshotApp.state.name, Some(TESTING), Actors.AppCollaborator(requestedByEmailAddress), (a: ApplicationData) => applicationRepository.save(a))
+  private def writeStateHistory(snapshotApp: ApplicationData, requestedByEmailAddress: String) =
+    insertStateHistory(snapshotApp, snapshotApp.state.name, Some(TESTING), Actors.AppCollaborator(requestedByEmailAddress.toLaxEmail), (a: ApplicationData) => applicationRepository.save(a))
 }

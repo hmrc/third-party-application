@@ -31,10 +31,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 object ApprovalsController {
-  case class RequestApprovalRequest(requestedByName: String, requestedByEmailAddress: LaxEmailAddress)
+  case class RequestApprovalRequest(requestedByName: String, requestedByEmailAddress: String)
   implicit val readsRequestApprovalRequest = Json.reads[RequestApprovalRequest]
 
   case class DeclinedRequest(gatekeeperUserName: String, reasons: String)
