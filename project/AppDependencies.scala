@@ -8,7 +8,6 @@ object AppDependencies {
 
   private lazy val compileDeps = Seq(
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28"         % bootstrapVersion,
-    "uk.gov.hmrc"       %% "play-json-union-formatter"         % "1.18.0-play-28",
     "com.typesafe.play" %% "play-json"                         % "2.9.2",
     "uk.gov.hmrc"       %% "play-hmrc-api"                     % "7.1.0-play-28",
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-work-item-repo-play-28" % hmrcMongoVersion,
