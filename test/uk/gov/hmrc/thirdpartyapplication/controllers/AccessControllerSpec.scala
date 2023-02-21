@@ -29,6 +29,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.FakeRequest
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
@@ -36,8 +37,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule {
   import play.api.test.Helpers._

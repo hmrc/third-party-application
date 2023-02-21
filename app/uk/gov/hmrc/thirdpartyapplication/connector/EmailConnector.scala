@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -24,15 +26,10 @@ import play.api.libs.json.Json
 import play.mvc.Http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import java.time.Instant
-import java.time.format.DateTimeFormatter
-import java.time.ZoneId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, Collaborator, Collaborators}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 object EmailConnector {
   case class Config(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)
@@ -86,8 +83,8 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
   private def getRoleForDisplay(role: Collaborator) =
     role match {
-      case _ : Collaborators.Administrator => "admin"
-      case _ : Collaborators.Developer     => "developer"
+      case _: Collaborators.Administrator => "admin"
+      case _: Collaborators.Developer     => "developer"
     }
 
   def sendCollaboratorAddedConfirmation(collaborator: Collaborator, application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {

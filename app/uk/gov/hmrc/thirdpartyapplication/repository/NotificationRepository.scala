@@ -27,10 +27,10 @@ import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.Notification
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.db.Notification
 
 @Singleton
 class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
@@ -75,10 +75,10 @@ class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
 
   private def applyEvent(event: ApplicationEvent): Future[HasSucceeded] = {
     event match {
-      case _ : ApplicationDeleted                       => deleteAllByApplicationId(event.applicationId)
-      case _ : ApplicationDeletedByGatekeeper           => deleteAllByApplicationId(event.applicationId)
-      case _ : ProductionCredentialsApplicationDeleted  => deleteAllByApplicationId(event.applicationId)
-      case _                                            => Future.successful(HasSucceeded)
+      case _: ApplicationDeleted                      => deleteAllByApplicationId(event.applicationId)
+      case _: ApplicationDeletedByGatekeeper          => deleteAllByApplicationId(event.applicationId)
+      case _: ProductionCredentialsApplicationDeleted => deleteAllByApplicationId(event.applicationId)
+      case _                                          => Future.successful(HasSucceeded)
     }
   }
 }

@@ -16,20 +16,18 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, LocalDateTime, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.NonEmptyList
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationApprovalRequestDeclined, ApplicationEvent}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationApprovalRequestDeclined
-import java.time.ZoneOffset
 
 @Singleton
 class SubmissionsService @Inject() (
@@ -137,7 +135,7 @@ class SubmissionsService @Inject() (
     (
       for {
         extSubmission    <- fromOptionF(fetch(SubmissionId(evt.submissionId.value)), "submission not found")
-        updatedSubmission = Submission.decline(LocalDateTime.ofInstant(evt.eventDateTime, ZoneOffset.UTC), evt.decliningUserEmail.text, evt.reasons)(extSubmission.submission)   // Is this correct use of email addresss or should we use decliningUserName ?
+        updatedSubmission = Submission.decline(LocalDateTime.ofInstant(evt.eventDateTime, ZoneOffset.UTC), evt.decliningUserEmail.text, evt.reasons)(extSubmission.submission) // Is this correct use of email addresss or should we use decliningUserName ?
         savedSubmission  <- liftF(store(updatedSubmission))
       } yield savedSubmission
     )

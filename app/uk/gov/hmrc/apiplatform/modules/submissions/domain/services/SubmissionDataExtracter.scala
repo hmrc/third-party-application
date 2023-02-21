@@ -18,11 +18,11 @@ package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import cats.Apply
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocation, PrivacyPolicyLocations, TermsAndConditionsLocation, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, ResponsibleIndividual, ServerLocation}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{TermsAndConditionsLocation, TermsAndConditionsLocations, PrivacyPolicyLocation, PrivacyPolicyLocations}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 object SubmissionDataExtracter extends ApplicationLogger {
 

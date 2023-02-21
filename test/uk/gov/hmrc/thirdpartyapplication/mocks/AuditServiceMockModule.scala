@@ -26,9 +26,9 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.{AuditAction, AuditService}
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 
 trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

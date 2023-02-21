@@ -21,22 +21,18 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Foldable.ops.toAllFoldableOps
-
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 @Singleton
 class SubscriptionService @Inject() (
@@ -79,7 +75,7 @@ class SubscriptionService @Inject() (
     val subscribeToApi = SubscribeToApi(actor, api, LocalDateTime.now())
     applicationCommandDispatcher.dispatch(applicationId, subscribeToApi).value.map {
       case Left(e)  =>
-        logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")
+        logger.warn(s"Command Process failed for $applicationId because ${e.toChain.toList.mkString("[", ",", "]")}")
         throw FailedToSubscribeException(applicationName, api)
       case Right(_) => HasSucceeded
     }

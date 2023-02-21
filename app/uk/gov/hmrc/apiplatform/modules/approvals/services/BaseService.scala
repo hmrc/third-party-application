@@ -20,11 +20,11 @@ import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 
 abstract class BaseService(stateHistoryRepository: StateHistoryRepository, clock: Clock)(implicit ec: ExecutionContext) {
 

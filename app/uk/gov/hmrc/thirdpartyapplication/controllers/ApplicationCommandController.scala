@@ -24,20 +24,20 @@ import cats.data.NonEmptyChain
 import play.api.libs.json.Json
 import play.api.mvc._
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, ApplicationCommandFormatters}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 
 object ApplicationCommandController {
   case class DispatchResult(applicationResponse: ApplicationResponse, events: List[ApplicationEvent])
-  
+
   object DispatchResult {
     import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
-    
+
     implicit val format = Json.format[DispatchResult]
   }
 }

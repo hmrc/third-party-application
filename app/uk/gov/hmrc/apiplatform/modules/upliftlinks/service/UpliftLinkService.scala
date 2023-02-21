@@ -21,9 +21,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.OptionT
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories.UpliftLinksRepository
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 @Singleton
 class UpliftLinkService @Inject() (upliftLinksRepository: UpliftLinksRepository)(implicit ec: ExecutionContext) {

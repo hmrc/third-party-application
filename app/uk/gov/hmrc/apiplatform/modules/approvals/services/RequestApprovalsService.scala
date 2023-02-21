@@ -24,6 +24,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
@@ -37,9 +40,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, HasSucceeded, In
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, AuditHelper, AuditService}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 object RequestApprovalsService {
   sealed trait RequestApprovalResult
@@ -266,5 +266,11 @@ class RequestApprovalsService @Inject() (
     auditService.audit(ApplicationUpliftRequested, AuditHelper.applicationId(applicationId) ++ Map("newApplicationName" -> updatedApp.name))
 
   private def writeStateHistory(snapshotApp: ApplicationData, requestedByEmailAddress: String) =
-    insertStateHistory(snapshotApp, snapshotApp.state.name, Some(TESTING), Actors.AppCollaborator(requestedByEmailAddress.toLaxEmail), (a: ApplicationData) => applicationRepository.save(a))
+    insertStateHistory(
+      snapshotApp,
+      snapshotApp.state.name,
+      Some(TESTING),
+      Actors.AppCollaborator(requestedByEmailAddress.toLaxEmail),
+      (a: ApplicationData) => applicationRepository.save(a)
+    )
 }

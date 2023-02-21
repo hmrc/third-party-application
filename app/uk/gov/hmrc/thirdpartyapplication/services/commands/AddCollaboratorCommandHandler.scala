@@ -23,12 +23,11 @@ import cats._
 import cats.data._
 import cats.implicits._
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 @Singleton
 class AddCollaboratorCommandHandler @Inject() (
@@ -44,7 +43,7 @@ class AddCollaboratorCommandHandler @Inject() (
           isCollaboratorOnApp(actorEmail, app),
           collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)
         ) { case _ => () }
-      case _                                       => Apply[Validated[CommandFailures, *]]
+      case _                                                   => Apply[Validated[CommandFailures, *]]
           .map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app))(_ => ())
     }
   }

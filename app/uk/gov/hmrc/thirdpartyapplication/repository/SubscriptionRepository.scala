@@ -32,11 +32,11 @@ import org.mongodb.scala.model.{IndexModel, IndexOptions, UpdateOptions, Updates
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 @Singleton
 class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)

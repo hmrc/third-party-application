@@ -19,28 +19,27 @@ package uk.gov.hmrc.thirdpartyapplication.services.notifications
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import cats.data.NonEmptyList
+
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import cats.data.NonEmptyList
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 
 @Singleton
 class NotificationService @Inject() (emailConnector: EmailConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
-    def getActorAsString(actor: Actor): String =
+  def getActorAsString(actor: Actor): String =
     actor match {
       case Actors.AppCollaborator(emailAddress) => emailAddress.text
-      case Actors.GatekeeperUser(userId)     => userId
-      case Actors.ScheduledJob(jobId)        => jobId
-      case Actors.Unknown                    => "Unknown"
+      case Actors.GatekeeperUser(userId)        => userId
+      case Actors.ScheduledJob(jobId)           => jobId
+      case Actors.Unknown                       => "Unknown"
     }
-
 
   // scalastyle:off cyclomatic.complexity method.length
   def sendNotifications(app: ApplicationData, events: NonEmptyList[ApplicationEvent])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
@@ -93,7 +92,7 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
         case evt: ApplicationDeletedByGatekeeper                    => ApplicationDeletedByGatekeeperNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: CollaboratorAddedV2                               => CollaboratorAddedNotification.sendCollaboratorAddedNotification(emailConnector, app, evt)
         case evt: CollaboratorRemovedV2                             => CollaboratorRemovedNotification.sendCollaboratorRemovedNotification(emailConnector, app, evt)
-        case _ => Future.successful(HasSucceeded)
+        case _                                                      => Future.successful(HasSucceeded)
       }
     }
 

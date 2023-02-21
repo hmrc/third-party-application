@@ -16,13 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Environment, _}
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{HmrcSpec, UpliftRequestSamples}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
+import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, HmrcSpec, UpliftRequestSamples}
 
 class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with CollaboratorTestData {
   import ApiIdentifierSyntax._

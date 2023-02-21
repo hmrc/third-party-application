@@ -24,14 +24,13 @@ import cats.data.{NonEmptyList, Validated}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByGatekeeper, State}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByGatekeeper, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 
 @Singleton
 class DeleteApplicationByGatekeeperCommandHandler @Inject() (
@@ -71,12 +70,12 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
 
   def process(app: ApplicationData, cmd: DeleteApplicationByGatekeeper)(implicit hc: HeaderCarrier): ResultT = {
     for {
-      valid    <- E.fromEither(validate(app).toEither)
+      valid              <- E.fromEither(validate(app).toEither)
       kindOfRequesterName = cmd.requestedByEmailAddress.text
-      stateHistory = StateHistory(app.id, State.DELETED, Actors.GatekeeperUser(cmd.gatekeeperUser), Some(app.state.name), changedAt = cmd.timestamp)
-      savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, kindOfRequesterName, kindOfRequesterName))
-      events    = asEvents(app, cmd, stateHistory)
-      _        <- deleteApplication(app, stateHistory, cmd.timestamp, kindOfRequesterName, kindOfRequesterName, events)
+      stateHistory        = StateHistory(app.id, State.DELETED, Actors.GatekeeperUser(cmd.gatekeeperUser), Some(app.state.name), changedAt = cmd.timestamp)
+      savedApp           <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, kindOfRequesterName, kindOfRequesterName))
+      events              = asEvents(app, cmd, stateHistory)
+      _                  <- deleteApplication(app, stateHistory, cmd.timestamp, kindOfRequesterName, kindOfRequesterName, events)
     } yield (savedApp, events)
   }
 }

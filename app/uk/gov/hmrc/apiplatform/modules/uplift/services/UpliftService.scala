@@ -24,6 +24,8 @@ import scala.util.Failure
 
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
@@ -32,10 +34,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AuditHelper, AuditService}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 
 @Singleton
 class UpliftService @Inject() (
@@ -48,7 +46,7 @@ class UpliftService @Inject() (
   )(implicit ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def requestUplift(applicationId:ApplicationId, applicationName: String, requestedByEmailAddress: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def requestUplift(applicationId: ApplicationId, applicationName: String, requestedByEmailAddress: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
 
     def uplift(existing: ApplicationData) = existing.copy(
       name = applicationName,
@@ -81,15 +79,16 @@ class UpliftService @Inject() (
       successful(UpliftVerified)
     }
 
-    def findLatestUpliftRequester(applicationId: ApplicationId): Future[String] = for {
-      history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL)
-      state    = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId.value}"))
-    } yield state.actor match {
-      case Actors.Unknown => "Unknown"
-      case Actors.AppCollaborator(email) => email.text
-      case Actors.GatekeeperUser(user) => user
-      case Actors.ScheduledJob(jobId) => jobId
-    }
+    def findLatestUpliftRequester(applicationId: ApplicationId): Future[String] =
+      for {
+        history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL)
+        state    = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId.value}"))
+      } yield state.actor match {
+        case Actors.Unknown                => "Unknown"
+        case Actors.AppCollaborator(email) => email.text
+        case Actors.GatekeeperUser(user)   => user
+        case Actors.ScheduledJob(jobId)    => jobId
+      }
 
     def audit(app: ApplicationData) =
       findLatestUpliftRequester(app.id) flatMap { email =>

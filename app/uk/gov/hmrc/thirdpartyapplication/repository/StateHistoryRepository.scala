@@ -26,10 +26,10 @@ import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 @Singleton
 class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
@@ -94,7 +94,7 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
   }
 
   def deleteByApplicationId(applicationId: ApplicationId): Future[HasSucceeded] = {
-    collection.deleteOne(equal("applicationId", Codecs.toBson(applicationId)))  // TODO - deleteMany ???
+    collection.deleteOne(equal("applicationId", Codecs.toBson(applicationId))) // TODO - deleteMany ???
       .toFuture()
       .map(_ => HasSucceeded)
   }

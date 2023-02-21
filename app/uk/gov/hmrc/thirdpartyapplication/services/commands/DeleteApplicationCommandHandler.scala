@@ -23,12 +23,12 @@ import cats.data.NonEmptyList
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 
 trait DeleteApplicationCommandHandler extends CommandHandler {
   val applicationRepository: ApplicationRepository

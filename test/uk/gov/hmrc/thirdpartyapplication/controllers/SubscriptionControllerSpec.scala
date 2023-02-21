@@ -30,11 +30,11 @@ import play.api.test.FakeRequest
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, SubscriptionRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite with SubscriptionRepositoryMockModule with ApplicationRepositoryMockModule {
 

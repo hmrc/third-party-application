@@ -26,12 +26,12 @@ import com.google.inject.Singleton
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Environment, State}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Notification, NotificationStatus, NotificationType}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 @Singleton
 class ProductionCredentialsRequestExpiryWarningJob @Inject() (

@@ -22,12 +22,12 @@ import scala.concurrent.ExecutionContext
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 @Singleton
 class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject() (
@@ -41,7 +41,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
     def validate: Validated[CommandFailures, String] = {
       val newUrl       = cmd.newLocation match {
         case TermsAndConditionsLocations.Url(value) => Some(value)
-        case _          => None
+        case _                                      => None
       }
       val ensureIsAUrl = mustBeDefined(newUrl, s"Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
 

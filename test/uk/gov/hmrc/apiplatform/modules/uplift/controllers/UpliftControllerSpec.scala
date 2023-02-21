@@ -27,6 +27,8 @@ import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ControllerSpec, ControllerTestData, ErrorCode}
@@ -35,8 +37,6 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, InvalidStateTransition}
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class UpliftControllerSpec
     extends ControllerSpec

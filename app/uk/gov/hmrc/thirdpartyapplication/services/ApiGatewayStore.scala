@@ -25,16 +25,18 @@ import cats.data.NonEmptyList
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{
+  ApplicationDeleted,
+  ApplicationDeletedByGatekeeper,
+  ApplicationEvent,
+  ProductionCredentialsApplicationDeleted
+}
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationDeletedByGatekeeper
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationDeleted
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ProductionCredentialsApplicationDeleted
 
 trait ApiGatewayStore extends EitherTHelper[String] {
 
@@ -60,10 +62,10 @@ trait ApiGatewayStore extends EitherTHelper[String] {
 
   private def applyEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     event match {
-      case ApplicationDeleted(_,_,_,_,_,wso2ApplicationName,_)                      => deleteApplication(wso2ApplicationName).map(Some(_))
-      case ApplicationDeletedByGatekeeper(_,_,_,_,_,wso2ApplicationName,_,_)        => deleteApplication(wso2ApplicationName).map(Some(_))
-      case ProductionCredentialsApplicationDeleted(_,_,_,_,_,wso2ApplicationName,_) => deleteApplication(wso2ApplicationName).map(Some(_))
-      case _                                                                        => Future.successful(None)
+      case ApplicationDeleted(_, _, _, _, _, wso2ApplicationName, _)                      => deleteApplication(wso2ApplicationName).map(Some(_))
+      case ApplicationDeletedByGatekeeper(_, _, _, _, _, wso2ApplicationName, _, _)       => deleteApplication(wso2ApplicationName).map(Some(_))
+      case ProductionCredentialsApplicationDeleted(_, _, _, _, _, wso2ApplicationName, _) => deleteApplication(wso2ApplicationName).map(Some(_))
+      case _                                                                              => Future.successful(None)
     }
   }
 }

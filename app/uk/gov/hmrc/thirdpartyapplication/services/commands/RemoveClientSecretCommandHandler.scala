@@ -23,10 +23,10 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ClientSecret, RemoveClientSecret}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 @Singleton
 class RemoveClientSecretCommandHandler @Inject() (
@@ -42,7 +42,6 @@ class RemoveClientSecretCommandHandler @Inject() (
       clientSecretExists(cmd.clientSecretId, app)
     ) { case _ => app }
   }
-
 
   private def asEvents(app: ApplicationData, cmd: RemoveClientSecret): NonEmptyList[ApplicationEvent] = {
     val clientSecret: Option[ClientSecret] = app.tokens.production.clientSecrets.find(_.id == cmd.clientSecretId)

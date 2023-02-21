@@ -22,9 +22,9 @@ import scala.concurrent.Future
 import com.github.t3hnar.bcrypt._
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

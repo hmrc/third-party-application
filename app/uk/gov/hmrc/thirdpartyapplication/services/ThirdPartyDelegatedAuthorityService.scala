@@ -23,11 +23,11 @@ import cats.data.NonEmptyList
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 @Singleton
 class ThirdPartyDelegatedAuthorityService @Inject() (
@@ -57,10 +57,10 @@ class ThirdPartyDelegatedAuthorityService @Inject() (
 
   private def applyEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     event match {
-      case e : ApplicationDeleted                                  => revokeApplicationAuthorities(e.clientId)
-      case e : ApplicationDeletedByGatekeeper                      => revokeApplicationAuthorities(e.clientId)
-      case e : ProductionCredentialsApplicationDeleted             => revokeApplicationAuthorities(e.clientId)
-      case _                                                       => Future.successful(None)
+      case e: ApplicationDeleted                      => revokeApplicationAuthorities(e.clientId)
+      case e: ApplicationDeletedByGatekeeper          => revokeApplicationAuthorities(e.clientId)
+      case e: ProductionCredentialsApplicationDeleted => revokeApplicationAuthorities(e.clientId)
+      case _                                          => Future.successful(None)
     }
   }
 }

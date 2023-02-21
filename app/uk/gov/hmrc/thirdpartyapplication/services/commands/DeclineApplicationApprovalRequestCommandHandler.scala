@@ -23,14 +23,13 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated, ValidatedNec}
 import cats.syntax.validated._
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Submission, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineApplicationApprovalRequest, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
 @Singleton
 class DeclineApplicationApprovalRequestCommandHandler @Inject() (
@@ -74,7 +73,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
         eventDateTime = cmd.timestamp.instant,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         decliningUserName = cmd.gatekeeperUser,
-        decliningUserEmail = LaxEmailAddress(cmd.gatekeeperUser),   // Not nice but we have nothing better
+        decliningUserEmail = LaxEmailAddress(cmd.gatekeeperUser), // Not nice but we have nothing better
         submissionId = SubmissionId(submission.id.value),
         submissionIndex = submission.latestInstance.index,
         reasons = cmd.reasons,
@@ -86,7 +85,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
   }
 
   def process(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): CommandHandler.ResultT = {
-    
+
     val stateHistory = StateHistory(
       applicationId = app.id,
       state = State.TESTING,

@@ -25,11 +25,11 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.{FakeRequest, Helpers}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 class ApplicationCommandControllerSpec
     extends ControllerSpec

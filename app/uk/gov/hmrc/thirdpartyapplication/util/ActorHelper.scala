@@ -17,15 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.util
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 
 trait ActorHelper {
 
   def getActorFromContext(userContext: Map[String, String], collaborators: Set[Collaborator]): Option[Actor] =
-    if(userContext.isEmpty) {
-      Some(Actors.GatekeeperUser("Gatekeeper Admin"))     // Should be Unknown ???
+    if (userContext.isEmpty) {
+      Some(Actors.GatekeeperUser("Gatekeeper Admin")) // Should be Unknown ???
     } else {
       userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
         .map(emailOrGKUser => deriveActor(emailOrGKUser, collaborators))
@@ -33,9 +31,9 @@ trait ActorHelper {
 
   private def deriveActor(emailOrGKUser: String, collaborators: Set[Collaborator]): Actor = {
     val possiblyEmail = LaxEmailAddress(emailOrGKUser)
-      collaborators.find(_.emailAddress.equalsIgnoreCase(possiblyEmail)) match {
-        case None                  => Actors.GatekeeperUser(emailOrGKUser)
-        case Some(_: Collaborator) => Actors.AppCollaborator(possiblyEmail)
-      }
+    collaborators.find(_.emailAddress.equalsIgnoreCase(possiblyEmail)) match {
+      case None                  => Actors.GatekeeperUser(emailOrGKUser)
+      case Some(_: Collaborator) => Actors.AppCollaborator(possiblyEmail)
     }
+  }
 }

@@ -19,8 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.security.SecureRandom
 import javax.inject.Singleton
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 @Singleton
 class TokenService {

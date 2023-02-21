@@ -19,17 +19,17 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.time.{Instant, ZoneOffset}
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{blocking, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.util.{Failure, Success}
 
 import com.github.t3hnar.bcrypt._
 
 import uk.gov.hmrc.time.DateTimeUtils
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 @Singleton
 class ClientSecretService @Inject() (applicationRepository: ApplicationRepository, config: ClientSecretServiceConfig)(implicit ec: ExecutionContext) extends ApplicationLogger {

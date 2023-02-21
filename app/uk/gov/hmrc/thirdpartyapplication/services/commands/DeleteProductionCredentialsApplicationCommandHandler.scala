@@ -25,16 +25,14 @@ import cats.data.{NonEmptyList, Validated}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredentialsApplication, State}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredentialsApplication, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 
 @Singleton
 class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
@@ -67,17 +65,17 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons
       ),
-     fromStateHistory(stateHistory, cmd.jobId, LaxEmailAddress(cmd.jobId))
+      fromStateHistory(stateHistory, cmd.jobId, LaxEmailAddress(cmd.jobId))
     )
   }
 
   def process(app: ApplicationData, cmd: DeleteProductionCredentialsApplication)(implicit hc: HeaderCarrier): ResultT = {
     for {
-      valid    <- E.fromEither(validate(app).toEither)
-      savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
+      valid       <- E.fromEither(validate(app).toEither)
+      savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
       stateHistory = StateHistory(app.id, State.DELETED, Actors.ScheduledJob(cmd.jobId), Some(app.state.name), changedAt = cmd.timestamp)
-      events    = asEvents(savedApp, cmd, stateHistory)
-      _        <- deleteApplication(app, stateHistory, cmd.timestamp, cmd.jobId, cmd.jobId, events)
+      events       = asEvents(savedApp, cmd, stateHistory)
+      _           <- deleteApplication(app, stateHistory, cmd.timestamp, cmd.jobId, cmd.jobId, events)
     } yield (savedApp, events)
   }
 

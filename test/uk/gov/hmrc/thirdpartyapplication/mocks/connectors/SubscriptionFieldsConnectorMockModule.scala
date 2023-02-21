@@ -21,8 +21,8 @@ import scala.concurrent.Future.{failed, successful}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 trait ApiSubscriptionFieldsConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,19 +24,18 @@ import cats.data.NonEmptyList
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import java.time.Instant
-import java.time.Clock
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 @Singleton
-class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlatformEventsConnector, clock: Clock)(implicit val ec: ExecutionContext) extends ApplicationLogger with ActorHelper {
+class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlatformEventsConnector, clock: Clock)(implicit val ec: ExecutionContext) extends ApplicationLogger
+    with ActorHelper {
 
   def applyEvents(events: NonEmptyList[ApplicationEvent])(implicit hc: HeaderCarrier): Future[Boolean] = {
     events match {
@@ -51,7 +51,7 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
   @deprecated("remove when no longer using old logic")
   def sendClientSecretAddedEvent(appData: ApplicationData, clientSecretId: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     handleResult(
-       appData.id,
+      appData.id,
       eventType = "ClientSecretAdded",
       maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
         actor => sendEvent(ClientSecretAddedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, clientSecretId = clientSecretId))
@@ -96,7 +96,8 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
       appData.id,
       eventType = "RedirectUrisUpdatedEvent",
       maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(RedirectUrisUpdatedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, oldRedirectUris = oldRedirectUris, newRedirectUris = newRedirectUris))
+        actor =>
+          sendEvent(RedirectUrisUpdatedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, oldRedirectUris = oldRedirectUris, newRedirectUris = newRedirectUris))
       }
     )
   }
@@ -138,6 +139,6 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     case ruue: RedirectUrisUpdatedEvent => apiPlatformEventsConnector.sendRedirectUrisUpdatedEvent(ruue)
     case apse: ApiSubscribedEvent       => apiPlatformEventsConnector.sendApiSubscribedEvent(apse)
     case apuse: ApiUnsubscribedEvent    => apiPlatformEventsConnector.sendApiUnsubscribedEvent(apuse)
-    case _ => Future.failed(new IllegalArgumentException("Bad Event in old sendEvent"))
+    case _                              => Future.failed(new IllegalArgumentException("Bad Event in old sendEvent"))
   }
 }

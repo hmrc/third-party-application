@@ -20,9 +20,9 @@ import scala.concurrent.Future.successful
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.SubmissionsDAO
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 trait SubmissionsDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

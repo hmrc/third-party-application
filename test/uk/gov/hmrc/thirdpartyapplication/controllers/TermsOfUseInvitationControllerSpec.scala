@@ -25,9 +25,9 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{contentAsJson, status, stubControllerComponents}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse

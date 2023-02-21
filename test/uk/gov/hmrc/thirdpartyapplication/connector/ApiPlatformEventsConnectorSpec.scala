@@ -23,9 +23,9 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 

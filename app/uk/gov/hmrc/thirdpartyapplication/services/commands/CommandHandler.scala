@@ -16,23 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.{EitherT, NonEmptyChain, NonEmptyList, Validated}
 import cats.implicits._
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
-import java.time.LocalDateTime
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import java.time.Instant
-import java.time.ZoneOffset
 
 trait CommandHandler {
   import CommandHandler._
@@ -54,17 +50,17 @@ object CommandHandler {
   }
 
   def fromStateHistory(stateHistory: StateHistory, requestingAdminName: String, requestingAdminEmail: LaxEmailAddress) =
-      ApplicationStateChanged(
-        id = EventId.random,
-        applicationId = stateHistory.applicationId,
-        eventDateTime = stateHistory.changedAt.instant,
-        actor = stateHistory.actor,
-        stateHistory.previousState.fold("")(_.toString),
-        stateHistory.state.toString,
-        requestingAdminName,
-        requestingAdminEmail
-      )
-        
+    ApplicationStateChanged(
+      id = EventId.random,
+      applicationId = stateHistory.applicationId,
+      eventDateTime = stateHistory.changedAt.instant,
+      actor = stateHistory.actor,
+      stateHistory.previousState.fold("")(_.toString),
+      stateHistory.state.toString,
+      requestingAdminName,
+      requestingAdminEmail
+    )
+
   def cond(cond: => Boolean, left: String): Validated[CommandFailures, Unit] = {
     if (cond) ().validNec[String] else left.invalidNec[Unit]
   }
@@ -83,7 +79,7 @@ object CommandHandler {
   private def isCollaboratorActorAndAdmin(actor: Actor, app: ApplicationData): Boolean =
     actor match {
       case Actors.AppCollaborator(emailAddress) => app.collaborators.exists(c => c.isAdministrator && c.emailAddress == emailAddress)
-      case _                                 => false
+      case _                                    => false
     }
 
   private def applicationHasAnAdmin(updated: Set[Collaborator]): Boolean = {

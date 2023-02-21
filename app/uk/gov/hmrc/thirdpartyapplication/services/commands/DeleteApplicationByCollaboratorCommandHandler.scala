@@ -24,16 +24,15 @@ import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByCollaborator, State}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByCollaborator, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 
 @Singleton
 class DeleteApplicationByCollaboratorCommandHandler @Inject() (
@@ -79,13 +78,13 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
 
   def process(app: ApplicationData, cmd: DeleteApplicationByCollaborator)(implicit hc: HeaderCarrier): ResultT = {
     for {
-      instigator <- E.fromEither(validate(app, cmd).toEither)
+      instigator          <- E.fromEither(validate(app, cmd).toEither)
       kindOfRequesterEmail = instigator.emailAddress.text
-      savedApp   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail))
+      savedApp            <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail))
       // TODO - need app state history change
-      stateHistory = StateHistory(app.id, State.DELETED, Actors.AppCollaborator(instigator.emailAddress), Some(app.state.name), changedAt = cmd.timestamp)
-      events      = asEvents(savedApp, cmd, instigator, stateHistory)
-      _          <- deleteApplication(app, stateHistory, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail, events)
+      stateHistory         = StateHistory(app.id, State.DELETED, Actors.AppCollaborator(instigator.emailAddress), Some(app.state.name), changedAt = cmd.timestamp)
+      events               = asEvents(savedApp, cmd, instigator, stateHistory)
+      _                   <- deleteApplication(app, stateHistory, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail, events)
     } yield (savedApp, events)
   }
 }

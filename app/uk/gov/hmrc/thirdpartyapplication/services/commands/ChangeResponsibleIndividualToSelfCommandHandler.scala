@@ -23,17 +23,13 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.validated._
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Submission, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividualToSelf, ImportantSubmissionData, Standard}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ChangeResponsibleIndividualToSelf
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
 @Singleton
 class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (

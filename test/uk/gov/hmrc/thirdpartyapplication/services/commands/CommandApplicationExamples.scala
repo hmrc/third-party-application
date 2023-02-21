@@ -16,10 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, HasApplicationId}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
 
 trait CommandApplicationExamples extends HasApplicationId {
   self: ApplicationTestData with CommandCollaboratorExamples =>

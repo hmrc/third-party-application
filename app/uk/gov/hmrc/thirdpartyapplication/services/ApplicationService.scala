@@ -31,7 +31,11 @@ import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier,
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.connector._
@@ -41,7 +45,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTi
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -49,13 +52,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, HeaderCarrierHelper}
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 
 @Singleton
 class ApplicationService @Inject() (
@@ -111,7 +107,6 @@ class ApplicationService @Inject() (
   @deprecated("please use AddCollaboratorRequest command to application Update controller")
   def addCollaborator(applicationId: ApplicationId, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
 
-    
     def validateCollaborator(app: ApplicationData, collaborator: Collaborator): Collaborator = {
       val normalisedCollaborator = request.collaborator.normalise
 
@@ -251,7 +246,7 @@ class ApplicationService @Inject() (
     )(implicit hc: HeaderCarrier
     ): Future[Set[Collaborator]] = {
     def deleteUser(app: ApplicationData): Future[ApplicationData] = {
-      val updatedCollaborators = app.collaborators.filterNot(_.emailAddress equalsIgnoreCase(collaborator))
+      val updatedCollaborators = app.collaborators.filterNot(_.emailAddress equalsIgnoreCase (collaborator))
       if (!hasAdmin(updatedCollaborators)) failed(new ApplicationNeedsAdmin)
       else applicationRepository.save(app.copy(collaborators = updatedCollaborators))
     }

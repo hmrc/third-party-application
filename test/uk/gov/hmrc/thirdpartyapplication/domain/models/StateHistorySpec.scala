@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
-import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
+import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, HmrcSpec}
 
 class StateHistorySpec extends HmrcSpec {
 

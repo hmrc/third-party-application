@@ -24,12 +24,12 @@ import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationDataService, TermsOfUseInvitationService}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationDataService, TermsOfUseInvitationService}
 
 class ApplicationRequest[A](val application: ApplicationData, val request: Request[A]) extends WrappedRequest[A](request)
 
