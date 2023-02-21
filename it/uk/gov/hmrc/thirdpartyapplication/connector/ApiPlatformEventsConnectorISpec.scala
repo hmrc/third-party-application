@@ -22,7 +22,15 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiContext, ApiVersio
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApiSubscribedV2, ApiUnsubscribedV2, ApplicationDeletedByGatekeeper, ApplicationEvent, ClientSecretAddedV2, ClientSecretRemovedV2, EventId}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{
+  ApiSubscribedV2,
+  ApiUnsubscribedV2,
+  ApplicationDeletedByGatekeeper,
+  ApplicationEvent,
+  ClientSecretAddedV2,
+  ClientSecretRemovedV2,
+  EventId
+}
 import uk.gov.hmrc.thirdpartyapplication.component.stubs.ApiPlatformEventsStub
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.utils.ServerBaseISpec
@@ -80,7 +88,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
 
       "send correct json for ApiUnSubscribed" in new Setup {
 
-        val apiUnSubscribed = ApiUnsubscribedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail),  ApiContext("contextValue"), ApiVersion("1.0"))
+        val apiUnSubscribed = ApiUnsubscribedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), ApiContext("contextValue"), ApiVersion("1.0"))
 
         val expectedApiUnSubscribedRequestBody =
           s"""

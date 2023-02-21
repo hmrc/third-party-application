@@ -20,7 +20,12 @@ import cats.data.NonEmptyList
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
+  ResponsibleIndividualToUVerification,
+  ResponsibleIndividualUpdateVerification,
+  ResponsibleIndividualVerification,
+  ResponsibleIndividualVerificationId
+}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -210,7 +215,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         EventId.random,
         appId,
         appName,
-      FixedClock.instant,
+        FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "ms admin",
         "admin@example.com".toLaxEmail,
@@ -225,13 +230,13 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ResponsibleIndividualChanged(
         EventId.random,
         appId,
-      FixedClock.instant,
+        FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr Previous Ri",
         "previous-ri@example.com".toLaxEmail,
         "Mr New Ri",
         "ri@example.com".toLaxEmail,
-       SubmissionId(submissionId.value),
+        SubmissionId(submissionId.value),
         submissionIndex,
         code,
         "Mr Admin",
@@ -242,12 +247,12 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ResponsibleIndividualDeclined(
         EventId.random,
         appId,
-      FixedClock.instant,
+        FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr New Ri",
         "ri@example.com".toLaxEmail,
-       SubmissionId(submissionId.value),
-         submissionIndex,
+        SubmissionId(submissionId.value),
+        submissionIndex,
         code,
         "Mr Admin",
         "admin@example.com".toLaxEmail
@@ -258,11 +263,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ResponsibleIndividualDeclinedUpdate(
         EventId.random,
         appId,
-      FixedClock.instant,
+        FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr New Ri",
         "ri@example.com".toLaxEmail,
-       SubmissionId(submissionId.value),
+        SubmissionId(submissionId.value),
         submissionIndex,
         code,
         "Mr Admin",
@@ -273,11 +278,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ResponsibleIndividualDidNotVerify(
         EventId.random,
         appId,
-      FixedClock.instant,
+        FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr New Ri",
         "ri@example.com".toLaxEmail,
-       SubmissionId(submissionId.value),
+        SubmissionId(submissionId.value),
         submissionIndex,
         code,
         "Mr Admin",
@@ -288,11 +293,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ResponsibleIndividualSet(
         EventId.random,
         appId,
-      FixedClock.instant,
+        FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         "Mr New Ri",
         "ri@example.com".toLaxEmail,
-       SubmissionId(submissionId.value),
+        SubmissionId(submissionId.value),
         submissionIndex,
         code,
         "Mr Admin",
@@ -303,7 +308,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ApplicationDeleted(
         EventId.random,
         applicationId,
-      FixedClock.instant,
+        FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         ClientId("clientId"),
         "wso2ApplicationName",
@@ -314,7 +319,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ProductionCredentialsApplicationDeleted(
         EventId.random,
         applicationId,
-      FixedClock.instant,
+        FixedClock.instant,
         Actors.AppCollaborator("requester@example.com".toLaxEmail),
         ClientId("clientId"),
         "wso2ApplicationName",

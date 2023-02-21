@@ -40,7 +40,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
 import uk.gov.hmrc.thirdpartyapplication.util._
 
-
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
     with CommandCollaboratorExamples
@@ -71,7 +70,7 @@ class ApplicationCommandDispatcherSpec
         .applyEvents(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)))(*[HeaderCarrier])
 
       verify(NotificationServiceMock.aMock)
-          .sendNotifications(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)))(*[HeaderCarrier])
+        .sendNotifications(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)))(*[HeaderCarrier])
     }
 
     val allCommandHandlers = Set(
@@ -150,7 +149,7 @@ class ApplicationCommandDispatcherSpec
     }
 
     "RemoveClientSecret is received" should {
-      val cmd: RemoveClientSecret  = RemoveClientSecret(devHubUser, UUID.randomUUID().toString, FixedClock.now)
+      val cmd: RemoveClientSecret    = RemoveClientSecret(devHubUser, UUID.randomUUID().toString, FixedClock.now)
       val evt: ClientSecretRemovedV2 = ClientSecretRemovedV2(EventId.random, applicationId, FixedClock.instant, devHubUser, cmd.clientSecretId, "someName")
 
       "call RemoveClientSecretCommand Handler and relevant common services if application exists" in new Setup {
@@ -170,9 +169,9 @@ class ApplicationCommandDispatcherSpec
     }
 
     "AddCollaborator is received" should {
-      val collaborator           = "email".developer()
-      val adminsToEmail          = Set("email1".toLaxEmail, "email2".toLaxEmail)
-      val cmd: AddCollaborator   = AddCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
+      val collaborator             = "email".developer()
+      val adminsToEmail            = Set("email1".toLaxEmail, "email2".toLaxEmail)
+      val cmd: AddCollaborator     = AddCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
       val evt: CollaboratorAddedV2 = CollaboratorAddedV2(
         EventId.random,
         applicationId,
@@ -200,9 +199,9 @@ class ApplicationCommandDispatcherSpec
 
     "RemoveCollaborator is received" should {
 
-      val collaborator             = "email".developer()
-      val adminsToEmail            = Set("email1".toLaxEmail, "email2".toLaxEmail)
-      val cmd: RemoveCollaborator  = RemoveCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
+      val collaborator               = "email".developer()
+      val adminsToEmail              = Set("email1".toLaxEmail, "email2".toLaxEmail)
+      val cmd: RemoveCollaborator    = RemoveCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
       val evt: CollaboratorRemovedV2 = CollaboratorRemovedV2(
         EventId.random,
         applicationId,

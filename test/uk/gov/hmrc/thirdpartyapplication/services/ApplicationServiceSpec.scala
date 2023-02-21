@@ -685,9 +685,9 @@ class ApplicationServiceSpec
   }
 
   "add collaborator with userId" should {
-    val admin2 = "admin2@example.com".toLaxEmail
-    val defaultEmail = "test@example.com".toLaxEmail
-    val adminsToEmail  = Set(admin2)
+    val admin2        = "admin2@example.com".toLaxEmail
+    val defaultEmail  = "test@example.com".toLaxEmail
+    val adminsToEmail = Set(admin2)
 
     def developerRequest(email: LaxEmailAddress = defaultEmail, isRegistered: Boolean = false, adminsToEmail: Set[LaxEmailAddress] = adminsToEmail) = {
       AddCollaboratorRequest(email.developer(), isRegistered, adminsToEmail)
@@ -718,10 +718,10 @@ class ApplicationServiceSpec
   }
 
   "add collaborator" should {
-    val admin  = "admin@example.com".toLaxEmail
-    val admin2 = "admin2@example.com".toLaxEmail
+    val admin         = "admin@example.com".toLaxEmail
+    val admin2        = "admin2@example.com".toLaxEmail
     val defaultEmail  = "test@example.com".toLaxEmail
-    val adminsToEmail  = Set(admin2)
+    val adminsToEmail = Set(admin2)
 
     def developerRequest(email: LaxEmailAddress = defaultEmail, isRegistered: Boolean = false, adminsToEmail: Set[LaxEmailAddress] = adminsToEmail) = {
       AddCollaboratorRequest(email.developer(), isRegistered, adminsToEmail)
@@ -888,18 +888,18 @@ class ApplicationServiceSpec
 
   "delete collaborator with userId" should {
     trait DeleteCollaboratorsSetup extends Setup {
-      val admin                    = "admin@example.com".toLaxEmail
-      val admin2           = "admin2@example.com".toLaxEmail
-      val testEmail                = "test@example.com".toLaxEmail
-      val adminsToEmail            = Set(admin2)
-      val notifyCollaborator       = true
-      val collaborators: Set[Collaborator]            = Set(
+      val admin                            = "admin@example.com".toLaxEmail
+      val admin2                           = "admin2@example.com".toLaxEmail
+      val testEmail                        = "test@example.com".toLaxEmail
+      val adminsToEmail                    = Set(admin2)
+      val notifyCollaborator               = true
+      val collaborators: Set[Collaborator] = Set(
         admin.admin(),
         admin2.admin(),
         testEmail.developer()
       )
-      override val applicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
-      val updatedData              = applicationData.copy(collaborators = applicationData.collaborators - testEmail.developer())
+      override val applicationData         = anApplicationData(applicationId = applicationId, collaborators = collaborators)
+      val updatedData                      = applicationData.copy(collaborators = applicationData.collaborators - testEmail.developer())
     }
 
     "remove collaborator and send confirmation and notification emails" in new DeleteCollaboratorsSetup {
@@ -989,7 +989,7 @@ class ApplicationServiceSpec
       AuditServiceMock.Audit.thenReturnSuccess()
       val mixedCaseCollaboratorEmail = collaborator.text.capitalize.toLaxEmail
       println(mixedCaseCollaboratorEmail)
-      val result: Set[Collaborator] = await(underTest.deleteCollaborator(applicationId, mixedCaseCollaboratorEmail, adminsToEmail, notifyCollaborator))
+      val result: Set[Collaborator]  = await(underTest.deleteCollaborator(applicationId, mixedCaseCollaboratorEmail, adminsToEmail, notifyCollaborator))
 
       ApplicationRepoMock.Save.verifyCalledWith(updatedData)
       verify(mockEmailConnector).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
@@ -997,7 +997,7 @@ class ApplicationServiceSpec
       result shouldBe updatedData.collaborators
 
       // verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(mixedCaseCollaboratorEmail), eqTo("DEVELOPER"))(any[HeaderCarrier])
-      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(*,*[LaxEmailAddress],*)(*[HeaderCarrier])
+      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(*, *[LaxEmailAddress], *)(*[HeaderCarrier])
 
     }
 

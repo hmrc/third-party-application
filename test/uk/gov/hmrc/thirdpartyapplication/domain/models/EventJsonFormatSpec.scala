@@ -23,12 +23,11 @@ import play.api.libs.json.Json
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 
-
 class EventJsonFormatSpec extends AnyWordSpec with Matchers {
 
   "Actor" should {
     "read to correctJson Format for Collaborator" in {
-      val collaborator: Actor =  Actors.AppCollaborator(LaxEmailAddress("some value"))
+      val collaborator: Actor = Actors.AppCollaborator(LaxEmailAddress("some value"))
       val collaboratorJson    = Json.toJson(collaborator).toString()
       collaboratorJson shouldBe """{"email":"some value","actorType":"COLLABORATOR"}"""
     }

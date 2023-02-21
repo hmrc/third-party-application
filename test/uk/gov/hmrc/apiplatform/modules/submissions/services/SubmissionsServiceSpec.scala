@@ -230,7 +230,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
     }
 
     "applyEvents" should {
-    
+
       val appId        = ApplicationId.random
       val submissionId = SubmissionId.random
       val reasons      = "reasons description"

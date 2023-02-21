@@ -88,9 +88,9 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
     }
   }
 
-  val reasons           = "reasons description text"
-  val ts                = FixedClock.instant
-  val authKey: String   = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
+  val reasons         = "reasons description text"
+  val ts              = FixedClock.instant
+  val authKey: String = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
 
   "DeleteUnusedApplicationCommand" should {
     val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, FixedClock.now)

@@ -42,13 +42,12 @@ trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatcher
 
       def thenAnswer() =
         when(aMock.insert(*)).thenAnswer((sh: StateHistory) => successful(sh))
-      
+
       def succeeds() = thenAnswer()
 
       def thenFailsWith(ex: Exception) =
         when(aMock.insert(*)).thenReturn(failed(ex))
 
-        
       def verifyCalledWith(sh: StateHistory) =
         verify.insert(eqTo(sh))
 

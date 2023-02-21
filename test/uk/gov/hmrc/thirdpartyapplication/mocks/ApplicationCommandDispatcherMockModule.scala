@@ -46,6 +46,7 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
     val E                           = EitherTHelper.make[CommandFailures]
 
     object Dispatch {
+
       def succeedsWith(applicationData: ApplicationData) = {
         val success: CommandSuccess = (applicationData, mockEvents)
         when(aMock.dispatch(*[ApplicationId], *)(*)).thenReturn(E.pure(success))

@@ -23,39 +23,40 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
 trait CollaboratorTestData {
-  
+
   private val idsByEmail = mutable.Map[String, UserId]()
-  
+
   def idOf(email: Any): UserId = email match {
-    case s: String => idsByEmail.getOrElseUpdate(s, UserId.random)
+    case s: String             => idsByEmail.getOrElseUpdate(s, UserId.random)
     case LaxEmailAddress(text) => idsByEmail.getOrElseUpdate(text, UserId.random)
   }
 
   import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
   implicit class CollaboratorStringSyntax(emailAddress: String) {
-    def admin() = Collaborators.Administrator(idOf(emailAddress), emailAddress.toLaxEmail)
+    def admin()     = Collaborators.Administrator(idOf(emailAddress), emailAddress.toLaxEmail)
     def developer() = Collaborators.Developer(idOf(emailAddress), emailAddress.toLaxEmail)
 
     def admin(userId: UserId) = {
       idsByEmail.put(emailAddress, userId)
       Collaborators.Administrator(userId, emailAddress.toLaxEmail)
     }
-    
+
     def developer(userId: UserId) = {
       idsByEmail.put(emailAddress, userId)
       Collaborators.Developer(userId, emailAddress.toLaxEmail)
     }
   }
+
   implicit class CollaboratorLaxEmailSyntax(emailAddress: LaxEmailAddress) {
-    def admin() = Collaborators.Administrator(idOf(emailAddress.text), emailAddress)
+    def admin()     = Collaborators.Administrator(idOf(emailAddress.text), emailAddress)
     def developer() = Collaborators.Developer(idOf(emailAddress.text), emailAddress)
 
     def admin(userId: UserId) = {
       idsByEmail.put(emailAddress.text, userId)
       Collaborators.Administrator(userId, emailAddress)
     }
-    
+
     def developer(userId: UserId) = {
       idsByEmail.put(emailAddress.text, userId)
       Collaborators.Developer(userId, emailAddress)

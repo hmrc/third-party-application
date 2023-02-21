@@ -1476,7 +1476,7 @@ class ApplicationControllerSpec
   // "temp" should {
   //   "dump some json" in {
   //     import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
-      
+
   //     val e: ApplicationEvent =
   //       ApiSubscribedV2(EventId.random, ApplicationId.random, FixedClock.instant, Actors.AppCollaborator("bob".toLaxEmail), "bob".asContext, "1.0".asVersion)
 

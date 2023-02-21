@@ -51,7 +51,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, FixedClock,
 class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks
     with UpliftRequestSamples
-    with SubmissionsTestData 
+    with SubmissionsTestData
     with CollaboratorTestData {
 
   import play.api.test.Helpers
@@ -340,7 +340,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
            |}]
            |}""".stripMargin.replaceAll("\n", "")
 
-      
       val result = underTest.create()(request.withBody(Json.parse(body)))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY

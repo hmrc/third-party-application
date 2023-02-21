@@ -93,9 +93,9 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
 
     }
   }
-  val appAdminUserId    = UserId.random
-  val reasons           = "reasons description text"
-  val ts                = FixedClock.instant
+  val appAdminUserId = UserId.random
+  val reasons        = "reasons description text"
+  val ts             = FixedClock.instant
 
   "DeleteApplicationByCollaborator" should {
     val cmd = DeleteApplicationByCollaborator(appAdminUserId, reasons, FixedClock.now)

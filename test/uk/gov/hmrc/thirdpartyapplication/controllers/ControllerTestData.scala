@@ -30,7 +30,7 @@ trait ControllerTestData extends CollaboratorTestData {
 
   val collaborators: Set[Collaborator] = Set(
     "admin@example.com".admin(),
-    "dev@example.com".developer()    
+    "dev@example.com".developer()
   )
 
   val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))

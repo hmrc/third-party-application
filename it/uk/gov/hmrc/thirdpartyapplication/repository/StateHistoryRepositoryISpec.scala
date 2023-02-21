@@ -33,7 +33,7 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
     with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
 
   private val repository = new StateHistoryRepository(mongoComponent)
-  val actor: Actor    = Actors.AppCollaborator("admin@example.com".toLaxEmail)
+  val actor: Actor       = Actors.AppCollaborator("admin@example.com".toLaxEmail)
 
   "insert" should {
 
@@ -126,12 +126,12 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
   "insert" should {
 
     "insert a StateHistory record" in {
-      val requesterEmail  = "bill.badger@rupert.com".toLaxEmail
-      val appId           = ApplicationId.random
-      val ts              = FixedClock.now
-      val actor: Actor = Actors.AppCollaborator(requesterEmail)
+      val requesterEmail = "bill.badger@rupert.com".toLaxEmail
+      val appId          = ApplicationId.random
+      val ts             = FixedClock.now
+      val actor: Actor   = Actors.AppCollaborator(requesterEmail)
 
-      val stateHistory    = StateHistory(appId, State.PENDING_GATEKEEPER_APPROVAL, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
+      val stateHistory = StateHistory(appId, State.PENDING_GATEKEEPER_APPROVAL, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
 
       val result = await(repository.insert(stateHistory))
 

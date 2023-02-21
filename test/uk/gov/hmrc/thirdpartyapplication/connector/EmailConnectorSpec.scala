@@ -69,9 +69,9 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
     val gatekeeperEmail   = "gatekeeper@example.com".toLaxEmail
     val applicationName   = "Test Application"
     val applicationId     = ApplicationId.random
-    val developer = collaboratorEmail.developer()
-    val administrator = adminEmail1.admin()
-    
+    val developer         = collaboratorEmail.developer()
+    val administrator     = adminEmail1.admin()
+
     "send added collaborator confirmation email" in new Setup {
       val expectedTemplateId                      = "apiAddedDeveloperAsCollaboratorConfirmation"
       val expectedToEmails                        = Set(collaboratorEmail.toLaxEmail)

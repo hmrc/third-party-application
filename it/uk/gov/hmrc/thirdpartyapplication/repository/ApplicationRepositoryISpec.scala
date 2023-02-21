@@ -3286,8 +3286,7 @@ class ApplicationRepositoryISpec
       prodClientId: ClientId = ClientId("aaa"),
       state: ApplicationState = testingState(),
       access: Access = Standard(),
-      users: Set[Collaborator] = Set("user@example.com".admin()
-      ),
+      users: Set[Collaborator] = Set("user@example.com".admin()),
       checkInformation: Option[CheckInformation] = None,
       clientSecrets: List[ClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
       grantLength: Int = defaultGrantLength

@@ -33,9 +33,9 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  val eventAppId = ApplicationId.random
+  val eventAppId        = ApplicationId.random
   val eventCollaborator = Actors.AppCollaborator("bob@bob.com".toLaxEmail)
-  
+
   val teamMemberAddedEvent: TeamMemberAddedEvent = TeamMemberAddedEvent(
     id = EventId.random,
     applicationId = eventAppId,
