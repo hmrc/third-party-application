@@ -18,6 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
@@ -30,8 +34,8 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val applicationId         = ApplicationId.random
-    val devEmail              = "dev@example.com"
-    val adminEmail            = "admin@example.com"
+    val devEmail              = "dev@example.com".toLaxEmail
+    val adminEmail            = "admin@example.com".toLaxEmail
     val oldName               = "old app name"
     val newName               = "new app name"
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
@@ -40,30 +44,30 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),
-      TermsAndConditionsLocation.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )
 
     val app            = anApplicationData(applicationId).copy(
       collaborators = Set(
-        Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
-        Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
+        devEmail.developer(),
+        adminEmail.admin()
       ),
       name = oldName,
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
     val timestamp      = FixedClock.now
     val gatekeeperUser = "gkuser"
-    val eventId        = UpdateApplicationEvent.Id.random
-    val actor          = UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser)
+    val eventId        = EventId.random
+    val actor          = Actors.GatekeeperUser(gatekeeperUser)
   }
 
   "sendAdviceEmail" should {
     "successfully send email for PrivacyPolicyUrlChanged" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
-      val previousPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/old-privacy-policy")
-      val newPrivacyPolicyUrl      = PrivacyPolicyLocation.Url("https://example.com/new-privacy-policy")
+      val previousPrivacyPolicyUrl = PrivacyPolicyLocations.Url("https://example.com/old-privacy-policy")
+      val newPrivacyPolicyUrl      = PrivacyPolicyLocations.Url("https://example.com/new-privacy-policy")
 
       val result = await(StandardChangedNotification.sendAdviceEmail(
         EmailConnectorMock.aMock,
@@ -75,12 +79,12 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
       ))
       result shouldBe HasSucceeded
       EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(
-        adminEmail,
+        adminEmail.text,
         app.name,
         "privacy policy URL",
         previousPrivacyPolicyUrl.value,
         newPrivacyPolicyUrl.value,
-        Set(adminEmail, devEmail, responsibleIndividual.emailAddress.value)
+        Set(adminEmail, devEmail, responsibleIndividual.emailAddress)
       )
     }
   }

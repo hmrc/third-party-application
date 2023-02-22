@@ -8,7 +8,6 @@ object AppDependencies {
 
   private lazy val compileDeps = Seq(
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28"         % bootstrapVersion,
-    "uk.gov.hmrc"       %% "play-json-union-formatter"         % "1.18.0-play-28",
     "com.typesafe.play" %% "play-json"                         % "2.9.2",
     "uk.gov.hmrc"       %% "play-hmrc-api"                     % "7.1.0-play-28",
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-work-item-repo-play-28" % hmrcMongoVersion,
@@ -17,8 +16,8 @@ object AppDependencies {
     "com.github.t3hnar" %% "scala-bcrypt"                      % "4.1",
     "uk.gov.hmrc"       %% "time"                              % "3.25.0",
     "commons-validator"  % "commons-validator"                 % "1.7",
-    "uk.gov.hmrc"       %% "internal-auth-client-play-28"      % "1.2.0"
-
+    "uk.gov.hmrc"       %% "internal-auth-client-play-28"      % "1.2.0",
+    "uk.gov.hmrc"       %% "api-platform-application-events"   % "0.10.14"
   )
 
   private lazy val testDeps = Seq(

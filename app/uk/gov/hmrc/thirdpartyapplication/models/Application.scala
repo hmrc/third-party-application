@@ -18,6 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.time.LocalDateTime
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
@@ -34,13 +36,13 @@ trait CreateApplicationRequest {
   def accessType: AccessType.AccessType
 
   protected def lowerCaseEmails(in: Set[Collaborator]): Set[Collaborator] = {
-    in.map(c => c.copy(emailAddress = c.emailAddress.toLowerCase))
+    in.map(c => c.normalise)
   }
 
   def validate(in: CreateApplicationRequest): Unit = {
     require(in.name.nonEmpty, "name is required")
-    require(in.collaborators.exists(_.role == Role.ADMINISTRATOR), "at least one ADMINISTRATOR collaborator is required")
-    require(in.collaborators.size == collaborators.map(_.emailAddress.toLowerCase).size, "duplicate email in collaborator")
+    require(in.collaborators.exists(_.isAdministrator), "at least one ADMINISTRATOR collaborator is required")
+    require(in.collaborators.size == collaborators.map(_.normalise).size, "duplicate email in collaborator")
   }
 }
 

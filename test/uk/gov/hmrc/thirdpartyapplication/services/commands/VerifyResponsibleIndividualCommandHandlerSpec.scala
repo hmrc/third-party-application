@@ -20,6 +20,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ResponsibleIndividualVerificationStarted
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -34,40 +39,38 @@ class VerifyResponsibleIndividualCommandHandlerSpec
     with CommandCollaboratorExamples
     with CommandApplicationExamples {
 
-  import UpdateApplicationEvent._
-
   trait Setup extends SubmissionsServiceMockModule with ResponsibleIndividualVerificationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val submission     = aSubmission
     val appAdminUserId = UserId.random
-    val appAdminEmail  = "admin@example.com"
+    val appAdminEmail  = "admin@example.com".toLaxEmail
     val appAdminName   = "Ms Admin"
     val oldRiUserId    = UserId.random
-    val oldRiEmail     = "oldri@example.com"
+    val oldRiEmail     = "oldri@example.com".toLaxEmail
     val oldRiName      = "old ri"
 
     val importantSubmissionData = ImportantSubmissionData(
       None,
-      ResponsibleIndividual.build(oldRiName, oldRiEmail),
+      ResponsibleIndividual.build(oldRiName, oldRiEmail.text),
       Set.empty,
-      TermsAndConditionsLocation.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )
 
     val app = anApplicationData(applicationId).copy(
       collaborators = Set(
-        Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId),
-        Collaborator(oldRiEmail, Role.ADMINISTRATOR, oldRiUserId)
+        appAdminEmail.admin(appAdminUserId),
+        oldRiEmail.admin(oldRiUserId)
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
 
-    val ts      = FixedClock.now
+    val ts      = FixedClock.instant
     val riName  = "Mr Responsible"
-    val riEmail = "ri@example.com"
+    val riEmail = "ri@example.com".toLaxEmail
 
     val underTest = new VerifyResponsibleIndividualCommandHandler(SubmissionsServiceMock.aMock, ResponsibleIndividualVerificationRepositoryMock.aMock)
 
@@ -84,7 +87,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
 
-      val result = await(underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, ts, appAdminName, riName, riEmail)).value).right.value
+      val result = await(underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, FixedClock.now, appAdminName, riName, riEmail)).value).right.value
 
       inside(result) { case (app, events) =>
         events should have size 1
@@ -94,11 +97,11 @@ class VerifyResponsibleIndividualCommandHandlerSpec
             event.applicationId shouldBe applicationId
             event.applicationName shouldBe app.name
             event.eventDateTime shouldBe ts
-            event.actor shouldBe CollaboratorActor(appAdminEmail)
+            event.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             event.responsibleIndividualName shouldBe riName
             event.responsibleIndividualEmail shouldBe riEmail
             event.submissionIndex shouldBe submission.latestInstance.index
-            event.submissionId shouldBe submission.id
+            event.submissionId.value shouldBe submission.id.value
             event.requestingAdminEmail shouldBe appAdminEmail
             event.requestingAdminName shouldBe appAdminName
         }
@@ -109,7 +112,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
 
       checkFailsWith(s"No submission found for application $applicationId") {
-        underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, ts, appAdminName, riName, riEmail))
+        underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, FixedClock.now, appAdminName, riName, riEmail))
       }
     }
 
@@ -118,7 +121,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
 
       checkFailsWith("Must be a standard new journey application") {
-        underTest.process(nonStandardApp, VerifyResponsibleIndividual(appAdminUserId, ts, appAdminName, riName, riEmail))
+        underTest.process(nonStandardApp, VerifyResponsibleIndividual(appAdminUserId, FixedClock.now, appAdminName, riName, riEmail))
       }
     }
 
@@ -127,7 +130,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
       val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith("Must be a standard new journey application") {
-        underTest.process(oldJourneyApp, VerifyResponsibleIndividual(appAdminUserId, ts, appAdminName, riName, riEmail))
+        underTest.process(oldJourneyApp, VerifyResponsibleIndividual(appAdminUserId, FixedClock.now, appAdminName, riName, riEmail))
       }
     }
 
@@ -136,7 +139,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
       val notApprovedApp = app.copy(state = ApplicationState.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
-        underTest.process(notApprovedApp, VerifyResponsibleIndividual(appAdminUserId, ts, appAdminName, riName, riEmail))
+        underTest.process(notApprovedApp, VerifyResponsibleIndividual(appAdminUserId, FixedClock.now, appAdminName, riName, riEmail))
       }
     }
 
@@ -144,7 +147,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(app, VerifyResponsibleIndividual(UserId.random, ts, appAdminName, riName, riEmail))
+        underTest.process(app, VerifyResponsibleIndividual(UserId.random, FixedClock.now, appAdminName, riName, riEmail))
       }
     }
 
@@ -152,7 +155,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
       checkFailsWith(s"The specified individual is already the RI for this application") {
-        underTest.process(app, VerifyResponsibleIndividual(oldRiUserId, ts, appAdminName, oldRiName, oldRiEmail))
+        underTest.process(app, VerifyResponsibleIndividual(oldRiUserId, FixedClock.now, appAdminName, oldRiName, oldRiEmail))
       }
     }
   }

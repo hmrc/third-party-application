@@ -18,7 +18,9 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
@@ -36,21 +38,21 @@ class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
 
     val nonStandardAccessApp = applicationData.copy(access = Privileged())
     val developer            = applicationData.collaborators.head
-    val developerActor       = CollaboratorActor(developer.emailAddress)
+    val developerActor       = Actors.AppCollaborator(developer.emailAddress)
 
     val oldRedirectUris = List.empty
     val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
 
-    val timestamp = FixedClock.now
-    val cmd       = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, timestamp)
+    val timestamp = FixedClock.instant
+    val cmd       = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, FixedClock.now)
 
-    def checkSuccessResult(expectedActor: CollaboratorActor)(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.CommandSuccess) = {
       inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head
 
         inside(event) {
-          case RedirectUrisUpdated(_, appId, eventDateTime, actor, oldUris, newUris) =>
+          case RedirectUrisUpdatedV2(_, appId, eventDateTime, actor, oldUris, newUris) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp

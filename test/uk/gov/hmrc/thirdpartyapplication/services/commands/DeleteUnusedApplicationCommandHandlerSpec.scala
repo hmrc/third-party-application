@@ -17,15 +17,16 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import java.nio.charset.StandardCharsets.UTF_8
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.apache.commons.codec.binary.Base64.encodeBase64String
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
@@ -37,8 +38,8 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val appId: ApplicationId                 = ApplicationId.random
-    val appAdminEmail: String                = loggedInUser
-    val actor: ScheduledJobActor             = ScheduledJobActor("DeleteUnusedApplicationsJob")
+    val appAdminEmail                        = loggedInUser
+    val actor: Actors.ScheduledJob           = Actors.ScheduledJob("DeleteUnusedApplicationsJob")
     val app: ApplicationData                 = anApplicationData(appId, environment = Environment.SANDBOX)
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
@@ -76,9 +77,9 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
               appId shouldBe appId
               evtActor shouldBe actor
               eventDateTime shouldBe ts
-              oldAppState shouldBe app.state.name
-              newAppState shouldBe State.DELETED
-              requestingAdminEmail shouldBe actor.jobId
+              oldAppState shouldBe app.state.name.toString()
+              newAppState shouldBe State.DELETED.toString()
+              requestingAdminEmail.text shouldBe actor.jobId
               requestingAdminName shouldBe actor.jobId
           }
         )
@@ -87,19 +88,19 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
     }
   }
 
-  val reasons           = "reasons description text"
-  val ts: LocalDateTime = FixedClock.now
-  val authKey: String   = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
+  val reasons         = "reasons description text"
+  val ts              = FixedClock.instant
+  val authKey: String = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
 
   "DeleteUnusedApplicationCommand" should {
-    val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, ts)
+    val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, FixedClock.now)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       ApiGatewayStoreMock.ApplyEvents.succeeds()
       NotificationRepositoryMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
-      StateHistoryRepoMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.Insert.succeeds()
 
       val result = await(underTest.process(app, cmd).value).right.value
 
@@ -107,7 +108,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
     }
 
     "return an error when auth key doesnt match" in new Setup {
-      val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", "notAuthKey", reasons, ts)
+      val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", "notAuthKey", reasons, FixedClock.now)
 
       val result = await(underTest.process(app, cmd).value).left.value.toNonEmptyList.toList
 

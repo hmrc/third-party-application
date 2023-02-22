@@ -22,17 +22,19 @@ import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess, _}
+import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess => _, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 import java.time.{Clock, Duration, LocalDateTime, ZoneOffset}
 import java.util.UUID
@@ -41,6 +43,14 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 
 import java.time.temporal.ChronoUnit
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
@@ -2515,10 +2525,10 @@ class ApplicationRepositoryISpec
     "update the application correctly" in {
       val responsibleIndividual   = ResponsibleIndividual(
         ResponsibleIndividual.Name("bob"),
-        ResponsibleIndividual.EmailAddress("bob@example.com")
+        LaxEmailAddress("bob@example.com")
       )
       val acceptanceDate          = FixedClock.now
-      val submissionId            = Submission.Id.random
+      val submissionId            = SubmissionId.random
       val acceptance              = TermsOfUseAcceptance(
         responsibleIndividual,
         acceptanceDate,
@@ -2530,8 +2540,8 @@ class ApplicationRepositoryISpec
         None,
         responsibleIndividual,
         Set.empty,
-        TermsAndConditionsLocation.InDesktopSoftware,
-        PrivacyPolicyLocation.InDesktopSoftware,
+        TermsAndConditionsLocations.InDesktopSoftware,
+        PrivacyPolicyLocations.InDesktopSoftware,
         termsOfUseAcceptances = List()
       )
       val application             = anApplicationDataForTest(applicationId).copy(access =
@@ -2681,8 +2691,7 @@ class ApplicationRepositoryISpec
       val applicationId3 = ApplicationId.random
       val userId         = UserId.random
 
-      val collaborator     =
-        Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+      val collaborator     = "user@example.com".admin(userId)
       val testApplication1 = anApplicationDataForTest(applicationId1)
         .copy(collaborators = Set(collaborator))
       val testApplication2 =
@@ -2710,8 +2719,7 @@ class ApplicationRepositoryISpec
       val applicationId3 = ApplicationId.random
       val userId         = UserId.random
 
-      val collaborator     =
-        Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+      val collaborator     = "user@example.com".admin(userId)
       val testApplication1 = anApplicationDataForTest(applicationId1)
         .copy(collaborators = Set(collaborator))
       val testApplication2 =
@@ -2742,8 +2750,7 @@ class ApplicationRepositoryISpec
       val userId         = UserId.random
       val productionEnv  = Environment.PRODUCTION.toString
 
-      val collaborator =
-        Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+      val collaborator = "user@example.com".admin(userId)
 
       val prodApplication1   = anApplicationDataForTest(applicationId1)
         .copy(environment = productionEnv, collaborators = Set(collaborator))
@@ -2783,8 +2790,7 @@ class ApplicationRepositoryISpec
       val userId         = UserId.random
       val productionEnv  = Environment.PRODUCTION.toString
 
-      val collaborator =
-        Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+      val collaborator = "user@example.com".admin(userId)
 
       val prodApplication1   = anApplicationDataForTest(applicationId1)
         .copy(environment = productionEnv, collaborators = Set(collaborator))
@@ -2803,7 +2809,7 @@ class ApplicationRepositoryISpec
 
       val result = await(
         applicationRepository.fetchAllForEmailAddressAndEnvironment(
-          collaborator.emailAddress,
+          collaborator.emailAddress.text,
           productionEnv
         )
       )
@@ -2867,7 +2873,7 @@ class ApplicationRepositoryISpec
     val app = anApplicationData(applicationId)
     await(applicationRepository.save(app))
 
-    val collaborator          = Collaborator("email", Role.DEVELOPER, idOf("email"))
+    val collaborator          = "email".developer()
     val existingCollaborators = app.collaborators
 
     val appWithNewCollaborator = await(applicationRepository.addCollaborator(applicationId, collaborator))
@@ -2877,8 +2883,8 @@ class ApplicationRepositoryISpec
   "handle removeCollaborator correctly" in {
     val applicationId = ApplicationId.random
 
-    val developerCollaborator = Collaborator("email", Role.DEVELOPER, idOf("email"))
-    val adminCollaborator     = Collaborator("email2", Role.ADMINISTRATOR, idOf("email2"))
+    val developerCollaborator = "email".developer()
+    val adminCollaborator     = "email2".admin()
     val app                   = anApplicationData(applicationId, collaborators = Set(developerCollaborator, adminCollaborator))
     await(applicationRepository.save(app))
 
@@ -2891,8 +2897,8 @@ class ApplicationRepositoryISpec
 
   "handle ProductionAppPrivacyPolicyLocationChanged correctly" in {
     val applicationId = ApplicationId.random
-    val oldLocation   = PrivacyPolicyLocation.InDesktopSoftware
-    val newLocation   = PrivacyPolicyLocation.Url("http://example.com")
+    val oldLocation   = PrivacyPolicyLocations.InDesktopSoftware
+    val newLocation   = PrivacyPolicyLocations.Url("http://example.com")
     val access        = Standard(
       List.empty,
       None,
@@ -2904,7 +2910,7 @@ class ApplicationRepositoryISpec
           None,
           ResponsibleIndividual.build("bob example", "bob@example.com"),
           Set.empty,
-          TermsAndConditionsLocation.InDesktopSoftware,
+          TermsAndConditionsLocations.InDesktopSoftware,
           oldLocation,
           List.empty
         )
@@ -2937,8 +2943,8 @@ class ApplicationRepositoryISpec
 
   "handle ProductionAppTermsConditionsLocationChanged event correctly" in {
     val applicationId = ApplicationId.random
-    val oldLocation   = TermsAndConditionsLocation.InDesktopSoftware
-    val newLocation   = TermsAndConditionsLocation.Url("http://example.com")
+    val oldLocation   = TermsAndConditionsLocations.InDesktopSoftware
+    val newLocation   = TermsAndConditionsLocations.Url("http://example.com")
     val access        = Standard(
       List.empty,
       None,
@@ -2946,7 +2952,7 @@ class ApplicationRepositoryISpec
       Set.empty,
       None,
       Some(
-        ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty, oldLocation, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
+        ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty, oldLocation, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
       )
     )
     val app           = anApplicationData(applicationId).copy(access = access)
@@ -2979,16 +2985,16 @@ class ApplicationRepositoryISpec
     val ts                      = FixedClock.now.truncatedTo(ChronoUnit.MILLIS)
     val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
     val importantSubmissionData =
-      ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
+      ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocations.InDesktopSoftware, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
     val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = anApplicationData(applicationId).copy(access = access)
 
     await(applicationRepository.save(app))
     app.state.name mustBe State.PRODUCTION
-    val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, ts, adminEmail, adminName))
+    val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, ts, adminEmail.text, adminName))
     appWithUpdatedState.state.name mustBe State.PENDING_GATEKEEPER_APPROVAL
     appWithUpdatedState.state.updatedOn mustBe ts
-    appWithUpdatedState.state.requestedByEmailAddress mustBe Some(adminEmail)
+    appWithUpdatedState.state.requestedByEmailAddress mustBe Some(adminEmail.text)
     appWithUpdatedState.state.requestedByName mustBe Some(adminName)
   }
 
@@ -2996,14 +3002,14 @@ class ApplicationRepositoryISpec
     val applicationId = ApplicationId.random
 
     val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
-    val submissionId            = Submission.Id.random
+    val submissionId            = SubmissionId.random
     val submissionIndex         = 1
     val importantSubmissionData = ImportantSubmissionData(
       None,
       oldRi,
       Set.empty,
-      TermsAndConditionsLocation.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List(TermsOfUseAcceptance(oldRi, FixedClock.now, submissionId, submissionIndex))
     )
     val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
@@ -3016,11 +3022,11 @@ class ApplicationRepositoryISpec
     appWithUpdatedRI.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         importantSubmissionData.responsibleIndividual.fullName.value mustBe adminName
-        importantSubmissionData.responsibleIndividual.emailAddress.value mustBe adminEmail
+        importantSubmissionData.responsibleIndividual.emailAddress mustBe adminEmail
         importantSubmissionData.termsOfUseAcceptances.size mustBe 2
         val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
         latestAcceptance.responsibleIndividual.fullName.value mustBe adminName
-        latestAcceptance.responsibleIndividual.emailAddress.value mustBe adminEmail
+        latestAcceptance.responsibleIndividual.emailAddress mustBe adminEmail
       }
       case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
     }
@@ -3044,16 +3050,16 @@ class ApplicationRepositoryISpec
   "handle updateApplicationChangeResponsibleIndividual" in {
     val applicationId           = ApplicationId.random
     val riName                  = "Mr Responsible"
-    val riEmail                 = "ri@example.com"
+    val riEmail                 = "ri@example.com".toLaxEmail
     val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
-    val submissionId            = Submission.Id.random
+    val submissionId            = SubmissionId.random
     val submissionIndex         = 1
     val importantSubmissionData = ImportantSubmissionData(
       None,
       oldRi,
       Set.empty,
-      TermsAndConditionsLocation.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List(TermsOfUseAcceptance(oldRi, FixedClock.now, submissionId, submissionIndex))
     )
     val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
@@ -3064,11 +3070,11 @@ class ApplicationRepositoryISpec
     appWithUpdatedRI.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         importantSubmissionData.responsibleIndividual.fullName.value mustBe riName
-        importantSubmissionData.responsibleIndividual.emailAddress.value mustBe riEmail
+        importantSubmissionData.responsibleIndividual.emailAddress mustBe riEmail
         importantSubmissionData.termsOfUseAcceptances.size mustBe 2
         val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
         latestAcceptance.responsibleIndividual.fullName.value mustBe riName
-        latestAcceptance.responsibleIndividual.emailAddress.value mustBe riEmail
+        latestAcceptance.responsibleIndividual.emailAddress mustBe riEmail
       }
       case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
     }
@@ -3084,8 +3090,8 @@ class ApplicationRepositoryISpec
               None,
               ResponsibleIndividual.build("ri name", "ri@example.com"),
               Set.empty,
-              TermsAndConditionsLocation.InDesktopSoftware,
-              PrivacyPolicyLocation.InDesktopSoftware,
+              TermsAndConditionsLocations.InDesktopSoftware,
+              PrivacyPolicyLocations.InDesktopSoftware,
               List.empty
             ))
           case false => None
@@ -3101,7 +3107,7 @@ class ApplicationRepositoryISpec
     def saveHistoryStatePair(appId: ApplicationId, oldState: State, newState: State, timeOffset: Duration)     = saveHistory(appId, Some(oldState), newState, timeOffset)
     def saveHistory(appId: ApplicationId, maybeOldState: Option[State], newState: State, timeOffset: Duration) = {
       val stateHistory =
-        StateHistory(appId, newState, OldActor("actor", ActorType.GATEKEEPER), maybeOldState, None, FixedClock.now.plus(timeOffset).truncatedTo(ChronoUnit.MILLIS))
+        StateHistory(appId, newState, Actors.GatekeeperUser("actor"), maybeOldState, None, FixedClock.now.plus(timeOffset).truncatedTo(ChronoUnit.MILLIS))
       await(stateHistoryRepository.insert(stateHistory))
       stateHistory
     }
@@ -3170,8 +3176,8 @@ class ApplicationRepositoryISpec
     val developerEmail1 = "john.doe@example.com"
     val developerEmail2 = "someone-else@example.com"
 
-    val user1 = Collaborator(developerEmail1, Role.DEVELOPER, UserId.random)
-    val user2 = Collaborator(developerEmail2, Role.DEVELOPER, UserId.random)
+    val user1 = developerEmail1.developer()
+    val user2 = developerEmail2.developer()
 
     "return only the APIs that the user's apps are subscribed to, without duplicates" in {
       val app1            = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
@@ -3255,7 +3261,7 @@ class ApplicationRepositoryISpec
       access: Access = Standard(),
       grantLength: Int = defaultGrantLength,
       users: Set[Collaborator] = Set(
-        Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)
+        "user@example.com".admin()
       ),
       checkInformation: Option[CheckInformation] = None,
       clientSecrets: List[ClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret"))
@@ -3280,9 +3286,7 @@ class ApplicationRepositoryISpec
       prodClientId: ClientId = ClientId("aaa"),
       state: ApplicationState = testingState(),
       access: Access = Standard(),
-      users: Set[Collaborator] = Set(
-        Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)
-      ),
+      users: Set[Collaborator] = Set("user@example.com".admin()),
       checkInformation: Option[CheckInformation] = None,
       clientSecrets: List[ClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
       grantLength: Int = defaultGrantLength

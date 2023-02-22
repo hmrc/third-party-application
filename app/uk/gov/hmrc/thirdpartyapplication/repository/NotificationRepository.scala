@@ -27,7 +27,8 @@ import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationDeletedBase, ApplicationId, UpdateApplicationEvent}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.Notification
 
@@ -64,17 +65,20 @@ class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
       .map(_ => HasSucceeded)
   }
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[HasSucceeded] = {
+  // TODO - remove this method and extract to command handlers
+  def applyEvents(events: NonEmptyList[ApplicationEvent]): Future[HasSucceeded] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }
 
-  private def applyEvent(event: UpdateApplicationEvent): Future[HasSucceeded] = {
+  private def applyEvent(event: ApplicationEvent): Future[HasSucceeded] = {
     event match {
-      case evt: UpdateApplicationEvent with ApplicationDeletedBase => deleteAllByApplicationId(evt.applicationId)
-      case _                                                       => Future.successful(HasSucceeded)
+      case _: ApplicationDeleted                      => deleteAllByApplicationId(event.applicationId)
+      case _: ApplicationDeletedByGatekeeper          => deleteAllByApplicationId(event.applicationId)
+      case _: ProductionCredentialsApplicationDeleted => deleteAllByApplicationId(event.applicationId)
+      case _                                          => Future.successful(HasSucceeded)
     }
   }
 }

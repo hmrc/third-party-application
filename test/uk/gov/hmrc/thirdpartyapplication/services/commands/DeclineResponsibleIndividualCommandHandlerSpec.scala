@@ -20,15 +20,19 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualUpdateVerification,
   ResponsibleIndividualVerificationId,
   ResponsibleIndividualVerificationState
 }
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
@@ -51,9 +55,9 @@ class DeclineResponsibleIndividualCommandHandlerSpec
 
     val submission               = aSubmission
     val appAdminUserId           = UserId.random
-    val appAdminEmail            = "admin@example.com"
+    val appAdminEmail            = "admin@example.com".toLaxEmail
     val riName                   = "Mr Responsible"
-    val riEmail                  = "ri@example.com"
+    val riEmail                  = "ri@example.com".toLaxEmail
     val newResponsibleIndividual = ResponsibleIndividual.build("New RI", "new-ri@example")
     val oldRiName                = "old ri"
     val requesterEmail           = appAdminEmail
@@ -61,21 +65,21 @@ class DeclineResponsibleIndividualCommandHandlerSpec
 
     val importantSubmissionData = ImportantSubmissionData(
       None,
-      ResponsibleIndividual.build(riName, riEmail),
+      ResponsibleIndividual.build(riName, riEmail.text),
       Set.empty,
-      TermsAndConditionsLocation.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )
 
     val app  = anApplicationData(applicationId).copy(
       collaborators = Set(
-        Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
+        appAdminEmail.admin(appAdminUserId)
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
-      state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName)
+      state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName)
     )
-    val ts   = FixedClock.now
+    val ts   = FixedClock.instant
     val code = "3242342387452384623549234"
 
     val riVerificationToU = ResponsibleIndividualToUVerification(
@@ -84,7 +88,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      ts,
+      FixedClock.now,
       ResponsibleIndividualVerificationState.INITIAL
     )
 
@@ -94,7 +98,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      ts,
+      FixedClock.now,
       newResponsibleIndividual,
       requesterName,
       requesterEmail,
@@ -118,11 +122,11 @@ class DeclineResponsibleIndividualCommandHandlerSpec
           case riDeclined: ResponsibleIndividualDeclined =>
             riDeclined.applicationId shouldBe applicationId
             riDeclined.eventDateTime shouldBe ts
-            riDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
+            riDeclined.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             riDeclined.responsibleIndividualName shouldBe riName
             riDeclined.responsibleIndividualEmail shouldBe riEmail
             riDeclined.submissionIndex shouldBe submission.latestInstance.index
-            riDeclined.submissionId shouldBe submission.id
+            riDeclined.submissionId.value shouldBe submission.id.value
             riDeclined.requestingAdminEmail shouldBe appAdminEmail
             riDeclined.code shouldBe code
         }
@@ -130,11 +134,11 @@ class DeclineResponsibleIndividualCommandHandlerSpec
           case appApprovalRequestDeclined: ApplicationApprovalRequestDeclined =>
             appApprovalRequestDeclined.applicationId shouldBe applicationId
             appApprovalRequestDeclined.eventDateTime shouldBe ts
-            appApprovalRequestDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
+            appApprovalRequestDeclined.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             appApprovalRequestDeclined.decliningUserName shouldBe riName
             appApprovalRequestDeclined.decliningUserEmail shouldBe riEmail
             appApprovalRequestDeclined.submissionIndex shouldBe submission.latestInstance.index
-            appApprovalRequestDeclined.submissionId shouldBe submission.id
+            appApprovalRequestDeclined.submissionId.value shouldBe submission.id.value
             appApprovalRequestDeclined.requestingAdminEmail shouldBe appAdminEmail
             appApprovalRequestDeclined.reasons shouldBe "Responsible individual declined the terms of use."
         }
@@ -143,11 +147,11 @@ class DeclineResponsibleIndividualCommandHandlerSpec
           case stateEvent: ApplicationStateChanged =>
             stateEvent.applicationId shouldBe applicationId
             stateEvent.eventDateTime shouldBe ts
-            stateEvent.actor shouldBe CollaboratorActor(appAdminEmail)
+            stateEvent.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             stateEvent.requestingAdminEmail shouldBe requesterEmail
             stateEvent.requestingAdminName shouldBe requesterName
-            stateEvent.newAppState shouldBe State.TESTING
-            stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+            stateEvent.newAppState shouldBe State.TESTING.toString()
+            stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION.toString()
         }
       }
     }
@@ -162,11 +166,11 @@ class DeclineResponsibleIndividualCommandHandlerSpec
           case riDeclined: ResponsibleIndividualDeclinedUpdate =>
             riDeclined.applicationId shouldBe applicationId
             riDeclined.eventDateTime shouldBe ts
-            riDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
+            riDeclined.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             riDeclined.responsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
-            riDeclined.responsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress.value
+            riDeclined.responsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress
             riDeclined.submissionIndex shouldBe submission.latestInstance.index
-            riDeclined.submissionId shouldBe submission.id
+            riDeclined.submissionId.value shouldBe submission.id.value
             riDeclined.requestingAdminEmail shouldBe appAdminEmail
             riDeclined.code shouldBe code
         }
@@ -188,10 +192,10 @@ class DeclineResponsibleIndividualCommandHandlerSpec
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
       SubmissionsServiceMock.DeclineApprovalRequest.succeeds()
-      StateHistoryRepoMock.AddRecord.succeeds()
+      StateHistoryRepoMock.Insert.succeeds()
 
       checkSuccessResultToU() {
-        underTest.process(app, DeclineResponsibleIndividual(code, ts))
+        underTest.process(app, DeclineResponsibleIndividual(code, FixedClock.now))
       }
     }
 
@@ -199,10 +203,10 @@ class DeclineResponsibleIndividualCommandHandlerSpec
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
       ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
 
-      val prodApp = app.copy(state = ApplicationState.production(requesterEmail, requesterName))
+      val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
 
       checkSuccessResultUpdate() {
-        underTest.process(prodApp, DeclineResponsibleIndividual(code, ts))
+        underTest.process(prodApp, DeclineResponsibleIndividual(code, FixedClock.now))
       }
     }
 
@@ -210,7 +214,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturnNothing
 
       checkFailsWith(s"No responsibleIndividualVerification found for code $code") {
-        underTest.process(app, DeclineResponsibleIndividual(code, ts))
+        underTest.process(app, DeclineResponsibleIndividual(code, FixedClock.now))
       }
     }
 
@@ -219,7 +223,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
 
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(nonStandardApp, DeclineResponsibleIndividual(code, ts))
+        underTest.process(nonStandardApp, DeclineResponsibleIndividual(code, FixedClock.now))
       }
     }
 
@@ -228,7 +232,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec
       val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(oldJourneyApp, DeclineResponsibleIndividual(code, ts))
+        underTest.process(oldJourneyApp, DeclineResponsibleIndividual(code, FixedClock.now))
       }
     }
 
@@ -239,22 +243,22 @@ class DeclineResponsibleIndividualCommandHandlerSpec
         submission.id,
         submission.latestInstance.index,
         "App Name",
-        ts,
+        FixedClock.now,
         ResponsibleIndividualVerificationState.INITIAL
       )
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification2)
 
       checkFailsWith("The given application id is different") {
-        underTest.process(app, DeclineResponsibleIndividual(code, ts))
+        underTest.process(app, DeclineResponsibleIndividual(code, FixedClock.now))
       }
     }
 
     "return an error if the application state is not PendingResponsibleIndividualVerification" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
-      val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail, requesterName))
+      val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail.text, requesterName))
 
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state") {
-        underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividual(code, ts))
+        underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividual(code, FixedClock.now))
       }
     }
   }

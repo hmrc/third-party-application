@@ -25,8 +25,10 @@ import cats.data.{NonEmptyList, Validated}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredentialsApplication, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredentialsApplication, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
@@ -45,44 +47,35 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
   ) extends DeleteApplicationCommandHandler {
 
   import CommandHandler._
-  import UpdateApplicationEvent._
 
   private def validate(app: ApplicationData): Validated[CommandFailures, ApplicationData] = {
     Apply[Validated[CommandFailures, *]]
       .map(isInTesting(app)) { case _ => app }
   }
 
-  private def asEvents(app: ApplicationData, cmd: DeleteProductionCredentialsApplication): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: DeleteProductionCredentialsApplication, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
     val clientId = app.tokens.production.clientId
     NonEmptyList.of(
       ProductionCredentialsApplicationDeleted(
-        id = UpdateApplicationEvent.Id.random,
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = ScheduledJobActor(cmd.jobId),
+        eventDateTime = cmd.timestamp.instant,
+        actor = Actors.ScheduledJob(cmd.jobId),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons
       ),
-      ApplicationStateChanged(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = ScheduledJobActor(cmd.jobId),
-        app.state.name,
-        State.DELETED,
-        requestingAdminName = cmd.jobId,
-        requestingAdminEmail = cmd.jobId
-      )
+      fromStateHistory(stateHistory, cmd.jobId, LaxEmailAddress(cmd.jobId))
     )
   }
 
   def process(app: ApplicationData, cmd: DeleteProductionCredentialsApplication)(implicit hc: HeaderCarrier): ResultT = {
     for {
-      valid    <- E.fromEither(validate(app).toEither)
-      savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
-      events    = asEvents(savedApp, cmd)
-      _        <- deleteApplication(app, cmd.timestamp, cmd.jobId, cmd.jobId, events)
+      valid       <- E.fromEither(validate(app).toEither)
+      savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
+      stateHistory = StateHistory(app.id, State.DELETED, Actors.ScheduledJob(cmd.jobId), Some(app.state.name), changedAt = cmd.timestamp)
+      events       = asEvents(savedApp, cmd, stateHistory)
+      _           <- deleteApplication(app, stateHistory, cmd.timestamp, cmd.jobId, cmd.jobId, events)
     } yield (savedApp, events)
   }
 

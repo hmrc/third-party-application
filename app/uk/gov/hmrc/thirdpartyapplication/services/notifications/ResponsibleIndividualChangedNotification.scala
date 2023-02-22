@@ -20,6 +20,7 @@ import scala.concurrent.Future
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -29,7 +30,7 @@ object ResponsibleIndividualChangedNotification {
   def sendAdviceEmail(
       emailConnector: EmailConnector,
       app: ApplicationData,
-      previousResponsibleIndividualEmail: String,
+      previousResponsibleIndividualEmail: LaxEmailAddress,
       requestingAdminName: String,
       previousResponsibleIndividualName: String,
       newResponsibleIndividualName: String
@@ -45,7 +46,7 @@ object ResponsibleIndividualChangedNotification {
     )
   }
 
-  private def getRecipients(app: ApplicationData): Set[String] = {
+  private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
     app.collaborators.map(_.emailAddress)
   }
 }

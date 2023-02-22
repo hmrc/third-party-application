@@ -18,13 +18,14 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualVerificationId,
   ResponsibleIndividualVerificationWithDetails
 }
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
@@ -55,8 +56,8 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),
-      TermsAndConditionsLocation.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )
 
@@ -81,7 +82,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     val riVerification            = ResponsibleIndividualToUVerification(
       riVerificationId,
       application.id,
-      Submission.Id.random,
+      SubmissionId.random,
       0,
       appName,
       FixedClock.now

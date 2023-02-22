@@ -23,9 +23,10 @@ import cats.data.NonEmptyList
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 
 @Singleton
@@ -46,17 +47,20 @@ class ThirdPartyDelegatedAuthorityService @Inject() (
       .value
   }
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+  // TODO - remove this method and extract to command handlers
+  def applyEvents(events: NonEmptyList[ApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }
 
-  private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+  private def applyEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     event match {
-      case evt: UpdateApplicationEvent with ApplicationDeletedBase => revokeApplicationAuthorities(evt.clientId)
-      case _                                                       => Future.successful(None)
+      case e: ApplicationDeleted                      => revokeApplicationAuthorities(e.clientId)
+      case e: ApplicationDeletedByGatekeeper          => revokeApplicationAuthorities(e.clientId)
+      case e: ProductionCredentialsApplicationDeleted => revokeApplicationAuthorities(e.clientId)
+      case _                                          => Future.successful(None)
     }
   }
 }

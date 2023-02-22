@@ -16,13 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.{EitherT, NonEmptyChain, NonEmptyList, Validated}
 import cats.implicits._
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor}
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
@@ -35,11 +39,27 @@ trait CommandHandler {
 }
 
 object CommandHandler {
-  type CommandSuccess  = (ApplicationData, NonEmptyList[UpdateApplicationEvent])
+  type CommandSuccess  = (ApplicationData, NonEmptyList[ApplicationEvent])
   type CommandFailures = NonEmptyChain[String]
 
   // type Result  = Future[Either[CommandFailures, CommandSuccess]]
   type ResultT = EitherT[Future, CommandFailures, CommandSuccess]
+
+  implicit class InstantSyntax(value: LocalDateTime) {
+    def instant: Instant = value.toInstant(ZoneOffset.UTC)
+  }
+
+  def fromStateHistory(stateHistory: StateHistory, requestingAdminName: String, requestingAdminEmail: LaxEmailAddress) =
+    ApplicationStateChanged(
+      id = EventId.random,
+      applicationId = stateHistory.applicationId,
+      eventDateTime = stateHistory.changedAt.instant,
+      actor = stateHistory.actor,
+      stateHistory.previousState.fold("")(_.toString),
+      stateHistory.state.toString,
+      requestingAdminName,
+      requestingAdminEmail
+    )
 
   def cond(cond: => Boolean, left: String): Validated[CommandFailures, Unit] = {
     if (cond) ().validNec[String] else left.invalidNec[Unit]
@@ -53,21 +73,21 @@ object CommandHandler {
     value.fold(left.invalidNec[R])(_.validNec[String])
   }
 
-  def isCollaboratorOnApp(email: String, app: ApplicationData): Validated[CommandFailures, Unit] =
-    cond(app.collaborators.exists(c => c.emailAddress == email), s"no collaborator found with email: $email")
+  def isCollaboratorOnApp(email: LaxEmailAddress, app: ApplicationData): Validated[CommandFailures, Unit] =
+    cond(app.collaborators.exists(c => c.emailAddress == email), s"no collaborator found with email: ${email.text}")
 
   private def isCollaboratorActorAndAdmin(actor: Actor, app: ApplicationData): Boolean =
     actor match {
-      case CollaboratorActor(emailAddress) => app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.emailAddress == emailAddress)
-      case _                               => false
+      case Actors.AppCollaborator(emailAddress) => app.collaborators.exists(c => c.isAdministrator && c.emailAddress == emailAddress)
+      case _                                    => false
     }
 
   private def applicationHasAnAdmin(updated: Set[Collaborator]): Boolean = {
-    updated.exists(_.role == Role.ADMINISTRATOR)
+    updated.exists(_.isAdministrator)
   }
 
   def isAdminOnApp(userId: UserId, app: ApplicationData): Validated[CommandFailures, Collaborator] =
-    mustBeDefined(app.collaborators.find(c => c.role == Role.ADMINISTRATOR && c.userId == userId), "User must be an ADMIN")
+    mustBeDefined(app.collaborators.find(c => c.isAdministrator && c.userId == userId), "User must be an ADMIN")
 
   def isAdminIfInProduction(actor: Actor, app: ApplicationData): Validated[CommandFailures, Unit] =
     cond(
@@ -93,14 +113,14 @@ object CommandHandler {
       s"Client Secret Id $clientSecretId not found in Application ${app.id.value}"
     )
 
-  def collaboratorAlreadyOnApp(email: String, app: ApplicationData) = {
+  def collaboratorAlreadyOnApp(email: LaxEmailAddress, app: ApplicationData) = {
     cond(
-      !app.collaborators.exists(_.emailAddress.toLowerCase == email.toLowerCase),
+      !app.collaborators.exists(_.emailAddress.equalsIgnoreCase(email)),
       s"Collaborator already linked to Application ${app.id.value}"
     )
   }
 
-  def applicationWillHaveAnAdmin(email: String, app: ApplicationData) = {
+  def applicationWillHaveAnAdmin(email: LaxEmailAddress, app: ApplicationData) = {
     cond(
       applicationHasAnAdmin(app.collaborators.filterNot(_.emailAddress equalsIgnoreCase email)),
       s"Collaborator is last remaining admin for Application ${app.id.value}"
@@ -137,7 +157,7 @@ object CommandHandler {
       "Must be a standard new journey application"
     )
 
-  def getRequester(app: ApplicationData, instigator: UserId) = {
+  def getRequester(app: ApplicationData, instigator: UserId): LaxEmailAddress = {
     app.collaborators.find(_.userId == instigator).map(_.emailAddress).getOrElse(throw new RuntimeException(s"no collaborator found with instigator's userid: ${instigator}"))
   }
 
@@ -150,14 +170,14 @@ object CommandHandler {
   def ensureResponsibleIndividualDefined(app: ApplicationData) =
     mustBeDefined(getResponsibleIndividual(app), "The responsible individual has not been set for this application")
 
-  def getRequesterEmail(app: ApplicationData) =
-    app.state.requestedByEmailAddress
+  def getRequesterEmail(app: ApplicationData): Option[LaxEmailAddress] =
+    app.state.requestedByEmailAddress.map(LaxEmailAddress(_))
 
   def ensureRequesterEmailDefined(app: ApplicationData) =
     mustBeDefined(getRequesterEmail(app), "The requestedByEmailAddress has not been set for this application")
 
-  def getRequesterName(app: ApplicationData) =
-    app.state.requestedByName.orElse(getRequesterEmail(app))
+  def getRequesterName(app: ApplicationData): Option[String] =
+    app.state.requestedByName.orElse(getRequesterEmail(app).map(_.text))
 
   def ensureRequesterNameDefined(app: ApplicationData) =
     mustBeDefined(getRequesterName(app), "The requestedByName has not been set for this application")

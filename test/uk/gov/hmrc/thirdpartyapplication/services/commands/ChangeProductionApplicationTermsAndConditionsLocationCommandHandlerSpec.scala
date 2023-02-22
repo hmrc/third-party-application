@@ -20,7 +20,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
@@ -38,7 +41,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
 
     val oldUrl      = "http://example.com/old"
     val newUrl      = "http://example.com/new"
-    val newLocation = TermsAndConditionsLocation.Url(newUrl)
+    val newLocation = TermsAndConditionsLocations.Url(newUrl)
 
     val newJourneyApp = anApplicationData(applicationId).copy(
       collaborators = Set(
@@ -56,11 +59,11 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
       access = Standard(termsAndConditionsUrl = Some(oldUrl))
     )
 
-    val userId    = idsByEmail(adminEmail)
-    val timestamp = FixedClock.now
-    val actor     = CollaboratorActor(adminEmail)
+    val userId    = idOf(adminEmail)
+    val timestamp = FixedClock.instant
+    val actor     = Actors.AppCollaborator(adminEmail)
 
-    val update = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
+    val update = ChangeProductionApplicationTermsAndConditionsLocation(userId, FixedClock.now, newLocation)
 
     val underTest = new ChangeProductionApplicationTermsAndConditionsLocationCommandHandler(ApplicationRepoMock.aMock)
 
@@ -124,7 +127,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
 
     "return an error if instigator is not an admin on the application" in new Setup {
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(newJourneyApp, update.copy(instigator = idsByEmail(devEmail)))
+        underTest.process(newJourneyApp, update.copy(instigator = idOf(devEmail)))
       }
     }
 
@@ -156,7 +159,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
 
     "return an error if instigator is not an admin on the application" in new Setup {
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(oldJourneyApp, update.copy(instigator = idsByEmail(devEmail)))
+        underTest.process(oldJourneyApp, update.copy(instigator = idOf(devEmail)))
       }
     }
 

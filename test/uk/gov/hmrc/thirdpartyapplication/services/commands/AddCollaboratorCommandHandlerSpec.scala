@@ -18,7 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
@@ -33,17 +34,17 @@ class AddCollaboratorCommandHandlerSpec
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new AddCollaboratorCommandHandler(ApplicationRepoMock.aMock)
 
-    val timestamp = FixedClock.now
+    val timestamp = FixedClock.instant
 
     val newCollaboratorEmail = "newdev@somecompany.com"
-    val newCollaborator      = Collaborator(newCollaboratorEmail, Role.DEVELOPER, idOf(newCollaboratorEmail))
+    val newCollaborator      = newCollaboratorEmail.developer()
 
     val adminsToEmail = Set(adminEmail, devEmail)
 
-    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, adminsToEmail, timestamp)
-    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, adminsToEmail, timestamp)
+    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, adminsToEmail, FixedClock.now)
+    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, adminsToEmail, FixedClock.now)
 
-    def checkSuccessResult(expectedActor: CollaboratorActor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>
@@ -51,11 +52,11 @@ class AddCollaboratorCommandHandlerSpec
         val event = events.head
 
         inside(event) {
-          case CollaboratorAdded(_, appId, eventDateTime, actor, collaboratorId, collaboratorEmail, collaboratorRole, verifiedAdminsToEmail) =>
+          case CollaboratorAddedV2(_, appId, eventDateTime, actor, collaborator, verifiedAdminsToEmail) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            Collaborator(collaboratorEmail, collaboratorRole, collaboratorId) shouldBe newCollaborator
+            collaborator shouldBe newCollaborator
         }
       }
     }

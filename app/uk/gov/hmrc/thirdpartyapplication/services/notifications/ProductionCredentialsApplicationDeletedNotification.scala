@@ -20,8 +20,9 @@ import scala.concurrent.Future
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ProductionCredentialsApplicationDeleted
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
@@ -30,14 +31,14 @@ object ProductionCredentialsApplicationDeletedNotification {
   def sendAdviceEmail(
       emailConnector: EmailConnector,
       app: ApplicationData,
-      event: UpdateApplicationEvent.ProductionCredentialsApplicationDeleted
+      event: ProductionCredentialsApplicationDeleted
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     val recipients = getRecipients(app)
     emailConnector.sendProductionCredentialsRequestExpired(app.name, recipients)
   }
 
-  private def getRecipients(app: ApplicationData): Set[String] = {
+  private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
     app.collaborators.map(_.emailAddress)
   }
 }

@@ -28,6 +28,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
 class SubmissionsDAOISpec
     extends ServerBaseISpec
@@ -56,7 +57,7 @@ class SubmissionsDAOISpec
   "save and retrieved" should {
 
     "not find a record that is not there" in {
-      await(submissionsDao.fetch(Submission.Id.random)) mustBe None
+      await(submissionsDao.fetch(SubmissionId.random)) mustBe None
     }
 
     "store a record and retrieve it" in {

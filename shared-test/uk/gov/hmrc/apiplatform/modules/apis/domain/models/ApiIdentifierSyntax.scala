@@ -14,47 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
-
-import scala.util.Random
-
-import play.api.libs.json.Json
-
-case class ApiContext(value: String) extends AnyVal
-case class ApiVersion(value: String) extends AnyVal
-
-case class ApiIdentifier(context: ApiContext, version: ApiVersion) {
-
-  def asText(separator: String): String = s"${context.value}$separator${version.value}"
-}
-
-object ApiContext {
-
-  implicit val ordering: Ordering[ApiContext] = new Ordering[ApiContext] {
-    override def compare(x: ApiContext, y: ApiContext): Int = x.value.compareTo(y.value)
-  }
-  def random                                  = ApiContext(Random.alphanumeric.take(10).mkString)
-
-  implicit val jsonFormat = Json.valueFormat[ApiContext]
-
-}
-
-object ApiVersion {
-
-  implicit val ordering: Ordering[ApiVersion] = new Ordering[ApiVersion] {
-    override def compare(x: ApiVersion, y: ApiVersion): Int = x.value.compareTo(y.value)
-  }
-  def random                                  = ApiVersion(Random.nextDouble().toString)
-
-  implicit val jsonFormat = Json.valueFormat[ApiVersion]
-}
-
-object ApiIdentifier {
-  def random = ApiIdentifier(ApiContext.random, ApiVersion.random)
-
-  implicit val jsonFormat = Json.format[ApiIdentifier]
-
-}
+package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 
 trait ApiIdentifierSyntax {
 

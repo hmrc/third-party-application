@@ -20,9 +20,11 @@ import java.time.LocalDateTime
 
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 
-case class StateHistory(applicationId: ApplicationId, state: State, actor: OldActor, previousState: Option[State] = None, notes: Option[String] = None, changedAt: LocalDateTime)
+case class StateHistory(applicationId: ApplicationId, state: State, actor: Actor, previousState: Option[State] = None, notes: Option[String] = None, changedAt: LocalDateTime)
 
 object StateHistory {
   import play.api.libs.json.Json

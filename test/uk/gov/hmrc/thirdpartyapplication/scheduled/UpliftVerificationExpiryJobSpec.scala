@@ -28,19 +28,22 @@ import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.test.MongoSupport
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.PENDING_REQUESTER_VERIFICATION
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock, NoMetricsGuiceOneAppPerSuite}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, FixedClock, NoMetricsGuiceOneAppPerSuite}
 
 class UpliftVerificationExpiryJobSpec
     extends AsyncHmrcSpec
     with MongoSupport
     with BeforeAndAfterAll
     with ApplicationStateUtil
-    with NoMetricsGuiceOneAppPerSuite {
+    with NoMetricsGuiceOneAppPerSuite
+    with CollaboratorTestData {
 
   final val FixedTimeNow     = FixedClock.now
   final val expiryTimeInDays = 90
@@ -89,14 +92,14 @@ class UpliftVerificationExpiryJobSpec
       verify(mockStateHistoryRepository).insert(StateHistory(
         app1.id,
         State.TESTING,
-        OldActor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
+        Actors.ScheduledJob("UpliftVerificationExpiryJob"),
         Some(PENDING_REQUESTER_VERIFICATION),
         changedAt = FixedClock.now
       ))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app2.id,
         State.TESTING,
-        OldActor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
+        Actors.ScheduledJob("UpliftVerificationExpiryJob"),
         Some(PENDING_REQUESTER_VERIFICATION),
         changedAt = FixedClock.now
       ))
@@ -143,7 +146,7 @@ class UpliftVerificationExpiryJobSpec
       id,
       s"myApp-${id.value}",
       s"myapp-${id.value}",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       Some("description"),
       "myapplication",
       ApplicationTokens(

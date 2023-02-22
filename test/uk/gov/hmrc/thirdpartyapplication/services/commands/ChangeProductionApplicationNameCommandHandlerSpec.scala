@@ -20,7 +20,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -44,14 +46,14 @@ class ChangeProductionApplicationNameCommandHandlerSpec
     val gatekeeperUser = "gkuser"
     val requester      = "requester"
 
-    val userId = idsByEmail(adminEmail)
+    val userId = idOf(adminEmail)
 
-    val timestamp = FixedClock.now
-    val update    = ChangeProductionApplicationName(userId, timestamp, gatekeeperUser, newName)
+    val timestamp = FixedClock.instant
+    val update    = ChangeProductionApplicationName(userId, FixedClock.now, gatekeeperUser, newName)
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
-    def checkSuccessResult(expectedActor: GatekeeperUserActor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.ResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -59,7 +61,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
         val event = events.head
 
         inside(event) {
-          case ProductionAppNameChanged(_, appId, eventDateTime, actor, oldName, eNewName, requestingAdminEmail) =>
+          case ProductionAppNameChangedEvent(_, appId, eventDateTime, actor, oldName, eNewName, requestingAdminEmail) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
@@ -84,7 +86,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
       ApplicationRepoMock.UpdateApplicationName.thenReturn(app) // unmodified
 
-      checkSuccessResult(GatekeeperUserActor(gatekeeperUser)) {
+      checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
         underTest.process(app, update)
       }
     }
@@ -94,7 +96,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
       val priviledgedApp = app.copy(access = Privileged())
       ApplicationRepoMock.UpdateApplicationName.thenReturn(priviledgedApp) // unmodified
 
-      checkSuccessResult(GatekeeperUserActor(gatekeeperUser)) {
+      checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
         underTest.process(priviledgedApp, update)
       }
     }
@@ -110,7 +112,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
 
     "return an error if instigator is not an admin on the application" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val instigatorIsDev = update.copy(instigator = idsByEmail(devEmail))
+      val instigatorIsDev = update.copy(instigator = idOf(devEmail))
 
       checkFailsWith("User must be an ADMIN") {
         underTest.process(app, instigatorIsDev)

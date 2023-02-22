@@ -40,7 +40,9 @@ lazy val microservice = Project(appName, file("."))
       "uk.gov.hmrc.apiplatform.modules.submissions.controllers._",
       "uk.gov.hmrc.apiplatform.modules.submissions.controllers.binders._",
       "uk.gov.hmrc.thirdpartyapplication.domain.models._",
-      "uk.gov.hmrc.apiplatform.modules.submissions.domain.models._"
+      "uk.gov.hmrc.apiplatform.modules.applications.domain.models._",
+      "uk.gov.hmrc.apiplatform.modules.submissions.domain.models._",
+      "uk.gov.hmrc.apiplatform.modules.developers.domain.models._"
     )
   )
   .settings(
@@ -74,6 +76,10 @@ lazy val microservice = Project(appName, file("."))
     )
   )
 
+  commands += Command.command("testAll") { state =>
+      "test" :: "it:test" :: state
+  }
+  
 def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
   tests map { test =>
     Group(

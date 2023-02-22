@@ -23,6 +23,7 @@ import cats.data.NonEmptyChain
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -72,7 +73,7 @@ class ApplicationCommandDispatcher @Inject() (
 
       _ <- E.liftF(apiPlatformEventService.applyEvents(events))
       _ <- E.liftF(auditService.applyEvents(savedApp, events))
-      _ <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt }))
+      _ <- E.liftF(notificationService.sendNotifications(savedApp, events))
     } yield (savedApp, events)
   }
 

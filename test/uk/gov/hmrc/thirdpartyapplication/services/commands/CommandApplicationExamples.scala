@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, HasApplicationId}
 
@@ -31,8 +32,8 @@ trait CommandApplicationExamples extends HasApplicationId {
   val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())
 
   val responsibleIndividual      = ResponsibleIndividual.build("bob example", "bob@example.com")
-  val privicyPolicyLocation      = PrivacyPolicyLocation.InDesktopSoftware
-  val termsAndConditionsLocation = TermsAndConditionsLocation.InDesktopSoftware
+  val privicyPolicyLocation      = PrivacyPolicyLocations.InDesktopSoftware
+  val termsAndConditionsLocation = TermsAndConditionsLocations.InDesktopSoftware
 
   val testImportantSubmissionData = ImportantSubmissionData(
     Some("organisationUrl.com"),

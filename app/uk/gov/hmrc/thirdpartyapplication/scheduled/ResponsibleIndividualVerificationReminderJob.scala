@@ -31,6 +31,7 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, Standard}
@@ -78,7 +79,7 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
       requesterEmail <- OptionT.fromOption[Future](getRequesterEmail(app))
       _              <- OptionT.liftF(emailConnector.sendVerifyResponsibleIndividualNotification(
                           ri.fullName.value,
-                          ri.emailAddress.value,
+                          ri.emailAddress,
                           app.name,
                           requesterName,
                           verificationDueForReminder.id.value
@@ -99,8 +100,8 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
     app.state.requestedByName
   }
 
-  private def getRequesterEmail(app: ApplicationResponse): Option[String] = {
-    app.state.requestedByEmailAddress
+  private def getRequesterEmail(app: ApplicationResponse): Option[LaxEmailAddress] = {
+    app.state.requestedByEmailAddress.map(LaxEmailAddress(_)) // This should be an email address for these operations but this is not provable
   }
 }
 

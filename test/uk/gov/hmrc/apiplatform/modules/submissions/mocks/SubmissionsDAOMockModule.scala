@@ -20,9 +20,9 @@ import scala.concurrent.Future.successful
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.SubmissionsDAO
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 trait SubmissionsDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -41,10 +41,10 @@ trait SubmissionsDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {
     object Fetch {
 
       def thenReturn(submission: Submission) =
-        when(aMock.fetch(*[Submission.Id])).thenReturn(successful(Some(submission)))
+        when(aMock.fetch(*[SubmissionId])).thenReturn(successful(Some(submission)))
 
       def thenReturnNothing() =
-        when(aMock.fetch(*[Submission.Id])).thenReturn(successful(None))
+        when(aMock.fetch(*[SubmissionId])).thenReturn(successful(None))
     }
 
     object FetchLatest {

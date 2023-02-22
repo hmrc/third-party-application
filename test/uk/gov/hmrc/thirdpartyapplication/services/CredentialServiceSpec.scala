@@ -26,11 +26,12 @@ import org.mockito.captor.ArgCaptor
 import play.api.Logger
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithActor, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -70,14 +71,14 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       }
 
     val applicationId    = ApplicationId.random
-    val anotherAdminUser = "admin@example.com"
+    val anotherAdminUser = "admin@example.com".toLaxEmail
 
     val applicationData        = anApplicationData(
       applicationId,
-      collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random), Collaborator(anotherAdminUser, ADMINISTRATOR, UserId.random))
+      collaborators = Set(loggedInUser.admin(), anotherAdminUser.admin())
     )
     val secretRequest          = ClientSecretRequest(loggedInUser)
-    val secretRequestWithActor = ClientSecretRequestWithActor(CollaboratorActor(loggedInUser), FixedClock.now)
+    val secretRequestWithActor = ClientSecretRequestWithActor(Actors.AppCollaborator(loggedInUser), FixedClock.now)
     val environmentToken       = applicationData.tokens.production
     val firstSecret            = environmentToken.clientSecrets.head
 

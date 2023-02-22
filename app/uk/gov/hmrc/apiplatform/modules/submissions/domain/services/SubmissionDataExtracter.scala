@@ -18,9 +18,11 @@ package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import cats.Apply
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocation, PrivacyPolicyLocations, TermsAndConditionsLocation, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, PrivacyPolicyLocation, ResponsibleIndividual, ServerLocation, TermsAndConditionsLocation}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, ResponsibleIndividual, ServerLocation}
 
 object SubmissionDataExtracter extends ApplicationLogger {
 
@@ -70,10 +72,10 @@ object SubmissionDataExtracter extends ApplicationLogger {
     })
   }
 
-  def getResponsibleIndividualEmail(submission: Submission, requestedByEmailAddress: String): Option[ResponsibleIndividual.EmailAddress] = {
+  def getResponsibleIndividualEmail(submission: Submission, requestedByEmailAddress: String): Option[String] = {
     getAnswerForYesOrNoResponsibleIndividualIsRequester(submission).flatMap(_ match {
-      case "Yes" => Some(ResponsibleIndividual.EmailAddress(requestedByEmailAddress))
-      case "No"  => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId).map(ResponsibleIndividual.EmailAddress)
+      case "Yes" => Some(requestedByEmailAddress)
+      case "No"  => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId)
     })
   }
 
@@ -95,9 +97,9 @@ object SubmissionDataExtracter extends ApplicationLogger {
     lazy val urlIfChosen = getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.termsAndConditionsUrlId)
 
     yesNoOrDesktop.flatMap(_ match {
-      case "Yes"                                              => urlIfChosen.map(TermsAndConditionsLocation.Url(_))
-      case "No"                                               => TermsAndConditionsLocation.NoneProvided.some
-      case "The terms and conditions are in desktop software" => TermsAndConditionsLocation.InDesktopSoftware.some
+      case "Yes"                                              => urlIfChosen.map(TermsAndConditionsLocations.Url(_))
+      case "No"                                               => TermsAndConditionsLocations.NoneProvided.some
+      case "The terms and conditions are in desktop software" => TermsAndConditionsLocations.InDesktopSoftware.some
     })
   }
 
@@ -107,9 +109,9 @@ object SubmissionDataExtracter extends ApplicationLogger {
     lazy val urlIfChosen = getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.privacyPolicyUrlId)
 
     yesNoOrDesktop.flatMap(_ match {
-      case "Yes"                                       => urlIfChosen.map(PrivacyPolicyLocation.Url(_))
-      case "No"                                        => PrivacyPolicyLocation.NoneProvided.some
-      case "The privacy policy is in desktop software" => PrivacyPolicyLocation.InDesktopSoftware.some
+      case "Yes"                                       => urlIfChosen.map(PrivacyPolicyLocations.Url(_))
+      case "No"                                        => PrivacyPolicyLocations.NoneProvided.some
+      case "The privacy policy is in desktop software" => PrivacyPolicyLocations.InDesktopSoftware.some
     })
   }
 
@@ -131,7 +133,7 @@ object SubmissionDataExtracter extends ApplicationLogger {
     import cats.implicits._
     Apply[Option].map4(responsibleIndividualName, responsibleIndividualEmail, termsAndConditionsLocation, privacyPolicyLocation) {
       case (name, email, tnc, pp) =>
-        ImportantSubmissionData(organisationUrl, ResponsibleIndividual(name, email), serverLocations, tnc, pp, List.empty)
+        ImportantSubmissionData(organisationUrl, ResponsibleIndividual(name, email.toLaxEmail), serverLocations, tnc, pp, List.empty)
     }
   }
 }

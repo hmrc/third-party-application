@@ -20,15 +20,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{UserId, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, FixedClock}
 
-class AccessServiceSpec extends AsyncHmrcSpec {
+class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData {
 
   "Access service update scopes function" should {
 
@@ -174,7 +175,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       None,
       "wso2ApplicationName",
       ApplicationTokens(
@@ -191,7 +192,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       None,
       "wso2ApplicationName",
       ApplicationTokens(
@@ -208,7 +209,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       None,
       "wso2ApplicationName",
       ApplicationTokens(

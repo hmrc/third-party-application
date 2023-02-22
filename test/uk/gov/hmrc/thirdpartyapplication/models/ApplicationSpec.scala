@@ -16,14 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, _}
 
-class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples {
+class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples with CollaboratorTestData {
 
   "RateLimitTier" should {
     "have all rate limit tiers" in {
@@ -47,7 +51,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         FixedClock.now,
         Some(FixedClock.now)
       )
-    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, OldActor("1", ActorType.COLLABORATOR), changedAt = FixedClock.now)
+    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator("1".toLaxEmail), changedAt = FixedClock.now)
 
     "create object" in {
       val result = ApplicationWithUpliftRequest.create(app, history)
@@ -71,7 +75,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
           name = "an application",
           access = access,
           environment = environment,
-          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+          collaborators = Set("jim@example.com".admin()),
           upliftRequest = makeUpliftRequest(ApiIdentifier.random),
           requestedBy = "user@example.com",
           sandboxApplicationId = ApplicationId.random
@@ -88,7 +92,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
           name = "an application",
           access = access,
           environment = environment,
-          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+          collaborators = Set("jim@example.com".admin()),
           subscriptions = None
         ),
         wso2ApplicationName = "wso2ApplicationName",

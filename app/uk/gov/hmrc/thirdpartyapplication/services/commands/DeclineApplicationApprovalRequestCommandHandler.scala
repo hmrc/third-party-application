@@ -23,9 +23,11 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated, ValidatedNec}
 import cats.syntax.validated._
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Submission, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineApplicationApprovalRequest, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineApplicationApprovalRequest, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 
@@ -39,7 +41,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData): Future[ValidatedNec[String, (String, String, Submission)]] = {
+  private def validate(app: ApplicationData): Future[ValidatedNec[String, (LaxEmailAddress, String, Submission)]] = {
 
     def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandFailures, Submission] =
       maybeSubmission.fold(s"No submission found for application ${app.id.value}".invalidNec[Submission])(_.validNec[String])
@@ -55,51 +57,50 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     }
   }
 
-  import UpdateApplicationEvent._
-
   private def asEvents(
       app: ApplicationData,
       cmd: DeclineApplicationApprovalRequest,
       submission: Submission,
-      requesterEmail: String,
-      requesterName: String
+      requesterEmail: LaxEmailAddress,
+      requesterName: String,
+      stateHistory: StateHistory
     ): (ApplicationApprovalRequestDeclined, ApplicationStateChanged) = {
 
     (
       ApplicationApprovalRequestDeclined(
-        id = UpdateApplicationEvent.Id.random,
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = GatekeeperUserActor(cmd.gatekeeperUser),
+        eventDateTime = cmd.timestamp.instant,
+        actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         decliningUserName = cmd.gatekeeperUser,
-        decliningUserEmail = cmd.gatekeeperUser,
-        submissionId = submission.id,
+        decliningUserEmail = LaxEmailAddress(cmd.gatekeeperUser), // Not nice but we have nothing better
+        submissionId = SubmissionId(submission.id.value),
         submissionIndex = submission.latestInstance.index,
         reasons = cmd.reasons,
         requestingAdminName = requesterName,
         requestingAdminEmail = requesterEmail
       ),
-      ApplicationStateChanged(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = GatekeeperUserActor(cmd.gatekeeperUser),
-        app.state.name,
-        State.TESTING,
-        requestingAdminName = requesterName,
-        requestingAdminEmail = requesterEmail
-      )
+      fromStateHistory(stateHistory, requesterName, requesterEmail)
     )
   }
 
   def process(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): CommandHandler.ResultT = {
+
+    val stateHistory = StateHistory(
+      applicationId = app.id,
+      state = State.TESTING,
+      previousState = Some(app.state.name),
+      actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
+      changedAt = cmd.timestamp
+    )
+
     for {
       validated                                  <- E.fromValidatedF(validate(app))
       (requesterEmail, requesterName, submission) = validated
-      savedApp                                   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requesterEmail, requesterName))
-      (approvalDeclined, stateChange)             = asEvents(savedApp, cmd, submission, requesterEmail, requesterName)
+      savedApp                                   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requesterEmail.text, requesterName))
+      _                                          <- E.liftF(stateHistoryRepository.insert(stateHistory))
+      (approvalDeclined, stateChange)             = asEvents(savedApp, cmd, submission, requesterEmail, requesterName, stateHistory)
       events                                      = NonEmptyList.of(approvalDeclined, stateChange)
-      _                                          <- E.liftF(stateHistoryRepository.applyEvents(events))
       _                                          <- E.liftF(submissionService.declineApplicationApprovalRequest(approvalDeclined))
     } yield (savedApp, events)
   }

@@ -22,11 +22,14 @@ import scala.concurrent.ExecutionContext
 import cats.Apply
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, VerifyResponsibleIndividual}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
@@ -37,13 +40,12 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
   ) extends CommandHandler {
 
   import CommandHandler._
-  import UpdateApplicationEvent._
 
-  private def isNotCurrentRi(name: String, email: String, app: ApplicationData) =
+  private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
     cond(
       app.access match {
         case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
-          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.value.equalsIgnoreCase(email)
+          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.equalsIgnoreCase(email)
         case _                                                                                            => true
       },
       s"The specified individual is already the RI for this application"
@@ -59,21 +61,21 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
     ) { case (_, _, instigator, _, _) => instigator }
   }
 
-  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: String): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: LaxEmailAddress): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ResponsibleIndividualVerificationStarted(
-        id = UpdateApplicationEvent.Id.random,
+        id = EventId.random,
         applicationId = app.id,
         app.name,
-        eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(requesterEmail),
+        eventDateTime = cmd.timestamp.instant,
+        actor = Actors.AppCollaborator(requesterEmail),
         cmd.requesterName,
         requestingAdminEmail = getRequester(app, cmd.instigator),
         responsibleIndividualName = cmd.riName,
         responsibleIndividualEmail = cmd.riEmail,
         submission.id,
         submission.latestInstance.index,
-        ResponsibleIndividualVerificationId.random
+        ResponsibleIndividualVerificationId.random.value
       )
     )
   }

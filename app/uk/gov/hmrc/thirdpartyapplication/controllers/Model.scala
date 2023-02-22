@@ -21,8 +21,10 @@ import java.time.LocalDateTime
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{IpAllowlist, _}
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidGrantLengthException
 
@@ -30,13 +32,13 @@ case class ValidationRequest(clientId: ClientId, clientSecret: String)
 
 case class ApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[ApplicationId])
 
-case class ClientSecretRequest(actorEmailAddress: String)
+case class ClientSecretRequest(actorEmailAddress: LaxEmailAddress)
 
-case class ClientSecretRequestWithActor(actor: CollaboratorActor, timestamp: LocalDateTime)
+case class ClientSecretRequestWithActor(actor: Actors.AppCollaborator, timestamp: LocalDateTime)
 
-case class DeleteClientSecretRequest(actorEmailAddress: String)
+case class DeleteClientSecretRequest(actorEmailAddress: LaxEmailAddress)
 
-case class DeleteClientSecretsRequest(actorEmailAddress: String, secrets: List[String])
+case class DeleteClientSecretsRequest(actorEmailAddress: LaxEmailAddress, secrets: List[String])
 
 case class ApproveUpliftRequest(gatekeeperUserId: String)
 
@@ -44,7 +46,7 @@ case class RejectUpliftRequest(gatekeeperUserId: String, reason: String)
 
 case class ResendVerificationRequest(gatekeeperUserId: String)
 
-case class AddCollaboratorRequest(collaborator: Collaborator, isRegistered: Boolean, adminsToEmail: Set[String])
+case class AddCollaboratorRequest(collaborator: Collaborator, isRegistered: Boolean, adminsToEmail: Set[LaxEmailAddress])
 
 case class AddCollaboratorResponse(registeredUser: Boolean)
 
@@ -79,21 +81,21 @@ object UpdateIpAllowlistRequest {
   }
 }
 
-case class DeleteApplicationRequest(gatekeeperUserId: String, requestedByEmailAddress: String)
+case class DeleteApplicationRequest(gatekeeperUserId: String, requestedByEmailAddress: LaxEmailAddress)
 
 case class DeleteSubordinateApplicationRequest(applicationId: String)
 
 case class FixCollaboratorRequest(emailAddress: String, userId: UserId)
 
 case class DeleteCollaboratorRequest(
-    email: String,
-    adminsToEmail: Set[String],
+    email: LaxEmailAddress,
+    adminsToEmail: Set[LaxEmailAddress],
     notifyCollaborator: Boolean
   )
 
-case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: LocalDateTime, submissionId: Submission.Id)
+case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: LocalDateTime, submissionId: SubmissionId)
 
-case class ConfirmSetupCompleteRequest(requesterEmailAddress: String)
+case class ConfirmSetupCompleteRequest(requesterEmailAddress: LaxEmailAddress)
 
 object ErrorCode extends Enumeration {
   type ErrorCode = Value

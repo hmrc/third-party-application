@@ -36,7 +36,11 @@ import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator, PrivacyPolicyLocation, TermsAndConditionsLocation}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
@@ -121,7 +125,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
             .background(true)
         )
       ),
-      replaceIndexes = true
+      replaceIndexes = true,
+      extraCodecs = Seq(Codecs.playFormatCodec(LaxEmailAddress.formatter))
     ) with MetricsHelper {
 
   import MongoJsonFormatterOverrides._
@@ -703,20 +708,20 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def updateApplicationChangeResponsibleIndividual(
       applicationId: ApplicationId,
       newResponsibleIndividualName: String,
-      newResponsibleIndividualEmail: String,
+      newResponsibleIndividualEmail: LaxEmailAddress,
       eventDateTime: LocalDateTime,
-      submissionId: Submission.Id,
+      submissionId: SubmissionId,
       submissionIndex: Int
     ): Future[ApplicationData] =
     updateApplication(
       applicationId,
       Updates.combine(
         Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", newResponsibleIndividualName),
-        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", newResponsibleIndividualEmail),
+        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", Codecs.toBson(newResponsibleIndividualEmail)),
         Updates.push(
           "access.importantSubmissionData.termsOfUseAcceptances",
           Codecs.toBson(TermsOfUseAcceptance(
-            ResponsibleIndividual.build(newResponsibleIndividualName, newResponsibleIndividualEmail),
+            ResponsibleIndividual.build(newResponsibleIndividualName, newResponsibleIndividualEmail.text),
             eventDateTime,
             submissionId,
             submissionIndex
@@ -728,20 +733,20 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def updateApplicationChangeResponsibleIndividualToSelf(
       applicationId: ApplicationId,
       requestingAdminName: String,
-      requestingAdminEmail: String,
+      requestingAdminEmail: LaxEmailAddress,
       timeOfChange: LocalDateTime,
-      submissionId: Submission.Id,
+      submissionId: SubmissionId,
       submissionIndex: Int
     ): Future[ApplicationData] =
     updateApplication(
       applicationId,
       Updates.combine(
         Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", requestingAdminName),
-        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", requestingAdminEmail),
+        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", Codecs.toBson(requestingAdminEmail)),
         Updates.push(
           "access.importantSubmissionData.termsOfUseAcceptances",
           Codecs.toBson(TermsOfUseAcceptance(
-            ResponsibleIndividual.build(requestingAdminName, requestingAdminEmail),
+            ResponsibleIndividual.build(requestingAdminName, requestingAdminEmail.text),
             timeOfChange,
             submissionId,
             submissionIndex
@@ -753,9 +758,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def updateApplicationSetResponsibleIndividual(
       applicationId: ApplicationId,
       responsibleIndividualName: String,
-      responsibleIndividualEmail: String,
+      responsibleIndividualEmail: LaxEmailAddress,
       eventDateTime: LocalDateTime,
-      submissionId: Submission.Id,
+      submissionId: SubmissionId,
       submissionIndex: Int
     ): Future[ApplicationData] =
     updateApplication(
@@ -764,7 +769,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
         Updates.push(
           "access.importantSubmissionData.termsOfUseAcceptances",
           Codecs.toBson(TermsOfUseAcceptance(
-            ResponsibleIndividual.build(responsibleIndividualName, responsibleIndividualEmail),
+            ResponsibleIndividual.build(responsibleIndividualName, responsibleIndividualEmail.text),
             eventDateTime,
             submissionId,
             submissionIndex

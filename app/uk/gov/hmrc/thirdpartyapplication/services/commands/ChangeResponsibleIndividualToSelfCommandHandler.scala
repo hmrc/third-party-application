@@ -23,9 +23,11 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.validated._
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Submission, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividualToSelf, ImportantSubmissionData, Standard, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividualToSelf, ImportantSubmissionData, Standard}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
@@ -38,11 +40,11 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def isNotCurrentRi(name: String, email: String, app: ApplicationData) =
+  private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
     cond(
       app.access match {
         case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
-          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.value.equalsIgnoreCase(email)
+          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.equalsIgnoreCase(email)
         case _                                                                                            => true
       },
       s"The specified individual is already the RI for this application"
@@ -65,26 +67,24 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     }
   }
 
-  import UpdateApplicationEvent._
-
   private def asEvents(
       app: ApplicationData,
       cmd: ChangeResponsibleIndividualToSelf,
       submission: Submission,
-      requesterEmail: String,
+      requesterEmail: LaxEmailAddress,
       requesterName: String
-    ): NonEmptyList[UpdateApplicationEvent] = {
+    ): NonEmptyList[ApplicationEvent] = {
     val previousResponsibleIndividual = getResponsibleIndividual(app).get
 
     NonEmptyList.of(
       ResponsibleIndividualChangedToSelf(
-        id = UpdateApplicationEvent.Id.random,
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(requesterEmail),
+        eventDateTime = cmd.timestamp.instant,
+        actor = Actors.AppCollaborator(requesterEmail),
         previousResponsibleIndividualName = previousResponsibleIndividual.fullName.value,
-        previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress.value,
-        submissionId = submission.id,
+        previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress,
+        submissionId = SubmissionId(submission.id.value),
         submissionIndex = submission.latestInstance.index,
         requestingAdminName = requesterName,
         requestingAdminEmail = requesterEmail

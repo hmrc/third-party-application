@@ -24,8 +24,10 @@ import cats.data.{NonEmptyList, Validated}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByGatekeeper, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByGatekeeper, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
@@ -43,45 +45,37 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
   ) extends DeleteApplicationCommandHandler {
 
   import CommandHandler._
-  import UpdateApplicationEvent._
 
   private def validate(app: ApplicationData): Validated[CommandFailures, ApplicationData] = {
     Validated.validNec(app)
   }
 
-  private def asEvents(app: ApplicationData, cmd: DeleteApplicationByGatekeeper): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: DeleteApplicationByGatekeeper, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
     val requesterEmail = cmd.requestedByEmailAddress
     val clientId       = app.tokens.production.clientId
     NonEmptyList.of(
       ApplicationDeletedByGatekeeper(
-        id = UpdateApplicationEvent.Id.random,
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = GatekeeperUserActor(cmd.gatekeeperUser),
+        eventDateTime = cmd.timestamp.instant,
+        actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons,
         requestingAdminEmail = requesterEmail
       ),
-      ApplicationStateChanged(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = GatekeeperUserActor(cmd.gatekeeperUser),
-        app.state.name,
-        State.DELETED,
-        requestingAdminName = requesterEmail,
-        requestingAdminEmail = requesterEmail
-      )
+      fromStateHistory(stateHistory, requesterEmail.text, requesterEmail)
     )
   }
 
   def process(app: ApplicationData, cmd: DeleteApplicationByGatekeeper)(implicit hc: HeaderCarrier): ResultT = {
     for {
-      valid    <- E.fromEither(validate(app).toEither)
-      events    = asEvents(app, cmd)
-      savedApp <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.requestedByEmailAddress, cmd.requestedByEmailAddress))
-      _        <- deleteApplication(app, cmd.timestamp, cmd.requestedByEmailAddress, cmd.requestedByEmailAddress, events)
+      valid              <- E.fromEither(validate(app).toEither)
+      kindOfRequesterName = cmd.requestedByEmailAddress.text
+      stateHistory        = StateHistory(app.id, State.DELETED, Actors.GatekeeperUser(cmd.gatekeeperUser), Some(app.state.name), changedAt = cmd.timestamp)
+      savedApp           <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, kindOfRequesterName, kindOfRequesterName))
+      events              = asEvents(app, cmd, stateHistory)
+      _                  <- deleteApplication(app, stateHistory, cmd.timestamp, kindOfRequesterName, kindOfRequesterName, events)
     } yield (savedApp, events)
   }
 }

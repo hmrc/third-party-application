@@ -20,7 +20,7 @@ import java.time.{ZoneOffset, ZonedDateTime}
 
 import play.api.test.FakeRequest
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
 class ApplicationSearchSpec extends HmrcSpec {

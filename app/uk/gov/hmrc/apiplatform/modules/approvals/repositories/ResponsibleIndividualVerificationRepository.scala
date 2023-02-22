@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.NonEmptyList
@@ -28,6 +28,7 @@ import org.mongodb.scala.model.{IndexModel, IndexOptions, Updates}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualUpdateVerification,
@@ -35,9 +36,9 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationId,
   ResponsibleIndividualVerificationState
 }
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationDeletedBase, ApplicationId, ResponsibleIndividual, UpdateApplicationEvent}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Submission, SubmissionId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 @Singleton
@@ -114,7 +115,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     deleteSubmissionInstance(submission.id, submission.latestInstance.index)
   }
 
-  def deleteSubmissionInstance(id: Submission.Id, index: Int): Future[HasSucceeded] = {
+  def deleteSubmissionInstance(id: SubmissionId, index: Int): Future[HasSucceeded] = {
     collection.deleteOne(
       and(
         equal("submissionId", Codecs.toBson(id)),
@@ -147,7 +148,8 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       .map(_ => HasSucceeded)
   }
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[HasSucceeded] = {
+  // TODO - remove this method and extract to command handlers
+  def applyEvents(events: NonEmptyList[ApplicationEvent]): Future[HasSucceeded] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
@@ -156,19 +158,19 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
 
   private def addResponsibleIndividualVerification(evt: ResponsibleIndividualVerificationStarted): Future[HasSucceeded] = {
     val verification = ResponsibleIndividualUpdateVerification(
-      evt.verificationId,
+      ResponsibleIndividualVerificationId(evt.verificationId),
       evt.applicationId,
-      evt.submissionId,
+      SubmissionId(evt.submissionId.value),
       evt.submissionIndex,
       evt.applicationName,
-      evt.eventDateTime,
-      ResponsibleIndividual.build(evt.responsibleIndividualName, evt.responsibleIndividualEmail),
+      LocalDateTime.ofInstant(evt.eventDateTime, ZoneOffset.UTC),
+      ResponsibleIndividual.build(evt.responsibleIndividualName, evt.responsibleIndividualEmail.text),
       evt.requestingAdminName,
       evt.requestingAdminEmail,
       ResponsibleIndividualVerificationState.INITIAL
     )
 
-    deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
+    deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
       .flatMap(_ => save(verification))
       .map(_ => HasSucceeded)
   }
@@ -177,16 +179,18 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     delete(ResponsibleIndividualVerificationId(code))
   }
 
-  private def applyEvent(event: UpdateApplicationEvent): Future[HasSucceeded] = {
+  private def applyEvent(event: ApplicationEvent): Future[HasSucceeded] = {
     event match {
-      case evt: ResponsibleIndividualVerificationStarted           => addResponsibleIndividualVerification(evt)
-      case evt: ResponsibleIndividualSet                           => deleteResponsibleIndividualVerification(evt.code)
-      case evt: ResponsibleIndividualChanged                       => deleteResponsibleIndividualVerification(evt.code)
-      case evt: ResponsibleIndividualDeclined                      => deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
-      case evt: ResponsibleIndividualDeclinedUpdate                => deleteResponsibleIndividualVerification(evt.code)
-      case evt: ResponsibleIndividualDidNotVerify                  => deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
-      case evt: UpdateApplicationEvent with ApplicationDeletedBase => deleteAllByApplicationId(evt.applicationId)
-      case _                                                       => Future.successful(HasSucceeded)
+      case evt: ResponsibleIndividualVerificationStarted => addResponsibleIndividualVerification(evt)
+      case evt: ResponsibleIndividualSet                 => deleteResponsibleIndividualVerification(evt.code)
+      case evt: ResponsibleIndividualChanged             => deleteResponsibleIndividualVerification(evt.code)
+      case evt: ResponsibleIndividualDeclined            => deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
+      case evt: ResponsibleIndividualDeclinedUpdate      => deleteResponsibleIndividualVerification(evt.code)
+      case evt: ResponsibleIndividualDidNotVerify        => deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
+      case _: ApplicationDeleted                         => deleteAllByApplicationId(event.applicationId)
+      case _: ApplicationDeletedByGatekeeper             => deleteAllByApplicationId(event.applicationId)
+      case _: ProductionCredentialsApplicationDeleted    => deleteAllByApplicationId(event.applicationId)
+      case _                                             => Future.successful(HasSucceeded)
     }
   }
 }

@@ -16,29 +16,23 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import scala.collection.mutable
-
 import com.github.t3hnar.bcrypt._
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 
-trait ApplicationTestData extends ApplicationStateUtil {
-
-  val idsByEmail = mutable.Map[String, UserId]()
-
-  def idOf(email: String) = {
-    idsByEmail.getOrElseUpdate(email, UserId.random)
-  }
+trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData {
 
   def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = FixedClock.now)
 
-  val loggedInUser = "loggedin@example.com"
-  val devEmail     = "dev@example.com"
-  val adminEmail   = "admin@example.com"
+  val loggedInUser = "loggedin@example.com".toLaxEmail
+  val devEmail     = "dev@example.com".toLaxEmail
+  val adminEmail   = "admin@example.com".toLaxEmail
   val adminName    = "Admin Example"
 
   val serverToken           = "b3c83934c02df8b111e7f9f8700000"
@@ -46,13 +40,13 @@ trait ApplicationTestData extends ApplicationStateUtil {
   val productionToken       = Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   val requestedByName  = "john smith"
-  val requestedByEmail = "john.smith@example.com"
+  val requestedByEmail = "john.smith@example.com".toLaxEmail
   val grantLength      = 547
 
   def anApplicationData(
       applicationId: ApplicationId,
-      state: ApplicationState = productionState(requestedByEmail),
-      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, Role.ADMINISTRATOR, idOf(loggedInUser))),
+      state: ApplicationState = productionState(requestedByEmail.text),
+      collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
       access: Access = Standard(),
       rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
       environment: Environment = Environment.PRODUCTION,
