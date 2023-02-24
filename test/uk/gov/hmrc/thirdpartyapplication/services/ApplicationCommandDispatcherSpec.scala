@@ -197,7 +197,7 @@ class ApplicationCommandDispatcherSpec
 
       val collaborator               = "email".developer()
       val adminsToEmail              = Set("email1".toLaxEmail, "email2".toLaxEmail)
-      val cmd: RemoveCollaborator    = RemoveCollaborator(otherAdminAsActor, collaborator, adminsToEmail, FixedClock.now)
+      val cmd: RemoveCollaborator    = RemoveCollaborator(otherAdminAsActor, collaborator, FixedClock.now)
       val evt: CollaboratorRemovedV2 = CollaboratorRemovedV2(
         EventId.random,
         applicationId,

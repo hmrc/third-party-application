@@ -23,15 +23,9 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ClientS
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class AddClientSecretCommandHandlerSpec
-    extends AsyncHmrcSpec
-    with ApplicationTestData
-    with CommandActorExamples
-    with CommandApplicationExamples {
-
-  import CommandFailures.GenericFailure
+class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   class Setup(limit: Int = 3) extends ApplicationRepositoryMockModule {
     val config    = CredentialConfig(limit)
@@ -72,20 +66,15 @@ class AddClientSecretCommandHandlerSpec
     }
 
     "return an error for a non-admin developer" in new Setup {
-      val result = await(underTest.process(principalApp, addClientSecretByDev).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe GenericFailure("App is in PRODUCTION so User must be an ADMIN")
+      checkFailsWith("App is in PRODUCTION so User must be an ADMIN") {
+        underTest.process(principalApp, addClientSecretByDev)
+      }
     }
 
     "return an error for a non-admin developer and application with full secrets" in new Setup(1) {
-      val result = await(underTest.process(principalApp, addClientSecretByDev).value).left.value.toNonEmptyList.toList
-
-      result should have length 2
-      result should contain allOf (
-        GenericFailure("App is in PRODUCTION so User must be an ADMIN"),
-        GenericFailure("Client secret limit has been exceeded")
-      )
+      checkFailsWith("App is in PRODUCTION so User must be an ADMIN", "Client secret limit has been exceeded") {
+        underTest.process(principalApp, addClientSecretByDev)
+      }
     }
   }
 

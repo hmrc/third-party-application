@@ -25,11 +25,11 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
+class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  trait Setup {
+  trait Setup extends DeleteApplicationCommandHandlers {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 

@@ -22,13 +22,9 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class AddCollaboratorCommandHandlerSpec
-    extends AsyncHmrcSpec
-    with ApplicationTestData
-    with CommandActorExamples
-    with CommandApplicationExamples {
+class AddCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   import CommandFailures._
 
@@ -60,13 +56,6 @@ class AddCollaboratorCommandHandlerSpec
             collaborator shouldBe newCollaborator
         }
       }
-    }
-
-    def checkFailsWith(failure: CommandFailure)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1
-      testThis.head shouldBe failure
     }
   }
 

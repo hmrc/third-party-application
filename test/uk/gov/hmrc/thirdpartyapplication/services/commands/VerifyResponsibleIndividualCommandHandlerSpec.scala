@@ -29,15 +29,9 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class VerifyResponsibleIndividualCommandHandlerSpec
-    extends AsyncHmrcSpec
-    with ApplicationTestData
-    with CommandActorExamples
-    with SubmissionsTestData
-    with CommandApplicationExamples {
-
+class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
   trait Setup extends SubmissionsServiceMockModule with ResponsibleIndividualVerificationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -73,12 +67,6 @@ class VerifyResponsibleIndividualCommandHandlerSpec
 
     val underTest = new VerifyResponsibleIndividualCommandHandler(SubmissionsServiceMock.aMock, ResponsibleIndividualVerificationRepositoryMock.aMock)
 
-    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1
-      testThis.head shouldBe CommandFailures.GenericFailure(msg)
-    }
   }
 
   "process" should {

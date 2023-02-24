@@ -24,13 +24,11 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.CollaboratorRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
-    with ApplicationRepositoryMockModule
-    with ApplicationTestData {
+class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  trait Setup {
+  trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new RemoveCollaboratorCommandHandler(ApplicationRepoMock.aMock)
 
     val applicationId = ApplicationId.random
@@ -63,7 +61,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
 
     val adminsToEmail = Set(anAdminEmail, devEmail)
 
-    val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), collaborator, adminsToEmail, FixedClock.now)
+    val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), collaborator, FixedClock.now)
 
     def checkSuccessResult(expectedActor: Actor)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
@@ -76,25 +74,8 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
             evtCollaborator shouldBe collaborator
-            verifiedAdminsToEmail shouldBe removeCollaborator.adminsToEmail
         }
       }
-    }
-
-    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1 + msgs.length
-      testThis.head shouldBe CommandFailures.GenericFailure(msg)
-      testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
-    }
-        
-    def checkFailsWith(fail: CommandFailure, fails: CommandFailure*)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1 + fails.length
-      testThis.head shouldBe fail
-      testThis.tail shouldBe fails
     }
   }
 

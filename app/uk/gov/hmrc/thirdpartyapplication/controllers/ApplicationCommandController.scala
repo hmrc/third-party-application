@@ -41,8 +41,8 @@ object ApplicationCommandController {
   object DispatchRequest {
     import ApplicationCommandFormatters._
 
-    val readsExactDispatchRequest = Json.reads[DispatchRequest]
-    val readsExactCommand = applicationUpdateRequestFormatter.map(cmd => DispatchRequest(cmd, Set.empty))
+    val readsExactDispatchRequest: Reads[DispatchRequest] = Json.reads[DispatchRequest]
+    val readsExactCommand: Reads[DispatchRequest] = applicationUpdateRequestFormatter.map(cmd => DispatchRequest(cmd, Set.empty))
 
     implicit val readsDispatchRequest: Reads[DispatchRequest] = readsExactDispatchRequest orElse readsExactCommand
   }
@@ -78,6 +78,7 @@ class ApplicationCommandController @Inject() (
       case _ @ CannotRemoveLastAdmin => "Cannot remove the last admin from an app"
       case _ @ ActorIsNotACollaboratorOnApp => "Actor is not a collaborator on the app"
       case _ @ CollaboratorDoesNotExistOnApp => "Collaborator does not exist on the app"
+      case _ @ CollaboratorHasMismatchOnApp => "Collaborator has mismatched details against the app"
       case _ @ CollaboratorAlreadyExistsOnApp => "Collaborator already exists on the app"
       case GenericFailure(s) => s
     })

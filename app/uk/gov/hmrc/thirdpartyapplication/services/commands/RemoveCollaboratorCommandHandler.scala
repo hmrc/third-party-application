@@ -24,7 +24,7 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RemoveCollaborator
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -55,10 +55,10 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
   }
 
   private def asEvents(app: ApplicationData, cmd: RemoveCollaborator): NonEmptyList[ApplicationEvent] = {
-    asEvents(app, cmd.actor, cmd.adminsToEmail, cmd.timestamp, cmd.collaborator)
+    asEvents(app, cmd.actor, cmd.timestamp, cmd.collaborator)
   }
 
-  private def asEvents(app: ApplicationData, actor: Actor, adminsToEmail: Set[LaxEmailAddress], eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: ApplicationData, actor: Actor, eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       CollaboratorRemovedV2(
         id = EventId.random,
@@ -66,7 +66,7 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
         eventDateTime = eventTime.instant,
         actor = actor,
         collaborator,
-        verifiedAdminsToEmail = adminsToEmail
+        verifiedAdminsToEmail = Set.empty
       )
     )
   }

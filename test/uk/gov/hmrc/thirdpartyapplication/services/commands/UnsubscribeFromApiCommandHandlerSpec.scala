@@ -28,11 +28,9 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class UnsubscribeFromApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with ApiIdentifierSyntax {
-
-  import CommandFailures.GenericFailure
+class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiIdentifierSyntax {
 
   trait Setup
       extends StrideGatekeeperRoleAuthorisationServiceMockModule
@@ -64,13 +62,6 @@ class UnsubscribeFromApiCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
             ApiIdentifier(context, version) shouldBe apiIdentifier
         }
       }
-    }
-
-    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1
-      testThis.head shouldBe GenericFailure(msg)
     }
   }
 

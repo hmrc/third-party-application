@@ -23,7 +23,6 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{
   StateHistoryRepositoryMockModule
 }
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, ThirdPartyDelegatedAuthorityServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 trait DeleteApplicationCommandHandlers
     extends ApplicationRepositoryMockModule
@@ -32,4 +31,3 @@ trait DeleteApplicationCommandHandlers
     with ResponsibleIndividualVerificationRepositoryMockModule
     with ThirdPartyDelegatedAuthorityServiceMockModule
     with NotificationRepositoryMockModule
-    with ApplicationTestData

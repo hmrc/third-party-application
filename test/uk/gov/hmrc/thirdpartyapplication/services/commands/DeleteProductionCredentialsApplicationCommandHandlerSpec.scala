@@ -26,11 +26,11 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
+class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  trait Setup {
+  trait Setup extends DeleteApplicationCommandHandlers {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -84,14 +84,6 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
           }
         )
       }
-    }
-    
-    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1 + msgs.length
-      testThis.head shouldBe CommandFailures.GenericFailure(msg)
-      testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
     }
   }
 

@@ -26,9 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
-class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
-    with ApplicationTestData
-    with CommandActorExamples {
+class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new UpdateRedirectUrisCommandHandler(ApplicationRepoMock.aMock)
@@ -62,13 +60,6 @@ class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
       }
     }
           
-    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1 + msgs.length
-      testThis.head shouldBe CommandFailures.GenericFailure(msg)
-      testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
-    }
   }
 
   "update with UpdateRedirectUris" should {

@@ -30,10 +30,10 @@ sealed trait ApplicationCommand {
   def timestamp: LocalDateTime
 }
 
+case class AddCollaborator(actor: Actor, collaborator: Collaborator, timestamp: LocalDateTime)                                                          extends ApplicationCommand
+case class RemoveCollaborator(actor: Actor, collaborator: Collaborator, timestamp: LocalDateTime)                                                       extends ApplicationCommand
 case class AddClientSecret(actor: Actors.AppCollaborator, clientSecret: ClientSecret, timestamp: LocalDateTime)                                         extends ApplicationCommand
 case class RemoveClientSecret(actor: Actors.AppCollaborator, clientSecretId: String, timestamp: LocalDateTime)                                          extends ApplicationCommand
-case class AddCollaborator(actor: Actor, collaborator: Collaborator, timestamp: LocalDateTime)                                                          extends ApplicationCommand
-case class RemoveCollaborator(actor: Actor, collaborator: Collaborator, adminsToEmail: Set[LaxEmailAddress], timestamp: LocalDateTime)                  extends ApplicationCommand
 case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation)           extends ApplicationCommand
 case class ChangeProductionApplicationTermsAndConditionsLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: TermsAndConditionsLocation) extends ApplicationCommand
 case class ChangeResponsibleIndividualToSelf(instigator: UserId, timestamp: LocalDateTime, name: String, email: LaxEmailAddress)                        extends ApplicationCommand

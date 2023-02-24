@@ -26,13 +26,9 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class ChangeProductionApplicationNameCommandHandlerSpec
-    extends AsyncHmrcSpec
-    with ApplicationTestData
-    with CommandActorExamples
-    with CommandApplicationExamples {
+class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   val app = principalApp.copy(access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
@@ -70,14 +66,6 @@ class ChangeProductionApplicationNameCommandHandlerSpec
         }
       }
     }
-
-    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1
-      testThis.head shouldBe CommandFailures.GenericFailure(msg)
-    }
-
   }
 
   "process" should {

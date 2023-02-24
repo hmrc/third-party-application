@@ -25,13 +25,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
-class RemoveClientSecretCommandHandlerSpec
-    extends AsyncHmrcSpec
-    with ApplicationTestData
-    with ApplicationRepositoryMockModule
-    with CommandActorExamples {
+class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  trait Setup {
+  trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new RemoveClientSecretCommandHandler(ApplicationRepoMock.aMock)
 
     val developerCollaborator = devEmail.developer(developerUserId)
@@ -70,13 +66,6 @@ class RemoveClientSecretCommandHandlerSpec
       }
     }
     
-    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1 + msgs.length
-      testThis.head shouldBe CommandFailures.GenericFailure(msg)
-      testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
-    }
   }
 
   "given a principal application" should {
