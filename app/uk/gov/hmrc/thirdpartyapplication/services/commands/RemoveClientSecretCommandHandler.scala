@@ -36,8 +36,8 @@ class RemoveClientSecretCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: RemoveClientSecret): Validated[CommandFailures, ApplicationData] = {
-    Apply[Validated[CommandFailures, *]].map2(
+  private def validate(app: ApplicationData, cmd: RemoveClientSecret): Validated[CommandHandler.Failures, ApplicationData] = {
+    Apply[Validated[CommandHandler.Failures, *]].map2(
       isAdminIfInProduction(cmd.actor, app),
       clientSecretExists(cmd.clientSecretId, app)
     ) { case _ => app }

@@ -258,8 +258,8 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
         when(aMock.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(requester: LaxEmailAddress, applicationName: String, recipients: Set[LaxEmailAddress]) =
-        verify.sendRemovedCollaboratorNotification(eqTo(requester), eqTo(applicationName), eqTo(recipients))(*)
+      def verifyCalledWith(deletedEmail: LaxEmailAddress, applicationName: String, recipients: Set[LaxEmailAddress]) =
+        verify.sendRemovedCollaboratorNotification(eqTo(deletedEmail), eqTo(applicationName), eqTo(recipients))(*)
 
       def verifyNeverCalled() = EmailConnectorMock.verify(never).sendRemovedCollaboratorNotification(*, *, *)(*)
     }
@@ -270,7 +270,7 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
         when(aMock.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(requester: String, applicationName: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(applicationName: String, recipients: Set[LaxEmailAddress]) =
         verify.sendRemovedCollaboratorConfirmation(eqTo(applicationName), eqTo(recipients))(*)
 
       def verifyNeverCalled() = EmailConnectorMock.verify(never).sendRemovedCollaboratorConfirmation(*, *)(*)

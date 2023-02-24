@@ -59,7 +59,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
       StateHistoryRepoMock.aMock
     )
 
-    def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult()(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
@@ -90,9 +90,17 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
           }
         )
       }
+    }
 
+    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
+      val testThis = await(fn.value).left.value.toNonEmptyList.toList
+
+      testThis should have length 1 + msgs.length
+      testThis.head shouldBe CommandFailures.GenericFailure(msg)
+      testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
     }
   }
+
   val appAdminUserId = UserId.random
   val reasons        = "reasons description text"
   val ts             = FixedClock.instant
@@ -116,15 +124,15 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
       val cmd            = DeleteApplicationByCollaborator(appAdminUserId, reasons, FixedClock.now)
 
-      val result = await(underTest.process(nonStandardApp, cmd).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe "App must have a STANDARD access type"
+      checkFailsWith("App must have a STANDARD access type") {
+        underTest.process(nonStandardApp, cmd)
+      }
     }
 
     "return an error if the actor is not an admin of the application" in new Setup {
-      val result = await(underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, FixedClock.now)).value).left.value.toNonEmptyList.toList
-      result.head shouldBe "User must be an ADMIN"
+      checkFailsWith("User must be an ADMIN") {
+        underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, FixedClock.now))
+      }
     }
 
   }

@@ -24,18 +24,20 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.Collabo
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
-object CollaboratorAddedNotification {
+object CollaboratorAddedNotification extends NotificationHelpers {
 
   def sendCollaboratorAddedNotification(
       emailConnector: EmailConnector,
       app: ApplicationData,
-      event: CollaboratorAddedV2
+      event: CollaboratorAddedV2,
+      verifiedCollaborators: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier,
       ec: ExecutionContext
     ): Future[HasSucceeded] = {
     for {
-      _ <- emailConnector.sendCollaboratorAddedNotification(event.collaborator, app.name, event.verifiedAdminsToEmail)
+      _ <- emailConnector.sendCollaboratorAddedNotification(event.collaborator, app.name, verifiedCollaborators.filter(onlyAdmins(app)))
       _ <- emailConnector.sendCollaboratorAddedConfirmation(event.collaborator, app.name, Set(event.collaborator.emailAddress))
     } yield HasSucceeded
   }

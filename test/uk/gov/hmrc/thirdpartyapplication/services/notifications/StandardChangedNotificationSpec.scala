@@ -35,7 +35,7 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
 
     val applicationId         = ApplicationId.random
     val devEmail              = "dev@example.com".toLaxEmail
-    val adminEmail            = "admin@example.com".toLaxEmail
+    val anAdminEmail            = "admin@example.com".toLaxEmail
     val oldName               = "old app name"
     val newName               = "new app name"
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
@@ -52,7 +52,7 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
     val app            = anApplicationData(applicationId).copy(
       collaborators = Set(
         devEmail.developer(),
-        adminEmail.admin()
+        anAdminEmail.admin()
       ),
       name = oldName,
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
@@ -79,12 +79,12 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
       ))
       result shouldBe HasSucceeded
       EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(
-        adminEmail.text,
+        anAdminEmail.text,
         app.name,
         "privacy policy URL",
         previousPrivacyPolicyUrl.value,
         newPrivacyPolicyUrl.value,
-        Set(adminEmail, devEmail, responsibleIndividual.emailAddress)
+        Set(anAdminEmail, devEmail, responsibleIndividual.emailAddress)
       )
     }
   }

@@ -22,7 +22,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -50,7 +49,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
       StateHistoryRepoMock.aMock
     )
 
-    def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult()(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
@@ -82,17 +81,16 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
           }
         )
       }
-
     }
   }
 
-  val gatekeeperUser    = "gatekeeperuser"
-  val actor             = Actors.GatekeeperUser(gatekeeperUser)
+  val actor             = gatekeeperActor
   val reasons           = "reasons description text"
   val ts: LocalDateTime = FixedClock.now
 
   "DeleteApplicationByGatekeeper" should {
     val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, ts)
+    
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()

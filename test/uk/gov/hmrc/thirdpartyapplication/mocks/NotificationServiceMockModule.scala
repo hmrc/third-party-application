@@ -34,7 +34,7 @@ trait NotificationServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     object SendNotifications {
 
       def thenReturnSuccess() =
-        when(aMock.sendNotifications(*[ApplicationData], *)(*)).thenReturn(Future.successful(List(HasSucceeded)))
+        when(aMock.sendNotifications(*[ApplicationData], *, *)(*)).thenReturn(Future.successful(List(HasSucceeded)))
     }
   }
 

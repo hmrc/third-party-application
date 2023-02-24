@@ -36,7 +36,6 @@ class VerifyResponsibleIndividualCommandHandlerSpec
     with ApplicationTestData
     with CommandActorExamples
     with SubmissionsTestData
-    with CommandCollaboratorExamples
     with CommandApplicationExamples {
 
   trait Setup extends SubmissionsServiceMockModule with ResponsibleIndividualVerificationRepositoryMockModule {
@@ -78,7 +77,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1
-      testThis.head shouldBe msg
+      testThis.head shouldBe CommandFailures.GenericFailure(msg)
     }
   }
 

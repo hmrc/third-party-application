@@ -38,14 +38,15 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 
 @Singleton
 class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
-    applicationRepository: ApplicationRepository,
-    responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
-    stateHistoryRepository: StateHistoryRepository
+  applicationRepository: ApplicationRepository,
+  responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
+  stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
-
+    
   import CommandHandler._
-
+  import CommandFailures._
+  
   private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
     cond(
       app.access match {
@@ -60,8 +61,8 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
   def processTou(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualToUVerification): ResultT = {
-    def validate(): Validated[CommandFailures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[CommandFailures, *]].map6(
+    def validate(): Validated[CommandHandler.Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
+      Apply[Validated[CommandHandler.Failures, *]].map6(
         isStandardNewJourneyApp(app),
         isPendingResponsibleIndividualVerification(app),
         isApplicationIdTheSame(app, riVerificationToU),
@@ -126,8 +127,8 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
   def processUpdate(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualUpdateVerification): ResultT = {
     val newResponsibleIndividual = riVerification.responsibleIndividual
 
-    def validateUpdate(): Validated[CommandFailures, ResponsibleIndividual] = {
-      Apply[Validated[CommandFailures, *]].map5(
+    def validateUpdate(): Validated[CommandHandler.Failures, ResponsibleIndividual] = {
+      Apply[Validated[CommandHandler.Failures, *]].map5(
         isStandardNewJourneyApp(app),
         isApproved(app),
         isApplicationIdTheSame(app, riVerification),
@@ -174,7 +175,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap {
         case Some(riVerificationToU: ResponsibleIndividualToUVerification)       => processTou(app, cmd, riVerificationToU).value
         case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification) => processUpdate(app, cmd, riVerificationUpdate).value
-        case _                                                                   => E.leftT(NonEmptyChain.one(s"No responsibleIndividualVerification found for code ${cmd.code}")).value
+        case _                                                                   => E.leftT(NonEmptyChain.one(GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
       }
     )
   }

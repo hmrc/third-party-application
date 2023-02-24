@@ -35,14 +35,12 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.CommandFailures
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
-    with CommandCollaboratorExamples
     with CommandApplicationExamples {
 
   trait Setup extends CommonSetup {
@@ -70,7 +68,7 @@ class ApplicationCommandDispatcherSpec
         .applyEvents(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)))(*[HeaderCarrier])
 
       verify(NotificationServiceMock.aMock)
-        .sendNotifications(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)))(*[HeaderCarrier])
+        .sendNotifications(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)), *)(*[HeaderCarrier])
     }
 
     val allCommandHandlers = Set(
@@ -109,7 +107,7 @@ class ApplicationCommandDispatcherSpec
       ApplicationRepoMock.Fetch.thenFail(new RuntimeException("some error"))
 
       intercept[RuntimeException] {
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
       }
 
       allCommandHandlers.foreach(handler => verifyZeroInteractions(handler))
@@ -119,26 +117,24 @@ class ApplicationCommandDispatcherSpec
   }
 
   val timestamp         = FixedClock.now
-  val gatekeeperUser    = "gkuser1"
   val jobId             = "jobId"
-  val devHubUser        = Actors.AppCollaborator(adminEmail)
   val scheduledJobActor = Actors.ScheduledJob(jobId)
   val reasons           = "some reason or other"
 
-  val E = EitherTHelper.make[CommandFailures]
+  val E = EitherTHelper.make[CommandHandler.Failures]
 
   "dispatch" when {
     "AddClientSecret is received" should {
       val clientSecret             = ClientSecret("name", FixedClock.now, None, UUID.randomUUID().toString, "hashedSecret")
-      val cmd: AddClientSecret     = AddClientSecret(devHubUser, clientSecret, FixedClock.now)
-      val evt: ClientSecretAddedV2 = ClientSecretAddedV2(EventId.random, applicationId, FixedClock.instant, devHubUser, clientSecret.name, clientSecret.id)
+      val cmd: AddClientSecret     = AddClientSecret(otherAdminAsActor, clientSecret, FixedClock.now)
+      val evt: ClientSecretAddedV2 = ClientSecretAddedV2(EventId.random, applicationId, FixedClock.instant, otherAdminAsActor, clientSecret.name, clientSecret.id)
 
       "call AddClientSecretCommand Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
         when(mockAddClientSecretCommandHandler.process(*[ApplicationData], *[AddClientSecret])).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[AddClientSecretCommandHandler]()
       }
@@ -149,15 +145,15 @@ class ApplicationCommandDispatcherSpec
     }
 
     "RemoveClientSecret is received" should {
-      val cmd: RemoveClientSecret    = RemoveClientSecret(devHubUser, UUID.randomUUID().toString, FixedClock.now)
-      val evt: ClientSecretRemovedV2 = ClientSecretRemovedV2(EventId.random, applicationId, FixedClock.instant, devHubUser, cmd.clientSecretId, "someName")
+      val cmd: RemoveClientSecret    = RemoveClientSecret(otherAdminAsActor, UUID.randomUUID().toString, FixedClock.now)
+      val evt: ClientSecretRemovedV2 = ClientSecretRemovedV2(EventId.random, applicationId, FixedClock.instant, otherAdminAsActor, cmd.clientSecretId, "someName")
 
       "call RemoveClientSecretCommand Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
         when(mockRemoveClientSecretCommandHandler.process(*[ApplicationData], *[RemoveClientSecret])).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[RemoveClientSecretCommandHandler]()
       }
@@ -171,12 +167,12 @@ class ApplicationCommandDispatcherSpec
     "AddCollaborator is received" should {
       val collaborator             = "email".developer()
       val adminsToEmail            = Set("email1".toLaxEmail, "email2".toLaxEmail)
-      val cmd: AddCollaborator     = AddCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
+      val cmd: AddCollaborator     = AddCollaborator(otherAdminAsActor, collaborator, FixedClock.now)
       val evt: CollaboratorAddedV2 = CollaboratorAddedV2(
         EventId.random,
         applicationId,
         FixedClock.instant,
-        devHubUser,
+        otherAdminAsActor,
         collaborator,
         adminsToEmail
       )
@@ -186,7 +182,7 @@ class ApplicationCommandDispatcherSpec
 
         when(mockAddCollaboratorCommandHandler.process(*[ApplicationData], *[AddCollaborator])).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[AddCollaboratorCommandHandler]()
       }
@@ -201,12 +197,12 @@ class ApplicationCommandDispatcherSpec
 
       val collaborator               = "email".developer()
       val adminsToEmail              = Set("email1".toLaxEmail, "email2".toLaxEmail)
-      val cmd: RemoveCollaborator    = RemoveCollaborator(devHubUser, collaborator, adminsToEmail, FixedClock.now)
+      val cmd: RemoveCollaborator    = RemoveCollaborator(otherAdminAsActor, collaborator, adminsToEmail, FixedClock.now)
       val evt: CollaboratorRemovedV2 = CollaboratorRemovedV2(
         EventId.random,
         applicationId,
         FixedClock.instant,
-        devHubUser,
+        otherAdminAsActor,
         collaborator,
         adminsToEmail
       )
@@ -216,7 +212,7 @@ class ApplicationCommandDispatcherSpec
 
         when(mockRemoveCollaboratorCommandHandler.process(*[ApplicationData], *[RemoveCollaborator])).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[RemoveCollaboratorCommandHandler]()
       }
@@ -256,7 +252,7 @@ class ApplicationCommandDispatcherSpec
           NonEmptyList.one(evt)
         )))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[ChangeProductionApplicationNameCommandHandler]()
       }
@@ -271,9 +267,9 @@ class ApplicationCommandDispatcherSpec
 
       val newUrl      = "http://example.com/new"
       val newLocation = PrivacyPolicyLocations.Url(newUrl)
-      val userId      = idOf(adminEmail)
+      val userId      = idOf(anAdminEmail)
       val timestamp   = FixedClock.now
-      val actor       = Actors.AppCollaborator(adminEmail)
+      val actor       = otherAdminAsActor
 
       val cmd = ChangeProductionApplicationPrivacyPolicyLocation(userId, timestamp, newLocation)
       val evt = ProductionAppPrivacyPolicyLocationChanged(
@@ -293,7 +289,7 @@ class ApplicationCommandDispatcherSpec
           NonEmptyList.one(evt)
         )))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[ChangeProductionApplicationPrivacyPolicyLocationCommandHandler]()
       }
@@ -308,9 +304,9 @@ class ApplicationCommandDispatcherSpec
 
       val newUrl      = "http://example.com/new"
       val newLocation = TermsAndConditionsLocations.Url(newUrl)
-      val userId      = idOf(adminEmail)
+      val userId      = idOf(anAdminEmail)
       val timestamp   = FixedClock.now
-      val actor       = Actors.AppCollaborator(adminEmail)
+      val actor       = otherAdminAsActor
 
       val cmd = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
       val evt = ProductionAppTermsConditionsLocationChanged(
@@ -329,7 +325,7 @@ class ApplicationCommandDispatcherSpec
           mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationTermsAndConditionsLocation])
         ).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[ChangeProductionApplicationTermsAndConditionsLocationCommandHandler]()
       }
@@ -347,7 +343,7 @@ class ApplicationCommandDispatcherSpec
         EventId.random,
         applicationId,
         FixedClock.instant,
-        devHubUser,
+        otherAdminAsActor,
         "previousRIName",
         "previousRIEmail".toLaxEmail,
         SubmissionId(SubmissionId.random.value),
@@ -363,7 +359,7 @@ class ApplicationCommandDispatcherSpec
           mockChangeResponsibleIndividualToSelfCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToSelf])
         ).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[ChangeResponsibleIndividualToSelfCommandHandler]()
       }
@@ -381,7 +377,7 @@ class ApplicationCommandDispatcherSpec
         EventId.random,
         applicationId,
         FixedClock.instant,
-        devHubUser,
+        otherAdminAsActor,
         "previousRIName",
         "previousRIEmail".toLaxEmail,
         "newRIName",
@@ -400,7 +396,7 @@ class ApplicationCommandDispatcherSpec
           mockChangeResponsibleIndividualToOtherCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToOther])
         ).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[ChangeResponsibleIndividualToOtherCommandHandler]()
       }
@@ -428,7 +424,7 @@ class ApplicationCommandDispatcherSpec
         1,
         "some reason or other",
         "adminName",
-        "adminEmail".toLaxEmail
+        "anAdminEmail".toLaxEmail
       )
 
       "call DeclineApplicationApprovalRequest Handler and relevant common services if application exists" in new Setup {
@@ -439,7 +435,7 @@ class ApplicationCommandDispatcherSpec
           NonEmptyList.one(evt)
         )))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[DeclineApplicationApprovalRequestCommandHandler]()
       }
@@ -471,7 +467,7 @@ class ApplicationCommandDispatcherSpec
           NonEmptyList.one(evt)
         )))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[DeleteApplicationByCollaboratorCommandHandler]()
       }
@@ -504,7 +500,7 @@ class ApplicationCommandDispatcherSpec
           NonEmptyList.one(evt)
         )))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[DeleteApplicationByGatekeeperCommandHandler]()
       }
@@ -536,7 +532,7 @@ class ApplicationCommandDispatcherSpec
           NonEmptyList.one(evt)
         )))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[DeleteUnusedApplicationCommandHandler]()
       }
@@ -553,7 +549,7 @@ class ApplicationCommandDispatcherSpec
         EventId.random,
         applicationId,
         FixedClock.instant,
-        devHubUser,
+        otherAdminAsActor,
         ClientId.random,
         "wsoApplicationName",
         reasons
@@ -567,7 +563,7 @@ class ApplicationCommandDispatcherSpec
           NonEmptyList.one(evt)
         )))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[DeleteProductionCredentialsApplicationCommandHandler]()
       }
@@ -582,12 +578,12 @@ class ApplicationCommandDispatcherSpec
       val context       = ApiContext("context")
       val version       = ApiVersion("version")
       val apiIdentifier = ApiIdentifier(context, version)
-      val cmd           = SubscribeToApi(devHubUser, apiIdentifier, timestamp)
+      val cmd           = SubscribeToApi(otherAdminAsActor, apiIdentifier, timestamp)
       val evt           = ApiSubscribedV2(
         EventId.random,
         applicationId,
         FixedClock.instant,
-        devHubUser,
+        otherAdminAsActor,
         context,
         version
       )
@@ -600,7 +596,7 @@ class ApplicationCommandDispatcherSpec
           NonEmptyList.one(evt)
         )))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[SubscribeToApiCommandHandler]()
       }
@@ -615,12 +611,12 @@ class ApplicationCommandDispatcherSpec
       val context       = ApiContext("context")
       val version       = ApiVersion("version")
       val apiIdentifier = ApiIdentifier(context, version)
-      val cmd           = UnsubscribeFromApi(devHubUser, apiIdentifier, timestamp)
+      val cmd           = UnsubscribeFromApi(otherAdminAsActor, apiIdentifier, timestamp)
       val evt           = ApiUnsubscribedV2(
         EventId.random,
         applicationId,
         FixedClock.instant,
-        devHubUser,
+        otherAdminAsActor,
         context,
         version
       )
@@ -633,7 +629,7 @@ class ApplicationCommandDispatcherSpec
           NonEmptyList.one(evt)
         )))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[UnsubscribeFromApiCommandHandler]()
       }
@@ -647,12 +643,12 @@ class ApplicationCommandDispatcherSpec
     " UpdateRedirectUris is received" should {
       val oldUris = List("uri1", "uri2")
       val newUris = List("uri3", "uri4")
-      val cmd     = UpdateRedirectUris(devHubUser, oldUris, newUris, timestamp)
+      val cmd     = UpdateRedirectUris(otherAdminAsActor, oldUris, newUris, timestamp)
       val evt     = RedirectUrisUpdatedV2(
         EventId.random,
         applicationId,
         FixedClock.instant,
-        devHubUser,
+        otherAdminAsActor,
         oldUris,
         newUris
       )
@@ -665,7 +661,7 @@ class ApplicationCommandDispatcherSpec
           NonEmptyList.one(evt)
         )))
 
-        await(underTest.dispatch(applicationId, cmd).value)
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[UpdateRedirectUrisCommandHandler]()
       }

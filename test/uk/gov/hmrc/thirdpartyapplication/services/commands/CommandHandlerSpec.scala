@@ -23,7 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock, HmrcSpec}
 
-class CommandHandler2Spec extends HmrcSpec with ApplicationTestData {
+class CommandHandlerSpec extends HmrcSpec with ApplicationTestData {
 
   val VALID         = Validated.Valid(())
   val applicationId = ApplicationId.random
@@ -41,8 +41,7 @@ class CommandHandler2Spec extends HmrcSpec with ApplicationTestData {
 
     }
     "fail when existing secrets are at the limit" in {
-      CommandHandler.appHasLessThanLimitOfSecrets(applicationData, 2) shouldBe Validated.Invalid(NonEmptyChain("Client secret limit has been exceeded"))
-
+      CommandHandler.appHasLessThanLimitOfSecrets(applicationData, 2) shouldBe Validated.Invalid(NonEmptyChain(CommandFailures.GenericFailure("Client secret limit has been exceeded")))
     }
   }
 }

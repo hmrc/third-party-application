@@ -30,6 +30,14 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationCommand
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AddCollaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import java.time.LocalDateTime
 
 class ApplicationCommandControllerSpec
     extends ControllerSpec
@@ -39,6 +47,8 @@ class ApplicationCommandControllerSpec
     with ApplicationTestData {
 
   import play.api.test.Helpers._
+
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup
       extends ApplicationCommandDispatcherMockModule with ApplicationServiceMockModule {
@@ -55,8 +65,14 @@ class ApplicationCommandControllerSpec
     val applicationId = ApplicationId.random
   }
 
+  val actor = Actors.AppCollaborator("fred@smith.com".toLaxEmail)
+  val cmd: ApplicationCommand = AddCollaborator(actor, Collaborators.Administrator(UserId.random, "bob@smith.com".toLaxEmail), LocalDateTime.now)
+  val dispatch = ApplicationCommandController.DispatchRequest(cmd, Set("fred".toLaxEmail))
+  
+  import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationCommandFormatters._
+  implicit val tempWriter = Json.writes[ApplicationCommandController.DispatchRequest]
+
   val instigatorUserId = UUID.randomUUID().toString
-  val gatekeeperUser   = "gk_user_1"
 
   "updateName" when {
     val validUpdateNameRequestBody = Json.obj(
@@ -69,7 +85,7 @@ class ApplicationCommandControllerSpec
 
     "calling update" should {
 
-      "return success if application update request is valid" in new Setup {
+      "return success if application command request is valid" in new Setup {
         ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(anApplicationData(applicationId))
 
         val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody))
@@ -77,42 +93,50 @@ class ApplicationCommandControllerSpec
         status(result) shouldBe OK
       }
 
-      "return 422 error if application update request is missing updateType" in new Setup {
+      "return success if dispatch request is valid" in new Setup {
+        ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(anApplicationData(applicationId))
+
+        val result = underTest.update(applicationId)(request.withBody(Json.toJson(dispatch)))
+
+        status(result) shouldBe OK
+      }
+
+      "return 422 error if application command request is missing updateType" in new Setup {
         val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "updateType"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
         status(result) shouldBe UNPROCESSABLE_ENTITY
       }
 
-      "return 422 error if application update request is missing instigator" in new Setup {
+      "return 422 error if application command request is missing instigator" in new Setup {
         val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "instigator"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
         status(result) shouldBe UNPROCESSABLE_ENTITY
       }
 
-      "return 422 error if application update request is missing timestamp" in new Setup {
+      "return 422 error if application command request is missing timestamp" in new Setup {
         val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "timestamp"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
         status(result) shouldBe UNPROCESSABLE_ENTITY
       }
 
-      "return 422 error if application update request is missing gatekeeperUser" in new Setup {
+      "return 422 error if application command request is missing gatekeeperUser" in new Setup {
         val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "gatekeeperUser"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
         status(result) shouldBe UNPROCESSABLE_ENTITY
       }
 
-      "return 422 error if application update request is missing newName" in new Setup {
+      "return 422 error if application command request is missing newName" in new Setup {
         val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "newName"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
         status(result) shouldBe UNPROCESSABLE_ENTITY
       }
 
-      "return 400 error if application update request is valid but update fails" in new Setup {
+      "return 400 error if application command request is valid but update fails" in new Setup {
         ApplicationCommandDispatcherMock.Dispatch.thenReturnFailed("update failed!")
 
         val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody))
@@ -124,7 +148,7 @@ class ApplicationCommandControllerSpec
 
     "calling dispatch" should {
 
-      "return success if application update request is valid" in new Setup {
+      "return success if application command request is valid" in new Setup {
         ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(anApplicationData(applicationId))
 
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody))
@@ -132,42 +156,50 @@ class ApplicationCommandControllerSpec
         status(result) shouldBe OK
       }
 
-      "return 422 error if application update request is missing updateType" in new Setup {
+      "return success if dispatch request is valid" in new Setup {
+        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(anApplicationData(applicationId))
+
+        val result = underTest.dispatch(applicationId)(request.withBody(Json.toJson(dispatch)))
+
+        status(result) shouldBe OK
+      }
+
+      "return 422 error if application command request is missing updateType" in new Setup {
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody - "updateType"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
         status(result) shouldBe UNPROCESSABLE_ENTITY
       }
 
-      "return 422 error if application update request is missing instigator" in new Setup {
+      "return 422 error if application command request is missing instigator" in new Setup {
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody - "instigator"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
         status(result) shouldBe UNPROCESSABLE_ENTITY
       }
 
-      "return 422 error if application update request is missing timestamp" in new Setup {
+      "return 422 error if application command request is missing timestamp" in new Setup {
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody - "timestamp"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
         status(result) shouldBe UNPROCESSABLE_ENTITY
       }
 
-      "return 422 error if application update request is missing gatekeeperUser" in new Setup {
+      "return 422 error if application command request is missing gatekeeperUser" in new Setup {
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody - "gatekeeperUser"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
         status(result) shouldBe UNPROCESSABLE_ENTITY
       }
 
-      "return 422 error if application update request is missing newName" in new Setup {
+      "return 422 error if application command request is missing newName" in new Setup {
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody - "newName"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
         status(result) shouldBe UNPROCESSABLE_ENTITY
       }
 
-      "return 400 error if application update request is valid but update fails" in new Setup {
+      "return 400 error if application command request is valid but update fails" in new Setup {
         ApplicationCommandDispatcherMock.Dispatch.thenReturnFailed("update failed!")
 
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody))

@@ -40,6 +40,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
   ) extends CommandHandler {
 
   import CommandHandler._
+  import CommandFailures._
 
   private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
     cond(
@@ -51,8 +52,8 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
       s"The specified individual is already the RI for this application"
     )
 
-  private def validate(app: ApplicationData, cmd: VerifyResponsibleIndividual): Validated[CommandFailures, Collaborator] = {
-    Apply[Validated[CommandFailures, *]].map5(
+  private def validate(app: ApplicationData, cmd: VerifyResponsibleIndividual): Validated[CommandHandler.Failures, Collaborator] = {
+    Apply[Validated[CommandHandler.Failures, *]].map5(
       isStandardNewJourneyApp(app),
       isApproved(app),
       isAdminOnApp(cmd.instigator, app),
@@ -81,7 +82,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
   }
 
   def process(app: ApplicationData, cmd: VerifyResponsibleIndividual): ResultT = {
-    lazy val noSubmission = NonEmptyChain.one(s"No submission found for application ${app.id}")
+    lazy val noSubmission = NonEmptyChain.one(GenericFailure(s"No submission found for application ${app.id}"))
 
     for {
       submission <- E.fromOptionF(submissionService.fetchLatest(app.id), noSubmission)

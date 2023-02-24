@@ -30,7 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
 class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
 
-//
   trait Setup {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -54,7 +53,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
       StateHistoryRepoMock.aMock
     )
 
-    def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult()(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
@@ -85,9 +84,15 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
           }
         )
       }
-
     }
+    
+    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
+      val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
+      testThis should have length 1 + msgs.length
+      testThis.head shouldBe CommandFailures.GenericFailure(msg)
+      testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
+    }
   }
 
   val reasons           = "reasons description text"
@@ -111,10 +116,9 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
     "return an error when app is NOT in testing state" in new Setup {
       val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, FixedClock.now)
 
-      val result = await(underTest.process(app.copy(state = app.state.copy(name = State.PRE_PRODUCTION)), cmd).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe "App is not in TESTING state"
+      checkFailsWith("App is not in TESTING state") {
+        underTest.process(app.copy(state = app.state.copy(name = State.PRE_PRODUCTION)), cmd)
+      }
     }
   }
 

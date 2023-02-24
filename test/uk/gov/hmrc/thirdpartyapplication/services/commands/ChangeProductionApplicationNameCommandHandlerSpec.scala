@@ -32,7 +32,6 @@ class ChangeProductionApplicationNameCommandHandlerSpec
     extends AsyncHmrcSpec
     with ApplicationTestData
     with CommandActorExamples
-    with CommandCollaboratorExamples
     with CommandApplicationExamples {
 
   val app = principalApp.copy(access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
@@ -46,7 +45,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
     val gatekeeperUser = "gkuser"
     val requester      = "requester"
 
-    val userId = idOf(adminEmail)
+    val userId = idOf(anAdminEmail)
 
     val timestamp = FixedClock.instant
     val update    = ChangeProductionApplicationName(userId, FixedClock.now, gatekeeperUser, newName)
@@ -67,7 +66,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
             eventDateTime shouldBe timestamp
             oldName shouldBe app.name
             eNewName shouldBe newName
-            requestingAdminEmail shouldBe adminEmail
+            requestingAdminEmail shouldBe anAdminEmail
         }
       }
     }
@@ -76,7 +75,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1
-      testThis.head shouldBe msg
+      testThis.head shouldBe CommandFailures.GenericFailure(msg)
     }
 
   }

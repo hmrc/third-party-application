@@ -72,7 +72,7 @@ class CredentialService @Inject() (
       _                           = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
       (clientSecret, secretValue) = clientSecretService.generateClientSecret()
       addSecretCmd                = generateCommand(clientSecret)
-      _                          <- applicationCommandDispatcher.dispatch(applicationId, addSecretCmd).value
+      _                          <- applicationCommandDispatcher.dispatch(applicationId, addSecretCmd, Set.empty).value
       updatedApplication         <- fetchApp(applicationId)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production, addSecretCmd.clientSecret.id, secretValue)
   }

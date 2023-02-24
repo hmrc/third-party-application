@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -32,7 +32,6 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
     extends AsyncHmrcSpec
     with ApplicationTestData
     with CommandActorExamples
-    with CommandCollaboratorExamples
     with CommandApplicationExamples {
 
   trait Setup extends ApplicationRepositoryMockModule {
@@ -46,7 +45,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
     val newJourneyApp = anApplicationData(applicationId).copy(
       collaborators = Set(
         developerCollaborator,
-        adminCollaborator
+        otherAdminCollaborator
       ),
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
@@ -54,14 +53,14 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
     val oldJourneyApp = anApplicationData(applicationId).copy(
       collaborators = Set(
         developerCollaborator,
-        adminCollaborator
+        otherAdminCollaborator
       ),
       access = Standard(termsAndConditionsUrl = Some(oldUrl))
     )
 
-    val userId    = idOf(adminEmail)
+    val userId    = idOf(anAdminEmail)
     val timestamp = FixedClock.instant
-    val actor     = Actors.AppCollaborator(adminEmail)
+    val actor     = otherAdminAsActor
 
     val update = ChangeProductionApplicationTermsAndConditionsLocation(userId, FixedClock.now, newLocation)
 
@@ -107,7 +106,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1
-      testThis.head shouldBe msg
+      testThis.head shouldBe CommandFailures.GenericFailure(msg)
     }
   }
 

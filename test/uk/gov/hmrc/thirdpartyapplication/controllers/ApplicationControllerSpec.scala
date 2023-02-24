@@ -257,7 +257,7 @@ class ApplicationControllerSpec
     val userId                                             = UserId.random
     val addCollaboratorRequestWithUserId                   = AddCollaboratorRequest(email.developer(userId), isRegistered, adminsToEmail)
     val payload                                            =
-      s"""{"adminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"DEVELOPER", "userId": "${userId.value}"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
+      s"""{"anAdminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"DEVELOPER", "userId": "${userId.value}"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
     val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.parse(payload))
 
     "succeed with a 200 (ok) for a STANDARD application" in new Setup {

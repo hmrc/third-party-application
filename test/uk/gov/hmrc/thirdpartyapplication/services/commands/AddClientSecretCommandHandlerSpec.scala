@@ -29,8 +29,9 @@ class AddClientSecretCommandHandlerSpec
     extends AsyncHmrcSpec
     with ApplicationTestData
     with CommandActorExamples
-    with CommandCollaboratorExamples
     with CommandApplicationExamples {
+
+  import CommandFailures.GenericFailure
 
   class Setup(limit: Int = 3) extends ApplicationRepositoryMockModule {
     val config    = CredentialConfig(limit)
@@ -41,9 +42,9 @@ class AddClientSecretCommandHandlerSpec
     val clientSecret = ClientSecret("name", FixedClock.now, hashedSecret = "hashed")
 
     val addClientSecretByDev   = AddClientSecret(Actors.AppCollaborator(devEmail), clientSecret, FixedClock.now)
-    val addClientSecretByAdmin = AddClientSecret(Actors.AppCollaborator(adminEmail), clientSecret, FixedClock.now)
+    val addClientSecretByAdmin = AddClientSecret(otherAdminAsActor, clientSecret, FixedClock.now)
 
-    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head
@@ -74,7 +75,7 @@ class AddClientSecretCommandHandlerSpec
       val result = await(underTest.process(principalApp, addClientSecretByDev).value).left.value.toNonEmptyList.toList
 
       result should have length 1
-      result.head shouldBe "App is in PRODUCTION so User must be an ADMIN"
+      result.head shouldBe GenericFailure("App is in PRODUCTION so User must be an ADMIN")
     }
 
     "return an error for a non-admin developer and application with full secrets" in new Setup(1) {
@@ -82,8 +83,8 @@ class AddClientSecretCommandHandlerSpec
 
       result should have length 2
       result should contain allOf (
-        "App is in PRODUCTION so User must be an ADMIN",
-        "Client secret limit has been exceeded"
+        GenericFailure("App is in PRODUCTION so User must be an ADMIN"),
+        GenericFailure("Client secret limit has been exceeded")
       )
     }
   }

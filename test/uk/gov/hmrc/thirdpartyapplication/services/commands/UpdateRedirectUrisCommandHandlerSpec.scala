@@ -46,7 +46,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
     val timestamp = FixedClock.instant
     val cmd       = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, FixedClock.now)
 
-    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head
@@ -60,6 +60,14 @@ class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
             newUris shouldBe newRedirectUris
         }
       }
+    }
+          
+    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
+      val testThis = await(fn.value).left.value.toNonEmptyList.toList
+
+      testThis should have length 1 + msgs.length
+      testThis.head shouldBe CommandFailures.GenericFailure(msg)
+      testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
     }
   }
 
@@ -75,11 +83,9 @@ class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
     }
 
     "fail when application is not standardAccess" in new Setup {
-
-      val result = await(underTest.process(nonStandardAccessApp, cmd).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe "App must have a STANDARD access type"
+      checkFailsWith("App must have a STANDARD access type") {
+        underTest.process(nonStandardAccessApp, cmd)
+      }
       ApplicationRepoMock.verifyZeroInteractions()
     }
   }

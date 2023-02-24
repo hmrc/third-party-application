@@ -53,7 +53,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
       StateHistoryRepoMock.aMock
     )
 
-    def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult()(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
@@ -84,7 +84,14 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
           }
         )
       }
+    }
+    
+    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
+      val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
+      testThis should have length 1 + msgs.length
+      testThis.head shouldBe CommandFailures.GenericFailure(msg)
+      testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
     }
   }
 
@@ -110,10 +117,9 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
     "return an error when auth key doesnt match" in new Setup {
       val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", "notAuthKey", reasons, FixedClock.now)
 
-      val result = await(underTest.process(app, cmd).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe "Cannot delete this applicaton"
+      checkFailsWith("Cannot delete this applicaton") {
+        underTest.process(app, cmd)
+      }
     }
   }
 

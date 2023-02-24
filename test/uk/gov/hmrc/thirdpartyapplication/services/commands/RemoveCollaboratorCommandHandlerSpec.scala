@@ -34,12 +34,12 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
     val underTest = new RemoveCollaboratorCommandHandler(ApplicationRepoMock.aMock)
 
     val applicationId = ApplicationId.random
-    val adminEmail    = "admin@example.com".toLaxEmail
+    val anAdminEmail    = "admin@example.com".toLaxEmail
 
     val developerCollaborator = devEmail.developer()
 
-    val adminCollaborator = adminEmail.admin()
-    val adminActor        = Actors.AppCollaborator(adminEmail)
+    val adminCollaborator = anAdminEmail.admin()
+    val adminActor        = otherAdminAsActor
 
     val gkUserEmail  = "admin@gatekeeper"
     val gkUserActor  = Actors.GatekeeperUser(gkUserEmail)
@@ -61,11 +61,11 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
 
     val timestamp = FixedClock.instant
 
-    val adminsToEmail = Set(adminEmail, devEmail)
+    val adminsToEmail = Set(anAdminEmail, devEmail)
 
     val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), collaborator, adminsToEmail, FixedClock.now)
 
-    def checkSuccessResult(expectedActor: Actor)(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult(expectedActor: Actor)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head
@@ -81,6 +81,21 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
       }
     }
 
+    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
+      val testThis = await(fn.value).left.value.toNonEmptyList.toList
+
+      testThis should have length 1 + msgs.length
+      testThis.head shouldBe CommandFailures.GenericFailure(msg)
+      testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
+    }
+        
+    def checkFailsWith(fail: CommandFailure, fails: CommandFailure*)(fn: => CommandHandler.ResultT) = {
+      val testThis = await(fn.value).left.value.toNonEmptyList.toList
+
+      testThis should have length 1 + fails.length
+      testThis.head shouldBe fail
+      testThis.tail shouldBe fails
+    }
   }
 
   "RemoveCollaborator" should {
@@ -101,34 +116,27 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
     }
 
     "return an error when collaborator is not associated to the application" in new Setup {
-
       val removeUnknownCollaboratorCommand = removeCollaborator.copy(collaborator = unknownEmail.developer())
 
-      val result = await(underTest.process(app, removeUnknownCollaboratorCommand).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe s"no collaborator found with email: $unknownEmail"
+      checkFailsWith(CommandFailures.CollaboratorDoesNotExistOnApp) {
+        underTest.process(app, removeUnknownCollaboratorCommand)
+      }
     }
 
     "return an error when actor is collaborator actor and is not associated to the application" in new Setup {
-
       val removeCollaboratorActorUnknownCommand: RemoveCollaborator = removeCollaborator.copy(actor = Actors.AppCollaborator(unknownEmail.toLaxEmail))
 
-      val result = await(underTest.process(app, removeCollaboratorActorUnknownCommand).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe s"no collaborator found with email: $unknownEmail"
+      checkFailsWith(CommandFailures.ActorIsNotACollaboratorOnApp) {
+        underTest.process(app, removeCollaboratorActorUnknownCommand)
+      }
     }
 
     "return an error when collaborator is last admin associated with the application" in new Setup {
-
       val removeLastAdminCollaboratorCommand = removeCollaborator.copy(collaborator = adminCollaborator)
 
-      val result = await(underTest.process(app, removeLastAdminCollaboratorCommand).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe s"Collaborator is last remaining admin for Application ${applicationId.value}"
+      checkFailsWith(CommandFailures.CannotRemoveLastAdmin) {
+        underTest.process(app, removeLastAdminCollaboratorCommand)
+      }
     }
-
   }
 }

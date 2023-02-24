@@ -31,19 +31,18 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 trait CommandHandler {
-  import CommandHandler._
-
   implicit def ec: ExecutionContext
 
-  val E = EitherTHelper.make[CommandFailures]
+  val E = EitherTHelper.make[CommandHandler.Failures]
 }
 
 object CommandHandler {
-  type CommandSuccess  = (ApplicationData, NonEmptyList[ApplicationEvent])
-  type CommandFailures = NonEmptyChain[String]
+  type Success  = (ApplicationData, NonEmptyList[ApplicationEvent])
+  type Failures = NonEmptyChain[CommandFailure]
 
-  // type Result  = Future[Either[CommandFailures, CommandSuccess]]
-  type ResultT = EitherT[Future, CommandFailures, CommandSuccess]
+  import CommandFailures._
+
+  type ResultT = EitherT[Future, Failures, Success]
 
   implicit class InstantSyntax(value: LocalDateTime) {
     def instant: Instant = value.toInstant(ZoneOffset.UTC)
@@ -61,20 +60,31 @@ object CommandHandler {
       requestingAdminEmail
     )
 
-  def cond(cond: => Boolean, left: String): Validated[CommandFailures, Unit] = {
-    if (cond) ().validNec[String] else left.invalidNec[Unit]
+  def cond(cond: => Boolean, left: CommandFailure): Validated[Failures, Unit] = {
+    if (cond) ().validNec[CommandFailure] else left.invalidNec[Unit]
   }
 
-  def cond[R](cond: => Boolean, left: String, rValue: R): Validated[CommandFailures, R] = {
-    if (cond) rValue.validNec[String] else left.invalidNec[R]
+  def cond(cond: => Boolean, left: String): Validated[Failures, Unit] = {
+    if (cond) ().validNec[CommandFailure] else GenericFailure(left).invalidNec[Unit]
   }
 
-  def mustBeDefined[R](value: Option[R], left: String): Validated[CommandFailures, R] = {
-    value.fold(left.invalidNec[R])(_.validNec[String])
+  def cond[R](cond: => Boolean, left: CommandFailure, rValue: R): Validated[Failures, R] = {
+    if (cond) rValue.validNec[CommandFailure] else left.invalidNec[R]
   }
 
-  def isCollaboratorOnApp(email: LaxEmailAddress, app: ApplicationData): Validated[CommandFailures, Unit] =
-    cond(app.collaborators.exists(c => c.emailAddress == email), s"no collaborator found with email: ${email.text}")
+  def mustBeDefined[R](value: Option[R], left: CommandFailure): Validated[Failures, R] = {
+    value.fold(left.invalidNec[R])(_.validNec[CommandFailure])
+  }
+
+  def mustBeDefined[R](value: Option[R], left: String): Validated[Failures, R] = {
+    value.fold[Validated[Failures, R]](GenericFailure(left).invalidNec[R])(_.validNec[CommandFailure])
+  }
+  def isAppActorACollaboratorOnApp(actor: Actors.AppCollaborator, app: ApplicationData): Validated[Failures, Unit] =
+    cond(app.collaborators.exists(c => c.emailAddress == actor.email), ActorIsNotACollaboratorOnApp)
+
+
+  def isCollaboratorOnApp(collaborator: Collaborator, app: ApplicationData): Validated[Failures, Unit] =
+    cond(app.collaborators.exists(c => c.emailAddress.equalsIgnoreCase(collaborator.emailAddress)), CollaboratorDoesNotExistOnApp)
 
   private def isCollaboratorActorAndAdmin(actor: Actor, app: ApplicationData): Boolean =
     actor match {
@@ -86,67 +96,67 @@ object CommandHandler {
     updated.exists(_.isAdministrator)
   }
 
-  def isAdminOnApp(userId: UserId, app: ApplicationData): Validated[CommandFailures, Collaborator] =
+  def isAdminOnApp(userId: UserId, app: ApplicationData): Validated[Failures, Collaborator] =
     mustBeDefined(app.collaborators.find(c => c.isAdministrator && c.userId == userId), "User must be an ADMIN")
 
-  def isAdminIfInProduction(actor: Actor, app: ApplicationData): Validated[CommandFailures, Unit] =
+  def isAdminIfInProduction(actor: Actor, app: ApplicationData): Validated[Failures, Unit] =
     cond(
       (app.environment == Environment.PRODUCTION.toString && isCollaboratorActorAndAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString),
-      "App is in PRODUCTION so User must be an ADMIN"
+      GenericFailure("App is in PRODUCTION so User must be an ADMIN")
     )
 
-  def isNotInProcessOfBeingApproved(app: ApplicationData): Validated[CommandFailures, Unit] =
+  def isNotInProcessOfBeingApproved(app: ApplicationData): Validated[Failures, Unit] =
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION || app.state.name == State.TESTING,
-      "App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION"
+      GenericFailure("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION")
     )
 
-  def isApproved(app: ApplicationData): Validated[CommandFailures, Unit] =
+  def isApproved(app: ApplicationData): Validated[Failures, Unit] =
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION,
-      "App is not in PRE_PRODUCTION or in PRODUCTION state"
+      GenericFailure("App is not in PRE_PRODUCTION or in PRODUCTION state")
     )
 
   def clientSecretExists(clientSecretId: String, app: ApplicationData) =
     cond(
       app.tokens.production.clientSecrets.exists(_.id == clientSecretId),
-      s"Client Secret Id $clientSecretId not found in Application ${app.id.value}"
+      GenericFailure(s"Client Secret Id $clientSecretId not found in Application ${app.id.value}")
     )
 
   def collaboratorAlreadyOnApp(email: LaxEmailAddress, app: ApplicationData) = {
     cond(
       !app.collaborators.exists(_.emailAddress.equalsIgnoreCase(email)),
-      s"Collaborator already linked to Application ${app.id.value}"
+      CollaboratorAlreadyExistsOnApp
     )
   }
 
-  def applicationWillHaveAnAdmin(email: LaxEmailAddress, app: ApplicationData) = {
+  def applicationWillStillHaveAnAdmin(email: LaxEmailAddress, app: ApplicationData) = {
     cond(
       applicationHasAnAdmin(app.collaborators.filterNot(_.emailAddress equalsIgnoreCase email)),
-      s"Collaborator is last remaining admin for Application ${app.id.value}"
+      CannotRemoveLastAdmin
     )
   }
 
   def isPendingResponsibleIndividualVerification(app: ApplicationData) =
     cond(
       app.isPendingResponsibleIndividualVerification,
-      "App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state"
+      GenericFailure("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state")
     )
 
   def isInTesting(app: ApplicationData) =
     cond(
       app.isInTesting,
-      "App is not in TESTING state"
+      GenericFailure("App is not in TESTING state")
     )
 
   def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app: ApplicationData) =
     cond(
       app.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification,
-      "App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state"
+      GenericFailure("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state")
     )
 
   def isStandardAccess(app: ApplicationData) =
-    cond(app.access.accessType == AccessType.STANDARD, "App must have a STANDARD access type")
+    cond(app.access.accessType == AccessType.STANDARD, GenericFailure("App must have a STANDARD access type"))
 
   def isStandardNewJourneyApp(app: ApplicationData) =
     cond(
@@ -154,7 +164,7 @@ object CommandHandler {
         case Standard(_, _, _, _, _, Some(_)) => true
         case _                                => false
       },
-      "Must be a standard new journey application"
+      GenericFailure("Must be a standard new journey application")
     )
 
   def getRequester(app: ApplicationData, instigator: UserId): LaxEmailAddress = {
@@ -182,6 +192,6 @@ object CommandHandler {
   def ensureRequesterNameDefined(app: ApplicationData) =
     mustBeDefined(getRequesterName(app), "The requestedByName has not been set for this application")
 
-  def appHasLessThanLimitOfSecrets(app: ApplicationData, clientSecretLimit: Int): Validated[CommandFailures, Unit] =
-    cond(app.tokens.production.clientSecrets.size < clientSecretLimit, "Client secret limit has been exceeded")
+  def appHasLessThanLimitOfSecrets(app: ApplicationData, clientSecretLimit: Int): Validated[Failures, Unit] =
+    cond(app.tokens.production.clientSecrets.size < clientSecretLimit, GenericFailure("Client secret limit has been exceeded"))
 }

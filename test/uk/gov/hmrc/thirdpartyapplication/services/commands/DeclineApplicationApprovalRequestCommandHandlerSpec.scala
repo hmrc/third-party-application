@@ -72,7 +72,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
     val ts              = FixedClock.instant
     val underTest       = new DeclineApplicationApprovalRequestCommandHandler(ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
 
-    def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult()(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
@@ -120,6 +120,14 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
         )
       }
     }
+    
+    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
+      val testThis = await(fn.value).left.value.toNonEmptyList.toList
+
+      testThis should have length 1 + msgs.length
+      testThis.head shouldBe CommandFailures.GenericFailure(msg)
+      testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
+    }
 
   }
 
@@ -138,29 +146,33 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturnNone
-      val result = await(underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now)).value).left.value.toNonEmptyList.toList
-      result.head shouldBe s"No submission found for application ${applicationData.id.value}"
+      checkFailsWith(s"No submission found for application ${applicationData.id.value}") {
+        underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now)) 
+      }
     }
 
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       val nonStandardApp = applicationData.copy(access = Ropc(Set.empty))
-      val result         = await(underTest.process(nonStandardApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now)).value).left.value.toNonEmptyList.toList
-      result.head shouldBe "Must be a standard new journey application"
+      checkFailsWith("Must be a standard new journey application") {
+        underTest.process(nonStandardApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now))
+      }
     }
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       val oldJourneyApp = applicationData.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
-      val result        = await(underTest.process(oldJourneyApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now)).value).left.value.toNonEmptyList.toList
-      result.head shouldBe "Must be a standard new journey application"
+      checkFailsWith("Must be a standard new journey application") {
+        underTest.process(oldJourneyApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now))
+      }
     }
 
     "return an error if the application state is not PendingResponsibleIndividualVerification or PendingGatekeeperApproval" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       val pendingGKApprovalApp = applicationData.copy(state = ApplicationState.pendingRequesterVerification(requesterEmail.text, requesterName, "12345678"))
-      val result               = await(underTest.process(pendingGKApprovalApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now)).value).left.value.toNonEmptyList.toList
-      result.head shouldBe "App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state"
+      checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state") {
+        underTest.process(pendingGKApprovalApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now))
+      }
     }
 
   }

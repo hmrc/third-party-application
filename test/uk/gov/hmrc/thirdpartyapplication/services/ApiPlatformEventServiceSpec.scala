@@ -36,9 +36,9 @@ import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach with TableDrivenPropertyChecks with CollaboratorTestData {
+class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach with TableDrivenPropertyChecks with CollaboratorTestData with ActorTestData {
 
   val mockConnector: ApiPlatformEventsConnector = mock[ApiPlatformEventsConnector]
 
@@ -60,14 +60,13 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
     checkInformation = None
   )
 
-  val adminEmail                         = "admin@admin.com".toLaxEmail
-  val hcWithAdminLoggedIn: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> adminEmail.text)
+  val hcWithAdminLoggedIn: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> anAdminEmail.text)
 
   val teamMemberEmail                               = "bob@bob.com".toLaxEmail
   val teamMemberRole                                = "ADMIN"
   val context: ApiContext                           = "api/path/path2".asContext
   val version: ApiVersion                           = "2.0".asVersion
-  val appDataWithCollaboratorAdded: ApplicationData = applicationData.copy(collaborators = Set(adminEmail.admin()))
+  val appDataWithCollaboratorAdded: ApplicationData = applicationData.copy(collaborators = Set(anAdminEmail.admin()))
 
   override def beforeEach(): Unit = {
     reset(mockConnector)
@@ -90,7 +89,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
 
       "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
-        teamMemberAddedRemoved(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = true, expectedResult = true, added = true)
+        teamMemberAddedRemoved(objInTest, otherAdminAsActor, connectorResult = true, expectedResult = true, added = true)
       }
 
       "send event payload with actor type as GATEKEEPER when user sending the event isn't a collaborator" in new Setup() {
@@ -102,7 +101,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event and return false result from connector" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        teamMemberAddedRemoved(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = false, expectedResult = false, added = true)
+        teamMemberAddedRemoved(objInTest, otherAdminAsActor, connectorResult = false, expectedResult = false, added = true)
       }
 
       "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {
@@ -123,7 +122,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        teamMemberAddedRemoved(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = true, expectedResult = true, added = false)
+        teamMemberAddedRemoved(objInTest, otherAdminAsActor, connectorResult = true, expectedResult = true, added = false)
       }
 
       "send event payload with actor type as GATEKEEPER when user sending the event isn't a collaborator" in new Setup() {
@@ -136,7 +135,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event and return false result from connector" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        teamMemberAddedRemoved(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = false, expectedResult = false, added = true)
+        teamMemberAddedRemoved(objInTest, otherAdminAsActor, connectorResult = false, expectedResult = false, added = true)
       }
 
       "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {
@@ -161,7 +160,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        clientSecretAddedRemoved(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = true, expectedResult = true, added = true)
+        clientSecretAddedRemoved(objInTest, otherAdminAsActor, connectorResult = true, expectedResult = true, added = true)
       }
 
       "send event payload with actor type as GATEKEEPER when user sending the event isn't a collaborator" in new Setup() {
@@ -174,7 +173,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event and return false result from connector" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        clientSecretAddedRemoved(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = false, expectedResult = false, added = true)
+        clientSecretAddedRemoved(objInTest, otherAdminAsActor, connectorResult = false, expectedResult = false, added = true)
       }
 
       "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {
@@ -199,7 +198,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        teamMemberAddedRemoved(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = true, expectedResult = true, added = false)
+        teamMemberAddedRemoved(objInTest, otherAdminAsActor, connectorResult = true, expectedResult = true, added = false)
       }
 
       "send event payload with actor type as GATEKEEPER when user sending the event isn't a collaborator" in new Setup() {
@@ -212,7 +211,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event and return false result from connector" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        teamMemberAddedRemoved(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = false, expectedResult = false, added = false)
+        teamMemberAddedRemoved(objInTest, otherAdminAsActor, connectorResult = false, expectedResult = false, added = false)
       }
 
       "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {
@@ -237,7 +236,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        redirectUrisUpdated(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = true, expectedResult = true)
+        redirectUrisUpdated(objInTest, otherAdminAsActor, connectorResult = true, expectedResult = true)
       }
 
       "send event payload with actor type as GATEKEEPER when user sending the event isn't a collaborator" in new Setup() {
@@ -250,7 +249,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event and return false result from connector" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        redirectUrisUpdated(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = false, expectedResult = false)
+        redirectUrisUpdated(objInTest, otherAdminAsActor, connectorResult = false, expectedResult = false)
       }
 
       "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {
@@ -275,7 +274,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        apiSubscribedUnsubscribed(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = true, expectedResult = true, subscribed = true)
+        apiSubscribedUnsubscribed(objInTest, otherAdminAsActor, connectorResult = true, expectedResult = true, subscribed = true)
       }
 
       "send event payload with actor type as GATEKEEPER when user sending the event isn't a collaborator" in new Setup() {
@@ -288,7 +287,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event and return false result from connector" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        apiSubscribedUnsubscribed(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = false, expectedResult = false, subscribed = true)
+        apiSubscribedUnsubscribed(objInTest, otherAdminAsActor, connectorResult = false, expectedResult = false, subscribed = true)
       }
 
       "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {
@@ -313,7 +312,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        apiSubscribedUnsubscribed(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = true, expectedResult = true, subscribed = false)
+        apiSubscribedUnsubscribed(objInTest, otherAdminAsActor, connectorResult = true, expectedResult = true, subscribed = false)
       }
 
       "send event payload with actor type as GATEKEEPER when user sending the event isn't a collaborator" in new Setup() {
@@ -325,7 +324,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       "send event and return false result from connector" in new Setup() {
         implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
 
-        apiSubscribedUnsubscribed(objInTest, Actors.AppCollaborator(adminEmail), connectorResult = false, expectedResult = false, subscribed = false)
+        apiSubscribedUnsubscribed(objInTest, otherAdminAsActor, connectorResult = false, expectedResult = false, subscribed = false)
       }
 
       "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {

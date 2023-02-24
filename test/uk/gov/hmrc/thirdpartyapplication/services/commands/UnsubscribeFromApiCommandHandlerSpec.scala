@@ -32,6 +32,8 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpe
 
 class UnsubscribeFromApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with ApiIdentifierSyntax {
 
+  import CommandFailures.GenericFailure
+
   trait Setup
       extends StrideGatekeeperRoleAuthorisationServiceMockModule
       with SubscriptionRepositoryMockModule {
@@ -68,7 +70,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1
-      testThis.head shouldBe msg
+      testThis.head shouldBe GenericFailure(msg)
     }
   }
 

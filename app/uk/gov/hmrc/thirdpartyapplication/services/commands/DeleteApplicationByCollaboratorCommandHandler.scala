@@ -51,8 +51,8 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
   def canDeleteApplicationsOrNotProductionApp(app: ApplicationData) =
     cond(authControlConfig.canDeleteApplications || !app.state.isInPreProductionOrProduction, "Cannot delete this applicaton")
 
-  private def validate(app: ApplicationData, cmd: DeleteApplicationByCollaborator): Validated[CommandFailures, Collaborator] = {
-    Apply[Validated[CommandFailures, *]].map3(
+  private def validate(app: ApplicationData, cmd: DeleteApplicationByCollaborator): Validated[CommandHandler.Failures, Collaborator] = {
+    Apply[Validated[CommandHandler.Failures, *]].map3(
       isAdminOnApp(cmd.instigator, app),
       isStandardAccess(app),
       canDeleteApplicationsOrNotProductionApp(app)

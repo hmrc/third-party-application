@@ -55,8 +55,8 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
   def matchesAuthorisationKey(cmd: DeleteUnusedApplication) =
     cond(base64Decode(cmd.authorisationKey).map(_ == authControlConfig.authorisationKey).getOrElse(false), "Cannot delete this applicaton")
 
-  private def validate(app: ApplicationData, cmd: DeleteUnusedApplication): Validated[CommandFailures, ApplicationData] = {
-    Apply[Validated[CommandFailures, *]]
+  private def validate(app: ApplicationData, cmd: DeleteUnusedApplication): Validated[CommandHandler.Failures, ApplicationData] = {
+    Apply[Validated[CommandHandler.Failures, *]]
       .map(matchesAuthorisationKey(cmd)) { case _ => app }
   }
 

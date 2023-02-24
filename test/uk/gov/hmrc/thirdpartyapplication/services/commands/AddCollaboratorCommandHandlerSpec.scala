@@ -28,8 +28,9 @@ class AddCollaboratorCommandHandlerSpec
     extends AsyncHmrcSpec
     with ApplicationTestData
     with CommandActorExamples
-    with CommandCollaboratorExamples
     with CommandApplicationExamples {
+
+  import CommandFailures._
 
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new AddCollaboratorCommandHandler(ApplicationRepoMock.aMock)
@@ -39,10 +40,10 @@ class AddCollaboratorCommandHandlerSpec
     val newCollaboratorEmail = "newdev@somecompany.com"
     val newCollaborator      = newCollaboratorEmail.developer()
 
-    val adminsToEmail = Set(adminEmail, devEmail)
+    val adminsToEmail = Set(anAdminEmail, devEmail)
 
-    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, adminsToEmail, FixedClock.now)
-    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, adminsToEmail, FixedClock.now)
+    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, FixedClock.now)
+    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, FixedClock.now)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
@@ -61,11 +62,11 @@ class AddCollaboratorCommandHandlerSpec
       }
     }
 
-    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
+    def checkFailsWith(failure: CommandFailure)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1
-      testThis.head shouldBe msg
+      testThis.head shouldBe failure
     }
   }
 
@@ -83,9 +84,9 @@ class AddCollaboratorCommandHandlerSpec
     }
 
     "return an error when collaborate already exists on the app" in new Setup {
-      val existingCollaboratorCmd = addCollaboratorAsAdmin.copy(collaborator = adminCollaborator)
+      val existingCollaboratorCmd = addCollaboratorAsAdmin.copy(collaborator = otherAdminCollaborator)
 
-      checkFailsWith(s"Collaborator already linked to Application ${applicationId.value}") {
+      checkFailsWith(CollaboratorAlreadyExistsOnApp) {
         underTest.process(principalApp, existingCollaboratorCmd)
       }
     }

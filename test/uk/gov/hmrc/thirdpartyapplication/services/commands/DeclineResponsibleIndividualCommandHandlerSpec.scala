@@ -42,7 +42,6 @@ class DeclineResponsibleIndividualCommandHandlerSpec
     with ApplicationTestData
     with SubmissionsTestData
     with CommandActorExamples
-    with CommandCollaboratorExamples
     with CommandApplicationExamples {
 
   trait Setup
@@ -181,8 +180,8 @@ class DeclineResponsibleIndividualCommandHandlerSpec
       val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
       testThis should have length 1 + msgs.length
-      testThis.head shouldBe msg
-      testThis.tail shouldBe msgs
+      testThis.head shouldBe CommandFailures.GenericFailure(msg)
+      testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
     }
   }
 

@@ -512,12 +512,12 @@ class ApplicationService @Inject() (
     )(implicit hc: HeaderCarrier
     ): Future[ApplicationData] = {
 
-    def fail(errorMessages: CommandHandler.CommandFailures) = {
+    def fail(errorMessages: CommandHandler.Failures) = {
       logger.warn(s"Command Process failed for $applicationId because ${errorMessages.toList.mkString("[", ",", "]")}")
       throw new BadRequestException("Failed to process UpdateRedirectUris command")
     }
 
-    def success(cmdSuccess: CommandHandler.CommandSuccess) = {
+    def success(cmdSuccess: CommandHandler.Success) = {
       cmdSuccess._1
     }
 
@@ -527,13 +527,13 @@ class ApplicationService @Inject() (
       newRedirectUris,
       timestamp = LocalDateTime.now(clock)
     )
-
-    applicationCommandDispatcher.dispatch(applicationId, updateRedirectUris)
+    println(updateRedirectUris)
+    applicationCommandDispatcher.dispatch(applicationId, updateRedirectUris, Set.empty)
       .fold(fail, success)
   }
 
   private def fetchApp(applicationId: ApplicationId) = {
-    val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
+    lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
     applicationRepository.fetch(applicationId).flatMap {
       case None      => failed(notFoundException)
       case Some(app) => successful(app)

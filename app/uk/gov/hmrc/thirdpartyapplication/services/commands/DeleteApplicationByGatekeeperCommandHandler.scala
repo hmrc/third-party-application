@@ -46,7 +46,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData): Validated[CommandFailures, ApplicationData] = {
+  private def validate(app: ApplicationData): Validated[CommandHandler.Failures, ApplicationData] = {
     Validated.validNec(app)
   }
 

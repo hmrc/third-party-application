@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services.commands
+package uk.gov.hmrc.thirdpartyapplication.util
 
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
-trait CommandCollaboratorExamples {
-  self: ApplicationTestData =>
+trait EmailTestData {
+  val loggedInUser = "loggedin@example.com".toLaxEmail
+  val devEmail     = "dev@example.com".toLaxEmail
+  val anAdminEmail   = "admin@example.com".toLaxEmail
 
-  val developerCollaborator = devEmail.developer()
-
-  val adminCollaborator = adminEmail.admin()
 }

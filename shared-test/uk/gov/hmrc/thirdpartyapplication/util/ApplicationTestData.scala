@@ -26,14 +26,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTi
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 
-trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData {
+trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData with ActorTestData with EmailTestData {
 
   def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = FixedClock.now)
-
-  val loggedInUser = "loggedin@example.com".toLaxEmail
-  val devEmail     = "dev@example.com".toLaxEmail
-  val adminEmail   = "admin@example.com".toLaxEmail
-  val adminName    = "Admin Example"
 
   val serverToken           = "b3c83934c02df8b111e7f9f8700000"
   val serverTokenLastAccess = FixedClock.now
@@ -46,7 +41,7 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
   def anApplicationData(
       applicationId: ApplicationId,
       state: ApplicationState = productionState(requestedByEmail.text),
-      collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
+      collaborators: Set[Collaborator] = Set(loggedInUserAdminCollaborator, otherAdminCollaborator, developerCollaborator),
       access: Access = Standard(),
       rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
       environment: Environment = Environment.PRODUCTION,
@@ -70,6 +65,7 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
       environment = environment.toString,
       ipAllowlist = ipAllowlist
     )
+
   }
 
 }

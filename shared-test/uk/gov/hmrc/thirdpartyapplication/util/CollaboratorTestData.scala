@@ -22,9 +22,14 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 
-trait CollaboratorTestData {
+trait CollaboratorTestData extends EmailTestData {
 
+  
   private val idsByEmail = mutable.Map[String, UserId]()
+
+  lazy val loggedInUserAdminCollaborator = loggedInUser.admin()
+  lazy val otherAdminCollaborator = anAdminEmail.admin()
+  lazy val developerCollaborator = devEmail.developer()
 
   def idOf(email: Any): UserId = email match {
     case s: String             => idsByEmail.getOrElseUpdate(s, UserId.random)
