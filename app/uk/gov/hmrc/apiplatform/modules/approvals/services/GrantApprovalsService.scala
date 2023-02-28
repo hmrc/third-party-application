@@ -170,4 +170,26 @@ class GrantApprovalsService @Inject() (
 
     emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(requesterEmail))
   }
+
+  def grantWithWarningsForTouUplift(
+      originalApp: ApplicationData,
+      submission: Submission,
+      gatekeeperUserName: String,
+      warnings: String
+    ): Future[GrantApprovalsService.Result] = {
+    import cats.implicits._
+    import cats.instances.future.catsStdInstancesForFuture
+
+    val ET    = EitherTHelper.make[Result]
+    (
+      for {
+        _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
+        _ <- ET.cond(submission.status.isWarnings, (), RejectedDueToIncorrectSubmissionState)
+
+        updatedSubmission        = Submission.grantWithWarnings(LocalDateTime.now(clock), gatekeeperUserName, warnings, None)(submission)
+        savedSubmission         <- ET.liftF(submissionService.store(updatedSubmission))
+      } yield Actioned(originalApp)
+    )
+      .fold[Result](identity, identity)
+  }
 }

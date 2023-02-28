@@ -40,6 +40,9 @@ object ApprovalsController {
 
   case class GrantedRequest(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])
   implicit val readsGrantedRequest = Json.reads[GrantedRequest]
+
+  case class GrantWithWarningsForTouUpliftRequest(gatekeeperUserName: String, warnings: String)
+  implicit val readsGrantWithWarningsForTouUpliftRequest = Json.reads[GrantWithWarningsForTouUpliftRequest]
 }
 
 @Singleton
@@ -86,6 +89,22 @@ class ApprovalsController @Inject() (
           case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
           case RejectedDueToIncorrectApplicationState =>
             PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'"))
+          case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
+        })
+    }
+      .recover(recovery)
+  }
+
+  def grantWithWarningsForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
+    import GrantApprovalsService._
+
+    withJsonBodyFromAnyContent[GrantWithWarningsForTouUpliftRequest] { grantedRequest =>
+      grantApprovalService.grantWithWarningsForTouUplift(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.warnings)
+        .map(_ match {
+          case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
+          case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_WARNINGS_STATE", s"Submission for $applicationId was not in a warnings state"))
+          case RejectedDueToIncorrectApplicationState =>
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
           case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
         })
     }
