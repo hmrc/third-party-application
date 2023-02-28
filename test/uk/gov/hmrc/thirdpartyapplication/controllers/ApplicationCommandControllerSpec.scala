@@ -93,14 +93,6 @@ class ApplicationCommandControllerSpec
         status(result) shouldBe OK
       }
 
-      "return success if dispatch request is valid" in new Setup {
-        ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(anApplicationData(applicationId))
-
-        val result = underTest.update(applicationId)(request.withBody(Json.toJson(dispatch)))
-
-        status(result) shouldBe OK
-      }
-
       "return 422 error if application command request is missing updateType" in new Setup {
         val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody - "updateType"))
 

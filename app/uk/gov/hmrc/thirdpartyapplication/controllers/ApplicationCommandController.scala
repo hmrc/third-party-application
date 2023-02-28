@@ -41,10 +41,10 @@ object ApplicationCommandController {
   object DispatchRequest {
     import ApplicationCommandFormatters._
 
-    val readsExactDispatchRequest: Reads[DispatchRequest] = Json.reads[DispatchRequest]
-    val readsExactCommand: Reads[DispatchRequest] = applicationUpdateRequestFormatter.map(cmd => DispatchRequest(cmd, Set.empty))
+    val readsDispatchRequest: Reads[DispatchRequest] = Json.reads[DispatchRequest]
+    val readsCommandAsDispatchRequest : Reads[DispatchRequest] = applicationUpdateRequestFormatter.map(cmd => DispatchRequest(cmd, Set.empty))
 
-    implicit val readsDispatchRequest: Reads[DispatchRequest] = readsExactDispatchRequest orElse readsExactCommand
+    implicit val readsEitherAsDispatchRequest: Reads[DispatchRequest] = readsDispatchRequest orElse readsCommandAsDispatchRequest
   }
 
   case class DispatchResult(applicationResponse: ApplicationResponse, events: List[ApplicationEvent])
@@ -92,8 +92,9 @@ class ApplicationCommandController @Inject() (
       Ok(Json.toJson(ApplicationResponse(data = result._1)))
     }
 
-    withJsonBody[DispatchRequest] { dispatchRequest =>
-      applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(fails(applicationId), passes(_))
+    withJsonBody[ApplicationCommand] { command =>
+      applicationCommandDispatcher.dispatch(applicationId, command, Set.empty) // Eventually we want to migrate everything to use the /dispatch endpoint with email list
+      .fold(fails(applicationId), passes(_))
     }
   }
 
@@ -107,5 +108,4 @@ class ApplicationCommandController @Inject() (
       applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(fails(applicationId), passes(_))
     }
   }
-
 }

@@ -583,11 +583,9 @@ class ApplicationServiceSpec
       override implicit val hc = hcForLoggedInGatekeeperUser
       
       val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
-      println(updateRedirectUris)
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccessOn(updateRedirectUris)(updatedApplication)
 
       val updateAppReq = UpdateApplicationRequest(updatedApplication.name, updatedApplication.access)
-      println(updateAppReq)
 
       await(underTest.update(applicationId, updateAppReq))
 
@@ -1003,7 +1001,6 @@ class ApplicationServiceSpec
 
       AuditServiceMock.Audit.thenReturnSuccess()
       val mixedCaseCollaboratorEmail = collaborator.text.capitalize.toLaxEmail
-      println(mixedCaseCollaboratorEmail)
       val result: Set[Collaborator]  = await(underTest.deleteCollaborator(applicationId, mixedCaseCollaboratorEmail, adminsToEmail, notifyCollaborator))
 
       ApplicationRepoMock.Save.verifyCalledWith(updatedData)

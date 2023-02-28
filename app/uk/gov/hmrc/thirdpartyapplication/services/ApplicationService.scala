@@ -527,7 +527,6 @@ class ApplicationService @Inject() (
       newRedirectUris,
       timestamp = LocalDateTime.now(clock)
     )
-    println(updateRedirectUris)
     applicationCommandDispatcher.dispatch(applicationId, updateRedirectUris, Set.empty)
       .fold(fail, success)
   }
