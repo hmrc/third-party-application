@@ -24,16 +24,21 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 import java.time.Clock
 import scala.util.Random.nextString
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 class SubscriptionRepositoryISpec
     extends ServerBaseISpec
@@ -46,7 +51,8 @@ class SubscriptionRepositoryISpec
     with Eventually
     with TableDrivenPropertyChecks
     with ApiIdentifierSyntax
-    with FixedClock {
+    with FixedClock
+    with CollaboratorTestData {
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -243,7 +249,7 @@ class SubscriptionRepositoryISpec
 
       val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.version, None))
 
-      val expectedEmails = app1.collaborators.map(c => c.emailAddress) ++ app2.collaborators.map(c => c.emailAddress)
+      val expectedEmails = (app1.collaborators.map(c => c.emailAddress) ++ app2.collaborators.map(c => c.emailAddress)).map(_.text)
       result.toSet mustBe expectedEmails
     }
 
@@ -367,7 +373,7 @@ class SubscriptionRepositoryISpec
       checkInformation: Option[CheckInformation] = None
     ): ApplicationData = {
 
-    val collaborators = user.map(email => Collaborator(email, Role.ADMINISTRATOR, UserId.random)).toSet
+    val collaborators: Set[Collaborator] = user.map(email => email.admin()).toSet
 
     ApplicationData(
       id,

@@ -24,15 +24,17 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ResponsibleIndividual, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, HasSucceeded, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
@@ -230,7 +232,7 @@ class RequestApprovalsService @Inject() (
     ): Future[HasSucceeded] = {
     if (!isRequesterTheResponsibleIndividual) {
       val responsibleIndividualName  = importantSubmissionData.responsibleIndividual.fullName.value
-      val responsibleIndividualEmail = importantSubmissionData.responsibleIndividual.emailAddress.value
+      val responsibleIndividualEmail = importantSubmissionData.responsibleIndividual.emailAddress
 
       for {
         verification <- responsibleIndividualVerificationService.createNewToUVerification(application, submission.id, submission.latestInstance.index)
@@ -264,5 +266,11 @@ class RequestApprovalsService @Inject() (
     auditService.audit(ApplicationUpliftRequested, AuditHelper.applicationId(applicationId) ++ Map("newApplicationName" -> updatedApp.name))
 
   private def writeStateHistory(snapshotApp: ApplicationData, requestedByEmailAddress: String) =
-    insertStateHistory(snapshotApp, snapshotApp.state.name, Some(TESTING), requestedByEmailAddress, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
+    insertStateHistory(
+      snapshotApp,
+      snapshotApp.state.name,
+      Some(TESTING),
+      Actors.AppCollaborator(requestedByEmailAddress.toLaxEmail),
+      (a: ApplicationData) => applicationRepository.save(a)
+    )
 }

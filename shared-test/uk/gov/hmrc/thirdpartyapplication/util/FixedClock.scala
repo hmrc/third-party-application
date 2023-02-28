@@ -36,4 +36,6 @@ trait FixedClock {
 
 object FixedClock extends FixedClock {
   val now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS)
+
+  val instant = now.toInstant(ZoneOffset.UTC)
 }

@@ -26,6 +26,8 @@ import cats.implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithActor, ValidationRequest}
@@ -95,7 +97,7 @@ class CredentialService @Inject() (
   }
 
   @deprecated("remove after client is no longer using the old endpoint")
-  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String, actorEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
+  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String, actorEmailAddress: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
     def audit(applicationId: ApplicationId, clientSecretId: String): Future[AuditResult] =
       auditService.audit(ClientSecretRemovedAudit, Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretId))
 

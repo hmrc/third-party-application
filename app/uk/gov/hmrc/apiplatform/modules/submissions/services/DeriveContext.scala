@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifier
 import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPrevention
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiIdentifier, State}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 object DeriveContext {

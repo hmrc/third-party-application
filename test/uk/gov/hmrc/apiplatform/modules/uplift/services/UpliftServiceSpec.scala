@@ -21,11 +21,13 @@ import scala.concurrent.Future.successful
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories.UpliftLinksRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -59,7 +61,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
 
   "requestUplift" should {
     val requestedName          = "application name"
-    val upliftRequestedByEmail = "email@example.com"
+    val upliftRequestedByEmail = "email@example.com".toLaxEmail
 
     "update the state of the application" in new Setup {
       AuditServiceMock.Audit.thenReturnSuccess()
@@ -67,12 +69,12 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
 
       val application: ApplicationData         = anApplicationData(applicationId, testingState())
       val expectedApplication: ApplicationData =
-        application.copy(state = pendingGatekeeperApprovalState(upliftRequestedByEmail), name = requestedName, normalisedName = requestedName.toLowerCase)
+        application.copy(state = pendingGatekeeperApprovalState(upliftRequestedByEmail.text), name = requestedName, normalisedName = requestedName.toLowerCase)
 
       val expectedStateHistory = StateHistory(
         applicationId = expectedApplication.id,
         state = PENDING_GATEKEEPER_APPROVAL,
-        actor = OldActor(upliftRequestedByEmail, COLLABORATOR),
+        actor = Actors.AppCollaborator(upliftRequestedByEmail),
         previousState = Some(TESTING),
         changedAt = FixedClock.now
       )
@@ -169,7 +171,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
   }
 
   "verifyUplift" should {
-    val upliftRequestedBy = "email@example.com"
+    val upliftRequestedBy = "email@example.com".toLaxEmail
 
     "update the state of the application and create app in the API gateway when application is in pendingRequesterVerification state" in new Setup {
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
@@ -177,12 +179,12 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
 
       val expectedStateHistory =
-        StateHistory(applicationId, State.PRE_PRODUCTION, OldActor(upliftRequestedBy, COLLABORATOR), Some(PENDING_REQUESTER_VERIFICATION), changedAt = FixedClock.now)
-      val upliftRequest        = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, OldActor(upliftRequestedBy, COLLABORATOR), Some(TESTING), changedAt = FixedClock.now)
+        StateHistory(applicationId, State.PRE_PRODUCTION, Actors.AppCollaborator(upliftRequestedBy), Some(PENDING_REQUESTER_VERIFICATION), changedAt = FixedClock.now)
+      val upliftRequest        = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator(upliftRequestedBy), Some(TESTING), changedAt = FixedClock.now)
 
-      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
+      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy.text))
 
-      val expectedApplication: ApplicationData = application.copy(state = preProductionState(upliftRequestedBy))
+      val expectedApplication: ApplicationData = application.copy(state = preProductionState(upliftRequestedBy.text))
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
       StateHistoryRepoMock.FetchLatestByStateForApplication.thenReturnWhen(applicationId, PENDING_GATEKEEPER_APPROVAL)(upliftRequest)
@@ -199,7 +201,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
 
     "fail if the application save fails" in new Setup {
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
-      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
+      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy.text))
       val saveException                = new RuntimeException("application failed to save")
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
@@ -212,7 +214,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
 
     "rollback if saving the state history fails" in new Setup {
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
-      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
+      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy.text))
       ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
       StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))
@@ -225,7 +227,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
     }
 
     "not update the state but result in success of the application when application is already in production state" in new Setup {
-      val application: ApplicationData = anApplicationData(applicationId, productionState(upliftRequestedBy))
+      val application: ApplicationData = anApplicationData(applicationId, productionState(upliftRequestedBy.text))
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
 
@@ -245,7 +247,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail when application is in pendingGatekeeperApproval state" in new Setup {
-      val application: ApplicationData = anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy))
+      val application: ApplicationData = anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy.text))
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
 
@@ -255,7 +257,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail when application is not found by verification code" in new Setup {
-      anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy))
+      anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy.text))
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnNoneWhen(generatedVerificationCode)
 

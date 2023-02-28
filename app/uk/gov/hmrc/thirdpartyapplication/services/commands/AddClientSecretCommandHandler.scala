@@ -23,7 +23,8 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddClientSecret, UpdateApplicationEvent, _}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ClientSecretAddedV2, EventId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AddClientSecret
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
@@ -46,14 +47,12 @@ class AddClientSecretCommandHandler @Inject() (
     ) { case _ => () }
   }
 
-  import UpdateApplicationEvent._
-
-  private def asEvents(app: ApplicationData, cmd: AddClientSecret): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: AddClientSecret): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ClientSecretAddedV2(
-        id = UpdateApplicationEvent.Id.random,
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
+        eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
         clientSecretId = cmd.clientSecret.id,
         clientSecretName = cmd.clientSecret.name

@@ -22,9 +22,9 @@ import scala.util.Random
 
 import cats.data.NonEmptyList
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, HasApplicationId}
 
 trait StatusTestDataHelper {
@@ -88,7 +88,7 @@ trait ProgressTestDataHelper {
 
 trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper {
 
-  val submissionId = Submission.Id.random
+  val submissionId = SubmissionId.random
 
   val standardContext: AskWhen.Context = Map(
     AskWhen.Context.Keys.IN_HOUSE_SOFTWARE       -> "No",
@@ -99,11 +99,11 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
 
   val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
 
-  val altSubmissionId = Submission.Id.random
+  val altSubmissionId = SubmissionId.random
   require(altSubmissionId != submissionId)
   val altSubmission   = Submission.create("bob@example.com", altSubmissionId, applicationId, now.plusSeconds(100), testGroups, testQuestionIdsOfInterest, standardContext)
 
-  val completedSubmissionId = Submission.Id.random
+  val completedSubmissionId = SubmissionId.random
   require(completedSubmissionId != submissionId)
 
   val completelyAnswerExtendedSubmission =
@@ -123,7 +123,7 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
   val grantedSubmission   = Submission.grant(now, gatekeeperUserName)(submittedSubmission)
 
   def buildSubmissionWithQuestions(): Submission = {
-    val subId = Submission.Id.random
+    val subId = SubmissionId.random
     val appId = ApplicationId.random
 
     val question1               = yesNoQuestion(1)

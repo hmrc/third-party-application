@@ -24,8 +24,8 @@ import org.mongodb.scala.model.Sorts.descending
 
 import uk.gov.hmrc.mongo.play.json.Codecs
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 @Singleton
 class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(implicit val ec: ExecutionContext) {
@@ -60,7 +60,7 @@ class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(im
       .headOption()
   }
 
-  def fetch(id: Submission.Id): Future[Option[Submission]] = {
+  def fetch(id: SubmissionId): Future[Option[Submission]] = {
     collection.find(equal("id", Codecs.toBson(id)))
       .headOption()
   }

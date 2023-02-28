@@ -21,9 +21,9 @@ import java.time.LocalDateTime
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 
-case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, dateTime: LocalDateTime, submissionId: Submission.Id, submissionInstance: Int = 0)
+case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, dateTime: LocalDateTime, submissionId: SubmissionId, submissionInstance: Int = 0)
 
 object TermsOfUseAcceptance {
   implicit val dateformat = MongoJavatimeFormats.localDateTimeFormat

@@ -18,18 +18,19 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, FixedClock}
 
-trait ControllerTestData {
+trait ControllerTestData extends CollaboratorTestData {
 
   val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
-    Collaborator("dev@example.com", DEVELOPER, UserId.random)
+    "admin@example.com".admin(),
+    "dev@example.com".developer()
   )
 
   val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))

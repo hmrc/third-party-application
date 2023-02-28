@@ -20,10 +20,10 @@ import scala.concurrent.Future
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
@@ -37,7 +37,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
     object CreateNewVerification {
 
       def thenCreateNewVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
-        when(aMock.createNewToUVerification(*[ApplicationData], *[Submission.Id], *)).thenAnswer((appData: ApplicationData, submissionId: Submission.Id, index: Int) =>
+        when(aMock.createNewToUVerification(*[ApplicationData], *[SubmissionId], *)).thenAnswer((appData: ApplicationData, submissionId: SubmissionId, index: Int) =>
           Future.successful(
             ResponsibleIndividualToUVerification(verificationId, appData.id, submissionId, index, appData.name, FixedClock.now)
           )
@@ -53,7 +53,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
             ResponsibleIndividualToUVerification(
               ResponsibleIndividualVerificationId(code),
               ApplicationId.random,
-              Submission.Id.random,
+              SubmissionId.random,
               0,
               "App name",
               FixedClock.now

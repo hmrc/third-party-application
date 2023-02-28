@@ -24,11 +24,12 @@ import scala.util.Failure
 
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -45,12 +46,12 @@ class UpliftService @Inject() (
   )(implicit ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def requestUplift(applicationId: ApplicationId, applicationName: String, requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def requestUplift(applicationId: ApplicationId, applicationName: String, requestedByEmailAddress: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
 
     def uplift(existing: ApplicationData) = existing.copy(
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
-      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, requestedByEmailAddress, clock)
+      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress.text, requestedByEmailAddress.text, clock)
     )
 
     for {
@@ -62,8 +63,7 @@ class UpliftService @Inject() (
                       app,
                       PENDING_GATEKEEPER_APPROVAL,
                       Some(TESTING),
-                      requestedByEmailAddress,
-                      COLLABORATOR,
+                      Actors.AppCollaborator(requestedByEmailAddress),
                       (a: ApplicationData) => applicationRepository.save(a)
                     )
       _           = logger.info(s"UPLIFT01: uplift request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} " +
@@ -79,10 +79,16 @@ class UpliftService @Inject() (
       successful(UpliftVerified)
     }
 
-    def findLatestUpliftRequester(applicationId: ApplicationId): Future[String] = for {
-      history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL)
-      state    = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId.value}"))
-    } yield state.actor.id
+    def findLatestUpliftRequester(applicationId: ApplicationId): Future[String] =
+      for {
+        history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL)
+        state    = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId.value}"))
+      } yield state.actor match {
+        case Actors.Unknown                => "Unknown"
+        case Actors.AppCollaborator(email) => email.text
+        case Actors.GatekeeperUser(user)   => user
+        case Actors.ScheduledJob(jobId)    => jobId
+      }
 
     def audit(app: ApplicationData) =
       findLatestUpliftRequester(app.id) flatMap { email =>
@@ -96,8 +102,7 @@ class UpliftService @Inject() (
              app,
              State.PRE_PRODUCTION,
              Some(PENDING_REQUESTER_VERIFICATION),
-             app.state.requestedByEmailAddress.get,
-             COLLABORATOR,
+             Actors.AppCollaborator(LaxEmailAddress(app.state.requestedByEmailAddress.get)),
              (a: ApplicationData) => applicationRepository.save(a)
            )
       _  = logger.info(s"UPLIFT02: Application uplift for application:${app.name} appId:${app.id} has been verified successfully")
@@ -120,11 +125,10 @@ class UpliftService @Inject() (
       snapshotApp: ApplicationData,
       newState: State,
       oldState: Option[State],
-      requestedBy: String,
-      actorType: ActorType.ActorType,
+      actor: Actor,
       rollback: ApplicationData => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, OldActor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = LocalDateTime.now(clock))
 
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>

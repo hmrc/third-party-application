@@ -19,18 +19,16 @@ package uk.gov.hmrc.apiplatform.modules.submissions.services
 import cats.data.NonEmptyList
 import org.scalatest.Inside
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.{SubmissionsDAOMockModule, _}
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
-  ApplicationApprovalRequestDeclined,
-  ApplicationStateChanged,
-  CollaboratorActor,
-  ResponsibleIndividualDidNotVerify
-}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, _}
 
@@ -232,52 +230,52 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
     }
 
     "applyEvents" should {
-      val now          = FixedClock.now
+
       val appId        = ApplicationId.random
-      val submissionId = Submission.Id.random
+      val submissionId = SubmissionId.random
       val reasons      = "reasons description"
       val code         = "5324763549732592387659238746"
 
       def buildApplicationApprovalRequestDeclinedEvent() =
         ApplicationApprovalRequestDeclined(
-          UpdateApplicationEvent.Id.random,
+          EventId.random,
           appId,
-          now,
-          CollaboratorActor("requester@example.com"),
+          FixedClock.instant,
+          Actors.AppCollaborator("requester@example.com".toLaxEmail),
           "Mr New Ri",
-          "ri@example.com",
-          submissionId,
+          "ri@example.com".toLaxEmail,
+          SubmissionId(submissionId.value),
           0,
           reasons,
           "Mr Admin",
-          "admin@example.com"
+          "admin@example.com".toLaxEmail
         )
 
       def buildResponsibleIndividualDidNotVerifyEvent() =
         ResponsibleIndividualDidNotVerify(
-          UpdateApplicationEvent.Id.random,
+          EventId.random,
           appId,
-          now,
-          CollaboratorActor("requester@example.com"),
+          FixedClock.instant,
+          Actors.AppCollaborator("requester@example.com".toLaxEmail),
           "Mr New Ri",
-          "ri@example.com",
-          submissionId,
+          "ri@example.com".toLaxEmail,
+          SubmissionId(submissionId.value),
           0,
           code,
           "Mr Admin",
-          "admin@example.com"
+          "admin@example.com".toLaxEmail
         )
 
       def buildApplicationStateChangedEvent() =
         ApplicationStateChanged(
-          UpdateApplicationEvent.Id.random,
+          EventId.random,
           appId,
-          now,
-          CollaboratorActor("requester@example.com"),
-          State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
-          State.TESTING,
+          FixedClock.instant,
+          Actors.AppCollaborator("requester@example.com".toLaxEmail),
+          State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION.toString,
+          State.TESTING.toString,
           "Mr Admin",
-          "admin@example.com"
+          "admin@example.com".toLaxEmail
         )
 
       "decline a submission given an ApplicationApprovalRequestDeclined event" in new Setup {

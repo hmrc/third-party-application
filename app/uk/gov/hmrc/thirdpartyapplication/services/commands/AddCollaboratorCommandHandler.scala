@@ -23,7 +23,8 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, CollaboratorAdded}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -38,25 +39,23 @@ class AddCollaboratorCommandHandler @Inject() (
 
   private def validate(app: ApplicationData, cmd: AddCollaborator): Validated[CommandFailures, Unit] = {
     cmd.actor match {
-      case CollaboratorActor(actorEmail: String) => Apply[Validated[CommandFailures, *]].map2(
+      case Actors.AppCollaborator(actorEmail: LaxEmailAddress) => Apply[Validated[CommandFailures, *]].map2(
           isCollaboratorOnApp(actorEmail, app),
           collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)
         ) { case _ => () }
-      case _                                     => Apply[Validated[CommandFailures, *]]
+      case _                                                   => Apply[Validated[CommandFailures, *]]
           .map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app))(_ => ())
     }
   }
 
-  private def asEvents(app: ApplicationData, cmd: AddCollaborator): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: AddCollaborator): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      CollaboratorAdded(
-        id = UpdateApplicationEvent.Id.random,
+      CollaboratorAddedV2(
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
+        eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
-        collaboratorId = cmd.collaborator.userId,
-        collaboratorEmail = cmd.collaborator.emailAddress.toLowerCase,
-        collaboratorRole = cmd.collaborator.role,
+        collaborator = cmd.collaborator,
         verifiedAdminsToEmail = cmd.adminsToEmail
       )
     )

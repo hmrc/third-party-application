@@ -20,25 +20,27 @@ import scala.concurrent.Future
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ProductionAppNameChangedEvent
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 object ProductionAppNameChangedNotification {
 
-  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.ProductionAppNameChanged)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, event: ProductionAppNameChangedEvent)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
-    emailConnector.sendChangeOfApplicationName(event.requestingAdminEmail, event.oldAppName, event.newAppName, recipients)
+    emailConnector.sendChangeOfApplicationName(event.requestingAdminEmail.text, event.oldAppName, event.newAppName, recipients)
   }
 
-  private def getRecipients(app: ApplicationData): Set[String] = {
+  private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
     app.collaborators.map(_.emailAddress)
   }
 
-  private def getResponsibleIndividual(app: ApplicationData): Set[String] = {
+  private def getResponsibleIndividual(app: ApplicationData): Set[LaxEmailAddress] = {
     app.access match {
-      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress.value)
+      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress)
       case _                                                      => Set()
     }
   }

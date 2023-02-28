@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiIdentifier, SellResellOrDistribute}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.SellResellOrDistribute
 import uk.gov.hmrc.thirdpartyapplication.models.UpliftRequest
 
 trait UpliftRequestSamples {

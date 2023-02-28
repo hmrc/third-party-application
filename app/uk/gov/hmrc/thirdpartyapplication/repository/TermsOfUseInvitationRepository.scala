@@ -27,9 +27,9 @@ import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
 @Singleton
 class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](

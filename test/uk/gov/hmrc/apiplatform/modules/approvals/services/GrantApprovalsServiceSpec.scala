@@ -20,6 +20,7 @@ import java.time.format.DateTimeFormatter
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{ActualAnswersAsText, QuestionsAndAnswersToMap}
@@ -63,8 +64,8 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),
-      TermsAndConditionsLocation.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List(acceptance)
     )
 

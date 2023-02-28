@@ -22,9 +22,11 @@ import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
 import org.scalatest.BeforeAndAfterAll
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
@@ -51,8 +53,8 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
       None,
       ResponsibleIndividual.build(riName, riEmail),
       Set.empty,
-      TermsAndConditionsLocation.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )
 
@@ -74,14 +76,14 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
       EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
       EmailConnectorMock.SendVerifyResponsibleIndividualReminderToAdmin.thenReturnSuccess()
 
-      val verification = ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, Submission.Id.random, 0, appName, FixedClock.now)
+      val verification = ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, SubmissionId.random, 0, appName, FixedClock.now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
       ResponsibleIndividualVerificationRepositoryMock.UpdateState.thenReturnSuccess()
 
       await(job.runJob)
 
-      EmailConnectorMock.SendVerifyResponsibleIndividualNotification.verifyCalledWith(riName, riEmail, appName, requesterName, verification.id.value)
-      EmailConnectorMock.SendVerifyResponsibleIndividualReminderToAdmin.verifyCalledWith(riName, requesterEmail, appName, requesterName)
+      EmailConnectorMock.SendVerifyResponsibleIndividualNotification.verifyCalledWith(riName, riEmail.toLaxEmail, appName, requesterName, verification.id.value)
+      EmailConnectorMock.SendVerifyResponsibleIndividualReminderToAdmin.verifyCalledWith(riName, requesterEmail.toLaxEmail, appName, requesterName)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
         ResponsibleIndividualVerification.VerificationTypeToU,
         INITIAL,

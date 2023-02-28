@@ -23,6 +23,7 @@ import com.typesafe.config.ConfigFactory
 import play.api.libs.json.{Format, Json, OFormat}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, Collaborator}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, TESTING}
@@ -56,7 +57,7 @@ case class ApplicationData(
     blocked: Boolean = false,
     ipAllowlist: IpAllowlist = IpAllowlist()
   ) {
-  lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
+  lazy val admins = collaborators.filter(_.isAdministrator)
 
   lazy val sellResellOrDistribute = access match {
     case Standard(_, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
@@ -92,7 +93,7 @@ object ApplicationData {
 
     val applicationState = (environment, accessType) match {
       case (Environment.SANDBOX, _) => ApplicationState(PRODUCTION, updatedOn = createdOn)
-      case (_, PRIVILEGED | ROPC)   => ApplicationState(PRODUCTION, collaborators.headOption.map(_.emailAddress), updatedOn = createdOn)
+      case (_, PRIVILEGED | ROPC)   => ApplicationState(PRODUCTION, collaborators.headOption.map(_.emailAddress.text), updatedOn = createdOn)
       case _                        => ApplicationState(TESTING, updatedOn = createdOn)
     }
 

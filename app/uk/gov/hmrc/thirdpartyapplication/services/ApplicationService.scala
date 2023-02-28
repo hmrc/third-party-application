@@ -31,15 +31,17 @@ import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier,
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest, FixCollaboratorRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -105,11 +107,12 @@ class ApplicationService @Inject() (
   @deprecated("please use AddCollaboratorRequest command to application Update controller")
   def addCollaborator(applicationId: ApplicationId, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
 
-    def validateCollaborator(app: ApplicationData, email: String, role: Role, userId: UserId): Collaborator = {
-      val normalised = email.toLowerCase
-      if (app.collaborators.exists(_.emailAddress == normalised)) throw new UserAlreadyExists
+    def validateCollaborator(app: ApplicationData, collaborator: Collaborator): Collaborator = {
+      val normalisedCollaborator = request.collaborator.normalise
 
-      Collaborator(normalised, role, userId)
+      if (app.collaborators.exists(_.emailAddress == normalisedCollaborator.emailAddress)) throw new UserAlreadyExists
+
+      normalisedCollaborator
     }
 
     def addUser(app: ApplicationData, collaborator: Collaborator): Future[Set[Collaborator]] = {
@@ -120,23 +123,23 @@ class ApplicationService @Inject() (
     def sendNotificationEmails(
         applicationName: String,
         collaborator: Collaborator,
-        adminsToEmail: Set[String]
+        adminsToEmail: Set[LaxEmailAddress]
       )(implicit hc: HeaderCarrier
       ): Future[HasSucceeded] = {
 
       if (adminsToEmail.nonEmpty) {
-        emailConnector.sendCollaboratorAddedNotification(collaborator.emailAddress, collaborator.role, applicationName, adminsToEmail)
+        emailConnector.sendCollaboratorAddedNotification(collaborator, applicationName, adminsToEmail)
       }
 
-      emailConnector.sendCollaboratorAddedConfirmation(collaborator.role, applicationName, Set(collaborator.emailAddress))
+      emailConnector.sendCollaboratorAddedConfirmation(collaborator, applicationName, Set(collaborator.emailAddress))
     }
 
     for {
       app         <- fetchApp(applicationId)
-      collaborator = validateCollaborator(app, request.collaborator.emailAddress, request.collaborator.role, request.collaborator.userId)
+      collaborator = validateCollaborator(app, request.collaborator)
       _           <- addUser(app, collaborator)
       _            = auditService.audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator))
-      _            = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)
+      _            = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.describeRole)
       _            = sendNotificationEmails(app.name, collaborator, request.adminsToEmail)
     } yield AddCollaboratorResponse(request.isRegistered)
   }
@@ -147,14 +150,14 @@ class ApplicationService @Inject() (
     } yield updatedApp
   }
 
-  def confirmSetupComplete(applicationId: ApplicationId, requesterEmailAddress: String): Future[ApplicationData] = {
+  def confirmSetupComplete(applicationId: ApplicationId, requesterEmailAddress: LaxEmailAddress): Future[ApplicationData] = {
     for {
       app            <- fetchApp(applicationId)
       oldState        = app.state
       newState        = app.state.toProduction(clock)
       appWithNewState = app.copy(state = newState)
       updatedApp     <- applicationRepository.save(appWithNewState)
-      stateHistory    = StateHistory(applicationId, newState.name, OldActor(requesterEmailAddress, COLLABORATOR), Some(oldState.name), None, app.state.updatedOn)
+      stateHistory    = StateHistory(applicationId, newState.name, Actors.AppCollaborator(requesterEmailAddress), Some(oldState.name), None, app.state.updatedOn)
       _              <- stateHistoryRepository.insert(stateHistory)
     } yield updatedApp
   }
@@ -237,18 +240,18 @@ class ApplicationService @Inject() (
   @deprecated("please use RemoveCollaboratorRequest command to application Update controller")
   def deleteCollaborator(
       applicationId: ApplicationId,
-      collaborator: String,
-      adminsToEmail: Set[String],
+      collaborator: LaxEmailAddress,
+      adminsToEmail: Set[LaxEmailAddress],
       notifyCollaborator: Boolean
     )(implicit hc: HeaderCarrier
     ): Future[Set[Collaborator]] = {
     def deleteUser(app: ApplicationData): Future[ApplicationData] = {
-      val updatedCollaborators = app.collaborators.filterNot(_.emailAddress equalsIgnoreCase collaborator)
+      val updatedCollaborators = app.collaborators.filterNot(_.emailAddress equalsIgnoreCase (collaborator))
       if (!hasAdmin(updatedCollaborators)) failed(new ApplicationNeedsAdmin)
       else applicationRepository.save(app.copy(collaborators = updatedCollaborators))
     }
 
-    def sendEmails(applicationName: String, collaboratorEmail: String, adminsToEmail: Set[String]): Future[Unit] = {
+    def sendEmails(applicationName: String, collaboratorEmail: LaxEmailAddress, adminsToEmail: Set[LaxEmailAddress]): Future[Unit] = {
       if (adminsToEmail.nonEmpty) emailConnector.sendRemovedCollaboratorNotification(collaboratorEmail, applicationName, adminsToEmail)
       if (notifyCollaborator) emailConnector.sendRemovedCollaboratorConfirmation(applicationName, Set(collaboratorEmail)).map(_ => ()) else successful(())
     }
@@ -258,10 +261,10 @@ class ApplicationService @Inject() (
       case None    => logger.warn(s"Failed to audit collaborator removal for: $collaborator")
     }
 
-    def findCollaborator(app: ApplicationData): Option[Collaborator] = app.collaborators.find(_.emailAddress == collaborator.toLowerCase)
+    def findCollaborator(app: ApplicationData): Option[Collaborator] = app.collaborators.find(_.emailAddress.normalise == collaborator.normalise)
 
     def sendEvent(app: ApplicationData, maybeColab: Option[Collaborator]) = maybeColab match {
-      case Some(collaborator) => apiPlatformEventService.sendTeamMemberRemovedEvent(app, collaborator.emailAddress, collaborator.role.toString)
+      case Some(collaborator) => apiPlatformEventService.sendTeamMemberRemovedEvent(app, collaborator.emailAddress, collaborator.describeRole)
       case None               => logger.warn(s"Failed to send TeamMemberRemovedEvent for appId: ${app.id}")
     }
 
@@ -270,7 +273,7 @@ class ApplicationService @Inject() (
       updated <- deleteUser(app)
       _        = audit(findCollaborator(app))
       _        = sendEvent(app, findCollaborator(app))
-      _        = recoverAll(sendEmails(app.name, collaborator.toLowerCase, adminsToEmail))
+      _        = recoverAll(sendEmails(app.name, collaborator.normalise, adminsToEmail))
     } yield updated.collaborators
   }
 
@@ -279,7 +282,7 @@ class ApplicationService @Inject() (
   }
 
   private def hasAdmin(updated: Set[Collaborator]): Boolean = {
-    updated.exists(_.role == Role.ADMINISTRATOR)
+    updated.exists(_.isAdministrator)
   }
 
   def fetchByClientId(clientId: ClientId): Future[Option[ApplicationResponse]] = {
@@ -439,10 +442,10 @@ class ApplicationService @Inject() (
 
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {
     val actor = appData.access.accessType match {
-      case PRIVILEGED | ROPC => OldActor("", GATEKEEPER)
-      case _                 => OldActor(loggedInUser, COLLABORATOR)
+      case PRIVILEGED | ROPC => Actors.Unknown
+      case _                 => loggedInActor
     }
-    insertStateHistory(appData, appData.state.name, None, actor.id, actor.actorType, (a: ApplicationData) => applicationRepository.hardDelete(a.id))
+    insertStateHistory(appData, appData.state.name, None, actor, (a: ApplicationData) => applicationRepository.hardDelete(a.id))
   }
 
   private def auditAppCreated(app: ApplicationData)(implicit hc: HeaderCarrier) =
@@ -519,7 +522,7 @@ class ApplicationService @Inject() (
     }
 
     val updateRedirectUris = UpdateRedirectUris(
-      actor = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators),
+      actor = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators).getOrElse(Actors.Unknown),
       oldRedirectUris,
       newRedirectUris,
       timestamp = LocalDateTime.now(clock)
@@ -541,11 +544,10 @@ class ApplicationService @Inject() (
       snapshotApp: ApplicationData,
       newState: State,
       oldState: Option[State],
-      requestedBy: String,
-      actorType: ActorType.ActorType,
+      actor: Actor,
       rollback: ApplicationData => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, OldActor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)
@@ -558,9 +560,8 @@ class ApplicationService @Inject() (
     }
   }
 
-  private def loggedInUser(implicit hc: HeaderCarrier) =
-    hc.valueOf(LOGGED_IN_USER_EMAIL_HEADER)
-      .getOrElse("")
+  private def loggedInActor(implicit hc: HeaderCarrier): Actor =
+    hc.valueOf(LOGGED_IN_USER_EMAIL_HEADER).fold[Actor](Actors.Unknown)(text => Actors.AppCollaborator(LaxEmailAddress(text)))
 }
 
 @Singleton

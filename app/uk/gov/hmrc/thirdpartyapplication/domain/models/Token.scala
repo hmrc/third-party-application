@@ -20,6 +20,8 @@ import java.time.LocalDateTime
 
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+
 case class Token(
     clientId: ClientId,
     accessToken: String,

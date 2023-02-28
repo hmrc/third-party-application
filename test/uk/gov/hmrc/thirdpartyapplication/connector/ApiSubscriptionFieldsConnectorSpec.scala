@@ -23,7 +23,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 

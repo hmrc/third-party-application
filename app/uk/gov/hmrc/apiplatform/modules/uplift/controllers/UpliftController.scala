@@ -21,17 +21,19 @@ import scala.concurrent.ExecutionContext
 
 import play.api.mvc.ControllerComponents
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsErrorResponse, JsonUtils}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, State}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, InvalidStateTransition}
 
 object UpliftController {
   import play.api.libs.json.Json
 
-  case class UpliftApplicationRequest(applicationName: String, requestedByEmailAddress: String)
+  case class UpliftApplicationRequest(applicationName: String, requestedByEmailAddress: LaxEmailAddress)
   implicit val formatUpliftApplicationRequest = Json.format[UpliftApplicationRequest]
 }
 

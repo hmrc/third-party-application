@@ -18,7 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor, CollaboratorRemoved, GatekeeperUserActor, ScheduledJobActor}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.CollaboratorRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
@@ -31,22 +34,22 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
     val underTest = new RemoveCollaboratorCommandHandler(ApplicationRepoMock.aMock)
 
     val applicationId = ApplicationId.random
-    val adminEmail    = "admin@example.com"
+    val adminEmail    = "admin@example.com".toLaxEmail
 
-    val developerCollaborator = Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail))
+    val developerCollaborator = devEmail.developer()
 
-    val adminCollaborator = Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
-    val adminActor        = CollaboratorActor(adminEmail)
+    val adminCollaborator = adminEmail.admin()
+    val adminActor        = Actors.AppCollaborator(adminEmail)
 
     val gkUserEmail  = "admin@gatekeeper"
-    val gkUserActor  = GatekeeperUserActor(gkUserEmail)
+    val gkUserActor  = Actors.GatekeeperUser(gkUserEmail)
     val unknownEmail = "someEmail"
 
     val jobId             = "theJobThatDeletesCollaborators"
-    val scheduledJobActor = ScheduledJobActor(jobId)
+    val scheduledJobActor = Actors.ScheduledJob(jobId)
     val collaboratorEmail = "newdev@somecompany.com"
 
-    val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
+    val collaborator = collaboratorEmail.developer()
 
     val app = anApplicationData(applicationId).copy(
       collaborators = Set(
@@ -56,11 +59,11 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
       )
     )
 
-    val timestamp = FixedClock.now
+    val timestamp = FixedClock.instant
 
     val adminsToEmail = Set(adminEmail, devEmail)
 
-    val removeCollaborator = RemoveCollaborator(CollaboratorActor(adminActor.email), collaborator, adminsToEmail, timestamp)
+    val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), collaborator, adminsToEmail, FixedClock.now)
 
     def checkSuccessResult(expectedActor: Actor)(result: CommandHandler.CommandSuccess) = {
       inside(result) { case (app, events) =>
@@ -68,14 +71,11 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
         val event = events.head
 
         inside(event) {
-          case CollaboratorRemoved(_, appId, eventDateTime, actor, collaboratorId, collaboratorEmail, collaboratorRole, notifyCollaborator: Boolean, verifiedAdminsToEmail) =>
+          case CollaboratorRemovedV2(_, appId, eventDateTime, actor, evtCollaborator, verifiedAdminsToEmail) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            collaboratorId shouldBe collaborator.userId
-            collaboratorRole shouldBe collaborator.role
-            collaboratorEmail shouldBe collaborator.emailAddress
-            notifyCollaborator shouldBe app.collaborators.contains(removeCollaborator.collaborator)
+            evtCollaborator shouldBe collaborator
             verifiedAdminsToEmail shouldBe removeCollaborator.adminsToEmail
         }
       }
@@ -92,7 +92,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
       checkSuccessResult(gkUserActor)(result)
     }
 
-    "succeed as collaboratorActor" in new Setup {
+    "succeed as Actors.AppCollaborator" in new Setup {
       ApplicationRepoMock.RemoveCollaborator.succeeds(app)
 
       val result = await(underTest.process(app, removeCollaborator).value).right.value
@@ -102,7 +102,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
 
     "return an error when collaborator is not associated to the application" in new Setup {
 
-      val removeUnknownCollaboratorCommand = removeCollaborator.copy(collaborator = Collaborator(unknownEmail, Role.DEVELOPER, idOf(unknownEmail)))
+      val removeUnknownCollaboratorCommand = removeCollaborator.copy(collaborator = unknownEmail.developer())
 
       val result = await(underTest.process(app, removeUnknownCollaboratorCommand).value).left.value.toNonEmptyList.toList
 
@@ -112,7 +112,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec
 
     "return an error when actor is collaborator actor and is not associated to the application" in new Setup {
 
-      val removeCollaboratorActorUnknownCommand: RemoveCollaborator = removeCollaborator.copy(actor = CollaboratorActor(unknownEmail))
+      val removeCollaboratorActorUnknownCommand: RemoveCollaborator = removeCollaborator.copy(actor = Actors.AppCollaborator(unknownEmail.toLaxEmail))
 
       val result = await(underTest.process(app, removeCollaboratorActorUnknownCommand).value).left.value.toNonEmptyList.toList
 

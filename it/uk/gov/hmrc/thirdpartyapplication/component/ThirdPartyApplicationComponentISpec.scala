@@ -25,23 +25,29 @@ import play.api.libs.json.Json
 import scalaj.http.{Http, HttpResponse}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorResponse, DeleteCollaboratorRequest}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 import java.time.ZoneOffset
 import java.util.UUID
 import scala.concurrent.Await.{ready, result}
 import scala.util.Random
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
 }
 
-class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
+class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with CollaboratorTestData {
 
   val configOverrides = Map[String, Any](
     "microservice.services.api-subscription-fields.port"         -> 19650,
@@ -315,7 +321,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       Then("The collaborator is added")
       result shouldBe AddCollaboratorResponse(registeredUser = true)
       val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.collaborators should contain(Collaborator("test@example.com", Role.ADMINISTRATOR, testUserId))
+      fetchedApplication.collaborators should contain("test@example.com".admin(testUserId))
 
       apiPlatformEventsStub.verifyTeamMemberAddedEventSent()
     }
@@ -331,14 +337,14 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       val application = createApplication()
 
       When("We request to remove a collaborator to the application")
-      val deleteRequest = DeleteCollaboratorRequest(emailAddress, Set("admin@example.com"), false)
+      val deleteRequest = DeleteCollaboratorRequest(emailAddress.toLaxEmail, Set("admin@example.com".toLaxEmail), false)
       val response      = postData(s"/application/${application.id.value}/collaborator/delete", Json.prettyPrint(Json.toJson(deleteRequest)))
 
       response.code shouldBe NO_CONTENT
 
       Then("The collaborator is removed")
       val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.collaborators should not contain Collaborator(emailAddress, Role.DEVELOPER, userId)
+      fetchedApplication.collaborators should not contain emailAddress.developer(userId)
 
       apiPlatformEventsStub.verifyTeamMemberRemovedEventSent()
     }

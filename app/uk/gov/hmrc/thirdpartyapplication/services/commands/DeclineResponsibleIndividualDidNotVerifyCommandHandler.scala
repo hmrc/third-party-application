@@ -29,8 +29,11 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationId
 }
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineResponsibleIndividualDidNotVerify, ResponsibleIndividual, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineResponsibleIndividualDidNotVerify, ResponsibleIndividual, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 
@@ -44,7 +47,6 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
   ) extends CommandHandler {
 
   import CommandHandler._
-  import UpdateApplicationEvent._
 
   private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")
@@ -60,18 +62,18 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
       ) { case _ => () }
     }
 
-    def asEvents(): NonEmptyList[UpdateApplicationEvent] = {
+    def asEvents(): NonEmptyList[ApplicationEvent] = {
       val responsibleIndividual = riVerification.responsibleIndividual
 
       NonEmptyList.of(
         ResponsibleIndividualDeclinedUpdate(
-          id = UpdateApplicationEvent.Id.random,
+          id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(riVerification.requestingAdminEmail),
+          eventDateTime = cmd.timestamp.instant,
+          actor = Actors.AppCollaborator(riVerification.requestingAdminEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
-          responsibleIndividualEmail = responsibleIndividual.emailAddress.value,
-          submissionId = riVerification.submissionId,
+          responsibleIndividualEmail = responsibleIndividual.emailAddress,
+          submissionId = SubmissionId(riVerification.submissionId.value),
           submissionIndex = riVerification.submissionInstance,
           code = cmd.code,
           requestingAdminName = riVerification.requestingAdminName,
@@ -88,7 +90,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
   }
 
   def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualToUVerification): ResultT = {
-    def validate(): Validated[CommandFailures, (ResponsibleIndividual, String, String)] = {
+    def validate(): Validated[CommandFailures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
       Apply[Validated[CommandFailures, *]].map6(
         isStandardNewJourneyApp(app),
         isPendingResponsibleIndividualVerification(app),
@@ -100,57 +102,50 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
     }
 
     def asEvents(
+        stateHistory: StateHistory,
         responsibleIndividual: ResponsibleIndividual,
-        requesterEmail: String,
+        requesterEmail: LaxEmailAddress,
         requesterName: String
       ): (ResponsibleIndividualDidNotVerify, ApplicationApprovalRequestDeclined, ApplicationStateChanged) = {
       (
         ResponsibleIndividualDidNotVerify(
-          id = UpdateApplicationEvent.Id.random,
+          id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(requesterEmail),
+          eventDateTime = cmd.timestamp.instant,
+          actor = Actors.AppCollaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
-          responsibleIndividualEmail = responsibleIndividual.emailAddress.value,
-          submissionId = riVerification.submissionId,
+          responsibleIndividualEmail = responsibleIndividual.emailAddress,
+          submissionId = SubmissionId(riVerification.submissionId.value),
           submissionIndex = riVerification.submissionInstance,
           code = cmd.code,
           requestingAdminName = requesterName,
           requestingAdminEmail = requesterEmail
         ),
         ApplicationApprovalRequestDeclined(
-          id = UpdateApplicationEvent.Id.random,
+          id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(requesterEmail),
+          eventDateTime = cmd.timestamp.instant,
+          actor = Actors.AppCollaborator(requesterEmail),
           decliningUserName = responsibleIndividual.fullName.value,
-          decliningUserEmail = responsibleIndividual.emailAddress.value,
-          submissionId = riVerification.submissionId,
+          decliningUserEmail = responsibleIndividual.emailAddress,
+          submissionId = SubmissionId(riVerification.submissionId.value),
           submissionIndex = riVerification.submissionInstance,
           reasons = "The responsible individual did not accept the terms of use in 20 days.",
           requestingAdminName = requesterName,
           requestingAdminEmail = requesterEmail
         ),
-        ApplicationStateChanged(
-          id = UpdateApplicationEvent.Id.random,
-          applicationId = app.id,
-          eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(requesterEmail),
-          app.state.name,
-          State.TESTING,
-          requestingAdminName = requesterName,
-          requestingAdminEmail = requesterEmail
-        )
+        fromStateHistory(stateHistory, requesterName, requesterEmail)
       )
     }
 
     for {
       valid                                                             <- E.fromEither(validate().toEither)
       (responsibleIndividual, requestingAdminEmail, requestingAdminName) = valid
-      _                                                                 <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requestingAdminEmail, requestingAdminName))
-      (riEvt, declinedEvt, stateEvt)                                     = asEvents(responsibleIndividual, requestingAdminEmail, requestingAdminName)
-      _                                                                 <- E.liftF(stateHistoryRepository.addStateHistoryRecord(stateEvt))
+      stateHistory                                                       = StateHistory(app.id, State.TESTING, Actors.AppCollaborator(requestingAdminEmail), Some(app.state.name), changedAt = cmd.timestamp)
+      _                                                                 <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requestingAdminEmail.text, requestingAdminName))
+      _                                                                 <- E.liftF(stateHistoryRepository.insert(stateHistory))
       _                                                                 <- E.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(riVerification.submissionId, riVerification.submissionInstance))
+      (riEvt, declinedEvt, stateEvt)                                     = asEvents(stateHistory, responsibleIndividual, requestingAdminEmail, requestingAdminName)
       _                                                                 <- E.liftF(submissionService.declineApplicationApprovalRequest(declinedEvt))
     } yield (app, NonEmptyList(riEvt, List(declinedEvt, stateEvt)))
   }

@@ -23,8 +23,10 @@ import scala.concurrent.ExecutionContext
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, RemoveCollaborator, UpdateApplicationEvent}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RemoveCollaborator
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.ResultT
@@ -37,42 +39,30 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
   private def validate(app: ApplicationData, cmd: RemoveCollaborator) = {
 
     cmd.actor match {
-      case CollaboratorActor(actorEmail: String) => Apply[Validated[CommandFailures, *]]
+      case Actors.AppCollaborator(actorEmail) => Apply[Validated[CommandFailures, *]]
           .map3(
             isCollaboratorOnApp(actorEmail, app),
             isCollaboratorOnApp(cmd.collaborator.emailAddress, app),
             applicationWillHaveAnAdmin(cmd.collaborator.emailAddress, app)
           ) { case _ => app }
-      case _                                     => Apply[Validated[CommandFailures, *]]
+      case _                                  => Apply[Validated[CommandFailures, *]]
           .map2(isCollaboratorOnApp(cmd.collaborator.emailAddress, app), applicationWillHaveAnAdmin(cmd.collaborator.emailAddress, app)) { case _ => app }
     }
 
   }
 
-  import UpdateApplicationEvent._
-
-  private def asEvents(app: ApplicationData, cmd: RemoveCollaborator): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: RemoveCollaborator): NonEmptyList[ApplicationEvent] = {
     asEvents(app, cmd.actor, cmd.adminsToEmail, cmd.timestamp, cmd.collaborator)
   }
 
-  private def asEvents(app: ApplicationData, actor: Actor, adminsToEmail: Set[String], eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[UpdateApplicationEvent] = {
-    def notifyCollaborator() = {
-      actor match {
-        case _: ScheduledJobActor => false
-        case _                    => true
-      }
-    }
-
+  private def asEvents(app: ApplicationData, actor: Actor, adminsToEmail: Set[LaxEmailAddress], eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      CollaboratorRemoved(
-        id = UpdateApplicationEvent.Id.random,
+      CollaboratorRemovedV2(
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = eventTime,
+        eventDateTime = eventTime.instant,
         actor = actor,
-        collaboratorId = collaborator.userId,
-        collaboratorEmail = collaborator.emailAddress,
-        collaboratorRole = collaborator.role,
-        notifyCollaborator = notifyCollaborator(),
+        collaborator,
         verifiedAdminsToEmail = adminsToEmail
       )
     )

@@ -24,22 +24,30 @@ import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.RejectUpliftRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.{COLLABORATOR, _}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens, ApplicationWithStateHistory}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, FixedClock}
 
-class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil with FixedClock {
+class GatekeeperServiceSpec
+    extends AsyncHmrcSpec
+    with BeforeAndAfterAll
+    with ApplicationStateUtil
+    with CollaboratorTestData
+    with FixedClock {
 
   private val requestedByEmail = "john.smith@example.com"
+
+  private val bobTheGKUser = Actors.GatekeeperUser("bob")
 
   private def aSecret(secret: String) = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
@@ -47,17 +55,17 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   private def aHistory(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
-    StateHistory(appId, state, OldActor("anEmail", COLLABORATOR), Some(TESTING), changedAt = FixedClock.now)
+    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(TESTING), changedAt = FixedClock.now)
   }
 
   private def aStateHistoryResponse(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, OldActor("anEmail", COLLABORATOR), None, FixedClock.now)
+    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, FixedClock.now)
   }
 
   private def anApplicationData(
       applicationId: ApplicationId,
       state: ApplicationState = productionState(requestedByEmail),
-      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random))
+      collaborators: Set[Collaborator] = Set(loggedInUser.admin())
     ) = {
     ApplicationData(
       applicationId,
@@ -98,12 +106,12 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
     )
 
     StateHistoryRepoMock.Insert.thenAnswer()
-    when(mockEmailConnector.sendRemovedCollaboratorNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationRejectedNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationDeletedNotification(*, *[ApplicationId], *, *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationDeletedNotification(*, *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
   }
 
   "fetch nonTestingApps with submitted date" should {
@@ -190,7 +198,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val expectedStateHistory = StateHistory(
         applicationId = expectedApplication.id,
         state = PENDING_REQUESTER_VERIFICATION,
-        actor = OldActor(gatekeeperUserId, GATEKEEPER),
+        actor = Actors.GatekeeperUser(gatekeeperUserId),
         previousState = Some(PENDING_GATEKEEPER_APPROVAL),
         changedAt = FixedClock.now
       )
@@ -268,7 +276,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       verify(mockEmailConnector).sendApplicationApprovedAdminConfirmation(
         eqTo(application.name),
         *,
-        eqTo(Set(application.state.requestedByEmailAddress.get))
+        eqTo(Set(application.state.requestedByEmailAddress.get.toLaxEmail))
       )(*)
     }
 
@@ -276,10 +284,10 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       AuditServiceMock.AuditWithTags.thenReturnSuccess()
       ApplicationRepoMock.Save.thenAnswer()
 
-      val admin1    = Collaborator("admin1@example.com", Role.ADMINISTRATOR, UserId.random)
-      val admin2    = Collaborator("admin2@example.com", Role.ADMINISTRATOR, UserId.random)
-      val requester = Collaborator(upliftRequestedBy, Role.ADMINISTRATOR, UserId.random)
-      val developer = Collaborator("somedev@example.com", Role.DEVELOPER, UserId.random)
+      val admin1    = "admin1@example.com".admin()
+      val admin2    = "admin2@example.com".admin()
+      val requester = upliftRequestedBy.admin()
+      val developer = "somedev@example.com".developer()
 
       val application = anApplicationData(
         applicationId,
@@ -311,7 +319,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val expectedStateHistory = StateHistory(
         applicationId = application.id,
         state = TESTING,
-        actor = OldActor(gatekeeperUserId, GATEKEEPER),
+        actor = Actors.GatekeeperUser(gatekeeperUserId),
         previousState = Some(PENDING_GATEKEEPER_APPROVAL),
         notes = Some(rejectReason),
         changedAt = FixedClock.now
@@ -423,7 +431,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       verify(mockEmailConnector).sendApplicationApprovedAdminConfirmation(
         eqTo(application.name),
         *,
-        eqTo(Set(application.state.requestedByEmailAddress.get))
+        eqTo(Set(application.state.requestedByEmailAddress.get.toLaxEmail))
       )(*)
     }
   }
@@ -478,8 +486,8 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
         "app1",
         2,
         List(
-          StateHistory(appId1, State.TESTING, OldActor("bob", ActorType.GATEKEEPER), None, None, ts1),
-          StateHistory(appId1, State.PRODUCTION, OldActor("bob", ActorType.GATEKEEPER), Some(State.TESTING), None, ts2)
+          StateHistory(appId1, State.TESTING, bobTheGKUser, None, None, ts1),
+          StateHistory(appId1, State.PRODUCTION, bobTheGKUser, Some(State.TESTING), None, ts2)
         )
       )
       val history2 = ApplicationWithStateHistory(
@@ -487,7 +495,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
         "app2",
         2,
         List(
-          StateHistory(appId2, State.TESTING, OldActor("bob", ActorType.GATEKEEPER), None, None, ts3)
+          StateHistory(appId2, State.TESTING, bobTheGKUser, None, None, ts3)
         )
       )
       ApplicationRepoMock.FetchProdAppStateHistories.thenReturn(history1, history2)

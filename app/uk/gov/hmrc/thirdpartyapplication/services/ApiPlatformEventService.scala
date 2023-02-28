@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,120 +24,110 @@ import cats.data.NonEmptyList
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
 
-// TODO - context and version probably should be strings in the events??
 @Singleton
-class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlatformEventsConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger with ActorHelper {
+class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlatformEventsConnector, clock: Clock)(implicit val ec: ExecutionContext) extends ApplicationLogger
+    with ActorHelper {
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[Boolean] = {
+  def applyEvents(events: NonEmptyList[ApplicationEvent])(implicit hc: HeaderCarrier): Future[Boolean] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }
 
-  private def obfuscateEvent(event: UpdateApplicationEvent): UpdateApplicationEvent = {
-    event match {
-      case _ => event
-    }
-  }
-
-  private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    apiPlatformEventsConnector.sendApplicationEvent(obfuscateEvent(event))
+  private def applyEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    apiPlatformEventsConnector.sendApplicationEvent(event)
   }
 
   @deprecated("remove when no longer using old logic")
   def sendClientSecretAddedEvent(appData: ApplicationData, clientSecretId: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val appId = appData.id.value.toString
     handleResult(
-      appId,
+      appData.id,
       eventType = "ClientSecretAdded",
-      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(ClientSecretAddedEvent(EventId.random, appId, actor = actor, clientSecretId = clientSecretId))
+      maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+        actor => sendEvent(ClientSecretAddedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, clientSecretId = clientSecretId))
       }
     )
   }
 
   @deprecated("remove when no longer using old logic")
   def sendClientSecretRemovedEvent(appData: ApplicationData, clientSecretId: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val appId = appData.id.value.toString
     handleResult(
-      appId,
+      appData.id,
       eventType = "ClientSecretRemoved",
-      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(ClientSecretRemovedEvent(EventId.random, appId, actor = actor, clientSecretId = clientSecretId))
+      maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+        actor => sendEvent(ClientSecretRemovedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, clientSecretId = clientSecretId))
       }
     )
   }
 
-  def sendTeamMemberAddedEvent(appData: ApplicationData, teamMemberEmail: String, teamMemberRole: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val appId = appData.id.value.toString
+  def sendTeamMemberAddedEvent(appData: ApplicationData, teamMemberEmail: LaxEmailAddress, teamMemberRole: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     handleResult(
-      appId,
+      appData.id,
       eventType = "TeamMemberAddedEvent",
-      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(TeamMemberAddedEvent(EventId.random, appId, actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
+      maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+        actor => sendEvent(TeamMemberAddedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
       }
     )
   }
 
-  def sendTeamMemberRemovedEvent(appData: ApplicationData, teamMemberEmail: String, teamMemberRole: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val appId = appData.id.value.toString
+  def sendTeamMemberRemovedEvent(appData: ApplicationData, teamMemberEmail: LaxEmailAddress, teamMemberRole: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     handleResult(
-      appId,
+      appData.id,
       eventType = "TeamMemberRemovedEvent",
-      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(TeamMemberRemovedEvent(EventId.random, appId, actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
+      maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+        actor => sendEvent(TeamMemberRemovedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
       }
     )
   }
 
   @deprecated("remove when no longer using old logic")
   def sendRedirectUrisUpdatedEvent(appData: ApplicationData, oldRedirectUris: String, newRedirectUris: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val appId = appData.id.value.toString
     handleResult(
-      appId,
+      appData.id,
       eventType = "RedirectUrisUpdatedEvent",
-      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(RedirectUrisUpdatedEvent(EventId.random, appId, actor = actor, oldRedirectUris = oldRedirectUris, newRedirectUris = newRedirectUris))
+      maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+        actor =>
+          sendEvent(RedirectUrisUpdatedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, oldRedirectUris = oldRedirectUris, newRedirectUris = newRedirectUris))
       }
     )
   }
 
   @deprecated("remove when no longer using old logic")
   def sendApiSubscribedEvent(appData: ApplicationData, context: ApiContext, version: ApiVersion)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val appId = appData.id.value.toString
     handleResult(
-      appId,
+      appData.id,
       eventType = "ApiSubscribedEvent",
-      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(ApiSubscribedEvent(EventId.random, appId, actor = actor, context = context.value, version = version.value))
+      maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+        actor => sendEvent(ApiSubscribedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, context = context.value, version = version.value))
       }
     )
   }
 
   @deprecated("remove when no longer using old logic")
   def sendApiUnsubscribedEvent(appData: ApplicationData, context: ApiContext, version: ApiVersion)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val appId = appData.id.value.toString
     handleResult(
-      appId,
+      appData.id,
       eventType = "ApiUnsubscribedEvent",
-      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(ApiUnsubscribedEvent(EventId.random, appId, actor = actor, context = context.value, version = version.value))
+      maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+        actor => sendEvent(ApiUnsubscribedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, context = context.value, version = version.value))
       }
     )
   }
 
-  private def handleResult(applicationId: String, eventType: String, maybeFuture: Option[Future[Boolean]]): Future[Boolean] = maybeFuture match {
+  private def handleResult(applicationId: ApplicationId, eventType: String, maybeFuture: Option[Future[Boolean]]): Future[Boolean] = maybeFuture match {
     case Some(x) => x
     case None    =>
-      logger.error(s"send $eventType for applicationId:${applicationId} not possible")
+      logger.error(s"send $eventType for applicationId:${applicationId.value} not possible")
       Future.successful(false)
   }
 
@@ -148,5 +139,6 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     case ruue: RedirectUrisUpdatedEvent => apiPlatformEventsConnector.sendRedirectUrisUpdatedEvent(ruue)
     case apse: ApiSubscribedEvent       => apiPlatformEventsConnector.sendApiSubscribedEvent(apse)
     case apuse: ApiUnsubscribedEvent    => apiPlatformEventsConnector.sendApiUnsubscribedEvent(apuse)
+    case _                              => Future.failed(new IllegalArgumentException("Bad Event in old sendEvent"))
   }
 }

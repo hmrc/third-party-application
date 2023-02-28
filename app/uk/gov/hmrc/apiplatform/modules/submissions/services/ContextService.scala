@@ -21,9 +21,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.EitherT
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 
 @Singleton

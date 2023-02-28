@@ -22,6 +22,7 @@ import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
 import org.scalatest.BeforeAndAfterAll
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.REMINDERS_SENT
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -51,8 +52,8 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       None,
       ResponsibleIndividual.build(riName, riEmail),
       Set.empty,
-      TermsAndConditionsLocation.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )
 

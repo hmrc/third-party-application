@@ -20,8 +20,9 @@ import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, OldActor, StateHistory}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 
@@ -31,11 +32,10 @@ abstract class BaseService(stateHistoryRepository: StateHistoryRepository, clock
       snapshotApp: ApplicationData,
       newState: State,
       oldState: Option[State],
-      requestedBy: String,
-      actorType: ActorType.ActorType,
+      actor: Actor,
       rollback: ApplicationData => Any
     ): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, OldActor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory)
       .andThen {
         case e: Failure[_] =>

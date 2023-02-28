@@ -32,22 +32,24 @@ import play.api.mvc.{AnyContentAsJson, RequestHeader, Result}
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationServiceMockModule, StrideGatekeeperRoleAuthorisationServiceMockModule}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UserId, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.services.{GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with ApplicationLogger
     with ControllerTestData with ApplicationTestData {
@@ -587,7 +589,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   "strideUserDeleteApplication" should {
     val gatekeeperUserId        = "big.boss.gatekeeper"
-    val requestedByEmailAddress = "admin@example.com"
+    val requestedByEmailAddress = "admin@example.com".toLaxEmail
     val deleteRequest           = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
     "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {
@@ -706,7 +708,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, OldActor("anEmail", COLLABORATOR), None, FixedClock.now)
+    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, FixedClock.now)
   }
 
   private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: LocalDateTime = FixedClock.now, state: ApplicationState = testingState()) = {

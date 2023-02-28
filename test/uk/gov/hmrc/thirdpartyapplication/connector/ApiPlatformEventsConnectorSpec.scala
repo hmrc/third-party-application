@@ -23,81 +23,93 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{GatekeeperUserActor, ProductionAppNameChanged}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats._
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
+  val eventAppId        = ApplicationId.random
+  val eventCollaborator = Actors.AppCollaborator("bob@bob.com".toLaxEmail)
+
   val teamMemberAddedEvent: TeamMemberAddedEvent = TeamMemberAddedEvent(
     id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
-    teamMemberEmail = "teamMember@teamMember.com",
+    applicationId = eventAppId,
+    eventDateTime = FixedClock.instant,
+    actor = eventCollaborator,
+    teamMemberEmail = "teamMember@teamMember.com".toLaxEmail,
     teamMemberRole = "ADMIN"
   )
 
   val teamMemberRemovedEvent: TeamMemberRemovedEvent = TeamMemberRemovedEvent(
     id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
-    teamMemberEmail = "teamMember@teamMember.com",
+    applicationId = eventAppId,
+    eventDateTime = FixedClock.instant,
+    actor = eventCollaborator,
+    teamMemberEmail = "teamMember@teamMember.com".toLaxEmail,
     teamMemberRole = "ADMIN"
   )
 
   val clientSecretAddedEvent: ClientSecretAddedEvent = ClientSecretAddedEvent(
     id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    applicationId = eventAppId,
+    eventDateTime = FixedClock.instant,
+    actor = eventCollaborator,
     clientSecretId = "1234"
   )
 
   val clientSecretRemovedEvent: ClientSecretRemovedEvent = ClientSecretRemovedEvent(
     id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    applicationId = eventAppId,
+    eventDateTime = FixedClock.instant,
+    actor = eventCollaborator,
     clientSecretId = "1234"
   )
 
   val redirectUrisUpdatedEvent: RedirectUrisUpdatedEvent = RedirectUrisUpdatedEvent(
     id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    applicationId = eventAppId,
+    eventDateTime = FixedClock.instant,
+    actor = eventCollaborator,
     oldRedirectUris = "originalUris",
     newRedirectUris = "newRedirectUris"
   )
 
   val apiSubscribedEvent: ApiSubscribedEvent = ApiSubscribedEvent(
     id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    applicationId = eventAppId,
+    eventDateTime = FixedClock.instant,
+    actor = eventCollaborator,
     context = "context",
     version = "2.0"
   )
 
   val apiUnSubscribedEvent: ApiUnsubscribedEvent = ApiUnsubscribedEvent(
     id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    applicationId = eventAppId,
+    eventDateTime = FixedClock.instant,
+    actor = eventCollaborator,
     context = "context",
     version = "2.0"
   )
 
-  val prodAppNameChangedEvent: ProductionAppNameChanged = ProductionAppNameChanged(
-    id = UpdateApplicationEvent.Id.random,
+  val prodAppNameChangedEvent: ProductionAppNameChangedEvent = ProductionAppNameChangedEvent(
+    id = EventId.random,
     applicationId = ApplicationId.random,
-    eventDateTime = FixedClock.now,
-    actor = GatekeeperUserActor("mr gatekeeper"),
+    eventDateTime = FixedClock.instant,
+    actor = Actors.GatekeeperUser("mr gatekeeper"),
     oldAppName = "old name",
     newAppName = "new name",
-    requestingAdminEmail = "admin@example.com"
+    requestingAdminEmail = "admin@example.com".toLaxEmail
   )
 
   abstract class Setup(enabled: Boolean = true) {
+    import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
+
     val http: HttpClient = app.injector.instanceOf[HttpClient]
 
     val config: ApiPlatformEventsConnector.Config = ApiPlatformEventsConnector.Config(wireMockUrl, enabled)
@@ -123,7 +135,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
           )
       )
 
-    def apiApplicationEventWillReturnCreated(request: UpdateApplicationEvent) =
+    def apiApplicationEventWillReturnCreated(request: ApplicationEvent) =
       stubFor(
         post(urlEqualTo("/application-event"))
           .withJsonRequestBody(request)

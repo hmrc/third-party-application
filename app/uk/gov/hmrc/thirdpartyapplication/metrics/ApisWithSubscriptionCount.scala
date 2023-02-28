@@ -25,8 +25,8 @@ import com.google.inject.Singleton
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.mongo.metrix.MetricSource
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifier
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 

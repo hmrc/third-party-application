@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPrevention
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiContext, ApiIdentifierSyntax, ApplicationState, SellResellOrDistribute}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationState, SellResellOrDistribute}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{HmrcSpec, UpliftRequestSamples}
 

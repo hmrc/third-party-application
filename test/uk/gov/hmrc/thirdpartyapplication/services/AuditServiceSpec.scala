@@ -29,13 +29,16 @@ import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, SubmissionId, Warn}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -57,8 +60,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     Some("organisationUrl.com"),
     responsibleIndividual,
     Set(ServerLocation.InUK),
-    TermsAndConditionsLocation.InDesktopSoftware,
-    PrivacyPolicyLocation.InDesktopSoftware,
+    TermsAndConditionsLocations.InDesktopSoftware,
+    PrivacyPolicyLocations.InDesktopSoftware,
     List.empty
   )
 
@@ -151,24 +154,23 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     val requesterName  = "bill badger"
     val appInTesting   = applicationData.copy(state = ApplicationState.testing)
 
-    val gatekeeperActor            = GatekeeperUserActor(gatekeeperUser)
-    val collaboratorActor          = CollaboratorActor(applicationData.collaborators.head.emailAddress)
+    val collaboratorActor          = Actors.AppCollaborator(applicationData.collaborators.head.emailAddress)
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     "applyEvents with a single ApplicationApprovalRequestDeclined event" in new Setup {
 
       val appApprovalRequestDeclined = ApplicationApprovalRequestDeclined(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         applicationId,
-        timestamp,
-        GatekeeperUserActor(gatekeeperUser),
+        FixedClock.instant,
+        Actors.GatekeeperUser(gatekeeperUser),
         gatekeeperUser,
-        gatekeeperUser,
-        Submission.Id.random,
+        gatekeeperUser.toLaxEmail,
+        SubmissionId.random,
         1,
         reasons,
         requesterName,
-        requesterEmail
+        requesterEmail.toLaxEmail
       )
 
       val tags                       = Map("gatekeeperId" -> gatekeeperUser)
@@ -217,9 +219,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     "applyEvents with a ClientSecretAdded event" in new Setup {
 
       val clientSecretAdded = ClientSecretAddedV2(
-        UpdateApplicationEvent.Id.random,
+        EventId.random,
         applicationId,
-        timestamp,
+        FixedClock.instant,
         collaboratorActor,
         "name",
         "hashedSecret"
@@ -247,10 +249,10 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
 
     "applyEvents with a ClientSecretRemoved event" in new Setup {
 
-      val clientSecretRemoved = ClientSecretRemoved(
-        UpdateApplicationEvent.Id.random,
+      val clientSecretRemoved = ClientSecretRemovedV2(
+        EventId.random,
         applicationId,
-        timestamp,
+        FixedClock.instant,
         collaboratorActor,
         "client secret ID",
         "secret name"
@@ -277,20 +279,14 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
 
     "applyEvents with a CollaboratorAdded event" in new Setup {
 
-      val newCollaborator = Collaborator(
-        "emailaddress",
-        Role.DEVELOPER,
-        UserId.random
-      )
+      val newCollaborator = "emailaddress".developer()
 
-      val collaboratorAdded = CollaboratorAdded(
-        UpdateApplicationEvent.Id.random,
+      val collaboratorAdded = CollaboratorAddedV2(
+        EventId.random,
         applicationId,
-        timestamp,
+        FixedClock.instant,
         collaboratorActor,
-        newCollaborator.userId,
-        newCollaborator.emailAddress,
-        newCollaborator.role,
+        newCollaborator,
         verifiedAdminsToEmail = Set.empty
       )
 
@@ -300,8 +296,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         tags = hc.toAuditTags(CollaboratorAddedAudit.name, "-"),
         detail = Map(
           "applicationId"        -> applicationId.value.toString,
-          "newCollaboratorEmail" -> newCollaborator.emailAddress,
-          "newCollaboratorType"  -> newCollaborator.role.toString
+          "newCollaboratorEmail" -> newCollaborator.emailAddress.text,
+          "newCollaboratorType"  -> newCollaborator.describeRole
         )
       )
 
@@ -318,15 +314,12 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
 
       val removedCollaborator = applicationData.collaborators.head
 
-      val collaboratorRemoved = CollaboratorRemoved(
-        UpdateApplicationEvent.Id.random,
+      val collaboratorRemoved = CollaboratorRemovedV2(
+        EventId.random,
         applicationId,
-        timestamp,
+        FixedClock.instant,
         collaboratorActor,
-        removedCollaborator.userId,
-        removedCollaborator.emailAddress,
-        removedCollaborator.role,
-        false,
+        removedCollaborator,
         verifiedAdminsToEmail = Set.empty
       )
 
@@ -336,8 +329,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         tags = hc.toAuditTags(CollaboratorRemovedAudit.name, "-"),
         detail = Map(
           "applicationId"            -> applicationId.value.toString,
-          "removedCollaboratorEmail" -> removedCollaborator.emailAddress,
-          "removedCollaboratorType"  -> removedCollaborator.role.toString
+          "removedCollaboratorEmail" -> removedCollaborator.emailAddress.text,
+          "removedCollaboratorType"  -> removedCollaborator.describeRole
         )
       )
 
@@ -352,13 +345,13 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
 
     "applyEvents with a ApiSubscribed event" in new Setup {
 
-      val apiSubscribed = ApiSubscribed(
-        UpdateApplicationEvent.Id.random,
+      val apiSubscribed = ApiSubscribedV2(
+        EventId.random,
         applicationId,
-        timestamp,
+        FixedClock.instant,
         collaboratorActor,
-        "context",
-        "version"
+        "context".asContext,
+        "version".asVersion
       )
 
       val expectedDataEvent = DataEvent(
@@ -367,8 +360,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         tags = hc.toAuditTags(Subscribed.name, "-"),
         detail = Map(
           "applicationId" -> applicationId.value.toString,
-          "apiVersion"    -> apiSubscribed.version,
-          "apiContext"    -> apiSubscribed.context
+          "apiVersion"    -> apiSubscribed.version.value,
+          "apiContext"    -> apiSubscribed.context.value
         )
       )
 
@@ -383,13 +376,13 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
 
     "applyEvents with a ApiUnsubscribed event" in new Setup {
 
-      val apiUnsubscribed = ApiUnsubscribed(
-        UpdateApplicationEvent.Id.random,
+      val apiUnsubscribed = ApiUnsubscribedV2(
+        EventId.random,
         applicationId,
-        timestamp,
+        FixedClock.instant,
         collaboratorActor,
-        "context",
-        "version"
+        "context".asContext,
+        "version".asVersion
       )
 
       val expectedDataEvent = DataEvent(
@@ -398,8 +391,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         tags = hc.toAuditTags(Unsubscribed.name, "-"),
         detail = Map(
           "applicationId" -> applicationId.value.toString,
-          "apiVersion"    -> apiUnsubscribed.version,
-          "apiContext"    -> apiUnsubscribed.context
+          "apiVersion"    -> apiUnsubscribed.version.value,
+          "apiContext"    -> apiUnsubscribed.context.value
         )
       )
 
@@ -414,10 +407,10 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
 
     "applyEvents with a RedirectUrisUpdated event" in new Setup {
 
-      val redirectUrisUpdated = RedirectUrisUpdated(
-        UpdateApplicationEvent.Id.random,
+      val redirectUrisUpdated = RedirectUrisUpdatedV2(
+        EventId.random,
         applicationId,
-        timestamp,
+        FixedClock.instant,
         collaboratorActor,
         oldRedirectUris = List.empty,
         newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
@@ -445,7 +438,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     // "applyEvents with a ApplicationDeletedByGatekeeper event" in new Setup {
 
     //   val event = ApplicationDeletedByGatekeeper(
-    //     UpdateApplicationEvent.Id.random,
+    //     EventId.random,
     //     applicationData.id,
     //     timestamp,
     //     gatekeeperActor,
@@ -482,7 +475,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
   "AuditHelper calculateAppChanges" should {
 
     val id          = ApplicationId.random
-    val admin       = Collaborator("test@example.com", ADMINISTRATOR, UserId.random)
+    val admin       = "test@example.com".admin()
     val tokens      = ApplicationTokens(
       Token(ClientId("prodId"), "prodToken")
     )

@@ -22,9 +22,9 @@ import scala.concurrent.Future.successful
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -72,19 +72,19 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     object Fetch {
 
       def thenReturn(extSubmission: ExtendedSubmission) =
-        when(aMock.fetch(*[Submission.Id])).thenReturn(successful(Some(extSubmission)))
+        when(aMock.fetch(*[SubmissionId])).thenReturn(successful(Some(extSubmission)))
 
       def thenReturnNone() =
-        when(aMock.fetch(*[Submission.Id])).thenReturn(successful(None))
+        when(aMock.fetch(*[SubmissionId])).thenReturn(successful(None))
     }
 
     object RecordAnswers {
 
       def thenReturn(extSubmission: ExtendedSubmission) =
-        when(aMock.recordAnswers(*[Submission.Id], *[Question.Id], *[List[String]])).thenReturn(successful(Right(extSubmission)))
+        when(aMock.recordAnswers(*[SubmissionId], *[Question.Id], *[List[String]])).thenReturn(successful(Right(extSubmission)))
 
       def thenFails(error: String) =
-        when(aMock.recordAnswers(*[Submission.Id], *[Question.Id], *[List[String]])).thenReturn(successful(Left(error)))
+        when(aMock.recordAnswers(*[SubmissionId], *[Question.Id], *[List[String]])).thenReturn(successful(Left(error)))
     }
 
     object DeleteAll {

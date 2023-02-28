@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import play.api.libs.json._
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocation, TermsAndConditionsLocation}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 
 sealed trait Access {

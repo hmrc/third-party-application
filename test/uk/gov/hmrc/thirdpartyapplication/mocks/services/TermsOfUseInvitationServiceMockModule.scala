@@ -20,11 +20,10 @@ import scala.concurrent.Future.successful
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
 trait TermsOfUseServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

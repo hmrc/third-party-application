@@ -23,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -41,7 +41,7 @@ class ResponsibleIndividualVerificationService @Inject() (
   )(implicit ec: ExecutionContext
   ) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
 
-  def createNewToUVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
+  def createNewToUVerification(applicationData: ApplicationData, submissionId: SubmissionId, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
     val verification = ResponsibleIndividualToUVerification(
       applicationId = applicationData.id,
       submissionId = submissionId,
