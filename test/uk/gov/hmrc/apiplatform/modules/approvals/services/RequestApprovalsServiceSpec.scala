@@ -190,6 +190,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         SubmissionsServiceMock.Store.thenReturn()
         ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(prodApplication)
         EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
+        EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
         ResponsibleIndividualVerificationServiceMock.CreateNewVerification.thenCreateNewVerification()
 
         val answersWithoutRIDetails            = sampleAnswersToQuestions

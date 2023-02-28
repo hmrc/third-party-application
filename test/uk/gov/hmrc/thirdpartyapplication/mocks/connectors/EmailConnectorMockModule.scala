@@ -280,5 +280,9 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
       def thenReturnSuccess() = when(aMock.sendNewTermsOfUseInvitation(*[Instant], *, *)(*)).thenReturn(successful(HasSucceeded))
     }
 
+    object SendNewTermsOfUseConfirmation {
+      def thenReturnSuccess() = when(aMock.sendNewTermsOfUseConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
+    }
+
   }
 }

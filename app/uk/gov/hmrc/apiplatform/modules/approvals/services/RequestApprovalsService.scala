@@ -194,7 +194,7 @@ class RequestApprovalsService @Inject() (
         addTouAcceptance                    = isRequesterTheResponsibleIndividual && savedSubmission.status.isGranted
         _                                  <- ET.liftF(addTouAcceptanceIfNeeded(addTouAcceptance, updatedApp, submission, requestedByName, requestedByEmailAddress))
         _                                  <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
-        _                                  <- ET.liftF(sendConfirmationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission))
+        _                                  <- ET.liftF(sendConfirmationEmailIfNeeded(addTouAcceptance, savedApp))
         _                                   = logCompletedApprovalRequest(savedApp)
         _                                  <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
       } yield ApprovalAccepted(savedApp)
@@ -247,12 +247,11 @@ class RequestApprovalsService @Inject() (
   }
 
   private def sendConfirmationEmailIfNeeded(
-      isRequesterTheResponsibleIndividual: Boolean,
-      application: ApplicationData,
-      submission: Submission
+      addTouAcceptance: Boolean,
+      application: ApplicationData
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
-    if (isRequesterTheResponsibleIndividual && submission.status.isGranted) {
+    if (addTouAcceptance) {
       emailConnector.sendNewTermsOfUseConfirmation(application.name, application.admins.map(_.emailAddress))
     } else {
       Future.successful(HasSucceeded)
