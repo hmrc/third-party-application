@@ -243,6 +243,15 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.fetchAllWithNoSubscriptions()).thenReturn(successful(Nil))
     }
 
+    object GetAppsWithSubscriptions {
+
+      def thenReturn(apps: ApplicationWithSubscriptions*) =
+        when(aMock.getAppsWithSubscriptions).thenReturn(successful(apps.toList))
+
+      def thenReturnNone() =
+        when(aMock.getAppsWithSubscriptions).thenReturn(successful(Nil))
+    }
+
     object RecordApplicationUsage {
 
       def thenReturnWhen(applicationId: ApplicationId)(applicationData: ApplicationData) =

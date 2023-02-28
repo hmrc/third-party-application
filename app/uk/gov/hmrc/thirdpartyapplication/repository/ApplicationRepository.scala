@@ -37,7 +37,7 @@ import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator, PrivacyPolicyLocation, TermsAndConditionsLocation}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
@@ -794,4 +794,23 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
         Updates.set("state.requestedByName", requestingAdminName)
       )
     )
+
+  def getAppsWithSubscriptions: Future[List[ApplicationWithSubscriptions]] = {
+    val pipeline = Seq(
+      lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis"),
+      unwind("$subscribedApis"),
+      group(
+        Document("id" -> "$id", "name" -> "$name"),
+        Accumulators.first("id", "$id"),
+        Accumulators.first("name", "$name"),
+        Accumulators.first("lastAccess", "$lastAccess"),
+        Accumulators.addToSet("apiIdentifiers", "$subscribedApis.apiIdentifier")
+      )
+    )
+
+    collection.aggregate[BsonValue](pipeline)
+      .map(Codecs.fromBson[ApplicationWithSubscriptions])
+      .toFuture()
+      .map(_.toList)
+  }
 }
