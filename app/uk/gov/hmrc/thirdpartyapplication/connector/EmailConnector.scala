@@ -80,6 +80,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   val changeOfApplicationDetails                = "apiChangeOfApplicationDetails"
   val changeOfResponsibleIndividual             = "apiChangeOfResponsibleIndividual"
   val newTermsOfUseInvitation                   = "apiNewTermsOfUseInvitation"
+  val newTermsOfUseConfirmation                 = "apiNewTermsOfUseConfirmation"
 
   private def getRoleForDisplay(role: Collaborator) =
     role match {
@@ -417,6 +418,21 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
         newTermsOfUseInvitation,
         Map(
           "completeBy"      -> DateTimeFormatter.ofPattern("dd MMMM yyyy").withZone(ZoneId.systemDefault()).format(dueBy),
+          "applicationName" -> applicationName
+        )
+      )
+    )
+
+  def sendNewTermsOfUseConfirmation(
+      applicationName: String,
+      recipients: Set[LaxEmailAddress]
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] =
+    post(
+      SendEmailRequest(
+        recipients,
+        newTermsOfUseConfirmation,
+        Map(
           "applicationName" -> applicationName
         )
       )
