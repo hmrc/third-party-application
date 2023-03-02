@@ -201,6 +201,29 @@ class GrantApprovalsService @Inject() (
       .fold[Result](identity, identity)
   }
 
+  def grantForTouUplift(
+      originalApp: ApplicationData,
+      submission: Submission,
+      gatekeeperUserName: String
+    )(implicit hc: HeaderCarrier
+    ): Future[GrantApprovalsService.Result] = {
+    import cats.implicits._
+    import cats.instances.future.catsStdInstancesForFuture
+
+    val ET    = EitherTHelper.make[Result]
+    (
+      for {
+        _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
+        _ <- ET.cond(submission.status.isGrantedWithWarnings, (), RejectedDueToIncorrectSubmissionState)
+
+        updatedSubmission        = Submission.grant(LocalDateTime.now(clock), gatekeeperUserName)(submission)
+        savedSubmission         <- ET.liftF(submissionService.store(updatedSubmission))
+        _                       <- ET.liftF(emailConnector.sendNewTermsOfUseConfirmation(originalApp.name, originalApp.admins.map(_.emailAddress)))
+      } yield Actioned(originalApp)
+    )
+      .fold[Result](identity, identity)
+  }
+
   def declineForTouUplift(
       originalApp: ApplicationData,
       submission: Submission,
