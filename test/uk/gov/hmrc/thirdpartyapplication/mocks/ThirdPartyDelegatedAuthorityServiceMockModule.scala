@@ -16,27 +16,24 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
-import scala.concurrent.Future.successful
-
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-
+import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.services.ThirdPartyDelegatedAuthorityService
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 trait ThirdPartyDelegatedAuthorityServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   protected trait BaseThirdPartyDelegatedAuthorityServiceMock {
     def aMock: ThirdPartyDelegatedAuthorityService
 
+    object RevokeApplicationAuthorities {
+      def succeeds() = when(aMock.revokeApplicationAuthorities(*[ClientId])(*)).thenReturn(successful(Some(HasSucceeded)))
+    }
+    
     def verify = MockitoSugar.verify(aMock)
 
     def verify(mode: org.mockito.verification.VerificationMode) = MockitoSugar.verify(aMock, mode)
-
-    object ApplyEvents {
-
-      def succeeds() = {
-        when(aMock.applyEvents(*)(*)).thenReturn(successful(None))
-      }
-    }
   }
 
   object ThirdPartyDelegatedAuthorityServiceMock extends BaseThirdPartyDelegatedAuthorityServiceMock {

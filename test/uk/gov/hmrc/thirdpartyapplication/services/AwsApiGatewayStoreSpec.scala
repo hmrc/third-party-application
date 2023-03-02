@@ -21,14 +21,10 @@ import scala.concurrent.Future.successful
 import scala.util.Random.nextString
 
 import akka.actor.ActorSystem
-import cats.data.NonEmptyList
 
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationDeleted, EventId}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
@@ -94,32 +90,6 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       await(underTest.deleteApplication(applicationName))
 
       verify(mockAwsApiGatewayConnector).deleteApplication(applicationName)(hc)
-    }
-  }
-
-  "applyEvents" should {
-    def buildApplicationDeletedEvent(applicationId: ApplicationId) =
-      ApplicationDeleted(
-        EventId.random,
-        applicationId,
-        FixedClock.instant,
-        Actors.AppCollaborator("requester@example.com".toLaxEmail),
-        ClientId("clientId"),
-        "wso2ApplicationName",
-        "reasons"
-      )
-
-    "handle an ApplicationDeleted event by calling the connector" in new Setup {
-      val applicationId1 = ApplicationId.random
-
-      when(mockAwsApiGatewayConnector.deleteApplication("wso2ApplicationName")(hc)).thenReturn(successful(HasSucceeded))
-
-      val event = buildApplicationDeletedEvent(applicationId1)
-
-      val result = await(underTest.applyEvents(NonEmptyList.one(event)))
-
-      result shouldBe Some(HasSucceeded)
-      verify(mockAwsApiGatewayConnector).deleteApplication("wso2ApplicationName")(hc)
     }
   }
 }

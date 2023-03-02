@@ -75,7 +75,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
       savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
       stateHistory = StateHistory(app.id, State.DELETED, Actors.ScheduledJob(cmd.jobId), Some(app.state.name), changedAt = cmd.timestamp)
       events       = asEvents(savedApp, cmd, stateHistory)
-      _           <- deleteApplication(app, stateHistory, cmd.timestamp, cmd.jobId, cmd.jobId, events)
+      _           <- deleteApplication(app, stateHistory)
     } yield (savedApp, events)
   }
 

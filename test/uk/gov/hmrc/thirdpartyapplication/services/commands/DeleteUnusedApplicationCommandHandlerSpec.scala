@@ -95,10 +95,10 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
     val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, FixedClock.now)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
-      ApiGatewayStoreMock.ApplyEvents.succeeds()
-      NotificationRepositoryMock.ApplyEvents.succeeds()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.RevokeApplicationAuthorities.succeeds()
+      NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
       StateHistoryRepoMock.Insert.succeeds()
 
       val result = await(underTest.process(app, cmd).value).right.value

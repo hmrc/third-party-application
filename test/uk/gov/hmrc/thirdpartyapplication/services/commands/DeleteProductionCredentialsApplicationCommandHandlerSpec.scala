@@ -95,10 +95,10 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()
-      ApiGatewayStoreMock.ApplyEvents.succeeds()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
-      NotificationRepositoryMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.RevokeApplicationAuthorities.succeeds()
+      NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
 
       val result = await(underTest.process(app, cmd).value).right.value
 

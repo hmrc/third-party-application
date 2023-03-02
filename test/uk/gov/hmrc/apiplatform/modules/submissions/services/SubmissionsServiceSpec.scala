@@ -28,7 +28,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.{SubmissionsDAOMockModule, _}
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, _}
 
@@ -229,12 +228,11 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
       }
     }
 
-    "applyEvents" should {
+    "declineApplicationApprovalRequest" should {
 
       val appId        = ApplicationId.random
       val submissionId = SubmissionId.random
       val reasons      = "reasons description"
-      val code         = "5324763549732592387659238746"
 
       def buildApplicationApprovalRequestDeclinedEvent() =
         ApplicationApprovalRequestDeclined(
@@ -251,57 +249,17 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
           "admin@example.com".toLaxEmail
         )
 
-      def buildResponsibleIndividualDidNotVerifyEvent() =
-        ResponsibleIndividualDidNotVerify(
-          EventId.random,
-          appId,
-          FixedClock.instant,
-          Actors.AppCollaborator("requester@example.com".toLaxEmail),
-          "Mr New Ri",
-          "ri@example.com".toLaxEmail,
-          SubmissionId(submissionId.value),
-          0,
-          code,
-          "Mr Admin",
-          "admin@example.com".toLaxEmail
-        )
-
-      def buildApplicationStateChangedEvent() =
-        ApplicationStateChanged(
-          EventId.random,
-          appId,
-          FixedClock.instant,
-          Actors.AppCollaborator("requester@example.com".toLaxEmail),
-          State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION.toString,
-          State.TESTING.toString,
-          "Mr Admin",
-          "admin@example.com".toLaxEmail
-        )
-
       "decline a submission given an ApplicationApprovalRequestDeclined event" in new Setup {
         val event = buildApplicationApprovalRequestDeclinedEvent()
 
         SubmissionsDAOMock.Fetch.thenReturn(submittedSubmission)
         SubmissionsDAOMock.Update.thenReturn()
 
-        val result = await(underTest.applyEvents(NonEmptyList.one(event)))
+        val result = await(underTest.declineApplicationApprovalRequest(event))
 
         val out = result.value
         out.instances.length shouldBe submittedSubmission.instances.length + 1
         out.instances.tail.head.status.isDeclined shouldBe true
-        SubmissionsDAOMock.Update.verifyCalled()
-      }
-
-      "process many events including an ApplicationApprovalRequestDeclined event" in new Setup {
-        val event1 = buildApplicationApprovalRequestDeclinedEvent()
-        val event2 = buildResponsibleIndividualDidNotVerifyEvent()
-        val event3 = buildApplicationStateChangedEvent()
-
-        SubmissionsDAOMock.Fetch.thenReturn(submittedSubmission)
-        SubmissionsDAOMock.Update.thenReturn()
-
-        await(underTest.applyEvents(NonEmptyList.of(event1, event2, event3)))
-
         SubmissionsDAOMock.Update.verifyCalled()
       }
     }

@@ -103,8 +103,8 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
       savedApp                                   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requesterEmail.text, requesterName))
       _                                          <- E.liftF(stateHistoryRepository.insert(stateHistory))
       (approvalDeclined, stateChange)             = asEvents(savedApp, cmd, submission, requesterEmail, requesterName, stateHistory)
-      events                                      = NonEmptyList.of(approvalDeclined, stateChange)
       _                                          <- E.liftF(submissionService.declineApplicationApprovalRequest(approvalDeclined))
+      events                                      = NonEmptyList.of(approvalDeclined, stateChange)
     } yield (savedApp, events)
   }
 }
