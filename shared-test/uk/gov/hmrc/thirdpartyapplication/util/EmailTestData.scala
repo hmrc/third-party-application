@@ -21,6 +21,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 trait EmailTestData {
   val loggedInUser = "loggedin@example.com".toLaxEmail
   val devEmail     = "dev@example.com".toLaxEmail
-  val anAdminEmail   = "admin@example.com".toLaxEmail
+  val anAdminEmail = "admin@example.com".toLaxEmail
 
 }

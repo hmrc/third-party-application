@@ -166,8 +166,8 @@ class ApplicationServiceSpec
   trait SetupForAuditTests extends Setup {
 
     def setupAuditTests(access: Access): (ApplicationData, UpdateRedirectUris) = {
-      val admin         = otherAdminCollaborator
-      val tokens        = ApplicationTokens(
+      val admin  = otherAdminCollaborator
+      val tokens = ApplicationTokens(
         Token(ClientId("prodId"), "prodToken")
       )
 
@@ -295,7 +295,9 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: ApplicationData =
-        anApplicationData(createdApp.application.id, state = testingState(), collaborators = Set(loggedInUserAdminCollaborator), environment = Environment.PRODUCTION).copy(description = None)
+        anApplicationData(createdApp.application.id, state = testingState(), collaborators = Set(loggedInUserAdminCollaborator), environment = Environment.PRODUCTION).copy(
+          description = None
+        )
 
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
@@ -321,7 +323,12 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: ApplicationData =
-        anApplicationData(createdApp.application.id, collaborators = Set(loggedInUserAdminCollaborator), state = ApplicationState(State.PRODUCTION, updatedOn = FixedClock.now), environment = Environment.SANDBOX)
+        anApplicationData(
+          createdApp.application.id,
+          collaborators = Set(loggedInUserAdminCollaborator),
+          state = ApplicationState(State.PRODUCTION, updatedOn = FixedClock.now),
+          environment = Environment.SANDBOX
+        )
 
       createdApp.totp shouldBe None
 
@@ -364,7 +371,7 @@ class ApplicationServiceSpec
         collaborators = Set(loggedInUserAdminCollaborator),
         access = Privileged(totpIds = Some(TotpId("prodTotpId")))
       )
-      .copy(description = None)
+        .copy(description = None)
 
       createdApp.totp shouldBe Some(TotpSecret(prodTOTP.secret))
 
@@ -398,7 +405,7 @@ class ApplicationServiceSpec
         collaborators = Set(loggedInUserAdminCollaborator),
         access = Ropc()
       )
-      .copy(description = None)
+        .copy(description = None)
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
@@ -581,7 +588,7 @@ class ApplicationServiceSpec
 
     "send an audit event for each type of change" in new SetupForAuditTests {
       override implicit val hc = hcForLoggedInGatekeeperUser
-      
+
       val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccessOn(updateRedirectUris)(updatedApplication)
 

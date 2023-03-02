@@ -32,7 +32,7 @@ class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
     val underTest = new RemoveCollaboratorCommandHandler(ApplicationRepoMock.aMock)
 
     val applicationId = ApplicationId.random
-    val anAdminEmail    = "admin@example.com".toLaxEmail
+    val anAdminEmail  = "admin@example.com".toLaxEmail
 
     val developerCollaborator = devEmail.developer()
 

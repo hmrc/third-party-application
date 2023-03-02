@@ -188,14 +188,14 @@ class GrantApprovalsService @Inject() (
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
-    val ET    = EitherTHelper.make[Result]
+    val ET = EitherTHelper.make[Result]
     (
       for {
         _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
         _ <- ET.cond(submission.status.isWarnings, (), RejectedDueToIncorrectSubmissionState)
 
-        updatedSubmission        = Submission.grantWithWarnings(LocalDateTime.now(clock), gatekeeperUserName, reasons, None)(submission)
-        savedSubmission         <- ET.liftF(submissionService.store(updatedSubmission))
+        updatedSubmission = Submission.grantWithWarnings(LocalDateTime.now(clock), gatekeeperUserName, reasons, None)(submission)
+        savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
       } yield Actioned(originalApp)
     )
       .fold[Result](identity, identity)
@@ -210,14 +210,14 @@ class GrantApprovalsService @Inject() (
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
-    val ET    = EitherTHelper.make[Result]
+    val ET = EitherTHelper.make[Result]
     (
       for {
         _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
         _ <- ET.cond(submission.status.isFailed, (), RejectedDueToIncorrectSubmissionState)
 
-        updatedSubmission        = Submission.decline(LocalDateTime.now(clock), gatekeeperUserName, reasons)(submission)
-        savedSubmission         <- ET.liftF(submissionService.store(updatedSubmission))
+        updatedSubmission = Submission.decline(LocalDateTime.now(clock), gatekeeperUserName, reasons)(submission)
+        savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
       } yield Actioned(originalApp)
     )
       .fold[Result](identity, identity)

@@ -45,7 +45,7 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
             isCollaboratorOnApp(cmd.collaborator, app),
             applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)
           ) { case _ => app }
-      case _                                  => Apply[Validated[CommandHandler.Failures, *]]
+      case _                             => Apply[Validated[CommandHandler.Failures, *]]
           .map2(
             isCollaboratorOnApp(cmd.collaborator, app),
             applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)

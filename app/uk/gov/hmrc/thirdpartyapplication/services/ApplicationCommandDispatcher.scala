@@ -81,8 +81,8 @@ class ApplicationCommandDispatcher @Inject() (
   // scalastyle:off cyclomatic.complexity
   private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): ResultT = {
     command match {
-      case cmd: AddCollaborator                                       => addCollaboratorCommandHandler.process(app, cmd)
-      case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
+      case cmd: AddCollaborator    => addCollaboratorCommandHandler.process(app, cmd)
+      case cmd: RemoveCollaborator => removeCollaboratorCommandHandler.process(app, cmd)
 
       case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
       case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)

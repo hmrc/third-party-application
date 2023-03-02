@@ -63,7 +63,7 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
       }
 
       def thenReturnCommandSuccess(applicationData: ApplicationData) = {
-        val dummyEvents             =
+        val dummyEvents                     =
           NonEmptyList.one(RedirectUrisUpdatedV2(EventId.random, ApplicationId.random, FixedClock.instant, Actors.AppCollaborator("someuser".toLaxEmail), List.empty, List("new URI")))
         val success: CommandHandler.Success = (applicationData, dummyEvents)
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(E.pure(success))

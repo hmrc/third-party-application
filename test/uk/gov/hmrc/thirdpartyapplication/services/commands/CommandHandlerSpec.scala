@@ -23,8 +23,9 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock, HmrcSpec}
+
 class CommandHandlerSpec extends HmrcSpec with ApplicationTestData {
-  
+
   import CommandHandler._
   import CommandFailures._
 
@@ -32,7 +33,7 @@ class CommandHandlerSpec extends HmrcSpec with ApplicationTestData {
   val timestamp     = FixedClock.now
   val clientSecret  = ClientSecret("name", timestamp, hashedSecret = "hashed")
   val secretValue   = "somSecret"
-  
+
   // Application with two client secrets
   val applicationData: ApplicationData = anApplicationData(applicationId)
 
@@ -82,14 +83,14 @@ class CommandHandlerSpec extends HmrcSpec with ApplicationTestData {
 
     "fail with CollaboratorHasMismatchOnApp when collaborator is found by email on app but ids are not the same" in {
       val theCollaborator = developerCollaborator
-      
+
       val app = applicationData.copy(collaborators = Set(theCollaborator.copy(userId = UserId.random)))
-      
+
       checkFailsWith(CollaboratorHasMismatchOnApp) {
         isCollaboratorOnApp(theCollaborator, app)
-       }
+      }
     }
- 
+
     "fail with CollaboratorHasMismatchOnApp when collaborator is found by id on app but emails are not the same" in {
       val theCollaborator = developerCollaborator
 

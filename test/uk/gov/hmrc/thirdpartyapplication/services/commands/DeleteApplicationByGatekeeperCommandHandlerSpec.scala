@@ -90,7 +90,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
 
   "DeleteApplicationByGatekeeper" should {
     val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, ts)
-    
+
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()

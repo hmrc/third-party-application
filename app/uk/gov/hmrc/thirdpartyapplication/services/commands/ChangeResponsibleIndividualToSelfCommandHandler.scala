@@ -58,7 +58,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
 
       maybeSubmission.fold(fails.invalidNec[Submission])(_.validNec[CommandFailure])
     }
-    
+
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
       Apply[Validated[CommandHandler.Failures, *]].map6(
         isStandardNewJourneyApp(app),

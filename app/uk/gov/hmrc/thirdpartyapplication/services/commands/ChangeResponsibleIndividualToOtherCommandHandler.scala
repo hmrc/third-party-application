@@ -38,15 +38,15 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 
 @Singleton
 class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
-  applicationRepository: ApplicationRepository,
-  responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
-  stateHistoryRepository: StateHistoryRepository
+    applicationRepository: ApplicationRepository,
+    responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
+    stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
-    
+
   import CommandHandler._
   import CommandFailures._
-  
+
   private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
     cond(
       app.access match {

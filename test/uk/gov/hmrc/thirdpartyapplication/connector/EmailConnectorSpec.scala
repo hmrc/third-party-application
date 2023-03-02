@@ -300,7 +300,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
     "send verify Responsible Individual reminder to admin" in new Setup {
       val responsibleIndividualName               = "Bob Example"
-      val anAdminEmail                              = "admin@example.com".toLaxEmail
+      val anAdminEmail                            = "admin@example.com".toLaxEmail
       val adminName                               = "John Admin"
       val appName                                 = "my app"
       val expectedParameters: Map[String, String] = Map(
@@ -316,7 +316,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
     "send responsible individual did not verify" in new Setup {
       val responsibleIndividualName               = "Bob Example"
-      val anAdminEmail                              = "admin@example.com".toLaxEmail
+      val anAdminEmail                            = "admin@example.com".toLaxEmail
       val adminName                               = "John Admin"
       val appName                                 = "my app"
       val expectedParameters: Map[String, String] = Map(

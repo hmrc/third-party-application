@@ -106,7 +106,7 @@ object Submission {
   val automaticallyMark: (LocalDateTime, String) => Submission => Submission = (timestamp, name) =>
     s => {
       val markedSubmission: MarkedSubmission = MarkedSubmission(s, MarkAnswer.markSubmission(s))
-      
+
       if (markedSubmission.isPass) {
         Submission.grant(timestamp, name)(s)
       } else if (markedSubmission.isFail) {

@@ -50,129 +50,129 @@ object ResponsibleIndividualVerificationRepositoryISpec {
   val code    = "12341285217652137257396"
 
   def buildRiVerificationStartedEvent(submissionId: SubmissionId, submissionIndex: Int) =
-  ResponsibleIndividualVerificationStarted(
-    EventId.random,
-    appId,
-    appName,
-    FixedClock.instant,
-    Actors.AppCollaborator("requester@example.com".toLaxEmail),
-    "ms admin",
-    "admin@example.com".toLaxEmail,
-    "ri name",
-    "ri@example.com".toLaxEmail,
-    SubmissionId(submissionId.value),
-    submissionIndex,
-    ResponsibleIndividualVerificationId.random.value
-  )
+    ResponsibleIndividualVerificationStarted(
+      EventId.random,
+      appId,
+      appName,
+      FixedClock.instant,
+      Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      "ms admin",
+      "admin@example.com".toLaxEmail,
+      "ri name",
+      "ri@example.com".toLaxEmail,
+      SubmissionId(submissionId.value),
+      submissionIndex,
+      ResponsibleIndividualVerificationId.random.value
+    )
 
-def buildResponsibleIndividualChangedEvent(submissionId: SubmissionId, submissionIndex: Int) =
-  ResponsibleIndividualChanged(
-    EventId.random,
-    appId,
-    FixedClock.instant,
-    Actors.AppCollaborator("requester@example.com".toLaxEmail),
-    "Mr Previous Ri",
-    "previous-ri@example.com".toLaxEmail,
-    "Mr New Ri",
-    "ri@example.com".toLaxEmail,
-    SubmissionId(submissionId.value),
-    submissionIndex,
-    code,
-    "Mr Admin",
-    "admin@example.com".toLaxEmail
-  )
+  def buildResponsibleIndividualChangedEvent(submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualChanged(
+      EventId.random,
+      appId,
+      FixedClock.instant,
+      Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      "Mr Previous Ri",
+      "previous-ri@example.com".toLaxEmail,
+      "Mr New Ri",
+      "ri@example.com".toLaxEmail,
+      SubmissionId(submissionId.value),
+      submissionIndex,
+      code,
+      "Mr Admin",
+      "admin@example.com".toLaxEmail
+    )
 
-def buildResponsibleIndividualDeclinedEvent(submissionId: SubmissionId, submissionIndex: Int) = {
-  ResponsibleIndividualDeclined(
-    EventId.random,
-    appId,
-    FixedClock.instant,
-    Actors.AppCollaborator("requester@example.com".toLaxEmail),
-    "Mr New Ri",
-    "ri@example.com".toLaxEmail,
-    SubmissionId(submissionId.value),
-    submissionIndex,
-    code,
-    "Mr Admin",
-    "admin@example.com".toLaxEmail
-  )
-}
+  def buildResponsibleIndividualDeclinedEvent(submissionId: SubmissionId, submissionIndex: Int) = {
+    ResponsibleIndividualDeclined(
+      EventId.random,
+      appId,
+      FixedClock.instant,
+      Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      "Mr New Ri",
+      "ri@example.com".toLaxEmail,
+      SubmissionId(submissionId.value),
+      submissionIndex,
+      code,
+      "Mr Admin",
+      "admin@example.com".toLaxEmail
+    )
+  }
 
-def buildResponsibleIndividualDeclinedUpdateEvent(submissionId: SubmissionId, submissionIndex: Int) =
-  ResponsibleIndividualDeclinedUpdate(
-    EventId.random,
-    appId,
-    FixedClock.instant,
-    Actors.AppCollaborator("requester@example.com".toLaxEmail),
-    "Mr New Ri",
-    "ri@example.com".toLaxEmail,
-    SubmissionId(submissionId.value),
-    submissionIndex,
-    code,
-    "Mr Admin",
-    "admin@example.com".toLaxEmail
-  )
+  def buildResponsibleIndividualDeclinedUpdateEvent(submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualDeclinedUpdate(
+      EventId.random,
+      appId,
+      FixedClock.instant,
+      Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      "Mr New Ri",
+      "ri@example.com".toLaxEmail,
+      SubmissionId(submissionId.value),
+      submissionIndex,
+      code,
+      "Mr Admin",
+      "admin@example.com".toLaxEmail
+    )
 
-def buildResponsibleIndividualDidNotVerifyEvent(submissionId: SubmissionId, submissionIndex: Int) =
-  ResponsibleIndividualDidNotVerify(
-    EventId.random,
-    appId,
-    FixedClock.instant,
-    Actors.AppCollaborator("requester@example.com".toLaxEmail),
-    "Mr New Ri",
-    "ri@example.com".toLaxEmail,
-    SubmissionId(submissionId.value),
-    submissionIndex,
-    code,
-    "Mr Admin",
-    "admin@example.com".toLaxEmail
-  )
+  def buildResponsibleIndividualDidNotVerifyEvent(submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualDidNotVerify(
+      EventId.random,
+      appId,
+      FixedClock.instant,
+      Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      "Mr New Ri",
+      "ri@example.com".toLaxEmail,
+      SubmissionId(submissionId.value),
+      submissionIndex,
+      code,
+      "Mr Admin",
+      "admin@example.com".toLaxEmail
+    )
 
-def buildResponsibleIndividualSetEvent(submissionId: SubmissionId, submissionIndex: Int) =
-  ResponsibleIndividualSet(
-    EventId.random,
-    appId,
-    FixedClock.instant,
-    Actors.AppCollaborator("requester@example.com".toLaxEmail),
-    "Mr New Ri",
-    "ri@example.com".toLaxEmail,
-    SubmissionId(submissionId.value),
-    submissionIndex,
-    code,
-    "Mr Admin",
-    "admin@example.com".toLaxEmail
-  )
+  def buildResponsibleIndividualSetEvent(submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualSet(
+      EventId.random,
+      appId,
+      FixedClock.instant,
+      Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      "Mr New Ri",
+      "ri@example.com".toLaxEmail,
+      SubmissionId(submissionId.value),
+      submissionIndex,
+      code,
+      "Mr Admin",
+      "admin@example.com".toLaxEmail
+    )
 
-def buildRiVerificationToURecord(id: ResponsibleIndividualVerificationId, submissionId: SubmissionId, submissionIndex: Int) =
-  buildRiVerificationToURecordWithAppId(id, appId, submissionId, submissionIndex)
+  def buildRiVerificationToURecord(id: ResponsibleIndividualVerificationId, submissionId: SubmissionId, submissionIndex: Int) =
+    buildRiVerificationToURecordWithAppId(id, appId, submissionId, submissionIndex)
 
-def buildRiVerificationToURecordWithAppId(id: ResponsibleIndividualVerificationId, applicationId: ApplicationId, submissionId: SubmissionId, submissionIndex: Int) =
-  ResponsibleIndividualToUVerification(
-    id,
-    applicationId,
-    submissionId,
-    submissionIndex,
-    appName,
-    now,
-    INITIAL
-  )
+  def buildRiVerificationToURecordWithAppId(id: ResponsibleIndividualVerificationId, applicationId: ApplicationId, submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualToUVerification(
+      id,
+      applicationId,
+      submissionId,
+      submissionIndex,
+      appName,
+      now,
+      INITIAL
+    )
 
-def buildRiVerificationRecord(id: ResponsibleIndividualVerificationId, submissionId: SubmissionId, submissionIndex: Int) =
-  buildRiVerificationRecordWithAppId(id, appId, submissionId, submissionIndex)
+  def buildRiVerificationRecord(id: ResponsibleIndividualVerificationId, submissionId: SubmissionId, submissionIndex: Int) =
+    buildRiVerificationRecordWithAppId(id, appId, submissionId, submissionIndex)
 
-def buildRiVerificationRecordWithAppId(id: ResponsibleIndividualVerificationId, applicationId: ApplicationId, submissionId: SubmissionId, submissionIndex: Int) =
-  ResponsibleIndividualUpdateVerification(
-    id,
-    applicationId,
-    submissionId,
-    submissionIndex,
-    appName,
-    now,
-    ResponsibleIndividual.build("ri name", "ri@example.com"),
-    "ms admin",
-    "admin@example.com".toLaxEmail,
-    INITIAL
-  )
+  def buildRiVerificationRecordWithAppId(id: ResponsibleIndividualVerificationId, applicationId: ApplicationId, submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualUpdateVerification(
+      id,
+      applicationId,
+      submissionId,
+      submissionIndex,
+      appName,
+      now,
+      ResponsibleIndividual.build("ri name", "ri@example.com"),
+      "ms admin",
+      "admin@example.com".toLaxEmail,
+      INITIAL
+    )
 }
 
 class ResponsibleIndividualVerificationRepositoryISpec
@@ -357,7 +357,6 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.findAll).toSet mustBe Set(existingRecordNotMatchingApplication)
     }
   }
-
 
   "applyEvents" should {
     "handle ResponsibleIndividualVerificationStarted event correctly" in {

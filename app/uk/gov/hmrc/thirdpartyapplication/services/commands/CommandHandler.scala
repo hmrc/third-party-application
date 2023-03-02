@@ -76,20 +76,21 @@ object CommandHandler {
     value.fold(left.invalidNec[R])(_.validNec[CommandFailure])
   }
 
-  def mustBeDefined[R](value: Option[R], left: String): Validated[Failures, R] = {
+  def mustBeDefined[R](value: Option[R], left: String): Validated[Failures, R]                                     = {
     value.fold[Validated[Failures, R]](GenericFailure(left).invalidNec[R])(_.validNec[CommandFailure])
   }
+
   def isAppActorACollaboratorOnApp(actor: Actors.AppCollaborator, app: ApplicationData): Validated[Failures, Unit] =
     cond(app.collaborators.exists(c => c.emailAddress == actor.email), ActorIsNotACollaboratorOnApp)
 
   def isCollaboratorOnApp(collaborator: Collaborator, app: ApplicationData): Validated[Failures, Unit] = {
-    val matchesId: Collaborator => Boolean = (appCollaborator) => { appCollaborator.userId == collaborator.userId }
+    val matchesId: Collaborator => Boolean    = (appCollaborator) => { appCollaborator.userId == collaborator.userId }
     val matchesEmail: Collaborator => Boolean = (appCollaborator) => { appCollaborator.emailAddress equalsIgnoreCase collaborator.emailAddress }
 
     app.collaborators.find(c => matchesId(c) || matchesEmail(c)) match {
-      case Some(c) if(c == collaborator) => ().validNec[CommandFailure]
-      case Some(_) => CollaboratorHasMismatchOnApp.invalidNec[Unit]
-      case _ => CollaboratorDoesNotExistOnApp.invalidNec[Unit]
+      case Some(c) if (c == collaborator) => ().validNec[CommandFailure]
+      case Some(_)                        => CollaboratorHasMismatchOnApp.invalidNec[Unit]
+      case _                              => CollaboratorDoesNotExistOnApp.invalidNec[Unit]
     }
   }
 

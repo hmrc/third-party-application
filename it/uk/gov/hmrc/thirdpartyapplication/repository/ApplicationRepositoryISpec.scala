@@ -61,7 +61,7 @@ class ApplicationRepositoryISpec
     with BeforeAndAfterEach
     with MetricsHelper {
 
-  val adminName    = "Admin Example"
+  val adminName = "Admin Example"
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()

@@ -67,7 +67,6 @@ class NotificationServiceSpec
 
     val collaboratorEmails = applicationData.collaborators.map(_.emailAddress)
 
-
     val gatekeeperUser = "gkuser"
     val oldAppName     = "old name"
     val newAppName     = "new name"
@@ -401,7 +400,7 @@ class NotificationServiceSpec
 
       val newCollaborator = "somedev@someCompany.com".developer()
 
-      val event             = CollaboratorAddedV2(
+      val event                 = CollaboratorAddedV2(
         EventId.random,
         ApplicationId.random,
         FixedClock.instant,
@@ -417,7 +416,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendCollaboratorAddedNotification.verifyCalledWith(
         newCollaborator,
         applicationData.name,
-        recipients = Set(otherAdminCollaborator.emailAddress)  // Developer is not notified, nor is the unverified admin
+        recipients = Set(otherAdminCollaborator.emailAddress) // Developer is not notified, nor is the unverified admin
       )
 
       EmailConnectorMock.SendCollaboratorAddedConfirmation
@@ -431,7 +430,7 @@ class NotificationServiceSpec
 
       val removedCollaborator = developerCollaborator
 
-      val event             = CollaboratorRemovedV2(
+      val event = CollaboratorRemovedV2(
         EventId.random,
         ApplicationId.random,
         FixedClock.instant,

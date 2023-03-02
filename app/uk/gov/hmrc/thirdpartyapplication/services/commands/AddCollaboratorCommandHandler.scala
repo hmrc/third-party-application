@@ -43,7 +43,7 @@ class AddCollaboratorCommandHandler @Inject() (
           isAppActorACollaboratorOnApp(actor, app),
           collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)
         ) { case _ => () }
-      case _                                                   => Apply[Validated[CommandHandler.Failures, *]]
+      case _                             => Apply[Validated[CommandHandler.Failures, *]]
           .map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app))(_ => ())
     }
   }

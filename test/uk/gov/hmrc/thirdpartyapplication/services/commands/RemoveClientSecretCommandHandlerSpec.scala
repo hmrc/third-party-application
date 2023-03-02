@@ -65,7 +65,7 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
         }
       }
     }
-    
+
   }
 
   "given a principal application" should {
@@ -85,7 +85,7 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     "return an error for an admin where the client secret id is not valid" in new Setup {
       val invalidCommand = removeClientSecretByAdmin.copy(clientSecretId = "invalid")
-      
+
       checkFailsWith(s"Client Secret Id invalid not found in Application ${principalApp.id.value}") {
         underTest.process(principalApp, invalidCommand)
       }
@@ -93,7 +93,7 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     "return errors for a non-admin developer where the client secret id is not valid" in new Setup {
       val invalidCommand = removeClientSecretByDev.copy(clientSecretId = "invalid")
-      
+
       checkFailsWith("App is in PRODUCTION so User must be an ADMIN", s"Client Secret Id invalid not found in Application ${principalApp.id.value}") {
         underTest.process(principalApp, invalidCommand)
       }

@@ -59,7 +59,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
         }
       }
     }
-          
+
   }
 
   "update with UpdateRedirectUris" should {

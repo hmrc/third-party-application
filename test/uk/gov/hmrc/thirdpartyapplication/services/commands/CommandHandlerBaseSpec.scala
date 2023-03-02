@@ -18,12 +18,12 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
-trait CommandHandlerBaseSpec 
+trait CommandHandlerBaseSpec
     extends AsyncHmrcSpec
     with ApplicationTestData
     with CommandActorExamples
     with CommandApplicationExamples {
-  
+
   def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
     val testThis = await(fn.value).left.value.toNonEmptyList.toList
 
@@ -31,7 +31,7 @@ trait CommandHandlerBaseSpec
     testThis.head shouldBe CommandFailures.GenericFailure(msg)
     testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
   }
-      
+
   def checkFailsWith(fail: CommandFailure, fails: CommandFailure*)(fn: => CommandHandler.ResultT) = {
     val testThis = await(fn.value).left.value.toNonEmptyList.toList
 

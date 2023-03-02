@@ -63,10 +63,10 @@ class ApplicationCommandControllerSpec
     val applicationId = ApplicationId.random
   }
 
-  val actor = Actors.AppCollaborator("fred@smith.com".toLaxEmail)
+  val actor                   = Actors.AppCollaborator("fred@smith.com".toLaxEmail)
   val cmd: ApplicationCommand = AddCollaborator(actor, Collaborators.Administrator(UserId.random, "bob@smith.com".toLaxEmail), LocalDateTime.now)
-  val dispatch = ApplicationCommandController.DispatchRequest(cmd, Set("fred".toLaxEmail))
-  
+  val dispatch                = ApplicationCommandController.DispatchRequest(cmd, Set("fred".toLaxEmail))
+
   import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationCommandFormatters._
   implicit val tempWriter = Json.writes[ApplicationCommandController.DispatchRequest]
 

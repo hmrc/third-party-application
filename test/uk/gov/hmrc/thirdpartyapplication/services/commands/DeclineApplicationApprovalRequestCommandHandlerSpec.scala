@@ -134,7 +134,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturnNone
       checkFailsWith(s"No submission found for application ${applicationData.id.value}") {
-        underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now)) 
+        underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now))
       }
     }
 

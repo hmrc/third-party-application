@@ -39,8 +39,8 @@ object ApplicationCommandController {
   object DispatchRequest {
     import ApplicationCommandFormatters._
 
-    val readsDispatchRequest: Reads[DispatchRequest] = Json.reads[DispatchRequest]
-    val readsCommandAsDispatchRequest : Reads[DispatchRequest] = applicationUpdateRequestFormatter.map(cmd => DispatchRequest(cmd, Set.empty))
+    val readsDispatchRequest: Reads[DispatchRequest]          = Json.reads[DispatchRequest]
+    val readsCommandAsDispatchRequest: Reads[DispatchRequest] = applicationUpdateRequestFormatter.map(cmd => DispatchRequest(cmd, Set.empty))
 
     implicit val readsEitherAsDispatchRequest: Reads[DispatchRequest] = readsDispatchRequest orElse readsCommandAsDispatchRequest
   }
@@ -68,17 +68,17 @@ class ApplicationCommandController @Inject() (
 
   import cats.implicits._
   import ApplicationCommandController._
-  
+
   private def fails(applicationId: ApplicationId)(e: CommandHandler.Failures) = {
 
-    val details = e.toList.map( _ match {
-      case _ @ ApplicationNotFound => "Application not found"
-      case _ @ CannotRemoveLastAdmin => "Cannot remove the last admin from an app"
-      case _ @ ActorIsNotACollaboratorOnApp => "Actor is not a collaborator on the app"
-      case _ @ CollaboratorDoesNotExistOnApp => "Collaborator does not exist on the app"
-      case _ @ CollaboratorHasMismatchOnApp => "Collaborator has mismatched details against the app"
-      case _ @ CollaboratorAlreadyExistsOnApp => "Collaborator already exists on the app"
-      case GenericFailure(s) => s
+    val details = e.toList.map(_ match {
+      case _ @ApplicationNotFound            => "Application not found"
+      case _ @CannotRemoveLastAdmin          => "Cannot remove the last admin from an app"
+      case _ @ActorIsNotACollaboratorOnApp   => "Actor is not a collaborator on the app"
+      case _ @CollaboratorDoesNotExistOnApp  => "Collaborator does not exist on the app"
+      case _ @CollaboratorHasMismatchOnApp   => "Collaborator has mismatched details against the app"
+      case _ @CollaboratorAlreadyExistsOnApp => "Collaborator already exists on the app"
+      case GenericFailure(s)                 => s
     })
 
     logger.warn(s"Command Process failed for $applicationId because ${details.mkString("[", ",", "]")}")
@@ -92,7 +92,7 @@ class ApplicationCommandController @Inject() (
 
     withJsonBody[ApplicationCommand] { command =>
       applicationCommandDispatcher.dispatch(applicationId, command, Set.empty) // Eventually we want to migrate everything to use the /dispatch endpoint with email list
-      .fold(fails(applicationId), passes(_))
+        .fold(fails(applicationId), passes(_))
     }
   }
 

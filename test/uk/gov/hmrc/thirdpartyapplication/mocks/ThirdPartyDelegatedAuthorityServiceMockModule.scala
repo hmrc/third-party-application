@@ -32,7 +32,7 @@ trait ThirdPartyDelegatedAuthorityServiceMockModule extends MockitoSugar with Ar
     object RevokeApplicationAuthorities {
       def succeeds() = when(aMock.revokeApplicationAuthorities(*[ClientId])(*)).thenReturn(successful(Some(HasSucceeded)))
     }
-    
+
     def verify = MockitoSugar.verify(aMock)
 
     def verify(mode: org.mockito.verification.VerificationMode) = MockitoSugar.verify(aMock, mode)

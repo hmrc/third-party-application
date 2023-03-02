@@ -32,6 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualV
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
+
   trait Setup extends SubmissionsServiceMockModule with ResponsibleIndividualVerificationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()

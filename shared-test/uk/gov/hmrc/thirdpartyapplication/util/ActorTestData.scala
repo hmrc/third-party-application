@@ -33,9 +33,9 @@ trait ActorTestData extends EmailTestData {
     def actor() = Actors.AppCollaborator(collaborator.emailAddress)
   }
 
-  val loggedInAsActor = loggedInUser.actor()
+  val loggedInAsActor   = loggedInUser.actor()
   val otherAdminAsActor = anAdminEmail.actor()
-  val developerAsActor = devEmail.actor()
+  val developerAsActor  = devEmail.actor()
 
   val gatekeeperUser = "Bob from SDST"
 

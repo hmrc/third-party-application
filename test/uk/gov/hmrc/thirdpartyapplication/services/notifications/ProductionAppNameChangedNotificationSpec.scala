@@ -35,7 +35,7 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
 
     val applicationId         = ApplicationId.random
     val devEmail              = "dev@example.com".toLaxEmail
-    val anAdminEmail            = "admin@example.com".toLaxEmail
+    val anAdminEmail          = "admin@example.com".toLaxEmail
     val oldName               = "old app name"
     val newName               = "new app name"
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")

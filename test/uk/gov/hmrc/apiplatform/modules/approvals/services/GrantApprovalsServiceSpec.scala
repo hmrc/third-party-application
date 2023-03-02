@@ -75,7 +75,8 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
-    val prodAppId = ApplicationId.random
+    val prodAppId                              = ApplicationId.random
+
     val applicationProduction: ApplicationData = anApplicationData(
       prodAppId,
       productionState("bob@fastshow.com"),
@@ -164,8 +165,8 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
       SubmissionsServiceMock.Store.thenReturn()
 
-      val warning     = "Here are some warnings"
-      val result      = await(underTest.grantWithWarningsForTouUplift(applicationProduction, warningsSubmission, gatekeeperUserName, warning))
+      val warning = "Here are some warnings"
+      val result  = await(underTest.grantWithWarningsForTouUplift(applicationProduction, warningsSubmission, gatekeeperUserName, warning))
 
       result should matchPattern {
         case GrantApprovalsService.Actioned(app) =>
@@ -177,15 +178,15 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to grant the specified application if the application is in the incorrect state" in new Setup {
-      val warning     = "Here are some warnings"
-      val result = await(underTest.grantWithWarningsForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName, warning))
+      val warning = "Here are some warnings"
+      val result  = await(underTest.grantWithWarningsForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
 
     "fail to grant the specified application if the submission is not in the warnings state" in new Setup {
-      val warning     = "Here are some warnings"
-      val result = await(underTest.grantWithWarningsForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, warning))
+      val warning = "Here are some warnings"
+      val result  = await(underTest.grantWithWarningsForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
     }
@@ -196,8 +197,8 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
       SubmissionsServiceMock.Store.thenReturn()
 
-      val warning     = "Here are some warnings"
-      val result      = await(underTest.declineForTouUplift(applicationProduction, failSubmission, gatekeeperUserName, warning))
+      val warning = "Here are some warnings"
+      val result  = await(underTest.declineForTouUplift(applicationProduction, failSubmission, gatekeeperUserName, warning))
 
       result should matchPattern {
         case GrantApprovalsService.Actioned(app) =>
@@ -209,17 +210,17 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to decline the specified application if the application is in the incorrect state" in new Setup {
-      val warning     = "Here are some warnings"
-      val result = await(underTest.declineForTouUplift(anApplicationData(applicationId, testingState()), failSubmission, gatekeeperUserName, warning))
+      val warning = "Here are some warnings"
+      val result  = await(underTest.declineForTouUplift(anApplicationData(applicationId, testingState()), failSubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
 
     "fail to decline the specified application if the submission is not in the fails state" in new Setup {
-      val warning     = "Here are some warnings"
-      val result = await(underTest.declineForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, warning))
+      val warning = "Here are some warnings"
+      val result  = await(underTest.declineForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
     }
-  }  
+  }
 }
