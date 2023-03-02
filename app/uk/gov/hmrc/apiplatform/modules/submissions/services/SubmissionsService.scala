@@ -24,10 +24,10 @@ import cats.data.NonEmptyList
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationApprovalRequestDeclined
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationApprovalRequestDeclined
 
 @Singleton
 class SubmissionsService @Inject() (

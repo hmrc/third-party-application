@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 trait CommandHandlerBaseSpec 
     extends AsyncHmrcSpec

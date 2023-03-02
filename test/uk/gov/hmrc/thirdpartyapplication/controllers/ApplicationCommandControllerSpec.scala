@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import java.time.LocalDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -24,20 +25,17 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.{FakeRequest, Helpers}
+import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, Collaborators}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddCollaborator, ApplicationCommand}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationCommand
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AddCollaborator
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import java.time.LocalDateTime
 
 class ApplicationCommandControllerSpec
     extends ControllerSpec

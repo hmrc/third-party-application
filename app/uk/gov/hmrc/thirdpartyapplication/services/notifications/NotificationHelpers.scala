@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 trait NotificationHelpers {
   

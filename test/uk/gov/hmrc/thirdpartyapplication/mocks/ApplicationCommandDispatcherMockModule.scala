@@ -31,10 +31,9 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{Applic
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationCommand
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandFailures.GenericFailure
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandFailure
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandFailure, CommandHandler}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

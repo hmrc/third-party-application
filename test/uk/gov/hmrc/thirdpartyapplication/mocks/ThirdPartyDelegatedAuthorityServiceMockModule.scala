@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import scala.concurrent.Future.successful
-import uk.gov.hmrc.thirdpartyapplication.services.ThirdPartyDelegatedAuthorityService
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.services.ThirdPartyDelegatedAuthorityService
 
 trait ThirdPartyDelegatedAuthorityServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
