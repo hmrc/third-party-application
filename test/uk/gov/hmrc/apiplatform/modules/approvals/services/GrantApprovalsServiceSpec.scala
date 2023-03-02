@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{ActualAnswersAsText, QuestionsAndAnswersToMap}
@@ -75,11 +75,18 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
+    val prodAppId = ApplicationId.random
+    val applicationProduction: ApplicationData = anApplicationData(
+      prodAppId,
+      productionState("bob@fastshow.com"),
+      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+    )
+
     val underTest =
       new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, clock)
   }
 
-  "GrantApprovalsService" should {
+  "GrantApprovalsService.grant" should {
     "grant the specified application" in new Setup {
       import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 
@@ -151,4 +158,68 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
     }
   }
+
+  "GrantApprovalsService.grantWithWarningsForTouUplift" should {
+    "grant the specified ToU application with warnings" in new Setup {
+
+      SubmissionsServiceMock.Store.thenReturn()
+
+      val warning     = "Here are some warnings"
+      val result      = await(underTest.grantWithWarningsForTouUplift(applicationProduction, warningsSubmission, gatekeeperUserName, warning))
+
+      result should matchPattern {
+        case GrantApprovalsService.Actioned(app) =>
+      }
+      SubmissionsServiceMock.Store.verifyCalledWith().status.isGrantedWithWarnings shouldBe true
+      SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
+        case Submission.Status.GrantedWithWarnings(_, gatekeeperUserName, warning, None) =>
+      }
+    }
+
+    "fail to grant the specified application if the application is in the incorrect state" in new Setup {
+      val warning     = "Here are some warnings"
+      val result = await(underTest.grantWithWarningsForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName, warning))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
+    }
+
+    "fail to grant the specified application if the submission is not in the warnings state" in new Setup {
+      val warning     = "Here are some warnings"
+      val result = await(underTest.grantWithWarningsForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, warning))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
+    }
+  }
+
+  "GrantApprovalsService.declineForTouUplift" should {
+    "decline the specified ToU application" in new Setup {
+
+      SubmissionsServiceMock.Store.thenReturn()
+
+      val warning     = "Here are some warnings"
+      val result      = await(underTest.declineForTouUplift(applicationProduction, failSubmission, gatekeeperUserName, warning))
+
+      result should matchPattern {
+        case GrantApprovalsService.Actioned(app) =>
+      }
+      SubmissionsServiceMock.Store.verifyCalledWith().status.isAnswering shouldBe true
+      SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
+        case Submission.Status.Answering(_, gatekeeperUserName) =>
+      }
+    }
+
+    "fail to decline the specified application if the application is in the incorrect state" in new Setup {
+      val warning     = "Here are some warnings"
+      val result = await(underTest.declineForTouUplift(anApplicationData(applicationId, testingState()), failSubmission, gatekeeperUserName, warning))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
+    }
+
+    "fail to decline the specified application if the submission is not in the fails state" in new Setup {
+      val warning     = "Here are some warnings"
+      val result = await(underTest.declineForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, warning))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
+    }
+  }  
 }
