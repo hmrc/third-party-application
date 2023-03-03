@@ -29,11 +29,11 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
+class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  trait Setup {
+  trait Setup extends DeleteApplicationCommandHandlers {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -53,7 +53,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
       StateHistoryRepoMock.aMock
     )
 
-    def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult()(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
@@ -84,7 +84,6 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
           }
         )
       }
-
     }
   }
 
@@ -96,10 +95,10 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
     val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, FixedClock.now)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
-      ApiGatewayStoreMock.ApplyEvents.succeeds()
-      NotificationRepositoryMock.ApplyEvents.succeeds()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.RevokeApplicationAuthorities.succeeds()
+      NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
       StateHistoryRepoMock.Insert.succeeds()
 
       val result = await(underTest.process(app, cmd).value).right.value
@@ -110,10 +109,9 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Delet
     "return an error when auth key doesnt match" in new Setup {
       val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", "notAuthKey", reasons, FixedClock.now)
 
-      val result = await(underTest.process(app, cmd).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe "Cannot delete this applicaton"
+      checkFailsWith("Cannot delete this applicaton") {
+        underTest.process(app, cmd)
+      }
     }
   }
 

@@ -28,6 +28,6 @@ trait CommandActorExamples {
   val developerUserId = idOf(devEmail)
   val developerActor  = Actors.AppCollaborator(devEmail)
 
-  val adminUserId = idOf(adminEmail)
-  val adminActor  = Actors.AppCollaborator(adminEmail)
+  val adminUserId = idOf(anAdminEmail)
+  val adminActor  = otherAdminAsActor
 }

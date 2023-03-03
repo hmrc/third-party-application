@@ -21,12 +21,12 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, HasApplicationId}
 
 trait CommandApplicationExamples extends HasApplicationId {
-  self: ApplicationTestData with CommandCollaboratorExamples =>
+  self: ApplicationTestData =>
 
   val principalApp   = anApplicationData(applicationId).copy(
     collaborators = Set(
       developerCollaborator,
-      adminCollaborator
+      otherAdminCollaborator
     )
   )
   val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())

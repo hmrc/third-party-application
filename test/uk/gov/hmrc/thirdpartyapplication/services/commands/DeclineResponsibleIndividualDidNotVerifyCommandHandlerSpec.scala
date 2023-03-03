@@ -35,15 +35,9 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
-    extends AsyncHmrcSpec
-    with ApplicationTestData
-    with SubmissionsTestData
-    with CommandActorExamples
-    with CommandCollaboratorExamples
-    with CommandApplicationExamples {
+class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
 
   trait Setup
       extends ResponsibleIndividualVerificationRepositoryMockModule
@@ -177,14 +171,6 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec
             riDeclined.code shouldBe code
         }
       }
-    }
-
-    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1 + msgs.length
-      testThis.head shouldBe msg
-      testThis.tail shouldBe msgs
     }
   }
 

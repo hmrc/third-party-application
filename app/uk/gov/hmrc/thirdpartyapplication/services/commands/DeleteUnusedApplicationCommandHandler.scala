@@ -55,8 +55,8 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
   def matchesAuthorisationKey(cmd: DeleteUnusedApplication) =
     cond(base64Decode(cmd.authorisationKey).map(_ == authControlConfig.authorisationKey).getOrElse(false), "Cannot delete this applicaton")
 
-  private def validate(app: ApplicationData, cmd: DeleteUnusedApplication): Validated[CommandFailures, ApplicationData] = {
-    Apply[Validated[CommandFailures, *]]
+  private def validate(app: ApplicationData, cmd: DeleteUnusedApplication): Validated[CommandHandler.Failures, ApplicationData] = {
+    Apply[Validated[CommandHandler.Failures, *]]
       .map(matchesAuthorisationKey(cmd)) { case _ => app }
   }
 
@@ -82,7 +82,7 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
       savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
       stateHistory = StateHistory(app.id, State.DELETED, Actors.ScheduledJob(cmd.jobId), Some(app.state.name), changedAt = cmd.timestamp)
       events       = asEvents(savedApp, cmd, stateHistory)
-      _           <- deleteApplication(app, stateHistory, cmd.timestamp, cmd.jobId, cmd.jobId, events)
+      _           <- deleteApplication(app, stateHistory)
     } yield (savedApp, events)
   }
 

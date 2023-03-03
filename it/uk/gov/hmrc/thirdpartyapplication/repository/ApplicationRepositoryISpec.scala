@@ -61,6 +61,8 @@ class ApplicationRepositoryISpec
     with BeforeAndAfterEach
     with MetricsHelper {
 
+  val adminName = "Admin Example"
+
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
       .configure(
@@ -2991,10 +2993,10 @@ class ApplicationRepositoryISpec
 
     await(applicationRepository.save(app))
     app.state.name mustBe State.PRODUCTION
-    val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, ts, adminEmail.text, adminName))
+    val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, ts, anAdminEmail.text, adminName))
     appWithUpdatedState.state.name mustBe State.PENDING_GATEKEEPER_APPROVAL
     appWithUpdatedState.state.updatedOn mustBe ts
-    appWithUpdatedState.state.requestedByEmailAddress mustBe Some(adminEmail.text)
+    appWithUpdatedState.state.requestedByEmailAddress mustBe Some(anAdminEmail.text)
     appWithUpdatedState.state.requestedByName mustBe Some(adminName)
   }
 
@@ -3017,16 +3019,16 @@ class ApplicationRepositoryISpec
     await(applicationRepository.save(app))
 
     val appWithUpdatedRI =
-      await(applicationRepository.updateApplicationChangeResponsibleIndividualToSelf(applicationId, adminName, adminEmail, FixedClock.now, submissionId, submissionIndex))
+      await(applicationRepository.updateApplicationChangeResponsibleIndividualToSelf(applicationId, adminName, anAdminEmail, FixedClock.now, submissionId, submissionIndex))
 
     appWithUpdatedRI.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         importantSubmissionData.responsibleIndividual.fullName.value mustBe adminName
-        importantSubmissionData.responsibleIndividual.emailAddress mustBe adminEmail
+        importantSubmissionData.responsibleIndividual.emailAddress mustBe anAdminEmail
         importantSubmissionData.termsOfUseAcceptances.size mustBe 2
         val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
         latestAcceptance.responsibleIndividual.fullName.value mustBe adminName
-        latestAcceptance.responsibleIndividual.emailAddress mustBe adminEmail
+        latestAcceptance.responsibleIndividual.emailAddress mustBe anAdminEmail
       }
       case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
     }

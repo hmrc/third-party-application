@@ -126,7 +126,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       .map(_ => HasSucceeded)
   }
 
-  private def deleteAllByApplicationId(id: ApplicationId): Future[HasSucceeded] = {
+  def deleteAllByApplicationId(id: ApplicationId): Future[HasSucceeded] = {
     collection.deleteMany(
       equal("applicationId", Codecs.toBson(id))
     )
@@ -187,9 +187,6 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       case evt: ResponsibleIndividualDeclined            => deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
       case evt: ResponsibleIndividualDeclinedUpdate      => deleteResponsibleIndividualVerification(evt.code)
       case evt: ResponsibleIndividualDidNotVerify        => deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
-      case _: ApplicationDeleted                         => deleteAllByApplicationId(event.applicationId)
-      case _: ApplicationDeletedByGatekeeper             => deleteAllByApplicationId(event.applicationId)
-      case _: ProductionCredentialsApplicationDeleted    => deleteAllByApplicationId(event.applicationId)
       case _                                             => Future.successful(HasSucceeded)
     }
   }

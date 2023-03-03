@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.mocks
 
-import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
 import org.mockito.captor.{ArgCaptor, Captor}
@@ -102,13 +101,6 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
         val capture: Captor[Submission] = ArgCaptor[Submission]
         SubmissionsServiceMock.verify.store(capture)
         capture.value
-      }
-    }
-
-    object ApplyEvents {
-
-      def succeeds() = {
-        when(aMock.applyEvents(*)).thenReturn(Future.successful(None))
       }
     }
 

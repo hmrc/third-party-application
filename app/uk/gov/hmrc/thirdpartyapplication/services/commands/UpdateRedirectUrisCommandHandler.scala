@@ -34,8 +34,8 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData): Validated[CommandFailures, Unit] = {
-    Apply[Validated[CommandFailures, *]].map(isStandardAccess(app))(_ => ())
+  private def validate(app: ApplicationData): Validated[CommandHandler.Failures, Unit] = {
+    Apply[Validated[CommandHandler.Failures, *]].map(isStandardAccess(app))(_ => ())
   }
 
   private def asEvents(app: ApplicationData, cmd: UpdateRedirectUris): NonEmptyList[ApplicationEvent] = {

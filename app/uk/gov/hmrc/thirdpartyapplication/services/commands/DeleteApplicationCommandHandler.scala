@@ -16,14 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
-
-import cats.data.NonEmptyList
-
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -40,19 +35,15 @@ trait DeleteApplicationCommandHandler extends CommandHandler {
 
   def deleteApplication(
       app: ApplicationData,
-      stateHistory: StateHistory,
-      timestamp: LocalDateTime,
-      requestingAdminEmail: String,
-      requestingAdminName: String,
-      events: NonEmptyList[ApplicationEvent]
+      stateHistory: StateHistory
     )(implicit hc: HeaderCarrier
     ) = {
     for {
       _ <- E.liftF(stateHistoryRepository.insert(stateHistory))
-      _ <- E.liftF(thirdPartyDelegatedAuthorityService.applyEvents(events))
-      _ <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
-      _ <- E.liftF(apiGatewayStore.applyEvents(events))
-      _ <- E.liftF(notificationRepository.applyEvents(events))
+      _ <- E.liftF(thirdPartyDelegatedAuthorityService.revokeApplicationAuthorities(app.tokens.production.clientId))
+      _ <- E.liftF(responsibleIndividualVerificationRepository.deleteAllByApplicationId(app.id))
+      _ <- E.liftF(apiGatewayStore.deleteApplication(app.wso2ApplicationName))
+      _ <- E.liftF(notificationRepository.deleteAllByApplicationId(app.id))
     } yield HasSucceeded
   }
 }

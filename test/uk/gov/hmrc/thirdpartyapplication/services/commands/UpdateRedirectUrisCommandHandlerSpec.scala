@@ -24,11 +24,9 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
-    with ApplicationTestData
-    with CommandActorExamples {
+class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new UpdateRedirectUrisCommandHandler(ApplicationRepoMock.aMock)
@@ -46,7 +44,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
     val timestamp = FixedClock.instant
     val cmd       = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, FixedClock.now)
 
-    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head
@@ -61,6 +59,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
         }
       }
     }
+
   }
 
   "update with UpdateRedirectUris" should {
@@ -75,11 +74,9 @@ class UpdateRedirectUrisCommandHandlerSpec extends AsyncHmrcSpec
     }
 
     "fail when application is not standardAccess" in new Setup {
-
-      val result = await(underTest.process(nonStandardAccessApp, cmd).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe "App must have a STANDARD access type"
+      checkFailsWith("App must have a STANDARD access type") {
+        underTest.process(nonStandardAccessApp, cmd)
+      }
       ApplicationRepoMock.verifyZeroInteractions()
     }
   }

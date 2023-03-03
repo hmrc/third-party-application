@@ -19,13 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.NonEmptyList
-
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
 import uk.gov.hmrc.thirdpartyapplication.models._
 
@@ -45,22 +42,5 @@ class ThirdPartyDelegatedAuthorityService @Inject() (
     )
       .toOption
       .value
-  }
-
-  // TODO - remove this method and extract to command handlers
-  def applyEvents(events: NonEmptyList[ApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
-    events match {
-      case NonEmptyList(e, Nil)  => applyEvent(e)
-      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
-    }
-  }
-
-  private def applyEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
-    event match {
-      case e: ApplicationDeleted                      => revokeApplicationAuthorities(e.clientId)
-      case e: ApplicationDeletedByGatekeeper          => revokeApplicationAuthorities(e.clientId)
-      case e: ProductionCredentialsApplicationDeleted => revokeApplicationAuthorities(e.clientId)
-      case _                                          => Future.successful(None)
-    }
   }
 }

@@ -34,9 +34,9 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
+class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
 
   trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationRepositoryMockModule with StateHistoryRepositoryMockModule {
 
@@ -152,15 +152,6 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
         }
       }
     }
-
-    def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1 + msgs.length
-      testThis.head shouldBe msg
-      testThis.tail shouldBe msgs
-    }
-
   }
 
   "process" should {
@@ -191,22 +182,25 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturnNothing
-      val result = await(underTest.process(app, ChangeResponsibleIndividualToOther(code, FixedClock.now)).value).left.value
-      result.head shouldBe s"No responsibleIndividualVerification found for code $code"
+      checkFailsWith(s"No responsibleIndividualVerification found for code $code") {
+        underTest.process(app, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+      }
     }
 
     "return an error if the application is non-standard" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
-      val result         = await(underTest.process(nonStandardApp, ChangeResponsibleIndividualToOther(code, FixedClock.now)).value).left.value
-      result.toNonEmptyList.toList should contain only ("Must be a standard new journey application", "The responsible individual has not been set for this application")
+      checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
+        underTest.process(nonStandardApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+      }
     }
 
     "return an error if the application is old journey" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
-      val result        = await(underTest.process(oldJourneyApp, ChangeResponsibleIndividualToOther(code, FixedClock.now)).value).left.value
-      result.toNonEmptyList.toList should contain only ("Must be a standard new journey application", "The responsible individual has not been set for this application")
+      checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
+        underTest.process(oldJourneyApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+      }
     }
 
     "return an error if the application is is different between the request and the responsibleIndividualVerification record" in new Setup {
@@ -220,15 +214,17 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
         ResponsibleIndividualVerificationState.INITIAL
       )
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification2)
-      val result          = await(underTest.process(app, ChangeResponsibleIndividualToOther(code, FixedClock.now)).value).left.value
-      result.head shouldBe "The given application id is different"
+      checkFailsWith("The given application id is different") {
+        underTest.process(app, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+      }
     }
 
     "return an error if the application state is not PendingResponsibleIndividualVerification" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail.text, requesterName))
-      val result               = await(underTest.process(pendingGKApprovalApp, ChangeResponsibleIndividualToOther(code, FixedClock.now)).value).left.value
-      result.head shouldBe "App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state"
+      checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state") {
+        underTest.process(pendingGKApprovalApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+      }
     }
 
   }

@@ -33,7 +33,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationState
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
-import uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController
 class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData with FixedClock {
   implicit val mat = NoMaterializer
   val name         = "bob example"

@@ -23,19 +23,15 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ClientSecretRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class RemoveClientSecretCommandHandlerSpec
-    extends AsyncHmrcSpec
-    with ApplicationTestData
-    with ApplicationRepositoryMockModule
-    with CommandActorExamples {
+class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  trait Setup {
+  trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new RemoveClientSecretCommandHandler(ApplicationRepoMock.aMock)
 
     val developerCollaborator = devEmail.developer(developerUserId)
-    val adminCollaborator     = adminEmail.admin(adminUserId)
+    val adminCollaborator     = anAdminEmail.admin(adminUserId)
 
     val applicationId = ApplicationId.random
 
@@ -52,9 +48,9 @@ class RemoveClientSecretCommandHandlerSpec
     val clientSecret = principalApp.tokens.production.clientSecrets.head
 
     val removeClientSecretByDev   = RemoveClientSecret(Actors.AppCollaborator(devEmail), clientSecret.id, FixedClock.now)
-    val removeClientSecretByAdmin = RemoveClientSecret(Actors.AppCollaborator(adminEmail), clientSecret.id, FixedClock.now)
+    val removeClientSecretByAdmin = RemoveClientSecret(otherAdminAsActor, clientSecret.id, FixedClock.now)
 
-    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         events should have size 1
         val event = events.head
@@ -69,6 +65,7 @@ class RemoveClientSecretCommandHandlerSpec
         }
       }
     }
+
   }
 
   "given a principal application" should {
@@ -81,31 +78,25 @@ class RemoveClientSecretCommandHandlerSpec
     }
 
     "return an error for a non-admin developer" in new Setup {
-      val result = await(underTest.process(principalApp, removeClientSecretByDev).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe "App is in PRODUCTION so User must be an ADMIN"
+      checkFailsWith("App is in PRODUCTION so User must be an ADMIN") {
+        underTest.process(principalApp, removeClientSecretByDev)
+      }
     }
 
     "return an error for an admin where the client secret id is not valid" in new Setup {
       val invalidCommand = removeClientSecretByAdmin.copy(clientSecretId = "invalid")
-      val result         = await(underTest.process(principalApp, invalidCommand).value).left.value.toNonEmptyList.toList
 
-      result should have length 1
-      result should contain only (
-        s"Client Secret Id invalid not found in Application ${principalApp.id.value}"
-      )
+      checkFailsWith(s"Client Secret Id invalid not found in Application ${principalApp.id.value}") {
+        underTest.process(principalApp, invalidCommand)
+      }
     }
 
     "return errors for a non-admin developer where the client secret id is not valid" in new Setup {
       val invalidCommand = removeClientSecretByDev.copy(clientSecretId = "invalid")
-      val result         = await(underTest.process(principalApp, invalidCommand).value).left.value.toNonEmptyList.toList
 
-      result should have length 2
-      result should contain allOf (
-        "App is in PRODUCTION so User must be an ADMIN",
-        s"Client Secret Id invalid not found in Application ${principalApp.id.value}",
-      )
+      checkFailsWith("App is in PRODUCTION so User must be an ADMIN", s"Client Secret Id invalid not found in Application ${principalApp.id.value}") {
+        underTest.process(principalApp, invalidCommand)
+      }
     }
   }
 

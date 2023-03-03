@@ -257,7 +257,7 @@ class ApplicationControllerSpec
     val userId                                             = UserId.random
     val addCollaboratorRequestWithUserId                   = AddCollaboratorRequest(email.developer(userId), isRegistered, adminsToEmail)
     val payload                                            =
-      s"""{"adminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"DEVELOPER", "userId": "${userId.value}"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
+      s"""{"anAdminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"DEVELOPER", "userId": "${userId.value}"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
     val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.parse(payload))
 
     "succeed with a 200 (ok) for a STANDARD application" in new Setup {
@@ -1472,23 +1472,4 @@ class ApplicationControllerSpec
       verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
     }
   }
-
-  // "temp" should {
-  //   "dump some json" in {
-  //     import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
-
-  //     val e: ApplicationEvent =
-  //       ApiSubscribedV2(EventId.random, ApplicationId.random, FixedClock.instant, Actors.AppCollaborator("bob".toLaxEmail), "bob".asContext, "1.0".asVersion)
-
-  //     Json.toJson[Actor](e.actor).toString
-  //     val txt = Json.toJson(e).toString
-  //     println(txt)
-  //     val e2 = Json.parse(txt).as[ApplicationEvent]
-
-  //     println(e2)
-
-  //     e shouldBe e2
-  //   }
-
-  // }
 }

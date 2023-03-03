@@ -22,14 +22,11 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class AddCollaboratorCommandHandlerSpec
-    extends AsyncHmrcSpec
-    with ApplicationTestData
-    with CommandActorExamples
-    with CommandCollaboratorExamples
-    with CommandApplicationExamples {
+class AddCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
+
+  import CommandFailures._
 
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new AddCollaboratorCommandHandler(ApplicationRepoMock.aMock)
@@ -39,10 +36,10 @@ class AddCollaboratorCommandHandlerSpec
     val newCollaboratorEmail = "newdev@somecompany.com"
     val newCollaborator      = newCollaboratorEmail.developer()
 
-    val adminsToEmail = Set(adminEmail, devEmail)
+    val adminsToEmail = Set(anAdminEmail, devEmail)
 
-    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, adminsToEmail, FixedClock.now)
-    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, adminsToEmail, FixedClock.now)
+    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, FixedClock.now)
+    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, FixedClock.now)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value
@@ -60,13 +57,6 @@ class AddCollaboratorCommandHandlerSpec
         }
       }
     }
-
-    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1
-      testThis.head shouldBe msg
-    }
   }
 
   "given a principal application" should {
@@ -83,9 +73,9 @@ class AddCollaboratorCommandHandlerSpec
     }
 
     "return an error when collaborate already exists on the app" in new Setup {
-      val existingCollaboratorCmd = addCollaboratorAsAdmin.copy(collaborator = adminCollaborator)
+      val existingCollaboratorCmd = addCollaboratorAsAdmin.copy(collaborator = otherAdminCollaborator)
 
-      checkFailsWith(s"Collaborator already linked to Application ${applicationId.value}") {
+      checkFailsWith(CollaboratorAlreadyExistsOnApp) {
         underTest.process(principalApp, existingCollaboratorCmd)
       }
     }

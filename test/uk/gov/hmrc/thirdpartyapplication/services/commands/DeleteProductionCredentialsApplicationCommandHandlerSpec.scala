@@ -26,12 +26,11 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
+class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-//
-  trait Setup {
+  trait Setup extends DeleteApplicationCommandHandlers {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -54,7 +53,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
       StateHistoryRepoMock.aMock
     )
 
-    def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult()(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
@@ -85,9 +84,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
           }
         )
       }
-
     }
-
   }
 
   val reasons           = "reasons description text"
@@ -98,10 +95,10 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()
-      ApiGatewayStoreMock.ApplyEvents.succeeds()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
-      NotificationRepositoryMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.RevokeApplicationAuthorities.succeeds()
+      NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
 
       val result = await(underTest.process(app, cmd).value).right.value
 
@@ -111,10 +108,9 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
     "return an error when app is NOT in testing state" in new Setup {
       val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, FixedClock.now)
 
-      val result = await(underTest.process(app.copy(state = app.state.copy(name = State.PRE_PRODUCTION)), cmd).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe "App is not in TESTING state"
+      checkFailsWith("App is not in TESTING state") {
+        underTest.process(app.copy(state = app.state.copy(name = State.PRE_PRODUCTION)), cmd)
+      }
     }
   }
 

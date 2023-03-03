@@ -47,14 +47,15 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
   ) extends CommandHandler {
 
   import CommandHandler._
+  import CommandFailures._
 
   private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
   def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualUpdateVerification): ResultT = {
 
-    def validate(): Validated[CommandFailures, Unit] = {
-      Apply[Validated[CommandFailures, *]].map4(
+    def validate(): Validated[CommandHandler.Failures, Unit] = {
+      Apply[Validated[CommandHandler.Failures, *]].map4(
         isStandardNewJourneyApp(app),
         isApproved(app),
         isApplicationIdTheSame(app, riVerification),
@@ -90,8 +91,8 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
   }
 
   def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualToUVerification): ResultT = {
-    def validate(): Validated[CommandFailures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[CommandFailures, *]].map6(
+    def validate(): Validated[CommandHandler.Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
+      Apply[Validated[CommandHandler.Failures, *]].map6(
         isStandardNewJourneyApp(app),
         isPendingResponsibleIndividualVerification(app),
         isApplicationIdTheSame(app, riVerification),
@@ -155,7 +156,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap(_ match {
         case Some(riVerificationToU: ResponsibleIndividualToUVerification)       => process(app, cmd, riVerificationToU).value
         case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification) => process(app, cmd, riVerificationUpdate).value
-        case _                                                                   => E.leftT(NonEmptyChain.one(s"No responsibleIndividualVerification found for code ${cmd.code}")).value
+        case _                                                                   => E.leftT(NonEmptyChain.one(GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
       })
     )
   }

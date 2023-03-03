@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import cats.data.NonEmptyList
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -32,11 +31,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationDeleted, EventId, ProductionCredentialsApplicationDeleted}
 
 class NotificationRepositoryISpec
     extends ServerBaseISpec
@@ -102,62 +97,6 @@ class NotificationRepositoryISpec
       val result         = await(notificationRepository.deleteAllByApplicationId(applicationId1))
 
       result mustBe HasSucceeded
-    }
-  }
-
-  "applyEvents" should {
-    val now = FixedClock.instant
-
-    def buildApplicationDeletedEvent(applicationId: ApplicationId) =
-      ApplicationDeleted(
-        EventId.random,
-        applicationId,
-        now,
-        Actors.AppCollaborator("requester@example.com".toLaxEmail),
-        ClientId("clientId"),
-        "wso2ApplicationName",
-        "reasons"
-      )
-
-    def buildProductionCredentialsApplicationDeletedEvent(applicationId: ApplicationId) =
-      ProductionCredentialsApplicationDeleted(
-        EventId.random,
-        applicationId,
-        now,
-        Actors.AppCollaborator("requester@example.com".toLaxEmail),
-        ClientId("clientId"),
-        "wso2ApplicationName",
-        "reasons"
-      )
-
-    "handle an ApplicationDeleted event by deleting any records for the application id" in {
-      val applicationId1 = ApplicationId.random
-      val applicationId2 = ApplicationId.random
-      val now            = FixedClock.now
-      await(notificationRepository.createEntity(Notification(applicationId1, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
-      await(notificationRepository.createEntity(Notification(applicationId2, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
-
-      val event = buildApplicationDeletedEvent(applicationId1)
-
-      val result = await(notificationRepository.applyEvents(NonEmptyList.one(event)))
-
-      result mustBe HasSucceeded
-      await(notificationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 1
-    }
-
-    "handle an ProductionCredentialsApplicationDeleted event by deleting any records for the application id" in {
-      val applicationId1 = ApplicationId.random
-      val applicationId2 = ApplicationId.random
-      val now            = FixedClock.now
-      await(notificationRepository.createEntity(Notification(applicationId1, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
-      await(notificationRepository.createEntity(Notification(applicationId2, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
-
-      val event = buildProductionCredentialsApplicationDeletedEvent(applicationId1)
-
-      val result = await(notificationRepository.applyEvents(NonEmptyList.one(event)))
-
-      result mustBe HasSucceeded
-      await(notificationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 1
     }
   }
 }

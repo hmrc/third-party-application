@@ -17,24 +17,20 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
-import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, HmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorTestData, FixedClock, HmrcSpec}
 
-class StateHistorySpec extends HmrcSpec {
+class StateHistorySpec extends HmrcSpec with ActorTestData {
 
   val applicationId = ApplicationId.random
   val now           = FixedClock.now
-  val actor         = Actors.AppCollaborator("admin@example.com".toLaxEmail)
 
   "State history" should {
     "sort by date" in {
-      val stateHistory1 = StateHistory(applicationId, State.TESTING, actor, changedAt = now.minusHours(5))
-      val stateHistory2 = StateHistory(applicationId, State.TESTING, actor, changedAt = now.minusHours(3))
+      val stateHistory1 = StateHistory(applicationId, State.TESTING, otherAdminAsActor, changedAt = now.minusHours(5))
+      val stateHistory2 = StateHistory(applicationId, State.TESTING, otherAdminAsActor, changedAt = now.minusHours(3))
 
       Seq(stateHistory2, stateHistory1).sortBy(_.changedAt) should contain inOrder (stateHistory1, stateHistory2)
     }
   }
-
 }

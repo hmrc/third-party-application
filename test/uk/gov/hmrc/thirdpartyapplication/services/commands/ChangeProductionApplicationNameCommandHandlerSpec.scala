@@ -26,14 +26,9 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class ChangeProductionApplicationNameCommandHandlerSpec
-    extends AsyncHmrcSpec
-    with ApplicationTestData
-    with CommandActorExamples
-    with CommandCollaboratorExamples
-    with CommandApplicationExamples {
+class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   val app = principalApp.copy(access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
@@ -46,7 +41,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec
     val gatekeeperUser = "gkuser"
     val requester      = "requester"
 
-    val userId = idOf(adminEmail)
+    val userId = idOf(anAdminEmail)
 
     val timestamp = FixedClock.instant
     val update    = ChangeProductionApplicationName(userId, FixedClock.now, gatekeeperUser, newName)
@@ -67,18 +62,10 @@ class ChangeProductionApplicationNameCommandHandlerSpec
             eventDateTime shouldBe timestamp
             oldName shouldBe app.name
             eNewName shouldBe newName
-            requestingAdminEmail shouldBe adminEmail
+            requestingAdminEmail shouldBe anAdminEmail
         }
       }
     }
-
-    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1
-      testThis.head shouldBe msg
-    }
-
   }
 
   "process" should {

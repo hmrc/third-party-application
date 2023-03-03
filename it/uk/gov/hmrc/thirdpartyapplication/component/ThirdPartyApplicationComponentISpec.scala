@@ -305,7 +305,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val response = postData(
         s"/application/${application.id.value}/collaborator",
         s"""{
-           | "adminEmail":"admin@example.com",
+           | "anAdminEmail":"admin@example.com",
            | "collaborator": {
            |   "emailAddress": "test@example.com",
            |   "role":"ADMINISTRATOR",

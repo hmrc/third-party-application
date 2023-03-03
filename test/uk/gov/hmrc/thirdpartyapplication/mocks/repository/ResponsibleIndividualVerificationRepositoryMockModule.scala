@@ -22,6 +22,7 @@ import scala.concurrent.Future.successful
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
@@ -81,6 +82,10 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
 
     object DeleteResponsibleIndividualVerification {
       def thenReturnSuccess() = when(aMock.deleteResponsibleIndividualVerification(*)).thenReturn(successful(HasSucceeded))
+    }
+
+    object DeleteAllByApplicationId {
+      def succeeds() = when(aMock.deleteAllByApplicationId(*[ApplicationId])).thenReturn(successful(HasSucceeded))
     }
 
     object ApplyEvents {

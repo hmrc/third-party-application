@@ -51,7 +51,6 @@ class GatekeeperServiceSpec
 
   private def aSecret(secret: String) = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
-  private val loggedInUser    = "loggedin@example.com"
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   private def aHistory(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {

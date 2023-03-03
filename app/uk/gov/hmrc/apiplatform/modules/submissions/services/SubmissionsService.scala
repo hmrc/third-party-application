@@ -24,7 +24,7 @@ import cats.data.NonEmptyList
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationApprovalRequestDeclined, ApplicationEvent}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationApprovalRequestDeclined
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
@@ -116,20 +116,6 @@ class SubmissionsService @Inject() (
 
   def store(submission: Submission): Future[Submission] =
     submissionsDAO.update(submission)
-
-  def applyEvents(events: NonEmptyList[ApplicationEvent]): Future[Option[Submission]] = {
-    events match {
-      case NonEmptyList(e, Nil)  => applyEvent(e)
-      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
-    }
-  }
-
-  private def applyEvent(event: ApplicationEvent): Future[Option[Submission]] = {
-    event match {
-      case evt: ApplicationApprovalRequestDeclined => declineApplicationApprovalRequest(evt)
-      case _                                       => Future.successful(None)
-    }
-  }
 
   def declineApplicationApprovalRequest(evt: ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
     (

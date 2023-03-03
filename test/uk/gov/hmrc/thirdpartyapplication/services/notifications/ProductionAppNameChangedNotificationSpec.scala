@@ -35,7 +35,7 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
 
     val applicationId         = ApplicationId.random
     val devEmail              = "dev@example.com".toLaxEmail
-    val adminEmail            = "admin@example.com".toLaxEmail
+    val anAdminEmail          = "admin@example.com".toLaxEmail
     val oldName               = "old app name"
     val newName               = "new app name"
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
@@ -52,7 +52,7 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
     val app                  = anApplicationData(applicationId).copy(
       collaborators = Set(
         devEmail.developer(),
-        adminEmail.admin()
+        anAdminEmail.admin()
       ),
       name = oldName,
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
@@ -69,7 +69,7 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
       EmailConnectorMock.SendChangeOfApplicationName.thenReturnSuccess()
       val result = await(ProductionAppNameChangedNotification.sendAdviceEmail(EmailConnectorMock.aMock, app, nameChangeEmailEvent))
       result shouldBe HasSucceeded
-      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(adminEmail.text, oldName, newName, Set(adminEmail, devEmail, responsibleIndividual.emailAddress))
+      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(anAdminEmail.text, oldName, newName, Set(anAdminEmail, devEmail, responsibleIndividual.emailAddress))
     }
   }
 }

@@ -24,6 +24,7 @@ import cats.data.NonEmptyChain
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -63,23 +64,26 @@ class ApplicationCommandDispatcher @Inject() (
   import cats.implicits._
   import CommandHandler._
 
-  val E = EitherTHelper.make[CommandFailures]
+  val E = EitherTHelper.make[CommandHandler.Failures]
 
-  def dispatch(applicationId: ApplicationId, command: ApplicationCommand)(implicit hc: HeaderCarrier): ResultT = {
+  def dispatch(applicationId: ApplicationId, command: ApplicationCommand, verifiedCollaborators: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): ResultT = {
     for {
-      app               <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
+      app               <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(CommandFailures.ApplicationNotFound))
       updateResults     <- processUpdate(app, command)
       (savedApp, events) = updateResults
 
       _ <- E.liftF(apiPlatformEventService.applyEvents(events))
       _ <- E.liftF(auditService.applyEvents(savedApp, events))
-      _ <- E.liftF(notificationService.sendNotifications(savedApp, events))
+      _ <- E.liftF(notificationService.sendNotifications(savedApp, events, verifiedCollaborators))
     } yield (savedApp, events)
   }
 
   // scalastyle:off cyclomatic.complexity
   private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): ResultT = {
     command match {
+      case cmd: AddCollaborator    => addCollaboratorCommandHandler.process(app, cmd)
+      case cmd: RemoveCollaborator => removeCollaboratorCommandHandler.process(app, cmd)
+
       case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
       case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
@@ -95,12 +99,9 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: DeleteApplicationByGatekeeper                         => deleteApplicationByGatekeeperCommandHandler.process(app, cmd)
       case cmd: DeleteUnusedApplication                               => deleteUnusedApplicationCommandHandler.process(app, cmd)
       case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCommandHandler.process(app, cmd)
-      case cmd: AddCollaborator                                       => addCollaboratorCommandHandler.process(app, cmd)
-      case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
       case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
       case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
       case cmd: UpdateRedirectUris                                    => updateRedirectUrisCommandHandler.process(app, cmd)
-      case _                                                          => E.fromEither(Left(NonEmptyChain(s"Unknown ApplicationCommand type $command")))
     }
   }
   // scalastyle:on cyclomatic.complexity

@@ -40,14 +40,17 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
   ) extends CommandHandler {
 
   import CommandHandler._
+  import CommandFailures._
 
-  private def validate(app: ApplicationData): Future[ValidatedNec[String, (LaxEmailAddress, String, Submission)]] = {
+  private def validate(app: ApplicationData): Future[ValidatedNec[CommandFailure, (LaxEmailAddress, String, Submission)]] = {
 
-    def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandFailures, Submission] =
-      maybeSubmission.fold(s"No submission found for application ${app.id.value}".invalidNec[Submission])(_.validNec[String])
+    def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandHandler.Failures, Submission] = {
+      val fails: CommandFailure = GenericFailure(s"No submission found for application ${app.id.value}")
+      maybeSubmission.fold(fails.invalidNec[Submission])(_.validNec[CommandFailure])
+    }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[CommandFailures, *]].map5(
+      Apply[Validated[CommandHandler.Failures, *]].map5(
         isStandardNewJourneyApp(app),
         isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app),
         ensureRequesterEmailDefined(app),
@@ -100,8 +103,8 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
       savedApp                                   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requesterEmail.text, requesterName))
       _                                          <- E.liftF(stateHistoryRepository.insert(stateHistory))
       (approvalDeclined, stateChange)             = asEvents(savedApp, cmd, submission, requesterEmail, requesterName, stateHistory)
-      events                                      = NonEmptyList.of(approvalDeclined, stateChange)
       _                                          <- E.liftF(submissionService.declineApplicationApprovalRequest(approvalDeclined))
+      events                                      = NonEmptyList.of(approvalDeclined, stateChange)
     } yield (savedApp, events)
   }
 }

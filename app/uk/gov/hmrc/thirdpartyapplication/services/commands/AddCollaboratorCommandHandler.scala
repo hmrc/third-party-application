@@ -23,7 +23,7 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -37,13 +37,13 @@ class AddCollaboratorCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: AddCollaborator): Validated[CommandFailures, Unit] = {
+  private def validate(app: ApplicationData, cmd: AddCollaborator): Validated[CommandHandler.Failures, Unit] = {
     cmd.actor match {
-      case Actors.AppCollaborator(actorEmail: LaxEmailAddress) => Apply[Validated[CommandFailures, *]].map2(
-          isCollaboratorOnApp(actorEmail, app),
+      case actor: Actors.AppCollaborator => Apply[Validated[CommandHandler.Failures, *]].map2(
+          isAppActorACollaboratorOnApp(actor, app),
           collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)
         ) { case _ => () }
-      case _                                                   => Apply[Validated[CommandFailures, *]]
+      case _                             => Apply[Validated[CommandHandler.Failures, *]]
           .map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app))(_ => ())
     }
   }
@@ -56,7 +56,7 @@ class AddCollaboratorCommandHandler @Inject() (
         eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
         collaborator = cmd.collaborator,
-        verifiedAdminsToEmail = cmd.adminsToEmail
+        verifiedAdminsToEmail = Set.empty
       )
     )
   }

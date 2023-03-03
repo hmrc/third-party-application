@@ -300,7 +300,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
     "send verify Responsible Individual reminder to admin" in new Setup {
       val responsibleIndividualName               = "Bob Example"
-      val adminEmail                              = "admin@example.com".toLaxEmail
+      val anAdminEmail                            = "admin@example.com".toLaxEmail
       val adminName                               = "John Admin"
       val appName                                 = "my app"
       val expectedParameters: Map[String, String] = Map(
@@ -308,15 +308,15 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
         "applicationName"           -> appName,
         "requesterName"             -> adminName
       )
-      val expectedRequest: SendEmailRequest       = SendEmailRequest(Set(adminEmail), "apiResponsibleIndividualReminderToAdmin", expectedParameters)
+      val expectedRequest: SendEmailRequest       = SendEmailRequest(Set(anAdminEmail), "apiResponsibleIndividualReminderToAdmin", expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendVerifyResponsibleIndividualReminderToAdmin(responsibleIndividualName, adminEmail, appName, adminName))
+      await(connector.sendVerifyResponsibleIndividualReminderToAdmin(responsibleIndividualName, anAdminEmail, appName, adminName))
     }
 
     "send responsible individual did not verify" in new Setup {
       val responsibleIndividualName               = "Bob Example"
-      val adminEmail                              = "admin@example.com".toLaxEmail
+      val anAdminEmail                            = "admin@example.com".toLaxEmail
       val adminName                               = "John Admin"
       val appName                                 = "my app"
       val expectedParameters: Map[String, String] = Map(
@@ -324,10 +324,10 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
         "applicationName"           -> appName,
         "requesterName"             -> adminName
       )
-      val expectedRequest: SendEmailRequest       = SendEmailRequest(Set(adminEmail), "apiResponsibleIndividualDidNotVerify", expectedParameters)
+      val expectedRequest: SendEmailRequest       = SendEmailRequest(Set(anAdminEmail), "apiResponsibleIndividualDidNotVerify", expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendResponsibleIndividualDidNotVerify(responsibleIndividualName, adminEmail, appName, adminName))
+      await(connector.sendResponsibleIndividualDidNotVerify(responsibleIndividualName, anAdminEmail, appName, adminName))
     }
 
     "send change of application name" in new Setup {

@@ -46,6 +46,7 @@ case class RejectUpliftRequest(gatekeeperUserId: String, reason: String)
 
 case class ResendVerificationRequest(gatekeeperUserId: String)
 
+@deprecated("Replace with command AddCollaborator")
 case class AddCollaboratorRequest(collaborator: Collaborator, isRegistered: Boolean, adminsToEmail: Set[LaxEmailAddress])
 
 case class AddCollaboratorResponse(registeredUser: Boolean)

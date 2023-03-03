@@ -21,19 +21,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
-    extends AsyncHmrcSpec
-    with ApplicationTestData
-    with CommandActorExamples
-    with CommandCollaboratorExamples
-    with CommandApplicationExamples {
+class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends ApplicationRepositoryMockModule {
 
@@ -46,7 +41,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
     val newJourneyApp = anApplicationData(applicationId).copy(
       collaborators = Set(
         developerCollaborator,
-        adminCollaborator
+        otherAdminCollaborator
       ),
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
@@ -54,14 +49,14 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
     val oldJourneyApp = anApplicationData(applicationId).copy(
       collaborators = Set(
         developerCollaborator,
-        adminCollaborator
+        otherAdminCollaborator
       ),
       access = Standard(privacyPolicyUrl = Some(oldUrl))
     )
 
-    val userId    = idOf(adminEmail)
+    val userId    = idOf(anAdminEmail)
     val timestamp = FixedClock.instant
-    val actor     = Actors.AppCollaborator(adminEmail)
+    val actor     = otherAdminAsActor
 
     val update = ChangeProductionApplicationPrivacyPolicyLocation(userId, FixedClock.now, newLocation)
 
@@ -101,13 +96,6 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec
             eNewUrl shouldBe newUrl
         }
       }
-    }
-
-    def checkFailsWith(msg: String)(fn: => CommandHandler.ResultT) = {
-      val testThis = await(fn.value).left.value.toNonEmptyList.toList
-
-      testThis should have length 1
-      testThis.head shouldBe msg
     }
   }
 

@@ -45,13 +45,6 @@ trait NotificationRepositoryMockModule extends MockitoSugar with ArgumentMatcher
       def thenReturnSuccess()                    = when(aMock.deleteAllByApplicationId(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
       def verifyCalledWith(appId: ApplicationId) = verify(aMock).deleteAllByApplicationId(appId)
     }
-
-    object ApplyEvents {
-
-      def succeeds() = {
-        when(aMock.applyEvents(*)).thenReturn(successful(HasSucceeded))
-      }
-    }
   }
 
   object NotificationRepositoryMock extends BaseNotificationRepositoryMock {

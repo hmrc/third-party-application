@@ -27,11 +27,11 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with DeleteApplicationCommandHandlers {
+class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  trait Setup {
+  trait Setup extends DeleteApplicationCommandHandlers {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -59,7 +59,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
       StateHistoryRepoMock.aMock
     )
 
-    def checkSuccessResult()(result: CommandHandler.CommandSuccess) = {
+    def checkSuccessResult()(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
@@ -90,9 +90,9 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
           }
         )
       }
-
     }
   }
+
   val appAdminUserId = UserId.random
   val reasons        = "reasons description text"
   val ts             = FixedClock.instant
@@ -102,10 +102,10 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()
-      ApiGatewayStoreMock.ApplyEvents.succeeds()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
-      NotificationRepositoryMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.RevokeApplicationAuthorities.succeeds()
+      NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
 
       val result = await(underTest.process(app, cmd).value).right.value
 
@@ -116,15 +116,15 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
       val cmd            = DeleteApplicationByCollaborator(appAdminUserId, reasons, FixedClock.now)
 
-      val result = await(underTest.process(nonStandardApp, cmd).value).left.value.toNonEmptyList.toList
-
-      result should have length 1
-      result.head shouldBe "App must have a STANDARD access type"
+      checkFailsWith("App must have a STANDARD access type") {
+        underTest.process(nonStandardApp, cmd)
+      }
     }
 
     "return an error if the actor is not an admin of the application" in new Setup {
-      val result = await(underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, FixedClock.now)).value).left.value.toNonEmptyList.toList
-      result.head shouldBe "User must be an ADMIN"
+      checkFailsWith("User must be an ADMIN") {
+        underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, FixedClock.now))
+      }
     }
 
   }

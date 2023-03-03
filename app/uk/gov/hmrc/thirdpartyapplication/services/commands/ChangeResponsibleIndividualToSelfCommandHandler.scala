@@ -39,6 +39,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
   ) extends CommandHandler {
 
   import CommandHandler._
+  import CommandFailures._
 
   private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
     cond(
@@ -47,16 +48,19 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
           !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.equalsIgnoreCase(email)
         case _                                                                                            => true
       },
-      s"The specified individual is already the RI for this application"
+      "The specified individual is already the RI for this application"
     )
 
-  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): Future[Validated[CommandFailures, Submission]] = {
+  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): Future[Validated[CommandHandler.Failures, Submission]] = {
 
-    def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandFailures, Submission] =
-      maybeSubmission.fold(s"No submission found for application ${app.id.value}".invalidNec[Submission])(_.validNec[String])
+    def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandHandler.Failures, Submission] = {
+      lazy val fails: CommandFailure = GenericFailure(s"No submission found for application ${app.id.value}")
+
+      maybeSubmission.fold(fails.invalidNec[Submission])(_.validNec[CommandFailure])
+    }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[CommandFailures, *]].map6(
+      Apply[Validated[CommandHandler.Failures, *]].map6(
         isStandardNewJourneyApp(app),
         isApproved(app),
         isAdminOnApp(cmd.instigator, app),

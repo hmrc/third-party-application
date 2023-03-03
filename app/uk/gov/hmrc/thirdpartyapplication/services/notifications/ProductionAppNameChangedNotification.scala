@@ -35,7 +35,7 @@ object ProductionAppNameChangedNotification {
   }
 
   private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
-    app.collaborators.map(_.emailAddress)
+    app.collaborators.map(_.emailAddress) // TODO - utilise verified collaborators to ensure we send to only verified people
   }
 
   private def getResponsibleIndividual(app: ApplicationData): Set[LaxEmailAddress] = {

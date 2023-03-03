@@ -23,7 +23,7 @@ import cats.data.NonEmptyList
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -42,9 +42,17 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
     }
 
   // scalastyle:off cyclomatic.complexity method.length
-  def sendNotifications(app: ApplicationData, events: NonEmptyList[ApplicationEvent])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
-    def sendNotification(app: ApplicationData, event: ApplicationEvent) = {
+  def sendNotifications(
+      app: ApplicationData,
+      events: NonEmptyList[ApplicationEvent],
+      verifiedCollaborators: Set[LaxEmailAddress]
+    )(implicit hc: HeaderCarrier
+    ): Future[List[HasSucceeded]] = {
+    def sendNotification(event: ApplicationEvent) = {
       event match {
+        case evt: CollaboratorAddedV2   => CollaboratorAddedNotification.sendCollaboratorAddedNotification(emailConnector, app, evt, verifiedCollaborators)
+        case evt: CollaboratorRemovedV2 => CollaboratorRemovedNotification.sendCollaboratorRemovedNotification(emailConnector, app, evt, verifiedCollaborators)
+
         case evt: ClientSecretAddedV2                               => ClientSecretAddedNotification.sendClientSecretAddedNotification(emailConnector, app, evt)
         case evt: ClientSecretRemovedV2                             => ClientSecretRemovedNotification.sendClientSecretRemovedNotification(emailConnector, app, evt)
         case evt: ProductionAppNameChangedEvent                     => ProductionAppNameChangedNotification.sendAdviceEmail(emailConnector, app, evt)
@@ -90,13 +98,11 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
         case evt: ResponsibleIndividualDidNotVerify                 => ResponsibleIndividualDidNotVerifyNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ProductionCredentialsApplicationDeleted           => ProductionCredentialsApplicationDeletedNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ApplicationDeletedByGatekeeper                    => ApplicationDeletedByGatekeeperNotification.sendAdviceEmail(emailConnector, app, evt)
-        case evt: CollaboratorAddedV2                               => CollaboratorAddedNotification.sendCollaboratorAddedNotification(emailConnector, app, evt)
-        case evt: CollaboratorRemovedV2                             => CollaboratorRemovedNotification.sendCollaboratorRemovedNotification(emailConnector, app, evt)
         case _                                                      => Future.successful(HasSucceeded)
       }
     }
 
-    Future.sequence(events.toList.map(evt => sendNotification(app, evt)))
+    Future.sequence(events.toList.map(evt => sendNotification(evt)))
   }
   // scalastyle:on cyclomatic.complexity method.length
 

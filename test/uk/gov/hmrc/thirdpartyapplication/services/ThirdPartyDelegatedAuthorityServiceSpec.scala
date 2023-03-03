@@ -20,18 +20,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
 import akka.actor.ActorSystem
-import cats.data.NonEmptyList
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationDeleted, EventId}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -43,27 +39,13 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
     val underTest                                                                        = new ThirdPartyDelegatedAuthorityService(mockThirdPartyDelegatedAuthorityConnector)
   }
 
-  "applyEvents" should {
-    val clientId                                                   = ClientId("clientId")
-    def buildApplicationDeletedEvent(applicationId: ApplicationId) =
-      ApplicationDeleted(
-        EventId.random,
-        applicationId,
-        FixedClock.instant,
-        Actors.AppCollaborator("requester@example.com".toLaxEmail),
-        clientId,
-        "wso2ApplicationName",
-        "reasons"
-      )
-
+  "ThirdPartyDelegatedAuthorityService" should {
     "handle an ApplicationDeleted event by calling the connector" in new Setup {
-      val applicationId1 = ApplicationId.random
+      val clientId = ClientId.random
 
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(clientId)(hc)).thenReturn(successful(HasSucceeded))
 
-      val event = buildApplicationDeletedEvent(applicationId1)
-
-      val result = await(underTest.applyEvents(NonEmptyList.one(event)))
+      val result = await(underTest.revokeApplicationAuthorities(clientId))
 
       result shouldBe Some(HasSucceeded)
       verify(mockThirdPartyDelegatedAuthorityConnector).revokeApplicationAuthorities(clientId)(hc)

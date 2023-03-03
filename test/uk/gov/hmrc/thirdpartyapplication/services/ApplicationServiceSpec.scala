@@ -102,10 +102,17 @@ class ApplicationServiceSpec
     val mockApiPlatformEventService               = mock[ApiPlatformEventService]
     val applicationResponseCreator                = new ApplicationResponseCreator()
 
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
+    val hcForLoggedInCollaborator = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser.text,
       LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
     )
+
+    val hcForLoggedInGatekeeperUser = HeaderCarrier().withExtraHeaders(
+      LOGGED_IN_USER_EMAIL_HEADER -> gatekeeperUser,
+      LOGGED_IN_USER_NAME_HEADER  -> "Bob Bentley"
+    )
+
+    implicit val hc = hcForLoggedInCollaborator
 
     val mockCredentialGenerator: CredentialGenerator = mock[CredentialGenerator]
     val mockNameValidationConfig                     = mock[ApplicationNamingService.ApplicationNameValidationConfig]
@@ -159,9 +166,8 @@ class ApplicationServiceSpec
   trait SetupForAuditTests extends Setup {
 
     def setupAuditTests(access: Access): (ApplicationData, UpdateRedirectUris) = {
-      val testUserEmail = "test@example.com"
-      val admin         = testUserEmail.admin()
-      val tokens        = ApplicationTokens(
+      val admin  = otherAdminCollaborator
+      val tokens = ApplicationTokens(
         Token(ClientId("prodId"), "prodToken")
       )
 
@@ -191,7 +197,7 @@ class ApplicationServiceSpec
         }
       )
       val updateRedirectUris                  = UpdateRedirectUris(
-        actor = Actors.GatekeeperUser(loggedInUser.text),
+        actor = gatekeeperActor,
         oldRedirectUris = List.empty,
         newRedirectUris = newRedirectUris,
         timestamp = FixedClock.now
@@ -259,6 +265,7 @@ class ApplicationServiceSpec
       val expectedApplicationData: ApplicationData = anApplicationData(
         createdApp.application.id,
         state = testingState(),
+        collaborators = Set(loggedInUserAdminCollaborator),
         environment = Environment.PRODUCTION,
         access = Standard().copy(sellResellOrDistribute = Some(sellResellOrDistribute))
       )
@@ -288,7 +295,9 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: ApplicationData =
-        anApplicationData(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION).copy(description = None)
+        anApplicationData(createdApp.application.id, state = testingState(), collaborators = Set(loggedInUserAdminCollaborator), environment = Environment.PRODUCTION).copy(
+          description = None
+        )
 
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
@@ -314,7 +323,12 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: ApplicationData =
-        anApplicationData(createdApp.application.id, state = ApplicationState(State.PRODUCTION, updatedOn = FixedClock.now), environment = Environment.SANDBOX)
+        anApplicationData(
+          createdApp.application.id,
+          collaborators = Set(loggedInUserAdminCollaborator),
+          state = ApplicationState(State.PRODUCTION, updatedOn = FixedClock.now),
+          environment = Environment.SANDBOX
+        )
 
       createdApp.totp shouldBe None
 
@@ -354,6 +368,7 @@ class ApplicationServiceSpec
       val expectedApplicationData: ApplicationData = anApplicationData(
         createdApp.application.id,
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = FixedClock.now),
+        collaborators = Set(loggedInUserAdminCollaborator),
         access = Privileged(totpIds = Some(TotpId("prodTotpId")))
       )
         .copy(description = None)
@@ -387,6 +402,7 @@ class ApplicationServiceSpec
       val expectedApplicationData: ApplicationData = anApplicationData(
         createdApp.application.id,
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = FixedClock.now),
+        collaborators = Set(loggedInUserAdminCollaborator),
         access = Ropc()
       )
         .copy(description = None)
@@ -571,10 +587,14 @@ class ApplicationServiceSpec
     }
 
     "send an audit event for each type of change" in new SetupForAuditTests {
+      override implicit val hc = hcForLoggedInGatekeeperUser
+
       val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccessOn(updateRedirectUris)(updatedApplication)
 
-      await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
+      val updateAppReq = UpdateApplicationRequest(updatedApplication.name, updatedApplication.access)
+
+      await(underTest.update(applicationId, updateAppReq))
 
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
@@ -988,7 +1008,6 @@ class ApplicationServiceSpec
 
       AuditServiceMock.Audit.thenReturnSuccess()
       val mixedCaseCollaboratorEmail = collaborator.text.capitalize.toLaxEmail
-      println(mixedCaseCollaboratorEmail)
       val result: Set[Collaborator]  = await(underTest.deleteCollaborator(applicationId, mixedCaseCollaboratorEmail, adminsToEmail, notifyCollaborator))
 
       ApplicationRepoMock.Save.verifyCalledWith(updatedData)
