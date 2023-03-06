@@ -115,14 +115,15 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
   val reasons            = "some reasons"
   val warnings           = "this is a warning"
 
-  val createdSubmission   = aSubmission
-  val answeringSubmission = createdSubmission.answeringWith(answersToQuestions)
-  val answeredSubmission  = createdSubmission.hasCompletelyAnsweredWith(AnsweringQuestionsHelper.answersForGroups(Pass)(answeringSubmission.groups))
-  val submittedSubmission = Submission.submit(now, "bob@example.com")(answeredSubmission)
-  val declinedSubmission  = Submission.decline(now, gatekeeperUserName, reasons)(submittedSubmission)
-  val grantedSubmission   = Submission.grant(now, gatekeeperUserName)(submittedSubmission)
-  val warningsSubmission  = Submission.warnings(now, "bob@example.com")(submittedSubmission)
-  val failSubmission      = Submission.fail(now, "bob@example.com")(submittedSubmission)
+  val createdSubmission             = aSubmission
+  val answeringSubmission           = createdSubmission.answeringWith(answersToQuestions)
+  val answeredSubmission            = createdSubmission.hasCompletelyAnsweredWith(AnsweringQuestionsHelper.answersForGroups(Pass)(answeringSubmission.groups))
+  val submittedSubmission           = Submission.submit(now, "bob@example.com")(answeredSubmission)
+  val declinedSubmission            = Submission.decline(now, gatekeeperUserName, reasons)(submittedSubmission)
+  val grantedSubmission             = Submission.grant(now, gatekeeperUserName)(submittedSubmission)
+  val grantedWithWarningsSubmission = Submission.grantWithWarnings(now, gatekeeperUserName, "Warnings", None)(submittedSubmission)
+  val warningsSubmission            = Submission.warnings(now, "bob@example.com")(submittedSubmission)
+  val failSubmission                = Submission.fail(now, "bob@example.com")(submittedSubmission)
 
   def buildSubmissionWithQuestions(): Submission = {
     val subId = SubmissionId.random

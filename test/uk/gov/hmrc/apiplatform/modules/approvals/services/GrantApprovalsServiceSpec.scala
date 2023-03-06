@@ -192,6 +192,36 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
   }
 
+  "GrantApprovalsService.grantForTouUplift" should {
+    "grant the specified ToU application with warnings" in new Setup {
+
+      SubmissionsServiceMock.Store.thenReturn()
+      EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
+
+      val result      = await(underTest.grantForTouUplift(applicationProduction, grantedWithWarningsSubmission, gatekeeperUserName))
+
+      result should matchPattern {
+        case GrantApprovalsService.Actioned(app) =>
+      }
+      SubmissionsServiceMock.Store.verifyCalledWith().status.isGranted shouldBe true
+      SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
+        case Submission.Status.Granted(_, gatekeeperUserName) =>
+      }
+    }
+
+    "fail to grant the specified application if the application is in the incorrect state" in new Setup {
+      val result = await(underTest.grantForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
+    }
+
+    "fail to grant the specified application if the submission is not in the granted with warnings state" in new Setup {
+      val result = await(underTest.grantForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
+    }
+  }
+
   "GrantApprovalsService.declineForTouUplift" should {
     "decline the specified ToU application" in new Setup {
 
