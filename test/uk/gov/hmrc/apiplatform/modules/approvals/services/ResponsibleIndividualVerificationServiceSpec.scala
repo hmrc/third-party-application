@@ -105,6 +105,20 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     }
   }
 
+  "createNewTouUpliftVerification" should {
+    "create a new ToU uplift verification object and save it to the database" in new Setup {
+      ResponsibleIndividualVerificationRepositoryMock.Save.thenReturnSuccess()
+
+      val result = await(underTest.createNewTouUpliftVerification(application, submissionId, submissionInstanceIndex))
+
+      result.applicationId shouldBe applicationId
+      result.submissionId shouldBe submissionId
+      result.submissionInstance shouldBe submissionInstanceIndex
+      result.applicationName shouldBe appName
+
+      ResponsibleIndividualVerificationRepositoryMock.Save.verifyCalledWith(result)
+    }
+  }  
   "getVerification" should {
     "get a RI verification record" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification)

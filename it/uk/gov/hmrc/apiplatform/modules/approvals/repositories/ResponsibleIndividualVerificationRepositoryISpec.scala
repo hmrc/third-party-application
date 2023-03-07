@@ -22,6 +22,7 @@ import play.api.inject
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
+  ResponsibleIndividualTouUpliftVerification,
   ResponsibleIndividualUpdateVerification,
   ResponsibleIndividualVerification,
   ResponsibleIndividualVerificationId
@@ -218,6 +219,22 @@ class ResponsibleIndividualVerificationRepositoryISpec
       state
     )
 
+  def buildTouUpliftDoc(
+      state: ResponsibleIndividualVerificationState,
+      createdOn: LocalDateTime = FixedClock.now,
+      submissionId: SubmissionId = SubmissionId.random,
+      submissionIndex: Int = 0
+    ) =
+    ResponsibleIndividualTouUpliftVerification(
+      ResponsibleIndividualVerificationId.random,
+      ApplicationId.random,
+      submissionId,
+      submissionIndex,
+      UUID.randomUUID().toString,
+      createdOn,
+      state
+    )
+
   def buildUpdateDoc(
       state: ResponsibleIndividualVerificationState,
       createdOn: LocalDateTime = FixedClock.now,
@@ -253,6 +270,14 @@ class ResponsibleIndividualVerificationRepositoryISpec
   "save" should {
     "save ToU document to the database" in {
       val doc = buildToUDoc(INITIAL, FixedClock.now.minusDays(FEW_DAYS_AGO))
+      await(repository.save(doc))
+
+      val allDocs = await(repository.findAll)
+      allDocs mustBe List(doc)
+    }
+
+    "save ToU uplift document to the database" in {
+      val doc = buildTouUpliftDoc(INITIAL, FixedClock.now.minusDays(FEW_DAYS_AGO))
       await(repository.save(doc))
 
       val allDocs = await(repository.findAll)

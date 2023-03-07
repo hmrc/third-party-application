@@ -164,8 +164,8 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         AuditServiceMock.Audit.thenReturnSuccess()
         SubmissionsServiceMock.Store.thenReturn()
         ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(prodApplication)
-        EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
-        ResponsibleIndividualVerificationServiceMock.CreateNewVerification.thenCreateNewVerification()
+        EmailConnectorMock.SendVerifyResponsibleIndividualUpdateNotification.thenReturnSuccess()
+        ResponsibleIndividualVerificationServiceMock.CreateNewTouUpliftVerification.thenCreateNewTouUpliftVerification()
 
         val result = await(underTest.requestApproval(prodApplication, testPassAnsweredSubmission, requestedByName, requestedByEmail.text))
 
