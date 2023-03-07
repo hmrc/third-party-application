@@ -27,9 +27,14 @@ object DeriveContext {
 
   def yesNoFromBoolean(b: Boolean) = if (b) "Yes" else "No"
 
-  def deriveFraudPrevention(subscriptions: List[ApiIdentifier]): String = {
-    val appContexts = subscriptions.map(_.context.value).toSet
-    yesNoFromBoolean(appContexts.intersect(FraudPrevention.contexts).nonEmpty)
+  def deriveFraudPrevention(newUplift: String, subscriptions: List[ApiIdentifier]): String = {
+    if ("Yes".equalsIgnoreCase(newUplift)) {
+      // If a new terms of use uplift, then don't want fraud prevention questions
+      "No"
+    } else {
+      val appContexts = subscriptions.map(_.context.value).toSet
+      yesNoFromBoolean(appContexts.intersect(FraudPrevention.contexts).nonEmpty)
+    }
   }
 
   def deriveFor(application: ApplicationData, subscriptions: List[ApiIdentifier]): Context = {
@@ -42,7 +47,7 @@ object DeriveContext {
     }
 
     Map(
-      Keys.VAT_OR_ITSA             -> deriveFraudPrevention(subscriptions),
+      Keys.VAT_OR_ITSA             -> deriveFraudPrevention(newUplift, subscriptions),
       Keys.IN_HOUSE_SOFTWARE       -> inHouse,
       Keys.NEW_TERMS_OF_USE_UPLIFT -> newUplift
     )
