@@ -128,4 +128,16 @@ class SubmissionsService @Inject() (
       .toOption
       .value
   }
+
+  def markSubmission(appId: ApplicationId, requestedByEmailAddress: String): Future[Option[Submission]] = {
+    (
+      for {
+        submission       <- fromOptionF(fetchLatest(appId), "submission not found")
+        updatedSubmission = Submission.automaticallyMark(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
+        savedSubmission  <- liftF(store(updatedSubmission))
+      } yield savedSubmission
+    )
+      .toOption
+      .value
+  }
 }

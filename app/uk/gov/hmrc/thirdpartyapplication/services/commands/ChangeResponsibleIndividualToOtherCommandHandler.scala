@@ -16,14 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.time.{Clock, LocalDateTime}
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
+  ResponsibleIndividualTouUpliftVerification,
   ResponsibleIndividualUpdateVerification,
   ResponsibleIndividualVerification,
   ResponsibleIndividualVerificationId
@@ -32,15 +35,22 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandFailures.GenericFailure
 
 @Singleton
 class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
-    stateHistoryRepository: StateHistoryRepository
+    stateHistoryRepository: StateHistoryRepository,
+    submissionsService: SubmissionsService,
+    emailConnector: EmailConnector,
+    clock: Clock
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
@@ -124,6 +134,77 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     } yield (savedApp, NonEmptyList(riEvt, List(stateEvt)))
   }
 
+  def processTouUplift(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualTouUpliftVerification)(implicit hc: HeaderCarrier): ResultT = {
+    def validate(): Validated[CommandHandler.Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
+      Apply[Validated[CommandHandler.Failures, *]].map6(
+        isStandardNewJourneyApp(app),
+        isInProduction(app),
+        isApplicationIdTheSame(app, riVerificationToU),
+        ensureResponsibleIndividualDefined(app),
+        ensureRequesterEmailDefined(app),
+        ensureRequesterNameDefined(app)
+      ) { case (_, _, _, responsibleIndividual, requesterEmail, requesterName) => (responsibleIndividual, requesterEmail, requesterName) }
+    }
+
+    def asEvents(
+        responsibleIndividual: ResponsibleIndividual,
+        requesterEmail: LaxEmailAddress,
+        requesterName: String
+      ): (ResponsibleIndividualSet) = {
+        ResponsibleIndividualSet(
+          id = EventId.random,
+          applicationId = app.id,
+          eventDateTime = cmd.timestamp.instant,
+          actor = Actors.AppCollaborator(requesterEmail),
+          responsibleIndividualName = responsibleIndividual.fullName.value,
+          responsibleIndividualEmail = responsibleIndividual.emailAddress,
+          submissionId = SubmissionId(riVerificationToU.submissionId.value),
+          submissionIndex = riVerificationToU.submissionInstance,
+          code = cmd.code,
+          requestingAdminName = requesterName,
+          requestingAdminEmail = requesterEmail
+        )
+    }
+
+    def addTouAcceptanceIfNeeded(
+        addTouAcceptance: Boolean,
+        appWithoutTouAcceptance: ApplicationData,
+        submissionId: SubmissionId,
+        submissionInstance: Int,
+        responsibleIndividual: ResponsibleIndividual
+      ): Future[ApplicationData] = {
+        if (addTouAcceptance) {
+          val acceptance            = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submissionId, submissionInstance)
+          applicationRepository.addApplicationTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
+        } else {
+          Future.successful(appWithoutTouAcceptance)
+        }
+    }
+
+    def sendConfirmationEmailIfNeeded(
+        addTouAcceptance: Boolean,
+        application: ApplicationData
+      )(implicit hc: HeaderCarrier
+      ): Future[HasSucceeded] = {
+      if (addTouAcceptance) {
+        emailConnector.sendNewTermsOfUseConfirmation(application.name, application.admins.map(_.emailAddress))
+      } else {
+        Future.successful(HasSucceeded)
+      }
+    }
+
+    for {
+      valid                                                 <- E.fromEither(validate().toEither)
+      (responsibleIndividual, requesterEmail, requesterName) = valid
+      submission                                            <- E.fromOptionF(submissionsService.markSubmission(app.id, requesterEmail.toString()), NonEmptyChain.one(GenericFailure("Submission not found")))
+      isPassed                                               = submission.status.isGranted
+      _                                                     <- E.liftF(addTouAcceptanceIfNeeded(isPassed, app, riVerificationToU.submissionId, riVerificationToU.submissionInstance, responsibleIndividual))
+      _                                                     <- E.liftF(sendConfirmationEmailIfNeeded(isPassed, app))
+      _                                                     <- E.liftF(responsibleIndividualVerificationRepository.deleteResponsibleIndividualVerification(cmd.code))
+      evt                                                    = asEvents(responsibleIndividual, requesterEmail, requesterName)
+    } yield (app, NonEmptyList.one(evt))
+  }
+
   def processUpdate(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualUpdateVerification): ResultT = {
     val newResponsibleIndividual = riVerification.responsibleIndividual
 
@@ -170,12 +251,13 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     } yield (app, NonEmptyList.one(evt))
   }
 
-  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther): CommandHandler.ResultT = {
+  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther)(implicit hc: HeaderCarrier): CommandHandler.ResultT = {
     E.fromEitherF(
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap {
-        case Some(riVerificationToU: ResponsibleIndividualToUVerification)       => processTou(app, cmd, riVerificationToU).value
-        case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification) => processUpdate(app, cmd, riVerificationUpdate).value
-        case _                                                                   => E.leftT(NonEmptyChain.one(GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
+        case Some(riVerificationToU: ResponsibleIndividualToUVerification)             => processTou(app, cmd, riVerificationToU).value
+        case Some(riVerificationTouUplift: ResponsibleIndividualTouUpliftVerification) => processTouUplift(app, cmd, riVerificationTouUplift).value
+        case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification)       => processUpdate(app, cmd, riVerificationUpdate).value
+        case _                                                                         => E.leftT(NonEmptyChain.one(GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
       }
     )
   }
