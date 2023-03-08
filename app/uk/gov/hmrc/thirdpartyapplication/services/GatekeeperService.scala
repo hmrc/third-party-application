@@ -190,6 +190,12 @@ class GatekeeperService @Inject() (
     } yield Unblocked
   }
 
+  def fetchAllWithSubscriptions(): Future[List[ApplicationWithSubscriptionsResponse]] = {
+    applicationRepository.getAppsWithSubscriptions map {
+      _.map(application => ApplicationWithSubscriptionsResponse(application))
+    }
+  }
+
   private def fetchApp(applicationId: ApplicationId): Future[ApplicationData] = {
     lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
     applicationRepository.fetch(applicationId).flatMap {

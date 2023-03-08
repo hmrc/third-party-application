@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens, ApplicationWithStateHistory}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens, ApplicationWithStateHistory, ApplicationWithSubscriptions}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, FixedClock}
 
 class GatekeeperServiceSpec
@@ -180,6 +180,27 @@ class GatekeeperServiceSpec
       val result = await(underTest.fetchAppStateHistoryById(appId))
 
       result shouldBe expectedHistories
+    }
+  }
+
+  "fetchAllWithSubscriptions" should {
+
+    "return no matching applications if application has a subscription" in new Setup {
+      ApplicationRepoMock.GetAppsWithSubscriptions.thenReturnNone()
+
+      val result: List[ApplicationWithSubscriptionsResponse] = await(underTest.fetchAllWithSubscriptions())
+
+      result.size shouldBe 0
+    }
+
+    "return applications when there are no matching subscriptions" in new Setup {
+      private val appWithSubs: ApplicationWithSubscriptions = ApplicationWithSubscriptions(id = ApplicationId.random, name = "name", lastAccess = None, apiIdentifiers = Set())
+      ApplicationRepoMock.GetAppsWithSubscriptions.thenReturn(appWithSubs)
+
+      val result: List[ApplicationWithSubscriptionsResponse] = await(underTest.fetchAllWithSubscriptions())
+
+      result.size shouldBe 1
+      result shouldBe List(ApplicationWithSubscriptionsResponse(appWithSubs))
     }
   }
 

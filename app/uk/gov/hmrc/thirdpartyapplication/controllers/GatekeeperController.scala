@@ -22,7 +22,7 @@ import scala.concurrent.Future.successful
 import scala.util.{Failure, Success, Try}
 
 import play.api.libs.json.Json
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
@@ -107,6 +107,10 @@ class GatekeeperController @Inject() (
     gatekeeperService.fetchNonTestingAppsWithSubmittedDate() map {
       apps => Ok(Json.toJson(apps))
     } recover recovery
+  }
+
+  def fetchAllAppsWithSubscriptions(): Action[AnyContent] = anyAuthenticatedUserAction {
+    _ => gatekeeperService.fetchAllWithSubscriptions map { apps => Ok(Json.toJson(apps)) } recover recovery
   }
 
   def fetchAppById(id: ApplicationId) = anyAuthenticatedUserAction { loggedInRequest =>

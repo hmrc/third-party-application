@@ -280,6 +280,34 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
   }
 
+  "fetchAllAppsWithSubscriptions" should {
+    val expected = List(
+      ApplicationWithSubscriptionsResponse(ApplicationId.random, "Application Name", None, Set())
+    )
+
+    "return app with subs for Stride GK User" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      when(mockGatekeeperService.fetchAllWithSubscriptions()).thenReturn(successful(expected))
+
+      val result = underTest.fetchAllAppsWithSubscriptions()(request)
+
+      status(result) shouldBe 200
+      contentAsJson(result) shouldBe Json.toJson(expected)
+    }
+
+    "return app with subs for LDAP GK User" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      when(mockGatekeeperService.fetchAllWithSubscriptions()).thenReturn(successful(expected))
+
+      val result = underTest.fetchAllAppsWithSubscriptions()(request)
+
+      status(result) shouldBe 200
+      contentAsJson(result) shouldBe Json.toJson(expected)
+    }
+  }
   "fetchAllForCollaborator" should {
     val userId                                                   = UserId.random
     val standardApplicationResponse: ExtendedApplicationResponse = aNewExtendedApplicationResponse(access = Standard())

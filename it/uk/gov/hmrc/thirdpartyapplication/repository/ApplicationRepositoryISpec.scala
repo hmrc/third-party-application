@@ -21,36 +21,29 @@ import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess => _, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 import java.time.{Clock, Duration, LocalDateTime, ZoneOffset}
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.util.Random.nextString
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-
-import java.time.temporal.ChronoUnit
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
@@ -1013,6 +1006,62 @@ class ApplicationRepositoryISpec
         applicationRepository.fetchVerifiableUpliftBy(generatedVerificationCode)
       )
       retrieved mustBe None
+    }
+  }
+
+  "AppsWithSubscriptions" should {
+    "return Apps with their subscriptions" in {
+      val api1        = "api-1"
+      val api2        = "api-2"
+      val api3        = "api-3"
+      val api1Version = "api-1-version-1"
+      val api2Version = "api-2-version-2"
+      val api3Version = "api-3-version-3"
+
+      val application1 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = ClientId("aaa"))
+      val application2 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = ClientId("aab"))
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData(api1, api1Version, application1.id, application2.id))
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData(api2, api2Version, application1.id, application2.id))
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData(api3, api3Version, application2.id))
+          .toFuture()
+      )
+
+      val expectedResult = List(
+        ApplicationWithSubscriptions(
+          application1.id,
+          application1.name,
+          application1.lastAccess,
+          Set(ApiIdentifier(ApiContext(api1), ApiVersion(api1Version)), ApiIdentifier(ApiContext(api2), ApiVersion(api2Version)))
+        ),
+        ApplicationWithSubscriptions(
+          application2.id,
+          application2.name,
+          application2.lastAccess,
+          Set(
+            ApiIdentifier(ApiContext(api1), ApiVersion(api1Version)),
+            ApiIdentifier(ApiContext(api2), ApiVersion(api2Version)),
+            ApiIdentifier(ApiContext(api3), ApiVersion(api3Version))
+          )
+        )
+      )
+
+      val result = await(applicationRepository.getAppsWithSubscriptions)
+
+      result must contain theSameElementsAs expectedResult
     }
   }
 
