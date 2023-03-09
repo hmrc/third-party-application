@@ -35,10 +35,11 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 
-class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
+class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData with FixedClock {
 
-  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationRepositoryMockModule with StateHistoryRepositoryMockModule {
+  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationRepositoryMockModule with StateHistoryRepositoryMockModule with SubmissionsServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -96,7 +97,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
     )
 
     val underTest =
-      new ChangeResponsibleIndividualToOtherCommandHandler(ApplicationRepoMock.aMock, ResponsibleIndividualVerificationRepositoryMock.aMock, StateHistoryRepoMock.aMock)
+      new ChangeResponsibleIndividualToOtherCommandHandler(ApplicationRepoMock.aMock, ResponsibleIndividualVerificationRepositoryMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, clock)
 
     def checkSuccessResultToU()(fn: => CommandHandler.ResultT) = {
       val testMe = await(fn.value).right.value

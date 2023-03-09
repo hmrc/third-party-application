@@ -336,7 +336,7 @@ class ApplicationCommandDispatcherSpec
 
     }
 
-    " ChangeResponsibleIndividualToSelf is received" should {
+    "ChangeResponsibleIndividualToSelf is received" should {
 
       val cmd = ChangeResponsibleIndividualToSelf(UserId.random, timestamp, requestedByName, requestedByEmail)
       val evt = ResponsibleIndividualChangedToSelf(
@@ -370,7 +370,7 @@ class ApplicationCommandDispatcherSpec
 
     }
 
-    " ChangeResponsibleIndividualToOther is received" should {
+    "ChangeResponsibleIndividualToOther is received" should {
       val code = "someCode"
       val cmd  = ChangeResponsibleIndividualToOther(code, timestamp)
       val evt  = ResponsibleIndividualChanged(
@@ -389,7 +389,7 @@ class ApplicationCommandDispatcherSpec
         requestedByEmail
       )
 
-      "call  ChangeResponsibleIndividualToOther Handler and relevant common services if application exists" in new Setup {
+      "call ChangeResponsibleIndividualToOther Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
         when(

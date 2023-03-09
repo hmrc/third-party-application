@@ -40,7 +40,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, HasSucceeded, In
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, AuditHelper, AuditService}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 object RequestApprovalsService {
   sealed trait RequestApprovalResult
@@ -201,20 +200,6 @@ class RequestApprovalsService @Inject() (
       } yield ApprovalAccepted(savedApp)
     )
       .fold[RequestApprovalResult](identity, identity)
-  }
-
-  def requestApprovalResponsibleIndividualVerified(application: ApplicationData, requestedByName: String, requestedByEmailAddress: LaxEmailAddress)(implicit hc: HeaderCarrier) = {
-    val ET = EitherTHelper.make[String]
-    (
-      for {
-        submission <- ET.fromOptionF(submissionService.markSubmission(application.id, requestedByEmailAddress.text), "Submission not found")
-        isPassed   = submission.status.isGranted
-        _          <- ET.liftF(addTouAcceptanceIfNeeded(isPassed, application, submission, requestedByName, requestedByEmailAddress.text))
-        _          <- ET.liftF(sendConfirmationEmailIfNeeded(isPassed, application))
-      } yield submission
-    )
-      .toOption
-      .value
   }
 
   private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Future[Unit] = {
