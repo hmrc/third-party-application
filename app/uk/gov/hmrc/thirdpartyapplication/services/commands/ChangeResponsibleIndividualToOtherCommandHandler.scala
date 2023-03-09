@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.{Clock, LocalDateTime}
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 import cats.Apply
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
@@ -35,10 +34,8 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandFailures.GenericFailure
@@ -48,9 +45,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     stateHistoryRepository: StateHistoryRepository,
-    submissionsService: SubmissionsService,
-    emailConnector: EmailConnector,
-    clock: Clock
+    requestApprovalsService: RequestApprovalsService
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
@@ -166,40 +161,10 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         )
     }
 
-    def addTouAcceptanceIfNeeded(
-        addTouAcceptance: Boolean,
-        appWithoutTouAcceptance: ApplicationData,
-        submissionId: SubmissionId,
-        submissionInstance: Int,
-        responsibleIndividual: ResponsibleIndividual
-      ): Future[ApplicationData] = {
-        if (addTouAcceptance) {
-          val acceptance            = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submissionId, submissionInstance)
-          applicationRepository.addApplicationTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
-        } else {
-          Future.successful(appWithoutTouAcceptance)
-        }
-    }
-
-    def sendConfirmationEmailIfNeeded(
-        addTouAcceptance: Boolean,
-        application: ApplicationData
-      )(implicit hc: HeaderCarrier
-      ): Future[HasSucceeded] = {
-      if (addTouAcceptance) {
-        emailConnector.sendNewTermsOfUseConfirmation(application.name, application.admins.map(_.emailAddress))
-      } else {
-        Future.successful(HasSucceeded)
-      }
-    }
-
     for {
       valid                                                 <- E.fromEither(validate().toEither)
       (responsibleIndividual, requesterEmail, requesterName) = valid
-      submission                                            <- E.fromOptionF(submissionsService.markSubmission(app.id, requesterEmail.toString()), NonEmptyChain.one(GenericFailure("Submission not found")))
-      isPassed                                               = submission.status.isGranted
-      _                                                     <- E.liftF(addTouAcceptanceIfNeeded(isPassed, app, riVerificationToU.submissionId, riVerificationToU.submissionInstance, responsibleIndividual))
-      _                                                     <- E.liftF(sendConfirmationEmailIfNeeded(isPassed, app))
+      submission                                            <- E.liftF(requestApprovalsService.requestApprovalResponsibleIndividualVerified(app, requesterName, requesterEmail))
       _                                                     <- E.liftF(responsibleIndividualVerificationRepository.deleteResponsibleIndividualVerification(cmd.code))
       evt                                                    = asEvents(responsibleIndividual, requesterEmail, requesterName)
     } yield (app, NonEmptyList.one(evt))
