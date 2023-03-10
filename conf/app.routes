@@ -51,6 +51,7 @@ GET           /gatekeeper/applications                               uk.gov.hmrc
 GET           /gatekeeper/application/:id                            uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppById(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 GET           /gatekeeper/application/:id/stateHistory               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistoryById(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 GET           /gatekeeper/applications/stateHistory                  uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistories
+GET           /gatekeeper/applications/subscriptions                 uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAllAppsWithSubscriptions
 GET           /gatekeeper/developer/:userId/applications             uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAllForCollaborator(userId: uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId)
 POST          /gatekeeper/application/:id/delete                     uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.deleteApplication(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 POST          /application/:id/approve-uplift                        uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.approveUplift(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)

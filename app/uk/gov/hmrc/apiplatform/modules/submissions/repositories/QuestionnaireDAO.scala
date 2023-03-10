@@ -97,8 +97,7 @@ object QuestionnaireDAO {
         Wording("Give us the email address of the individual responsible for the software"),
         statement = None,
         afterStatement = Statement(
-          StatementText("We will email a verification link to the responsible individual that expires in 10 working days."),
-          StatementText("The responsible individual must verify before we can process your request for production credentials.")
+          StatementText("The responsible individual must verify before you can agree to our terms of use. We will send them a verification link.")
         ).some,
         label = Question.Label("Email address").some,
         hintText = StatementText("Cannot be a shared mailbox").some,
@@ -244,7 +243,7 @@ object QuestionnaireDAO {
         wording = Wording("Does your error handling meet our specification?"),
         statement = Statement(
           CompoundFragment(
-            StatementText("We will check for evidence that you comply with our "),
+            StatementText("You must comply with our "),
             StatementLink("error handling specification (opens in new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/reference-guide#errors"),
             StatementText(".")
           )
@@ -453,7 +452,7 @@ object QuestionnaireDAO {
 
     object CustomersAuthorisingYourSoftware {
 
-      val question1 = AcknowledgementOnly(
+      val question1a = AcknowledgementOnly(
         Question.Id("95da25e8-af3a-4e05-a621-4a5f4ca788f6"),
         Wording("Customers authorising your software"),
         statement = Statement(
@@ -461,6 +460,20 @@ object QuestionnaireDAO {
           StatementText("Before you continue, you will need:"),
           StatementBullets(
             StatementText("the name of your software"),
+            StatementText("the location of your servers which store customer data"),
+            StatementText("a link to your privacy policy"),
+            StatementText("a link to your terms and conditions")
+          )
+        ).some
+      )
+
+      val question1b = AcknowledgementOnly(
+        Question.Id("dba97fee-4a06-4688-846a-89b45dcd7164"),
+        Wording("Customers authorising your software"),
+        statement = Statement(
+          StatementText("Your customers will see the information you provide here when they authorise your software to interact with HMRC."),
+          StatementText("Before you continue, you will need:"),
+          StatementBullets(
             StatementText("the location of your servers which store customer data"),
             StatementText("a link to your privacy policy"),
             StatementText("a link to your terms and conditions")
@@ -560,7 +573,8 @@ object QuestionnaireDAO {
         id = Questionnaire.Id("3a7f3369-8e28-447c-bd47-efbabeb6d93f"),
         label = Questionnaire.Label("Customers authorising your software"),
         questions = NonEmptyList.of(
-          QuestionItem(question1),
+          QuestionItem(question1a, AskWhenContext(Keys.NEW_TERMS_OF_USE_UPLIFT, "No")),
+          QuestionItem(question1b, AskWhenContext(Keys.NEW_TERMS_OF_USE_UPLIFT, "Yes")),
           QuestionItem(question2, AskWhenContext(Keys.NEW_TERMS_OF_USE_UPLIFT, "No")),
           QuestionItem(question3, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question4),

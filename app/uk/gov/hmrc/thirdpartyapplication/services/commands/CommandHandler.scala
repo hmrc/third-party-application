@@ -76,7 +76,7 @@ object CommandHandler {
     value.fold(left.invalidNec[R])(_.validNec[CommandFailure])
   }
 
-  def mustBeDefined[R](value: Option[R], left: String): Validated[Failures, R]                                     = {
+  def mustBeDefined[R](value: Option[R], left: String): Validated[Failures, R] = {
     value.fold[Validated[Failures, R]](GenericFailure(left).invalidNec[R])(_.validNec[CommandFailure])
   }
 

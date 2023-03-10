@@ -24,7 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationWithSubscriptions}
 
 trait CreateApplicationRequest {
   def name: String
@@ -329,4 +329,16 @@ object ApplicationWithUpliftRequest {
     ApplicationWithUpliftRequest(app.id, app.name, upliftRequest.changedAt, app.state.name)
   }
 
+}
+
+case class ApplicationWithSubscriptionsResponse(id: ApplicationId, name: String, lastAccess: Option[LocalDateTime], apiIdentifiers: Set[ApiIdentifier])
+
+object ApplicationWithSubscriptionsResponse {
+  import play.api.libs.json.{Format, Json}
+
+  implicit val format: Format[ApplicationWithSubscriptionsResponse] = Json.format[ApplicationWithSubscriptionsResponse]
+
+  def apply(application: ApplicationWithSubscriptions): ApplicationWithSubscriptionsResponse = {
+    ApplicationWithSubscriptionsResponse(application.id, application.name, application.lastAccess, application.apiIdentifiers)
+  }
 }

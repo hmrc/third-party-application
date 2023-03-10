@@ -210,15 +210,15 @@ class GrantApprovalsService @Inject() (
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
-    val ET    = EitherTHelper.make[Result]
+    val ET = EitherTHelper.make[Result]
     (
       for {
         _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
         _ <- ET.cond(submission.status.isGrantedWithWarnings, (), RejectedDueToIncorrectSubmissionState)
 
-        updatedSubmission        = Submission.grant(LocalDateTime.now(clock), gatekeeperUserName)(submission)
-        savedSubmission         <- ET.liftF(submissionService.store(updatedSubmission))
-        _                       <- ET.liftF(emailConnector.sendNewTermsOfUseConfirmation(originalApp.name, originalApp.admins.map(_.emailAddress)))
+        updatedSubmission = Submission.grant(LocalDateTime.now(clock), gatekeeperUserName)(submission)
+        savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
+        _                <- ET.liftF(emailConnector.sendNewTermsOfUseConfirmation(originalApp.name, originalApp.admins.map(_.emailAddress)))
       } yield Actioned(originalApp)
     )
       .fold[Result](identity, identity)

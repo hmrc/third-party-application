@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.time.{Instant, ZoneOffset}
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{blocking, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.util.{Failure, Success}
 
 import com.github.t3hnar.bcrypt._
