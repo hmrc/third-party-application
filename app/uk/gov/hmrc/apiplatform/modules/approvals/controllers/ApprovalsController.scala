@@ -122,7 +122,8 @@ class ApprovalsController @Inject() (
       grantApprovalService.grantForTouUplift(request.application, request.submission, grantedRequest.gatekeeperUserName)
         .map(_ match {
           case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
-          case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_GRANTED_WITH_WARNINGS_STATE", s"Submission for $applicationId was not in a granted with warnings state"))
+          case RejectedDueToIncorrectSubmissionState  =>
+            PreconditionFailed(asJsonError("NOT_IN_GRANTED_WITH_WARNINGS_STATE", s"Submission for $applicationId was not in a granted with warnings state"))
           case RejectedDueToIncorrectApplicationState =>
             PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
           case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))

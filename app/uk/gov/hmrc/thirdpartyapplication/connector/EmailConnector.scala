@@ -464,7 +464,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
         }
     }
 
-    if(payload.to.isEmpty) {
+    if (payload.to.isEmpty) {
       logger.warn(s"Sending email ${payload.templateId} abandoned due to lack of any recipients")
       Future.successful(HasSucceeded)
     } else {
