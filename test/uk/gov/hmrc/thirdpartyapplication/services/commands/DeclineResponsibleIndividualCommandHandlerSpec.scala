@@ -23,6 +23,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
+  ResponsibleIndividualTouUpliftVerification,
   ResponsibleIndividualUpdateVerification,
   ResponsibleIndividualVerificationId,
   ResponsibleIndividualVerificationState
@@ -77,6 +78,16 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
     val code = "3242342387452384623549234"
 
     val riVerificationToU = ResponsibleIndividualToUVerification(
+      ResponsibleIndividualVerificationId(code),
+      applicationId,
+      submission.id,
+      submission.latestInstance.index,
+      "App Name",
+      FixedClock.now,
+      ResponsibleIndividualVerificationState.INITIAL
+    )
+
+    val riVerificationTouUplift = ResponsibleIndividualTouUpliftVerification(
       ResponsibleIndividualVerificationId(code),
       applicationId,
       submission.id,
@@ -188,6 +199,18 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
     "create correct event for a valid request with an update responsibleIndividualVerification and a standard app" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
       ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
+
+      val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
+
+      checkSuccessResultUpdate() {
+        underTest.process(prodApp, DeclineResponsibleIndividual(code, FixedClock.now))
+      }
+    }
+
+    "create correct event for a valid request with an ToU uplift responsibleIndividualVerification and a standard app" in new Setup {
+      ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationTouUplift)
+      ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
+      SubmissionsServiceMock.DeclineSubmission.thenReturn(declinedSubmission)
 
       val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
 

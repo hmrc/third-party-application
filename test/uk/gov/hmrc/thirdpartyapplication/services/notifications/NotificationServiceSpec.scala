@@ -353,6 +353,31 @@ class NotificationServiceSpec
       )
     }
 
+    "when receive a ResponsibleIndividualDeclinedOrDidNotVerify, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendResponsibleIndividualDeclinedOrDidNotVerify.thenReturnSuccess()
+      val event = ResponsibleIndividualDeclinedOrDidNotVerify(
+        EventId.random,
+        ApplicationId.random,
+        FixedClock.instant,
+        otherAdminAsActor,
+        "ri name",
+        "ri@example.com".toLaxEmail,
+        SubmissionId.random,
+        1,
+        "code12345678",
+        "admin name",
+        "admin@example.com".toLaxEmail
+      )
+
+      val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendResponsibleIndividualDeclinedOrDidNotVerify.verifyCalledWith(
+        event.responsibleIndividualName,
+        applicationData.name,
+        recipients = applicationData.admins.map(_.emailAddress)
+      )
+    }
+
     "when receive a TermsOfUsePassed, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
       val event = TermsOfUsePassed(

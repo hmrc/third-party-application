@@ -96,6 +96,7 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
         case evt: ResponsibleIndividualDeclined                     => ResponsibleIndividualDeclinedNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ResponsibleIndividualDeclinedUpdate               => ResponsibleIndividualDeclinedUpdateNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ResponsibleIndividualDidNotVerify                 => ResponsibleIndividualDidNotVerifyNotification.sendAdviceEmail(emailConnector, app, evt)
+        case evt: ResponsibleIndividualDeclinedOrDidNotVerify       => ResponsibleIndividualDeclinedOrDidNotVerifyNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: TermsOfUsePassed                                  => TermsOfUsePassedNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ProductionCredentialsApplicationDeleted           => ProductionCredentialsApplicationDeletedNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ApplicationDeletedByGatekeeper                    => ApplicationDeletedByGatekeeperNotification.sendAdviceEmail(emailConnector, app, evt)

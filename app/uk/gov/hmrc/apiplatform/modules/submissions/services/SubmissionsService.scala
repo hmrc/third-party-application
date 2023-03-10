@@ -129,6 +129,18 @@ class SubmissionsService @Inject() (
       .value
   }
 
+  def declineSubmission(appId: ApplicationId, requestedByEmailAddress: String, reasons: String): Future[Option[Submission]] = {
+    (
+      for {
+        submission       <- fromOptionF(fetchLatest(appId), "submission not found")
+        updatedSubmission = Submission.decline(LocalDateTime.now(clock), requestedByEmailAddress, reasons)(submission)
+        savedSubmission  <- liftF(store(updatedSubmission))
+      } yield savedSubmission
+    )
+      .toOption
+      .value
+  }
+
   def markSubmission(appId: ApplicationId, requestedByEmailAddress: String): Future[Option[Submission]] = {
     (
       for {

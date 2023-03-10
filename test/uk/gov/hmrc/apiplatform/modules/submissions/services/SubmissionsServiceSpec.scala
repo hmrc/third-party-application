@@ -277,5 +277,21 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         SubmissionsDAOMock.Update.verifyCalled()
       }
     }
+
+    "declineSubmission" should {
+      "decline the latest submission for an application id" in new Setup {
+        val requesterEmail = "bob@example.com"
+        SubmissionsDAOMock.FetchLatest.thenReturn(pendingRISubmission)
+        SubmissionsDAOMock.Update.thenReturn()
+
+        val result = await(underTest.declineSubmission(applicationId, requesterEmail, reasons))
+
+        val out = result.value
+        out.latestInstance.status.isAnswering shouldBe true
+        out.instances.length shouldBe pendingRISubmission.instances.length + 1
+        out.instances.tail.head.status.isDeclined shouldBe true
+        SubmissionsDAOMock.Update.verifyCalled()
+      }
+    }
   }
 }
