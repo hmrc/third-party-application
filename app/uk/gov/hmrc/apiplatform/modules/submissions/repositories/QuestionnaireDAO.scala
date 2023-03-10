@@ -97,8 +97,7 @@ object QuestionnaireDAO {
         Wording("Give us the email address of the individual responsible for the software"),
         statement = None,
         afterStatement = Statement(
-          StatementText("We will email a verification link to the responsible individual that expires in 10 working days."),
-          StatementText("The responsible individual must verify before we can process your request for production credentials.")
+          StatementText("The responsible must verify before you can agree to our terms of use. We will send them a verification link."),
         ).some,
         label = Question.Label("Email address").some,
         hintText = StatementText("Cannot be a shared mailbox").some,
