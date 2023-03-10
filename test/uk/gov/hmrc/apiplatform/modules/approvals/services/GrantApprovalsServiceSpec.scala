@@ -75,7 +75,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
-    val prodAppId                              = ApplicationId.random
+    val prodAppId = ApplicationId.random
 
     val applicationProduction: ApplicationData = anApplicationData(
       prodAppId,
@@ -198,7 +198,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       SubmissionsServiceMock.Store.thenReturn()
       EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
 
-      val result      = await(underTest.grantForTouUplift(applicationProduction, grantedWithWarningsSubmission, gatekeeperUserName))
+      val result = await(underTest.grantForTouUplift(applicationProduction, grantedWithWarningsSubmission, gatekeeperUserName))
 
       result should matchPattern {
         case GrantApprovalsService.Actioned(app) =>
