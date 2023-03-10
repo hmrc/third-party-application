@@ -28,16 +28,21 @@ class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftReq
   val fpContext1 = FraudPrevention.contexts.head
   val fpSubs     = List(fpContext1.asIdentifier, fpContext1.asIdentifier("2.0"), ApiContext.random.asIdentifier)
   val nonFpSubs  = List(ApiContext.random.asIdentifier, ApiContext.random.asIdentifier, ApiContext.random.asIdentifier)
+  val newUplift  = "No"
 
   "DeriveContext" when {
     "deriveFraudPrevention is called" should {
       "return 'Yes' when at least one subscription is a fraud prevention candidate" in {
 
-        DeriveContext.deriveFraudPrevention(fpSubs) shouldBe "Yes"
+        DeriveContext.deriveFraudPrevention(newUplift, fpSubs) shouldBe "Yes"
       }
       "return 'No' when not a single subscription is a fraud prevention candidate" in {
 
-        DeriveContext.deriveFraudPrevention(nonFpSubs) shouldBe "No"
+        DeriveContext.deriveFraudPrevention(newUplift, nonFpSubs) shouldBe "No"
+      }
+      "return 'No' when new uplift and at least one subscription is a fraud prevention candidate" in {
+
+        DeriveContext.deriveFraudPrevention("Yes", fpSubs) shouldBe "No"
       }
     }
   }
@@ -62,7 +67,7 @@ class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftReq
       when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("Yes")))
       when(aMock.state).thenReturn(ApplicationState.production("requesterEmail", "requesterName"))
 
-      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "Yes", Keys.IN_HOUSE_SOFTWARE -> "No", Keys.NEW_TERMS_OF_USE_UPLIFT -> "Yes")
+      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "No", Keys.IN_HOUSE_SOFTWARE -> "No", Keys.NEW_TERMS_OF_USE_UPLIFT -> "Yes")
     }
   }
 }
