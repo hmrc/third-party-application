@@ -23,6 +23,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
+  ResponsibleIndividualTouUpliftVerification,
   ResponsibleIndividualUpdateVerification,
   ResponsibleIndividualVerificationId,
   ResponsibleIndividualVerificationState
@@ -83,6 +84,16 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       ResponsibleIndividualVerificationState.INITIAL
     )
 
+    val riVerificationTouUplift = ResponsibleIndividualTouUpliftVerification(
+      ResponsibleIndividualVerificationId(code),
+      appId,
+      submission.id,
+      submission.latestInstance.index,
+      "App Name",
+      FixedClock.now,
+      ResponsibleIndividualVerificationState.INITIAL
+    )
+
     val riVerificationUpdate = ResponsibleIndividualUpdateVerification(
       ResponsibleIndividualVerificationId(code),
       appId,
@@ -131,7 +142,56 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       }
     }
 
-    def checkSuccessResultUpdate()(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultTouUplift(isPassed: Boolean)(fn: => CommandHandler.ResultT) = {
+      val testMe = await(fn.value).right.value
+
+      if (isPassed) {
+        inside(testMe) { case (app, events) =>
+          events should have size 2
+
+          events.collect {
+            case riSet: ResponsibleIndividualSet =>
+              riSet.applicationId shouldBe appId
+              riSet.eventDateTime shouldBe ts
+              riSet.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+              riSet.responsibleIndividualName shouldBe riName
+              riSet.responsibleIndividualEmail shouldBe riEmail
+              riSet.submissionIndex shouldBe submission.latestInstance.index
+              riSet.submissionId.value shouldBe submission.id.value
+              riSet.requestingAdminEmail shouldBe appAdminEmail
+              riSet.code shouldBe code
+          }
+
+          events.collect {
+            case passEvent: TermsOfUsePassed =>
+              passEvent.applicationId shouldBe appId
+              passEvent.eventDateTime shouldBe ts
+              passEvent.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+              passEvent.submissionIndex shouldBe submission.latestInstance.index
+              passEvent.submissionId.value shouldBe submission.id.value
+          }
+        }
+      } else {
+        inside(testMe) { case (app, events) =>
+          events should have size 1
+
+          events.collect {
+            case riSet: ResponsibleIndividualSet =>
+              riSet.applicationId shouldBe appId
+              riSet.eventDateTime shouldBe ts
+              riSet.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+              riSet.responsibleIndividualName shouldBe riName
+              riSet.responsibleIndividualEmail shouldBe riEmail
+              riSet.submissionIndex shouldBe submission.latestInstance.index
+              riSet.submissionId.value shouldBe submission.id.value
+              riSet.requestingAdminEmail shouldBe appAdminEmail
+              riSet.code shouldBe code
+          }
+        }
+      }
+    }
+
+     def checkSuccessResultUpdate()(fn: => CommandHandler.ResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -158,14 +218,41 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
   "process" should {
     "create correct event for a valid request with a ToU responsibleIndividualVerification and a standard app" in new Setup {
 
-      val prodApp = app.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName))
-      ApplicationRepoMock.UpdateApplicationSetResponsibleIndividual.thenReturn(prodApp)
+      val pendingRIApp = app.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName))
+      ApplicationRepoMock.UpdateApplicationSetResponsibleIndividual.thenReturn(pendingRIApp)
       ApplicationRepoMock.UpdateApplicationState.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
       StateHistoryRepoMock.Insert.succeeds()
 
       checkSuccessResultToU() {
+        underTest.process(pendingRIApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+      }
+    }
+
+    "create correct event for a valid request with a Tou Uplift responsibleIndividualVerification, a standard app and a non-passing submission" in new Setup {
+
+      val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
+      ApplicationRepoMock.UpdateApplicationSetResponsibleIndividual.thenReturn(prodApp)
+      ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationTouUplift)
+      SubmissionsServiceMock.MarkSubmission.thenReturn(submission)
+      ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
+
+      checkSuccessResultTouUplift(false) {
+        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+      }
+    }
+
+    "create correct event for a valid request with a Tou Uplift responsibleIndividualVerification, a standard app and a passing submission" in new Setup {
+
+      val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
+      ApplicationRepoMock.UpdateApplicationSetResponsibleIndividual.thenReturn(prodApp)
+      ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationTouUplift)
+      SubmissionsServiceMock.MarkSubmission.thenReturn(grantedSubmission)
+      ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(prodApp)
+      ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
+
+      checkSuccessResultTouUplift(true) {
         underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
       }
     }

@@ -114,6 +114,12 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
         when(aMock.declineApplicationApprovalRequest(*)).thenReturn(successful(Some(submission)))
       }
     }
+
+    object MarkSubmission {
+
+      def thenReturn(submission: Submission) =
+        when(aMock.markSubmission(*[ApplicationId], *)).thenReturn(successful(Some(submission)))
+    }
   }
 
   object SubmissionsServiceMock extends BaseSubmissionsServiceMock {

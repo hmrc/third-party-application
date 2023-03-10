@@ -353,6 +353,25 @@ class NotificationServiceSpec
       )
     }
 
+    "when receive a TermsOfUsePassed, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
+      val event = TermsOfUsePassed(
+        EventId.random,
+        ApplicationId.random,
+        FixedClock.instant,
+        otherAdminAsActor,
+        SubmissionId.random,
+        1
+      )
+
+      val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendNewTermsOfUseConfirmation.verifyCalledWith(
+        applicationData.name,
+        recipients = applicationData.admins.map(_.emailAddress)
+      )
+    }
+
     "when receive a ClientSecretAdded, call the event handler and return successfully" in new Setup {
       val obfuscatedSecret     = "********cret"
       val requestingAdminEmail = "admin@example.com".toLaxEmail
