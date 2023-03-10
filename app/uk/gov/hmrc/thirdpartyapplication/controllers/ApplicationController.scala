@@ -163,28 +163,6 @@ class ApplicationController @Inject() (
     handleOption(credentialService.fetchCredentials(applicationId))
   }
 
-  @deprecated("remove when client no longer uses this route and sends AddCollaboratorRequest Command")
-  def addCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[AddCollaboratorRequest] { collaboratorRequest =>
-      applicationService.addCollaborator(applicationId, collaboratorRequest) map {
-        response => Ok(toJson(response))
-      } recover {
-        case _: UserAlreadyExists => Conflict(JsErrorResponse(USER_ALREADY_EXISTS, "This email address is already registered with different role, delete and add with desired role"))
-
-        case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid Role"))
-      } recover recovery
-    }
-  }
-
-  @deprecated("remove when client no longer uses this route and sends RemoveCollaboratorRequest Command")
-  def deleteCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[DeleteCollaboratorRequest] { dcRequest =>
-      applicationService.deleteCollaborator(applicationId, dcRequest.email, dcRequest.adminsToEmail, dcRequest.notifyCollaborator) map (_ => NoContent) recover {
-        case _: ApplicationNeedsAdmin => Forbidden(JsErrorResponse(APPLICATION_NEEDS_ADMIN, "Application requires at least one admin"))
-      } recover recovery
-    }
-  }
-
   def fixCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[FixCollaboratorRequest] { fixCollaboratorRequest =>
       applicationService.fixCollaborator(applicationId, fixCollaboratorRequest).map {

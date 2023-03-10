@@ -70,26 +70,6 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     )
   }
 
-  def sendTeamMemberAddedEvent(appData: ApplicationData, teamMemberEmail: LaxEmailAddress, teamMemberRole: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    handleResult(
-      appData.id,
-      eventType = "TeamMemberAddedEvent",
-      maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(TeamMemberAddedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
-      }
-    )
-  }
-
-  def sendTeamMemberRemovedEvent(appData: ApplicationData, teamMemberEmail: LaxEmailAddress, teamMemberRole: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    handleResult(
-      appData.id,
-      eventType = "TeamMemberRemovedEvent",
-      maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(TeamMemberRemovedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
-      }
-    )
-  }
-
   @deprecated("remove when no longer using old logic")
   def sendRedirectUrisUpdatedEvent(appData: ApplicationData, oldRedirectUris: String, newRedirectUris: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     handleResult(
@@ -132,8 +112,6 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
   }
 
   private def sendEvent(appEvent: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = appEvent match {
-    case tmae: TeamMemberAddedEvent     => apiPlatformEventsConnector.sendTeamMemberAddedEvent(tmae)
-    case tmre: TeamMemberRemovedEvent   => apiPlatformEventsConnector.sendTeamMemberRemovedEvent(tmre)
     case csae: ClientSecretAddedEvent   => apiPlatformEventsConnector.sendClientSecretAddedEvent(csae)
     case csra: ClientSecretRemovedEvent => apiPlatformEventsConnector.sendClientSecretRemovedEvent(csra)
     case ruue: RedirectUrisUpdatedEvent => apiPlatformEventsConnector.sendRedirectUrisUpdatedEvent(ruue)

@@ -24,7 +24,6 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import scalaj.http.{Http, HttpResponse}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorResponse, DeleteCollaboratorRequest}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -42,12 +41,18 @@ import scala.concurrent.Await.{ready, result}
 import scala.util.Random
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
+import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController
+import org.scalatest.Inside
+import java.time.LocalDateTime
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationCommandFormatters._
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
 }
 
-class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with CollaboratorTestData {
+class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with CollaboratorTestData with Inside {
 
   val configOverrides = Map[String, Any](
     "microservice.services.api-subscription-fields.port"         -> 19650,
@@ -293,60 +298,48 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
   Feature("Add/Remove collaborators to an application") {
 
-    Scenario("Add collaborator for an application") {
+    Scenario("Add collaborator for an application then remove it") {
       Given("No applications exist")
       emptyApplicationRepository()
+      val developerThatWillBeAddedAndRemoved = Collaborators.Developer(testUserId, "test@example.com".toLaxEmail)
 
       Given("A third party application")
       val application = createApplication()
-      apiPlatformEventsStub.willReceiveTeamMemberAddedEvent()
-
-      When("We request to add the developer as a collaborator of the application")
-      val response = postData(
-        s"/application/${application.id.value}/collaborator",
-        s"""{
-           | "anAdminEmail":"admin@example.com",
-           | "collaborator": {
-           |   "emailAddress": "test@example.com",
-           |   "role":"ADMINISTRATOR",
-           |   "userId":"${testUserId.value}"
-           | },
-           | "isRegistered": true,
-           | "adminsToEmail": []
-           | }""".stripMargin
-      )
-      response.code shouldBe OK
-      val result   = Json.parse(response.body).as[AddCollaboratorResponse]
-
-      Then("The collaborator is added")
-      result shouldBe AddCollaboratorResponse(registeredUser = true)
-      val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.collaborators should contain("test@example.com".admin(testUserId))
-
-      apiPlatformEventsStub.verifyTeamMemberAddedEventSent()
-    }
-
-    Scenario("Remove collaborator to an application") {
+      apiPlatformEventsStub.willReceiveEvent("COLLABORATOR_ADDED")
       emailStub.willPostEmailNotification()
-      apiPlatformEventsStub.willReceiveTeamMemberRemovedEvent()
+      
+      When("We request to add the developer as a collaborator of the application")
+      val addCollaborator: ApplicationCommand = AddCollaborator(Actors.AppCollaborator(anAdminEmail), developerThatWillBeAddedAndRemoved, LocalDateTime.now())
+      
+      val addResponse = postData(s"/application/${application.id.value}/dispatch", Json.prettyPrint(Json.toJson(addCollaborator)), method = "PATCH")
+      
+      Then("the command was processed")
+      addResponse.code shouldBe OK
+      
+      
+      Then("The collaborator is added")
+      inside(Json.parse(addResponse.body).as[ApplicationCommandController.DispatchResult]) {
+        case ApplicationCommandController.DispatchResult(appResponse, events) =>
+          appResponse.collaborators should contain (developerThatWillBeAddedAndRemoved)
+          case _ => fail()
+        }
+      apiPlatformEventsStub.verifyEventSent("COLLABORATOR_ADDED")
+      
+      When("We request to remove a collaborator from the application")
+      apiPlatformEventsStub.willReceiveEvent("COLLABORATOR_REMOVED")
+      val removeCollaborator: ApplicationCommand = RemoveCollaborator(Actors.AppCollaborator(anAdminEmail), developerThatWillBeAddedAndRemoved, LocalDateTime.now())
+      val removeResponse      = postData(s"/application/${application.id.value}/dispatch", Json.prettyPrint(Json.toJson(removeCollaborator)), method = "PATCH")
 
-      Given("No applications exist")
-      emptyApplicationRepository()
-
-      Given("A third party application")
-      val application = createApplication()
-
-      When("We request to remove a collaborator to the application")
-      val deleteRequest = DeleteCollaboratorRequest(emailAddress.toLaxEmail, Set("admin@example.com".toLaxEmail), false)
-      val response      = postData(s"/application/${application.id.value}/collaborator/delete", Json.prettyPrint(Json.toJson(deleteRequest)))
-
-      response.code shouldBe NO_CONTENT
+      Then("the command was processed")
+      removeResponse.code shouldBe OK
 
       Then("The collaborator is removed")
-      val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.collaborators should not contain emailAddress.developer(userId)
-
-      apiPlatformEventsStub.verifyTeamMemberRemovedEventSent()
+      inside(Json.parse(removeResponse.body).as[ApplicationCommandController.DispatchResult]) {
+        case ApplicationCommandController.DispatchResult(appResponse, events) =>
+          appResponse.collaborators should  not contain developerThatWillBeAddedAndRemoved
+        case _ => fail()
+      }
+      apiPlatformEventsStub.verifyEventSent("COLLABORATOR_ADDED")
     }
   }
 
@@ -401,7 +394,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       Given("A third party application")
       val application = createApplication()
-      apiPlatformEventsStub.willReceiveApiSubscribedEvent()
+      apiPlatformEventsStub.willReceiveClientSecretAddedEvent()
       apiPlatformEventsStub.willReceiveClientRemovedEvent()
       emailStub.willPostEmailNotification()
       val createdApp  = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
@@ -581,7 +574,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       When("I request to uplift an application to production")
       val result = postData(
         s"/application/${application.id.value}/request-uplift",
-        s"""{"requestedByEmailAddress":"admin@example.com", "applicationName": "Prod Application Name"}"""
+        s"""{"requestedByEmailAddress":"${anAdminEmail.text}", "applicationName": "Prod Application Name"}"""
       )
 
       Then("The application is updated to PENDING_GATEKEEPER_APPROVAL")
@@ -649,7 +642,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
        |"access" : ${Json.toJson(access)},
        |"collaborators": [
        | {
-       |   "emailAddress": "admin@example.com",
+       |   "emailAddress": "${anAdminEmail.text}",
        |   "role": "ADMINISTRATOR",
        |   "userId": "${adminUserId.value}"
        | },

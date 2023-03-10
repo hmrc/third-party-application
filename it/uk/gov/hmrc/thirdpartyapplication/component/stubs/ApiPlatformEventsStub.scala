@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
-import play.api.http.Status.CREATED
+import play.api.http.Status.{CREATED, OK}
 
 object ApiPlatformEventsStub extends Stub {
 
@@ -28,10 +28,8 @@ object ApiPlatformEventsStub extends Stub {
   private val clientSecretRemovedEventURL: String = "/application-events/clientSecretRemoved"
   private val apiSubscribedEventURL: String       = "/application-events/apiSubscribed"
   private val apiUnsubscribedEventURL: String     = "/application-events/apiUnsubscribed"
-  private val teamMemberAddedEventURL: String     = "/application-events/teamMemberAdded"
-  private val teamMemberRemovedEventURL: String   = "/application-events/teamMemberRemoved"
   private val applicationEventsURL: String        = "/application-event"
-
+  
   def verifyClientSecretAddedEventSent(): Unit = {
     verifyStubCalled(clientSecretAddedEventURL)
   }
@@ -40,12 +38,11 @@ object ApiPlatformEventsStub extends Stub {
     verifyStubCalled(clientSecretRemovedEventURL)
   }
 
-  def verifyTeamMemberAddedEventSent(): Unit = {
-    verifyStubCalled(teamMemberAddedEventURL)
-  }
-
-  def verifyTeamMemberRemovedEventSent(): Unit = {
-    verifyStubCalled(teamMemberRemovedEventURL)
+  def verifyEventSent(eventType: String): Unit = {
+    stub.mock.verifyThat(
+      postRequestedFor(urlEqualTo(applicationEventsURL))
+      .withRequestBody(containing(eventType))
+    )
   }
 
   def verifyApiSubscribedEventSent(): Unit = {
@@ -74,6 +71,16 @@ object ApiPlatformEventsStub extends Stub {
 
   }
 
+  def willReceiveEvent(eventType: String) = {
+    stub.mock.register(post(urlEqualTo(applicationEventsURL))
+      .withRequestBody(containing(eventType))
+      .willReturn(
+        aResponse()
+        // TODO - body
+          .withStatus(OK)
+      ))    
+  }
+
   def willReceiveClientSecretAddedEvent() = {
     stub.mock.register(post(urlEqualTo(clientSecretAddedEventURL))
       .willReturn(
@@ -100,22 +107,6 @@ object ApiPlatformEventsStub extends Stub {
 
   def willReceiveApiUnsubscribedEvent() = {
     stub.mock.register(post(urlEqualTo(apiUnsubscribedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
-  }
-
-  def willReceiveTeamMemberAddedEvent() = {
-    stub.mock.register(post(urlEqualTo(teamMemberAddedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
-  }
-
-  def willReceiveTeamMemberRemovedEvent() = {
-    stub.mock.register(post(urlEqualTo(teamMemberRemovedEventURL))
       .willReturn(
         aResponse()
           .withStatus(CREATED)

@@ -85,76 +85,6 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
 
   "ApiPlatformEventService" when {
 
-    "TeamMemberAdded" should {
-
-      "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
-        implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
-        teamMemberAddedRemoved(objInTest, otherAdminAsActor, connectorResult = true, expectedResult = true, added = true)
-      }
-
-      "send event payload with actor type as GATEKEEPER when user sending the event isn't a collaborator" in new Setup() {
-        val userEmail: String             = "NonCollaboratorEmail"
-        implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> userEmail)
-        teamMemberAddedRemoved(objInTest, Actors.GatekeeperUser(userEmail), connectorResult = true, expectedResult = true, added = true)
-      }
-
-      "send event and return false result from connector" in new Setup() {
-        implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
-
-        teamMemberAddedRemoved(objInTest, otherAdminAsActor, connectorResult = false, expectedResult = false, added = true)
-      }
-
-      "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {
-        implicit val newHc: HeaderCarrier = HeaderCarrier()
-        teamMemberAddedRemoved(objInTest, Actors.GatekeeperUser("Gatekeeper Admin"), connectorResult = true, expectedResult = true, added = true)
-      }
-
-      "return false when username header is set but not user email header" in new Setup() {
-        implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_NAME_HEADER -> "someuserName")
-        val result: Boolean               = await(objInTest.sendTeamMemberAddedEvent(appDataWithCollaboratorAdded, teamMemberEmail, teamMemberRole))
-
-        result shouldBe false
-        verifyZeroInteractions(mockConnector)
-      }
-    }
-    "TeamMemberRemoved" should {
-
-      "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
-        implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
-
-        teamMemberAddedRemoved(objInTest, otherAdminAsActor, connectorResult = true, expectedResult = true, added = false)
-      }
-
-      "send event payload with actor type as GATEKEEPER when user sending the event isn't a collaborator" in new Setup() {
-
-        val userEmail: String             = "NonCollaboratorEmail"
-        implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> userEmail)
-        teamMemberAddedRemoved(objInTest, Actors.GatekeeperUser(userEmail), connectorResult = true, expectedResult = true, added = true)
-      }
-
-      "send event and return false result from connector" in new Setup() {
-        implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
-
-        teamMemberAddedRemoved(objInTest, otherAdminAsActor, connectorResult = false, expectedResult = false, added = true)
-      }
-
-      "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {
-        implicit val newHc: HeaderCarrier = HeaderCarrier()
-        teamMemberAddedRemoved(objInTest, Actors.GatekeeperUser("Gatekeeper Admin"), connectorResult = true, expectedResult = true, added = true)
-
-      }
-
-      "return false when username header is set but not user email header" in new Setup() {
-        implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_NAME_HEADER -> "someuserName")
-
-        val result: Boolean = await(objInTest.sendTeamMemberRemovedEvent(appDataWithCollaboratorAdded, teamMemberEmail, teamMemberRole))
-
-        result shouldBe false
-
-        verifyZeroInteractions(mockConnector)
-      }
-    }
-
     "ClientSecretAddedEvent" should {
 
       "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
@@ -194,32 +124,6 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
     }
 
     "ClientSecretRemovedEvent" should {
-
-      "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
-        implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
-
-        teamMemberAddedRemoved(objInTest, otherAdminAsActor, connectorResult = true, expectedResult = true, added = false)
-      }
-
-      "send event payload with actor type as GATEKEEPER when user sending the event isn't a collaborator" in new Setup() {
-
-        val userEmail: String             = "NonCollaboratorEmail"
-        implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> userEmail)
-        teamMemberAddedRemoved(objInTest, Actors.GatekeeperUser(userEmail), connectorResult = true, expectedResult = true, added = false)
-      }
-
-      "send event and return false result from connector" in new Setup() {
-        implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
-
-        teamMemberAddedRemoved(objInTest, otherAdminAsActor, connectorResult = false, expectedResult = false, added = false)
-      }
-
-      "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {
-        implicit val newHc: HeaderCarrier = HeaderCarrier()
-        teamMemberAddedRemoved(objInTest, Actors.GatekeeperUser("Gatekeeper Admin"), connectorResult = true, expectedResult = true, added = false)
-
-      }
-
       "return false when username header is set but not user email header" in new Setup() {
         implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_NAME_HEADER -> "someuserName")
 
@@ -372,38 +276,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       }
     }
 
-    def teamMemberAddedRemoved(
-        objInTest: ApiPlatformEventService,
-        expectedActor: Actor,
-        connectorResult: Boolean,
-        expectedResult: Boolean,
-        added: Boolean
-      )(implicit hc: HeaderCarrier
-      ) = {
-      if (added) when(mockConnector.sendTeamMemberAddedEvent(any[TeamMemberAddedEvent])(any[HeaderCarrier])).thenReturn(Future.successful(connectorResult))
-      else when(mockConnector.sendTeamMemberRemovedEvent(any[TeamMemberRemovedEvent])(any[HeaderCarrier])).thenReturn(Future.successful(connectorResult))
-
-      val f: (ApplicationData, Map[String, String]) => Future[Boolean] = (appData: ApplicationData, data: Map[String, String]) => {
-        val teamMemberEmail = data.getOrElse("teamMemberEmail", "").toLaxEmail
-        val teamMemberRole  = data.getOrElse("teamMemberRole", "")
-
-        if (added) objInTest.sendTeamMemberAddedEvent(appData, teamMemberEmail, teamMemberRole)
-        else objInTest.sendTeamMemberRemovedEvent(appData, teamMemberEmail, teamMemberRole)
-      }
-
-      testService(f, expectedResult)
-      if (added) {
-        val argumentCaptor = ArgCaptor[TeamMemberAddedEvent]
-        verify(mockConnector).sendTeamMemberAddedEvent(argumentCaptor.capture)(any[HeaderCarrier])
-        validateEvent(argumentCaptor.value, expectedActor)
-      } else {
-        val argumentCaptor = ArgCaptor[TeamMemberRemovedEvent]
-        verify(mockConnector).sendTeamMemberRemovedEvent(argumentCaptor.capture)(any[HeaderCarrier])
-        validateEvent(argumentCaptor.value, expectedActor)
-      }
-    }
-
-    def apiSubscribedUnsubscribed(
+      def apiSubscribedUnsubscribed(
         objInTest: ApiPlatformEventService,
         expectedActor: Actor,
         connectorResult: Boolean,
@@ -471,16 +344,6 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
     }
 
     def validateEvent(applicationEvent: ApplicationEvent, expectedActor: Actor) = applicationEvent match {
-      case teamMemberAddedEvent: TeamMemberAddedEvent         =>
-        val actor = teamMemberAddedEvent.actor
-        actor shouldBe expectedActor
-        teamMemberAddedEvent.teamMemberEmail shouldBe teamMemberEmail
-        teamMemberAddedEvent.teamMemberRole shouldBe teamMemberRole
-      case teamMemberRemovedEvent: TeamMemberRemovedEvent     =>
-        val actor = teamMemberRemovedEvent.actor
-        actor shouldBe expectedActor
-        teamMemberRemovedEvent.teamMemberEmail shouldBe teamMemberEmail
-        teamMemberRemovedEvent.teamMemberRole shouldBe teamMemberRole
       case clientSecretAddedEvent: ClientSecretAddedEvent     =>
         val actor = clientSecretAddedEvent.actor
         actor shouldBe expectedActor
