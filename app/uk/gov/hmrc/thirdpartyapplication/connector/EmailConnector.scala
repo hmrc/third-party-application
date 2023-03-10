@@ -450,16 +450,25 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       }
     }
 
-    import uk.gov.hmrc.http.HttpReads.Implicits._
+    def makeCall() = {
+      import uk.gov.hmrc.http.HttpReads.Implicits._
 
-    httpClient.POST[SendEmailRequest, HttpResponse](url, payload)
-      .map { response =>
-        logger.info(s"Sent '${payload.templateId}' with response: ${response.status}")
-        response.status match {
-          case status if status >= 200 && status <= 299 => HasSucceeded
-          case NOT_FOUND                                => throw new RuntimeException(s"Unable to send email. Downstream endpoint not found: $url")
-          case _                                        => throw extractError(response)
+      httpClient.POST[SendEmailRequest, HttpResponse](url, payload)
+        .map { response =>
+          logger.info(s"Sent '${payload.templateId}' with response: ${response.status}")
+          response.status match {
+            case status if status >= 200 && status <= 299 => HasSucceeded
+            case NOT_FOUND                                => throw new RuntimeException(s"Unable to send email. Downstream endpoint not found: $url")
+            case _                                        => throw extractError(response)
+          }
         }
-      }
+    }
+
+    if(payload.to.isEmpty) {
+      logger.warn(s"Sending email ${payload.templateId} abandoned due to lack of any recipients")
+      Future.successful(HasSucceeded)
+    } else {
+      makeCall()
+    }
   }
 }

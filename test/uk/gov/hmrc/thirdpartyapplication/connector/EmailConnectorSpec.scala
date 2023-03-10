@@ -29,6 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector.SendEmailRequest
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 
 class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
@@ -71,6 +72,22 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
     val applicationId     = ApplicationId.random
     val developer         = collaboratorEmail.developer()
     val administrator     = adminEmail1.admin()
+
+    "not attempt to do anything if there are no recipients" in new Setup {
+      val expectedTemplateId                      = "apiAddedDeveloperAsCollaboratorConfirmation"
+      val expectedToEmails                        = Set.empty[LaxEmailAddress]
+      val expectedParameters: Map[String, String] = Map(
+        "article"           -> "an",
+        "role"              -> "admin",
+        "applicationName"   -> applicationName,
+        "developerHubTitle" -> hubTestTitle
+      )
+      val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+
+      // No stubbing so we cannot call POST
+
+      await(connector.sendCollaboratorAddedConfirmation(administrator, applicationName, expectedToEmails)) shouldBe HasSucceeded
+    }
 
     "send added collaborator confirmation email" in new Setup {
       val expectedTemplateId                      = "apiAddedDeveloperAsCollaboratorConfirmation"
