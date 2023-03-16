@@ -211,7 +211,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     }
     
     for {
-      valid                                                 <- E.fromEither(validate().toEither)
+      valid                                                 <- E.fromValidated(validate())
       (responsibleIndividual, requesterEmail, requesterName) = valid
       submission                                            <- E.fromOptionF(submissionsService.markSubmission(app.id, requesterEmail.text), NonEmptyChain.one(GenericFailure("Submission not found")))
       isPassed                                               = submission.status.isGranted

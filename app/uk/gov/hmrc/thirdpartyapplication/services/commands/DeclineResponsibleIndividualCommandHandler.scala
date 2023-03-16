@@ -156,7 +156,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
     }
 
     for {
-      valid                                                             <- E.fromEither(validate().toEither)
+      valid                                                             <- E.fromValidated(validate())
       (responsibleIndividual, requestingAdminEmail, requestingAdminName) = valid
       reasons                                                            = "Responsible individual declined the terms of use."
       _                                                                 <- E.liftF(submissionService.declineSubmission(app.id, responsibleIndividual.emailAddress.text, reasons))
