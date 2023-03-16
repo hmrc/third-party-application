@@ -50,8 +50,6 @@ class TermsOfUseInvitationService @Inject() (
   }
 
   def fetchInvitation(applicationId: ApplicationId): Future[Option[TermsOfUseInvitationResponse]] = {
-    logger.info(s"Fetching invitation to complete the new terms of use for application(${applicationId.value})")
-
     for {
       inviteF  <- termsOfUseRepository.fetch(applicationId)
       responseF = inviteF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent))
@@ -59,8 +57,6 @@ class TermsOfUseInvitationService @Inject() (
   }
 
   def fetchInvitations(): Future[List[TermsOfUseInvitationResponse]] = {
-    logger.info("Fetching all applications that have been invited to complete the new terms of use")
-
     for {
       invitesF  <- termsOfUseRepository.fetchAll()
       responsesF = invitesF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent))

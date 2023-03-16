@@ -266,6 +266,7 @@ object Submission {
       case (p: PendingResponsibleIndividual, f: Failed)    => true
       case (p: PendingResponsibleIndividual, w: Warnings)  => true
       case (p: PendingResponsibleIndividual, g: Granted)   => true
+      case (p: PendingResponsibleIndividual, d: Declined)  => true
       case (f: Failed, g: Granted)                         => true
       case (f: Failed, d: Declined)                        => true
       case (w: Warnings, g: Granted)                       => true

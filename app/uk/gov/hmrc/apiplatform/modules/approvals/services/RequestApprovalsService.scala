@@ -136,7 +136,7 @@ class RequestApprovalsService @Inject() (
         _                                  <- ET.liftF(writeStateHistory(updatedApp, requestedByEmailAddress))
         updatedSubmission                   = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
-        _                                  <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
+        _                                  <- ET.liftF(sendProdCredsVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
         _                                   = logCompletedApprovalRequest(savedApp)
         _                                  <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
       } yield ApprovalAccepted(savedApp)
@@ -193,7 +193,7 @@ class RequestApprovalsService @Inject() (
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
         addTouAcceptance                    = isRequesterTheResponsibleIndividual && savedSubmission.status.isGranted
         _                                  <- ET.liftF(addTouAcceptanceIfNeeded(addTouAcceptance, updatedApp, submission, requestedByName, requestedByEmailAddress))
-        _                                  <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
+        _                                  <- ET.liftF(sendTouUpliftVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
         _                                  <- ET.liftF(sendConfirmationEmailIfNeeded(addTouAcceptance, savedApp))
         _                                   = logCompletedApprovalRequest(savedApp)
         _                                  <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
@@ -223,7 +223,7 @@ class RequestApprovalsService @Inject() (
     }
   }
 
-  private def sendVerificationEmailIfNeeded(
+  private def sendProdCredsVerificationEmailIfNeeded(
       isRequesterTheResponsibleIndividual: Boolean,
       application: ApplicationData,
       submission: Submission,
@@ -239,6 +239,29 @@ class RequestApprovalsService @Inject() (
         verification <- responsibleIndividualVerificationService.createNewToUVerification(application, submission.id, submission.latestInstance.index)
         _            <-
           emailConnector.sendVerifyResponsibleIndividualNotification(responsibleIndividualName, responsibleIndividualEmail, application.name, requestedByName, verification.id.value)
+      } yield HasSucceeded
+
+    } else {
+      Future.successful(HasSucceeded)
+    }
+  }
+
+  private def sendTouUpliftVerificationEmailIfNeeded(
+      isRequesterTheResponsibleIndividual: Boolean,
+      application: ApplicationData,
+      submission: Submission,
+      importantSubmissionData: ImportantSubmissionData,
+      requestedByName: String
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    if (!isRequesterTheResponsibleIndividual) {
+      val responsibleIndividualName  = importantSubmissionData.responsibleIndividual.fullName.value
+      val responsibleIndividualEmail = importantSubmissionData.responsibleIndividual.emailAddress
+
+      for {
+        verification <- responsibleIndividualVerificationService.createNewTouUpliftVerification(application, submission.id, submission.latestInstance.index)
+        _            <-
+          emailConnector.sendVerifyResponsibleIndividualUpdateNotification(responsibleIndividualName, responsibleIndividualEmail, application.name, requestedByName, verification.id.value)
       } yield HasSucceeded
 
     } else {

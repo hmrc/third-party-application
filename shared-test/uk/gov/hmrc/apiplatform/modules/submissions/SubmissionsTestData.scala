@@ -122,6 +122,7 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
   val declinedSubmission            = Submission.decline(now, gatekeeperUserName, reasons)(submittedSubmission)
   val grantedSubmission             = Submission.grant(now, gatekeeperUserName)(submittedSubmission)
   val grantedWithWarningsSubmission = Submission.grantWithWarnings(now, gatekeeperUserName, "Warnings", None)(submittedSubmission)
+  val pendingRISubmission           = Submission.pendingResponsibleIndividual(now, "bob@example.com")(submittedSubmission)
   val warningsSubmission            = Submission.warnings(now, "bob@example.com")(submittedSubmission)
   val failSubmission                = Submission.fail(now, "bob@example.com")(submittedSubmission)
 

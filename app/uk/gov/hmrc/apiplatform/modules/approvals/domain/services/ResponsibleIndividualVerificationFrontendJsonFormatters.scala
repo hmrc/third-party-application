@@ -20,6 +20,7 @@ import play.api.libs.json._
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
+  ResponsibleIndividualTouUpliftVerification,
   ResponsibleIndividualUpdateVerification,
   ResponsibleIndividualVerification,
   ResponsibleIndividualVerificationWithDetails
@@ -31,11 +32,13 @@ trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
 
   implicit val utcReads = DefaultLocalDateTimeReads
 
-  implicit val responsibleIndividualVerificationFormat       = Json.format[ResponsibleIndividualToUVerification]
-  implicit val responsibleIndividualUpdateVerificationFormat = Json.format[ResponsibleIndividualUpdateVerification]
+  implicit val responsibleIndividualVerificationFormat          = Json.format[ResponsibleIndividualToUVerification]
+  implicit val responsibleIndividualTouUpliftVerificationFormat = Json.format[ResponsibleIndividualTouUpliftVerification]
+  implicit val responsibleIndividualUpdateVerificationFormat    = Json.format[ResponsibleIndividualUpdateVerification]
 
   implicit val jsonFormatResponsibleIndividualVerification = Union.from[ResponsibleIndividualVerification]("verificationType")
     .and[ResponsibleIndividualToUVerification]("termsOfUse")
+    .and[ResponsibleIndividualTouUpliftVerification]("termsOfUseUplift")
     .and[ResponsibleIndividualUpdateVerification]("adminUpdate")
     .format
 

@@ -75,6 +75,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   val responsibleIndividualReminderToAdmin      = "apiResponsibleIndividualReminderToAdmin"
   val responsibleIndividualDidNotVerify         = "apiResponsibleIndividualDidNotVerify"
   val responsibleIndividualDeclined             = "apiResponsibleIndividualDeclined"
+  val responsibleIndividualDeclinedV2           = "apiResponsibleIndividualDeclinedV2"
   val responsibleIndividualNotChanged           = "apiResponsibleIndividualNotChanged"
   val changeOfApplicationName                   = "apiChangeOfApplicationName"
   val changeOfApplicationDetails                = "apiChangeOfApplicationDetails"
@@ -326,6 +327,22 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
         "responsibleIndividualName" -> responsibleIndividualName,
         "applicationName"           -> applicationName,
         "requesterName"             -> requesterName
+      )
+    ))
+  }
+
+  def sendResponsibleIndividualDeclinedOrDidNotVerify(
+      responsibleIndividualName: String,
+      applicationName: String,
+      recipients: Set[LaxEmailAddress]
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    post(SendEmailRequest(
+      recipients,
+      responsibleIndividualDeclinedV2,
+      Map(
+        "responsibleIndividualName" -> responsibleIndividualName,
+        "applicationName"           -> applicationName
       )
     ))
   }

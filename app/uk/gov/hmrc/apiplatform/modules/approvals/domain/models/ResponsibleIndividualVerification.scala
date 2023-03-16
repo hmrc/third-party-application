@@ -39,20 +39,33 @@ sealed trait ResponsibleIndividualVerification {
 }
 
 object ResponsibleIndividualVerification {
-  implicit val dateFormat: Format[LocalDateTime]                                            = MongoJavatimeFormats.localDateTimeFormat
-  implicit val riVerificationFormat: OFormat[ResponsibleIndividualToUVerification]          = Json.format[ResponsibleIndividualToUVerification]
-  implicit val riUpdateVerificationFormat: OFormat[ResponsibleIndividualUpdateVerification] = Json.format[ResponsibleIndividualUpdateVerification]
+  implicit val dateFormat: Format[LocalDateTime]                                                  = MongoJavatimeFormats.localDateTimeFormat
+  implicit val riVerificationFormat: OFormat[ResponsibleIndividualToUVerification]                = Json.format[ResponsibleIndividualToUVerification]
+  implicit val riVerificationTouUpliftFormat: OFormat[ResponsibleIndividualTouUpliftVerification] = Json.format[ResponsibleIndividualTouUpliftVerification]
+  implicit val riUpdateVerificationFormat: OFormat[ResponsibleIndividualUpdateVerification]       = Json.format[ResponsibleIndividualUpdateVerification]
 
-  val VerificationTypeToU: String    = "termsOfUse"
-  val VerificationTypeUpdate: String = "adminUpdate"
+  val VerificationTypeToU: String       = "termsOfUse"
+  val VerificationTypeTouUplift: String = "termsOfUseUplift"
+  val VerificationTypeUpdate: String    = "adminUpdate"
 
   implicit val jsonFormatResponsibleIndividualVerification = Union.from[ResponsibleIndividualVerification]("verificationType")
     .and[ResponsibleIndividualToUVerification](VerificationTypeToU)
+    .and[ResponsibleIndividualTouUpliftVerification](VerificationTypeTouUplift)
     .and[ResponsibleIndividualUpdateVerification](VerificationTypeUpdate)
     .format
 }
 
 case class ResponsibleIndividualToUVerification(
+    id: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random,
+    applicationId: ApplicationId,
+    submissionId: SubmissionId,
+    submissionInstance: Int,
+    applicationName: String,
+    createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    state: ResponsibleIndividualVerificationState = INITIAL
+  ) extends ResponsibleIndividualVerification
+
+case class ResponsibleIndividualTouUpliftVerification(
     id: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random,
     applicationId: ApplicationId,
     submissionId: SubmissionId,

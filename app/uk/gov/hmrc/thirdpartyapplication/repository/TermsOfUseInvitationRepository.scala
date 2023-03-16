@@ -55,7 +55,6 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent)(implicit 
         successful(None)
       }
       case None        => {
-        logger.info(s"Creating terms of use invitation for application with id ${termsOfUseInvitation.applicationId.value}.")
         collection.insertOne(termsOfUseInvitation).toFuture().map(_ => Some(termsOfUseInvitation))
       }
     }

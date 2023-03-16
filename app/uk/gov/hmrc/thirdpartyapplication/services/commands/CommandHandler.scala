@@ -157,6 +157,12 @@ object CommandHandler {
       GenericFailure("App is not in TESTING state")
     )
 
+  def isInProduction(app: ApplicationData) =
+    cond(
+      app.isInProduction,
+      GenericFailure("App is not in PRODUCTION state")
+    )
+
   def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app: ApplicationData) =
     cond(
       app.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification,
