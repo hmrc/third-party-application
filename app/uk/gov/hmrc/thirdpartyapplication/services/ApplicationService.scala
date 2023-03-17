@@ -39,7 +39,6 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest, FixCollaboratorRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
@@ -52,6 +51,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, HeaderCarrierHelper}
+import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
+import uk.gov.hmrc.thirdpartyapplication.controllers.FixCollaboratorRequest
 
 @Singleton
 class ApplicationService @Inject() (
@@ -102,46 +103,6 @@ class ApplicationService @Inject() (
       existing <- fetchApp(applicationId)
       savedApp <- applicationRepository.save(existing.copy(checkInformation = Some(checkInformation)))
     } yield ApplicationResponse(data = savedApp)
-  }
-
-  @deprecated("please use AddCollaboratorRequest command to application Update controller")
-  def addCollaborator(applicationId: ApplicationId, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
-
-    def validateCollaborator(app: ApplicationData, collaborator: Collaborator): Collaborator = {
-      val normalisedCollaborator = request.collaborator.normalise
-
-      if (app.collaborators.exists(_.emailAddress == normalisedCollaborator.emailAddress)) throw new UserAlreadyExists
-
-      normalisedCollaborator
-    }
-
-    def addUser(app: ApplicationData, collaborator: Collaborator): Future[Set[Collaborator]] = {
-      val updated = app.collaborators + collaborator
-      applicationRepository.save(app.copy(collaborators = updated)) map (_.collaborators)
-    }
-
-    def sendNotificationEmails(
-        applicationName: String,
-        collaborator: Collaborator,
-        adminsToEmail: Set[LaxEmailAddress]
-      )(implicit hc: HeaderCarrier
-      ): Future[HasSucceeded] = {
-
-      if (adminsToEmail.nonEmpty) {
-        emailConnector.sendCollaboratorAddedNotification(collaborator, applicationName, adminsToEmail)
-      }
-
-      emailConnector.sendCollaboratorAddedConfirmation(collaborator, applicationName, Set(collaborator.emailAddress))
-    }
-
-    for {
-      app         <- fetchApp(applicationId)
-      collaborator = validateCollaborator(app, request.collaborator)
-      _           <- addUser(app, collaborator)
-      _            = auditService.audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator))
-      _            = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.describeRole)
-      _            = sendNotificationEmails(app.name, collaborator, request.adminsToEmail)
-    } yield AddCollaboratorResponse(request.isRegistered)
   }
 
   def addTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] = {
@@ -237,52 +198,8 @@ class ApplicationService @Inject() (
     }
   }
 
-  @deprecated("please use RemoveCollaboratorRequest command to application Update controller")
-  def deleteCollaborator(
-      applicationId: ApplicationId,
-      collaborator: LaxEmailAddress,
-      adminsToEmail: Set[LaxEmailAddress],
-      notifyCollaborator: Boolean
-    )(implicit hc: HeaderCarrier
-    ): Future[Set[Collaborator]] = {
-    def deleteUser(app: ApplicationData): Future[ApplicationData] = {
-      val updatedCollaborators = app.collaborators.filterNot(_.emailAddress equalsIgnoreCase (collaborator))
-      if (!hasAdmin(updatedCollaborators)) failed(new ApplicationNeedsAdmin)
-      else applicationRepository.save(app.copy(collaborators = updatedCollaborators))
-    }
-
-    def sendEmails(applicationName: String, collaboratorEmail: LaxEmailAddress, adminsToEmail: Set[LaxEmailAddress]): Future[Unit] = {
-      if (adminsToEmail.nonEmpty) emailConnector.sendRemovedCollaboratorNotification(collaboratorEmail, applicationName, adminsToEmail)
-      if (notifyCollaborator) emailConnector.sendRemovedCollaboratorConfirmation(applicationName, Set(collaboratorEmail)).map(_ => ()) else successful(())
-    }
-
-    def audit(collaborator: Option[Collaborator]) = collaborator match {
-      case Some(c) => auditService.audit(CollaboratorRemovedAudit, AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(c))
-      case None    => logger.warn(s"Failed to audit collaborator removal for: $collaborator")
-    }
-
-    def findCollaborator(app: ApplicationData): Option[Collaborator] = app.collaborators.find(_.emailAddress.normalise == collaborator.normalise)
-
-    def sendEvent(app: ApplicationData, maybeColab: Option[Collaborator]) = maybeColab match {
-      case Some(collaborator) => apiPlatformEventService.sendTeamMemberRemovedEvent(app, collaborator.emailAddress, collaborator.describeRole)
-      case None               => logger.warn(s"Failed to send TeamMemberRemovedEvent for appId: ${app.id}")
-    }
-
-    for {
-      app     <- fetchApp(applicationId)
-      updated <- deleteUser(app)
-      _        = audit(findCollaborator(app))
-      _        = sendEvent(app, findCollaborator(app))
-      _        = recoverAll(sendEmails(app.name, collaborator.normalise, adminsToEmail))
-    } yield updated.collaborators
-  }
-
   def fixCollaborator(applicationId: ApplicationId, fixCollaboratorRequest: FixCollaboratorRequest): Future[Option[ApplicationData]] = {
     applicationRepository.updateCollaboratorId(applicationId, fixCollaboratorRequest.emailAddress, fixCollaboratorRequest.userId)
-  }
-
-  private def hasAdmin(updated: Set[Collaborator]): Boolean = {
-    updated.exists(_.isAdministrator)
   }
 
   def fetchByClientId(clientId: ClientId): Future[Option[ApplicationResponse]] = {

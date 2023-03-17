@@ -47,8 +47,6 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatEnvironmentToken  = Json.format[Token]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
-  // implicit val formatApplicationData = Json.format[ApplicationData]
-
   implicit val formatUpdateApplicationRequest     = Json.format[UpdateApplicationRequest]
   implicit val formatApplicationResponse          = Json.format[ApplicationResponse]
   implicit val formatExtendedApplicationResponse  = Json.format[ExtendedApplicationResponse]
@@ -67,10 +65,8 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatApproveUpliftRequest             = Json.format[ApproveUpliftRequest]
   implicit val formatRejectUpliftRequest              = Json.format[RejectUpliftRequest]
   implicit val formatResendVerificationRequest        = Json.format[ResendVerificationRequest]
-  implicit val formatAddCollaboratorRequest           = Json.format[AddCollaboratorRequest]
   implicit val formatAddTermsOfUseAcceptanceRequest   = Json.format[AddTermsOfUseAcceptanceRequest]
   implicit val formatConfirmSetupCompleteRequest      = Json.format[ConfirmSetupCompleteRequest]
-  implicit val formatAddCollaboratorResponse          = Json.format[AddCollaboratorResponse]
   implicit val formatScopeRequest                     = Json.format[ScopeRequest]
   implicit val formatScopeResponse                    = Json.format[ScopeResponse]
   implicit val formatOverridesRequest                 = Json.format[OverridesRequest]
@@ -80,7 +76,6 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatDeleteClientSecretsRequest       = Json.format[DeleteClientSecretsRequest]
   implicit val formatDeleteClientSecretRequest        = Json.format[DeleteClientSecretRequest]
   implicit val formatFixCollaboratorRequest           = Json.format[FixCollaboratorRequest]
-  implicit val formatDeleteCollaboratorRequest        = Json.format[DeleteCollaboratorRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
     JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecret]]

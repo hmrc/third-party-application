@@ -21,7 +21,7 @@ import java.time.LocalDateTime
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
@@ -45,11 +45,6 @@ case class ApproveUpliftRequest(gatekeeperUserId: String)
 case class RejectUpliftRequest(gatekeeperUserId: String, reason: String)
 
 case class ResendVerificationRequest(gatekeeperUserId: String)
-
-@deprecated("Replace with command AddCollaborator")
-case class AddCollaboratorRequest(collaborator: Collaborator, isRegistered: Boolean, adminsToEmail: Set[LaxEmailAddress])
-
-case class AddCollaboratorResponse(registeredUser: Boolean)
 
 case class ScopeRequest(scopes: Set[String])
 
@@ -87,12 +82,6 @@ case class DeleteApplicationRequest(gatekeeperUserId: String, requestedByEmailAd
 case class DeleteSubordinateApplicationRequest(applicationId: String)
 
 case class FixCollaboratorRequest(emailAddress: String, userId: UserId)
-
-case class DeleteCollaboratorRequest(
-    email: LaxEmailAddress,
-    adminsToEmail: Set[LaxEmailAddress],
-    notifyCollaborator: Boolean
-  )
 
 case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: LocalDateTime, submissionId: SubmissionId)
 
