@@ -33,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submissi
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, TermsOfUseAcceptance}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -216,12 +216,21 @@ class GrantApprovalsService @Inject() (
         _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
         _ <- ET.cond(submission.status.isGrantedWithWarnings, (), RejectedDueToIncorrectSubmissionState)
 
-        updatedSubmission = Submission.grant(LocalDateTime.now(clock), gatekeeperUserName)(submission)
-        savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
-        _                <- ET.liftF(emailConnector.sendNewTermsOfUseConfirmation(originalApp.name, originalApp.admins.map(_.emailAddress)))
+        updatedSubmission      = Submission.grant(LocalDateTime.now(clock), gatekeeperUserName)(submission)
+        savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
+        responsibleIndividual <- ET.fromOption(getResponsibleIndividual(originalApp), RejectedDueToIncorrectApplicationData)
+        acceptance             = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submission.id, submission.latestInstance.index)
+        _                     <- ET.liftF(applicationRepository.addApplicationTermsOfUseAcceptance(originalApp.id, acceptance))
+        _                     <- ET.liftF(emailConnector.sendNewTermsOfUseConfirmation(originalApp.name, originalApp.admins.map(_.emailAddress)))
       } yield Actioned(originalApp)
     )
       .fold[Result](identity, identity)
+  }
+
+  private def getResponsibleIndividual(app: ApplicationData) =
+    app.access match {
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
+      case _                                                                                            => None
   }
 
   def declineForTouUplift(
