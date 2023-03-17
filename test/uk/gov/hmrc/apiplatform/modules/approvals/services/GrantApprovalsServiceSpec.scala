@@ -193,9 +193,10 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
   }
 
   "GrantApprovalsService.grantForTouUplift" should {
-    "grant the specified ToU application with warnings" in new Setup {
+    "grant the specified ToU application" in new Setup {
 
       SubmissionsServiceMock.Store.thenReturn()
+      ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(applicationProduction)
       EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
 
       val result = await(underTest.grantForTouUplift(applicationProduction, grantedWithWarningsSubmission, gatekeeperUserName))
