@@ -28,9 +28,18 @@ object ApiPlatformEventsStub extends Stub {
   private val clientSecretRemovedEventURL: String = "/application-events/clientSecretRemoved"
   private val apiSubscribedEventURL: String       = "/application-events/apiSubscribed"
   private val apiUnsubscribedEventURL: String     = "/application-events/apiUnsubscribed"
-  private val teamMemberAddedEventURL: String     = "/application-events/teamMemberAdded"
-  private val teamMemberRemovedEventURL: String   = "/application-events/teamMemberRemoved"
   private val applicationEventsURL: String        = "/application-event"
+
+  def willReceiveEventType(eventType: String): Unit = {
+    stub.mock.register(
+      post(urlEqualTo(applicationEventsURL))
+        .withRequestBody(containing(s""""eventType":"$eventType""""))
+        .willReturn(
+          aResponse()
+            .withStatus(CREATED)
+      )
+    )
+  }
 
   def verifyClientSecretAddedEventSent(): Unit = {
     verifyStubCalled(clientSecretAddedEventURL)
@@ -38,14 +47,6 @@ object ApiPlatformEventsStub extends Stub {
 
   def verifyClientSecretRemovedEventSent(): Unit = {
     verifyStubCalled(clientSecretRemovedEventURL)
-  }
-
-  def verifyTeamMemberAddedEventSent(): Unit = {
-    verifyStubCalled(teamMemberAddedEventURL)
-  }
-
-  def verifyTeamMemberRemovedEventSent(): Unit = {
-    verifyStubCalled(teamMemberRemovedEventURL)
   }
 
   def verifyApiSubscribedEventSent(): Unit = {
@@ -61,17 +62,14 @@ object ApiPlatformEventsStub extends Stub {
   }
 
   def verifyApplicationEventPostBody(body: String) = {
-
     stubFor(
       post(urlEqualTo(applicationEventsURL))
         .withRequestBody(equalToJson(body))
         .willReturn(
           aResponse()
-            .withBody(body)
             .withStatus(CREATED)
         )
     )
-
   }
 
   def willReceiveClientSecretAddedEvent() = {
@@ -100,22 +98,6 @@ object ApiPlatformEventsStub extends Stub {
 
   def willReceiveApiUnsubscribedEvent() = {
     stub.mock.register(post(urlEqualTo(apiUnsubscribedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
-  }
-
-  def willReceiveTeamMemberAddedEvent() = {
-    stub.mock.register(post(urlEqualTo(teamMemberAddedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
-  }
-
-  def willReceiveTeamMemberRemovedEvent() = {
-    stub.mock.register(post(urlEqualTo(teamMemberRemovedEventURL))
       .willReturn(
         aResponse()
           .withStatus(CREATED)

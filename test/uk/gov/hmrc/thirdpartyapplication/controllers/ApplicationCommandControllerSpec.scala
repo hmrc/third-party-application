@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddCollaborator, Applica
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RemoveCollaborator
 
 class ApplicationCommandControllerSpec
     extends ControllerSpec
@@ -81,6 +82,20 @@ class ApplicationCommandControllerSpec
       "newName"        -> "bob"
     )
 
+    "dispatch request" should {
+      val jsonText = s"""{"command":{"actor":{"actorType":"UNKNOWN"},"collaborator":{"userId":"${developerCollaborator.userId.value}","emailAddress":"dev@example.com","role":"DEVELOPER"},"timestamp":"2020-01-01T12:00:00","updateType":"removeCollaborator"},"verifiedCollaboratorsToNotify":["admin@example.com"]}"""
+      val timestamp = LocalDateTime.of(2020,1,1,12,0,0)
+      val cmd = RemoveCollaborator(Actors.Unknown, developerCollaborator, timestamp)
+      val req = ApplicationCommandController.DispatchRequest(cmd, Set(anAdminEmail))
+      import cats.syntax.option._
+
+      "write to json" in {
+        Json.toJson(req).toString() shouldBe jsonText
+      }
+      "read from json" in {
+        Json.parse(jsonText).asOpt[ApplicationCommandController.DispatchRequest] shouldBe req.some
+      }
+    }
     "calling update" should {
 
       "return success if application command request is valid" in new Setup {

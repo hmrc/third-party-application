@@ -26,7 +26,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
@@ -66,26 +65,6 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
       eventType = "ClientSecretRemoved",
       maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
         actor => sendEvent(ClientSecretRemovedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, clientSecretId = clientSecretId))
-      }
-    )
-  }
-
-  def sendTeamMemberAddedEvent(appData: ApplicationData, teamMemberEmail: LaxEmailAddress, teamMemberRole: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    handleResult(
-      appData.id,
-      eventType = "TeamMemberAddedEvent",
-      maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(TeamMemberAddedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
-      }
-    )
-  }
-
-  def sendTeamMemberRemovedEvent(appData: ApplicationData, teamMemberEmail: LaxEmailAddress, teamMemberRole: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    handleResult(
-      appData.id,
-      eventType = "TeamMemberRemovedEvent",
-      maybeFuture = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(TeamMemberRemovedEvent(EventId.random, appData.id, Instant.now(clock), actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
       }
     )
   }
@@ -132,8 +111,6 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
   }
 
   private def sendEvent(appEvent: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = appEvent match {
-    case tmae: TeamMemberAddedEvent     => apiPlatformEventsConnector.sendTeamMemberAddedEvent(tmae)
-    case tmre: TeamMemberRemovedEvent   => apiPlatformEventsConnector.sendTeamMemberRemovedEvent(tmre)
     case csae: ClientSecretAddedEvent   => apiPlatformEventsConnector.sendClientSecretAddedEvent(csae)
     case csra: ClientSecretRemovedEvent => apiPlatformEventsConnector.sendClientSecretRemovedEvent(csra)
     case ruue: RedirectUrisUpdatedEvent => apiPlatformEventsConnector.sendRedirectUrisUpdatedEvent(ruue)

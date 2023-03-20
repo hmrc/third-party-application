@@ -156,51 +156,6 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
   }
 
   "ApiPlatformEventsConnector" when {
-
-    "TeamMemberAddedEvents" should {
-      "return true when httpclient receives CREATED status" in new Setup() {
-        apiApplicationEventsWillReturnCreated(teamMemberAddedEvent)
-        val result = await(underTest.sendTeamMemberAddedEvent(teamMemberAddedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return true when connector is disabled" in new Setup(false) {
-        val result = await(underTest.sendTeamMemberAddedEvent(teamMemberAddedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return false when httpclient receives internal server error status" in new Setup() {
-        apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendTeamMemberAddedEvent(teamMemberAddedEvent)(hc))
-
-        result shouldBe false
-      }
-    }
-
-    "TeamMemberRemovedEvents" should {
-      "return true when httpclient receives CREATED status" in new Setup() {
-        apiApplicationEventsWillReturnCreated(teamMemberRemovedEvent)
-        val result = await(underTest.sendTeamMemberRemovedEvent(teamMemberRemovedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return true when connector is disabled" in new Setup(false) {
-        val result = await(underTest.sendTeamMemberRemovedEvent(teamMemberRemovedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return false when httpclient receives internal server error status" in new Setup() {
-        apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendTeamMemberRemovedEvent(teamMemberRemovedEvent)(hc))
-
-        result shouldBe false
-      }
-    }
-
     "ClientSecretAdded" should {
       "return true when httpclient receives CREATED status" in new Setup() {
         apiApplicationEventsWillReturnCreated(clientSecretAddedEvent)
