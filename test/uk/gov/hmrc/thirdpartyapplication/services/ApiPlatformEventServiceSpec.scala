@@ -123,20 +123,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       }
     }
 
-    // TODO
     "ClientSecretRemovedEvent" should {
-
-      "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
-      }
-
-      "send event payload with actor type as GATEKEEPER when user sending the event isn't a collaborator" in new Setup() {
-      }
-
-      "send event and return false result from connector" in new Setup() {
-      }
-
-      "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {
-      }
 
       "return false when username header is set but not user email header" in new Setup() {
         implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_NAME_HEADER -> "someuserName")

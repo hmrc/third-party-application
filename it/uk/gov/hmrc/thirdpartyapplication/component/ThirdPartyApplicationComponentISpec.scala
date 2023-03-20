@@ -40,12 +40,16 @@ import scala.concurrent.Await.{ready, result}
 import scala.util.Random
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
+import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController.{DispatchRequest, DispatchResult}
+import org.scalatest.Inside
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
 }
 
-class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with CollaboratorTestData {
+class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with CollaboratorTestData with Inside {
 
   val configOverrides = Map[String, Any](
     "microservice.services.api-subscription-fields.port"         -> 19650,
@@ -289,45 +293,59 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
     }
   }
 
-  // TODO
   Feature("Add/Remove collaborators to an application") {
-
+   
     Scenario("Add collaborator for an application") {
       Given("No applications exist")
       emptyApplicationRepository()
 
       Given("A third party application")
       val application = createApplication()
-      // apiPlatformEventsStub.willReceiveTeamMemberAddedEvent()
+      val newUserId = UserId.random
+      val newUserEmail = "bob@example.com".toLaxEmail
 
+      emailStub.willPostEmailNotification()
+      apiPlatformEventsStub.willReceiveEventType("COLLABORATOR_ADDED")
+      
       When("We request to add the developer as a collaborator of the application")
-      // val response = postData(
-      //   s"/application/${application.id.value}/collaborator",
-      //   s"""{
-      //      | "anAdminEmail":"admin@example.com",
-      //      | "collaborator": {
-      //      |   "emailAddress": "test@example.com",
-      //      |   "role":"ADMINISTRATOR",
-      //      |   "userId":"${testUserId.value}"
-      //      | },
-      //      | "isRegistered": true,
-      //      | "adminsToEmail": []
-      //      | }""".stripMargin
-      // )
-      // response.code shouldBe OK
-      // val result   = Json.parse(response.body).as[AddCollaboratorResponse]
+      val addCollaboratorCommandPayload =  s"""{
+              |  "actor": {
+              |    "email": "admin@example.com",
+              |    "actorType": "COLLABORATOR"
+              |  },
+              |  "collaborator": {
+              |    "emailAddress": "${newUserEmail.text}",
+              |    "role": "DEVELOPER",
+              |    "userId": "${newUserId.value}"
+              |  },
+              |  "timestamp": "2020-01-01T12:00:00",
+              |  "updateType": "addCollaborator"
+              | }""".stripMargin
+
+        val response = postData(
+            s"/application/${application.id.value}/dispatch",
+            s"""{
+              | "command": $addCollaboratorCommandPayload,
+              | "verifiedCollaboratorsToNotify": []
+              | }""".stripMargin,
+              method = "PATCH"
+          )
+          response.code shouldBe OK
+          val result   = Json.parse(response.body).as[DispatchResult]
 
       Then("The collaborator is added")
-      // result shouldBe AddCollaboratorResponse(registeredUser = true)
-      // val fetchedApplication = fetchApplication(application.id)
-      // fetchedApplication.collaborators should contain("test@example.com".admin(testUserId))
+      inside(result) { case DispatchResult(appResponse, events) => {
+        appResponse.collaborators should contain (Collaborators.Developer(newUserId, newUserEmail))
+        events.size shouldBe 1
+      }}
 
-      // apiPlatformEventsStub.verifyTeamMemberAddedEventSent()
+      val fetchedApplication = fetchApplication(application.id)
+      fetchedApplication.collaborators should contain (Collaborators.Developer(newUserId, newUserEmail))
     }
 
     Scenario("Remove collaborator to an application") {
-      // emailStub.willPostEmailNotification()
-      // apiPlatformEventsStub.willReceiveTeamMemberRemovedEvent()
+      emailStub.willPostEmailNotification()
+      apiPlatformEventsStub.willReceiveEventType("REMOVE_COLLABORATOR")
 
       Given("No applications exist")
       emptyApplicationRepository()
@@ -336,16 +354,39 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val application = createApplication()
 
       When("We request to remove a collaborator to the application")
-      // val deleteRequest = DeleteCollaboratorRequest(emailAddress.toLaxEmail, Set("admin@example.com".toLaxEmail), false)
-      // val response      = postData(s"/application/${application.id.value}/collaborator/delete", Json.prettyPrint(Json.toJson(deleteRequest)))
+        val commandPayload =  s"""{
+                |  "actor": {
+                |    "email": "admin@example.com",
+                |    "actorType": "COLLABORATOR"
+                |  },
+                |  "collaborator": {
+                |    "emailAddress": "$emailAddress",
+                |    "role": "DEVELOPER",
+                |    "userId": "${userId.value}"
+                |  },
+                |  "timestamp": "2020-01-01T12:00:00",
+                |  "updateType": "removeCollaborator"
+                | }""".stripMargin
 
-      // response.code shouldBe NO_CONTENT
+        val response = postData(
+          s"/application/${application.id.value}/dispatch",
+          s"""{
+            | "command": $commandPayload,
+            | "verifiedCollaboratorsToNotify": []
+            | }""".stripMargin,
+            method = "PATCH"
+        )
+        response.code shouldBe OK
+        val result   = Json.parse(response.body).as[DispatchResult]
 
       Then("The collaborator is removed")
-      // val fetchedApplication = fetchApplication(application.id)
-      // fetchedApplication.collaborators should not contain emailAddress.developer(userId)
-
-      // apiPlatformEventsStub.verifyTeamMemberRemovedEventSent()
+      inside(result) { case DispatchResult(appResponse, events) => {
+        appResponse.collaborators should not contain (Collaborators.Developer(userId, emailAddress.toLaxEmail))
+        events.size shouldBe 1
+      }}
+      
+      val fetchedApplication = fetchApplication(application.id)
+      fetchedApplication.collaborators should not contain emailAddress.developer(userId)
     }
   }
 

@@ -30,6 +30,17 @@ object ApiPlatformEventsStub extends Stub {
   private val apiUnsubscribedEventURL: String     = "/application-events/apiUnsubscribed"
   private val applicationEventsURL: String        = "/application-event"
 
+  def willReceiveEventType(eventType: String): Unit = {
+    stub.mock.register(
+      post(urlEqualTo(applicationEventsURL))
+        .withRequestBody(containing(s""""eventType":"$eventType""""))
+        .willReturn(
+          aResponse()
+            .withStatus(CREATED)
+      )
+    )
+  }
+
   def verifyClientSecretAddedEventSent(): Unit = {
     verifyStubCalled(clientSecretAddedEventURL)
   }
@@ -51,17 +62,14 @@ object ApiPlatformEventsStub extends Stub {
   }
 
   def verifyApplicationEventPostBody(body: String) = {
-
     stubFor(
       post(urlEqualTo(applicationEventsURL))
         .withRequestBody(equalToJson(body))
         .willReturn(
           aResponse()
-            .withBody(body)
             .withStatus(CREATED)
         )
     )
-
   }
 
   def willReceiveClientSecretAddedEvent() = {
