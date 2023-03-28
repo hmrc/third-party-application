@@ -16,15 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.time.Instant
+import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
-import play.api.libs.json.{Format, Json}
+object TermsOfUseInvitationState extends Enumeration {
+  type TermsOfUseInvitationState = Value
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.TermsOfUseInvitationState
+  val EMAIL_SENT, WARNINGS, FAILED, TERMS_OF_USE_V2_WITH_WARNINGS, TERMS_OF_USE_V2 = Value
 
-final case class TermsOfUseInvitationResponse(applicationId: ApplicationId, createdOn: Instant, lastUpdated: Instant, dueBy: Instant, reminderSent: Option[Instant], status: TermsOfUseInvitationState)
-
-object TermsOfUseInvitationResponse {
-  implicit val format: Format[TermsOfUseInvitationResponse] = Json.format[TermsOfUseInvitationResponse]
+  implicit val format = EnumJson.enumFormat(TermsOfUseInvitationState)
 }

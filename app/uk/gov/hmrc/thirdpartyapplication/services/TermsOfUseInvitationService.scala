@@ -27,7 +27,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
 
@@ -52,14 +54,18 @@ class TermsOfUseInvitationService @Inject() (
   def fetchInvitation(applicationId: ApplicationId): Future[Option[TermsOfUseInvitationResponse]] = {
     for {
       inviteF  <- termsOfUseRepository.fetch(applicationId)
-      responseF = inviteF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent))
+      responseF = inviteF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent, invite.status))
     } yield responseF
   }
 
   def fetchInvitations(): Future[List[TermsOfUseInvitationResponse]] = {
     for {
       invitesF  <- termsOfUseRepository.fetchAll()
-      responsesF = invitesF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent))
+      responsesF = invitesF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent, invite.status))
     } yield responsesF
+  }
+
+  def updateStatus(applicationId: ApplicationId, newState: TermsOfUseInvitationState): Future[HasSucceeded] = {
+      termsOfUseRepository.updateState(applicationId, newState)
   }
 }

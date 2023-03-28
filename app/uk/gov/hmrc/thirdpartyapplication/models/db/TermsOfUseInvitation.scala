@@ -23,9 +23,10 @@ import java.time.temporal.ChronoUnit._
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{TermsOfUseInvitationState, EMAIL_SENT}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
-final case class TermsOfUseInvitation(applicationId: ApplicationId, createdOn: Instant, lastUpdated: Instant, dueBy: Instant, reminderSent: Option[Instant] = None)
+final case class TermsOfUseInvitation(applicationId: ApplicationId, createdOn: Instant, lastUpdated: Instant, dueBy: Instant, reminderSent: Option[Instant] = None, status: TermsOfUseInvitationState = EMAIL_SENT)
 
 object TermsOfUseInvitation extends MongoJavatimeFormats.Implicits {
   val daysUntilDue = 60
@@ -37,6 +38,9 @@ object TermsOfUseInvitation extends MongoJavatimeFormats.Implicits {
       id,
       Instant.now().truncatedTo(MILLIS),
       Instant.now().truncatedTo(MILLIS),
-      Instant.now().truncatedTo(MILLIS).plus(daysUntilDue, ChronoUnit.DAYS)
+      Instant.now().truncatedTo(MILLIS).plus(daysUntilDue, ChronoUnit.DAYS),
+      None,
+      EMAIL_SENT
     )
 }
+

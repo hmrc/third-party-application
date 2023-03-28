@@ -70,7 +70,7 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
 
       val result = await(underTest.fetchInvitation(applicationId))
 
-      result.value should equal(TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent))
+      result.value should equal(TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent, invite.status))
     }
 
     "return nothing when no invitation is found in the repository" in new Setup {
