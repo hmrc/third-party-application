@@ -76,7 +76,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent)(implicit 
       state: TermsOfUseInvitationState,
     ): Future[List[TermsOfUseInvitation]] = {
     collection.find(
-      equal("state", Codecs.toBson(state)),
+      equal("state", Codecs.toBson(state))
     ).toFuture()
       .map(_.toList)
   }
