@@ -73,7 +73,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent)(implicit 
   def fetchAll(): Future[List[TermsOfUseInvitation]] = collection.find().toFuture().map(seq => seq.toList)
 
   def fetchByStatus(
-      state: TermsOfUseInvitationState,
+      state: TermsOfUseInvitationState
     ): Future[List[TermsOfUseInvitation]] = {
     collection.find(
       equal("state", Codecs.toBson(state))
