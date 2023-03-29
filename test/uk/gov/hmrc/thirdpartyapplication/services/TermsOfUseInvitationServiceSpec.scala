@@ -38,7 +38,7 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
     val now           = Instant.now().truncatedTo(MILLIS)
 
     val underTest = new TermsOfUseInvitationService(
-      TermsOfUseRepositoryMock.aMock,
+      TermsOfUseInvitationRepositoryMock.aMock,
       EmailConnectorMock.aMock
     )
   }
@@ -46,7 +46,7 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
   "create invitation" should {
     "return success when the terms of use invitiation can be created" in new Setup {
       EmailConnectorMock.SendNewTermsOfUseInvitation.thenReturnSuccess()
-      TermsOfUseRepositoryMock.Create.thenReturnSuccess(TermsOfUseInvitation(applicationId))
+      TermsOfUseInvitationRepositoryMock.Create.thenReturnSuccess(TermsOfUseInvitation(applicationId))
 
       val result = await(underTest.createInvitation(anApplicationData(applicationId)))
 
@@ -54,7 +54,7 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
     }
 
     "return failure when the terms of use invitiation cannot be created" in new Setup {
-      TermsOfUseRepositoryMock.Create.thenReturnFailure()
+      TermsOfUseInvitationRepositoryMock.Create.thenReturnFailure()
 
       val result = await(underTest.createInvitation(anApplicationData(applicationId)))
 
@@ -66,7 +66,7 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
     "return an invitation when one is found in the repository" in new Setup {
       val invite = TermsOfUseInvitation(applicationId)
 
-      TermsOfUseRepositoryMock.FetchInvitation.thenReturn(invite)
+      TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(invite)
 
       val result = await(underTest.fetchInvitation(applicationId))
 
@@ -74,7 +74,7 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
     }
 
     "return nothing when no invitation is found in the repository" in new Setup {
-      TermsOfUseRepositoryMock.FetchInvitation.thenReturnNone()
+      TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturnNone()
 
       val result = await(underTest.fetchInvitation(applicationId))
 
@@ -88,7 +88,7 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
         TermsOfUseInvitation(applicationId)
       )
 
-      TermsOfUseRepositoryMock.FetchAll.thenReturn(invitations)
+      TermsOfUseInvitationRepositoryMock.FetchAll.thenReturn(invitations)
 
       val result = await(underTest.fetchInvitations())
 
@@ -96,7 +96,7 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
     }
 
     "return empty list when no invitations are found in the repository" in new Setup {
-      TermsOfUseRepositoryMock.FetchAll.thenReturn(List.empty)
+      TermsOfUseInvitationRepositoryMock.FetchAll.thenReturn(List.empty)
 
       val result = await(underTest.fetchInvitations())
 

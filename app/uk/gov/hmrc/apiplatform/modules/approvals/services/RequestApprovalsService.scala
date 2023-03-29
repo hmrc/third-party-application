@@ -34,12 +34,14 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, HasSucceeded, InvalidName, ValidName}
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, AuditHelper, AuditService}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
 
 object RequestApprovalsService {
   sealed trait RequestApprovalResult
@@ -60,6 +62,7 @@ class RequestApprovalsService @Inject() (
     auditService: AuditService,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
+    termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     approvalsNamingService: ApprovalsNamingService,
     submissionService: SubmissionsService,
     emailConnector: EmailConnector,
@@ -183,6 +186,7 @@ class RequestApprovalsService @Inject() (
       for {
         _                                  <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
         _                                  <- ET.cond(originalApp.isInProduction, (), ApprovalRejectedDueToIncorrectApplicationState)
+        touInvite                          <- ET.fromOptionF(termsOfUseInvitationRepository.fetch(originalApp.id), ApprovalRejectedDueToIncorrectApplicationState)
         _                                  <- ET.cond(submission.status.isAnsweredCompletely, (), ApprovalRejectedDueToIncorrectSubmissionState(submission.status))
         isRequesterTheResponsibleIndividual = SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission)
         importantSubmissionData             = getImportantSubmissionData(submission, requestedByName, requestedByEmailAddress).get // Safe at this point
@@ -193,6 +197,7 @@ class RequestApprovalsService @Inject() (
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
         addTouAcceptance                    = isRequesterTheResponsibleIndividual && savedSubmission.status.isGranted
         _                                  <- ET.liftF(addTouAcceptanceIfNeeded(addTouAcceptance, updatedApp, submission, requestedByName, requestedByEmailAddress))
+        _                                  <- ET.liftF(setTermsOfUseInvitationStatus(savedApp.id, savedSubmission))
         _                                  <- ET.liftF(sendTouUpliftVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
         _                                  <- ET.liftF(sendConfirmationEmailIfNeeded(addTouAcceptance, savedApp))
         _                                   = logCompletedApprovalRequest(savedApp)
@@ -205,6 +210,15 @@ class RequestApprovalsService @Inject() (
   private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Future[Unit] = {
     logger.info(s"Approval-01: approval request made for appId:${applicationId}")
     successful(Unit)
+  }
+
+  private def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
+    submission.status match {
+      case Granted(_, _)  => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
+      case Warnings(_, _) => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
+      case Failed(_, _)   => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
+      case _              => successful(HasSucceeded)
+    }
   }
 
   private def addTouAcceptanceIfNeeded(
