@@ -125,7 +125,7 @@ class ApplicationCommandDispatcherSpec
 
   "dispatch" when {
     "AddClientSecret is received" should {
-      val clientSecret             = ClientSecret("name", FixedClock.now, None, UUID.randomUUID().toString, "hashedSecret")
+      val clientSecret             = ClientSecretDetails("name", FixedClock.now, None, UUID.randomUUID().toString, "hashedSecret")
       val cmd: AddClientSecret     = AddClientSecret(otherAdminAsActor, clientSecret, FixedClock.now)
       val evt: ClientSecretAddedV2 = ClientSecretAddedV2(EventId.random, applicationId, FixedClock.instant, otherAdminAsActor, clientSecret.name, clientSecret.id)
 

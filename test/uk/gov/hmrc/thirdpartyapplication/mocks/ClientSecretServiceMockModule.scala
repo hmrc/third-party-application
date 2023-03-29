@@ -23,7 +23,7 @@ import com.github.t3hnar.bcrypt._
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
 
 trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -37,20 +37,20 @@ trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     object GenerateClientSecret {
 
       def thenReturnWithSpecificSecret(id: String, secret: String) =
-        when(aMock.generateClientSecret()).thenReturn((ClientSecret(id = id, name = secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret))
+        when(aMock.generateClientSecret()).thenReturn((ClientSecretData(id = id, name = secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret))
 
       def thenReturnWithRandomSecret() = {
         val secret = UUID.randomUUID().toString
-        when(aMock.generateClientSecret()).thenReturn((ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret))
+        when(aMock.generateClientSecret()).thenReturn((ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret))
       }
     }
 
     object ClientSecretIsValid {
 
-      def thenReturnValidationResult(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecret])(matchingClientSecret: ClientSecret) =
+      def thenReturnValidationResult(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecretData])(matchingClientSecret: ClientSecretData) =
         when(aMock.clientSecretIsValid(eqTo(applicationId), eqTo(secret), eqTo(candidateClientSecrets))).thenReturn(Future.successful(Some(matchingClientSecret)))
 
-      def noMatchingClientSecret(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecret]) =
+      def noMatchingClientSecret(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecretData]) =
         when(aMock.clientSecretIsValid(eqTo(applicationId), eqTo(secret), eqTo(candidateClientSecrets))).thenReturn(Future.successful(None))
     }
   }

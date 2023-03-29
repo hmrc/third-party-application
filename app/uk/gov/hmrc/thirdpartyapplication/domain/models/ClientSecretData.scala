@@ -21,7 +21,7 @@ import java.{util => ju}
 
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
-case class ClientSecret(
+case class ClientSecretData(
     name: String,
     createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     lastAccess: Option[LocalDateTime] = None,
@@ -29,9 +29,9 @@ case class ClientSecret(
     hashedSecret: String
   )
 
-object ClientSecret {
+object ClientSecretData {
   import play.api.libs.json.Json
 
   implicit val dateformat = MongoJavatimeFormats.localDateTimeFormat
-  implicit val format     = Json.format[ClientSecret]
+  implicit val format     = Json.format[ClientSecretData]
 }

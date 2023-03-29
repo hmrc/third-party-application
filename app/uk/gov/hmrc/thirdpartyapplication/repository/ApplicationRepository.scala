@@ -209,7 +209,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
-  def addClientSecret(applicationId: ApplicationId, clientSecret: ClientSecret): Future[ApplicationData] =
+  def addClientSecret(applicationId: ApplicationId, clientSecret: ClientSecretData): Future[ApplicationData] =
     updateApplication(applicationId, Updates.push("tokens.production.clientSecrets", Codecs.toBson(clientSecret)))
 
   def updateClientSecretName(applicationId: ApplicationId, clientSecretId: String, newName: String): Future[ApplicationData] =

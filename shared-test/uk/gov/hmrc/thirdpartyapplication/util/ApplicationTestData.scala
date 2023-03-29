@@ -28,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db._
 
 trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData with ActorTestData with EmailTestData {
 
-  def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = FixedClock.now)
+  def aSecret(secret: String): ClientSecretData = ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = FixedClock.now)
 
   val serverToken           = "b3c83934c02df8b111e7f9f8700000"
   val serverTokenLastAccess = FixedClock.now

@@ -145,7 +145,7 @@ class ApplicationControllerSpec
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
   val credentialServiceResponseToken: ApplicationTokenResponse =
-    ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
+    ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecretData("3333", hashedSecret = "3333".bcrypt(4)))))
 
   "update approval" should {
     val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", FixedClock.now, "1.0".asVersion.value)

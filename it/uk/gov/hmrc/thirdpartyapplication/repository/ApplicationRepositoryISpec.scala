@@ -2439,14 +2439,14 @@ class ApplicationRepositoryISpec
     def clientSecretWithId(
         application: ApplicationData,
         clientSecretId: String
-      ): ClientSecret =
+      ): ClientSecretData =
       application.tokens.production.clientSecrets
         .find(_.id == clientSecretId)
         .get
     def otherClientSecrets(
         application: ApplicationData,
         clientSecretId: String
-      ): Seq[ClientSecret] =
+      ): Seq[ClientSecretData] =
       application.tokens.production.clientSecrets
         .filterNot(_.id == clientSecretId)
 
@@ -3315,7 +3315,7 @@ class ApplicationRepositoryISpec
         "user@example.com".admin()
       ),
       checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[ClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret"))
+      clientSecrets: List[ClientSecretData] = List(aClientSecret(hashedSecret = "hashed-secret"))
     ): ApplicationData = {
 
     aNamedApplicationData(
@@ -3339,7 +3339,7 @@ class ApplicationRepositoryISpec
       access: Access = Standard(),
       users: Set[Collaborator] = Set("user@example.com".admin()),
       checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[ClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
+      clientSecrets: List[ClientSecretData] = List(aClientSecret(hashedSecret = "hashed-secret")),
       grantLength: Int = defaultGrantLength
     ): ApplicationData = {
 

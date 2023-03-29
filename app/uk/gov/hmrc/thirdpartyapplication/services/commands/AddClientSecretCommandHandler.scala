@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.AddClientSecret
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
 
 @Singleton
 class AddClientSecretCommandHandler @Inject() (
@@ -54,16 +55,26 @@ class AddClientSecretCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
-        clientSecretId = cmd.clientSecret.id,
+        clientSecretId = cmd.clientSecret.id.value.toString,
         clientSecretName = cmd.clientSecret.name
       )
     )
   }
 
   def process(app: ApplicationData, cmd: AddClientSecret): ResultT = {
+    import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
+
+    def asClientSecretData(details: ClientSecretDetails): ClientSecretData = 
+      ClientSecretData(
+        name = details.name,
+        createdOn = details.createdOn,
+        lastAccess = details.lastAccess,
+        id = details.id.value.toString,
+        hashedSecret = details.hashedSecret
+      )
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
-      savedApp <- E.liftF(applicationRepository.addClientSecret(app.id, cmd.clientSecret))
+      savedApp <- E.liftF(applicationRepository.addClientSecret(app.id, asClientSecretData(cmd.clientSecret)))
       events    = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }

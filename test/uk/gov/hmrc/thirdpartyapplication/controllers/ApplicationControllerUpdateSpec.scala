@@ -122,7 +122,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
   val credentialServiceResponseToken: ApplicationTokenResponse =
-    ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
+    ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecretData("3333", hashedSecret = "3333".bcrypt(4)))))
 
   val collaborators: Set[Collaborator] = Set(
     "admin@example.com".admin(),
