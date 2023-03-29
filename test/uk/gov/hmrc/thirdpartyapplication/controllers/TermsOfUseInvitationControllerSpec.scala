@@ -31,6 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 class TermsOfUseInvitationControllerSpec extends ControllerSpec with ApplicationDataServiceMockModule with SubmissionsServiceMockModule with ApplicationTestData
@@ -51,7 +52,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
 
   "fetch invitation" should {
     "return an OK with a terms of use invitation response" in new Setup {
-      val response = TermsOfUseInvitationResponse(applicationId, now, now, dueDate, None)
+      val response = TermsOfUseInvitationResponse(applicationId, now, now, dueDate, None, EMAIL_SENT)
 
       TermsOfUseServiceMock.FetchInvitation.thenReturn(response)
 
@@ -78,7 +79,8 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
           now,
           now,
           dueDate,
-          None
+          None,
+          EMAIL_SENT
         )
       )
 
