@@ -23,12 +23,12 @@ import cats._
 import cats.data._
 import cats.implicits._
 
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ClientSecretAddedV2, EventId}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AddClientSecret
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
 
 @Singleton
 class AddClientSecretCommandHandler @Inject() (
@@ -64,7 +64,7 @@ class AddClientSecretCommandHandler @Inject() (
   def process(app: ApplicationData, cmd: AddClientSecret): ResultT = {
     import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 
-    def asClientSecretData(details: ClientSecretDetails): ClientSecretData = 
+    def asClientSecretData(details: ClientSecretDetails): ClientSecretData =
       ClientSecretData(
         name = details.name,
         createdOn = details.createdOn,

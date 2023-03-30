@@ -117,7 +117,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
 
       ResponsibleIndividualVerificationRepositoryMock.Save.verifyCalledWith(result)
     }
-  }  
+  }
   "getVerification" should {
     "get a RI verification record" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification)

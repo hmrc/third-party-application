@@ -43,9 +43,9 @@ import java.time.ZoneOffset
 class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar with ApplicationLogger with FixedClock {
 
   val dateTimeFormatterAsUsedByEventLib = new DateTimeFormatterBuilder()
-        .appendPattern("uuuu-MM-dd'T'HH:mm:ss.SSS")
-        .toFormatter
-        .withZone(ZoneOffset.UTC)
+    .appendPattern("uuuu-MM-dd'T'HH:mm:ss.SSS")
+    .toFormatter
+    .withZone(ZoneOffset.UTC)
 
   override protected def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
@@ -54,13 +54,13 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
       )
 
   trait Setup {
-    val inTest      = app.injector.instanceOf[ApiPlatformEventsConnector]
-    val appId       = ApplicationId.random
-    val eventId     = EventId.random
+    val inTest          = app.injector.instanceOf[ApiPlatformEventsConnector]
+    val appId           = ApplicationId.random
+    val eventId         = EventId.random
     val instantAsString = dateTimeFormatterAsUsedByEventLib.format(instant)
 
-    val email       = "someemail@somewhere.com"
-    val userName    = "bobby fingers"
+    val email    = "someemail@somewhere.com"
+    val userName = "bobby fingers"
 
     def testJson(updateApplicationEvent: ApplicationEvent, expectedRequestBody: String) = {
       implicit val request = FakeRequest()

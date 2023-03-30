@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.time.temporal.ChronoUnit
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.{util => ju}
 
@@ -27,7 +28,6 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
-import java.time.temporal.ChronoUnit
 
 case class ApplicationState(
     name: State = TESTING,

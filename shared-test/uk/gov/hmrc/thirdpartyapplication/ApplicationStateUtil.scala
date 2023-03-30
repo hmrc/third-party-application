@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 trait ApplicationStateUtil extends FixedClock {
   val generatedVerificationCode: String = "verificationCode"

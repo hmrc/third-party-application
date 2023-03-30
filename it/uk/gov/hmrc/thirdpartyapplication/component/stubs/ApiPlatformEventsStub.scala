@@ -37,7 +37,7 @@ object ApiPlatformEventsStub extends Stub {
         .willReturn(
           aResponse()
             .withStatus(CREATED)
-      )
+        )
     )
   }
 

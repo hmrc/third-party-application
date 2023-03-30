@@ -294,53 +294,55 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
   }
 
   Feature("Add/Remove collaborators to an application") {
-   
+
     Scenario("Add collaborator for an application") {
       Given("No applications exist")
       emptyApplicationRepository()
 
       Given("A third party application")
-      val application = createApplication()
-      val newUserId = UserId.random
+      val application  = createApplication()
+      val newUserId    = UserId.random
       val newUserEmail = "bob@example.com".toLaxEmail
 
       emailStub.willPostEmailNotification()
       apiPlatformEventsStub.willReceiveEventType("COLLABORATOR_ADDED")
-      
-      When("We request to add the developer as a collaborator of the application")
-      val addCollaboratorCommandPayload =  s"""{
-              |  "actor": {
-              |    "email": "admin@example.com",
-              |    "actorType": "COLLABORATOR"
-              |  },
-              |  "collaborator": {
-              |    "emailAddress": "${newUserEmail.text}",
-              |    "role": "DEVELOPER",
-              |    "userId": "${newUserId.value}"
-              |  },
-              |  "timestamp": "2020-01-01T12:00:00",
-              |  "updateType": "addCollaborator"
-              | }""".stripMargin
 
-        val response = postData(
-            s"/application/${application.id.value}/dispatch",
-            s"""{
-              | "command": $addCollaboratorCommandPayload,
-              | "verifiedCollaboratorsToNotify": []
-              | }""".stripMargin,
-              method = "PATCH"
-          )
-          response.code shouldBe OK
-          val result   = Json.parse(response.body).as[DispatchResult]
+      When("We request to add the developer as a collaborator of the application")
+      val addCollaboratorCommandPayload = s"""{
+                                             |  "actor": {
+                                             |    "email": "admin@example.com",
+                                             |    "actorType": "COLLABORATOR"
+                                             |  },
+                                             |  "collaborator": {
+                                             |    "emailAddress": "${newUserEmail.text}",
+                                             |    "role": "DEVELOPER",
+                                             |    "userId": "${newUserId.value}"
+                                             |  },
+                                             |  "timestamp": "2020-01-01T12:00:00",
+                                             |  "updateType": "addCollaborator"
+                                             | }""".stripMargin
+
+      val response = postData(
+        s"/application/${application.id.value}/dispatch",
+        s"""{
+           | "command": $addCollaboratorCommandPayload,
+           | "verifiedCollaboratorsToNotify": []
+           | }""".stripMargin,
+        method = "PATCH"
+      )
+      response.code shouldBe OK
+      val result   = Json.parse(response.body).as[DispatchResult]
 
       Then("The collaborator is added")
-      inside(result) { case DispatchResult(appResponse, events) => {
-        appResponse.collaborators should contain (Collaborators.Developer(newUserId, newUserEmail))
-        events.size shouldBe 1
-      }}
+      inside(result) {
+        case DispatchResult(appResponse, events) => {
+          appResponse.collaborators should contain(Collaborators.Developer(newUserId, newUserEmail))
+          events.size shouldBe 1
+        }
+      }
 
       val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.collaborators should contain (Collaborators.Developer(newUserId, newUserEmail))
+      fetchedApplication.collaborators should contain(Collaborators.Developer(newUserId, newUserEmail))
     }
 
     Scenario("Remove collaborator to an application") {
@@ -354,37 +356,39 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val application = createApplication()
 
       When("We request to remove a collaborator to the application")
-        val commandPayload =  s"""{
-                |  "actor": {
-                |    "email": "admin@example.com",
-                |    "actorType": "COLLABORATOR"
-                |  },
-                |  "collaborator": {
-                |    "emailAddress": "$emailAddress",
-                |    "role": "DEVELOPER",
-                |    "userId": "${userId.value}"
-                |  },
-                |  "timestamp": "2020-01-01T12:00:00",
-                |  "updateType": "removeCollaborator"
-                | }""".stripMargin
+      val commandPayload = s"""{
+                              |  "actor": {
+                              |    "email": "admin@example.com",
+                              |    "actorType": "COLLABORATOR"
+                              |  },
+                              |  "collaborator": {
+                              |    "emailAddress": "$emailAddress",
+                              |    "role": "DEVELOPER",
+                              |    "userId": "${userId.value}"
+                              |  },
+                              |  "timestamp": "2020-01-01T12:00:00",
+                              |  "updateType": "removeCollaborator"
+                              | }""".stripMargin
 
-        val response = postData(
-          s"/application/${application.id.value}/dispatch",
-          s"""{
-            | "command": $commandPayload,
-            | "verifiedCollaboratorsToNotify": []
-            | }""".stripMargin,
-            method = "PATCH"
-        )
-        response.code shouldBe OK
-        val result   = Json.parse(response.body).as[DispatchResult]
+      val response = postData(
+        s"/application/${application.id.value}/dispatch",
+        s"""{
+           | "command": $commandPayload,
+           | "verifiedCollaboratorsToNotify": []
+           | }""".stripMargin,
+        method = "PATCH"
+      )
+      response.code shouldBe OK
+      val result   = Json.parse(response.body).as[DispatchResult]
 
       Then("The collaborator is removed")
-      inside(result) { case DispatchResult(appResponse, events) => {
-        appResponse.collaborators should not contain (Collaborators.Developer(userId, emailAddress.toLaxEmail))
-        events.size shouldBe 1
-      }}
-      
+      inside(result) {
+        case DispatchResult(appResponse, events) => {
+          appResponse.collaborators should not contain (Collaborators.Developer(userId, emailAddress.toLaxEmail))
+          events.size shouldBe 1
+        }
+      }
+
       val fetchedApplication = fetchApplication(application.id)
       fetchedApplication.collaborators should not contain emailAddress.developer(userId)
     }

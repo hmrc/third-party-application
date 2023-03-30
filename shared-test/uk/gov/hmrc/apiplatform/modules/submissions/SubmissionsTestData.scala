@@ -22,10 +22,10 @@ import scala.util.Random
 import cats.data.NonEmptyList
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.HasApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 trait StatusTestDataHelper {
   self: FixedClock =>
@@ -96,7 +96,7 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
     AskWhen.Context.Keys.VAT_OR_ITSA             -> "No",
     AskWhen.Context.Keys.NEW_TERMS_OF_USE_UPLIFT -> "No"
   )
-  val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
+  val aSubmission                      = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
 
   val altSubmissionId = SubmissionId.random
   require(altSubmissionId != submissionId)

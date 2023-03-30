@@ -141,5 +141,5 @@ class TermsOfUseInvitationRepositoryISpec
       val fetch = await(termsOfUseInvitationRepository.fetch(applicationId))
       fetch mustBe Some(TermsOfUseInvitation(applicationId, now, now, now, None, TERMS_OF_USE_V2))
     }
-  }  
+  }
 }

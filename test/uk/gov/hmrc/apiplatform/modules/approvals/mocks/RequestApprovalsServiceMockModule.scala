@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService
 import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData}
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
 

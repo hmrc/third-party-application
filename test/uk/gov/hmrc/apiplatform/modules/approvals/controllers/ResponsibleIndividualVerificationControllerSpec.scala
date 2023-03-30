@@ -25,8 +25,8 @@ import play.api.test.{FakeRequest, Helpers}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class ResponsibleIndividualVerificationControllerSpec extends AsyncHmrcSpec with FixedClock {
   implicit val mat = NoMaterializer

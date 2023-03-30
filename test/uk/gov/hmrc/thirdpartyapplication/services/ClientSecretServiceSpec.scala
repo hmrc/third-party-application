@@ -21,11 +21,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.github.t3hnar.bcrypt._
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMockModule with FixedClock {
 
@@ -84,7 +84,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
 
   "lastUsedOrdering" should {
     val mostRecent = ClientSecretData(name = "secret-1", hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = Some(now))
-    val middle     = ClientSecretData(name = "secret-2", hashedSecret = "bar".bcrypt(fastWorkFactor), lastAccess = Some(now.minusDays (1)))
+    val middle     = ClientSecretData(name = "secret-2", hashedSecret = "bar".bcrypt(fastWorkFactor), lastAccess = Some(now.minusDays(1)))
     val agesAgo    = ClientSecretData(name = "secret-3", hashedSecret = "baz".bcrypt(fastWorkFactor), lastAccess = Some(now.minusDays(10)))
 
     "sort client secrets by most recently used" in {
