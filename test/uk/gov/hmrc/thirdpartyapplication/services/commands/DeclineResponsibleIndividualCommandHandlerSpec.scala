@@ -35,7 +35,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
@@ -43,6 +43,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
   trait Setup
       extends ResponsibleIndividualVerificationRepositoryMockModule
       with StateHistoryRepositoryMockModule
+      with TermsOfUseInvitationRepositoryMockModule
       with SubmissionsServiceMockModule
       with ApplicationRepositoryMockModule {
 
@@ -114,6 +115,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       ApplicationRepoMock.aMock,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       StateHistoryRepoMock.aMock,
+      TermsOfUseInvitationRepositoryMock.aMock,
       SubmissionsServiceMock.aMock
     )
 
@@ -211,7 +213,8 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationTouUplift)
       ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
       SubmissionsServiceMock.DeclineSubmission.thenReturn(declinedSubmission)
-
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn
+      
       val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
 
       checkSuccessResultUpdate() {
