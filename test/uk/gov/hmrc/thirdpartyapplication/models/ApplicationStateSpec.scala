@@ -20,7 +20,8 @@ import org.scalatest.BeforeAndAfterEach
 
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, HmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{HmrcSpec}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with BeforeAndAfterEach with FixedClock {
 
@@ -28,7 +29,7 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
   val upliftRequestedByName  = "Mrs Requester"
 
   "state transition from TESTING " should {
-    val startingState = testingState().copy(updatedOn = FixedClock.now.minusHours(24L))
+    val startingState = testingState().copy(updatedOn = now.minusHours(24L))
     "move application to PENDING_GATEKEEPER_APPROVAL state" in {
       val resultState = startingState.toPendingGatekeeperApproval(upliftRequestedByEmail, upliftRequestedByName, clock)
 
@@ -53,7 +54,7 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
   }
 
   "state transition from PENDING_GATEKEEPER_APPROVAL " should {
-    val startingState = pendingGatekeeperApprovalState(upliftRequestedByEmail).copy(updatedOn = FixedClock.now.minusHours(24L))
+    val startingState = pendingGatekeeperApprovalState(upliftRequestedByEmail).copy(updatedOn = now.minusHours(24L))
     "move application to PENDING_REQUESTER_VERIFICATION state" in {
       val resultState = startingState.toPendingRequesterVerification(clock)
 
@@ -77,7 +78,7 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
   }
 
   "state transition from PENDING_REQUESTER_VERIFICATION " should {
-    val startingState = pendingRequesterVerificationState(upliftRequestedByEmail).copy(updatedOn = FixedClock.now.minusHours(24L))
+    val startingState = pendingRequesterVerificationState(upliftRequestedByEmail).copy(updatedOn = now.minusHours(24L))
     "move application to PRE_PRODUCTION state" in {
       val resultState = startingState.toPreProduction(clock)
 
@@ -98,7 +99,7 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
   }
 
   "state transition from PRE_PRODUCTION " should {
-    val startingState = preProductionState(upliftRequestedByEmail).copy(updatedOn = FixedClock.now.minusHours(24L))
+    val startingState = preProductionState(upliftRequestedByEmail).copy(updatedOn = now.minusHours(24L))
 
     "move back application to TESTING state" in {
       val resultState = startingState.toTesting(clock)

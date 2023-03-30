@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.Instant
-import java.time.temporal.ChronoUnit._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
@@ -35,7 +33,6 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
     implicit val hc = HeaderCarrier()
 
     val applicationId = ApplicationId.random
-    val now           = Instant.now().truncatedTo(MILLIS)
 
     val underTest = new TermsOfUseInvitationService(
       TermsOfUseRepositoryMock.aMock,

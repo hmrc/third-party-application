@@ -35,7 +35,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 
 class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData with FixedClock {
@@ -80,7 +80,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      FixedClock.now,
+      now,
       ResponsibleIndividualVerificationState.INITIAL
     )
 
@@ -90,7 +90,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      FixedClock.now,
+      now,
       ResponsibleIndividualVerificationState.INITIAL
     )
 
@@ -100,7 +100,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      FixedClock.now,
+      now,
       newResponsibleIndividual,
       requesterName,
       requesterEmail,
@@ -226,7 +226,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       StateHistoryRepoMock.Insert.succeeds()
 
       checkSuccessResultToU() {
-        underTest.process(pendingRIApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+        underTest.process(pendingRIApp, ChangeResponsibleIndividualToOther(code, now))
       }
     }
 
@@ -239,7 +239,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
 
       checkSuccessResultTouUplift(false) {
-        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, now))
       }
     }
 
@@ -253,7 +253,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
 
       checkSuccessResultTouUplift(true) {
-        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, now))
       }
     }
 
@@ -264,14 +264,14 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       ApplicationRepoMock.UpdateApplicationChangeResponsibleIndividual.thenReturn(prodApp)
 
       checkSuccessResultUpdate() {
-        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, now))
       }
     }
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturnNothing
       checkFailsWith(s"No responsibleIndividualVerification found for code $code") {
-        underTest.process(app, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+        underTest.process(app, ChangeResponsibleIndividualToOther(code, now))
       }
     }
 
@@ -279,7 +279,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(nonStandardApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+        underTest.process(nonStandardApp, ChangeResponsibleIndividualToOther(code, now))
       }
     }
 
@@ -287,7 +287,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(oldJourneyApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+        underTest.process(oldJourneyApp, ChangeResponsibleIndividualToOther(code, now))
       }
     }
 
@@ -298,12 +298,12 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
         submission.id,
         submission.latestInstance.index,
         "App Name",
-        FixedClock.now,
+        now,
         ResponsibleIndividualVerificationState.INITIAL
       )
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification2)
       checkFailsWith("The given application id is different") {
-        underTest.process(app, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+        underTest.process(app, ChangeResponsibleIndividualToOther(code, now))
       }
     }
 
@@ -311,7 +311,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail.text, requesterName))
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state") {
-        underTest.process(pendingGKApprovalApp, ChangeResponsibleIndividualToOther(code, FixedClock.now))
+        underTest.process(pendingGKApprovalApp, ChangeResponsibleIndividualToOther(code, now))
       }
     }
 

@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiIdentifierSyntax {
 
@@ -45,7 +45,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with A
     val apiIdentifier       = "some-context".asIdentifier("1.1")
     val timestamp           = FixedClock.instant
 
-    val unsubscribeFromApi = UnsubscribeFromApi(gatekeeperUserActor, apiIdentifier, FixedClock.now)
+    val unsubscribeFromApi = UnsubscribeFromApi(gatekeeperUserActor, apiIdentifier, now)
 
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value

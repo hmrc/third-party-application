@@ -35,7 +35,7 @@ import play.api.inject.{ApplicationLifecycle, bind}
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 
 import uk.gov.hmrc.thirdpartyapplication.config.{ClockModule, SchedulerModule}
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventually with MockitoSugar with GuiceOneAppPerTest with FixedClock {
 

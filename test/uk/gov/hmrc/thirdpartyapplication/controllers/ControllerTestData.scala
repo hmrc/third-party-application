@@ -24,9 +24,10 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
-trait ControllerTestData extends CollaboratorTestData {
+trait ControllerTestData extends CollaboratorTestData with FixedClock {
 
   val collaborators: Set[Collaborator] = Set(
     "admin@example.com".admin(),
@@ -64,8 +65,8 @@ trait ControllerTestData extends CollaboratorTestData {
       environment.toString,
       Some("Description"),
       collaborators,
-      FixedClock.now,
-      Some(FixedClock.now),
+      now,
+      Some(now),
       grantLengthInDays,
       None,
       standardAccess.redirectUris,

@@ -29,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -92,7 +92,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
   val authKey: String = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
 
   "DeleteUnusedApplicationCommand" should {
-    val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, FixedClock.now)
+    val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, now)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
@@ -107,7 +107,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
     }
 
     "return an error when auth key doesnt match" in new Setup {
-      val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", "notAuthKey", reasons, FixedClock.now)
+      val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", "notAuthKey", reasons, now)
 
       checkFailsWith("Cannot delete this applicaton") {
         underTest.process(app, cmd)

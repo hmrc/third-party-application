@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddCollaborator, ApplicationCommand}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RemoveCollaborator
 
 class ApplicationCommandControllerSpec
@@ -77,7 +77,7 @@ class ApplicationCommandControllerSpec
     val validUpdateNameRequestBody = Json.obj(
       "updateType"     -> "changeProductionApplicationName",
       "instigator"     -> instigatorUserId,
-      "timestamp"      -> FixedClock.now,
+      "timestamp"      -> now,
       "gatekeeperUser" -> gatekeeperUser,
       "newName"        -> "bob"
     )

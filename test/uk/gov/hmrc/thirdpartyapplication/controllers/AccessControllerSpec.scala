@@ -36,7 +36,6 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule {
   import play.api.test.Helpers._
@@ -198,8 +197,8 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
         "PRODUCTION",
         Some("description"),
         Set.empty,
-        FixedClock.now,
-        Some(FixedClock.now),
+        now,
+        Some(now),
         grantLengthInDays,
         access = Standard()
       )
@@ -211,7 +210,7 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
 
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
-        ApplicationResponse(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, FixedClock.now, Some(FixedClock.now), grantLengthInDays)
+        ApplicationResponse(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, now, Some(now), grantLengthInDays)
       when(mockApplicationService.fetch(applicationId)).thenReturn(
         OptionT.pure[Future](
           applicationResponse.copy(clientId = ClientId("privilegedClientId"), name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))

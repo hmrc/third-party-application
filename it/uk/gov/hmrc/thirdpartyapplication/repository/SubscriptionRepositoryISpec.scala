@@ -29,12 +29,12 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
-
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.time.Clock
 import scala.util.Random.nextString
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
@@ -385,8 +385,8 @@ class SubscriptionRepositoryISpec
       ApplicationTokens(Token(clientId, generateAccessToken)),
       state,
       access,
-      FixedClock.now,
-      Some(FixedClock.now),
+      now,
+      Some(now),
       checkInformation = checkInformation
     )
   }

@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{ControllerSpec, Controller
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, UpliftRequested}
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, InvalidStateTransition}
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 class UpliftControllerSpec

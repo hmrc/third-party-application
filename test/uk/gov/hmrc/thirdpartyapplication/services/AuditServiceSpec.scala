@@ -43,9 +43,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
-class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with FixedClock
+class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
 
   class Setup {
@@ -53,7 +53,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     val auditService       = new AuditService(mockAuditConnector, SubmissionsServiceMock.aMock, clock)
   }
 
-  val timestamp             = FixedClock.now
+  val timestamp             = now
   val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
   val testImportantSubmissionData = ImportantSubmissionData(
@@ -162,7 +162,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       val appApprovalRequestDeclined = ApplicationApprovalRequestDeclined(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         Actors.GatekeeperUser(gatekeeperUser),
         gatekeeperUser,
         gatekeeperUser.toLaxEmail,
@@ -221,7 +221,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       val clientSecretAdded = ClientSecretAddedV2(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         collaboratorActor,
         "name",
         "hashedSecret"
@@ -252,7 +252,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       val clientSecretRemoved = ClientSecretRemovedV2(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         collaboratorActor,
         "client secret ID",
         "secret name"
@@ -284,7 +284,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       val collaboratorAdded = CollaboratorAddedV2(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         collaboratorActor,
         newCollaborator,
         verifiedAdminsToEmail = Set.empty
@@ -317,7 +317,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       val collaboratorRemoved = CollaboratorRemovedV2(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         collaboratorActor,
         removedCollaborator,
         verifiedAdminsToEmail = Set.empty
@@ -348,7 +348,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       val apiSubscribed = ApiSubscribedV2(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         collaboratorActor,
         "context".asContext,
         "version".asVersion
@@ -379,7 +379,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       val apiUnsubscribed = ApiUnsubscribedV2(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         collaboratorActor,
         "context".asContext,
         "version".asVersion
@@ -410,7 +410,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       val redirectUrisUpdated = RedirectUrisUpdatedV2(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         collaboratorActor,
         oldRedirectUris = List.empty,
         newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
@@ -487,8 +487,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       wso2ApplicationName = "wso2ApplicationName",
       tokens = tokens,
       state = testingState(),
-      createdOn = FixedClock.now,
-      lastAccess = Some(FixedClock.now)
+      createdOn = now,
+      lastAccess = Some(now)
     )
 
     val updatedApp = previousApp.copy(

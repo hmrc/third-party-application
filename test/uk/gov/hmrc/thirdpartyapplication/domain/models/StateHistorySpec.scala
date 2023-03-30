@@ -18,12 +18,12 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
-import uk.gov.hmrc.thirdpartyapplication.util.{ActorTestData, FixedClock, HmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorTestData, HmrcSpec}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
-class StateHistorySpec extends HmrcSpec with ActorTestData {
+class StateHistorySpec extends HmrcSpec with ActorTestData with FixedClock {
 
   val applicationId = ApplicationId.random
-  val now           = FixedClock.now
 
   "State history" should {
     "sort by date" in {

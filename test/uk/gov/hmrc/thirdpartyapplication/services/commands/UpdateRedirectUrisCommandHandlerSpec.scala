@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -42,7 +42,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
 
     val timestamp = FixedClock.instant
-    val cmd       = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, FixedClock.now)
+    val cmd       = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, now)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>

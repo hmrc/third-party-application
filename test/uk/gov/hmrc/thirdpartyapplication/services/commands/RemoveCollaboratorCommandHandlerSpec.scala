@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.CollaboratorRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -61,7 +61,7 @@ class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val adminsToEmail = Set(anAdminEmail, devEmail)
 
-    val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), collaborator, FixedClock.now)
+    val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), collaborator, now)
 
     def checkSuccessResult(expectedActor: Actor)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>

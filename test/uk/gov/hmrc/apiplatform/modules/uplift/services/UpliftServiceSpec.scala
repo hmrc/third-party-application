@@ -46,8 +46,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       with UpliftNamingServiceMockModule
       with UpliftLinksRepositoryMockModule
       with ApiGatewayStoreMockModule
-      with ApplicationTestData
-      with FixedClock {
+      with ApplicationTestData {
 
     val applicationId: ApplicationId = ApplicationId.random
 
@@ -76,7 +75,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
         state = PENDING_GATEKEEPER_APPROVAL,
         actor = Actors.AppCollaborator(upliftRequestedByEmail),
         previousState = Some(TESTING),
-        changedAt = FixedClock.now
+        changedAt = now
       )
 
       ApplicationRepoMock.Fetch.thenReturn(application)
@@ -179,8 +178,8 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
 
       val expectedStateHistory =
-        StateHistory(applicationId, State.PRE_PRODUCTION, Actors.AppCollaborator(upliftRequestedBy), Some(PENDING_REQUESTER_VERIFICATION), changedAt = FixedClock.now)
-      val upliftRequest        = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator(upliftRequestedBy), Some(TESTING), changedAt = FixedClock.now)
+        StateHistory(applicationId, State.PRE_PRODUCTION, Actors.AppCollaborator(upliftRequestedBy), Some(PENDING_REQUESTER_VERIFICATION), changedAt = now)
+      val upliftRequest        = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator(upliftRequestedBy), Some(TESTING), changedAt = now)
 
       val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy.text))
 

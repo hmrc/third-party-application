@@ -30,6 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.{SubmissionsDAOMockModu
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, _}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 

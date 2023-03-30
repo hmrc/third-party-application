@@ -38,7 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with CollaboratorTestData {
 
@@ -73,7 +73,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     when(mockApiPlatformEventsService.sendApiUnsubscribedEvent(*, *[ApiContext], *[ApiVersion])(*)).thenReturn(successful(true))
   }
 
-  private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
+  private def aSecret(secret: String) = ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   "isSubscribed" should {
     val applicationId = ApplicationId.random
@@ -270,8 +270,8 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
       ApplicationTokens(productionToken),
       state,
       Standard(),
-      FixedClock.now,
-      Some(FixedClock.now),
+      now,
+      Some(now),
       rateLimitTier = rateLimitTier
     )
   }

@@ -48,7 +48,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData}
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks with CollaboratorTestData {
@@ -191,8 +191,8 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
       environment.toString,
       Some("Description"),
       collaborators,
-      FixedClock.now,
-      Some(FixedClock.now),
+      now,
+      Some(now),
       grantLengthInDays,
       None,
       standardAccess.redirectUris,

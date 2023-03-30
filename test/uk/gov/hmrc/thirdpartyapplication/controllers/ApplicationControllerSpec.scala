@@ -56,7 +56,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 
 class ApplicationControllerSpec
@@ -148,7 +148,7 @@ class ApplicationControllerSpec
     ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecretData("3333", hashedSecret = "3333".bcrypt(4)))))
 
   "update approval" should {
-    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", FixedClock.now, "1.0".asVersion.value)
+    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", now, "1.0".asVersion.value)
     val checkInformation    = CheckInformation(
       contactDetails = Some(ContactDetails("Tester", "test@example.com", "12345677890")),
       termsOfUseAgreements = List(termsOfUseAgreement)
@@ -327,7 +327,7 @@ class ApplicationControllerSpec
     val applicationId             = ApplicationId.random
     val applicationTokensResponse =
       ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
-    val secretRequest             = ClientSecretRequestWithActor(Actors.AppCollaborator("actor@example.com".toLaxEmail), FixedClock.now)
+    val secretRequest             = ClientSecretRequestWithActor(Actors.AppCollaborator("actor@example.com".toLaxEmail), now)
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(
@@ -548,7 +548,7 @@ class ApplicationControllerSpec
     val clientId = ClientId("A123XC")
 
     trait LastAccessedSetup extends Setup {
-      val updatedLastAccessTime: LocalDateTime = FixedClock.now.truncatedTo(ChronoUnit.MILLIS)
+      val updatedLastAccessTime: LocalDateTime = now.truncatedTo(ChronoUnit.MILLIS)
       val lastAccessTime: LocalDateTime        = updatedLastAccessTime.minusDays(10) // scalastyle:ignore magic.number
       val applicationId: ApplicationId         = ApplicationId.random
 

@@ -27,6 +27,7 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
+import java.time.temporal.ChronoUnit
 
 case class ApplicationState(
     name: State = TESTING,
@@ -97,7 +98,7 @@ case class ApplicationState(
     copy(name = State.PENDING_REQUESTER_VERIFICATION, verificationCode = Some(verificationCode()), updatedOn = LocalDateTime.now(clock))
   }
 
-  def toDeleted(clock: Clock) = copy(name = DELETED, verificationCode = None, updatedOn = LocalDateTime.now(clock))
+  def toDeleted(clock: Clock) = copy(name = DELETED, verificationCode = None, updatedOn = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS))
 }
 
 object ApplicationState {

@@ -25,13 +25,14 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
-trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData with ActorTestData with EmailTestData {
+trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData with ActorTestData with EmailTestData with FixedClock {
 
-  def aSecret(secret: String): ClientSecretData = ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = FixedClock.now)
+  def aSecret(secret: String): ClientSecretData = ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = now)
 
   val serverToken           = "b3c83934c02df8b111e7f9f8700000"
-  val serverTokenLastAccess = FixedClock.now
+  val serverTokenLastAccess = now
   val productionToken       = Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   val requestedByName  = "john smith"
@@ -58,8 +59,8 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
       ApplicationTokens(productionToken),
       state,
       access,
-      FixedClock.now,
-      Some(FixedClock.now),
+      now,
+      Some(now),
       grantLength,
       rateLimitTier = rateLimitTier,
       environment = environment.toString,

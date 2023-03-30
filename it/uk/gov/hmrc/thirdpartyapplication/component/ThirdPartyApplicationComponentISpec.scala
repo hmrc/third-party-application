@@ -40,7 +40,7 @@ import scala.concurrent.Await.{ready, result}
 import scala.util.Random
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
-import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController.{DispatchRequest, DispatchResult}
+import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController._
 import org.scalatest.Inside
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax

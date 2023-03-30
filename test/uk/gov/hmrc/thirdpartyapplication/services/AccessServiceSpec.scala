@@ -27,9 +27,10 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
-class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData {
+class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with FixedClock {
 
   "Access service update scopes function" should {
 
@@ -183,8 +184,8 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData {
       ),
       ApplicationState(),
       Privileged(None, scopes),
-      FixedClock.now,
-      Some(FixedClock.now)
+      now,
+      Some(now)
     )
 
   private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): ApplicationData =
@@ -200,8 +201,8 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData {
       ),
       ApplicationState(),
       Ropc(scopes),
-      FixedClock.now,
-      Some(FixedClock.now)
+      now,
+      Some(now)
     )
 
   private def standardApplicationDataWithOverrides(applicationId: ApplicationId, overrides: Set[OverrideFlag]): ApplicationData =
@@ -217,7 +218,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData {
       ),
       ApplicationState(),
       Standard(redirectUris = List.empty, overrides = overrides),
-      FixedClock.now,
-      Some(FixedClock.now)
+      now,
+      Some(now)
     )
 }

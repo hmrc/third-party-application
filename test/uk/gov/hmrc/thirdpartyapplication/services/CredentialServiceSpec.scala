@@ -39,7 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMock
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with ApplicationTestData {
 
@@ -78,11 +78,11 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       collaborators = Set(loggedInUser.admin(), anotherAdminUser.admin())
     )
     val secretRequest          = ClientSecretRequest(loggedInUser)
-    val secretRequestWithActor = ClientSecretRequestWithActor(Actors.AppCollaborator(loggedInUser), FixedClock.now)
+    val secretRequestWithActor = ClientSecretRequestWithActor(Actors.AppCollaborator(loggedInUser), now)
     val environmentToken       = applicationData.tokens.production
     val firstSecret            = environmentToken.clientSecrets.head
 
-    val prodTokenWith5Secrets       = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v, hashedSecret = "hashed-secret")))
+    val prodTokenWith5Secrets       = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecretData(v, hashedSecret = "hashed-secret")))
     val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
     val expectedTokenResponse = ApplicationTokenResponse(environmentToken)
@@ -136,7 +136,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
     "return application details when credentials match" in new Setup {
 
-      val updatedApplicationData      = applicationData.copy(lastAccess = Some(FixedClock.now))
+      val updatedApplicationData      = applicationData.copy(lastAccess = Some(now))
       val expectedApplicationResponse = ApplicationResponse(data = updatedApplicationData)
       val clientId                    = applicationData.tokens.production.clientId
       val secret                      = UUID.randomUUID().toString
@@ -181,7 +181,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       val newSecretValue: String = "secret3"
       val secretName: String     = newSecretValue.takeRight(4)
       val hashedSecret           = newSecretValue.bcrypt
-      val newClientSecret        = ClientSecret(secretName, hashedSecret = hashedSecret)
+      val newClientSecret        = ClientSecretData(secretName, hashedSecret = hashedSecret)
 
       ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newClientSecret.id, newSecretValue)
 
@@ -228,14 +228,14 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       val newSecretValue: String = "secret3"
       val secretName: String     = newSecretValue.takeRight(4)
       val hashedSecret           = newSecretValue.bcrypt
-      val newClientSecret        = ClientSecret(secretName, hashedSecret = hashedSecret)
+      val newClientSecret        = ClientSecretData(secretName, hashedSecret = hashedSecret)
 
       ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newClientSecret.id, newSecretValue)
 
-      val updatedClientSecrets: List[ClientSecret] = applicationData.tokens.production.clientSecrets :+ newClientSecret
-      val updatedEnvironmentToken: Token           = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
-      val updatedApplicationTokens                 = applicationData.tokens.copy(production = updatedEnvironmentToken)
-      val applicationWithNewClientSecret           = applicationData.copy(tokens = updatedApplicationTokens)
+      val updatedClientSecrets: List[ClientSecretData] = applicationData.tokens.production.clientSecrets :+ newClientSecret
+      val updatedEnvironmentToken: Token               = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
+      val updatedApplicationTokens                     = applicationData.tokens.copy(production = updatedEnvironmentToken)
+      val applicationWithNewClientSecret               = applicationData.copy(tokens = updatedApplicationTokens)
 
       ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(applicationWithNewClientSecret)
 
@@ -264,13 +264,13 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
       val newSecretValue: String = "secret3"
       val secretName: String     = newSecretValue.takeRight(4)
-      val newClientSecret        = ClientSecret(secretName, hashedSecret = newSecretValue.bcrypt)
+      val newClientSecret        = ClientSecretData(secretName, hashedSecret = newSecretValue.bcrypt)
       ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newClientSecret.id, newSecretValue)
 
-      val updatedClientSecrets: List[ClientSecret] = applicationData.tokens.production.clientSecrets :+ newClientSecret
-      val updatedEnvironmentToken: Token           = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
-      val updatedApplicationTokens                 = applicationData.tokens.copy(production = updatedEnvironmentToken)
-      val applicationWithNewClientSecret           = applicationData.copy(tokens = updatedApplicationTokens)
+      val updatedClientSecrets: List[ClientSecretData] = applicationData.tokens.production.clientSecrets :+ newClientSecret
+      val updatedEnvironmentToken: Token               = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
+      val updatedApplicationTokens                     = applicationData.tokens.copy(production = updatedEnvironmentToken)
+      val applicationWithNewClientSecret               = applicationData.copy(tokens = updatedApplicationTokens)
       ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(applicationWithNewClientSecret)
 
       await(underTest.addClientSecret(applicationId, secretRequest))

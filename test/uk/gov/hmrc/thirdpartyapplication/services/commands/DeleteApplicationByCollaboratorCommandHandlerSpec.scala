@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -98,7 +98,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
   val ts             = FixedClock.instant
 
   "DeleteApplicationByCollaborator" should {
-    val cmd = DeleteApplicationByCollaborator(appAdminUserId, reasons, FixedClock.now)
+    val cmd = DeleteApplicationByCollaborator(appAdminUserId, reasons, now)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()
@@ -114,7 +114,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
 
     "return an error when app is NOT in testing state" in new Setup {
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
-      val cmd            = DeleteApplicationByCollaborator(appAdminUserId, reasons, FixedClock.now)
+      val cmd            = DeleteApplicationByCollaborator(appAdminUserId, reasons, now)
 
       checkFailsWith("App must have a STANDARD access type") {
         underTest.process(nonStandardApp, cmd)
@@ -123,7 +123,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
 
     "return an error if the actor is not an admin of the application" in new Setup {
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, FixedClock.now))
+        underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, now))
       }
     }
 
