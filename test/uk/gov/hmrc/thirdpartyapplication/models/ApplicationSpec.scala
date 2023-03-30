@@ -48,10 +48,10 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         ApplicationTokens(Token(ClientId("cid"), "at")),
         productionState("user1"),
         Standard(),
-        FixedClock.now,
-        Some(FixedClock.now)
+        now,
+        Some(now)
       )
-    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator("1".toLaxEmail), changedAt = FixedClock.now)
+    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator("1".toLaxEmail), changedAt = now)
 
     "create object" in {
       val result = ApplicationWithUpliftRequest.create(app, history)
@@ -82,7 +82,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         ),
         wso2ApplicationName = "wso2ApplicationName",
         environmentToken = Token(ClientId("clientId"), "accessToken"),
-        createdOn = FixedClock.now
+        createdOn = now
       )
     }
 
@@ -97,7 +97,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         ),
         wso2ApplicationName = "wso2ApplicationName",
         environmentToken = Token(ClientId("clientId"), "accessToken"),
-        createdOn = FixedClock.now
+        createdOn = now
       )
     }
 

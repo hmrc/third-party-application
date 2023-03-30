@@ -300,10 +300,10 @@ case class ClientSecretResponse(id: String, name: String, secret: Option[String]
 
 object ClientSecretResponse {
 
-  def apply(clientSecret: ClientSecret): ClientSecretResponse =
+  def apply(clientSecret: ClientSecretData): ClientSecretResponse =
     ClientSecretResponse(clientSecret.id, clientSecret.name, None, clientSecret.createdOn, clientSecret.lastAccess)
 
-  def apply(clientSecret: ClientSecret, newClientSecretId: String, newClientSecret: String): ClientSecretResponse =
+  def apply(clientSecret: ClientSecretData, newClientSecretId: String, newClientSecret: String): ClientSecretResponse =
     ClientSecretResponse(
       clientSecret.id,
       clientSecret.name,

@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationCommandDispatcherMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil
     with ApplicationTestData {
@@ -39,8 +39,6 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       with SubmissionsTestData {
 
     val mockLockKeeper = mock[ResponsibleIndividualVerificationRemovalJobLockService]
-    val timeNow        = FixedClock.now
-    val fixedClock     = FixedClock.clock
 
     val riName         = "bob responsible"
     val riEmail        = "bob.responsible@example.com"
@@ -60,7 +58,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
     val app             = anApplicationData(
       ApplicationId.random,
       access = Standard(importantSubmissionData = Some(importantSubmissionData)),
-      state = ApplicationState().toPendingResponsibleIndividualVerification(requesterEmail, requesterName, fixedClock)
+      state = ApplicationState().toPendingResponsibleIndividualVerification(requesterEmail, requesterName, clock)
     ).copy(name = appName)
     val initialDelay    = FiniteDuration(1, MINUTES)
     val interval        = FiniteDuration(1, HOURS)
@@ -71,7 +69,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       mockLockKeeper,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       ApplicationCommandDispatcherMock.aMock,
-      fixedClock,
+      clock,
       jobConfig
     )
   }
@@ -82,7 +80,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
 
       val code         = "123242423432432432"
       val verification =
-        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code), app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, FixedClock.now)
+        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code), app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
 
       await(job.runJob)
@@ -90,7 +88,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
         ResponsibleIndividualVerification.VerificationTypeToU,
         REMINDERS_SENT,
-        timeNow.minus(removalInterval.toSeconds, SECONDS)
+        now.minus(removalInterval.toSeconds, SECONDS)
       )
       val command                                  = ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(app.id)
       val declineResponsibleIndividualDidNotVerify = command.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
@@ -110,11 +108,11 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
           completelyAnswerExtendedSubmission.submission.id,
           0,
           badApp.name,
-          FixedClock.now
+          now
         )
       val code2         = "725446087565645698"
       val verification2 =
-        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code2), app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, FixedClock.now)
+        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code2), app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification1, verification2)
 
       await(job.runJob)
@@ -122,7 +120,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
         ResponsibleIndividualVerification.VerificationTypeToU,
         REMINDERS_SENT,
-        timeNow.minus(removalInterval.toSeconds, SECONDS)
+        now.minus(removalInterval.toSeconds, SECONDS)
       )
       val command                                  = ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(app.id)
       val declineResponsibleIndividualDidNotVerify = command.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]

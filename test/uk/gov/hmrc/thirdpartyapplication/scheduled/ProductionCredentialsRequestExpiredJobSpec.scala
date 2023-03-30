@@ -26,15 +26,14 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationCommandDispatcherMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   trait Setup extends ApplicationRepositoryMockModule with ApplicationCommandDispatcherMockModule with ApplicationTestData {
 
     val mockLockKeeper = mock[ProductionCredentialsRequestExpiredJobLockService]
-    val timeNow        = FixedClock.now
-    val fixedClock     = FixedClock.clock
+    val timeNow        = now
 
     val riName         = "bob responsible"
     val riEmail        = "bob.responsible@example.com"
@@ -54,13 +53,13 @@ class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with Befo
     val app            = anApplicationData(
       ApplicationId.random,
       access = Standard(importantSubmissionData = Some(importantSubmissionData)),
-      state = ApplicationState().toPendingResponsibleIndividualVerification(requesterEmail, requesterName, fixedClock)
+      state = ApplicationState().toPendingResponsibleIndividualVerification(requesterEmail, requesterName, clock)
     ).copy(name = appName)
     val initialDelay   = FiniteDuration(1, MINUTES)
     val interval       = FiniteDuration(1, HOURS)
     val deleteInterval = FiniteDuration(10, DAYS)
     val jobConfig      = ProductionCredentialsRequestExpiredJobConfig(initialDelay, interval, true, deleteInterval)
-    val job            = new ProductionCredentialsRequestExpiredJob(mockLockKeeper, ApplicationRepoMock.aMock, ApplicationCommandDispatcherMock.aMock, fixedClock, jobConfig)
+    val job            = new ProductionCredentialsRequestExpiredJob(mockLockKeeper, ApplicationRepoMock.aMock, ApplicationCommandDispatcherMock.aMock, clock, jobConfig)
     val recipients     = app.collaborators.map(_.emailAddress)
   }
 

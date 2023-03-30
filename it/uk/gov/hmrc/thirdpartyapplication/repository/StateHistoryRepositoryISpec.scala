@@ -21,13 +21,14 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport
     with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
@@ -39,7 +40,7 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
     "Save a state history" in {
 
-      val stateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = FixedClock.now)
+      val stateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = now)
 
       val result = await(repository.insert(stateHistory))
 
@@ -54,8 +55,8 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
     "Return the state history of the application" in {
 
       val applicationId          = ApplicationId.random
-      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = FixedClock.now)
-      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = FixedClock.now)
+      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = now)
+      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = now)
       await(repository.insert(stateHistory))
       await(repository.insert(anotherAppStateHistory))
 
@@ -70,10 +71,10 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
     "Return the state history of the application" in {
 
       val applicationId   = ApplicationId.random
-      val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = FixedClock.now.minusDays(5))
-      val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = FixedClock.now)
-      val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = FixedClock.now)
-      val pendingHistory3 = StateHistory(ApplicationId.random, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = FixedClock.now)
+      val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = now.minusDays(5))
+      val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = now)
+      val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = now)
+      val pendingHistory3 = StateHistory(ApplicationId.random, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = now)
 
       await(repository.insert(pendingHistory1))
       await(repository.insert(approvedHistory))
@@ -91,10 +92,10 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
     "Return the state history of the application" in {
 
       val applicationId   = ApplicationId.random
-      val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = FixedClock.now.minusDays(5))
-      val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = FixedClock.now)
-      val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = FixedClock.now)
-      val pendingHistory3 = StateHistory(ApplicationId.random, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = FixedClock.now)
+      val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = now.minusDays(5))
+      val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = now)
+      val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = now)
+      val pendingHistory3 = StateHistory(ApplicationId.random, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = now)
 
       await(repository.insert(pendingHistory1))
       await(repository.insert(approvedHistory))
@@ -112,8 +113,8 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
     "Delete the state histories of the application" in {
 
       val applicationId          = ApplicationId.random
-      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = FixedClock.now)
-      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = FixedClock.now)
+      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = now)
+      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = now)
       await(repository.insert(stateHistory))
       await(repository.insert(anotherAppStateHistory))
 
@@ -128,7 +129,7 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
     "insert a StateHistory record" in {
       val requesterEmail = "bill.badger@rupert.com".toLaxEmail
       val appId          = ApplicationId.random
-      val ts             = FixedClock.now
+      val ts             = now
       val actor: Actor   = Actors.AppCollaborator(requesterEmail)
 
       val stateHistory = StateHistory(appId, State.PENDING_GATEKEEPER_APPROVAL, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)

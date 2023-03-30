@@ -18,12 +18,13 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ClientSecretAddedV2
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -33,10 +34,10 @@ class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val timestamp    = FixedClock.instant
     val secretValue  = "secret"
-    val clientSecret = ClientSecret("name", FixedClock.now, hashedSecret = "hashed")
+    val clientSecret = ClientSecretDetails("name", now, hashedSecret = "hashed")
 
-    val addClientSecretByDev   = AddClientSecret(Actors.AppCollaborator(devEmail), clientSecret, FixedClock.now)
-    val addClientSecretByAdmin = AddClientSecret(otherAdminAsActor, clientSecret, FixedClock.now)
+    val addClientSecretByDev   = AddClientSecret(Actors.AppCollaborator(devEmail), clientSecret, now)
+    val addClientSecretByAdmin = AddClientSecret(otherAdminAsActor, clientSecret, now)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
@@ -48,7 +49,7 @@ class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            clientSecretId shouldBe clientSecret.id
+            clientSecretId shouldBe clientSecret.id.value.toString
             clientSecretName shouldBe clientSecret.name
         }
       }

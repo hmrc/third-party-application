@@ -33,8 +33,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submissi
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, TermsOfUseAcceptance}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, TermsOfUseAcceptance}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
@@ -231,7 +231,7 @@ class GrantApprovalsService @Inject() (
     app.access match {
       case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
       case _                                                                                            => None
-  }
+    }
 
   def declineForTouUplift(
       originalApp: ApplicationData,
