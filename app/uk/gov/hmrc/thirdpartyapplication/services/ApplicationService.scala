@@ -401,50 +401,7 @@ class ApplicationService @Inject() (
       _           = checkAccessType(existing)
       savedApp   <- applicationRepository.save(updatedApplication(existing))
       _           = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
-      updatedApp <- sendEventAndAuditIfRedirectUrisChanged(existing, savedApp)
-    } yield updatedApp
-  }
-
-  private def sendEventAndAuditIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
-    (previousAppData.access, updatedAppData.access) match {
-      case (previous: Standard, updated: Standard) =>
-        if (previous.redirectUris != updated.redirectUris) {
-          handleUpdateApplication(
-            previousAppData.id,
-            updatedAppData.collaborators,
-            oldRedirectUris = previous.redirectUris,
-            newRedirectUris = updated.redirectUris
-          )
-        } else Future.successful(updatedAppData)
-      case _                                       => Future.successful(updatedAppData)
-    }
-  }
-
-  private def handleUpdateApplication(
-      applicationId: ApplicationId,
-      collaborators: Set[Collaborator],
-      oldRedirectUris: List[String],
-      newRedirectUris: List[String]
-    )(implicit hc: HeaderCarrier
-    ): Future[ApplicationData] = {
-
-    def fail(errorMessages: CommandHandler.Failures) = {
-      logger.warn(s"Command Process failed for $applicationId because ${errorMessages.toList.mkString("[", ",", "]")}")
-      throw new BadRequestException("Failed to process UpdateRedirectUris command")
-    }
-
-    def success(cmdSuccess: CommandHandler.Success) = {
-      cmdSuccess._1
-    }
-
-    val updateRedirectUris = UpdateRedirectUris(
-      actor = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators).getOrElse(Actors.Unknown),
-      oldRedirectUris,
-      newRedirectUris,
-      timestamp = LocalDateTime.now(clock)
-    )
-    applicationCommandDispatcher.dispatch(applicationId, updateRedirectUris, Set.empty)
-      .fold(fail, success)
+    } yield savedApp
   }
 
   private def fetchApp(applicationId: ApplicationId) = {
