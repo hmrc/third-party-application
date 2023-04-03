@@ -344,8 +344,8 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object UpdateRedirectUris {
 
-      def thenReturn(applicationId: ApplicationId, redirectUris: List[String])(updatedApplication: ApplicationData) = {
-        when(aMock.updateRedirectUris(eqTo(applicationId), eqTo(redirectUris))).thenReturn(successful(updatedApplication))
+      def thenReturn(redirectUris: List[String])(updatedApplication: ApplicationData) = {
+        when(aMock.updateRedirectUris(eqTo(updatedApplication.id), eqTo(redirectUris))).thenReturn(successful(updatedApplication))
       }
 
       def verifyCalledWith(applicationId: ApplicationId, redirectUris: List[String]) =

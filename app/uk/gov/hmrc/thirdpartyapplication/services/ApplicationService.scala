@@ -27,12 +27,12 @@ import scala.util.{Failure, Try}
 import akka.actor.ActorSystem
 import org.apache.commons.net.util.SubnetUtils
 
-import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
@@ -48,10 +48,9 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, HeaderCarrierHelper}
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator}
 
 @Singleton
 class ApplicationService @Inject() (

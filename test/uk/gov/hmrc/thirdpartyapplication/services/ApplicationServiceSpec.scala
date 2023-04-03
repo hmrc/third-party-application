@@ -148,7 +148,6 @@ class ApplicationServiceSpec
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationDeletedNotification(*, *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockApiPlatformEventService.sendRedirectUrisUpdatedEvent(*, *, *)(*)).thenReturn(successful(true))
 
     UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
     SubmissionsServiceMock.DeleteAll.thenReturn()
@@ -597,22 +596,8 @@ class ApplicationServiceSpec
       AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
     }
 
-    "throw BadRequestException when UpdateRedirectUris command fails" in new SetupForAuditTests {
-      val (updatedApplication, _) = setupAuditTests(Standard())
-      ApplicationCommandDispatcherMock.Dispatch.thenReturnFailed("Error message")
-
-      intercept[BadRequestException] {
-        await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
-      }.message shouldBe "Failed to process UpdateRedirectUris command"
-
-      AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
-      AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
-      AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
-    }
-
-    "not update RedirectUris or audit TermsAndConditionsUrl or PrivacyPolicyUrl for a privileged app" in new SetupForAuditTests {
+    "not audit TermsAndConditionsUrl or PrivacyPolicyUrl for a privileged app" in new SetupForAuditTests {
       val (updatedApplication, _) = setupAuditTests(Privileged())
-      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(updatedApplication)
 
       await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name, access = Privileged())))
 
