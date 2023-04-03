@@ -200,28 +200,6 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
       }
     }
 
-    "RedirectUrisUpdatedEvent" should {
-      "return true when httpclient receives CREATED status" in new Setup() {
-        apiApplicationEventsWillReturnCreated(redirectUrisUpdatedEvent)
-        val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return true when connector is disabled" in new Setup(false) {
-        val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return false when httpclient receives internal server error status" in new Setup() {
-        apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
-
-        result shouldBe false
-      }
-    }
-
     "ApiSubscribedEvent" should {
       "return true when httpclient receives CREATED status" in new Setup() {
         apiApplicationEventsWillReturnCreated(apiSubscribedEvent)

@@ -113,7 +113,6 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
   private def sendEvent(appEvent: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = appEvent match {
     case csae: ClientSecretAddedEvent   => apiPlatformEventsConnector.sendClientSecretAddedEvent(csae)
     case csra: ClientSecretRemovedEvent => apiPlatformEventsConnector.sendClientSecretRemovedEvent(csra)
-    case ruue: RedirectUrisUpdatedEvent => apiPlatformEventsConnector.sendRedirectUrisUpdatedEvent(ruue)
     case apse: ApiSubscribedEvent       => apiPlatformEventsConnector.sendApiSubscribedEvent(apse)
     case apuse: ApiUnsubscribedEvent    => apiPlatformEventsConnector.sendApiUnsubscribedEvent(apuse)
     case _                              => Future.failed(new IllegalArgumentException("Bad Event in old sendEvent"))

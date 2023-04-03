@@ -33,6 +33,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val applicationId                    = ApplicationId.random
     val applicationData: ApplicationData = anApplicationData(applicationId)
+    val subordinateApp                   = applicationData.copy(environment = Environment.SANDBOX.toString())
 
     val nonStandardAccessApp = applicationData.copy(access = Privileged())
     val developer            = applicationData.collaborators.head
@@ -41,8 +42,9 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val oldRedirectUris = List.empty
     val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
 
-    val timestamp = FixedClock.instant
-    val cmd       = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, now)
+    val timestamp  = FixedClock.instant
+    val cmdAsAdmin = UpdateRedirectUris(adminActor, oldRedirectUris, newRedirectUris, now)
+    val cmdAsDev   = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, now)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
@@ -59,26 +61,49 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
         }
       }
     }
-
   }
 
-  "update with UpdateRedirectUris" should {
+  "UpdateRedirectUrisCommandHandler" when {
+    "given a principal application" should {
+      "succeed when application is standardAccess" in new Setup {
+        ApplicationRepoMock.UpdateRedirectUris.thenReturn(newRedirectUris)(applicationData) // Dont need to test the repo here so just return any app
 
-    "succeed when application is standardAccess" in new Setup {
-      ApplicationRepoMock.UpdateRedirectUris.thenReturn(applicationId, newRedirectUris)(applicationData) // Dont need to test the repo here so just return any app
+        val result = await(underTest.process(applicationData, cmdAsAdmin).value).right.value
 
-      val result = await(underTest.process(applicationData, cmd).value).right.value
+        checkSuccessResult(adminActor)(result)
 
-      checkSuccessResult(developerActor)(result)
-
-    }
-
-    "fail when application is not standardAccess" in new Setup {
-      checkFailsWith("App must have a STANDARD access type") {
-        underTest.process(nonStandardAccessApp, cmd)
       }
-      ApplicationRepoMock.verifyZeroInteractions()
+
+      "return an error for a non-admin developer" in new Setup {
+        checkFailsWith("App is in PRODUCTION so User must be an ADMIN") {
+          underTest.process(principalApp, cmdAsDev)
+        }
+      }
+
+      "fail when we try to add too many redirect URIs" in new Setup {
+        checkFailsWith("Can have at most 5 redirect URIs") {
+          val brokenCmd = cmdAsAdmin.copy(newRedirectUris = (1 to 6).toList.map(id => s"http://somewhere.com/endpoint$id"))
+          underTest.process(applicationData, brokenCmd)
+        }
+        ApplicationRepoMock.verifyZeroInteractions()
+      }
+
+      "fail when application is not standardAccess" in new Setup {
+        checkFailsWith("App must have a STANDARD access type") {
+          underTest.process(nonStandardAccessApp, cmdAsAdmin)
+        }
+        ApplicationRepoMock.verifyZeroInteractions()
+      }
+    }
+
+    "given a subordinate application" should {
+      "succeed for a developer" in new Setup {
+        ApplicationRepoMock.UpdateRedirectUris.thenReturn(newRedirectUris)(subordinateApp) // Dont need to test the repo here so just return any app
+
+        val result = await(underTest.process(subordinateApp, cmdAsDev).value).right.value
+
+        checkSuccessResult(developerActor)(result)
+      }
     }
   }
-
 }

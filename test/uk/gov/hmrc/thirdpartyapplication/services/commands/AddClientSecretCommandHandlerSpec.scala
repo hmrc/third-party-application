@@ -36,7 +36,7 @@ class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
     val secretValue  = "secret"
     val clientSecret = ClientSecretDetails("name", now, hashedSecret = "hashed")
 
-    val addClientSecretByDev   = AddClientSecret(Actors.AppCollaborator(devEmail), clientSecret, now)
+    val addClientSecretByDev   = AddClientSecret(developerActor, clientSecret, now)
     val addClientSecretByAdmin = AddClientSecret(otherAdminAsActor, clientSecret, now)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
@@ -56,37 +56,38 @@ class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
     }
   }
 
-  "given a principal application" should {
-    "succeed for an admin" in new Setup {
-      val updatedApp = principalApp // Don't need the ClientSecrets fixed here
-      ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(updatedApp)
+  "AddClientSecretCommandHandler" when {
+    "given a principal application" should {
+      "succeed for an admin" in new Setup {
+        val updatedApp = principalApp // Don't need the ClientSecrets fixed here
+        ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(updatedApp)
 
-      val result = await(underTest.process(principalApp, addClientSecretByAdmin).value).right.value
+        val result = await(underTest.process(principalApp, addClientSecretByAdmin).value).right.value
 
-      checkSuccessResult(adminActor)(result)
-    }
+        checkSuccessResult(adminActor)(result)
+      }
 
-    "return an error for a non-admin developer" in new Setup {
-      checkFailsWith("App is in PRODUCTION so User must be an ADMIN") {
-        underTest.process(principalApp, addClientSecretByDev)
+      "return an error for a non-admin developer" in new Setup {
+        checkFailsWith("App is in PRODUCTION so User must be an ADMIN") {
+          underTest.process(principalApp, addClientSecretByDev)
+        }
+      }
+
+      "return an error for a non-admin developer and application with full secrets" in new Setup(1) {
+        checkFailsWith("App is in PRODUCTION so User must be an ADMIN", "Client secret limit has been exceeded") {
+          underTest.process(principalApp, addClientSecretByDev)
+        }
       }
     }
 
-    "return an error for a non-admin developer and application with full secrets" in new Setup(1) {
-      checkFailsWith("App is in PRODUCTION so User must be an ADMIN", "Client secret limit has been exceeded") {
-        underTest.process(principalApp, addClientSecretByDev)
+    "given a subordinate application" should {
+      "succeed for a developer" in new Setup {
+        ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(subordinateApp)
+
+        val result = await(underTest.process(subordinateApp, addClientSecretByDev).value).right.value
+
+        checkSuccessResult(developerActor)(result)
       }
-    }
-  }
-
-  "given a subordinate application" should {
-    "succeed for a developer" in new Setup {
-      val updatedApp = principalApp // Don't need the ClientSecrets fixed here
-      ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(updatedApp)
-
-      val result = await(underTest.process(subordinateApp, addClientSecretByDev).value).right.value
-
-      checkSuccessResult(developerActor)(result)
     }
   }
 }
