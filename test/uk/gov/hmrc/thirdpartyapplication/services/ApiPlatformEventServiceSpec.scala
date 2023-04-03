@@ -270,8 +270,6 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       }
     }
 
-
-
     def testService(f: (ApplicationData, Map[String, String]) => Future[Boolean], expectedResult: Boolean) = {
       val data = Map(
         "teamMemberEmail" -> teamMemberEmail.text,

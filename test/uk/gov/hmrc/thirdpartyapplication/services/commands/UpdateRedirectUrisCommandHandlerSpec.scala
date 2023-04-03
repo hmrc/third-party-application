@@ -33,7 +33,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val applicationId                    = ApplicationId.random
     val applicationData: ApplicationData = anApplicationData(applicationId)
-    val subordinateApp = applicationData.copy(environment = Environment.SANDBOX.toString())
+    val subordinateApp                   = applicationData.copy(environment = Environment.SANDBOX.toString())
 
     val nonStandardAccessApp = applicationData.copy(access = Privileged())
     val developer            = applicationData.collaborators.head
@@ -45,7 +45,6 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val timestamp  = FixedClock.instant
     val cmdAsAdmin = UpdateRedirectUris(adminActor, oldRedirectUris, newRedirectUris, now)
     val cmdAsDev   = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, now)
-
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
@@ -86,7 +85,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
           val brokenCmd = cmdAsAdmin.copy(newRedirectUris = (1 to 6).toList.map(id => s"http://somewhere.com/endpoint$id"))
           underTest.process(applicationData, brokenCmd)
         }
-        ApplicationRepoMock.verifyZeroInteractions()      
+        ApplicationRepoMock.verifyZeroInteractions()
       }
 
       "fail when application is not standardAccess" in new Setup {
@@ -106,5 +105,5 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
         checkSuccessResult(developerActor)(result)
       }
     }
-  } 
+  }
 }

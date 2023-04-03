@@ -33,13 +33,14 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler.Result
 class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
+
   private def validate(app: ApplicationData, cmd: UpdateRedirectUris): Validated[CommandHandler.Failures, Unit] = {
     val hasFiveOrFewerURIs = cond(cmd.newRedirectUris.size <= 5, CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
     Apply[Validated[CommandHandler.Failures, *]].map3(
       isStandardAccess(app),
       isAdminIfInProduction(cmd.actor, app),
       hasFiveOrFewerURIs
-    )( (_,_,_) => ())
+    )((_, _, _) => ())
   }
 
   private def asEvents(app: ApplicationData, cmd: UpdateRedirectUris): NonEmptyList[ApplicationEvent] = {

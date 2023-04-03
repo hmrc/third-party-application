@@ -396,10 +396,10 @@ class ApplicationService @Inject() (
       }
 
     for {
-      existing   <- fetchApp(applicationId)
-      _           = checkAccessType(existing)
-      savedApp   <- applicationRepository.save(updatedApplication(existing))
-      _           = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
+      existing <- fetchApp(applicationId)
+      _         = checkAccessType(existing)
+      savedApp <- applicationRepository.save(updatedApplication(existing))
+      _         = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
     } yield savedApp
   }
 
