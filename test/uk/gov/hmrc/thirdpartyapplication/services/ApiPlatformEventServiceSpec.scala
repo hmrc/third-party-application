@@ -137,44 +137,6 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       }
     }
 
-    "RedirectUrisUpdatedEvent" should {
-
-      "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
-        implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
-
-        redirectUrisUpdated(objInTest, otherAdminAsActor, connectorResult = true, expectedResult = true)
-      }
-
-      "send event payload with actor type as GATEKEEPER when user sending the event isn't a collaborator" in new Setup() {
-
-        val userEmail: String             = "NonCollaboratorEmail"
-        implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> userEmail)
-        redirectUrisUpdated(objInTest, Actors.GatekeeperUser(userEmail), connectorResult = true, expectedResult = true)
-      }
-
-      "send event and return false result from connector" in new Setup() {
-        implicit val newHc: HeaderCarrier = hcWithAdminLoggedIn
-
-        redirectUrisUpdated(objInTest, otherAdminAsActor, connectorResult = false, expectedResult = false)
-      }
-
-      "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {
-        implicit val newHc: HeaderCarrier = HeaderCarrier()
-        redirectUrisUpdated(objInTest, Actors.GatekeeperUser("Gatekeeper Admin"), connectorResult = true, expectedResult = true)
-
-      }
-
-      "return false when username header is set but not user email header" in new Setup() {
-        implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_NAME_HEADER -> "someuserName")
-
-        val result: Boolean = await(objInTest.sendRedirectUrisUpdatedEvent(appDataWithCollaboratorAdded, oldRedirectUris, newRedirectUris))
-
-        result shouldBe false
-
-        verifyZeroInteractions(mockConnector)
-      }
-    }
-
     "ApiSubscribedEvent" should {
 
       "send event payload with actor type as COLLABORATOR when user sending the event is a collaborator" in new Setup() {
@@ -308,26 +270,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       }
     }
 
-    def redirectUrisUpdated(
-        objInTest: ApiPlatformEventService,
-        expectedActor: Actor,
-        connectorResult: Boolean,
-        expectedResult: Boolean
-      )(implicit hc: HeaderCarrier
-      ) = {
-      when(mockConnector.sendRedirectUrisUpdatedEvent(any[RedirectUrisUpdatedEvent])(any[HeaderCarrier])).thenReturn(Future.successful(connectorResult))
 
-      val f: (ApplicationData, Map[String, String]) => Future[Boolean] = (appData: ApplicationData, data: Map[String, String]) => {
-        val newRedirectUris = data.getOrElse("newRedirectUris", "")
-        val oldRedirectUris = data.getOrElse("oldRedirectUris", "")
-        objInTest.sendRedirectUrisUpdatedEvent(appData, oldRedirectUris, newRedirectUris)
-      }
-      testService(f, expectedResult)
-      val argumentCaptor                                               = ArgCaptor[RedirectUrisUpdatedEvent]
-      verify(mockConnector).sendRedirectUrisUpdatedEvent(argumentCaptor.capture)(any[HeaderCarrier])
-
-      validateEvent(argumentCaptor.value, expectedActor)
-    }
 
     def testService(f: (ApplicationData, Map[String, String]) => Future[Boolean], expectedResult: Boolean) = {
       val data = Map(

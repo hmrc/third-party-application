@@ -28,7 +28,7 @@ import cats.implicits._
 import org.mockito.captor.ArgCaptor
 import org.scalatest.BeforeAndAfterAll
 
-import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
