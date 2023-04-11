@@ -27,6 +27,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.RejectUpliftRequest
@@ -36,7 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens, ApplicationWithStateHistory, ApplicationWithSubscriptions}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
 
 class GatekeeperServiceSpec
     extends AsyncHmrcSpec
@@ -49,16 +50,16 @@ class GatekeeperServiceSpec
 
   private val bobTheGKUser = Actors.GatekeeperUser("bob")
 
-  private def aSecret(secret: String) = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
+  private def aSecret(secret: String) = ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   private def aHistory(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
-    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(TESTING), changedAt = FixedClock.now)
+    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(TESTING), changedAt = now)
   }
 
   private def aStateHistoryResponse(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, FixedClock.now)
+    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, now)
   }
 
   private def anApplicationData(
@@ -76,8 +77,8 @@ class GatekeeperServiceSpec
       ApplicationTokens(productionToken),
       state,
       Standard(),
-      FixedClock.now,
-      Some(FixedClock.now)
+      now,
+      Some(now)
     )
   }
 
@@ -220,7 +221,7 @@ class GatekeeperServiceSpec
         state = PENDING_REQUESTER_VERIFICATION,
         actor = Actors.GatekeeperUser(gatekeeperUserId),
         previousState = Some(PENDING_GATEKEEPER_APPROVAL),
-        changedAt = FixedClock.now
+        changedAt = now
       )
 
       ApplicationRepoMock.Fetch.thenReturn(application)
@@ -342,7 +343,7 @@ class GatekeeperServiceSpec
         actor = Actors.GatekeeperUser(gatekeeperUserId),
         previousState = Some(PENDING_GATEKEEPER_APPROVAL),
         notes = Some(rejectReason),
-        changedAt = FixedClock.now
+        changedAt = now
       )
 
       ApplicationRepoMock.Fetch.thenReturn(application)
@@ -498,9 +499,9 @@ class GatekeeperServiceSpec
     "return correct state history values" in new Setup {
       val appId1   = ApplicationId.random
       val appId2   = ApplicationId.random
-      val ts1      = FixedClock.now
-      val ts2      = FixedClock.now
-      val ts3      = FixedClock.now
+      val ts1      = now
+      val ts2      = now
+      val ts3      = now
       val history1 = ApplicationWithStateHistory(
         appId1,
         "app1",

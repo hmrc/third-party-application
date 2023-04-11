@@ -153,51 +153,51 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         requesterEmail: LaxEmailAddress,
         requesterName: String
       ): NonEmptyList[ApplicationEvent] = {
-        if (isPassed) {
-          NonEmptyList.of(
-            getResponsibleIndividualSet(
-              responsibleIndividual,
-              requesterEmail,
-              requesterName
-            ),
-            TermsOfUsePassed(
-              id = EventId.random,
-              applicationId = app.id,
-              eventDateTime = cmd.timestamp.instant,
-              actor = Actors.AppCollaborator(requesterEmail),
-              submissionId = SubmissionId(riVerificationToU.submissionId.value),
-              submissionIndex = riVerificationToU.submissionInstance
-            )
+      if (isPassed) {
+        NonEmptyList.of(
+          getResponsibleIndividualSet(
+            responsibleIndividual,
+            requesterEmail,
+            requesterName
+          ),
+          TermsOfUsePassed(
+            id = EventId.random,
+            applicationId = app.id,
+            eventDateTime = cmd.timestamp.instant,
+            actor = Actors.AppCollaborator(requesterEmail),
+            submissionId = SubmissionId(riVerificationToU.submissionId.value),
+            submissionIndex = riVerificationToU.submissionInstance
           )
-        } else {
-          NonEmptyList.of(
-            getResponsibleIndividualSet(
-              responsibleIndividual,
-              requesterEmail,
-              requesterName
-            )
+        )
+      } else {
+        NonEmptyList.of(
+          getResponsibleIndividualSet(
+            responsibleIndividual,
+            requesterEmail,
+            requesterName
           )
-        }
+        )
+      }
     }
 
     def getResponsibleIndividualSet(
-       responsibleIndividual: ResponsibleIndividual,
+        responsibleIndividual: ResponsibleIndividual,
         requesterEmail: LaxEmailAddress,
         requesterName: String
       ): ResponsibleIndividualSet = {
-        ResponsibleIndividualSet(
-          id = EventId.random,
-          applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
-          actor = Actors.AppCollaborator(requesterEmail),
-          responsibleIndividualName = responsibleIndividual.fullName.value,
-          responsibleIndividualEmail = responsibleIndividual.emailAddress,
-          submissionId = SubmissionId(riVerificationToU.submissionId.value),
-          submissionIndex = riVerificationToU.submissionInstance,
-          code = cmd.code,
-          requestingAdminName = requesterName,
-          requestingAdminEmail = requesterEmail
-        )
+      ResponsibleIndividualSet(
+        id = EventId.random,
+        applicationId = app.id,
+        eventDateTime = cmd.timestamp.instant,
+        actor = Actors.AppCollaborator(requesterEmail),
+        responsibleIndividualName = responsibleIndividual.fullName.value,
+        responsibleIndividualEmail = responsibleIndividual.emailAddress,
+        submissionId = SubmissionId(riVerificationToU.submissionId.value),
+        submissionIndex = riVerificationToU.submissionInstance,
+        code = cmd.code,
+        requestingAdminName = requesterName,
+        requestingAdminEmail = requesterEmail
+      )
     }
 
     def addTouAcceptanceIfNeeded(
@@ -207,12 +207,12 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         submissionInstance: Int,
         responsibleIndividual: ResponsibleIndividual
       ): Future[ApplicationData] = {
-        if (addTouAcceptance) {
-          val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submissionId, submissionInstance)
-          applicationRepository.addApplicationTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
-        } else {
-          Future.successful(appWithoutTouAcceptance)
-        }
+      if (addTouAcceptance) {
+        val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submissionId, submissionInstance)
+        applicationRepository.addApplicationTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
+      } else {
+        Future.successful(appWithoutTouAcceptance)
+      }
     }
     
     def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
@@ -232,7 +232,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
       isPassed                                               = submission.status.isGranted
       _                                                     <- E.liftF(addTouAcceptanceIfNeeded(isPassed, app, submission.id, submission.latestInstance.index, responsibleIndividual))
       _                                                     <- E.liftF(responsibleIndividualVerificationRepository.deleteResponsibleIndividualVerification(cmd.code))
-      evts                                                    = asEvents(isPassed, responsibleIndividual, requesterEmail, requesterName)
+      evts                                                   = asEvents(isPassed, responsibleIndividual, requesterEmail, requesterName)
     } yield (app, evts)
   }
 

@@ -14,16 +14,24 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.util
+package uk.gov.hmrc.apiplatform.modules.common.utils
 
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
 
-trait FixedClockOld {
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
 
-  val utc = ZoneOffset.UTC
+trait FixedClock extends ClockNow {
 
-  val clock = Clock.fixed(Instant.ofEpochMilli(1650878658447L), utc)
+  private val utc: ZoneOffset = ZoneOffset.UTC
+
+  override val now: LocalDateTime = LocalDateTime.of(2020, 1, 2, 3, 4, 5, 6 * 1000 * 1000).truncatedTo(ChronoUnit.MILLIS)
+
+  override val instant: Instant = now.toInstant(utc)
+
+  val nowAsText: String = "2020-01-02T03:04:05.006Z"
+
+  val clock: Clock = Clock.fixed(instant, utc)
 
   def clockMinusHours(hours: Long) = {
     val newInstant = LocalDateTime
@@ -34,8 +42,4 @@ trait FixedClockOld {
   }
 }
 
-object FixedClockOld extends FixedClockOld {
-  val now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS)
-
-  val instant = now.toInstant(ZoneOffset.UTC)
-}
+object FixedClock extends FixedClock

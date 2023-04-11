@@ -26,9 +26,9 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{EMAIL_SENT, TERMS_OF_USE_V2}
-import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
-
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.time.Clock
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -141,5 +141,5 @@ class TermsOfUseInvitationRepositoryISpec
       val fetch = await(termsOfUseInvitationRepository.fetch(applicationId))
       fetch mustBe Some(TermsOfUseInvitation(applicationId, now, now, now, None, TERMS_OF_USE_V2))
     }
-  }  
+  }
 }

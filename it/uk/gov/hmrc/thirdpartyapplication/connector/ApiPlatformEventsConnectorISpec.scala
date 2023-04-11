@@ -32,14 +32,20 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{
   EventId
 }
 import uk.gov.hmrc.thirdpartyapplication.component.stubs.ApiPlatformEventsStub
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.utils.ServerBaseISpec
 
-import java.time.format.DateTimeFormatter
 import uk.gov.hmrc.thirdpartyapplication.util.WiremockSugar
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import java.time.format.DateTimeFormatterBuilder
+import java.time.ZoneOffset
 
-class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar with ApplicationLogger {
+class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar with ApplicationLogger with FixedClock {
+
+  val dateTimeFormatterAsUsedByEventLib = new DateTimeFormatterBuilder()
+    .appendPattern("uuuu-MM-dd'T'HH:mm:ss.SSS")
+    .toFormatter
+    .withZone(ZoneOffset.UTC)
 
   override protected def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
@@ -48,13 +54,13 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
       )
 
   trait Setup {
-    val inTest      = app.injector.instanceOf[ApiPlatformEventsConnector]
-    val appId       = ApplicationId.random
-    val eventId     = EventId.random
-    val now         = FixedClock.instant
-    val nowAsString = DateTimeFormatter.ISO_INSTANT.format(now)
-    val email       = "someemail@somewhere.com"
-    val userName    = "bobby fingers"
+    val inTest          = app.injector.instanceOf[ApiPlatformEventsConnector]
+    val appId           = ApplicationId.random
+    val eventId         = EventId.random
+    val instantAsString = dateTimeFormatterAsUsedByEventLib.format(instant)
+
+    val email    = "someemail@somewhere.com"
+    val userName = "bobby fingers"
 
     def testJson(updateApplicationEvent: ApplicationEvent, expectedRequestBody: String) = {
       implicit val request = FakeRequest()
@@ -75,7 +81,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
              |{
              |"id" : "${eventId.value.toString}",
              |"applicationId" : "${appId.value.toString}",
-             |"eventDateTime": "$nowAsString",
+             |"eventDateTime": "$instantAsString",
              |"actor" : {"email" :"$email",
              |"actorType": "COLLABORATOR"},
              |"context" :"contextValue",
@@ -95,7 +101,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
              |{
              |"id" : "${eventId.value.toString}",
              |"applicationId" : "${appId.value.toString}",
-             |"eventDateTime": "$nowAsString",
+             |"eventDateTime": "$instantAsString",
              |"actor" : {"email" :"$email",
              |"actorType": "COLLABORATOR"},
              |"context" :"contextValue",
@@ -115,7 +121,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
              |{
              |"id" : "${eventId.value.toString}",
              |"applicationId" : "${appId.value.toString}",
-             |"eventDateTime": "$nowAsString",
+             |"eventDateTime": "$instantAsString",
              |"actor" : {"email" :"$email"},
              |"clientSecretId" :"secretName",
              |"clientSecretName" : "secretValue",
@@ -134,7 +140,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
              |{
              |"id" : "${eventId.value.toString}",
              |"applicationId" : "${appId.value.toString}",
-             |"eventDateTime": "$nowAsString",
+             |"eventDateTime": "$instantAsString",
              |"actor" : {"email" :"$email"},
              |"clientSecretId" :"secretName",
              |"clientSecretName" : "secretValue",
@@ -154,7 +160,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
              |{
              |"id" : "${eventId.value.toString}",
              |"applicationId" : "${appId.value.toString}",
-             |"eventDateTime": "$nowAsString",
+             |"eventDateTime": "$instantAsString",
              |"actor" : {"user" :"$userName"},
              |"clientId" : "${clientId.value}",
              |"wso2ApplicationName" : "wso2ApplicationName",

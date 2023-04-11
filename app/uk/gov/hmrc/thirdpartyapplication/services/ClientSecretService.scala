@@ -28,7 +28,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
@@ -36,10 +36,10 @@ class ClientSecretService @Inject() (applicationRepository: ApplicationRepositor
 
   def clientSecretValueGenerator: () => String = UUID.randomUUID().toString
 
-  def generateClientSecret(): (ClientSecret, String) = {
+  def generateClientSecret(): (ClientSecretData, String) = {
     val secretValue = clientSecretValueGenerator()
 
-    (ClientSecret(name = secretValue.takeRight(4), hashedSecret = hashSecret(secretValue)), secretValue)
+    (ClientSecretData(name = secretValue.takeRight(4), hashedSecret = hashSecret(secretValue)), secretValue)
   }
 
   def hashSecret(secret: String): String = {
@@ -58,7 +58,7 @@ class ClientSecretService @Inject() (applicationRepository: ApplicationRepositor
     hashedValue
   }
 
-  def clientSecretIsValid(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecret]): Future[Option[ClientSecret]] = {
+  def clientSecretIsValid(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecretData]): Future[Option[ClientSecretData]] = {
     /*
      * *** WARNING ***
      * This function is called every time an OAuth2 token is issued, and is therefore crucially important to the overall performance of the API Platform.
@@ -91,7 +91,7 @@ class ClientSecretService @Inject() (applicationRepository: ApplicationRepositor
     }
   }
 
-  def lastUsedOrdering: (ClientSecret, ClientSecret) => Boolean = {
+  def lastUsedOrdering: (ClientSecretData, ClientSecretData) => Boolean = {
     val oldEpochDateTime = Instant.ofEpochMilli(0).atOffset(ZoneOffset.UTC).toLocalDateTime
     (first, second) => first.lastAccess.getOrElse(oldEpochDateTime).isAfter(second.lastAccess.getOrElse(oldEpochDateTime))
   }

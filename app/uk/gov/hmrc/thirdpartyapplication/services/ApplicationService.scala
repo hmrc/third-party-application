@@ -27,18 +27,19 @@ import scala.util.{Failure, Try}
 import akka.actor.ActorSystem
 import org.apache.commons.net.util.SubnetUtils
 
-import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, FixCollaboratorRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
@@ -47,12 +48,9 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, HeaderCarrierHelper}
-import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
-import uk.gov.hmrc.thirdpartyapplication.controllers.FixCollaboratorRequest
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator}
 
 @Singleton
 class ApplicationService @Inject() (
@@ -398,54 +396,11 @@ class ApplicationService @Inject() (
       }
 
     for {
-      existing   <- fetchApp(applicationId)
-      _           = checkAccessType(existing)
-      savedApp   <- applicationRepository.save(updatedApplication(existing))
-      _           = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
-      updatedApp <- sendEventAndAuditIfRedirectUrisChanged(existing, savedApp)
-    } yield updatedApp
-  }
-
-  private def sendEventAndAuditIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
-    (previousAppData.access, updatedAppData.access) match {
-      case (previous: Standard, updated: Standard) =>
-        if (previous.redirectUris != updated.redirectUris) {
-          handleUpdateApplication(
-            previousAppData.id,
-            updatedAppData.collaborators,
-            oldRedirectUris = previous.redirectUris,
-            newRedirectUris = updated.redirectUris
-          )
-        } else Future.successful(updatedAppData)
-      case _                                       => Future.successful(updatedAppData)
-    }
-  }
-
-  private def handleUpdateApplication(
-      applicationId: ApplicationId,
-      collaborators: Set[Collaborator],
-      oldRedirectUris: List[String],
-      newRedirectUris: List[String]
-    )(implicit hc: HeaderCarrier
-    ): Future[ApplicationData] = {
-
-    def fail(errorMessages: CommandHandler.Failures) = {
-      logger.warn(s"Command Process failed for $applicationId because ${errorMessages.toList.mkString("[", ",", "]")}")
-      throw new BadRequestException("Failed to process UpdateRedirectUris command")
-    }
-
-    def success(cmdSuccess: CommandHandler.Success) = {
-      cmdSuccess._1
-    }
-
-    val updateRedirectUris = UpdateRedirectUris(
-      actor = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators).getOrElse(Actors.Unknown),
-      oldRedirectUris,
-      newRedirectUris,
-      timestamp = LocalDateTime.now(clock)
-    )
-    applicationCommandDispatcher.dispatch(applicationId, updateRedirectUris, Set.empty)
-      .fold(fail, success)
+      existing <- fetchApp(applicationId)
+      _         = checkAccessType(existing)
+      savedApp <- applicationRepository.save(updatedApplication(existing))
+      _         = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
+    } yield savedApp
   }
 
   private def fetchApp(applicationId: ApplicationId) = {

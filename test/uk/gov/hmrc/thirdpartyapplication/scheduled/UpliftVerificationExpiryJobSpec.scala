@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State.PENDING_REQUESTER_V
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, FixedClock, NoMetricsGuiceOneAppPerSuite}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, NoMetricsGuiceOneAppPerSuite}
 
 class UpliftVerificationExpiryJobSpec
     extends AsyncHmrcSpec
@@ -45,7 +45,7 @@ class UpliftVerificationExpiryJobSpec
     with NoMetricsGuiceOneAppPerSuite
     with CollaboratorTestData {
 
-  final val FixedTimeNow     = FixedClock.now
+  final val FixedTimeNow     = now
   final val expiryTimeInDays = 90
   final val sixty            = 60
   final val twentyFour       = 24
@@ -86,7 +86,7 @@ class UpliftVerificationExpiryJobSpec
         .thenAnswer((a: ApplicationData) => successful(a))
 
       await(underTest.execute)
-      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, FixedClock.now.minusDays(expiryTimeInDays))
+      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, now.minusDays(expiryTimeInDays))
       verify(mockApplicationRepository).save(app1.copy(state = testingState()))
       verify(mockApplicationRepository).save(app2.copy(state = testingState()))
       verify(mockStateHistoryRepository).insert(StateHistory(
@@ -94,14 +94,14 @@ class UpliftVerificationExpiryJobSpec
         State.TESTING,
         Actors.ScheduledJob("UpliftVerificationExpiryJob"),
         Some(PENDING_REQUESTER_VERIFICATION),
-        changedAt = FixedClock.now
+        changedAt = now
       ))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app2.id,
         State.TESTING,
         Actors.ScheduledJob("UpliftVerificationExpiryJob"),
         Some(PENDING_REQUESTER_VERIFICATION),
-        changedAt = FixedClock.now
+        changedAt = now
       ))
     }
 
@@ -134,7 +134,7 @@ class UpliftVerificationExpiryJobSpec
 
       val result: underTest.Result = await(underTest.execute)
 
-      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, FixedClock.now.minusDays(expiryTimeInDays))
+      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, now.minusDays(expiryTimeInDays))
       result.message shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing save db query'." +
         " The next execution of the job will do retry."
@@ -154,8 +154,8 @@ class UpliftVerificationExpiryJobSpec
       ),
       state,
       Standard(),
-      FixedClock.now,
-      Some(FixedClock.now)
+      now,
+      Some(now)
     )
   }
 }

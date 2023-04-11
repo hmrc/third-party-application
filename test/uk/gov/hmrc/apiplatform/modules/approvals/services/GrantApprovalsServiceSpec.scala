@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModu
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -42,8 +42,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       with SubmissionsServiceMockModule
       with EmailConnectorMockModule
       with ApplicationTestData
-      with SubmissionsTestData
-      with FixedClock {
+      with SubmissionsTestData {
 
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
@@ -52,7 +51,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     val fmt = DateTimeFormatter.ISO_DATE_TIME
 
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val acceptanceDate        = FixedClock.now
+    val acceptanceDate        = now
 
     val acceptance = TermsOfUseAcceptance(
       responsibleIndividual,

@@ -275,7 +275,13 @@ class RequestApprovalsService @Inject() (
       for {
         verification <- responsibleIndividualVerificationService.createNewTouUpliftVerification(application, submission.id, submission.latestInstance.index)
         _            <-
-          emailConnector.sendVerifyResponsibleIndividualUpdateNotification(responsibleIndividualName, responsibleIndividualEmail, application.name, requestedByName, verification.id.value)
+          emailConnector.sendVerifyResponsibleIndividualUpdateNotification(
+            responsibleIndividualName,
+            responsibleIndividualEmail,
+            application.name,
+            requestedByName,
+            verification.id.value
+          )
       } yield HasSucceeded
 
     } else {

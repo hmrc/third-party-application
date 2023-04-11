@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{EventI
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -57,11 +57,11 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
       name = oldName,
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
-    val timestamp            = FixedClock.now
+    val timestamp            = now
     val gatekeeperUser       = "gkuser"
     val eventId              = EventId.random
     val actor                = Actors.GatekeeperUser(gatekeeperUser)
-    val nameChangeEmailEvent = ProductionAppNameChangedEvent(eventId, applicationId, FixedClock.instant, actor, oldName, newName, "admin@example.com".toLaxEmail)
+    val nameChangeEmailEvent = ProductionAppNameChangedEvent(eventId, applicationId, instant, actor, oldName, newName, "admin@example.com".toLaxEmail)
   }
 
   "sendAdviceEmail" should {

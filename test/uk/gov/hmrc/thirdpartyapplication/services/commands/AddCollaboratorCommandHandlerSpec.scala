@@ -19,10 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class AddCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -38,8 +38,8 @@ class AddCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val adminsToEmail = Set(anAdminEmail, devEmail)
 
-    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, FixedClock.now)
-    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, FixedClock.now)
+    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, now)
+    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, now)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(fn: => CommandHandler.ResultT) = {
       val testThis = await(fn.value).right.value

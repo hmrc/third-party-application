@@ -28,7 +28,7 @@ import cats.implicits._
 import org.mockito.captor.ArgCaptor
 import org.scalatest.BeforeAndAfterAll
 
-import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
@@ -61,8 +61,7 @@ class ApplicationServiceSpec
     with BeforeAndAfterAll
     with ApplicationStateUtil
     with ApplicationTestData
-    with UpliftRequestSamples
-    with FixedClock {
+    with UpliftRequestSamples {
 
   var actorSystem: Option[ActorSystem] = None
 
@@ -149,7 +148,6 @@ class ApplicationServiceSpec
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationDeletedNotification(*, *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockApiPlatformEventService.sendRedirectUrisUpdatedEvent(*, *, *)(*)).thenReturn(successful(true))
 
     UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
     SubmissionsServiceMock.DeleteAll.thenReturn()
@@ -177,8 +175,8 @@ class ApplicationServiceSpec
         tokens = tokens,
         state = testingState(),
         access = access,
-        createdOn = FixedClock.now,
-        lastAccess = Some(FixedClock.now)
+        createdOn = now,
+        lastAccess = Some(now)
       )
       val newRedirectUris                     = List("http://new-url.example.com")
       val updatedApplication: ApplicationData = existingApplication.copy(
@@ -197,7 +195,7 @@ class ApplicationServiceSpec
         actor = gatekeeperActor,
         oldRedirectUris = List.empty,
         newRedirectUris = newRedirectUris,
-        timestamp = FixedClock.now
+        timestamp = now
       )
 
       ApplicationRepoMock.Fetch.thenReturn(existingApplication)
@@ -236,7 +234,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = FixedClock.now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -271,7 +269,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = FixedClock.now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -299,7 +297,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = FixedClock.now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -323,7 +321,7 @@ class ApplicationServiceSpec
         anApplicationData(
           createdApp.application.id,
           collaborators = Set(loggedInUserAdminCollaborator),
-          state = ApplicationState(State.PRODUCTION, updatedOn = FixedClock.now),
+          state = ApplicationState(State.PRODUCTION, updatedOn = now),
           environment = Environment.SANDBOX
         )
 
@@ -335,7 +333,7 @@ class ApplicationServiceSpec
         createdApp.application.id,
         State.PRODUCTION,
         Actors.AppCollaborator(loggedInUser),
-        changedAt = FixedClock.now
+        changedAt = now
       ))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
@@ -364,7 +362,7 @@ class ApplicationServiceSpec
 
       val expectedApplicationData: ApplicationData = anApplicationData(
         createdApp.application.id,
-        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = FixedClock.now),
+        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = now),
         collaborators = Set(loggedInUserAdminCollaborator),
         access = Privileged(totpIds = Some(TotpId("prodTotpId")))
       )
@@ -374,7 +372,7 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = FixedClock.now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -398,7 +396,7 @@ class ApplicationServiceSpec
 
       val expectedApplicationData: ApplicationData = anApplicationData(
         createdApp.application.id,
-        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = FixedClock.now),
+        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = now),
         collaborators = Set(loggedInUserAdminCollaborator),
         access = Ropc()
       )
@@ -406,7 +404,7 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = FixedClock.now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -491,7 +489,7 @@ class ApplicationServiceSpec
     "update the repository correctly" in new Setup {
       val termsOfUseAcceptance = TermsOfUseAcceptance(
         ResponsibleIndividual.build("bob", "bob@example.com"),
-        FixedClock.now,
+        now,
         SubmissionId.random,
         0
       )
@@ -598,22 +596,8 @@ class ApplicationServiceSpec
       AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
     }
 
-    "throw BadRequestException when UpdateRedirectUris command fails" in new SetupForAuditTests {
-      val (updatedApplication, _) = setupAuditTests(Standard())
-      ApplicationCommandDispatcherMock.Dispatch.thenReturnFailed("Error message")
-
-      intercept[BadRequestException] {
-        await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
-      }.message shouldBe "Failed to process UpdateRedirectUris command"
-
-      AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
-      AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
-      AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
-    }
-
-    "not update RedirectUris or audit TermsAndConditionsUrl or PrivacyPolicyUrl for a privileged app" in new SetupForAuditTests {
+    "not audit TermsAndConditionsUrl or PrivacyPolicyUrl for a privileged app" in new SetupForAuditTests {
       val (updatedApplication, _) = setupAuditTests(Privileged())
-      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(updatedApplication)
 
       await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name, access = Privileged())))
 
@@ -1101,8 +1085,8 @@ class ApplicationServiceSpec
       ApplicationTokens(productionToken),
       state,
       access,
-      FixedClock.now,
-      Some(FixedClock.now),
+      now,
+      Some(now),
       rateLimitTier = rateLimitTier,
       environment = environment.toString
     )

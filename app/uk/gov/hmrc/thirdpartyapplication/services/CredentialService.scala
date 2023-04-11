@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -26,7 +27,8 @@ import cats.implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientSecret}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -63,8 +65,9 @@ class CredentialService @Inject() (
 
   def addClientSecretNew(applicationId: ApplicationId, request: ClientSecretRequestWithActor)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
 
-    def generateCommand(clientSecret: ClientSecret) = {
-      AddClientSecret(actor = request.actor, clientSecret, timestamp = request.timestamp)
+    def generateCommand(csd: ClientSecretData) = {
+      val cmdClientSecret = ClientSecretDetails(csd.name, csd.createdOn, csd.lastAccess, ClientSecret.Id(UUID.fromString(csd.id)), csd.hashedSecret)
+      AddClientSecret(actor = request.actor, cmdClientSecret, timestamp = request.timestamp)
     }
 
     for {
@@ -74,7 +77,7 @@ class CredentialService @Inject() (
       addSecretCmd                = generateCommand(clientSecret)
       _                          <- applicationCommandDispatcher.dispatch(applicationId, addSecretCmd, Set.empty).value
       updatedApplication         <- fetchApp(applicationId)
-    } yield ApplicationTokenResponse(updatedApplication.tokens.production, addSecretCmd.clientSecret.id, secretValue)
+    } yield ApplicationTokenResponse(updatedApplication.tokens.production, addSecretCmd.clientSecret.id.value.toString, secretValue)
   }
 
   @deprecated("remove after client is no longer using the old endpoint")
@@ -101,11 +104,11 @@ class CredentialService @Inject() (
     def audit(applicationId: ApplicationId, clientSecretId: String): Future[AuditResult] =
       auditService.audit(ClientSecretRemovedAudit, Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretId))
 
-    def sendNotification(clientSecret: ClientSecret, app: ApplicationData): Future[HasSucceeded] = {
+    def sendNotification(clientSecret: ClientSecretData, app: ApplicationData): Future[HasSucceeded] = {
       emailConnector.sendRemovedClientSecretNotification(actorEmailAddress, clientSecret.name, app.name, app.admins.map(_.emailAddress))
     }
 
-    def findClientSecretToDelete(application: ApplicationData, clientSecretId: String): ClientSecret =
+    def findClientSecretToDelete(application: ApplicationData, clientSecretId: String): ClientSecretData =
       application.tokens.production.clientSecrets
         .find(_.id == clientSecretId)
         .getOrElse(throw new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [${applicationId.value}]"))

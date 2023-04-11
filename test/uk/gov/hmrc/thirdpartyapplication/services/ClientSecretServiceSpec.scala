@@ -21,10 +21,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.github.t3hnar.bcrypt._
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMockModule with FixedClock {
 
@@ -34,7 +35,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
 
   "generateClientSecret" should {
     "create new ClientSecret object using UUID for secret value" in {
-      val generatedClientSecret: (ClientSecret, String) = underTest.generateClientSecret()
+      val generatedClientSecret: (ClientSecretData, String) = underTest.generateClientSecret()
 
       val clientSecret      = generatedClientSecret._1
       val clientSecretValue = generatedClientSecret._2
@@ -50,9 +51,9 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
 
   "clientSecretIsValid" should {
     val applicationId = ApplicationId.random
-    val fooSecret     = ClientSecret(name = "secret-1", createdOn = FixedClock.now, hashedSecret = "foo".bcrypt(fastWorkFactor))
-    val barSecret     = ClientSecret(name = "secret-2", createdOn = FixedClock.now, hashedSecret = "bar".bcrypt(fastWorkFactor))
-    val bazSecret     = ClientSecret(name = "secret-3", createdOn = FixedClock.now, hashedSecret = "baz".bcrypt(fastWorkFactor))
+    val fooSecret     = ClientSecretData(name = "secret-1", createdOn = now, hashedSecret = "foo".bcrypt(fastWorkFactor))
+    val barSecret     = ClientSecretData(name = "secret-2", createdOn = now, hashedSecret = "bar".bcrypt(fastWorkFactor))
+    val bazSecret     = ClientSecretData(name = "secret-3", createdOn = now, hashedSecret = "baz".bcrypt(fastWorkFactor))
 
     "return the ClientSecret that matches the provided secret value" in {
       val matchingSecret = await(underTest.clientSecretIsValid(applicationId, "bar", Seq(fooSecret, barSecret, bazSecret)))
@@ -62,7 +63,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
     }
 
     "return the ClientSecret that matches the provided secret value and rehash it if the work factor has changed" in {
-      val secretWithDifferentWorkFactor = ClientSecret(name = "secret-4", createdOn = FixedClock.now, hashedSecret = "different-work-factor".bcrypt(fastWorkFactor + 1))
+      val secretWithDifferentWorkFactor = ClientSecretData(name = "secret-4", createdOn = now, hashedSecret = "different-work-factor".bcrypt(fastWorkFactor + 1))
 
       ApplicationRepoMock.UpdateClientSecretHash.thenReturn(applicationId, secretWithDifferentWorkFactor.id)(mock[ApplicationData])
 
@@ -79,13 +80,12 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
       matchingSecret should be(None)
       ApplicationRepoMock.verifyZeroInteractions()
     }
-
   }
 
   "lastUsedOrdering" should {
-    val mostRecent = ClientSecret(name = "secret-1", hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = Some(FixedClock.now))
-    val middle     = ClientSecret(name = "secret-2", hashedSecret = "bar".bcrypt(fastWorkFactor), lastAccess = Some(FixedClock.now minusDays (1)))
-    val agesAgo    = ClientSecret(name = "secret-3", hashedSecret = "baz".bcrypt(fastWorkFactor), lastAccess = Some(FixedClock.now.minusDays(10)))
+    val mostRecent = ClientSecretData(name = "secret-1", hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = Some(now))
+    val middle     = ClientSecretData(name = "secret-2", hashedSecret = "bar".bcrypt(fastWorkFactor), lastAccess = Some(now.minusDays(1)))
+    val agesAgo    = ClientSecretData(name = "secret-3", hashedSecret = "baz".bcrypt(fastWorkFactor), lastAccess = Some(now.minusDays(10)))
 
     "sort client secrets by most recently used" in {
       val sortedList = List(middle, agesAgo, mostRecent).sortWith(underTest.lastUsedOrdering)
@@ -96,7 +96,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
     }
 
     "sort client secrets with no last used date to the end" in {
-      val noLastUsedDate = ClientSecret(name = "secret-1", createdOn = FixedClock.now, hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = None)
+      val noLastUsedDate = ClientSecretData(name = "secret-1", createdOn = now, hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = None)
 
       val sortedList = List(noLastUsedDate, middle, agesAgo, mostRecent).sortWith(underTest.lastUsedOrdering)
 

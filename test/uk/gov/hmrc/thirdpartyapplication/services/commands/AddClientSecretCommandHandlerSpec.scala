@@ -18,12 +18,13 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ClientSecretAddedV2
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -33,10 +34,10 @@ class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val timestamp    = FixedClock.instant
     val secretValue  = "secret"
-    val clientSecret = ClientSecret("name", FixedClock.now, hashedSecret = "hashed")
+    val clientSecret = ClientSecretDetails("name", now, hashedSecret = "hashed")
 
-    val addClientSecretByDev   = AddClientSecret(Actors.AppCollaborator(devEmail), clientSecret, FixedClock.now)
-    val addClientSecretByAdmin = AddClientSecret(otherAdminAsActor, clientSecret, FixedClock.now)
+    val addClientSecretByDev   = AddClientSecret(developerActor, clientSecret, now)
+    val addClientSecretByAdmin = AddClientSecret(otherAdminAsActor, clientSecret, now)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
@@ -48,44 +49,45 @@ class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            clientSecretId shouldBe clientSecret.id
+            clientSecretId shouldBe clientSecret.id.value.toString
             clientSecretName shouldBe clientSecret.name
         }
       }
     }
   }
 
-  "given a principal application" should {
-    "succeed for an admin" in new Setup {
-      val updatedApp = principalApp // Don't need the ClientSecrets fixed here
-      ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(updatedApp)
+  "AddClientSecretCommandHandler" when {
+    "given a principal application" should {
+      "succeed for an admin" in new Setup {
+        val updatedApp = principalApp // Don't need the ClientSecrets fixed here
+        ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(updatedApp)
 
-      val result = await(underTest.process(principalApp, addClientSecretByAdmin).value).right.value
+        val result = await(underTest.process(principalApp, addClientSecretByAdmin).value).right.value
 
-      checkSuccessResult(adminActor)(result)
-    }
+        checkSuccessResult(adminActor)(result)
+      }
 
-    "return an error for a non-admin developer" in new Setup {
-      checkFailsWith("App is in PRODUCTION so User must be an ADMIN") {
-        underTest.process(principalApp, addClientSecretByDev)
+      "return an error for a non-admin developer" in new Setup {
+        checkFailsWith("App is in PRODUCTION so User must be an ADMIN") {
+          underTest.process(principalApp, addClientSecretByDev)
+        }
+      }
+
+      "return an error for a non-admin developer and application with full secrets" in new Setup(1) {
+        checkFailsWith("App is in PRODUCTION so User must be an ADMIN", "Client secret limit has been exceeded") {
+          underTest.process(principalApp, addClientSecretByDev)
+        }
       }
     }
 
-    "return an error for a non-admin developer and application with full secrets" in new Setup(1) {
-      checkFailsWith("App is in PRODUCTION so User must be an ADMIN", "Client secret limit has been exceeded") {
-        underTest.process(principalApp, addClientSecretByDev)
+    "given a subordinate application" should {
+      "succeed for a developer" in new Setup {
+        ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(subordinateApp)
+
+        val result = await(underTest.process(subordinateApp, addClientSecretByDev).value).right.value
+
+        checkSuccessResult(developerActor)(result)
       }
-    }
-  }
-
-  "given a subordinate application" should {
-    "succeed for a developer" in new Setup {
-      val updatedApp = principalApp // Don't need the ClientSecrets fixed here
-      ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(updatedApp)
-
-      val result = await(underTest.process(subordinateApp, addClientSecretByDev).value).right.value
-
-      checkSuccessResult(developerActor)(result)
     }
   }
 }

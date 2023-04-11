@@ -17,44 +17,45 @@
 package uk.gov.hmrc.apiplatform.modules.submissions
 
 import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 import scala.util.Random
 
 import cats.data.NonEmptyList
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, HasApplicationId}
+import uk.gov.hmrc.thirdpartyapplication.util.HasApplicationId
 
 trait StatusTestDataHelper {
+  self: FixedClock =>
 
   implicit class StatusHistorySyntax(submission: Submission) {
 
     def hasCompletelyAnsweredWith(answers: Submission.AnswersToQuestions): Submission = {
       (
-        Submission.addStatusHistory(Submission.Status.Answering(FixedClock.now, true)) andThen
+        Submission.addStatusHistory(Submission.Status.Answering(now, true)) andThen
           Submission.updateLatestAnswersTo(answers)
       )(submission)
     }
 
     def hasCompletelyAnswered: Submission = {
-      Submission.addStatusHistory(Submission.Status.Answering(FixedClock.now, true))(submission)
+      Submission.addStatusHistory(Submission.Status.Answering(now, true))(submission)
     }
 
     def answeringWith(answers: Submission.AnswersToQuestions): Submission = {
       (
-        Submission.addStatusHistory(Submission.Status.Answering(FixedClock.now, false)) andThen
+        Submission.addStatusHistory(Submission.Status.Answering(now, false)) andThen
           Submission.updateLatestAnswersTo(answers)
       )(submission)
     }
 
     def answering: Submission = {
-      Submission.addStatusHistory(Submission.Status.Answering(FixedClock.now, false))(submission)
+      Submission.addStatusHistory(Submission.Status.Answering(now, false))(submission)
     }
 
     def submitted: Submission = {
-      Submission.submit(FixedClock.now, "bob@example.com")(submission)
+      Submission.submit(now, "bob@example.com")(submission)
     }
   }
 }
@@ -86,7 +87,7 @@ trait ProgressTestDataHelper {
   }
 }
 
-trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper {
+trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper with FixedClock {
 
   val submissionId = SubmissionId.random
 
@@ -95,9 +96,7 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
     AskWhen.Context.Keys.VAT_OR_ITSA             -> "No",
     AskWhen.Context.Keys.NEW_TERMS_OF_USE_UPLIFT -> "No"
   )
-  val now                              = FixedClock.now.truncatedTo(ChronoUnit.MILLIS)
-
-  val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
+  val aSubmission                      = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
 
   val altSubmissionId = SubmissionId.random
   require(altSubmissionId != submissionId)
@@ -173,7 +172,7 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
       "bob@example.com",
       subId,
       appId,
-      FixedClock.now,
+      now,
       questionnaireGroups,
       QuestionIdsOfInterest(
         questionName.id,
@@ -320,7 +319,7 @@ trait MarkedSubmissionsTestData extends SubmissionsTestData with AnsweringQuesti
 
   val markedSubmission = MarkedSubmission(submittedSubmission, markedAnswers)
 
-  def markAsPass(now: LocalDateTime = FixedClock.now, requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
+  def markAsPass(now: LocalDateTime = now, requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
     val answers = answersForGroups(Pass)(submission.groups)
     val marks   = answers.map { case (q, a) => q -> Pass }
 

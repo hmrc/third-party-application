@@ -19,19 +19,20 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import cats.data.{NonEmptyChain, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock, HmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, HmrcSpec}
 
-class CommandHandlerSpec extends HmrcSpec with ApplicationTestData {
+class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClock {
 
   import CommandHandler._
   import CommandFailures._
 
   val applicationId = ApplicationId.random
-  val timestamp     = FixedClock.now
-  val clientSecret  = ClientSecret("name", timestamp, hashedSecret = "hashed")
+  val timestamp     = now
+  val clientSecret  = ClientSecretDetails("name", timestamp, hashedSecret = "hashed")
   val secretValue   = "somSecret"
 
   // Application with two client secrets

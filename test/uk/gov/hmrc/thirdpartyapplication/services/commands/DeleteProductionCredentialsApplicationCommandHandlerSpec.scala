@@ -23,10 +23,10 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -88,7 +88,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
   }
 
   val reasons           = "reasons description text"
-  val ts: LocalDateTime = FixedClock.now
+  val ts: LocalDateTime = now
 
   "DeleteProductionCredentialsApplication" should {
     val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, ts)
@@ -106,7 +106,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     }
 
     "return an error when app is NOT in testing state" in new Setup {
-      val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, FixedClock.now)
+      val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, now)
 
       checkFailsWith("App is not in TESTING state") {
         underTest.process(app.copy(state = app.state.copy(name = State.PRE_PRODUCTION)), cmd)

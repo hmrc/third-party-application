@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
 
@@ -44,8 +44,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       with ResponsibleIndividualVerificationRepositoryMockModule
       with ApplicationServiceMockModule
       with SubmissionsServiceMockModule
-      with EmailConnectorMockModule
-      with FixedClock {
+      with EmailConnectorMockModule {
 
     val appName                 = "my shiny app"
     val submissionInstanceIndex = 0
@@ -85,7 +84,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       SubmissionId.random,
       0,
       appName,
-      FixedClock.now
+      now
     )
     val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual, "Rick Deckard", "rick@submitter.com")
   }
@@ -118,7 +117,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
 
       ResponsibleIndividualVerificationRepositoryMock.Save.verifyCalledWith(result)
     }
-  }  
+  }
   "getVerification" should {
     "get a RI verification record" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification)

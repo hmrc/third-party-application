@@ -34,15 +34,14 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, _}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec
     with BeforeAndAfterAll
     with ApplicationStateUtil
     with ApplicationTestData
-    with UpliftRequestSamples
-    with FixedClock {
+    with UpliftRequestSamples {
 
   trait Setup extends EmailConnectorMockModule {
 
@@ -79,7 +78,7 @@ class NotificationServiceSpec
       val event = ProductionAppNameChangedEvent(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         gatekeeperActor,
         oldAppName,
         newAppName,
@@ -99,7 +98,7 @@ class NotificationServiceSpec
       val event                    = ProductionAppPrivacyPolicyLocationChanged(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         previousPrivacyPolicyUrl,
         newPrivacyPolicyUrl
@@ -124,7 +123,7 @@ class NotificationServiceSpec
       val event                    = ProductionLegacyAppPrivacyPolicyLocationChanged(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         previousPrivacyPolicyUrl,
         newPrivacyPolicyUrl
@@ -149,7 +148,7 @@ class NotificationServiceSpec
       val event                         = ProductionAppTermsConditionsLocationChanged(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         previousTermsAndConditionsUrl,
         newTermsAndConditionsUrl
@@ -174,7 +173,7 @@ class NotificationServiceSpec
       val event                         = ProductionLegacyAppTermsConditionsLocationChanged(
         EventId.random,
         applicationId,
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         previousTermsAndConditionsUrl,
         newTermsAndConditionsUrl
@@ -198,7 +197,7 @@ class NotificationServiceSpec
         EventId.random,
         ApplicationId.random,
         "app name",
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         "admin name",
         "admin@example.com".toLaxEmail,
@@ -228,7 +227,7 @@ class NotificationServiceSpec
       val event = ResponsibleIndividualChanged(
         EventId.random,
         ApplicationId.random,
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         "old ri name",
         oldRIemail,
@@ -259,7 +258,7 @@ class NotificationServiceSpec
       val event = ResponsibleIndividualChangedToSelf(
         EventId.random,
         ApplicationId.random,
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         "old ri name",
         oldRIemail,
@@ -285,7 +284,7 @@ class NotificationServiceSpec
       val event = ResponsibleIndividualDeclined(
         EventId.random,
         ApplicationId.random,
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         "ri name",
         "ri@example.com".toLaxEmail,
@@ -311,7 +310,7 @@ class NotificationServiceSpec
       val event = ResponsibleIndividualDeclinedUpdate(
         EventId.random,
         ApplicationId.random,
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         "ri name",
         "ri@example.com".toLaxEmail,
@@ -332,7 +331,7 @@ class NotificationServiceSpec
       val event = ResponsibleIndividualDidNotVerify(
         EventId.random,
         ApplicationId.random,
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         "ri name",
         "ri@example.com".toLaxEmail,
@@ -358,7 +357,7 @@ class NotificationServiceSpec
       val event = ResponsibleIndividualDeclinedOrDidNotVerify(
         EventId.random,
         ApplicationId.random,
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         "ri name",
         "ri@example.com".toLaxEmail,
@@ -383,7 +382,7 @@ class NotificationServiceSpec
       val event = TermsOfUsePassed(
         EventId.random,
         ApplicationId.random,
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         SubmissionId.random,
         1
@@ -404,7 +403,7 @@ class NotificationServiceSpec
       val event                = ClientSecretAddedV2(
         EventId.random,
         ApplicationId.random,
-        FixedClock.instant,
+        instant,
         Actors.AppCollaborator(requestingAdminEmail),
         "someClientSecretId",
         obfuscatedSecret
@@ -426,7 +425,7 @@ class NotificationServiceSpec
       val requestingAdminEmail = "dev@example.com".toLaxEmail
       EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
       val event                =
-        ClientSecretRemovedV2(EventId.random, ApplicationId.random, FixedClock.instant, Actors.AppCollaborator(requestingAdminEmail), clientSecretId, clientSecretName)
+        ClientSecretRemovedV2(EventId.random, ApplicationId.random, instant, Actors.AppCollaborator(requestingAdminEmail), clientSecretId, clientSecretName)
 
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
@@ -447,7 +446,7 @@ class NotificationServiceSpec
       val event                 = CollaboratorAddedV2(
         EventId.random,
         ApplicationId.random,
-        FixedClock.instant,
+        instant,
         developerAsActor,
         newCollaborator,
         Set.empty
@@ -477,7 +476,7 @@ class NotificationServiceSpec
       val event = CollaboratorRemovedV2(
         EventId.random,
         ApplicationId.random,
-        FixedClock.instant,
+        instant,
         otherAdminAsActor,
         removedCollaborator,
         Set.empty
@@ -504,7 +503,7 @@ class NotificationServiceSpec
       val event = ApplicationDeletedByGatekeeper(
         EventId.random,
         applicationData.id,
-        FixedClock.instant,
+        instant,
         gatekeeperActor,
         ClientId("clientId"),
         "wso2AppName",
@@ -522,7 +521,7 @@ class NotificationServiceSpec
       val event = ProductionCredentialsApplicationDeleted(
         EventId.random,
         applicationData.id,
-        FixedClock.instant,
+        instant,
         gatekeeperActor,
         ClientId("clientId"),
         "wso2AppName",

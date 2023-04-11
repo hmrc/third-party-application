@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.time.temporal.ChronoUnit
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.{util => ju}
 
@@ -97,7 +98,7 @@ case class ApplicationState(
     copy(name = State.PENDING_REQUESTER_VERIFICATION, verificationCode = Some(verificationCode()), updatedOn = LocalDateTime.now(clock))
   }
 
-  def toDeleted(clock: Clock) = copy(name = DELETED, verificationCode = None, updatedOn = LocalDateTime.now(clock))
+  def toDeleted(clock: Clock) = copy(name = DELETED, verificationCode = None, updatedOn = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS))
 }
 
 object ApplicationState {

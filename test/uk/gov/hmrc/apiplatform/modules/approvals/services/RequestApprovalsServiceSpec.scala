@@ -37,7 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
@@ -52,8 +52,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       with TermsOfUseInvitationRepositoryMockModule
       with ApplicationServiceMockModule
       with SubmissionsTestData
-      with ApplicationTestData
-      with FixedClock {
+      with ApplicationTestData {
 
     val application: ApplicationData = anApplicationData(applicationId, testingState())
 

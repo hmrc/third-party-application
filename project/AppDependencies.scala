@@ -17,7 +17,8 @@ object AppDependencies {
     "uk.gov.hmrc"       %% "time"                              % "3.25.0",
     "commons-validator"  % "commons-validator"                 % "1.7",
     "uk.gov.hmrc"       %% "internal-auth-client-play-28"      % "1.2.0",
-    "uk.gov.hmrc"       %% "api-platform-application-events"   % "0.12.0"
+    "uk.gov.hmrc"       %% "api-platform-application-events"   % "0.15.0",
+    "uk.gov.hmrc"       %% "api-platform-application-commands" % "0.7.0"
   )
 
   private lazy val testDeps = Seq(

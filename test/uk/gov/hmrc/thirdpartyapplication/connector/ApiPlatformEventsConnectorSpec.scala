@@ -26,8 +26,8 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
@@ -195,28 +195,6 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
       "return false when httpclient receives internal server error status" in new Setup() {
         apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
         val result = await(underTest.sendClientSecretRemovedEvent(clientSecretRemovedEvent)(hc))
-
-        result shouldBe false
-      }
-    }
-
-    "RedirectUrisUpdatedEvent" should {
-      "return true when httpclient receives CREATED status" in new Setup() {
-        apiApplicationEventsWillReturnCreated(redirectUrisUpdatedEvent)
-        val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return true when connector is disabled" in new Setup(false) {
-        val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return false when httpclient receives internal server error status" in new Setup() {
-        apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
 
         result shouldBe false
       }

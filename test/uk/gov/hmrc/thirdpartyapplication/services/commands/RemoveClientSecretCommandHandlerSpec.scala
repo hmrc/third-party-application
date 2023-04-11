@@ -20,10 +20,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ClientSecretRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -47,8 +47,8 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
     val secretValue  = "secret"
     val clientSecret = principalApp.tokens.production.clientSecrets.head
 
-    val removeClientSecretByDev   = RemoveClientSecret(Actors.AppCollaborator(devEmail), clientSecret.id, FixedClock.now)
-    val removeClientSecretByAdmin = RemoveClientSecret(otherAdminAsActor, clientSecret.id, FixedClock.now)
+    val removeClientSecretByDev   = RemoveClientSecret(Actors.AppCollaborator(devEmail), clientSecret.id, now)
+    val removeClientSecretByAdmin = RemoveClientSecret(otherAdminAsActor, clientSecret.id, now)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>

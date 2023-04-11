@@ -21,13 +21,17 @@ import scala.concurrent.Future
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualTouUpliftVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
+  ResponsibleIndividualToUVerification,
+  ResponsibleIndividualTouUpliftVerification,
+  ResponsibleIndividualVerificationId
+}
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
+trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with FixedClock {
 
   protected trait BaseResponsibleIndividualVerificationServiceMock {
     def aMock: ResponsibleIndividualVerificationService
@@ -39,7 +43,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
       def thenCreateNewVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
         when(aMock.createNewToUVerification(*[ApplicationData], *[SubmissionId], *)).thenAnswer((appData: ApplicationData, submissionId: SubmissionId, index: Int) =>
           Future.successful(
-            ResponsibleIndividualToUVerification(verificationId, appData.id, submissionId, index, appData.name, FixedClock.now)
+            ResponsibleIndividualToUVerification(verificationId, appData.id, submissionId, index, appData.name, now)
           )
         )
       }
@@ -50,7 +54,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
       def thenCreateNewTouUpliftVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
         when(aMock.createNewTouUpliftVerification(*[ApplicationData], *[SubmissionId], *)).thenAnswer((appData: ApplicationData, submissionId: SubmissionId, index: Int) =>
           Future.successful(
-            ResponsibleIndividualTouUpliftVerification(verificationId, appData.id, submissionId, index, appData.name, FixedClock.now)
+            ResponsibleIndividualTouUpliftVerification(verificationId, appData.id, submissionId, index, appData.name, now)
           )
         )
       }
@@ -67,7 +71,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
               SubmissionId.random,
               0,
               "App name",
-              FixedClock.now
+              now
             )
           ))
         )
