@@ -32,10 +32,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.services.BaseCommandHandler
 
-trait CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[ApplicationEvent])] {
+trait CommandHandler {
   implicit def ec: ExecutionContext
 
-  val E = EitherTHelper.make[Failures]
+  val E = EitherTHelper.make[CommandHandler.Failures]
 }
 
 object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[ApplicationEvent])] {
