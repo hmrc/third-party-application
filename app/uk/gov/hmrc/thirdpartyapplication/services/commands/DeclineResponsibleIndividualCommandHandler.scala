@@ -17,11 +17,12 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualTouUpliftVerification,
@@ -32,17 +33,22 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandFailures.GenericFailure
 
 @Singleton
 class DeclineResponsibleIndividualCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     stateHistoryRepository: StateHistoryRepository,
+    termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     submissionService: SubmissionsService
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
@@ -155,11 +161,19 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
       )
     }
 
+    def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
+      submission.status match {
+        case Answering(_, _)  => termsOfUseInvitationRepository.updateState(applicationId, EMAIL_SENT)
+        case _                => Future.successful(HasSucceeded)
+      }
+    }
+
     for {
       valid                                                             <- E.fromValidated(validate())
       (responsibleIndividual, requestingAdminEmail, requestingAdminName) = valid
       reasons                                                            = "Responsible individual declined the terms of use."
-      _                                                                 <- E.liftF(submissionService.declineSubmission(app.id, responsibleIndividual.emailAddress.text, reasons))
+      submission                                                        <- E.fromOptionF(submissionService.declineSubmission(app.id, responsibleIndividual.emailAddress.text, reasons), NonEmptyChain.one(GenericFailure("Submission not found")))
+      _                                                                 <- E.liftF(setTermsOfUseInvitationStatus(app.id, submission))
       _                                                                 <- E.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(riVerification.submissionId, riVerification.submissionInstance))
       riDeclined                                                         = asEvents(responsibleIndividual, requestingAdminEmail, requestingAdminName)
     } yield (app, NonEmptyList.one(riDeclined))

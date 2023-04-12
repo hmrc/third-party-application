@@ -23,6 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import cats.Apply
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualTouUpliftVerification,
@@ -33,11 +34,14 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandFailures.GenericFailure
 
 @Singleton
@@ -45,6 +49,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     stateHistoryRepository: StateHistoryRepository,
+    termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     submissionsService: SubmissionsService,
     clock: Clock
   )(implicit val ec: ExecutionContext
@@ -209,11 +214,21 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         Future.successful(appWithoutTouAcceptance)
       }
     }
+    
+    def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
+      submission.status match {
+        case Granted(_, _)  => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
+        case Warnings(_, _) => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
+        case Failed(_, _)   => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
+        case _              => Future.successful(HasSucceeded)
+      }
+    }
 
     for {
       valid                                                 <- E.fromValidated(validate())
       (responsibleIndividual, requesterEmail, requesterName) = valid
       submission                                            <- E.fromOptionF(submissionsService.markSubmission(app.id, requesterEmail.text), NonEmptyChain.one(GenericFailure("Submission not found")))
+      _                                                     <- E.liftF(setTermsOfUseInvitationStatus(app.id, submission))
       isPassed                                               = submission.status.isGranted
       _                                                     <- E.liftF(addTouAcceptanceIfNeeded(isPassed, app, submission.id, submission.latestInstance.index, responsibleIndividual))
       _                                                     <- E.liftF(responsibleIndividualVerificationRepository.deleteResponsibleIndividualVerification(cmd.code))

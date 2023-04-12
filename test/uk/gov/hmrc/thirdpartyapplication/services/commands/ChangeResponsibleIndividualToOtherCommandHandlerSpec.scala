@@ -36,12 +36,12 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 
 class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData with FixedClock {
 
-  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationRepositoryMockModule with StateHistoryRepositoryMockModule
-      with SubmissionsServiceMockModule {
+  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationRepositoryMockModule with StateHistoryRepositoryMockModule with TermsOfUseInvitationRepositoryMockModule with SubmissionsServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -113,6 +113,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
         ApplicationRepoMock.aMock,
         ResponsibleIndividualVerificationRepositoryMock.aMock,
         StateHistoryRepoMock.aMock,
+        TermsOfUseInvitationRepositoryMock.aMock,
         SubmissionsServiceMock.aMock,
         clock
       )
@@ -242,8 +243,9 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
       ApplicationRepoMock.UpdateApplicationSetResponsibleIndividual.thenReturn(prodApp)
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationTouUplift)
-      SubmissionsServiceMock.MarkSubmission.thenReturn(submission)
+      SubmissionsServiceMock.MarkSubmission.thenReturn(warningsSubmission)
       ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn
 
       checkSuccessResultTouUplift(false) {
         underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, now))
@@ -258,6 +260,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       SubmissionsServiceMock.MarkSubmission.thenReturn(grantedSubmission)
       ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(prodApp)
       ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn
 
       checkSuccessResultTouUplift(true) {
         underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, now))

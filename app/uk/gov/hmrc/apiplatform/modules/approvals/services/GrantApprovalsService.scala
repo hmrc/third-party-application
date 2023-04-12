@@ -30,14 +30,16 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, TermsOfUseAcceptance}
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditService
 
@@ -57,6 +59,7 @@ class GrantApprovalsService @Inject() (
     auditService: AuditService,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
+    termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     submissionService: SubmissionsService,
     emailConnector: EmailConnector,
     clock: Clock
@@ -179,6 +182,17 @@ class GrantApprovalsService @Inject() (
     emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(requesterEmail))
   }
 
+  private def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
+    submission.status match {
+      case Granted(_, _)                   => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
+      case GrantedWithWarnings(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2_WITH_WARNINGS)
+      case Warnings(_, _)                  => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
+      case Failed(_, _)                    => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
+      case Answering(_, _)                 => termsOfUseInvitationRepository.updateState(applicationId, EMAIL_SENT)
+      case _                               => successful(HasSucceeded)
+    }
+  }
+
   def grantWithWarningsForTouUplift(
       originalApp: ApplicationData,
       submission: Submission,
@@ -196,6 +210,7 @@ class GrantApprovalsService @Inject() (
 
         updatedSubmission = Submission.grantWithWarnings(LocalDateTime.now(clock), gatekeeperUserName, reasons, None)(submission)
         savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
+        _                <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
       } yield Actioned(originalApp)
     )
       .fold[Result](identity, identity)
@@ -218,6 +233,7 @@ class GrantApprovalsService @Inject() (
 
         updatedSubmission      = Submission.grant(LocalDateTime.now(clock), gatekeeperUserName)(submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
+        _                     <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
         responsibleIndividual <- ET.fromOption(getResponsibleIndividual(originalApp), RejectedDueToIncorrectApplicationData)
         acceptance             = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submission.id, submission.latestInstance.index)
         _                     <- ET.liftF(applicationRepository.addApplicationTermsOfUseAcceptance(originalApp.id, acceptance))
@@ -250,6 +266,7 @@ class GrantApprovalsService @Inject() (
 
         updatedSubmission = Submission.decline(LocalDateTime.now(clock), gatekeeperUserName, reasons)(submission)
         savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
+        _                <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
       } yield Actioned(originalApp)
     )
       .fold[Result](identity, identity)

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
@@ -30,12 +31,14 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDat
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, State}
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName, ValidName}
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -46,6 +49,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       with SubmissionsServiceMockModule
       with EmailConnectorMockModule
       with ResponsibleIndividualVerificationServiceMockModule
+      with TermsOfUseInvitationRepositoryMockModule
       with ApplicationServiceMockModule
       with SubmissionsTestData
       with ApplicationTestData {
@@ -54,7 +58,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
     val testSubmission             = aSubmission
     val testPassAnsweredSubmission = testSubmission.hasCompletelyAnsweredWith(sampleAnswersToQuestions)
-
+    val touInvite                  = TermsOfUseInvitation(applicationId, Instant.now(clock), Instant.now(clock), Instant.now(clock), None, EMAIL_SENT)
     val mockApprovalsNamingService: ApprovalsNamingService = mock[ApprovalsNamingService]
 
     def namingServiceReturns(result: ApplicationNameValidationResult) =
@@ -66,6 +70,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       AuditServiceMock.aMock,
       ApplicationRepoMock.aMock,
       StateHistoryRepoMock.aMock,
+      TermsOfUseInvitationRepositoryMock.aMock,
       mockApprovalsNamingService,
       SubmissionsServiceMock.aMock,
       EmailConnectorMock.aMock,
@@ -165,6 +170,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(prodApplication)
         EmailConnectorMock.SendVerifyResponsibleIndividualUpdateNotification.thenReturnSuccess()
         ResponsibleIndividualVerificationServiceMock.CreateNewTouUpliftVerification.thenCreateNewTouUpliftVerification()
+        TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(touInvite)
 
         val result = await(underTest.requestApproval(prodApplication, testPassAnsweredSubmission, requestedByName, requestedByEmail.text))
 
@@ -191,6 +197,8 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
         EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
         ResponsibleIndividualVerificationServiceMock.CreateNewVerification.thenCreateNewVerification()
+        TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(touInvite)
+        TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
         val answersWithoutRIDetails            = sampleAnswersToQuestions
           .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("Yes"))
@@ -221,6 +229,8 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(prodApplication)
         EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
         ResponsibleIndividualVerificationServiceMock.CreateNewVerification.thenCreateNewVerification()
+        TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(touInvite)
+        TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
         val answersWithWarnings            = sampleAnswersToQuestions
           .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("Yes"))
@@ -252,6 +262,8 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(prodApplication)
         EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
         ResponsibleIndividualVerificationServiceMock.CreateNewVerification.thenCreateNewVerification()
+        TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(touInvite)
+        TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
         val answersWithFails            = sampleAnswersToQuestions
           .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("Yes"))
