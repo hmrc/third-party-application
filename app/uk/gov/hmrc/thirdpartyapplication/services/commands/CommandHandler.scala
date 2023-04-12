@@ -17,20 +17,20 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import java.time.{Instant, LocalDateTime, ZoneOffset}
-import scala.concurrent.{ExecutionContext}
+import scala.concurrent.ExecutionContext
 
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.services.BaseCommandHandler
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.services.BaseCommandHandler
 
 trait CommandHandler {
   implicit def ec: ExecutionContext
@@ -40,7 +40,7 @@ trait CommandHandler {
 
 object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[ApplicationEvent])] {
   import scala.language.implicitConversions
-  
+
   import CommandFailures._
 
   implicit class InstantSyntax(value: LocalDateTime) {

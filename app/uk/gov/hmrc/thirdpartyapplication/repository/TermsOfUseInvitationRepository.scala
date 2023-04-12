@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.{Clock, Instant}
 import java.time.temporal.ChronoUnit.MILLIS
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -84,9 +84,9 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
   def updateState(applicationId: ApplicationId, newState: TermsOfUseInvitationState): Future[HasSucceeded] = {
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(
-        Updates.set("status", Codecs.toBson(newState)),
-        Updates.set("lastUpdated", Instant.now(clock).truncatedTo(MILLIS))
-      )
+      Updates.set("status", Codecs.toBson(newState)),
+      Updates.set("lastUpdated", Instant.now(clock).truncatedTo(MILLIS))
+    )
     collection.updateOne(filter, update)
       .toFuture()
       .map(_ => HasSucceeded)

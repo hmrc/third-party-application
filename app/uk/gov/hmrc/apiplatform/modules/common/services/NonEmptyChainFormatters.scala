@@ -28,7 +28,7 @@ trait NonEmptyChainFormatters {
       .collect(
         JsonValidationError("expected a NonEmptyList but got an empty list")
       ) {
-        case head :: tail => NEC.of(head, tail:_ *)
+        case head :: tail => NEC.of(head, tail: _*)
       }
 
   implicit def necWrites[A](implicit w: Writes[A]): Writes[NEC[A]] =

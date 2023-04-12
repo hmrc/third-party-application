@@ -32,17 +32,17 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationId
 }
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 
 @Singleton
 class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
@@ -213,7 +213,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         Future.successful(appWithoutTouAcceptance)
       }
     }
-    
+
     def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
       submission.status match {
         case Granted(_, _)  => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)

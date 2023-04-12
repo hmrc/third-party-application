@@ -84,7 +84,15 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     )
 
     val underTest =
-      new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, TermsOfUseInvitationRepositoryMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, clock)
+      new GrantApprovalsService(
+        AuditServiceMock.aMock,
+        ApplicationRepoMock.aMock,
+        StateHistoryRepoMock.aMock,
+        TermsOfUseInvitationRepositoryMock.aMock,
+        SubmissionsServiceMock.aMock,
+        EmailConnectorMock.aMock,
+        clock
+      )
   }
 
   "GrantApprovalsService.grant" should {

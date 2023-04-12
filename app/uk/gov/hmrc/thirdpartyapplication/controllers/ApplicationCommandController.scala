@@ -23,6 +23,7 @@ import play.api.libs.json.{Json, Reads}
 import play.api.mvc._
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
@@ -30,7 +31,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, Appl
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 object ApplicationCommandController {

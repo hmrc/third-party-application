@@ -23,6 +23,7 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.validated._
 
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Submission, SubmissionId}
@@ -30,7 +31,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividualToSelf, ImportantSubmissionData, Standard}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 
 @Singleton
 class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
