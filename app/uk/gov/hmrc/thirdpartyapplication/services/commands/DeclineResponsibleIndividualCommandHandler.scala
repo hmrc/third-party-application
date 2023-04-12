@@ -41,7 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandFailures.GenericFailure
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 
 @Singleton
 class DeclineResponsibleIndividualCommandHandler @Inject() (
@@ -172,7 +172,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
       valid                                                             <- E.fromValidated(validate())
       (responsibleIndividual, requestingAdminEmail, requestingAdminName) = valid
       reasons                                                            = "Responsible individual declined the terms of use."
-      submission                                                        <- E.fromOptionF(submissionService.declineSubmission(app.id, responsibleIndividual.emailAddress.text, reasons), NonEmptyChain.one(GenericFailure("Submission not found")))
+      submission                                                        <- E.fromOptionF(submissionService.declineSubmission(app.id, responsibleIndividual.emailAddress.text, reasons), NonEmptyChain.one(CommandFailures.GenericFailure("Submission not found")))
       _                                                                 <- E.liftF(setTermsOfUseInvitationStatus(app.id, submission))
       _                                                                 <- E.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(riVerification.submissionId, riVerification.submissionInstance))
       riDeclined                                                         = asEvents(responsibleIndividual, requestingAdminEmail, requestingAdminName)

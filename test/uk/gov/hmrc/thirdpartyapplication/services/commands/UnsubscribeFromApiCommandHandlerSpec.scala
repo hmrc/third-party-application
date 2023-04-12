@@ -29,6 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 
 class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiIdentifierSyntax {
 
@@ -100,7 +101,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with A
 
       val app = anApplicationData(applicationId)
 
-      checkFailsWith("Application MyApp is not subscribed to API some-context v1.1") {
+      checkFailsWith(CommandFailures.NotSubscribedToApi) {
         underTest.process(app, unsubscribeFromApi)
       }
     }
@@ -126,7 +127,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with A
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
         applicationId,
         { app =>
-          checkFailsWith(s"Unauthorized to unsubscribe any API from app ${app.name}") {
+          checkFailsWith(CommandFailures.InsufficientPrivileges(s"Unauthorized to unsubscribe any API from app ${app.name}")) {
             underTest.process(app, unsubscribeFromApi)
           }
         }

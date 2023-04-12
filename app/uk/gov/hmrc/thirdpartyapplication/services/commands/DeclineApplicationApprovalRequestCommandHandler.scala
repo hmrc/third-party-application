@@ -30,6 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineApplicationApprovalRequest, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 
 @Singleton
 class DeclineApplicationApprovalRequestCommandHandler @Inject() (

@@ -31,6 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, VerifyResponsibleIndividual}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 
 @Singleton
 class VerifyResponsibleIndividualCommandHandler @Inject() (

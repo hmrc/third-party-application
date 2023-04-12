@@ -29,6 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 
 trait CommandHandler {
   implicit def ec: ExecutionContext
@@ -37,6 +38,8 @@ trait CommandHandler {
 }
 
 object CommandHandler {
+  import scala.language.implicitConversions
+  
   type Success  = (ApplicationData, NonEmptyList[ApplicationEvent])
   type Failures = NonEmptyChain[CommandFailure]
 
@@ -60,23 +63,24 @@ object CommandHandler {
       requestingAdminEmail
     )
 
-  def cond(cond: => Boolean, left: CommandFailure): Validated[Failures, Unit] = {
+  implicit def toCommandFailure(in: String): CommandFailure = CommandFailures.GenericFailure(in)
+
+  def cond(cond: Boolean, left: => CommandFailure): Validated[Failures, Unit] = {
     if (cond) ().validNec[CommandFailure] else left.invalidNec[Unit]
   }
+  // def cond(cond: Boolean, left: => String): Validated[Failures, Unit] = {
+  //   if (cond) ().validNec[CommandFailure] else GenericFailure(left).invalidNec[Unit]
+  // }
 
-  def cond(cond: => Boolean, left: String): Validated[Failures, Unit] = {
-    if (cond) ().validNec[CommandFailure] else GenericFailure(left).invalidNec[Unit]
-  }
-
-  def cond[R](cond: => Boolean, left: CommandFailure, rValue: R): Validated[Failures, R] = {
+  def cond[R](cond: Boolean, left: => CommandFailure, rValue: R): Validated[Failures, R] = {
     if (cond) rValue.validNec[CommandFailure] else left.invalidNec[R]
   }
 
-  def mustBeDefined[R](value: Option[R], left: CommandFailure): Validated[Failures, R] = {
+  def mustBeDefinedFail[R](value: Option[R], left: => CommandFailure): Validated[Failures, R] = {
     value.fold(left.invalidNec[R])(_.validNec[CommandFailure])
   }
 
-  def mustBeDefined[R](value: Option[R], left: String): Validated[Failures, R] = {
+  def mustBeDefined[R](value: Option[R], left: => String): Validated[Failures, R] = {
     value.fold[Validated[Failures, R]](GenericFailure(left).invalidNec[R])(_.validNec[CommandFailure])
   }
 

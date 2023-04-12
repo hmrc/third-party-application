@@ -17,6 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailure
 
 trait CommandHandlerBaseSpec
     extends AsyncHmrcSpec

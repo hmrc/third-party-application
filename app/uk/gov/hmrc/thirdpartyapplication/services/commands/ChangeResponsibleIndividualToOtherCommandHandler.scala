@@ -42,7 +42,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandFailures.GenericFailure
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 
 @Singleton
 class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
@@ -56,7 +56,6 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
   ) extends CommandHandler {
 
   import CommandHandler._
-  import CommandFailures._
 
   private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
     cond(
@@ -227,7 +226,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     for {
       valid                                                 <- E.fromValidated(validate())
       (responsibleIndividual, requesterEmail, requesterName) = valid
-      submission                                            <- E.fromOptionF(submissionsService.markSubmission(app.id, requesterEmail.text), NonEmptyChain.one(GenericFailure("Submission not found")))
+      submission                                            <- E.fromOptionF(submissionsService.markSubmission(app.id, requesterEmail.text), NonEmptyChain.one(CommandFailures.GenericFailure("Submission not found")))
       _                                                     <- E.liftF(setTermsOfUseInvitationStatus(app.id, submission))
       isPassed                                               = submission.status.isGranted
       _                                                     <- E.liftF(addTouAcceptanceIfNeeded(isPassed, app, submission.id, submission.latestInstance.index, responsibleIndividual))
@@ -288,7 +287,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         case Some(riVerificationToU: ResponsibleIndividualToUVerification)             => processTou(app, cmd, riVerificationToU).value
         case Some(riVerificationTouUplift: ResponsibleIndividualTouUpliftVerification) => processTouUplift(app, cmd, riVerificationTouUplift).value
         case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification)       => processUpdate(app, cmd, riVerificationUpdate).value
-        case _                                                                         => E.leftT(NonEmptyChain.one(GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
+        case _                                                                         => E.leftT(NonEmptyChain.one(CommandFailures.GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
       }
     )
   }
