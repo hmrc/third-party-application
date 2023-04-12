@@ -17,9 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import java.time.{Instant, LocalDateTime, ZoneOffset}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext}
 
-import cats.data.{EitherT, NonEmptyChain, NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
@@ -30,22 +30,18 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{Applic
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.services.BaseCommandHandler
 
-trait CommandHandler {
+trait CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[ApplicationEvent])] {
   implicit def ec: ExecutionContext
 
-  val E = EitherTHelper.make[CommandHandler.Failures]
+  val E = EitherTHelper.make[Failures]
 }
 
-object CommandHandler {
+object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[ApplicationEvent])] {
   import scala.language.implicitConversions
   
-  type Success  = (ApplicationData, NonEmptyList[ApplicationEvent])
-  type Failures = NonEmptyChain[CommandFailure]
-
   import CommandFailures._
-
-  type ResultT = EitherT[Future, Failures, Success]
 
   implicit class InstantSyntax(value: LocalDateTime) {
     def instant: Instant = value.toInstant(ZoneOffset.UTC)
@@ -64,25 +60,6 @@ object CommandHandler {
     )
 
   implicit def toCommandFailure(in: String): CommandFailure = CommandFailures.GenericFailure(in)
-
-  def cond(cond: Boolean, left: => CommandFailure): Validated[Failures, Unit] = {
-    if (cond) ().validNec[CommandFailure] else left.invalidNec[Unit]
-  }
-  // def cond(cond: Boolean, left: => String): Validated[Failures, Unit] = {
-  //   if (cond) ().validNec[CommandFailure] else GenericFailure(left).invalidNec[Unit]
-  // }
-
-  def cond[R](cond: Boolean, left: => CommandFailure, rValue: R): Validated[Failures, R] = {
-    if (cond) rValue.validNec[CommandFailure] else left.invalidNec[R]
-  }
-
-  def mustBeDefinedFail[R](value: Option[R], left: => CommandFailure): Validated[Failures, R] = {
-    value.fold(left.invalidNec[R])(_.validNec[CommandFailure])
-  }
-
-  def mustBeDefined[R](value: Option[R], left: => String): Validated[Failures, R] = {
-    value.fold[Validated[Failures, R]](GenericFailure(left).invalidNec[R])(_.validNec[CommandFailure])
-  }
 
   def isAppActorACollaboratorOnApp(actor: Actors.AppCollaborator, app: ApplicationData): Validated[Failures, Unit] =
     cond(app.collaborators.exists(c => c.emailAddress == actor.email), ActorIsNotACollaboratorOnApp)
