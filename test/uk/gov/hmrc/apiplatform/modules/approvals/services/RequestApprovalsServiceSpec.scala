@@ -33,12 +33,11 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, State}
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, AuditServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -56,9 +55,9 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
     val application: ApplicationData = anApplicationData(applicationId, testingState())
 
-    val testSubmission             = aSubmission
-    val testPassAnsweredSubmission = testSubmission.hasCompletelyAnsweredWith(sampleAnswersToQuestions)
-    val touInvite                  = TermsOfUseInvitation(applicationId, Instant.now(clock), Instant.now(clock), Instant.now(clock), None, EMAIL_SENT)
+    val testSubmission                                     = aSubmission
+    val testPassAnsweredSubmission                         = testSubmission.hasCompletelyAnsweredWith(sampleAnswersToQuestions)
+    val touInvite                                          = TermsOfUseInvitation(applicationId, Instant.now(clock), Instant.now(clock), Instant.now(clock), None, EMAIL_SENT)
     val mockApprovalsNamingService: ApprovalsNamingService = mock[ApprovalsNamingService]
 
     def namingServiceReturns(result: ApplicationNameValidationResult) =

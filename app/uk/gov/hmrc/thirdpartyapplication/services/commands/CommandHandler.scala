@@ -17,12 +17,14 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import java.time.{Instant, LocalDateTime, ZoneOffset}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-import cats.data.{EitherT, NonEmptyChain, NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.services.BaseCommandHandler
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
@@ -36,13 +38,10 @@ trait CommandHandler {
   val E = EitherTHelper.make[CommandHandler.Failures]
 }
 
-object CommandHandler {
-  type Success  = (ApplicationData, NonEmptyList[ApplicationEvent])
-  type Failures = NonEmptyChain[CommandFailure]
+object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[ApplicationEvent])] {
+  import scala.language.implicitConversions
 
   import CommandFailures._
-
-  type ResultT = EitherT[Future, Failures, Success]
 
   implicit class InstantSyntax(value: LocalDateTime) {
     def instant: Instant = value.toInstant(ZoneOffset.UTC)
@@ -60,25 +59,7 @@ object CommandHandler {
       requestingAdminEmail
     )
 
-  def cond(cond: => Boolean, left: CommandFailure): Validated[Failures, Unit] = {
-    if (cond) ().validNec[CommandFailure] else left.invalidNec[Unit]
-  }
-
-  def cond(cond: => Boolean, left: String): Validated[Failures, Unit] = {
-    if (cond) ().validNec[CommandFailure] else GenericFailure(left).invalidNec[Unit]
-  }
-
-  def cond[R](cond: => Boolean, left: CommandFailure, rValue: R): Validated[Failures, R] = {
-    if (cond) rValue.validNec[CommandFailure] else left.invalidNec[R]
-  }
-
-  def mustBeDefined[R](value: Option[R], left: CommandFailure): Validated[Failures, R] = {
-    value.fold(left.invalidNec[R])(_.validNec[CommandFailure])
-  }
-
-  def mustBeDefined[R](value: Option[R], left: String): Validated[Failures, R] = {
-    value.fold[Validated[Failures, R]](GenericFailure(left).invalidNec[R])(_.validNec[CommandFailure])
-  }
+  implicit def toCommandFailure(in: String): CommandFailure = CommandFailures.GenericFailure(in)
 
   def isAppActorACollaboratorOnApp(actor: Actors.AppCollaborator, app: ApplicationData): Validated[Failures, Unit] =
     cond(app.collaborators.exists(c => c.emailAddress == actor.email), ActorIsNotACollaboratorOnApp)

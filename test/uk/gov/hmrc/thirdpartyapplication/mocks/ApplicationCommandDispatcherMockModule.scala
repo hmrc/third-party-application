@@ -24,6 +24,7 @@ import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -32,17 +33,17 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{Applic
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationCommand
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandFailures.GenericFailure
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandFailure, CommandHandler}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentMatchersSugar {
+  import cats.implicits._
 
   protected trait BaseApplicationCommandDispatcherMock {
 
     def aMock: ApplicationCommandDispatcher
 
     val mockEvents                          = NonEmptyList.of(mock[ApplicationEvent])
-    val mockErrors: CommandHandler.Failures = NonEmptyChain(GenericFailure("Bang"))
+    val mockErrors: CommandHandler.Failures = NonEmptyChain(CommandFailures.GenericFailure("Bang"))
     val E                                   = EitherTHelper.make[CommandHandler.Failures]
 
     object Dispatch {
@@ -84,7 +85,10 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(EitherT.leftT(NonEmptyChain[CommandFailure](fails, otherFails: _*)))
 
       def thenReturnFailed(msg: String, otherMsgs: String*) =
-        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(EitherT.leftT(NonEmptyChain(GenericFailure(msg), otherMsgs.toList.map(GenericFailure(_)): _*)))
+        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(EitherT.leftT(NonEmptyChain(
+          CommandFailures.GenericFailure(msg),
+          otherMsgs.toList.map(CommandFailures.GenericFailure(_)): _*
+        )))
 
       def verifyNeverCalled =
         verify(aMock, never).dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)

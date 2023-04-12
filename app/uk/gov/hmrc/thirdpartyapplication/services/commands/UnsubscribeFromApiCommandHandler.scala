@@ -25,6 +25,7 @@ import cats.implicits._
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC}
@@ -42,8 +43,8 @@ class UnsubscribeFromApiCommandHandler @Inject() (
   import CommandHandler._
 
   private def validate(app: ApplicationData, cmd: UnsubscribeFromApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[CommandHandler.Failures, Unit] = {
-    def isGatekeeperUser    = cond(rolePassed, s"Unauthorized to unsubscribe any API from app ${app.name}")
-    def alreadySubscribedTo = cond(alreadySubcribed, s"Application ${app.name} is not subscribed to API ${cmd.apiIdentifier.asText(" v")}")
+    def isGatekeeperUser    = cond(rolePassed, CommandFailures.InsufficientPrivileges(s"Unauthorized to unsubscribe any API from app ${app.name}"))
+    def alreadySubscribedTo = cond(alreadySubcribed, CommandFailures.NotSubscribedToApi)
 
     Apply[Validated[CommandHandler.Failures, *]].map2(
       isGatekeeperUser,

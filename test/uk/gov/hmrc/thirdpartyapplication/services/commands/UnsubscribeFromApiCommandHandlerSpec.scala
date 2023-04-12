@@ -22,6 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApiUnsubscribedV2
@@ -100,7 +101,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with A
 
       val app = anApplicationData(applicationId)
 
-      checkFailsWith("Application MyApp is not subscribed to API some-context v1.1") {
+      checkFailsWith(CommandFailures.NotSubscribedToApi) {
         underTest.process(app, unsubscribeFromApi)
       }
     }
@@ -126,7 +127,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with A
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
         applicationId,
         { app =>
-          checkFailsWith(s"Unauthorized to unsubscribe any API from app ${app.name}") {
+          checkFailsWith(CommandFailures.InsufficientPrivileges(s"Unauthorized to unsubscribe any API from app ${app.name}")) {
             underTest.process(app, unsubscribeFromApi)
           }
         }

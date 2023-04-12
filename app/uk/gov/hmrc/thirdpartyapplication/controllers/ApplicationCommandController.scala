@@ -23,6 +23,7 @@ import play.api.libs.json.{Json, Reads}
 import play.api.mvc._
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
@@ -30,8 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, Appl
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandFailures._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandFailureJsonFormatters, CommandHandler}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 object ApplicationCommandController {
   case class DispatchRequest(command: ApplicationCommand, verifiedCollaboratorsToNotify: Set[LaxEmailAddress])
@@ -63,7 +63,6 @@ class ApplicationCommandController @Inject() (
   ) extends ExtraHeadersController(cc)
     with JsonUtils
     with ApplicationCommandFormatters
-    with CommandFailureJsonFormatters
     with ApplicationLogger {
 
   import cats.implicits._
@@ -73,11 +72,15 @@ class ApplicationCommandController @Inject() (
 
     val details = e.toList.map(_ match {
       case _ @ApplicationNotFound            => "Application not found"
+      case InsufficientPrivileges(text)      => s"Insufficient privileges - $text"
       case _ @CannotRemoveLastAdmin          => "Cannot remove the last admin from an app"
       case _ @ActorIsNotACollaboratorOnApp   => "Actor is not a collaborator on the app"
       case _ @CollaboratorDoesNotExistOnApp  => "Collaborator does not exist on the app"
       case _ @CollaboratorHasMismatchOnApp   => "Collaborator has mismatched details against the app"
       case _ @CollaboratorAlreadyExistsOnApp => "Collaborator already exists on the app"
+      case _ @DuplicateSubscription          => "Duplicate subscription"
+      case _ @SubscriptionNotAvailable       => "Subscription not available"
+      case _ @NotSubscribedToApi             => "Not subscribed to API"
       case GenericFailure(s)                 => s
     })
 
