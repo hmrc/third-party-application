@@ -39,14 +39,14 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
   import CommandHandler._
 
   def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): ResultT = {
-    def validate: Validated[CommandHandler.Failures, String] = {
+    def validate: Validated[Failures, String] = {
       val newUrl     = cmd.newLocation match {
         case PrivacyPolicyLocations.Url(value) => Some(value)
         case _                                 => None
       }
       val isJustAUrl = cond(newUrl.isDefined, "Unexpected new PrivacyPolicyLocation type specified for legacy application: " + cmd.newLocation)
 
-      Apply[Validated[CommandHandler.Failures, *]].map4(
+      Apply[Validated[Failures, *]].map4(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         isStandardAccess(app),
@@ -80,8 +80,8 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
   }
 
   def processApp(oldLocation: PrivacyPolicyLocation, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): ResultT = {
-    def validate: Validated[CommandHandler.Failures, ApplicationData] = {
-      Apply[Validated[CommandHandler.Failures, *]].map3(
+    def validate: Validated[Failures, ApplicationData] = {
+      Apply[Validated[Failures, *]].map3(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         isStandardAccess(app)

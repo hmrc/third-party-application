@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
@@ -54,8 +54,8 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
       s"The specified individual is already the RI for this application"
     )
 
-  private def validate(app: ApplicationData, cmd: VerifyResponsibleIndividual): Validated[CommandHandler.Failures, Collaborator] = {
-    Apply[Validated[CommandHandler.Failures, *]].map5(
+  private def validate(app: ApplicationData, cmd: VerifyResponsibleIndividual): Validated[Failures, Collaborator] = {
+    Apply[Validated[Failures, *]].map5(
       isStandardNewJourneyApp(app),
       isApproved(app),
       isAdminOnApp(cmd.instigator, app),
@@ -84,7 +84,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
   }
 
   def process(app: ApplicationData, cmd: VerifyResponsibleIndividual): ResultT = {
-    lazy val noSubmission = NonEmptyChain.one(GenericFailure(s"No submission found for application ${app.id}"))
+    lazy val noSubmission = NonEmptyList.one(GenericFailure(s"No submission found for application ${app.id}"))
 
     for {
       submission <- E.fromOptionF(submissionService.fetchLatest(app.id), noSubmission)

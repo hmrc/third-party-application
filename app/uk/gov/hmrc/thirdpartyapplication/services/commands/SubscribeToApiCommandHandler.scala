@@ -41,11 +41,11 @@ class SubscribeToApiCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: SubscribeToApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[CommandHandler.Failures, Unit] = {
+  private def validate(app: ApplicationData, cmd: SubscribeToApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[Failures, Unit] = {
     def isAuthorisedUser       = cond(rolePassed, s"Unauthorized to subscribe any API to app ${app.name}")
     def notAlreadySubscribedTo = cond(!alreadySubcribed, s"Application ${app.name} is already subscribed to API ${cmd.apiIdentifier.asText(" v")}")
 
-    Apply[Validated[CommandHandler.Failures, *]].map2(
+    Apply[Validated[Failures, *]].map2(
       isAuthorisedUser,
       notAlreadySubscribedTo
     ) { case _ => () }

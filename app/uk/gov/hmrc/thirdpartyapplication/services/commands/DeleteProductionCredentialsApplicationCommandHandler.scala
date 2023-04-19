@@ -49,8 +49,8 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData): Validated[CommandHandler.Failures, ApplicationData] = {
-    Apply[Validated[CommandHandler.Failures, *]]
+  private def validate(app: ApplicationData): Validated[Failures, ApplicationData] = {
+    Apply[Validated[Failures, *]]
       .map(isInTesting(app)) { case _ => app }
   }
 

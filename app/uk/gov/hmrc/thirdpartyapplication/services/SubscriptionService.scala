@@ -76,7 +76,7 @@ class SubscriptionService @Inject() (
     val subscribeToApi = ApplicationCommands.SubscribeToApi(actor, api, true, LocalDateTime.now())
     applicationCommandDispatcher.dispatch(applicationId, subscribeToApi, Set.empty).value.map {
       case Left(e)  =>
-        logger.warn(s"Command Process failed for $applicationId because ${e.toChain.toList.mkString("[", ",", "]")}")
+        logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")
         throw FailedToSubscribeException(applicationName, api)
       case Right(_) => HasSucceeded
     }

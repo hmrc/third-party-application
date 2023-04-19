@@ -41,8 +41,8 @@ class AddClientSecretCommandHandler @Inject() (
 
   private val clientSecretLimit = config.clientSecretLimit
 
-  private def validate(app: ApplicationData, cmd: AddClientSecret): Validated[CommandHandler.Failures, Unit] = {
-    Apply[Validated[CommandHandler.Failures, *]].map2(
+  private def validate(app: ApplicationData, cmd: AddClientSecret): Validated[Failures, Unit] = {
+    Apply[Validated[Failures, *]].map2(
       isAdminIfInProduction(cmd.actor, app),
       appHasLessThanLimitOfSecrets(app, clientSecretLimit)
     ) { case _ => () }

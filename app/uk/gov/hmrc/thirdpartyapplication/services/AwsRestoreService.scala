@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, Ra
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
-class AwsRestoreService @Inject() (awsApiGatewayConnector: AwsApiGatewayConnector, applicationRepository: ApplicationRepository)(implicit ec: ExecutionContext)
+class AwsRestoreService @Inject() (awsApiGatewayConnector: AwsApiGatewayConnector, applicationRepository: ApplicationRepository)
     extends ApplicationLogger {
 
   val DefaultRateLimitTier: RateLimitTier = BRONZE

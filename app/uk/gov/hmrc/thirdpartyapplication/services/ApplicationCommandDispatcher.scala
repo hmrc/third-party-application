@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.data.NonEmptyChain
+import cats.data.NonEmptyList
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -69,7 +69,7 @@ class ApplicationCommandDispatcher @Inject() (
 
   def dispatch(applicationId: ApplicationId, command: ApplicationCommand, verifiedCollaborators: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): ResultT = {
     for {
-      app               <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(CommandFailures.ApplicationNotFound))
+      app               <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyList.one(CommandFailures.ApplicationNotFound))
       updateResults     <- processUpdate(app, command)
       (savedApp, events) = updateResults
 

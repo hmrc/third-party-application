@@ -31,7 +31,6 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 trait CommandHandler {
   implicit def ec: ExecutionContext
@@ -70,9 +69,9 @@ object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[
     val matchesEmail: Collaborator => Boolean = (appCollaborator) => { appCollaborator.emailAddress equalsIgnoreCase collaborator.emailAddress }
 
     app.collaborators.find(c => matchesId(c) || matchesEmail(c)) match {
-      case Some(c) if (c == collaborator) => ().validNec[CommandFailure]
-      case Some(_)                        => CollaboratorHasMismatchOnApp.invalidNec[Unit]
-      case _                              => CollaboratorDoesNotExistOnApp.invalidNec[Unit]
+      case Some(c) if (c == collaborator) => ().validNel[CommandFailure]
+      case Some(_)                        => CollaboratorHasMismatchOnApp.invalidNel[Unit]
+      case _                              => CollaboratorDoesNotExistOnApp.invalidNel[Unit]
     }
   }
 

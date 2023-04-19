@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.data.{NonEmptyChain, Validated}
+import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ClientSecretDetails, CommandFailure, CommandFailures}
@@ -43,7 +43,7 @@ class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClo
   }
 
   def checkFailsWith(failure: CommandFailure, failures: CommandFailure*)(fn: => Validated[CommandHandler.Failures, _]) = {
-    fn shouldBe Validated.Invalid(NonEmptyChain.of(failure, failures: _*))
+    fn shouldBe Validated.Invalid(NonEmptyList.of(failure, failures: _*))
   }
 
   "appHasLessThanLimitOfSecrets" should {
@@ -97,7 +97,7 @@ class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClo
 
       val app = applicationData.copy(collaborators = Set(theCollaborator.copy(emailAddress = anAdminEmail)))
 
-      isCollaboratorOnApp(theCollaborator, app) shouldBe Validated.Invalid(NonEmptyChain(CommandFailures.CollaboratorHasMismatchOnApp))
+      isCollaboratorOnApp(theCollaborator, app) shouldBe Validated.Invalid(NonEmptyList.one(CommandFailures.CollaboratorHasMismatchOnApp))
     }
   }
 }

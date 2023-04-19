@@ -42,11 +42,11 @@ class UnsubscribeFromApiCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: UnsubscribeFromApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[CommandHandler.Failures, Unit] = {
+  private def validate(app: ApplicationData, cmd: UnsubscribeFromApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[Failures, Unit] = {
     def isGatekeeperUser    = cond(rolePassed, CommandFailures.InsufficientPrivileges(s"Unauthorized to unsubscribe any API from app ${app.name}"))
     def alreadySubscribedTo = cond(alreadySubcribed, CommandFailures.NotSubscribedToApi)
 
-    Apply[Validated[CommandHandler.Failures, *]].map2(
+    Apply[Validated[Failures, *]].map2(
       isGatekeeperUser,
       alreadySubscribedTo
     ) { case _ => () }

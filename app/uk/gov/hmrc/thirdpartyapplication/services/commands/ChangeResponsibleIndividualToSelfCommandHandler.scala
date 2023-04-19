@@ -53,16 +53,16 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
       "The specified individual is already the RI for this application"
     )
 
-  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): Future[Validated[CommandHandler.Failures, Submission]] = {
+  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): Future[Validated[Failures, Submission]] = {
 
-    def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandHandler.Failures, Submission] = {
+    def checkSubmission(maybeSubmission: Option[Submission]): Validated[Failures, Submission] = {
       lazy val fails: CommandFailure = GenericFailure(s"No submission found for application ${app.id.value}")
 
-      maybeSubmission.fold(fails.invalidNec[Submission])(_.validNec[CommandFailure])
+      maybeSubmission.fold(fails.invalidNel[Submission])(_.validNel[CommandFailure])
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[CommandHandler.Failures, *]].map6(
+      Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
         isApproved(app),
         isAdminOnApp(cmd.instigator, app),
@@ -98,7 +98,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): CommandHandler.ResultT = {
+  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): ResultT = {
 
     val requesterName = cmd.name
     for {

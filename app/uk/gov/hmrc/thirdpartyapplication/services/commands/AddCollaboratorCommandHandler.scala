@@ -37,13 +37,13 @@ class AddCollaboratorCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: AddCollaborator): Validated[CommandHandler.Failures, Unit] = {
+  private def validate(app: ApplicationData, cmd: AddCollaborator): Validated[Failures, Unit] = {
     cmd.actor match {
-      case actor: Actors.AppCollaborator => Apply[Validated[CommandHandler.Failures, *]].map2(
+      case actor: Actors.AppCollaborator => Apply[Validated[Failures, *]].map2(
           isAppActorACollaboratorOnApp(actor, app),
           collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)
         ) { (_, _) => () }
-      case _                             => Apply[Validated[CommandHandler.Failures, *]]
+      case _                             => Apply[Validated[Failures, *]]
           .map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app))(_ => ())
     }
   }

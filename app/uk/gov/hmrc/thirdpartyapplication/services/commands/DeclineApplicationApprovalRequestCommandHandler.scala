@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
 import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
@@ -44,15 +44,15 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
   import CommandHandler._
   import CommandFailures._
 
-  private def validate(app: ApplicationData): Future[ValidatedNec[CommandFailure, (LaxEmailAddress, String, Submission)]] = {
+  private def validate(app: ApplicationData): Future[Validated[Failures, (LaxEmailAddress, String, Submission)]] = {
 
-    def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandHandler.Failures, Submission] = {
+    def checkSubmission(maybeSubmission: Option[Submission]): Validated[Failures, Submission] = {
       val fails: CommandFailure = GenericFailure(s"No submission found for application ${app.id.value}")
-      maybeSubmission.fold(fails.invalidNec[Submission])(_.validNec[CommandFailure])
+      maybeSubmission.fold(fails.invalidNel[Submission])(_.validNel[CommandFailure])
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[CommandHandler.Failures, *]].map5(
+      Apply[Validated[Failures, *]].map5(
         isStandardNewJourneyApp(app),
         isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app),
         ensureRequesterEmailDefined(app),
@@ -89,7 +89,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): CommandHandler.ResultT = {
+  def process(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): ResultT = {
 
     val stateHistory = StateHistory(
       applicationId = app.id,

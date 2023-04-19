@@ -26,7 +26,7 @@ trait CommandHandlerBaseSpec
     with CommandApplicationExamples {
 
   def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.ResultT) = {
-    val testThis = await(fn.value).left.value.toNonEmptyList.toList
+    val testThis = await(fn.value).left.value.toList
 
     testThis should have length 1 + msgs.length
     testThis.head shouldBe CommandFailures.GenericFailure(msg)
@@ -34,7 +34,7 @@ trait CommandHandlerBaseSpec
   }
 
   def checkFailsWith(fail: CommandFailure, fails: CommandFailure*)(fn: => CommandHandler.ResultT) = {
-    val testThis = await(fn.value).left.value.toNonEmptyList.toList
+    val testThis = await(fn.value).left.value.toList
 
     testThis should have length 1 + fails.length
     testThis.head shouldBe fail

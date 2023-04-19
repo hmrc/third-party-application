@@ -38,13 +38,13 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
   private def validate(app: ApplicationData, cmd: RemoveCollaborator) = {
 
     cmd.actor match {
-      case actor: Actors.AppCollaborator => Apply[Validated[CommandHandler.Failures, *]]
+      case actor: Actors.AppCollaborator => Apply[Validated[Failures, *]]
           .map3(
             isAppActorACollaboratorOnApp(actor, app),
             isCollaboratorOnApp(cmd.collaborator, app),
             applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)
           ) { case _ => app }
-      case _                             => Apply[Validated[CommandHandler.Failures, *]]
+      case _                             => Apply[Validated[Failures, *]]
           .map2(
             isCollaboratorOnApp(cmd.collaborator, app),
             applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)

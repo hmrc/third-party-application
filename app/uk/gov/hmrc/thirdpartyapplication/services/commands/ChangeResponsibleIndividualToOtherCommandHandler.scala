@@ -21,7 +21,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
@@ -72,8 +72,8 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
   def processTou(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualToUVerification): ResultT = {
-    def validate(): Validated[CommandHandler.Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[CommandHandler.Failures, *]].map6(
+    def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
+      Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
         isPendingResponsibleIndividualVerification(app),
         isApplicationIdTheSame(app, riVerificationToU),
@@ -136,8 +136,8 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
   }
 
   def processTouUplift(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualTouUpliftVerification): ResultT = {
-    def validate(): Validated[CommandHandler.Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[CommandHandler.Failures, *]].map6(
+    def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
+      Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
         isInProduction(app),
         isApplicationIdTheSame(app, riVerificationToU),
@@ -227,7 +227,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     for {
       valid                                                 <- E.fromValidated(validate())
       (responsibleIndividual, requesterEmail, requesterName) = valid
-      submission                                            <- E.fromOptionF(submissionsService.markSubmission(app.id, requesterEmail.text), NonEmptyChain.one(CommandFailures.GenericFailure("Submission not found")))
+      submission                                            <- E.fromOptionF(submissionsService.markSubmission(app.id, requesterEmail.text), NonEmptyList.one(CommandFailures.GenericFailure("Submission not found")))
       _                                                     <- E.liftF(setTermsOfUseInvitationStatus(app.id, submission))
       isPassed                                               = submission.status.isGranted
       _                                                     <- E.liftF(addTouAcceptanceIfNeeded(isPassed, app, submission.id, submission.latestInstance.index, responsibleIndividual))
@@ -239,8 +239,8 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
   def processUpdate(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualUpdateVerification): ResultT = {
     val newResponsibleIndividual = riVerification.responsibleIndividual
 
-    def validateUpdate(): Validated[CommandHandler.Failures, ResponsibleIndividual] = {
-      Apply[Validated[CommandHandler.Failures, *]].map5(
+    def validateUpdate(): Validated[Failures, ResponsibleIndividual] = {
+      Apply[Validated[Failures, *]].map5(
         isStandardNewJourneyApp(app),
         isApproved(app),
         isApplicationIdTheSame(app, riVerification),
@@ -282,13 +282,13 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     } yield (app, NonEmptyList.one(evt))
   }
 
-  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther): CommandHandler.ResultT = {
+  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther): ResultT = {
     E.fromEitherF(
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap {
         case Some(riVerificationToU: ResponsibleIndividualToUVerification)             => processTou(app, cmd, riVerificationToU).value
         case Some(riVerificationTouUplift: ResponsibleIndividualTouUpliftVerification) => processTouUplift(app, cmd, riVerificationTouUplift).value
         case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification)       => processUpdate(app, cmd, riVerificationUpdate).value
-        case _                                                                         => E.leftT(NonEmptyChain.one(CommandFailures.GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
+        case _                                                                         => E.leftT(NonEmptyList.one(CommandFailures.GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
       }
     )
   }

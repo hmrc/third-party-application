@@ -39,14 +39,14 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
   import CommandHandler._
 
   def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
-    def validate: Validated[CommandHandler.Failures, String] = {
+    def validate: Validated[Failures, String] = {
       val newUrl       = cmd.newLocation match {
         case TermsAndConditionsLocations.Url(value) => Some(value)
         case _                                      => None
       }
       val ensureIsAUrl = mustBeDefined(newUrl, s"Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
 
-      Apply[Validated[CommandHandler.Failures, *]].map4(
+      Apply[Validated[Failures, *]].map4(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         isStandardAccess(app),
@@ -75,8 +75,8 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
   }
 
   def processApp(oldLocation: TermsAndConditionsLocation, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
-    def validate: Validated[CommandHandler.Failures, ApplicationData] = {
-      Apply[Validated[CommandHandler.Failures, *]].map3(
+    def validate: Validated[Failures, ApplicationData] = {
+      Apply[Validated[Failures, *]].map3(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         isStandardAccess(app)
