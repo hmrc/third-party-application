@@ -26,7 +26,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ClientId, ClientSecret, PrivacyPolicyLocations, TermsAndConditionsLocations}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -127,9 +126,9 @@ class ApplicationCommandDispatcherSpec
 
   "dispatch" when {
     "AddClientSecret is received" should {
-      val clientSecret             = ClientSecretDetails("name", now, None, ClientSecret.Id.random, "hashedSecret")
-      val cmd: AddClientSecret     = AddClientSecret(otherAdminAsActor, clientSecret, now)
-      val evt: ClientSecretAddedV2 = ClientSecretAddedV2(EventId.random, applicationId, instant, otherAdminAsActor, clientSecret.name, clientSecret.id.value.toString)
+      val id = ClientSecret.Id.random
+      val cmd: AddClientSecret     = AddClientSecret(otherAdminAsActor, "name", id, "hashedSecret", now)
+      val evt: ClientSecretAddedV2 = ClientSecretAddedV2(EventId.random, applicationId, instant, otherAdminAsActor, "name", id.value.toString)
 
       "call AddClientSecretCommand Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()

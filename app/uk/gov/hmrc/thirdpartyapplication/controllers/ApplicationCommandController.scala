@@ -79,6 +79,7 @@ class ApplicationCommandController @Inject() (
       case _ @DuplicateSubscription          => "Duplicate subscription"
       case _ @SubscriptionNotAvailable       => "Subscription not available"
       case _ @NotSubscribedToApi             => "Not subscribed to API"
+      case _ @ClientSecretLimitExceeded      => "Client Secrets imit exceeded"
       case GenericFailure(s)                 => s
     })
 

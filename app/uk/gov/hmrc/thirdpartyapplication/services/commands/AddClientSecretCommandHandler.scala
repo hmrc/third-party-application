@@ -23,7 +23,6 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ClientSecretAddedV2, EventId}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
@@ -55,8 +54,8 @@ class AddClientSecretCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
-        clientSecretId = cmd.clientSecret.id.value.toString,
-        clientSecretName = cmd.clientSecret.name
+        clientSecretId = cmd.id.value.toString,
+        clientSecretName = cmd.name
       )
     )
   }
@@ -64,17 +63,17 @@ class AddClientSecretCommandHandler @Inject() (
   def process(app: ApplicationData, cmd: AddClientSecret): ResultT = {
     import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 
-    def asClientSecretData(details: ClientSecretDetails): ClientSecretData =
+    def asClientSecretData(cmd: AddClientSecret): ClientSecretData =
       ClientSecretData(
-        name = details.name,
-        createdOn = details.createdOn,
-        lastAccess = details.lastAccess,
-        id = details.id,
-        hashedSecret = details.hashedSecret
+        name = cmd.name,
+        createdOn = cmd.timestamp,
+        lastAccess = None,
+        id = cmd.id,
+        hashedSecret = cmd.hashedSecret
       )
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
-      savedApp <- E.liftF(applicationRepository.addClientSecret(app.id, asClientSecretData(cmd.clientSecret)))
+      savedApp <- E.liftF(applicationRepository.addClientSecret(app.id, asClientSecretData(cmd)))
       events    = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }

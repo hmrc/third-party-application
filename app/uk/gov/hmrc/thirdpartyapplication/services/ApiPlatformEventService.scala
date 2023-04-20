@@ -31,7 +31,6 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 @Singleton
 class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlatformEventsConnector, clock: Clock)(implicit val ec: ExecutionContext) extends ApplicationLogger

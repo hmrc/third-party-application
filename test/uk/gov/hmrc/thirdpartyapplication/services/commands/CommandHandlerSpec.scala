@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ClientSecretDetails, CommandFailure, CommandFailures}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -32,8 +32,6 @@ class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClo
 
   val applicationId = ApplicationId.random
   val timestamp     = now
-  val clientSecret  = ClientSecretDetails("name", timestamp, hashedSecret = "hashed")
-  val secretValue   = "somSecret"
 
   // Application with two client secrets
   val applicationData: ApplicationData = anApplicationData(applicationId)

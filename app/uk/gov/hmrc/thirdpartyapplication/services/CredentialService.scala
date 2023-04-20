@@ -27,7 +27,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientSecret}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -66,8 +65,7 @@ class CredentialService @Inject() (
   def addClientSecretNew(applicationId: ApplicationId, request: ClientSecretRequestWithActor)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
 
     def generateCommand(csd: ClientSecretData) = {
-      val cmdClientSecret = ClientSecretDetails(csd.name, csd.createdOn, csd.lastAccess, csd.id, csd.hashedSecret)
-      ApplicationCommands.AddClientSecret(actor = request.actor, cmdClientSecret, timestamp = request.timestamp)
+      ApplicationCommands.AddClientSecret(actor = request.actor, csd.name, csd.id, csd.hashedSecret, timestamp = request.timestamp)
     }
 
     for {
@@ -77,7 +75,7 @@ class CredentialService @Inject() (
       addSecretCmd                = generateCommand(clientSecret)
       _                          <- applicationCommandDispatcher.dispatch(applicationId, addSecretCmd, Set.empty).value
       updatedApplication         <- fetchApp(applicationId)
-    } yield ApplicationTokenResponse(updatedApplication.tokens.production, addSecretCmd.clientSecret.id, secretValue)
+    } yield ApplicationTokenResponse(updatedApplication.tokens.production, clientSecret.id, secretValue)
   }
 
   @deprecated("remove after client is no longer using the old endpoint")
