@@ -16,46 +16,43 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.{Instant, ZoneOffset}
-import java.util.UUID
+import java.time.{Clock, Instant, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future, blocking}
-import scala.util.{Failure, Success}
 
-import com.github.t3hnar.bcrypt._
-
-import uk.gov.hmrc.time.DateTimeUtils
-
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientSecretsHashingConfig}
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, SimpleTimer}
+import uk.gov.hmrc.apiplatform.modules.crypto.services.SecretsHashingService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
-class ClientSecretService @Inject() (applicationRepository: ApplicationRepository, config: ClientSecretServiceConfig)(implicit ec: ExecutionContext) extends ApplicationLogger {
+class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applicationRepository: ApplicationRepository, val clock: Clock)(implicit ec: ExecutionContext)
+    extends SecretsHashingService(config) with ApplicationLogger with SimpleTimer with ClockNow {
 
-  def clientSecretValueGenerator: () => String = UUID.randomUUID().toString
+  def generateClientSecret(): Future[(ClientSecretData, String)] = {
+    Future {
+      blocking {
+        val ((secretValue, hashedSecretValue), duration) = timeThis(() => generateSecretAndHash())
 
-  def generateClientSecret(): (ClientSecretData, String) = {
-    val secretValue = clientSecretValueGenerator()
+        logger.info(
+          s"[ClientSecretService] Creating and Hashing Secret with Work Factor of [${config.workFactor}] took [${duration.toString()}]"
+        )
 
-    (ClientSecretData(name = secretValue.takeRight(4), hashedSecret = hashSecret(secretValue)), secretValue)
+        (ClientSecretData(name = secretValue.takeRight(4), hashedSecret = hashedSecretValue), secretValue)
+      }
+    }
   }
 
-  def hashSecret(secret: String): String = {
-    /*
-     * Measure the time it takes to perform the hashing process - need to ensure we tune the work factor so that we don't introduce too much delay for
-     * legitimate users.
-     */
-    val startTime   = DateTimeUtils.now
-    val hashedValue = secret.bcrypt(config.hashFunctionWorkFactor)
-    val endTime     = DateTimeUtils.now
+  def timedHashSecret(secretValue: String): String = {
+    val (hashedSecretValue, duration) = timeThis(() => hashSecret(secretValue))
 
     logger.info(
-      s"[ClientSecretService] Hashing Secret with Work Factor of [${config.hashFunctionWorkFactor}] took [${endTime.getMillis - startTime.getMillis}ms]"
+      s"[ClientSecretService] Hashing Secret with Work Factor of [${config.workFactor}] took [${duration.toString()}]"
     )
 
-    hashedValue
+    hashedSecretValue
   }
 
   def clientSecretIsValid(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecretData]): Future[Option[ClientSecretData]] = {
@@ -77,14 +74,10 @@ class ClientSecretService @Inject() (applicationRepository: ApplicationRepositor
         for {
           matchingClientSecret <- candidateClientSecrets
                                     .sortWith(lastUsedOrdering) // Assuming most clients use the same secret every time, we should match on the first comparison most of the time
-                                    .find(clientSecret => {
-                                      secret.isBcryptedSafe(clientSecret.hashedSecret) match {
-                                        case Success(result) => result
-                                        case Failure(_)      => false
-                                      }
-                                    })
+                                    .find(clientSecret => checkAgainstHash(secret, clientSecret.hashedSecret))
           _                     = if (requiresRehash(matchingClientSecret.hashedSecret)) {
-                                    applicationRepository.updateClientSecretHash(applicationId, matchingClientSecret.id, hashSecret(secret))
+                                    // Fire and forget out of chain of execution (not map/flatMap'ed)
+                                    applicationRepository.updateClientSecretHash(applicationId, matchingClientSecret.id, timedHashSecret(secret))
                                   }
         } yield matchingClientSecret
       }
@@ -95,10 +88,4 @@ class ClientSecretService @Inject() (applicationRepository: ApplicationRepositor
     val oldEpochDateTime = Instant.ofEpochMilli(0).atOffset(ZoneOffset.UTC).toLocalDateTime
     (first, second) => first.lastAccess.getOrElse(oldEpochDateTime).isAfter(second.lastAccess.getOrElse(oldEpochDateTime))
   }
-
-  def requiresRehash(hashedSecret: String): Boolean = workFactorOfHash(hashedSecret) != config.hashFunctionWorkFactor
-
-  def workFactorOfHash(hashedSecret: String): Int = hashedSecret.split("\\$")(2).toInt
 }
-
-case class ClientSecretServiceConfig(hashFunctionWorkFactor: Int)

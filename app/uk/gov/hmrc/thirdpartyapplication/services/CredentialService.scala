@@ -73,7 +73,7 @@ class CredentialService @Inject() (
     for {
       existingApp                <- fetchApp(applicationId)
       _                           = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
-      (clientSecret, secretValue) = clientSecretService.generateClientSecret()
+      (clientSecret, secretValue)<- clientSecretService.generateClientSecret()
       addSecretCmd                = generateCommand(clientSecret)
       _                          <- applicationCommandDispatcher.dispatch(applicationId, addSecretCmd, Set.empty).value
       updatedApplication         <- fetchApp(applicationId)
@@ -86,9 +86,9 @@ class CredentialService @Inject() (
       existingApp <- fetchApp(applicationId)
       _            = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
 
-      generatedSecret = clientSecretService.generateClientSecret()
-      newSecret       = generatedSecret._1
-      newSecretValue  = generatedSecret._2
+      generatedSecret <- clientSecretService.generateClientSecret()
+      newSecret        = generatedSecret._1
+      newSecretValue   = generatedSecret._2
 
       updatedApplication    <- applicationRepository.addClientSecret(applicationId, newSecret)
       _                     <- apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication, newSecret.id.value.toString)

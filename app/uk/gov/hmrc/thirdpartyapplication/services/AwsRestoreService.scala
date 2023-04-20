@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 import uk.gov.hmrc.http.HeaderCarrier
 

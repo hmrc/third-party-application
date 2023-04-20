@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import org.mockito.ArgumentMatchersSugar
