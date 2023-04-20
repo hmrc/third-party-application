@@ -31,6 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 trait CommandHandler {
   implicit def ec: ExecutionContext
@@ -104,12 +105,6 @@ object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION,
       GenericFailure("App is not in PRE_PRODUCTION or in PRODUCTION state")
-    )
-
-  def clientSecretExists(clientSecretId: String, app: ApplicationData) =
-    cond(
-      app.tokens.production.clientSecrets.exists(_.id == clientSecretId),
-      GenericFailure(s"Client Secret Id $clientSecretId not found in Application ${app.id.value}")
     )
 
   def collaboratorAlreadyOnApp(email: LaxEmailAddress, app: ApplicationData) = {

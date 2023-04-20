@@ -27,11 +27,11 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand,ApplicationCommands}
 
 @Singleton
 class ApplicationCommandDispatcher @Inject() (
@@ -81,6 +81,7 @@ class ApplicationCommandDispatcher @Inject() (
 
   // scalastyle:off cyclomatic.complexity
   private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): ResultT = {
+    import ApplicationCommands._
     command match {
       case cmd: AddCollaborator    => addCollaboratorCommandHandler.process(app, cmd)
       case cmd: RemoveCollaborator => removeCollaboratorCommandHandler.process(app, cmd)

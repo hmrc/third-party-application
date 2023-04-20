@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
 import scala.collection.immutable.Set
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
@@ -35,10 +34,11 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
@@ -147,8 +147,8 @@ class ApplicationCommandDispatcherSpec
     }
 
     "RemoveClientSecret is received" should {
-      val cmd: RemoveClientSecret    = RemoveClientSecret(otherAdminAsActor, UUID.randomUUID().toString, now)
-      val evt: ClientSecretRemovedV2 = ClientSecretRemovedV2(EventId.random, applicationId, instant, otherAdminAsActor, cmd.clientSecretId, "someName")
+      val cmd: RemoveClientSecret    = RemoveClientSecret(otherAdminAsActor, ClientSecret.Id.random, now)
+      val evt: ClientSecretRemovedV2 = ClientSecretRemovedV2(EventId.random, applicationId, instant, otherAdminAsActor, cmd.clientSecretId.value.toString(), "someName")
 
       "call RemoveClientSecretCommand Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
@@ -235,7 +235,7 @@ class ApplicationCommandDispatcherSpec
       val userId         = UserId.random
 
       val timestamp = now
-      val cmd       = ChangeProductionApplicationName(userId, timestamp, gatekeeperUser, newName)
+      val cmd       = ChangeProductionApplicationName(gatekeeperUser, userId, timestamp, newName)
       val evt       = ProductionAppNameChangedEvent(
         EventId.random,
         applicationId,
@@ -580,7 +580,7 @@ class ApplicationCommandDispatcherSpec
       val context       = ApiContext("context")
       val version       = ApiVersion("version")
       val apiIdentifier = ApiIdentifier(context, version)
-      val cmd           = SubscribeToApi(otherAdminAsActor, apiIdentifier, timestamp)
+      val cmd           = SubscribeToApi(otherAdminAsActor, apiIdentifier, true, timestamp)
       val evt           = ApiSubscribedV2(
         EventId.random,
         applicationId,

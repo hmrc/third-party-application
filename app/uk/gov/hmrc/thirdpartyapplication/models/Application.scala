@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, Ra
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationWithSubscriptions}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 trait CreateApplicationRequest {
   def name: String
@@ -288,7 +289,7 @@ object ApplicationTokenResponse {
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_) }
     )
 
-  def apply(token: Token, newClientSecretId: String, newClientSecret: String): ApplicationTokenResponse =
+  def apply(token: Token, newClientSecretId: ClientSecret.Id, newClientSecret: String): ApplicationTokenResponse =
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
@@ -296,14 +297,14 @@ object ApplicationTokenResponse {
     )
 }
 
-case class ClientSecretResponse(id: String, name: String, secret: Option[String], createdOn: LocalDateTime, lastAccess: Option[LocalDateTime])
+case class ClientSecretResponse(id: ClientSecret.Id, name: String, secret: Option[String], createdOn: LocalDateTime, lastAccess: Option[LocalDateTime])
 
 object ClientSecretResponse {
 
   def apply(clientSecret: ClientSecretData): ClientSecretResponse =
     ClientSecretResponse(clientSecret.id, clientSecret.name, None, clientSecret.createdOn, clientSecret.lastAccess)
 
-  def apply(clientSecret: ClientSecretData, newClientSecretId: String, newClientSecret: String): ClientSecretResponse =
+  def apply(clientSecret: ClientSecretData, newClientSecretId: ClientSecret.Id, newClientSecret: String): ClientSecretResponse =
     ClientSecretResponse(
       clientSecret.id,
       clientSecret.name,

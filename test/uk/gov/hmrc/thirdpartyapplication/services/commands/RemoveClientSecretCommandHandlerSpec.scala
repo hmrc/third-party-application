@@ -24,6 +24,8 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ClientSecretRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -60,7 +62,7 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            clientSecretId shouldBe clientSecret.id
+            clientSecretId shouldBe clientSecret.id.value.toString()
             clientSecretName shouldBe clientSecret.name
         }
       }
@@ -84,17 +86,17 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
     }
 
     "return an error for an admin where the client secret id is not valid" in new Setup {
-      val invalidCommand = removeClientSecretByAdmin.copy(clientSecretId = "invalid")
+      val invalidCommand = removeClientSecretByAdmin.copy(clientSecretId = ClientSecret.Id.random)
 
-      checkFailsWith(s"Client Secret Id invalid not found in Application ${principalApp.id.value}") {
+      checkFailsWith(s"Client Secret Id ${invalidCommand.clientSecretId.value} not found in Application ${principalApp.id.value}") {
         underTest.process(principalApp, invalidCommand)
       }
     }
 
     "return errors for a non-admin developer where the client secret id is not valid" in new Setup {
-      val invalidCommand = removeClientSecretByDev.copy(clientSecretId = "invalid")
+      val invalidCommand = removeClientSecretByDev.copy(clientSecretId = ClientSecret.Id.random)
 
-      checkFailsWith("App is in PRODUCTION so User must be an ADMIN", s"Client Secret Id invalid not found in Application ${principalApp.id.value}") {
+      checkFailsWith("App is in PRODUCTION so User must be an ADMIN", s"Client Secret Id ${invalidCommand.clientSecretId.value} not found in Application ${principalApp.id.value}") {
         underTest.process(principalApp, invalidCommand)
       }
     }
@@ -104,6 +106,7 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
     "succeed for a non admin" in new Setup {
       ApplicationRepoMock.DeleteClientSecret.succeeds(subordinateApp, clientSecret.id)
 
+      println(subordinateApp.tokens.production.clientSecrets)
       val result = await(underTest.process(subordinateApp, removeClientSecretByDev).value).right.value
 
       checkSuccessResult(developerActor)(result)

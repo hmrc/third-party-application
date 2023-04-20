@@ -40,6 +40,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with ApplicationTestData {
 
@@ -254,7 +255,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
         hc
       )
 
-      verify(mockApiPlatformEventService).sendClientSecretAddedEvent(*[ApplicationData], eqTo(result.clientSecrets.last.id))(*[HeaderCarrier])
+      verify(mockApiPlatformEventService).sendClientSecretAddedEvent(*[ApplicationData], eqTo(result.clientSecrets.last.id.value.toString()))(*[HeaderCarrier])
     }
 
     "send a notification to all admins" in new Setup {
@@ -299,7 +300,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
   "deleteClientSecret" should {
 
     "remove a client secret form an app with more than one client secret" in new Setup {
-      val clientSecretIdToRemove: String = firstSecret.id
+      val clientSecretIdToRemove = firstSecret.id
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.DeleteClientSecret.succeeds(applicationData, clientSecretIdToRemove)
@@ -307,7 +308,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
       AuditServiceMock.Audit.thenReturnSuccessWhen(
         ClientSecretRemovedAudit,
-        Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretIdToRemove)
+        Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretIdToRemove.value.toString)
       )
 
       val result = await(underTest.deleteClientSecret(applicationId, clientSecretIdToRemove, loggedInUser))
@@ -318,15 +319,15 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
       AuditServiceMock.Audit.verifyCalledWith(
         ClientSecretRemovedAudit,
-        Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretIdToRemove),
+        Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretIdToRemove.value.toString),
         hc
       )
 
-      verify(mockApiPlatformEventService).sendClientSecretRemovedEvent(any[ApplicationData], eqTo(clientSecretIdToRemove))(any[HeaderCarrier])
+      verify(mockApiPlatformEventService).sendClientSecretRemovedEvent(any[ApplicationData], eqTo(clientSecretIdToRemove.value.toString))(any[HeaderCarrier])
     }
 
     "send a notification to all admins" in new Setup {
-      val clientSecretIdToRemove: String = firstSecret.id
+      val clientSecretIdToRemove = firstSecret.id
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.DeleteClientSecret.succeeds(applicationData, clientSecretIdToRemove)
@@ -338,11 +339,11 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       EmailConnectorMock.SendRemovedClientSecretNotification
         .verifyCalledWith(loggedInUser, firstSecret.name, applicationData.name, Set(loggedInUser, anotherAdminUser))
 
-      verify(mockApiPlatformEventService).sendClientSecretRemovedEvent(any[ApplicationData], eqTo(clientSecretIdToRemove))(any[HeaderCarrier])
+      verify(mockApiPlatformEventService).sendClientSecretRemovedEvent(any[ApplicationData], eqTo(clientSecretIdToRemove.value.toString))(any[HeaderCarrier])
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-      val clientSecretIdToRemove: String = firstSecret.id
+      val clientSecretIdToRemove = firstSecret.id
 
       ApplicationRepoMock.Fetch.thenReturnNone()
 
@@ -354,7 +355,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
     }
 
     "throw a NotFoundException when trying to delete a secret which does not exist" in new Setup {
-      val clientSecretIdToRemove = "notARealSecret"
+      val clientSecretIdToRemove = ClientSecret.Id.random
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
 

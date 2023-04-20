@@ -32,10 +32,11 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddCollaborator, ApplicationCommand, RemoveCollaborator}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 
 class ApplicationCommandControllerSpec
     extends ControllerSpec
@@ -67,7 +68,6 @@ class ApplicationCommandControllerSpec
   val cmd: ApplicationCommand = AddCollaborator(actor, Collaborators.Administrator(UserId.random, "bob@smith.com".toLaxEmail), LocalDateTime.now)
   val dispatch                = ApplicationCommandController.DispatchRequest(cmd, Set("fred".toLaxEmail))
 
-  import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationCommandFormatters._
   implicit val tempWriter = Json.writes[ApplicationCommandController.DispatchRequest]
 
   val instigatorUserId = UUID.randomUUID().toString
@@ -83,7 +83,7 @@ class ApplicationCommandControllerSpec
 
     "dispatch request" should {
       val jsonText  =
-        s"""{"command":{"actor":{"actorType":"UNKNOWN"},"collaborator":{"userId":"${developerCollaborator.userId.value}","emailAddress":"dev@example.com","role":"DEVELOPER"},"timestamp":"2020-01-01T12:00:00","updateType":"removeCollaborator"},"verifiedCollaboratorsToNotify":["admin@example.com"]}"""
+        s"""{"command":{"actor":{"actorType":"UNKNOWN"},"collaborator":{"userId":"${developerCollaborator.userId.value}","emailAddress":"dev@example.com","role":"DEVELOPER"},"timestamp":"2020-01-01T12:00:00Z","updateType":"removeCollaborator"},"verifiedCollaboratorsToNotify":["admin@example.com"]}"""
       val timestamp = LocalDateTime.of(2020, 1, 1, 12, 0, 0)
       val cmd       = RemoveCollaborator(Actors.Unknown, developerCollaborator, timestamp)
       val req       = ApplicationCommandController.DispatchRequest(cmd, Set(anAdminEmail))

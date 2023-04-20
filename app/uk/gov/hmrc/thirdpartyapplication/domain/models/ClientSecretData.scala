@@ -17,15 +17,15 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import java.time.{LocalDateTime, ZoneOffset}
-import java.{util => ju}
 
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 case class ClientSecretData(
     name: String,
     createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     lastAccess: Option[LocalDateTime] = None,
-    id: String = ju.UUID.randomUUID().toString,
+    id: ClientSecret.Id = ClientSecret.Id.random,
     hashedSecret: String
   )
 

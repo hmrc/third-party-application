@@ -37,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -307,13 +308,13 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object RecordClientSecretUsage {
 
       def verifyNeverCalled() =
-        ApplicationRepoMock.verify(never).recordClientSecretUsage(*[ApplicationId], *)
+        ApplicationRepoMock.verify(never).recordClientSecretUsage(*[ApplicationId], *[ClientSecret.Id])
 
-      def thenReturnWhen(applicationId: ApplicationId, clientSecretId: String)(applicationData: ApplicationData) =
+      def thenReturnWhen(applicationId: ApplicationId, clientSecretId: ClientSecret.Id)(applicationData: ApplicationData) =
         when(aMock.recordClientSecretUsage(eqTo(applicationId), eqTo(clientSecretId))).thenReturn(successful(applicationData))
 
       def thenFail(failWith: Throwable) =
-        when(aMock.recordClientSecretUsage(*[ApplicationId], *)).thenReturn(failed(failWith))
+        when(aMock.recordClientSecretUsage(*[ApplicationId], *[ClientSecret.Id])).thenReturn(failed(failWith))
     }
 
     object UpdateApplicationRateLimit {
@@ -334,11 +335,11 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object UpdateClientSecretHash {
 
-      def thenReturn(applicationId: ApplicationId, clientSecretId: String)(updatedApplication: ApplicationData) = {
+      def thenReturn(applicationId: ApplicationId, clientSecretId: ClientSecret.Id)(updatedApplication: ApplicationData) = {
         when(aMock.updateClientSecretHash(eqTo(applicationId), eqTo(clientSecretId), *)).thenReturn(successful(updatedApplication))
       }
 
-      def verifyCalledWith(applicationId: ApplicationId, clientSecretId: String) =
+      def verifyCalledWith(applicationId: ApplicationId, clientSecretId: ClientSecret.Id) =
         ApplicationRepoMock.verify.updateClientSecretHash(eqTo(applicationId), eqTo(clientSecretId), *)
     }
 
@@ -355,7 +356,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object DeleteClientSecret {
 
-      def succeeds(application: ApplicationData, clientSecretId: String) = {
+      def succeeds(application: ApplicationData, clientSecretId: ClientSecret.Id) = {
         val otherClientSecrets = application.tokens.production.clientSecrets.filterNot(_.id == clientSecretId)
         val updatedApplication =
           application
@@ -366,11 +367,11 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.deleteClientSecret(eqTo(application.id), eqTo(clientSecretId))).thenReturn(successful(updatedApplication))
       }
 
-      def clientSecretNotFound(applicationId: ApplicationId, clientSecretId: String) =
+      def clientSecretNotFound(applicationId: ApplicationId, clientSecretId: ClientSecret.Id) =
         when(aMock.deleteClientSecret(eqTo(applicationId), eqTo(clientSecretId)))
           .thenThrow(new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [${applicationId.value}]"))
 
-      def verifyNeverCalled() = ApplicationRepoMock.verify(never).deleteClientSecret(*[ApplicationId], *)
+      def verifyNeverCalled() = ApplicationRepoMock.verify(never).deleteClientSecret(*[ApplicationId], *[ClientSecret.Id])
     }
 
     object AddCollaborator {

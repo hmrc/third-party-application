@@ -27,6 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationName
 
 class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -44,7 +45,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
     val userId = idOf(anAdminEmail)
 
     val timestamp = FixedClock.instant
-    val update    = ChangeProductionApplicationName(userId, now, gatekeeperUser, newName)
+    val update    = ChangeProductionApplicationName(gatekeeperUser, userId, now, newName)
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 

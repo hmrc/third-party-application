@@ -40,7 +40,6 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
       val clientSecret      = generatedClientSecret._1
       val clientSecretValue = generatedClientSecret._2
 
-      clientSecret.id.isEmpty should be(false)
       clientSecret.name should be(clientSecretValue takeRight 4)
 
       val hashedSecretCheck = clientSecretValue.isBcryptedSafe(clientSecret.hashedSecret)

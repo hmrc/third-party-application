@@ -27,20 +27,19 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Comma
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, ApplicationCommandFormatters}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 
 object ApplicationCommandController {
   case class DispatchRequest(command: ApplicationCommand, verifiedCollaboratorsToNotify: Set[LaxEmailAddress])
 
   object DispatchRequest {
-    import ApplicationCommandFormatters._
 
     val readsDispatchRequest: Reads[DispatchRequest]          = Json.reads[DispatchRequest]
-    val readsCommandAsDispatchRequest: Reads[DispatchRequest] = applicationUpdateRequestFormatter.map(cmd => DispatchRequest(cmd, Set.empty))
+    val readsCommandAsDispatchRequest: Reads[DispatchRequest] = ApplicationCommand.formatter.map(cmd => DispatchRequest(cmd, Set.empty))
 
     implicit val readsEitherAsDispatchRequest: Reads[DispatchRequest] = readsDispatchRequest orElse readsCommandAsDispatchRequest
   }
@@ -62,7 +61,6 @@ class ApplicationCommandController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
-    with ApplicationCommandFormatters
     with ApplicationLogger {
 
   import cats.implicits._

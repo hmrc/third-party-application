@@ -41,7 +41,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTime
 import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.time.{Clock, Duration, LocalDateTime, ZoneOffset}
-import java.util.UUID
 import scala.util.Random.nextString
 
 class ApplicationRepositoryISpec
@@ -2437,21 +2436,21 @@ class ApplicationRepositoryISpec
   "updateClientSecretName" should {
     def clientSecretWithId(
         application: ApplicationData,
-        clientSecretId: String
+        clientSecretId: ClientSecret.Id
       ): ClientSecretData =
       application.tokens.production.clientSecrets
         .find(_.id == clientSecretId)
         .get
     def otherClientSecrets(
         application: ApplicationData,
-        clientSecretId: String
+        clientSecretId: ClientSecret.Id
       ): Seq[ClientSecretData] =
       application.tokens.production.clientSecrets
         .filterNot(_.id == clientSecretId)
 
     "populate the name where it was an empty String" in {
       val applicationId  = ApplicationId.random
-      val clientSecretId = UUID.randomUUID().toString
+      val clientSecretId = ClientSecret.Id.random
 
       await(
         applicationRepository.save(
@@ -2478,7 +2477,7 @@ class ApplicationRepositoryISpec
 
     "populate the name where it was Default" in {
       val applicationId  = ApplicationId.random
-      val clientSecretId = UUID.randomUUID().toString
+      val clientSecretId = ClientSecret.Id.random
 
       await(
         applicationRepository.save(
@@ -2505,7 +2504,7 @@ class ApplicationRepositoryISpec
 
     "populate the name where it was a masked String" in {
       val applicationId  = ApplicationId.random
-      val clientSecretId = UUID.randomUUID().toString
+      val clientSecretId = ClientSecret.Id.random
 
       await(
         applicationRepository.save(
@@ -2537,7 +2536,7 @@ class ApplicationRepositoryISpec
 
     "update correct client secret where there are multiple" in {
       val applicationId  = ApplicationId.random
-      val clientSecretId = UUID.randomUUID().toString
+      val clientSecretId = ClientSecret.Id.random
 
       val clientSecret1 = aClientSecret(name = "secret-that-should-not-change")
       val clientSecret2 = aClientSecret(name = "secret-that-should-not-change")
@@ -3360,7 +3359,7 @@ class ApplicationRepositoryISpec
     )
   }
 
-  def aClientSecret(id: String = UUID.randomUUID().toString, name: String = "", lastAccess: Option[LocalDateTime] = None, hashedSecret: String = "") =
+  def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[LocalDateTime] = None, hashedSecret: String = "") =
     ClientSecretData(
       id = id,
       name = name,

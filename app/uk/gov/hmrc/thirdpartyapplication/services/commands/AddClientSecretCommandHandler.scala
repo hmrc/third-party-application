@@ -25,10 +25,10 @@ import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ClientSecretAddedV2, EventId}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AddClientSecret
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddClientSecret
 
 @Singleton
 class AddClientSecretCommandHandler @Inject() (
@@ -69,7 +69,7 @@ class AddClientSecretCommandHandler @Inject() (
         name = details.name,
         createdOn = details.createdOn,
         lastAccess = details.lastAccess,
-        id = details.id.value.toString,
+        id = details.id,
         hashedSecret = details.hashedSecret
       )
     for {

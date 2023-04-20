@@ -58,6 +58,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -401,7 +402,7 @@ class ApplicationControllerSpec
   "deleteClientSecret" should {
 
     val applicationId     = ApplicationId.random
-    val clientSecretId    = ju.UUID.randomUUID().toString
+    val clientSecretId    = ClientSecret.Id.random
     val actorEmailAddress = "actor@example.com".toLaxEmail
     val secretRequest     = DeleteClientSecretRequest(actorEmailAddress)
     val tokenResponse     = ApplicationTokenResponse(ClientId("aaa"), "bbb", List.empty)
