@@ -54,7 +54,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
   private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualUpdateVerification): ResultT = {
+  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualUpdateVerification): AppCmdResultT = {
 
     def validate(): Validated[Failures, Unit] = {
       Apply[Validated[Failures, *]].map4(
@@ -92,7 +92,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
     } yield (app, events)
   }
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualToUVerification): ResultT = {
+  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualToUVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
       Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
@@ -153,7 +153,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
     } yield (app, NonEmptyList(riEvt, List(declinedEvt, stateEvt)))
   }
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify): ResultT = {
+  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify): AppCmdResultT = {
     E.fromEitherF(
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap(_ match {
         case Some(riVerificationToU: ResponsibleIndividualToUVerification)       => process(app, cmd, riVerificationToU).value

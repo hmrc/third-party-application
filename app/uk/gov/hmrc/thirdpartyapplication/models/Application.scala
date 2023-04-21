@@ -297,6 +297,7 @@ object ApplicationTokenResponse {
     )
 }
 
+// TODO - remove when deprecated addClientSecret endpoint is removed - use the one from domain lib instead.
 case class ClientSecretResponse(id: ClientSecret.Id, name: String, secret: Option[String], createdOn: LocalDateTime, lastAccess: Option[LocalDateTime])
 
 object ClientSecretResponse {

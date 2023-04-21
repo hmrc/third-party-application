@@ -579,7 +579,7 @@ class ApplicationCommandDispatcherSpec
       val context       = ApiContext("context")
       val version       = ApiVersion("version")
       val apiIdentifier = ApiIdentifier(context, version)
-      val cmd           = SubscribeToApi(otherAdminAsActor, apiIdentifier, true, timestamp)
+      val cmd           = SubscribeToApi(otherAdminAsActor, apiIdentifier, timestamp)
       val evt           = ApiSubscribedV2(
         EventId.random,
         applicationId,

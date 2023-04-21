@@ -49,7 +49,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
-    def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>

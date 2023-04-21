@@ -98,7 +98,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): ResultT = {
+  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): AppCmdResultT = {
 
     val requesterName = cmd.name
     for {

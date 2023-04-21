@@ -63,7 +63,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
     val underTest = new ChangeProductionApplicationTermsAndConditionsLocationCommandHandler(ApplicationRepoMock.aMock)
 
-    def checkSuccessResult(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>
@@ -81,7 +81,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
       }
     }
 
-    def checkLegacySuccessResult(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
+    def checkLegacySuccessResult(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>

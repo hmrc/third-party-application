@@ -61,7 +61,7 @@ class AddCollaboratorCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: AddCollaborator): ResultT = {
+  def process(app: ApplicationData, cmd: AddCollaborator): AppCmdResultT = {
     for {
       _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.addCollaborator(app.id, cmd.collaborator))

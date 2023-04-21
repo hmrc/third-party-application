@@ -66,7 +66,7 @@ class RemoveClientSecretCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: RemoveClientSecret): ResultT = {
+  def process(app: ApplicationData, cmd: RemoveClientSecret): AppCmdResultT = {
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.deleteClientSecret(app.id, cmd.clientSecretId))

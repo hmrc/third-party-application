@@ -67,7 +67,7 @@ class ApplicationCommandDispatcher @Inject() (
 
   val E = EitherTHelper.make[CommandHandler.Failures]
 
-  def dispatch(applicationId: ApplicationId, command: ApplicationCommand, verifiedCollaborators: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): ResultT = {
+  def dispatch(applicationId: ApplicationId, command: ApplicationCommand, verifiedCollaborators: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       app               <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyList.one(CommandFailures.ApplicationNotFound))
       updateResults     <- processUpdate(app, command)
@@ -80,7 +80,7 @@ class ApplicationCommandDispatcher @Inject() (
   }
 
   // scalastyle:off cyclomatic.complexity
-  private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): ResultT = {
+  private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): AppCmdResultT = {
     import ApplicationCommands._
     command match {
       case cmd: AddCollaborator    => addCollaboratorCommandHandler.process(app, cmd)

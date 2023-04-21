@@ -69,7 +69,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteApplicationByGatekeeper)(implicit hc: HeaderCarrier): ResultT = {
+  def process(app: ApplicationData, cmd: DeleteApplicationByGatekeeper)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       valid              <- E.fromEither(validate(app).toEither)
       kindOfRequesterName = cmd.requestedByEmailAddress.text

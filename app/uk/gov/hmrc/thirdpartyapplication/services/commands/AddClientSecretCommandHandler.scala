@@ -60,7 +60,7 @@ class AddClientSecretCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: AddClientSecret): ResultT = {
+  def process(app: ApplicationData, cmd: AddClientSecret): AppCmdResultT = {
     import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 
     def asClientSecretData(cmd: AddClientSecret): ClientSecretData =

@@ -89,7 +89,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): ResultT = {
+  def process(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): AppCmdResultT = {
 
     val stateHistory = StateHistory(
       applicationId = app.id,

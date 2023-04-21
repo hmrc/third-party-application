@@ -77,7 +77,7 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteUnusedApplication)(implicit hc: HeaderCarrier): ResultT = {
+  def process(app: ApplicationData, cmd: DeleteUnusedApplication)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       valid       <- E.fromEither(validate(app, cmd).toEither)
       savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))

@@ -77,7 +77,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteApplicationByCollaborator)(implicit hc: HeaderCarrier): ResultT = {
+  def process(app: ApplicationData, cmd: DeleteApplicationByCollaborator)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       instigator          <- E.fromEither(validate(app, cmd).toEither)
       kindOfRequesterEmail = instigator.emailAddress.text

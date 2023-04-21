@@ -125,7 +125,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       SubmissionsServiceMock.aMock
     )
 
-    def checkSuccessResultToU()(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultToU()(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -169,7 +169,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       }
     }
 
-    def checkSuccessResultUpdate()(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultUpdate()(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>

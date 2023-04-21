@@ -71,7 +71,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
   private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
-  def processTou(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualToUVerification): ResultT = {
+  def processTou(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualToUVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
       Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
@@ -135,7 +135,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     } yield (savedApp, NonEmptyList(riEvt, List(stateEvt)))
   }
 
-  def processTouUplift(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualTouUpliftVerification): ResultT = {
+  def processTouUplift(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualTouUpliftVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
       Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
@@ -236,7 +236,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     } yield (app, evts)
   }
 
-  def processUpdate(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualUpdateVerification): ResultT = {
+  def processUpdate(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualUpdateVerification): AppCmdResultT = {
     val newResponsibleIndividual = riVerification.responsibleIndividual
 
     def validateUpdate(): Validated[Failures, ResponsibleIndividual] = {
@@ -282,7 +282,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     } yield (app, NonEmptyList.one(evt))
   }
 
-  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther): ResultT = {
+  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther): AppCmdResultT = {
     E.fromEitherF(
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap {
         case Some(riVerificationToU: ResponsibleIndividualToUVerification)             => processTou(app, cmd, riVerificationToU).value

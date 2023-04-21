@@ -83,7 +83,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: VerifyResponsibleIndividual): ResultT = {
+  def process(app: ApplicationData, cmd: VerifyResponsibleIndividual): AppCmdResultT = {
     lazy val noSubmission = NonEmptyList.one(GenericFailure(s"No submission found for application ${app.id}"))
 
     for {

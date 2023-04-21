@@ -56,7 +56,7 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
     )
   }
 
-  def process(app: ApplicationData, cmd: UpdateRedirectUris): ResultT = {
+  def process(app: ApplicationData, cmd: UpdateRedirectUris): AppCmdResultT = {
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.updateRedirectUris(app.id, cmd.newRedirectUris))

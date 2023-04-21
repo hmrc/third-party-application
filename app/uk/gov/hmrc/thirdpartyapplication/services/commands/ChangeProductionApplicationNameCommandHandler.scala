@@ -69,7 +69,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeProductionApplicationName): ResultT = {
+  def process(app: ApplicationData, cmd: ChangeProductionApplicationName): AppCmdResultT = {
     for {
       nameValidationResult <- E.liftF(namingService.validateApplicationName(cmd.newName, noExclusions))
       valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)

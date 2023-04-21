@@ -71,7 +71,7 @@ class SubscribeToApiCommandHandler @Inject() (
       Future.successful(true)
   }
 
-  def process(app: ApplicationData, cmd: SubscribeToApi)(implicit hc: HeaderCarrier): ResultT = {
+  def process(app: ApplicationData, cmd: SubscribeToApi)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       rolePassed       <- E.liftF(performRoleCheckAsRequired(app))
       alreadySubcribed <- E.liftF(subscriptionRepository.isSubscribed(app.id, cmd.apiIdentifier))

@@ -109,7 +109,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       SubmissionsServiceMock.aMock
     )
 
-    def checkSuccessResultToU(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultToU(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -153,7 +153,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       }
     }
 
-    def checkSuccessResultUpdate(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultUpdate(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>

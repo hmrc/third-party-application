@@ -70,7 +70,7 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
     )
   }
 
-  def process(app: ApplicationData, cmd: RemoveCollaborator): ResultT = {
+  def process(app: ApplicationData, cmd: RemoveCollaborator): AppCmdResultT = {
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.removeCollaborator(app.id, cmd.collaborator.userId))

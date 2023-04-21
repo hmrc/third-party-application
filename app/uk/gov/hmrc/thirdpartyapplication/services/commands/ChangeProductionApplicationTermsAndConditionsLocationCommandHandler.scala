@@ -38,7 +38,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
 
   import CommandHandler._
 
-  def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
+  def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
     def validate: Validated[Failures, String] = {
       val newUrl       = cmd.newLocation match {
         case TermsAndConditionsLocations.Url(value) => Some(value)
@@ -74,7 +74,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
     } yield (savedApp, events)
   }
 
-  def processApp(oldLocation: TermsAndConditionsLocation, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
+  def processApp(oldLocation: TermsAndConditionsLocation, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
     def validate: Validated[Failures, ApplicationData] = {
       Apply[Validated[Failures, *]].map3(
         isAdminOnApp(cmd.instigator, app),
@@ -103,7 +103,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
     } yield (savedApp, events)
   }
 
-  def process(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
+  def process(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
     app.access match {
       case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => processApp(termsAndConditionsLocation, app, cmd)
       case Standard(_, maybeTermsAndConditionsLocation, _, _, _, None)                                       => processLegacyApp(maybeTermsAndConditionsLocation.getOrElse(""), app, cmd)

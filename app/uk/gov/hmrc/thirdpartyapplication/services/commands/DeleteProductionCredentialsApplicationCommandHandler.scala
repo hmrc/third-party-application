@@ -70,7 +70,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteProductionCredentialsApplication)(implicit hc: HeaderCarrier): ResultT = {
+  def process(app: ApplicationData, cmd: DeleteProductionCredentialsApplication)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       valid       <- E.fromEither(validate(app).toEither)
       savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
