@@ -27,6 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationTermsAndConditionsLocation
 
 class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -62,7 +63,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
     val underTest = new ChangeProductionApplicationTermsAndConditionsLocationCommandHandler(ApplicationRepoMock.aMock)
 
-    def checkSuccessResult(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>
@@ -80,7 +81,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
       }
     }
 
-    def checkLegacySuccessResult(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
+    def checkLegacySuccessResult(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>

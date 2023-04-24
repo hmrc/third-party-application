@@ -22,8 +22,8 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Comma
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddCollaborator
 
 class AddCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -42,7 +42,7 @@ class AddCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
     val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, now)
     val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, now)
 
-    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>

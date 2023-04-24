@@ -25,18 +25,18 @@ import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateRedirectUris
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
 
 @Singleton
 class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: UpdateRedirectUris): Validated[CommandHandler.Failures, Unit] = {
+  private def validate(app: ApplicationData, cmd: UpdateRedirectUris): Validated[Failures, Unit] = {
     val hasFiveOrFewerURIs = cond(cmd.newRedirectUris.size <= 5, CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
-    Apply[Validated[CommandHandler.Failures, *]].map3(
+    Apply[Validated[Failures, *]].map3(
       isStandardAccess(app),
       isAdminIfInProduction(cmd.actor, app),
       hasFiveOrFewerURIs
@@ -56,7 +56,7 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
     )
   }
 
-  def process(app: ApplicationData, cmd: UpdateRedirectUris): ResultT = {
+  def process(app: ApplicationData, cmd: UpdateRedirectUris): AppCmdResultT = {
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.updateRedirectUris(app.id, cmd.newRedirectUris))

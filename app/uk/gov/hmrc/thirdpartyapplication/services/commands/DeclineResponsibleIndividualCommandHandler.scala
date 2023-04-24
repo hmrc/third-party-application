@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
@@ -42,6 +42,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineResponsibleIndividual
 
 @Singleton
 class DeclineResponsibleIndividualCommandHandler @Inject() (
@@ -58,9 +59,9 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
   private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualToUVerification): ResultT = {
-    def validate(): Validated[CommandHandler.Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[CommandHandler.Failures, *]].map6(
+  def process(app: ApplicationData, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualToUVerification): AppCmdResultT = {
+    def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
+      Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
         isPendingResponsibleIndividualVerification(app),
         isApplicationIdTheSame(app, riVerification),
@@ -127,9 +128,9 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
     } yield (app, NonEmptyList(riDeclined, List(approvalDeclined, stateEvt)))
   }
 
-  def processTouUplift(app: ApplicationData, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualTouUpliftVerification): ResultT = {
-    def validate(): Validated[CommandHandler.Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[CommandHandler.Failures, *]].map6(
+  def processTouUplift(app: ApplicationData, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualTouUpliftVerification): AppCmdResultT = {
+    def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
+      Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
         isInProduction(app),
         isApplicationIdTheSame(app, riVerification),
@@ -174,7 +175,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
       reasons                                                            = "Responsible individual declined the terms of use."
       submission                                                        <- E.fromOptionF(
                                                                              submissionService.declineSubmission(app.id, responsibleIndividual.emailAddress.text, reasons),
-                                                                             NonEmptyChain.one(CommandFailures.GenericFailure("Submission not found"))
+                                                                             NonEmptyList.one(CommandFailures.GenericFailure("Submission not found"))
                                                                            )
       _                                                                 <- E.liftF(setTermsOfUseInvitationStatus(app.id, submission))
       _                                                                 <- E.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(riVerification.submissionId, riVerification.submissionInstance))
@@ -182,10 +183,10 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
     } yield (app, NonEmptyList.one(riDeclined))
   }
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualUpdateVerification): ResultT = {
+  def process(app: ApplicationData, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualUpdateVerification): AppCmdResultT = {
 
-    def validate(): Validated[CommandHandler.Failures, Unit] = {
-      Apply[Validated[CommandHandler.Failures, *]].map4(
+    def validate(): Validated[Failures, Unit] = {
+      Apply[Validated[Failures, *]].map4(
         isStandardNewJourneyApp(app),
         isApproved(app),
         isApplicationIdTheSame(app, riVerification),
@@ -219,13 +220,13 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
     } yield (app, events)
   }
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividual): ResultT = {
+  def process(app: ApplicationData, cmd: DeclineResponsibleIndividual): AppCmdResultT = {
     E.fromEitherF(
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap(_ match {
         case Some(riVerificationToU: ResponsibleIndividualToUVerification)             => process(app, cmd, riVerificationToU).value
         case Some(riVerificationTouUplift: ResponsibleIndividualTouUpliftVerification) => processTouUplift(app, cmd, riVerificationTouUplift).value
         case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification)       => process(app, cmd, riVerificationUpdate).value
-        case _                                                                         => E.leftT(NonEmptyChain.one(CommandFailures.GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
+        case _                                                                         => E.leftT(NonEmptyList.one(CommandFailures.GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
       })
     )
   }

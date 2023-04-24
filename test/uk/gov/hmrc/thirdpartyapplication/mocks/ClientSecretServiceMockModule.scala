@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
 import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.github.t3hnar.bcrypt._
@@ -25,8 +26,10 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
+  import cats.implicits._
 
   object ClientSecretServiceMock {
     lazy val aMock: ClientSecretService = mock[ClientSecretService]
@@ -36,12 +39,12 @@ trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSu
 
     object GenerateClientSecret {
 
-      def thenReturnWithSpecificSecret(id: String, secret: String) =
-        when(aMock.generateClientSecret()).thenReturn((ClientSecretData(id = id, name = secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret))
+      def thenReturnWithSpecificSecret(id: ClientSecret.Id, secret: String) =
+        when(aMock.generateClientSecret()).thenReturn((ClientSecretData(id = id, name = secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret).pure[Future])
 
       def thenReturnWithRandomSecret() = {
         val secret = UUID.randomUUID().toString
-        when(aMock.generateClientSecret()).thenReturn((ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret))
+        when(aMock.generateClientSecret()).thenReturn((ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret).pure[Future])
       }
     }
 

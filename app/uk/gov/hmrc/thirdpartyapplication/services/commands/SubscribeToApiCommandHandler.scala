@@ -28,9 +28,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.SubscribeToApi
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 
 @Singleton
 class SubscribeToApiCommandHandler @Inject() (
@@ -41,11 +41,11 @@ class SubscribeToApiCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: SubscribeToApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[CommandHandler.Failures, Unit] = {
+  private def validate(app: ApplicationData, cmd: SubscribeToApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[Failures, Unit] = {
     def isAuthorisedUser       = cond(rolePassed, s"Unauthorized to subscribe any API to app ${app.name}")
     def notAlreadySubscribedTo = cond(!alreadySubcribed, s"Application ${app.name} is already subscribed to API ${cmd.apiIdentifier.asText(" v")}")
 
-    Apply[Validated[CommandHandler.Failures, *]].map2(
+    Apply[Validated[Failures, *]].map2(
       isAuthorisedUser,
       notAlreadySubscribedTo
     ) { case _ => () }
@@ -71,7 +71,7 @@ class SubscribeToApiCommandHandler @Inject() (
       Future.successful(true)
   }
 
-  def process(app: ApplicationData, cmd: SubscribeToApi)(implicit hc: HeaderCarrier): ResultT = {
+  def process(app: ApplicationData, cmd: SubscribeToApi)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       rolePassed       <- E.liftF(performRoleCheckAsRequired(app))
       alreadySubcribed <- E.liftF(subscriptionRepository.isSubscribed(app.id, cmd.apiIdentifier))

@@ -28,10 +28,11 @@ import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecretsHashingConfig
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, ClientSecretServiceConfig, CredentialConfig}
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, CredentialConfig}
 
 class ConfigurationModule extends Module {
 
@@ -54,7 +55,7 @@ class ConfigurationModule extends Module {
       bind[ThirdPartyDelegatedAuthorityConnector.Config].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
-      bind[ClientSecretServiceConfig].toProvider[ClientSecretServiceConfigProvider],
+      bind[ClientSecretsHashingConfig].toProvider[ClientSecretsHashingConfigProvider],
       bind[ApplicationNamingService.ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider],
       bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider]
     )
@@ -283,13 +284,12 @@ class CredentialConfigProvider @Inject() (val configuration: Configuration)
 }
 
 @Singleton
-class ClientSecretServiceConfigProvider @Inject() (val configuration: Configuration)
+class ClientSecretsHashingConfigProvider @Inject() (val configuration: Configuration)
     extends ServicesConfig(configuration)
-    with Provider[ClientSecretServiceConfig] {
+    with Provider[ClientSecretsHashingConfig] {
 
-  override def get(): ClientSecretServiceConfig = {
-    val hashFunctionWorkFactor: Int = ConfigHelper.getConfig("hashFunctionWorkFactor", configuration.getOptional[Int])
-    ClientSecretServiceConfig(hashFunctionWorkFactor)
+  override def get(): ClientSecretsHashingConfig = {
+    new ClientSecretsHashingConfig(configuration.underlying)
   }
 }
 

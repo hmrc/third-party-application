@@ -42,6 +42,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{
   StateHistoryRepositoryMockModule,
   TermsOfUseInvitationRepositoryMockModule
 }
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeResponsibleIndividualToOther
 
 class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData with FixedClock {
 
@@ -123,7 +124,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
         clock
       )
 
-    def checkSuccessResultToU()(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultToU()(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -155,7 +156,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       }
     }
 
-    def checkSuccessResultTouUplift(isPassed: Boolean)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultTouUplift(isPassed: Boolean)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).right.value
 
       if (isPassed) {
@@ -204,7 +205,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       }
     }
 
-    def checkSuccessResultUpdate()(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultUpdate()(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>

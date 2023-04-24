@@ -69,9 +69,9 @@ object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[
     val matchesEmail: Collaborator => Boolean = (appCollaborator) => { appCollaborator.emailAddress equalsIgnoreCase collaborator.emailAddress }
 
     app.collaborators.find(c => matchesId(c) || matchesEmail(c)) match {
-      case Some(c) if (c == collaborator) => ().validNec[CommandFailure]
-      case Some(_)                        => CollaboratorHasMismatchOnApp.invalidNec[Unit]
-      case _                              => CollaboratorDoesNotExistOnApp.invalidNec[Unit]
+      case Some(c) if (c == collaborator) => ().validNel[CommandFailure]
+      case Some(_)                        => CollaboratorHasMismatchOnApp.invalidNel[Unit]
+      case _                              => CollaboratorDoesNotExistOnApp.invalidNel[Unit]
     }
   }
 
@@ -104,12 +104,6 @@ object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION,
       GenericFailure("App is not in PRE_PRODUCTION or in PRODUCTION state")
-    )
-
-  def clientSecretExists(clientSecretId: String, app: ApplicationData) =
-    cond(
-      app.tokens.production.clientSecrets.exists(_.id == clientSecretId),
-      GenericFailure(s"Client Secret Id $clientSecretId not found in Application ${app.id.value}")
     )
 
   def collaboratorAlreadyOnApp(email: LaxEmailAddress, app: ApplicationData) = {

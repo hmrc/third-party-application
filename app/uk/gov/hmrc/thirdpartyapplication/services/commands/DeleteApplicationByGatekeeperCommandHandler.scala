@@ -27,10 +27,11 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByGatekeeper, State, StateHistory}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByGatekeeper
 
 @Singleton
 class DeleteApplicationByGatekeeperCommandHandler @Inject() (
@@ -46,8 +47,8 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData): Validated[CommandHandler.Failures, ApplicationData] = {
-    Validated.validNec(app)
+  private def validate(app: ApplicationData): Validated[Failures, ApplicationData] = {
+    Validated.validNel(app)
   }
 
   private def asEvents(app: ApplicationData, cmd: DeleteApplicationByGatekeeper, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
@@ -68,7 +69,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteApplicationByGatekeeper)(implicit hc: HeaderCarrier): ResultT = {
+  def process(app: ApplicationData, cmd: DeleteApplicationByGatekeeper)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       valid              <- E.fromEither(validate(app).toEither)
       kindOfRequesterName = cmd.requestedByEmailAddress.text

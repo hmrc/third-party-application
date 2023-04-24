@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -28,7 +27,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientSecret}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -38,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 
 @Singleton
 class CredentialService @Inject() (
@@ -66,18 +65,17 @@ class CredentialService @Inject() (
   def addClientSecretNew(applicationId: ApplicationId, request: ClientSecretRequestWithActor)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
 
     def generateCommand(csd: ClientSecretData) = {
-      val cmdClientSecret = ClientSecretDetails(csd.name, csd.createdOn, csd.lastAccess, ClientSecret.Id(UUID.fromString(csd.id)), csd.hashedSecret)
-      AddClientSecret(actor = request.actor, cmdClientSecret, timestamp = request.timestamp)
+      ApplicationCommands.AddClientSecret(actor = request.actor, csd.name, csd.id, csd.hashedSecret, timestamp = request.timestamp)
     }
 
     for {
       existingApp                <- fetchApp(applicationId)
       _                           = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
-      (clientSecret, secretValue) = clientSecretService.generateClientSecret()
+      (clientSecret, secretValue)<- clientSecretService.generateClientSecret()
       addSecretCmd                = generateCommand(clientSecret)
       _                          <- applicationCommandDispatcher.dispatch(applicationId, addSecretCmd, Set.empty).value
       updatedApplication         <- fetchApp(applicationId)
-    } yield ApplicationTokenResponse(updatedApplication.tokens.production, addSecretCmd.clientSecret.id.value.toString, secretValue)
+    } yield ApplicationTokenResponse(updatedApplication.tokens.production, clientSecret.id, secretValue)
   }
 
   @deprecated("remove after client is no longer using the old endpoint")
@@ -86,12 +84,12 @@ class CredentialService @Inject() (
       existingApp <- fetchApp(applicationId)
       _            = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
 
-      generatedSecret = clientSecretService.generateClientSecret()
-      newSecret       = generatedSecret._1
-      newSecretValue  = generatedSecret._2
+      generatedSecret <- clientSecretService.generateClientSecret()
+      newSecret        = generatedSecret._1
+      newSecretValue   = generatedSecret._2
 
       updatedApplication    <- applicationRepository.addClientSecret(applicationId, newSecret)
-      _                     <- apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication, newSecret.id)
+      _                     <- apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication, newSecret.id.value.toString)
       _                      = auditService.audit(ClientSecretAddedAudit, Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
       notificationRecipients = existingApp.admins.map(_.emailAddress)
 
@@ -100,15 +98,15 @@ class CredentialService @Inject() (
   }
 
   @deprecated("remove after client is no longer using the old endpoint")
-  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String, actorEmailAddress: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
-    def audit(applicationId: ApplicationId, clientSecretId: String): Future[AuditResult] =
-      auditService.audit(ClientSecretRemovedAudit, Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretId))
+  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: ClientSecret.Id, actorEmailAddress: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
+    def audit(applicationId: ApplicationId, clientSecretId: ClientSecret.Id): Future[AuditResult] =
+      auditService.audit(ClientSecretRemovedAudit, Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretId.value.toString))
 
     def sendNotification(clientSecret: ClientSecretData, app: ApplicationData): Future[HasSucceeded] = {
       emailConnector.sendRemovedClientSecretNotification(actorEmailAddress, clientSecret.name, app.name, app.admins.map(_.emailAddress))
     }
 
-    def findClientSecretToDelete(application: ApplicationData, clientSecretId: String): ClientSecretData =
+    def findClientSecretToDelete(application: ApplicationData, clientSecretId: ClientSecret.Id): ClientSecretData =
       application.tokens.production.clientSecrets
         .find(_.id == clientSecretId)
         .getOrElse(throw new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [${applicationId.value}]"))
@@ -118,7 +116,7 @@ class CredentialService @Inject() (
       clientSecretToUpdate = findClientSecretToDelete(application, clientSecretId)
       updatedApplication  <- applicationRepository.deleteClientSecret(applicationId, clientSecretId)
       _                   <- audit(applicationId, clientSecretId)
-      _                   <- apiPlatformEventService.sendClientSecretRemovedEvent(updatedApplication, clientSecretId)
+      _                   <- apiPlatformEventService.sendClientSecretRemovedEvent(updatedApplication, clientSecretId.value.toString)
       _                   <- sendNotification(clientSecretToUpdate, updatedApplication)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production)
 

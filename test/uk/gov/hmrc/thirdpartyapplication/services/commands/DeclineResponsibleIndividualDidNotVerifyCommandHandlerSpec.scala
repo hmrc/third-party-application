@@ -36,6 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineResponsibleIndividualDidNotVerify
 
 class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
 
@@ -108,7 +109,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       SubmissionsServiceMock.aMock
     )
 
-    def checkSuccessResultToU(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultToU(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -152,7 +153,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       }
     }
 
-    def checkSuccessResultUpdate(expectedActor: Actor)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultUpdate(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>

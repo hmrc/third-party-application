@@ -28,11 +28,12 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredentialsApplication, Environment, State}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Environment, State}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 
 @Singleton
 class ProductionCredentialsRequestExpiredJob @Inject() (
@@ -72,7 +73,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
       s"name='${app.state.name}',state.updatedOn='${app.state.updatedOn}}'")
 
     val reasons = s"Delete expired production credentials request, updated on ${app.state.updatedOn}"
-    val request = DeleteProductionCredentialsApplication(name, reasons, LocalDateTime.now(clock))
+    val request = ApplicationCommands.DeleteProductionCredentialsApplication(name, reasons, LocalDateTime.now(clock))
 
     (for {
       savedApp <- commandDispatcher.dispatch(app.id, request, Set.empty)

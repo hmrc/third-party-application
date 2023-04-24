@@ -29,10 +29,11 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByCollaborator, State, StateHistory}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByCollaborator
 
 @Singleton
 class DeleteApplicationByCollaboratorCommandHandler @Inject() (
@@ -51,8 +52,8 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
   def canDeleteApplicationsOrNotProductionApp(app: ApplicationData) =
     cond(authControlConfig.canDeleteApplications || !app.state.isInPreProductionOrProduction, "Cannot delete this applicaton")
 
-  private def validate(app: ApplicationData, cmd: DeleteApplicationByCollaborator): Validated[CommandHandler.Failures, Collaborator] = {
-    Apply[Validated[CommandHandler.Failures, *]].map3(
+  private def validate(app: ApplicationData, cmd: DeleteApplicationByCollaborator): Validated[Failures, Collaborator] = {
+    Apply[Validated[Failures, *]].map3(
       isAdminOnApp(cmd.instigator, app),
       isStandardAccess(app),
       canDeleteApplicationsOrNotProductionApp(app)
@@ -76,7 +77,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteApplicationByCollaborator)(implicit hc: HeaderCarrier): ResultT = {
+  def process(app: ApplicationData, cmd: DeleteApplicationByCollaborator)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       instigator          <- E.fromEither(validate(app, cmd).toEither)
       kindOfRequesterEmail = instigator.emailAddress.text

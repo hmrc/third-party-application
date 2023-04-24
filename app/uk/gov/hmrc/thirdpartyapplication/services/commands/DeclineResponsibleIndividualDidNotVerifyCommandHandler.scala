@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
@@ -34,9 +34,10 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAdd
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineResponsibleIndividualDidNotVerify, ResponsibleIndividual, State, StateHistory}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineResponsibleIndividualDidNotVerify
 
 @Singleton
 class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
@@ -53,10 +54,10 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
   private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualUpdateVerification): ResultT = {
+  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualUpdateVerification): AppCmdResultT = {
 
-    def validate(): Validated[CommandHandler.Failures, Unit] = {
-      Apply[Validated[CommandHandler.Failures, *]].map4(
+    def validate(): Validated[Failures, Unit] = {
+      Apply[Validated[Failures, *]].map4(
         isStandardNewJourneyApp(app),
         isApproved(app),
         isApplicationIdTheSame(app, riVerification),
@@ -91,9 +92,9 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
     } yield (app, events)
   }
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualToUVerification): ResultT = {
-    def validate(): Validated[CommandHandler.Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[CommandHandler.Failures, *]].map6(
+  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualToUVerification): AppCmdResultT = {
+    def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
+      Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
         isPendingResponsibleIndividualVerification(app),
         isApplicationIdTheSame(app, riVerification),
@@ -152,12 +153,12 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
     } yield (app, NonEmptyList(riEvt, List(declinedEvt, stateEvt)))
   }
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify): ResultT = {
+  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify): AppCmdResultT = {
     E.fromEitherF(
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap(_ match {
         case Some(riVerificationToU: ResponsibleIndividualToUVerification)       => process(app, cmd, riVerificationToU).value
         case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification) => process(app, cmd, riVerificationUpdate).value
-        case _                                                                   => E.leftT(NonEmptyChain.one(GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
+        case _                                                                   => E.leftT(NonEmptyList.one(GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
       })
     )
   }

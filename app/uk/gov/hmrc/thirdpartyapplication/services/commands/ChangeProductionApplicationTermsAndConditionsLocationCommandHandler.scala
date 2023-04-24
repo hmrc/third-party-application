@@ -28,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationTermsAndConditionsLocation
 
 @Singleton
 class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject() (
@@ -37,15 +38,15 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
 
   import CommandHandler._
 
-  def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
-    def validate: Validated[CommandHandler.Failures, String] = {
+  def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
+    def validate: Validated[Failures, String] = {
       val newUrl       = cmd.newLocation match {
         case TermsAndConditionsLocations.Url(value) => Some(value)
         case _                                      => None
       }
       val ensureIsAUrl = mustBeDefined(newUrl, s"Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
 
-      Apply[Validated[CommandHandler.Failures, *]].map4(
+      Apply[Validated[Failures, *]].map4(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         isStandardAccess(app),
@@ -73,9 +74,9 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
     } yield (savedApp, events)
   }
 
-  def processApp(oldLocation: TermsAndConditionsLocation, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
-    def validate: Validated[CommandHandler.Failures, ApplicationData] = {
-      Apply[Validated[CommandHandler.Failures, *]].map3(
+  def processApp(oldLocation: TermsAndConditionsLocation, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
+    def validate: Validated[Failures, ApplicationData] = {
+      Apply[Validated[Failures, *]].map3(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         isStandardAccess(app)
@@ -102,7 +103,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
     } yield (savedApp, events)
   }
 
-  def process(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ResultT = {
+  def process(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
     app.access match {
       case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => processApp(termsAndConditionsLocation, app, cmd)
       case Standard(_, maybeTermsAndConditionsLocation, _, _, _, None)                                       => processLegacyApp(maybeTermsAndConditionsLocation.getOrElse(""), app, cmd)

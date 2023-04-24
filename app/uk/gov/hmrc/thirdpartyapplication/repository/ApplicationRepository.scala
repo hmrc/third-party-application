@@ -196,10 +196,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
-  def updateClientSecretField(applicationId: ApplicationId, clientSecretId: String, fieldName: String, fieldValue: String): Future[ApplicationData] = {
+  def updateClientSecretField(applicationId: ApplicationId, clientSecretId: ClientSecret.Id, fieldName: String, fieldValue: String): Future[ApplicationData] = {
     val query = and(
       equal("id", Codecs.toBson(applicationId)),
-      equal("tokens.production.clientSecrets.id", clientSecretId)
+      equal("tokens.production.clientSecrets.id", Codecs.toBson(clientSecretId))
     )
 
     collection.findOneAndUpdate(
@@ -212,16 +212,16 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def addClientSecret(applicationId: ApplicationId, clientSecret: ClientSecretData): Future[ApplicationData] =
     updateApplication(applicationId, Updates.push("tokens.production.clientSecrets", Codecs.toBson(clientSecret)))
 
-  def updateClientSecretName(applicationId: ApplicationId, clientSecretId: String, newName: String): Future[ApplicationData] =
+  def updateClientSecretName(applicationId: ApplicationId, clientSecretId: ClientSecret.Id, newName: String): Future[ApplicationData] =
     updateClientSecretField(applicationId, clientSecretId, "name", newName)
 
-  def updateClientSecretHash(applicationId: ApplicationId, clientSecretId: String, hashedSecret: String): Future[ApplicationData] =
+  def updateClientSecretHash(applicationId: ApplicationId, clientSecretId: ClientSecret.Id, hashedSecret: String): Future[ApplicationData] =
     updateClientSecretField(applicationId, clientSecretId, "hashedSecret", hashedSecret)
 
-  def recordClientSecretUsage(applicationId: ApplicationId, clientSecretId: String): Future[ApplicationData] = {
+  def recordClientSecretUsage(applicationId: ApplicationId, clientSecretId: ClientSecret.Id): Future[ApplicationData] = {
     val query = and(
       equal("id", Codecs.toBson(applicationId)),
-      equal("tokens.production.clientSecrets.id", clientSecretId)
+      equal("tokens.production.clientSecrets.id", Codecs.toBson(clientSecretId))
     )
 
     collection.findOneAndUpdate(
@@ -231,7 +231,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
-  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String): Future[ApplicationData] = {
+  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: ClientSecret.Id): Future[ApplicationData] = {
     val query = equal("id", Codecs.toBson(applicationId))
 
     collection.findOneAndUpdate(

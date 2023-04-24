@@ -24,9 +24,12 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ClientSecretData, RemoveClientSecret}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 
 @Singleton
 class RemoveClientSecretCommandHandler @Inject() (
@@ -37,6 +40,12 @@ class RemoveClientSecretCommandHandler @Inject() (
   import CommandHandler._
 
   private def validate(app: ApplicationData, cmd: RemoveClientSecret): Validated[CommandHandler.Failures, ApplicationData] = {
+    def clientSecretExists(clientSecretId: ClientSecret.Id, app: ApplicationData) =
+      cond(
+        app.tokens.production.clientSecrets.exists(_.id == clientSecretId),
+        CommandFailures.GenericFailure(s"Client Secret Id ${clientSecretId.value} not found in Application ${app.id.value}")
+      )
+    
     Apply[Validated[CommandHandler.Failures, *]].map2(
       isAdminIfInProduction(cmd.actor, app),
       clientSecretExists(cmd.clientSecretId, app)
@@ -51,13 +60,13 @@ class RemoveClientSecretCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
-        clientSecretId = cmd.clientSecretId,
+        clientSecretId = cmd.clientSecretId.value.toString(),
         clientSecretName = clientSecret.map(_.name).getOrElse("")
       )
     )
   }
 
-  def process(app: ApplicationData, cmd: RemoveClientSecret): ResultT = {
+  def process(app: ApplicationData, cmd: RemoveClientSecret): AppCmdResultT = {
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.deleteClientSecret(app.id, cmd.clientSecretId))

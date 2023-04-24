@@ -26,9 +26,9 @@ import cats.data.{NonEmptyList, Validated}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RemoveCollaborator
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveCollaborator
 
 @Singleton
 class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
@@ -38,13 +38,13 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
   private def validate(app: ApplicationData, cmd: RemoveCollaborator) = {
 
     cmd.actor match {
-      case actor: Actors.AppCollaborator => Apply[Validated[CommandHandler.Failures, *]]
+      case actor: Actors.AppCollaborator => Apply[Validated[Failures, *]]
           .map3(
             isAppActorACollaboratorOnApp(actor, app),
             isCollaboratorOnApp(cmd.collaborator, app),
             applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)
           ) { case _ => app }
-      case _                             => Apply[Validated[CommandHandler.Failures, *]]
+      case _                             => Apply[Validated[Failures, *]]
           .map2(
             isCollaboratorOnApp(cmd.collaborator, app),
             applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)
@@ -70,7 +70,7 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
     )
   }
 
-  def process(app: ApplicationData, cmd: RemoveCollaborator): ResultT = {
+  def process(app: ApplicationData, cmd: RemoveCollaborator): AppCmdResultT = {
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.removeCollaborator(app.id, cmd.collaborator.userId))

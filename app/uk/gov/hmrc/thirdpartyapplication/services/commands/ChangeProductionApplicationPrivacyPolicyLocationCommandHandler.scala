@@ -25,9 +25,10 @@ import cats.data.{NonEmptyList, Validated}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocation, PrivacyPolicyLocations}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationPrivacyPolicyLocation, ImportantSubmissionData, Standard}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationPrivacyPolicyLocation
 
 @Singleton
 class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
@@ -37,15 +38,15 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
 
   import CommandHandler._
 
-  def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): ResultT = {
-    def validate: Validated[CommandHandler.Failures, String] = {
+  def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
+    def validate: Validated[Failures, String] = {
       val newUrl     = cmd.newLocation match {
         case PrivacyPolicyLocations.Url(value) => Some(value)
         case _                                 => None
       }
       val isJustAUrl = cond(newUrl.isDefined, "Unexpected new PrivacyPolicyLocation type specified for legacy application: " + cmd.newLocation)
 
-      Apply[Validated[CommandHandler.Failures, *]].map4(
+      Apply[Validated[Failures, *]].map4(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         isStandardAccess(app),
@@ -78,9 +79,9 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
     } yield (savedApp, events)
   }
 
-  def processApp(oldLocation: PrivacyPolicyLocation, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): ResultT = {
-    def validate: Validated[CommandHandler.Failures, ApplicationData] = {
-      Apply[Validated[CommandHandler.Failures, *]].map3(
+  def processApp(oldLocation: PrivacyPolicyLocation, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
+    def validate: Validated[Failures, ApplicationData] = {
+      Apply[Validated[Failures, *]].map3(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         isStandardAccess(app)
@@ -107,7 +108,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
     } yield (savedApp, events)
   }
 
-  def process(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): ResultT = {
+  def process(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
     app.access match {
       case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => processApp(privacyPolicyLocation, app, cmd)
       case Standard(_, _, maybePrivacyPolicyUrl, _, _, None)                                            => processLegacyApp(maybePrivacyPolicyUrl.getOrElse(""), app, cmd)

@@ -26,11 +26,11 @@ import cats.implicits._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationName
 
 @Singleton
 class ChangeProductionApplicationNameCommandHandler @Inject() (
@@ -45,8 +45,8 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
       app: ApplicationData,
       cmd: ChangeProductionApplicationName,
       nameValidationResult: ApplicationNameValidationResult
-    ): Validated[CommandHandler.Failures, ApplicationData] = {
-    Apply[Validated[CommandHandler.Failures, *]].map5(
+    ): Validated[Failures, ApplicationData] = {
+    Apply[Validated[Failures, *]].map5(
       isAdminOnApp(cmd.instigator, app),
       isNotInProcessOfBeingApproved(app),
       cond(app.name != cmd.newName, "App already has that name"),
@@ -69,7 +69,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeProductionApplicationName): ResultT = {
+  def process(app: ApplicationData, cmd: ChangeProductionApplicationName): AppCmdResultT = {
     for {
       nameValidationResult <- E.liftF(namingService.validateApplicationName(cmd.newName, noExclusions))
       valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)

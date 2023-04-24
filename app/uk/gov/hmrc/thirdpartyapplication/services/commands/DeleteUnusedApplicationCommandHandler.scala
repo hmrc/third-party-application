@@ -31,10 +31,11 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteUnusedApplication, State, StateHistory}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteUnusedApplication
 
 @Singleton
 class DeleteUnusedApplicationCommandHandler @Inject() (
@@ -55,8 +56,8 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
   def matchesAuthorisationKey(cmd: DeleteUnusedApplication) =
     cond(base64Decode(cmd.authorisationKey).map(_ == authControlConfig.authorisationKey).getOrElse(false), "Cannot delete this applicaton")
 
-  private def validate(app: ApplicationData, cmd: DeleteUnusedApplication): Validated[CommandHandler.Failures, ApplicationData] = {
-    Apply[Validated[CommandHandler.Failures, *]]
+  private def validate(app: ApplicationData, cmd: DeleteUnusedApplication): Validated[Failures, ApplicationData] = {
+    Apply[Validated[Failures, *]]
       .map(matchesAuthorisationKey(cmd)) { case _ => app }
   }
 
@@ -76,7 +77,7 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteUnusedApplication)(implicit hc: HeaderCarrier): ResultT = {
+  def process(app: ApplicationData, cmd: DeleteUnusedApplication)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       valid       <- E.fromEither(validate(app, cmd).toEither)
       savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))

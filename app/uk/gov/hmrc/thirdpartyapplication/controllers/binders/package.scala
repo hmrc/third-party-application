@@ -24,6 +24,7 @@ import play.api.mvc.{PathBindable, QueryStringBindable}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 package object binders {
 
@@ -87,6 +88,24 @@ package object binders {
 
     override def unbind(key: String, developerId: UserId): String = {
       textBinder.unbind("developerId", developerId.asText)
+    }
+  }
+
+  private def clientSecretIdFromString(text: String): Either[String, ClientSecret.Id] = {
+    Try(ju.UUID.fromString(text))
+      .toOption
+      .toRight(s"Cannot accept $text as ClientSecret.Id")
+      .map(ClientSecret.Id(_))
+  }
+
+  implicit def clientSecretIdPathBinder(implicit textBinder: PathBindable[String]): PathBindable[ClientSecret.Id] = new PathBindable[ClientSecret.Id] {
+
+    override def bind(key: String, value: String): Either[String, ClientSecret.Id] = {
+      textBinder.bind(key, value).flatMap(clientSecretIdFromString(_))
+    }
+
+    override def unbind(key: String, clientSecretId: ClientSecret.Id): String = {
+      clientSecretId.value.toString()
     }
   }
 

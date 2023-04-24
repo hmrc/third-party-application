@@ -25,9 +25,9 @@ import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddCollaborator
 
 @Singleton
 class AddCollaboratorCommandHandler @Inject() (
@@ -37,13 +37,13 @@ class AddCollaboratorCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: AddCollaborator): Validated[CommandHandler.Failures, Unit] = {
+  private def validate(app: ApplicationData, cmd: AddCollaborator): Validated[Failures, Unit] = {
     cmd.actor match {
-      case actor: Actors.AppCollaborator => Apply[Validated[CommandHandler.Failures, *]].map2(
+      case actor: Actors.AppCollaborator => Apply[Validated[Failures, *]].map2(
           isAppActorACollaboratorOnApp(actor, app),
           collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)
         ) { (_, _) => () }
-      case _                             => Apply[Validated[CommandHandler.Failures, *]]
+      case _                             => Apply[Validated[Failures, *]]
           .map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app))(_ => ())
     }
   }
@@ -61,7 +61,7 @@ class AddCollaboratorCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: AddCollaborator): ResultT = {
+  def process(app: ApplicationData, cmd: AddCollaborator): AppCmdResultT = {
     for {
       _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.addCollaborator(app.id, cmd.collaborator))

@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 
 @Singleton
 class SubscriptionService @Inject() (
@@ -72,10 +73,10 @@ class SubscriptionService @Inject() (
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     val actor          = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators).getOrElse(Actors.Unknown)
-    val subscribeToApi = SubscribeToApi(actor, api, LocalDateTime.now())
+    val subscribeToApi = ApplicationCommands.SubscribeToApi(actor, api, LocalDateTime.now())
     applicationCommandDispatcher.dispatch(applicationId, subscribeToApi, Set.empty).value.map {
       case Left(e)  =>
-        logger.warn(s"Command Process failed for $applicationId because ${e.toChain.toList.mkString("[", ",", "]")}")
+        logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")
         throw FailedToSubscribeException(applicationName, api)
       case Right(_) => HasSucceeded
     }

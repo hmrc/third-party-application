@@ -30,6 +30,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeResponsibleIndividualToSelf
+
 
 class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
 
@@ -68,7 +70,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
 
     val changeResponsibleIndividualToSelfCommand = ChangeResponsibleIndividualToSelf(appAdminUserId, now, riName, riEmail)
 
-    def checkSuccessResult(expectedActor: Actor, expectedPreviousEmail: LaxEmailAddress, expectedPreviousName: String)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actor, expectedPreviousEmail: LaxEmailAddress, expectedPreviousName: String)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>

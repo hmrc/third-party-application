@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.data.NonEmptyChain
+import cats.data.NonEmptyList
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -27,11 +27,11 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand,ApplicationCommands}
 
 @Singleton
 class ApplicationCommandDispatcher @Inject() (
@@ -67,9 +67,9 @@ class ApplicationCommandDispatcher @Inject() (
 
   val E = EitherTHelper.make[CommandHandler.Failures]
 
-  def dispatch(applicationId: ApplicationId, command: ApplicationCommand, verifiedCollaborators: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): ResultT = {
+  def dispatch(applicationId: ApplicationId, command: ApplicationCommand, verifiedCollaborators: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
-      app               <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(CommandFailures.ApplicationNotFound))
+      app               <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyList.one(CommandFailures.ApplicationNotFound))
       updateResults     <- processUpdate(app, command)
       (savedApp, events) = updateResults
 
@@ -80,7 +80,8 @@ class ApplicationCommandDispatcher @Inject() (
   }
 
   // scalastyle:off cyclomatic.complexity
-  private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): ResultT = {
+  private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): AppCmdResultT = {
+    import ApplicationCommands._
     command match {
       case cmd: AddCollaborator    => addCollaboratorCommandHandler.process(app, cmd)
       case cmd: RemoveCollaborator => removeCollaboratorCommandHandler.process(app, cmd)

@@ -29,6 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 
 class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiIdentifierSyntax {
 
@@ -47,7 +48,7 @@ class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiId
 
     val subscribeToApi = SubscribeToApi(gatekeeperUserActor, apiIdentifier, now)
 
-    def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).right.value
 
       inside(testThis) { case (app, events) =>

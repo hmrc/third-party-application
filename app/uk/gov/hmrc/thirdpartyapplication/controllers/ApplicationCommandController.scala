@@ -23,24 +23,23 @@ import play.api.libs.json.{Json, Reads}
 import play.api.mvc._
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationCommand, ApplicationCommandFormatters}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 
 object ApplicationCommandController {
   case class DispatchRequest(command: ApplicationCommand, verifiedCollaboratorsToNotify: Set[LaxEmailAddress])
 
   object DispatchRequest {
-    import ApplicationCommandFormatters._
 
     val readsDispatchRequest: Reads[DispatchRequest]          = Json.reads[DispatchRequest]
-    val readsCommandAsDispatchRequest: Reads[DispatchRequest] = applicationUpdateRequestFormatter.map(cmd => DispatchRequest(cmd, Set.empty))
+    val readsCommandAsDispatchRequest: Reads[DispatchRequest] = ApplicationCommand.formatter.map(cmd => DispatchRequest(cmd, Set.empty))
 
     implicit val readsEitherAsDispatchRequest: Reads[DispatchRequest] = readsDispatchRequest orElse readsCommandAsDispatchRequest
   }
@@ -62,7 +61,6 @@ class ApplicationCommandController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
-    with ApplicationCommandFormatters
     with ApplicationLogger {
 
   import cats.implicits._
@@ -70,19 +68,7 @@ class ApplicationCommandController @Inject() (
 
   private def fails(applicationId: ApplicationId)(e: CommandHandler.Failures) = {
 
-    val details = e.toList.map(_ match {
-      case _ @ApplicationNotFound            => "Application not found"
-      case InsufficientPrivileges(text)      => s"Insufficient privileges - $text"
-      case _ @CannotRemoveLastAdmin          => "Cannot remove the last admin from an app"
-      case _ @ActorIsNotACollaboratorOnApp   => "Actor is not a collaborator on the app"
-      case _ @CollaboratorDoesNotExistOnApp  => "Collaborator does not exist on the app"
-      case _ @CollaboratorHasMismatchOnApp   => "Collaborator has mismatched details against the app"
-      case _ @CollaboratorAlreadyExistsOnApp => "Collaborator already exists on the app"
-      case _ @DuplicateSubscription          => "Duplicate subscription"
-      case _ @SubscriptionNotAvailable       => "Subscription not available"
-      case _ @NotSubscribedToApi             => "Not subscribed to API"
-      case GenericFailure(s)                 => s
-    })
+    val details = e.toList.map(CommandFailures.describe)
 
     logger.warn(s"Command Process failed for $applicationId because ${details.mkString("[", ",", "]")}")
     BadRequest(Json.toJson(e.toList))

@@ -23,12 +23,11 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ClientSecretDetails
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ClientSecretAddedV2, EventId}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AddClientSecret
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddClientSecret
 
 @Singleton
 class AddClientSecretCommandHandler @Inject() (
@@ -41,8 +40,8 @@ class AddClientSecretCommandHandler @Inject() (
 
   private val clientSecretLimit = config.clientSecretLimit
 
-  private def validate(app: ApplicationData, cmd: AddClientSecret): Validated[CommandHandler.Failures, Unit] = {
-    Apply[Validated[CommandHandler.Failures, *]].map2(
+  private def validate(app: ApplicationData, cmd: AddClientSecret): Validated[Failures, Unit] = {
+    Apply[Validated[Failures, *]].map2(
       isAdminIfInProduction(cmd.actor, app),
       appHasLessThanLimitOfSecrets(app, clientSecretLimit)
     ) { case _ => () }
@@ -55,26 +54,26 @@ class AddClientSecretCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
-        clientSecretId = cmd.clientSecret.id.value.toString,
-        clientSecretName = cmd.clientSecret.name
+        clientSecretId = cmd.id.value.toString,
+        clientSecretName = cmd.name
       )
     )
   }
 
-  def process(app: ApplicationData, cmd: AddClientSecret): ResultT = {
+  def process(app: ApplicationData, cmd: AddClientSecret): AppCmdResultT = {
     import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 
-    def asClientSecretData(details: ClientSecretDetails): ClientSecretData =
+    def asClientSecretData(cmd: AddClientSecret): ClientSecretData =
       ClientSecretData(
-        name = details.name,
-        createdOn = details.createdOn,
-        lastAccess = details.lastAccess,
-        id = details.id.value.toString,
-        hashedSecret = details.hashedSecret
+        name = cmd.name,
+        createdOn = cmd.timestamp,
+        lastAccess = None,
+        id = cmd.id,
+        hashedSecret = cmd.hashedSecret
       )
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
-      savedApp <- E.liftF(applicationRepository.addClientSecret(app.id, asClientSecretData(cmd.clientSecret)))
+      savedApp <- E.liftF(applicationRepository.addClientSecret(app.id, asClientSecretData(cmd)))
       events    = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }

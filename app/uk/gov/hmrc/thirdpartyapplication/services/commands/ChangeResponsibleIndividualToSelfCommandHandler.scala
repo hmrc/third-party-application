@@ -28,9 +28,10 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAdd
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Submission, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividualToSelf, ImportantSubmissionData, Standard}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeResponsibleIndividualToSelf
 
 @Singleton
 class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
@@ -52,16 +53,16 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
       "The specified individual is already the RI for this application"
     )
 
-  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): Future[Validated[CommandHandler.Failures, Submission]] = {
+  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): Future[Validated[Failures, Submission]] = {
 
-    def checkSubmission(maybeSubmission: Option[Submission]): Validated[CommandHandler.Failures, Submission] = {
+    def checkSubmission(maybeSubmission: Option[Submission]): Validated[Failures, Submission] = {
       lazy val fails: CommandFailure = GenericFailure(s"No submission found for application ${app.id.value}")
 
-      maybeSubmission.fold(fails.invalidNec[Submission])(_.validNec[CommandFailure])
+      maybeSubmission.fold(fails.invalidNel[Submission])(_.validNel[CommandFailure])
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[CommandHandler.Failures, *]].map6(
+      Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
         isApproved(app),
         isAdminOnApp(cmd.instigator, app),
@@ -97,7 +98,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): CommandHandler.ResultT = {
+  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): AppCmdResultT = {
 
     val requesterName = cmd.name
     for {

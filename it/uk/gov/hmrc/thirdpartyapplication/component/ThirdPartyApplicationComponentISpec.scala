@@ -473,7 +473,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val clientSecretId = moreSecrets.last.id
 
       When("I request to remove a production client secret")
-      val removeClientSecretResponse = postData(s"/application/${application.id.value}/client-secret/$clientSecretId", s"""{"actorEmailAddress": "$emailAddress"}""")
+      val removeClientSecretResponse = postData(s"/application/${application.id.value}/client-secret/${clientSecretId.value}", s"""{"actorEmailAddress": "$emailAddress"}""")
       removeClientSecretResponse.code shouldBe NO_CONTENT
 
       apiPlatformEventsStub.verifyClientSecretRemovedEventSent()

@@ -42,6 +42,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{
   StateHistoryRepositoryMockModule,
   TermsOfUseInvitationRepositoryMockModule
 }
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineResponsibleIndividual
 
 class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
 
@@ -124,7 +125,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       SubmissionsServiceMock.aMock
     )
 
-    def checkSuccessResultToU()(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultToU()(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>
@@ -168,7 +169,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       }
     }
 
-    def checkSuccessResultUpdate()(fn: => CommandHandler.ResultT) = {
+    def checkSuccessResultUpdate()(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).right.value
 
       inside(testMe) { case (app, events) =>

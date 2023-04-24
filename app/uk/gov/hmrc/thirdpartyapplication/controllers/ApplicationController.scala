@@ -51,6 +51,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 @Singleton
 class ApplicationController @Inject() (
@@ -196,7 +197,7 @@ class ApplicationController @Inject() (
   }
 
   @deprecated("remove when client no longer uses this route")
-  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String) = {
+  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: ClientSecret.Id) = {
     Action.async(parse.json) { implicit request =>
       withJsonBody[DeleteClientSecretRequest] { deleteClientSecretRequest =>
         credentialService.deleteClientSecret(applicationId, clientSecretId, deleteClientSecretRequest.actorEmailAddress).map(_ => NoContent) recover recovery
