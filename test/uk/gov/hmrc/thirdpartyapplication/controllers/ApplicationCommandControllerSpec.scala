@@ -28,6 +28,8 @@ import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, Collaborators}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
@@ -35,8 +37,6 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 
 class ApplicationCommandControllerSpec
     extends ControllerSpec

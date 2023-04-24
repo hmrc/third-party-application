@@ -18,13 +18,13 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddClientSecret
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ClientSecretAddedV2
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddClientSecret
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -32,9 +32,9 @@ class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
     val config    = CredentialConfig(limit)
     val underTest = new AddClientSecretCommandHandler(ApplicationRepoMock.aMock, config)
 
-    val timestamp    = FixedClock.instant
-    val secretValue  = "secret"
-    val id = ClientSecret.Id.random
+    val timestamp   = FixedClock.instant
+    val secretValue = "secret"
+    val id          = ClientSecret.Id.random
 
     val addClientSecretByDev   = AddClientSecret(developerActor, "name", id, "hashed", now)
     val addClientSecretByAdmin = AddClientSecret(otherAdminAsActor, "name", id, "hashed", now)

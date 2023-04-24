@@ -18,14 +18,13 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientSecret}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ClientSecretRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -96,7 +95,10 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
     "return errors for a non-admin developer where the client secret id is not valid" in new Setup {
       val invalidCommand = removeClientSecretByDev.copy(clientSecretId = ClientSecret.Id.random)
 
-      checkFailsWith("App is in PRODUCTION so User must be an ADMIN", s"Client Secret Id ${invalidCommand.clientSecretId.value} not found in Application ${principalApp.id.value}") {
+      checkFailsWith(
+        "App is in PRODUCTION so User must be an ADMIN",
+        s"Client Secret Id ${invalidCommand.clientSecretId.value} not found in Application ${principalApp.id.value}"
+      ) {
         underTest.process(principalApp, invalidCommand)
       }
     }

@@ -27,7 +27,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.http.NotFoundException
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator, PrivacyPolicyLocation, TermsAndConditionsLocation}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
@@ -37,7 +37,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

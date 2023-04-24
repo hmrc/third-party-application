@@ -24,7 +24,7 @@ import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -33,7 +33,6 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{Applic
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 
 trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentMatchersSugar {
   import cats.implicits._

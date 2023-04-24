@@ -19,13 +19,12 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import java.time.LocalDateTime
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, ClientSecret, Collaborator}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationWithSubscriptions}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 trait CreateApplicationRequest {
   def name: String

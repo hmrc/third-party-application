@@ -53,10 +53,11 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
     object CreateNewTouUpliftVerification {
 
       def thenCreateNewTouUpliftVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
-        when(aMock.createNewTouUpliftVerification(*[ApplicationData], *[SubmissionId], *, *, *[LaxEmailAddress])).thenAnswer((appData: ApplicationData, submissionId: SubmissionId, index: Int, requesterName: String, requesterEmail: LaxEmailAddress) =>
-          Future.successful(
-            ResponsibleIndividualTouUpliftVerification(verificationId, appData.id, submissionId, index, appData.name, now, requesterName, requesterEmail)
-          )
+        when(aMock.createNewTouUpliftVerification(*[ApplicationData], *[SubmissionId], *, *, *[LaxEmailAddress])).thenAnswer(
+          (appData: ApplicationData, submissionId: SubmissionId, index: Int, requesterName: String, requesterEmail: LaxEmailAddress) =>
+            Future.successful(
+              ResponsibleIndividualTouUpliftVerification(verificationId, appData.id, submissionId, index, appData.name, now, requesterName, requesterEmail)
+            )
         )
       }
     }

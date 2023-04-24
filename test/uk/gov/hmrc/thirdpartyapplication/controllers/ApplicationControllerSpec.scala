@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.time.temporal.ChronoUnit
 import java.time.{LocalDateTime, ZoneOffset}
-import java.{util => ju}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
@@ -39,7 +38,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, ClientSecret}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
@@ -58,7 +57,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 class ApplicationControllerSpec
     extends ControllerSpec

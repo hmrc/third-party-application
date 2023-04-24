@@ -25,6 +25,7 @@ import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.INITIAL
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineResponsibleIndividualDidNotVerify
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -32,7 +33,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationCommandDispatcherMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineResponsibleIndividualDidNotVerify
 
 class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil
     with ApplicationTestData {

@@ -198,7 +198,14 @@ class RequestApprovalsService @Inject() (
         addTouAcceptance                    = isRequesterTheResponsibleIndividual && savedSubmission.status.isGranted
         _                                  <- ET.liftF(addTouAcceptanceIfNeeded(addTouAcceptance, updatedApp, submission, requestedByName, requestedByEmailAddress))
         _                                  <- ET.liftF(setTermsOfUseInvitationStatus(savedApp.id, savedSubmission))
-        _                                  <- ET.liftF(sendTouUpliftVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName, requestedByEmailAddress))
+        _                                  <- ET.liftF(sendTouUpliftVerificationEmailIfNeeded(
+                                                isRequesterTheResponsibleIndividual,
+                                                savedApp,
+                                                submission,
+                                                importantSubmissionData,
+                                                requestedByName,
+                                                requestedByEmailAddress
+                                              ))
         _                                  <- ET.liftF(sendConfirmationEmailIfNeeded(addTouAcceptance, savedApp))
         _                                   = logCompletedApprovalRequest(savedApp)
         _                                  <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
@@ -274,7 +281,13 @@ class RequestApprovalsService @Inject() (
       val responsibleIndividualEmail = importantSubmissionData.responsibleIndividual.emailAddress
 
       for {
-        verification <- responsibleIndividualVerificationService.createNewTouUpliftVerification(application, submission.id, submission.latestInstance.index, requestedByName, requestedByEmailAddress.toLaxEmail)
+        verification <- responsibleIndividualVerificationService.createNewTouUpliftVerification(
+                          application,
+                          submission.id,
+                          submission.latestInstance.index,
+                          requestedByName,
+                          requestedByEmailAddress.toLaxEmail
+                        )
         _            <-
           emailConnector.sendVerifyResponsibleIndividualUpdateNotification(
             responsibleIndividualName,

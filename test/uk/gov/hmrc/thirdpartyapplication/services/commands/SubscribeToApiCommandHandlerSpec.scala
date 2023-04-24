@@ -22,6 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApiSubscribedV2
@@ -29,7 +30,6 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 
 class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiIdentifierSyntax {
 

@@ -36,7 +36,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
-
 class ResponsibleIndividualVerificationService @Inject() (
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     applicationRepository: ApplicationRepository,
@@ -59,7 +58,13 @@ class ResponsibleIndividualVerificationService @Inject() (
     responsibleIndividualVerificationRepository.save(verification)
   }
 
-  def createNewTouUpliftVerification(applicationData: ApplicationData, submissionId: SubmissionId, submissionInstance: Int, requestedByName: String, requestedByEmailAddress: LaxEmailAddress): Future[ResponsibleIndividualVerification] = {
+  def createNewTouUpliftVerification(
+      applicationData: ApplicationData,
+      submissionId: SubmissionId,
+      submissionInstance: Int,
+      requestedByName: String,
+      requestedByEmailAddress: LaxEmailAddress
+    ): Future[ResponsibleIndividualVerification] = {
     val verification = ResponsibleIndividualTouUpliftVerification(
       applicationId = applicationData.id,
       submissionId = submissionId,
