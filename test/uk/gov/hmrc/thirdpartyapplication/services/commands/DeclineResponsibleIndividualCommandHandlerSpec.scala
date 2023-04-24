@@ -101,6 +101,8 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       submission.latestInstance.index,
       "App Name",
       now,
+      requesterName,
+      requesterEmail,
       ResponsibleIndividualVerificationState.INITIAL
     )
 

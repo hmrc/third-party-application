@@ -72,6 +72,8 @@ case class ResponsibleIndividualTouUpliftVerification(
     submissionInstance: Int,
     applicationName: String,
     createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    requestingAdminName: String,
+    requestingAdminEmail: LaxEmailAddress,
     state: ResponsibleIndividualVerificationState = INITIAL
   ) extends ResponsibleIndividualVerification
 

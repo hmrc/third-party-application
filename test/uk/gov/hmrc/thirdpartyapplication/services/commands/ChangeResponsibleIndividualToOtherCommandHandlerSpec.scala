@@ -98,6 +98,8 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       submission.latestInstance.index,
       "App Name",
       now,
+      requesterName,
+      requesterEmail,
       ResponsibleIndividualVerificationState.INITIAL
     )
 

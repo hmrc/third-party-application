@@ -24,6 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationId,
   ResponsibleIndividualVerificationWithDetails
 }
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -49,6 +50,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     val appName                 = "my shiny app"
     val submissionInstanceIndex = 0
     val responsibleIndividual   = ResponsibleIndividual.build("bob example", "bob@example.com")
+    val requestingAdminName     = "Bob Fleming"
     val requestingAdminEmail    = "bob.fleming@yahoo.com"
 
     val testImportantSubmissionData = ImportantSubmissionData(
@@ -108,7 +110,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     "create a new ToU uplift verification object and save it to the database" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Save.thenReturnSuccess()
 
-      val result = await(underTest.createNewTouUpliftVerification(application, submissionId, submissionInstanceIndex))
+      val result = await(underTest.createNewTouUpliftVerification(application, submissionId, submissionInstanceIndex, requestingAdminName, LaxEmailAddress(requestingAdminEmail)))
 
       result.applicationId shouldBe applicationId
       result.submissionId shouldBe submissionId

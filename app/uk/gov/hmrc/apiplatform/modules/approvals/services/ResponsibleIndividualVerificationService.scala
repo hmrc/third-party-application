@@ -27,6 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationId
 }
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -34,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+
 
 class ResponsibleIndividualVerificationService @Inject() (
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
@@ -57,13 +59,15 @@ class ResponsibleIndividualVerificationService @Inject() (
     responsibleIndividualVerificationRepository.save(verification)
   }
 
-  def createNewTouUpliftVerification(applicationData: ApplicationData, submissionId: SubmissionId, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
+  def createNewTouUpliftVerification(applicationData: ApplicationData, submissionId: SubmissionId, submissionInstance: Int, requestedByName: String, requestedByEmailAddress: LaxEmailAddress): Future[ResponsibleIndividualVerification] = {
     val verification = ResponsibleIndividualTouUpliftVerification(
       applicationId = applicationData.id,
       submissionId = submissionId,
       submissionInstance = submissionInstance,
       applicationName = applicationData.name,
-      createdOn = LocalDateTime.now(clock)
+      createdOn = LocalDateTime.now(clock),
+      requestingAdminName = requestedByName,
+      requestingAdminEmail = requestedByEmailAddress
     )
     responsibleIndividualVerificationRepository.save(verification)
   }

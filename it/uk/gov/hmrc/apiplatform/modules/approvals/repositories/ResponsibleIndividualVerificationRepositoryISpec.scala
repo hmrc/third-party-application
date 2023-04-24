@@ -231,6 +231,8 @@ class ResponsibleIndividualVerificationRepositoryISpec
       submissionIndex,
       UUID.randomUUID().toString,
       createdOn,
+      requestingAdminName,
+      requestingAdminEmail,
       state
     )
 
