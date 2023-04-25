@@ -37,7 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
 class SubscriptionService @Inject() (
     applicationRepository: ApplicationRepository,
     subscriptionRepository: SubscriptionRepository,
-    applicationCommandDispatcher: ApplicationCommandDispatcher,
+    applicationCommandDispatcher: ApplicationCommandDispatcher
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ActorHelper {
 
