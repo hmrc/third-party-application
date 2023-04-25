@@ -98,7 +98,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       mockCredentialService,
       mockSubscriptionService,
       config,
-      mockGatekeeperService,
       SubmissionsServiceMock.aMock,
       mockNamingService,
       UpliftLinkServiceMock.aMock,

@@ -18,54 +18,39 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
-import com.github.t3hnar.bcrypt._
 import org.mockito.captor.ArgCaptor
 
 import play.api.Logger
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, ClientSecret}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithActor, ValidationRequest}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
+import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule, ClientSecretServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.ClientSecretServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with ApplicationTestData {
 
   trait Setup extends ApplicationRepositoryMockModule
-      with AuditServiceMockModule
-      with ApplicationCommandDispatcherMockModule
-      with ClientSecretServiceMockModule
-      with EmailConnectorMockModule {
+      with ClientSecretServiceMockModule {
 
     implicit val hc: HeaderCarrier                           = HeaderCarrier()
     val mockLogger: Logger                                   = mock[Logger]
     val clientSecretLimit                                    = 5
     val credentialConfig: CredentialConfig                   = CredentialConfig(clientSecretLimit)
     val mockApiPlatformEventService: ApiPlatformEventService = mock[ApiPlatformEventService]
-    when(mockApiPlatformEventService.sendClientSecretAddedEvent(*[ApplicationData], *)(*)).thenReturn(Future.successful(true))
-    when(mockApiPlatformEventService.sendClientSecretRemovedEvent(*[ApplicationData], *)(*)).thenReturn(Future.successful(true))
 
     val underTest: CredentialService =
       new CredentialService(
         ApplicationRepoMock.aMock,
-        ApplicationCommandDispatcherMock.aMock,
-        AuditServiceMock.aMock,
         ClientSecretServiceMock.aMock,
-        credentialConfig,
-        mockApiPlatformEventService,
-        EmailConnectorMock.aMock
+        credentialConfig
       ) {
         override val logger = mockLogger
       }
@@ -77,8 +62,6 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       applicationId,
       collaborators = Set(loggedInUser.admin(), anotherAdminUser.admin())
     )
-    val secretRequest          = ClientSecretRequest(loggedInUser)
-    val secretRequestWithActor = ClientSecretRequestWithActor(Actors.AppCollaborator(loggedInUser), now)
     val environmentToken       = applicationData.tokens.production
     val firstSecret            = environmentToken.clientSecrets.head
 
@@ -174,196 +157,4 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       result shouldBe Some(expectedApplicationResponse)
     }
   }
-
-  "addClientSecretNew" should {
-    "add the client secret and return it unmasked" in new Setup {
-
-      val newSecretValue: String = "secret3"
-      val secretName: String     = newSecretValue.takeRight(4)
-      val hashedSecret           = newSecretValue.bcrypt
-      val newClientSecret        = ClientSecretData(secretName, hashedSecret = hashedSecret)
-
-      ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newClientSecret.id, newSecretValue)
-
-      val updateProductionToken  = productionToken.copy(clientSecrets = productionToken.clientSecrets ++ List(newClientSecret))
-      val updatedApplicationData = applicationData.copy(tokens = applicationData.tokens.copy(production = updateProductionToken))
-
-      ApplicationRepoMock.Fetch.thenReturn(updatedApplicationData)
-
-      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(updatedApplicationData)
-
-      val result: ApplicationTokenResponse = await(underTest.addClientSecretNew(applicationId, secretRequestWithActor))
-
-      result.clientId shouldBe applicationData.tokens.production.clientId
-      result.accessToken shouldBe applicationData.tokens.production.accessToken
-
-      val existingSecrets = result.clientSecrets.dropRight(1)
-      existingSecrets shouldBe expectedTokenResponse.clientSecrets
-      result.clientSecrets.last.secret shouldBe Some(newSecretValue)
-      result.clientSecrets.last.name shouldBe secretName
-    }
-
-    "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturnNone()
-      intercept[NotFoundException](await(underTest.addClientSecretNew(applicationId, secretRequestWithActor)))
-
-      ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
-    }
-
-    "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationDataWith5Secrets)
-
-      intercept[ClientSecretsLimitExceeded](await(underTest.addClientSecretNew(applicationId, secretRequestWithActor)))
-
-      ApplicationRepoMock.Save.verifyNeverCalled()
-    }
-  }
-
-  "addClientSecret" should {
-
-    "add the client secret and return it unmasked" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      EmailConnectorMock.SendAddedClientSecretNotification.thenReturnOk()
-
-      val newSecretValue: String = "secret3"
-      val secretName: String     = newSecretValue.takeRight(4)
-      val hashedSecret           = newSecretValue.bcrypt
-      val newClientSecret        = ClientSecretData(secretName, hashedSecret = hashedSecret)
-
-      ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newClientSecret.id, newSecretValue)
-
-      val updatedClientSecrets: List[ClientSecretData] = applicationData.tokens.production.clientSecrets :+ newClientSecret
-      val updatedEnvironmentToken: Token               = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
-      val updatedApplicationTokens                     = applicationData.tokens.copy(production = updatedEnvironmentToken)
-      val applicationWithNewClientSecret               = applicationData.copy(tokens = updatedApplicationTokens)
-
-      ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(applicationWithNewClientSecret)
-
-      val result: ApplicationTokenResponse = await(underTest.addClientSecret(applicationId, secretRequest))
-
-      result.clientId shouldBe environmentToken.clientId
-      result.accessToken shouldBe environmentToken.accessToken
-      val existingSecrets = result.clientSecrets.dropRight(1)
-      existingSecrets shouldBe expectedTokenResponse.clientSecrets
-      result.clientSecrets.last.secret shouldBe Some(newSecretValue)
-      result.clientSecrets.last.name shouldBe secretName
-
-      AuditServiceMock.Audit.verifyCalledWith(
-        ClientSecretAddedAudit,
-        Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> secretName, "clientSecretType" -> PRODUCTION.toString),
-        hc
-      )
-
-      verify(mockApiPlatformEventService).sendClientSecretAddedEvent(*[ApplicationData], eqTo(result.clientSecrets.last.id.value.toString()))(*[HeaderCarrier])
-    }
-
-    "send a notification to all admins" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      EmailConnectorMock.SendAddedClientSecretNotification.thenReturnOk()
-      AuditServiceMock.Audit.thenReturnSuccess()
-
-      val newSecretValue: String = "secret3"
-      val secretName: String     = newSecretValue.takeRight(4)
-      val newClientSecret        = ClientSecretData(secretName, hashedSecret = newSecretValue.bcrypt)
-      ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newClientSecret.id, newSecretValue)
-
-      val updatedClientSecrets: List[ClientSecretData] = applicationData.tokens.production.clientSecrets :+ newClientSecret
-      val updatedEnvironmentToken: Token               = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
-      val updatedApplicationTokens                     = applicationData.tokens.copy(production = updatedEnvironmentToken)
-      val applicationWithNewClientSecret               = applicationData.copy(tokens = updatedApplicationTokens)
-      ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(applicationWithNewClientSecret)
-
-      await(underTest.addClientSecret(applicationId, secretRequest))
-
-      EmailConnectorMock.SendAddedClientSecretNotification
-        .verifyCalledWith(secretRequest.actorEmailAddress, secretName, applicationData.name, Set(loggedInUser, anotherAdminUser))
-    }
-
-    "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
-
-      intercept[NotFoundException](await(underTest.addClientSecret(applicationId, secretRequest)))
-
-      ApplicationRepoMock.Save.verifyNeverCalled()
-    }
-
-    "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationDataWith5Secrets)
-
-      intercept[ClientSecretsLimitExceeded](await(underTest.addClientSecret(applicationId, secretRequest)))
-
-      ApplicationRepoMock.Save.verifyNeverCalled()
-    }
-  }
-
-  "deleteClientSecret" should {
-
-    "remove a client secret form an app with more than one client secret" in new Setup {
-      val clientSecretIdToRemove = firstSecret.id
-
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.DeleteClientSecret.succeeds(applicationData, clientSecretIdToRemove)
-      EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
-
-      AuditServiceMock.Audit.thenReturnSuccessWhen(
-        ClientSecretRemovedAudit,
-        Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretIdToRemove.value.toString)
-      )
-
-      val result = await(underTest.deleteClientSecret(applicationId, clientSecretIdToRemove, loggedInUser))
-
-      val updatedClientSecrets = result.clientSecrets
-      updatedClientSecrets should have size environmentToken.clientSecrets.size - 1
-      updatedClientSecrets should not contain (firstSecret)
-
-      AuditServiceMock.Audit.verifyCalledWith(
-        ClientSecretRemovedAudit,
-        Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretIdToRemove.value.toString),
-        hc
-      )
-
-      verify(mockApiPlatformEventService).sendClientSecretRemovedEvent(any[ApplicationData], eqTo(clientSecretIdToRemove.value.toString))(any[HeaderCarrier])
-    }
-
-    "send a notification to all admins" in new Setup {
-      val clientSecretIdToRemove = firstSecret.id
-
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.DeleteClientSecret.succeeds(applicationData, clientSecretIdToRemove)
-      EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
-      AuditServiceMock.Audit.thenReturnSuccess()
-
-      await(underTest.deleteClientSecret(applicationId, clientSecretIdToRemove, loggedInUser))
-
-      EmailConnectorMock.SendRemovedClientSecretNotification
-        .verifyCalledWith(loggedInUser, firstSecret.name, applicationData.name, Set(loggedInUser, anotherAdminUser))
-
-      verify(mockApiPlatformEventService).sendClientSecretRemovedEvent(any[ApplicationData], eqTo(clientSecretIdToRemove.value.toString))(any[HeaderCarrier])
-    }
-
-    "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-      val clientSecretIdToRemove = firstSecret.id
-
-      ApplicationRepoMock.Fetch.thenReturnNone()
-
-      intercept[NotFoundException](await(underTest.deleteClientSecret(applicationId, clientSecretIdToRemove, loggedInUser)))
-
-      ApplicationRepoMock.DeleteClientSecret.verifyNeverCalled()
-      AuditServiceMock.Audit.verifyNeverCalled()
-      EmailConnectorMock.SendRemovedClientSecretNotification.verifyNeverCalled()
-    }
-
-    "throw a NotFoundException when trying to delete a secret which does not exist" in new Setup {
-      val clientSecretIdToRemove = ClientSecret.Id.random
-
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-
-      intercept[NotFoundException](await(underTest.deleteClientSecret(applicationId, clientSecretIdToRemove, loggedInUser)))
-
-      ApplicationRepoMock.DeleteClientSecret.verifyNeverCalled()
-      AuditServiceMock.Audit.verifyNeverCalled()
-      EmailConnectorMock.SendRemovedClientSecretNotification.verifyNeverCalled()
-    }
-  }
-
 }

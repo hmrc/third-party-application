@@ -22,7 +22,7 @@ import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{IpAllowlist, _}
@@ -31,14 +31,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.InvalidGrantLengthException
 case class ValidationRequest(clientId: ClientId, clientSecret: String)
 
 case class ApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[ApplicationId])
-
-case class ClientSecretRequest(actorEmailAddress: LaxEmailAddress)
-
-case class ClientSecretRequestWithActor(actor: Actors.AppCollaborator, timestamp: LocalDateTime)
-
-case class DeleteClientSecretRequest(actorEmailAddress: LaxEmailAddress)
-
-case class DeleteClientSecretsRequest(actorEmailAddress: LaxEmailAddress, secrets: List[String])
 
 case class ApproveUpliftRequest(gatekeeperUserId: String)
 

@@ -49,7 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
-import uk.gov.hmrc.thirdpartyapplication.services.{GatekeeperService, SubscriptionService}
+import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with ApplicationLogger
@@ -70,7 +70,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       with SubmissionsServiceMockModule
       with SubmissionsTestData {
     val mockGatekeeperService   = mock[GatekeeperService]
-    val mockSubscriptionService = mock[SubscriptionService]
     implicit val headers        = HeaderCarrier()
 
     lazy val underTest =
@@ -79,7 +78,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
         LdapGatekeeperRoleAuthorisationServiceMock.aMock,
         StrideGatekeeperRoleAuthorisationServiceMock.aMock,
         mockGatekeeperService,
-        mockSubscriptionService,
         TermsOfUseServiceMock.aMock,
         ApplicationDataServiceMock.aMock,
         SubmissionsServiceMock.aMock,

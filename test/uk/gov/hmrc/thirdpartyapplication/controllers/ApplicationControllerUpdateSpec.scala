@@ -86,7 +86,6 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
       mockCredentialService,
       mockSubscriptionService,
       config,
-      mockGatekeeperService,
       SubmissionsServiceMock.aMock,
       mockNamingService,
       UpliftLinkServiceMock.aMock,

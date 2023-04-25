@@ -43,7 +43,6 @@ class GatekeeperController @Inject() (
     val ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService,
     val strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,
     gatekeeperService: GatekeeperService,
-    subscriptionService: SubscriptionService,
     val termsOfUseInvitationService: TermsOfUseInvitationService,
     val applicationDataService: ApplicationDataService,
     val submissionsService: SubmissionsService,

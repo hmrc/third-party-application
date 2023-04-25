@@ -16,11 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
-import java.util.UUID
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import com.github.t3hnar.bcrypt._
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientSecret}
@@ -28,24 +25,11 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
 
 trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
-  import cats.implicits._
-
   object ClientSecretServiceMock {
     lazy val aMock: ClientSecretService = mock[ClientSecretService]
 
     def verify                                                  = MockitoSugar.verify(aMock)
     def verify(mode: org.mockito.verification.VerificationMode) = MockitoSugar.verify(aMock, mode)
-
-    object GenerateClientSecret {
-
-      def thenReturnWithSpecificSecret(id: ClientSecret.Id, secret: String) =
-        when(aMock.generateClientSecret()).thenReturn((ClientSecretData(id = id, name = secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret).pure[Future])
-
-      def thenReturnWithRandomSecret() = {
-        val secret = UUID.randomUUID().toString
-        when(aMock.generateClientSecret()).thenReturn((ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret).pure[Future])
-      }
-    }
 
     object ClientSecretIsValid {
 

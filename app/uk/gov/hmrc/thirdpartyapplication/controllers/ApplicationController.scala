@@ -26,11 +26,11 @@ import cats.data.OptionT
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, ClientSecret}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
@@ -44,7 +44,6 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.to
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAuthorisationActions, AuthKeyRefiner}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.utils._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -60,7 +59,6 @@ class ApplicationController @Inject() (
     credentialService: CredentialService,
     subscriptionService: SubscriptionService,
     config: ApplicationControllerConfig,
-    gatekeeperService: GatekeeperService,
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
     upliftLinkService: UpliftLinkService,
@@ -169,38 +167,6 @@ class ApplicationController @Inject() (
         case Some(_) => Ok
         case None    => Conflict
       } recover recovery
-    }
-  }
-
-  @deprecated("remove when client no longer uses this route")
-  def addClientSecret(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[ClientSecretRequest] { secret =>
-      credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(token)) } recover {
-        case e: NotFoundException          => handleNotFound(e.getMessage)
-        case _: InvalidEnumException       => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
-        case _: ClientSecretsLimitExceeded => Forbidden(JsErrorResponse(CLIENT_SECRET_LIMIT_EXCEEDED, "Client secret limit has been exceeded"))
-        case e                             => handleException(e)
-      }
-    }
-  }
-
-  def addClientSecretNew(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[ClientSecretRequestWithActor] { secret =>
-      credentialService.addClientSecretNew(applicationId, secret) map { token => Ok(toJson(token)) } recover {
-        case e: NotFoundException          => handleNotFound(e.getMessage)
-        case _: InvalidEnumException       => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
-        case _: ClientSecretsLimitExceeded => Forbidden(JsErrorResponse(CLIENT_SECRET_LIMIT_EXCEEDED, "Client secret limit has been exceeded"))
-        case e                             => handleException(e)
-      }
-    }
-  }
-
-  @deprecated("remove when client no longer uses this route")
-  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: ClientSecret.Id) = {
-    Action.async(parse.json) { implicit request =>
-      withJsonBody[DeleteClientSecretRequest] { deleteClientSecretRequest =>
-        credentialService.deleteClientSecret(applicationId, clientSecretId, deleteClientSecretRequest.actorEmailAddress).map(_ => NoContent) recover recovery
-      }
     }
   }
 
@@ -358,22 +324,6 @@ class ApplicationController @Inject() (
       case true  => Ok(toJson(api)).withHeaders(CACHE_CONTROL -> s"max-age=$subscriptionCacheExpiry")
       case false => NotFound(JsErrorResponse(SUBSCRIPTION_NOT_FOUND, s"Application ${applicationId.value} is not subscribed to $context $version"))
     } recover recovery
-  }
-
-  @deprecated("remove when client no longer uses this route")
-  def createSubscriptionForApplication(applicationId: ApplicationId) =
-    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
-      implicit request =>
-        withJsonBody[ApiIdentifier] { api =>
-          subscriptionService.createSubscriptionForApplicationMinusChecks(applicationId, api).map(_ => NoContent) recover recovery
-        }
-    }
-
-  @deprecated("remove when client no longer uses this route")
-  def removeSubscriptionForApplication(applicationId: ApplicationId, context: ApiContext, version: ApiVersion) = {
-    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
-      subscriptionService.removeSubscriptionForApplication(applicationId, ApiIdentifier(context, version)).map(_ => NoContent) recover recovery
-    }
   }
 
   def deleteApplication(id: ApplicationId): Action[AnyContent] = (Action andThen authKeyRefiner).async { implicit request: MaybeMatchesAuthorisationKeyRequest[AnyContent] =>

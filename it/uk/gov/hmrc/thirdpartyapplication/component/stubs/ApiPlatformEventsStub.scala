@@ -24,10 +24,6 @@ object ApiPlatformEventsStub extends Stub {
 
   override val stub: MockHost = MockHost(16700)
 
-  private val clientSecretAddedEventURL: String   = "/application-events/clientSecretAdded"
-  private val clientSecretRemovedEventURL: String = "/application-events/clientSecretRemoved"
-  private val apiSubscribedEventURL: String       = "/application-events/apiSubscribed"
-  private val apiUnsubscribedEventURL: String     = "/application-events/apiUnsubscribed"
   private val applicationEventsURL: String        = "/application-event"
 
   def willReceiveEventType(eventType: String): Unit = {
@@ -42,23 +38,23 @@ object ApiPlatformEventsStub extends Stub {
   }
 
   def verifyClientSecretAddedEventSent(): Unit = {
-    verifyStubCalled(clientSecretAddedEventURL)
+    verifyStubCalledForEvent(applicationEventsURL, "CLIENT_SECRET_ADDED_V2")
   }
 
   def verifyClientSecretRemovedEventSent(): Unit = {
-    verifyStubCalled(clientSecretRemovedEventURL)
+    verifyStubCalledForEvent(applicationEventsURL, "CLIENT_SECRET_REMOVED_V2")
   }
 
   def verifyApiSubscribedEventSent(): Unit = {
-    verifyStubCalled(apiSubscribedEventURL)
+    verifyStubCalledForEvent(applicationEventsURL, "API_SUBSCRIBED_V2")
   }
 
   def verifyApiUnsubscribedEventSent(): Unit = {
-    verifyStubCalled(apiUnsubscribedEventURL)
+    verifyStubCalledForEvent(applicationEventsURL, "API_UNSUBSCRIBED_V2")
   }
 
-  private def verifyStubCalled(urlString: String) = {
-    stub.mock.verifyThat(postRequestedFor(urlEqualTo(urlString)))
+  private def verifyStubCalledForEvent(urlString: String, eventType: String) = {
+    stub.mock.verifyThat(postRequestedFor(urlEqualTo(urlString)).withRequestBody(containing(s""""eventType":"$eventType"""")))
   }
 
   def verifyApplicationEventPostBody(body: String) = {
@@ -73,34 +69,18 @@ object ApiPlatformEventsStub extends Stub {
   }
 
   def willReceiveClientSecretAddedEvent() = {
-    stub.mock.register(post(urlEqualTo(clientSecretAddedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
+    willReceiveEventType("CLIENT_SECRET_ADDED_V2")
   }
 
   def willReceiveClientRemovedEvent() = {
-    stub.mock.register(post(urlEqualTo(clientSecretRemovedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
+    willReceiveEventType("CLIENT_SECRET_REMOVED_V2")
   }
 
   def willReceiveApiSubscribedEvent() = {
-    stub.mock.register(post(urlEqualTo(apiSubscribedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
+    willReceiveEventType("API_SUBSCRIBED_V2")
   }
 
   def willReceiveApiUnsubscribedEvent() = {
-    stub.mock.register(post(urlEqualTo(apiUnsubscribedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
+    willReceiveEventType("API_UNSUBSCRIBED_V2")
   }
 }

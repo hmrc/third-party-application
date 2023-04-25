@@ -33,20 +33,6 @@ class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applica
 
   override val workFactor = config.workFactor
 
-  def generateClientSecret(): Future[(ClientSecretData, String)] = {
-    Future {
-      blocking {
-        val ((secretValue, hashedSecretValue), duration) = timeThis(() => generateSecretAndHash())
-
-        logger.info(
-          s"[ClientSecretService] Creating and Hashing Secret with Work Factor of [${config.workFactor}] took [${duration.toString()}]"
-        )
-
-        (ClientSecretData(name = secretValue.takeRight(4), hashedSecret = hashedSecretValue), secretValue)
-      }
-    }
-  }
-
   def timedHashSecret(secretValue: String): String = {
     val (hashedSecretValue, duration) = timeThis(() => hashSecret(secretValue))
 
