@@ -30,13 +30,12 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
 
@@ -47,25 +46,16 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
   trait SetupWithoutHc extends AuditServiceMockModule with ApplicationCommandDispatcherMockModule {
 
     lazy val locked                    = false
-    val mockApiGatewayStore            = mock[ApiGatewayStore](withSettings.lenient())
     val mockApplicationRepository      = mock[ApplicationRepository](withSettings.lenient())
-    val mockStateHistoryRepository     = mock[StateHistoryRepository](withSettings.lenient())
-    val mockEmailConnector             = mock[EmailConnector](withSettings.lenient())
     val mockSubscriptionRepository     = mock[SubscriptionRepository](withSettings.lenient())
-    val mockApiPlatformEventsService   = mock[ApiPlatformEventService](withSettings.lenient())
     val mockApplicationCommandDispatch = mock[ApplicationCommandDispatcher](withSettings.lenient())
     val response                       = mock[WSResponse]
 
     val underTest = new SubscriptionService(
       mockApplicationRepository,
       mockSubscriptionRepository,
-      AuditServiceMock.aMock,
-      mockApiPlatformEventsService,
-      ApplicationCommandDispatcherMock.aMock,
-      mockApiGatewayStore
+      ApplicationCommandDispatcherMock.aMock
     )
-
-    when(mockApiGatewayStore.createApplication(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
     when(mockSubscriptionRepository.add(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
     when(mockSubscriptionRepository.remove(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))

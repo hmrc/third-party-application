@@ -37,14 +37,9 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
 class SubscriptionService @Inject() (
     applicationRepository: ApplicationRepository,
     subscriptionRepository: SubscriptionRepository,
-    auditService: AuditService,
-    apiPlatformEventService: ApiPlatformEventService,
     applicationCommandDispatcher: ApplicationCommandDispatcher,
-    apiGatewayStore: ApiGatewayStore
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ActorHelper {
-
-  val IgnoredContexts: List[String] = List("sso-in/sso", "web-session/sso-api")
 
   def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmailMatch: Option[String]): Future[List[String]] = {
     subscriptionRepository.searchCollaborators(context, version, partialEmailMatch)
@@ -86,5 +81,4 @@ class SubscriptionService @Inject() (
       case _         => failed(new NotFoundException(s"Application not found for id: ${applicationId.value}"))
     }
   }
-
 }

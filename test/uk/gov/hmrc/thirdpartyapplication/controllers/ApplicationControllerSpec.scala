@@ -97,7 +97,6 @@ class ApplicationControllerSpec
       mockCredentialService,
       mockSubscriptionService,
       config,
-      mockGatekeeperService,
       SubmissionsServiceMock.aMock,
       mockUpliftNamingService,
       UpliftLinkServiceMock.aMock,

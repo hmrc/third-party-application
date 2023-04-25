@@ -59,7 +59,6 @@ class ApplicationController @Inject() (
     credentialService: CredentialService,
     subscriptionService: SubscriptionService,
     config: ApplicationControllerConfig,
-    gatekeeperService: GatekeeperService,
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
     upliftLinkService: UpliftLinkService,

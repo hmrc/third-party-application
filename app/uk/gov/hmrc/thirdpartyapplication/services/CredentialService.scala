@@ -25,7 +25,6 @@ import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -34,12 +33,8 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 @Singleton
 class CredentialService @Inject() (
     applicationRepository: ApplicationRepository,
-    applicationCommandDispatcher: ApplicationCommandDispatcher,
-    auditService: AuditService,
     clientSecretService: ClientSecretService,
     config: CredentialConfig,
-    apiPlatformEventService: ApiPlatformEventService,
-    emailConnector: EmailConnector
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 

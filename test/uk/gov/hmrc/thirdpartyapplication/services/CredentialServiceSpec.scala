@@ -25,13 +25,11 @@ import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithActor, ValidationRequest}
-import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
+import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule, ClientSecretServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.ClientSecretServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
@@ -40,10 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with ApplicationTestData {
 
   trait Setup extends ApplicationRepositoryMockModule
-      with AuditServiceMockModule
-      with ApplicationCommandDispatcherMockModule
-      with ClientSecretServiceMockModule
-      with EmailConnectorMockModule {
+      with ClientSecretServiceMockModule {
 
     implicit val hc: HeaderCarrier                           = HeaderCarrier()
     val mockLogger: Logger                                   = mock[Logger]
@@ -54,12 +49,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
     val underTest: CredentialService =
       new CredentialService(
         ApplicationRepoMock.aMock,
-        ApplicationCommandDispatcherMock.aMock,
-        AuditServiceMock.aMock,
         ClientSecretServiceMock.aMock,
-        credentialConfig,
-        mockApiPlatformEventService,
-        EmailConnectorMock.aMock
+        credentialConfig
       ) {
         override val logger = mockLogger
       }
@@ -71,8 +62,6 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       applicationId,
       collaborators = Set(loggedInUser.admin(), anotherAdminUser.admin())
     )
-    val secretRequest          = ClientSecretRequest(loggedInUser)
-    val secretRequestWithActor = ClientSecretRequestWithActor(Actors.AppCollaborator(loggedInUser), now)
     val environmentToken       = applicationData.tokens.production
     val firstSecret            = environmentToken.clientSecrets.head
 

@@ -60,8 +60,6 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   implicit val formatValidationRequest                = Json.format[ValidationRequest]
   implicit val formatApplicationNameValidationRequest = Json.format[ApplicationNameValidationRequest]
-  implicit val formatClientSecretRequest              = Json.format[ClientSecretRequest]
-  implicit val formatClientSecretRequestWithActor     = Json.format[ClientSecretRequestWithActor]
   implicit val formatApproveUpliftRequest             = Json.format[ApproveUpliftRequest]
   implicit val formatRejectUpliftRequest              = Json.format[RejectUpliftRequest]
   implicit val formatResendVerificationRequest        = Json.format[ResendVerificationRequest]
@@ -73,8 +71,6 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatOverridesResponse                = Json.format[OverridesResponse]
   implicit val formatApplicationWithUpliftRequest     = Json.format[ApplicationWithUpliftRequest]
   implicit val formatDeleteApplicationRequest         = Json.format[DeleteApplicationRequest]
-  implicit val formatDeleteClientSecretsRequest       = Json.format[DeleteClientSecretsRequest]
-  implicit val formatDeleteClientSecretRequest        = Json.format[DeleteClientSecretRequest]
   implicit val formatFixCollaboratorRequest           = Json.format[FixCollaboratorRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
