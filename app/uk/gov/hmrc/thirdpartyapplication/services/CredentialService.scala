@@ -34,7 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 class CredentialService @Inject() (
     applicationRepository: ApplicationRepository,
     clientSecretService: ClientSecretService,
-    config: CredentialConfig,
+    config: CredentialConfig
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
