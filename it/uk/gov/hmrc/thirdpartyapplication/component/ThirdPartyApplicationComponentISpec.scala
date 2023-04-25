@@ -44,6 +44,9 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandControlle
 import org.scalatest.Inside
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
@@ -602,8 +605,15 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       apiPlatformEventsStub.willReceiveApiUnsubscribedEvent()
 
       When("I request to unsubscribe the application to an API")
-      val unsubscribedResponse = Http(s"$serviceUrl/application/${application.id.value}/subscription?context=$context&version=$version")
-        .method("DELETE").asString
+      val cmd = ApplicationCommands.UnsubscribeFromApi(Actors.AppCollaborator("admin@example.com".toLaxEmail), ApiIdentifier(context, version), FixedClock.now)
+      val request = DispatchRequest(cmd, Set.empty)
+      implicit val writer = Json.writes[DispatchRequest]
+      
+      val unsubscribedResponse = Http(s"$serviceUrl/application/${application.id.value}/dispatch")
+        .method("PATCH")
+        .headers(Seq("Content-Type" -> "application/json"))
+        .postData(Json.toJson(request).toString())
+        .asString
 
       Then("A 204 is returned")
       unsubscribedResponse.code shouldBe NO_CONTENT

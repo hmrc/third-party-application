@@ -31,13 +31,12 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, GOLD, RateLimitTier}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
 
@@ -70,8 +69,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
     when(mockSubscriptionRepository.add(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
     when(mockSubscriptionRepository.remove(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
-    when(mockApiPlatformEventsService.sendApiSubscribedEvent(*, *[ApiContext], *[ApiVersion])(*)).thenReturn(successful(true))
-    when(mockApiPlatformEventsService.sendApiUnsubscribedEvent(*, *[ApiContext], *[ApiVersion])(*)).thenReturn(successful(true))
   }
 
   private def aSecret(secret: String) = ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
@@ -180,62 +177,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
       intercept[FailedToSubscribeException] {
         await(underTest.updateApplicationForApiSubscription(applicationId, applicationData.name, applicationData.collaborators, apiIdentifier))
       }
-    }
-  }
-
-  "createSubscriptionForApplicationMinusChecks" should {
-    val applicationId   = ApplicationId.random
-    val applicationData = anApplicationData(applicationId, rateLimitTier = Some(GOLD))
-    val api             = ApiIdentifier.random
-
-    "create a subscription in Mongo for the given application when an application exists in the repository" in new Setup {
-
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
-      AuditServiceMock.Audit.thenReturnSuccess()
-
-      val result: HasSucceeded = await(underTest.createSubscriptionForApplicationMinusChecks(applicationId, api))
-
-      result shouldBe HasSucceeded
-
-      verify(mockSubscriptionRepository).add(applicationId, api)
-      verify(mockApiPlatformEventsService).sendApiSubscribedEvent(any[ApplicationData], eqTo(api.context), eqTo(api.version))(any[HeaderCarrier])
-
-      val capturedParameters = AuditServiceMock.Audit.verifyData(Subscribed)
-      capturedParameters.get("applicationId") should be(Some(applicationId.value.toString))
-      capturedParameters.get("apiVersion") should be(Some(api.version.value))
-      capturedParameters.get("apiContext") should be(Some(api.context.value))
-    }
-  }
-
-  "removeSubscriptionForApplication" should {
-    val applicationId = ApplicationId.random
-    val api           = ApiIdentifier.random
-
-    "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
-
-      intercept[NotFoundException] {
-        await(underTest.removeSubscriptionForApplication(applicationId, api))
-      }
-    }
-
-    "remove the API subscription from Mongo for the given application id when an application exists" in new Setup {
-      val applicationData = anApplicationData(applicationId)
-
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      AuditServiceMock.Audit.thenReturnSuccess()
-
-      val result = await(underTest.removeSubscriptionForApplication(applicationId, api))
-
-      result shouldBe HasSucceeded
-      verify(mockSubscriptionRepository).remove(applicationId, api)
-      verify(mockApiPlatformEventsService).sendApiUnsubscribedEvent(any[ApplicationData], eqTo(api.context), eqTo(api.version))(any[HeaderCarrier])
-
-      val capturedParameters = AuditServiceMock.Audit.verifyData(Unsubscribed)
-      capturedParameters.get("applicationId") should be(Some(applicationId.value.toString))
-      capturedParameters.get("apiVersion") should be(Some(api.version.value))
-      capturedParameters.get("apiContext") should be(Some(api.context.value))
     }
   }
 

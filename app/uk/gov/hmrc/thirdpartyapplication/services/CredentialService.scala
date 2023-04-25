@@ -23,20 +23,13 @@ import scala.util.control.NonFatal
 import cats.data.OptionT
 import cats.implicits._
 
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientSecret}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithActor, ValidationRequest}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 
 @Singleton
 class CredentialService @Inject() (
@@ -62,71 +55,6 @@ class CredentialService @Inject() (
     })
   }
 
-  def addClientSecretNew(applicationId: ApplicationId, request: ClientSecretRequestWithActor)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
-
-    def generateCommand(csd: ClientSecretData) = {
-      ApplicationCommands.AddClientSecret(actor = request.actor, csd.name, csd.id, csd.hashedSecret, timestamp = request.timestamp)
-    }
-
-    for {
-      existingApp                 <- fetchApp(applicationId)
-      _                            = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
-      (clientSecret, secretValue) <- clientSecretService.generateClientSecret()
-      addSecretCmd                 = generateCommand(clientSecret)
-      _                           <- applicationCommandDispatcher.dispatch(applicationId, addSecretCmd, Set.empty).value
-      updatedApplication          <- fetchApp(applicationId)
-    } yield ApplicationTokenResponse(updatedApplication.tokens.production, clientSecret.id, secretValue)
-  }
-
-  @deprecated("remove after client is no longer using the old endpoint")
-  def addClientSecret(applicationId: ApplicationId, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
-    for {
-      existingApp <- fetchApp(applicationId)
-      _            = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
-
-      generatedSecret <- clientSecretService.generateClientSecret()
-      newSecret        = generatedSecret._1
-      newSecretValue   = generatedSecret._2
-
-      updatedApplication    <- applicationRepository.addClientSecret(applicationId, newSecret)
-      _                     <- apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication, newSecret.id.value.toString)
-      _                      = auditService.audit(ClientSecretAddedAudit, Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
-      notificationRecipients = existingApp.admins.map(_.emailAddress)
-
-      _ = emailConnector.sendAddedClientSecretNotification(secretRequest.actorEmailAddress, newSecret.name, existingApp.name, notificationRecipients)
-    } yield ApplicationTokenResponse(updatedApplication.tokens.production, newSecret.id, newSecretValue)
-  }
-
-  @deprecated("remove after client is no longer using the old endpoint")
-  def deleteClientSecret(
-      applicationId: ApplicationId,
-      clientSecretId: ClientSecret.Id,
-      actorEmailAddress: LaxEmailAddress
-    )(implicit hc: HeaderCarrier
-    ): Future[ApplicationTokenResponse] = {
-    def audit(applicationId: ApplicationId, clientSecretId: ClientSecret.Id): Future[AuditResult] =
-      auditService.audit(ClientSecretRemovedAudit, Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretId.value.toString))
-
-    def sendNotification(clientSecret: ClientSecretData, app: ApplicationData): Future[HasSucceeded] = {
-      emailConnector.sendRemovedClientSecretNotification(actorEmailAddress, clientSecret.name, app.name, app.admins.map(_.emailAddress))
-    }
-
-    def findClientSecretToDelete(application: ApplicationData, clientSecretId: ClientSecret.Id): ClientSecretData =
-      application.tokens.production.clientSecrets
-        .find(_.id == clientSecretId)
-        .getOrElse(throw new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [${applicationId.value}]"))
-
-    for {
-      application         <- fetchApp(applicationId)
-      clientSecretToUpdate = findClientSecretToDelete(application, clientSecretId)
-      updatedApplication  <- applicationRepository.deleteClientSecret(applicationId, clientSecretId)
-      _                   <- audit(applicationId, clientSecretId)
-      _                   <- apiPlatformEventService.sendClientSecretRemovedEvent(updatedApplication, clientSecretId.value.toString)
-      _                   <- sendNotification(clientSecretToUpdate, updatedApplication)
-    } yield ApplicationTokenResponse(updatedApplication.tokens.production)
-
-  }
-
   def validateCredentials(validation: ValidationRequest): OptionT[Future, ApplicationResponse] = {
     def recoverFromFailedUsageDateUpdate(application: ApplicationData): PartialFunction[Throwable, ApplicationData] = {
       case NonFatal(e) =>
@@ -143,14 +71,6 @@ class CredentialService @Inject() (
           .recover(recoverFromFailedUsageDateUpdate(application)))
     } yield ApplicationResponse(data = updatedApplication)
 
-  }
-
-  private def fetchApp(applicationId: ApplicationId) = {
-    val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
-    applicationRepository.fetch(applicationId).flatMap {
-      case None      => Future.failed(notFoundException)
-      case Some(app) => Future.successful(app)
-    }
   }
 
 }

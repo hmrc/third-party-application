@@ -34,26 +34,9 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
     with ApplicationLogger {
 
   val serviceBaseUrl: String         = s"${config.baseUrl}"
-  private val applicationEventsUri   = "/application-events"
-  private val clientSecretAddedUri   = applicationEventsUri + "/clientSecretAdded"
-  private val clientSecretRemovedUri = applicationEventsUri + "/clientSecretRemoved"
-  private val apiSubscribedUri       = applicationEventsUri + "/apiSubscribed"
-  private val apiUnsubscribedUri     = applicationEventsUri + "/apiUnsubscribed"
-  private val updateApplicationUri   = "/application-event"
+  private val applicationEventUri   = "/application-event"
 
-  @deprecated("remove after client is no longer using the old endpoint")
-  def sendClientSecretAddedEvent(event: ClientSecretAddedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, clientSecretAddedUri)(hc)
-
-  @deprecated("remove after client is no longer using the old endpoint")
-  def sendClientSecretRemovedEvent(event: ClientSecretRemovedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, clientSecretRemovedUri)(hc)
-
-  @deprecated("remove after client is no longer using the old endpoint")
-  def sendApiSubscribedEvent(event: ApiSubscribedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiSubscribedUri)(hc)
-
-  @deprecated("remove after client is no longer using the old endpoint")
-  def sendApiUnsubscribedEvent(event: ApiUnsubscribedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiUnsubscribedUri)(hc)
-
-  def sendApplicationEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, updateApplicationUri)(hc)
+  def sendApplicationEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, applicationEventUri)(hc)
 
   private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
