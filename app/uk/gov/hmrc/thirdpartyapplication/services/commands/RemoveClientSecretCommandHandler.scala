@@ -23,13 +23,13 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 
 @Singleton
 class RemoveClientSecretCommandHandler @Inject() (
@@ -45,7 +45,7 @@ class RemoveClientSecretCommandHandler @Inject() (
         app.tokens.production.clientSecrets.exists(_.id == clientSecretId),
         CommandFailures.GenericFailure(s"Client Secret Id ${clientSecretId.value} not found in Application ${app.id.value}")
       )
-    
+
     Apply[Validated[CommandHandler.Failures, *]].map2(
       isAdminIfInProduction(cmd.actor, app),
       clientSecretExists(cmd.clientSecretId, app)

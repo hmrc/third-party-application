@@ -26,6 +26,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ClientId, ClientSecret, PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -36,8 +38,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
@@ -126,7 +126,7 @@ class ApplicationCommandDispatcherSpec
 
   "dispatch" when {
     "AddClientSecret is received" should {
-      val id = ClientSecret.Id.random
+      val id                       = ClientSecret.Id.random
       val cmd: AddClientSecret     = AddClientSecret(otherAdminAsActor, "name", id, "hashedSecret", now)
       val evt: ClientSecretAddedV2 = ClientSecretAddedV2(EventId.random, applicationId, instant, otherAdminAsActor, "name", id.value.toString)
 

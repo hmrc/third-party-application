@@ -27,6 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationId
 }
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -52,10 +53,11 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
     object CreateNewTouUpliftVerification {
 
       def thenCreateNewTouUpliftVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
-        when(aMock.createNewTouUpliftVerification(*[ApplicationData], *[SubmissionId], *)).thenAnswer((appData: ApplicationData, submissionId: SubmissionId, index: Int) =>
-          Future.successful(
-            ResponsibleIndividualTouUpliftVerification(verificationId, appData.id, submissionId, index, appData.name, now)
-          )
+        when(aMock.createNewTouUpliftVerification(*[ApplicationData], *[SubmissionId], *, *, *[LaxEmailAddress])).thenAnswer(
+          (appData: ApplicationData, submissionId: SubmissionId, index: Int, requesterName: String, requesterEmail: LaxEmailAddress) =>
+            Future.successful(
+              ResponsibleIndividualTouUpliftVerification(verificationId, appData.id, submissionId, index, appData.name, now, requesterName, requesterEmail)
+            )
         )
       }
     }

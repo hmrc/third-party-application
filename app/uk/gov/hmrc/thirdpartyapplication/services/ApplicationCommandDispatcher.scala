@@ -24,14 +24,13 @@ import cats.data.NonEmptyList
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, ApplicationCommands, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand,ApplicationCommands}
 
 @Singleton
 class ApplicationCommandDispatcher @Inject() (
