@@ -85,6 +85,9 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler                   = mock[ChangeProductionApplicationNameCommandHandler]
     val mockAddClientSecretCommandHandler: AddClientSecretCommandHandler                                                   = mock[AddClientSecretCommandHandler]
     val mockRemoveClientSecretCommandHandler: RemoveClientSecretCommandHandler                                             = mock[RemoveClientSecretCommandHandler]
+    val mockAddRedirectUriCommandHandler: AddRedirectUriCommandHandler                                                     = mock[AddRedirectUriCommandHandler]
+    val mockChangeRedirectUriCommandHandler: ChangeRedirectUriCommandHandler                                               = mock[ChangeRedirectUriCommandHandler]
+    val mockDeleteRedirectUriCommandHandler: DeleteRedirectUriCommandHandler                                               = mock[DeleteRedirectUriCommandHandler]
 
     val underTest = new ApplicationCommandDispatcher(
       ApplicationRepoMock.aMock,
@@ -92,14 +95,16 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       ApiPlatformEventServiceMock.aMock,
       AuditServiceMock.aMock,
       mockAddClientSecretCommandHandler,
+      mockAddCollaboratorCommandHandler,
+      mockAddRedirectUriCommandHandler,
       mockRemoveClientSecretCommandHandler,
       mockChangeProductionApplicationNameCommandHandler,
-      mockAddCollaboratorCommandHandler,
       mockRemoveCollaboratorCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
       mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
       mockChangeResponsibleIndividualToSelfCommandHandler,
       mockChangeResponsibleIndividualToOtherCommandHandler,
+      mockChangeRedirectUriCommandHandler,
       mockVerifyResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
@@ -108,6 +113,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockDeleteApplicationByGatekeeperCommandHandler,
       mockDeleteUnusedApplicationCommandHandler,
       mockDeleteProductionCredentialsApplicationCommandHandler,
+      mockDeleteRedirectUriCommandHandler,
       mockSubscribeToApiCommandHandler,
       mockUnsubscribeFromApiCommandHandler,
       mockUpdateRedirectUrisCommandHandler

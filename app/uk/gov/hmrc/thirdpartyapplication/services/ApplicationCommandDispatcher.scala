@@ -39,14 +39,16 @@ class ApplicationCommandDispatcher @Inject() (
     apiPlatformEventService: ApiPlatformEventService,
     auditService: AuditService,
     addClientSecretCommandHandler: AddClientSecretCommandHandler,
+    addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
+    addRedirectUriCommandHandle: AddRedirectUriCommandHandler,
     removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
     changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-    addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
     removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
     changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
     changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
     changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
     changeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler,
+    changeRedirectUriCommandHandler: ChangeRedirectUriCommandHandler,
     verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
     declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
     declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
@@ -55,6 +57,7 @@ class ApplicationCommandDispatcher @Inject() (
     deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
     deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
     deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
+    deleteRedirectUriCommandHandler: DeleteRedirectUriCommandHandler,
     subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
     unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
     updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler
@@ -84,12 +87,13 @@ class ApplicationCommandDispatcher @Inject() (
     command match {
       case cmd: AddCollaborator    => addCollaboratorCommandHandler.process(app, cmd)
       case cmd: RemoveCollaborator => removeCollaboratorCommandHandler.process(app, cmd)
-
       case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
+      case cmd: AddRedirectUri                                        => addRedirectUriCommandHandle.process(app, cmd)
       case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
+      case cmd: ChangeRedirectUri                                     => changeRedirectUriCommandHandler.process(app, cmd)
       case cmd: ChangeResponsibleIndividualToSelf                     => changeResponsibleIndividualToSelfCommandHandler.process(app, cmd)
       case cmd: ChangeResponsibleIndividualToOther                    => changeResponsibleIndividualToOtherCommandHandler.process(app, cmd)
       case cmd: VerifyResponsibleIndividual                           => verifyResponsibleIndividualCommandHandler.process(app, cmd)
@@ -100,6 +104,7 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: DeleteApplicationByGatekeeper                         => deleteApplicationByGatekeeperCommandHandler.process(app, cmd)
       case cmd: DeleteUnusedApplication                               => deleteUnusedApplicationCommandHandler.process(app, cmd)
       case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCommandHandler.process(app, cmd)
+      case cmd: DeleteRedirectUri                                     => deleteRedirectUriCommandHandler.process(app, cmd)
       case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
       case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
       case cmd: UpdateRedirectUris                                    => updateRedirectUrisCommandHandler.process(app, cmd)

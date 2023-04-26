@@ -350,7 +350,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def verifyCalledWith(applicationId: ApplicationId, redirectUris: List[String]) =
         ApplicationRepoMock.verify.updateRedirectUris(eqTo(applicationId), eqTo(redirectUris))
-
     }
 
     object DeleteClientSecret {
