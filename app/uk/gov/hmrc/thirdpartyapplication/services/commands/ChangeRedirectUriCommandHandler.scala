@@ -40,7 +40,7 @@ class ChangeRedirectUriCommandHandler @Inject()(applicationRepository: Applicati
       case _ => List.empty
     }
 
-    val uriExists = cond(existingUris.contains(cmd.redirectUriToReplace.uri), CommandFailures.GenericFailure("Uri to Change does not exist"))
+    val uriExists = cond(existingUris.contains(cmd.redirectUriToReplace.uri), CommandFailures.GenericFailure(s"RedirectUri ${cmd.redirectUriToReplace.uri} does not exist"))
     
     Apply[Validated[Failures, *]].map3(
       isStandardAccess(app),
