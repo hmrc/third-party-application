@@ -16,9 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
 import cats._
 import cats.data._
 import cats.implicits._
+
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -26,18 +30,15 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
-
 @Singleton
-class AddRedirectUriCommandHandler @Inject()(applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
+class AddRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 
   private def validate(app: ApplicationData, cmd: AddRedirectUri): Validated[Failures, List[String]] = {
     val existingRedirects = app.access match {
       case Standard(redirectUris, _, _, _, _, _) => redirectUris
-      case _ => List.empty
+      case _                                     => List.empty
     }
 
     val hasFourOrFewerURIs = cond((existingRedirects.size < 5), CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
@@ -63,10 +64,10 @@ class AddRedirectUriCommandHandler @Inject()(applicationRepository: ApplicationR
 
   def process(app: ApplicationData, cmd: AddRedirectUri): AppCmdResultT = {
     for {
-      existingUris     <- E.fromEither(validate(app, cmd).toEither)
-      urisAfterChange   = existingUris :+ cmd.redirectUriToAdd.uri
-      savedApp         <- E.liftF(applicationRepository.updateRedirectUris(app.id, urisAfterChange))
-      events            = asEvents(savedApp, cmd)
+      existingUris   <- E.fromEither(validate(app, cmd).toEither)
+      urisAfterChange = existingUris :+ cmd.redirectUriToAdd.uri
+      savedApp       <- E.liftF(applicationRepository.updateRedirectUris(app.id, urisAfterChange))
+      events          = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }
 }

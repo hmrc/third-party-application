@@ -69,8 +69,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       with ApplicationDataServiceMockModule
       with SubmissionsServiceMockModule
       with SubmissionsTestData {
-    val mockGatekeeperService   = mock[GatekeeperService]
-    implicit val headers        = HeaderCarrier()
+    val mockGatekeeperService = mock[GatekeeperService]
+    implicit val headers      = HeaderCarrier()
 
     lazy val underTest =
       new GatekeeperController(

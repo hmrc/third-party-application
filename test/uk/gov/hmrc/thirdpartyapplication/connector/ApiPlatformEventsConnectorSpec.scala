@@ -55,7 +55,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
     val underTest = new ApiPlatformEventsConnector(http, config)
 
-     def apiApplicationEventWillReturnCreated(request: ApplicationEvent) =
+    def apiApplicationEventWillReturnCreated(request: ApplicationEvent) =
       stubFor(
         post(urlEqualTo("/application-event"))
           .withJsonRequestBody(request)

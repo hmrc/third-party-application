@@ -23,12 +23,12 @@ import scala.util.control.NonFatal
 import cats.data.OptionT
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 
 @Singleton
 class CredentialService @Inject() (

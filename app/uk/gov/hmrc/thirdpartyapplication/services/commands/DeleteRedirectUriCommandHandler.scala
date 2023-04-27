@@ -16,9 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
 import cats._
 import cats.data._
 import cats.implicits._
+
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -26,21 +30,26 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
-
 @Singleton
-class DeleteRedirectUriCommandHandler @Inject()(applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
+class DeleteRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 
   private def validate(app: ApplicationData, cmd: DeleteRedirectUri): Validated[Failures, List[String]] = {
     val existingRedirects = app.access match {
       case Standard(redirectUris, _, _, _, _, _) => redirectUris
-      case _ => List.empty
+      case _                                     => List.empty
     }
 
-    val hasRequestedUri = cond((existingRedirects.contains(cmd.redirectUriToDelete.uri)), CommandFailures.GenericFailure(s"RedirectUri ${cmd.redirectUriToDelete.uri} does not exist"))
+    val standardAccess  = isStandardAccess(app)
+    val hasRequestedUri =
+      if (standardAccess.isValid)
+        cond(
+          (existingRedirects.contains(cmd.redirectUriToDelete.uri)),
+          CommandFailures.GenericFailure(s"RedirectUri ${cmd.redirectUriToDelete.uri} does not exist")
+        )
+      else
+        ().validNel
 
     Apply[Validated[Failures, *]].map3(
       isStandardAccess(app),
@@ -63,10 +72,10 @@ class DeleteRedirectUriCommandHandler @Inject()(applicationRepository: Applicati
 
   def process(app: ApplicationData, cmd: DeleteRedirectUri): AppCmdResultT = {
     for {
-      existingUris    <- E.fromEither(validate(app, cmd).toEither)
-      urisAfterChange   = existingUris.filterNot(_ == cmd.redirectUriToDelete.uri)
-      savedApp <- E.liftF(applicationRepository.updateRedirectUris(app.id, urisAfterChange))
-      events    = asEvents(savedApp, cmd)
+      existingUris   <- E.fromEither(validate(app, cmd).toEither)
+      urisAfterChange = existingUris.filterNot(_ == cmd.redirectUriToDelete.uri)
+      savedApp       <- E.liftF(applicationRepository.updateRedirectUris(app.id, urisAfterChange))
+      events          = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }
 }

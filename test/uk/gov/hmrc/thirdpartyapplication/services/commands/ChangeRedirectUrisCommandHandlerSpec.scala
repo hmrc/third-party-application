@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, RedirectUri}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeRedirectUri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
@@ -26,25 +26,22 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RedirectUri
 
 class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new ChangeRedirectUriCommandHandler(ApplicationRepoMock.aMock)
 
-    val applicationId                    = ApplicationId.random
-    val untouchedUri = RedirectUri.unsafeApply("https://leavemebe.example.com")
-    val toBeReplacedRedirectUri = RedirectUri.unsafeApply("https://new-url.example.com")
-    val replacementUri = RedirectUri.unsafeApply("https://new-url.example.com/other-redirect")
-    val originalUris = List(toBeReplacedRedirectUri.uri, untouchedUri.uri)
-    val nonExistantUri = RedirectUri.unsafeApply("https://otherurl.com/not-there")
-    val applicationData: ApplicationData = anApplicationData(applicationId, access = Standard(originalUris), collaborators = devAndAdminCollaborators)
+    val applicationId                 = ApplicationId.random
+    val untouchedUri                  = RedirectUri.unsafeApply("https://leavemebe.example.com")
+    val toBeReplacedRedirectUri       = RedirectUri.unsafeApply("https://new-url.example.com")
+    val replacementUri                = RedirectUri.unsafeApply("https://new-url.example.com/other-redirect")
+    val originalUris                  = List(toBeReplacedRedirectUri.uri, untouchedUri.uri)
+    val nonExistantUri                = RedirectUri.unsafeApply("https://otherurl.com/not-there")
+    val principalApp: ApplicationData = anApplicationData(applicationId, access = Standard(originalUris), collaborators = devAndAdminCollaborators)
+    val subordinateApp                = principalApp.copy(environment = Environment.SANDBOX.toString())
 
-    val principalApp                     = applicationData.copy(environment = Environment.PRODUCTION.toString())
-    val subordinateApp                   = applicationData.copy(environment = Environment.SANDBOX.toString())
-
-    val nonStandardAccessApp = applicationData.copy(access = Privileged())
+    val nonStandardAccessApp = principalApp.copy(access = Privileged())
     val developerActor       = Actors.AppCollaborator(developerCollaborator.emailAddress)
 
     val timestamp  = FixedClock.instant
@@ -71,10 +68,10 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
   "ChangeRedirectUrisCommandHandler" when {
     "given a principal application" should {
       "succeed when application is standardAccess" in new Setup {
-        val expectedUrisAfterChange = List(replacementUri.uri,untouchedUri.uri)
-        ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(applicationData) // Dont need to test the repo here so just return any app
+        val expectedUrisAfterChange = List(replacementUri.uri, untouchedUri.uri)
+        ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(principalApp) // Dont need to test the repo here so just return any app
 
-        val result = await(underTest.process(applicationData, cmdAsAdmin).value).right.value
+        val result = await(underTest.process(principalApp, cmdAsAdmin).value).right.value
 
         checkSuccessResult(adminActor)(result)
       }
@@ -88,13 +85,13 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
       "fail when we try to change non existant URI" in new Setup {
         checkFailsWith(s"RedirectUri ${nonExistantUri.uri} does not exist") {
           val brokenCmd = cmdAsAdmin.copy(redirectUriToReplace = nonExistantUri)
-          underTest.process(applicationData, brokenCmd)
+          underTest.process(principalApp, brokenCmd)
         }
         ApplicationRepoMock.verifyZeroInteractions()
       }
 
       "fail when application is not standardAccess" in new Setup {
-        checkFailsWith("App must have a STANDARD access type", s"RedirectUri ${toBeReplacedRedirectUri.uri} does not exist") {
+        checkFailsWith("App must have a STANDARD access type") {
           underTest.process(nonStandardAccessApp, cmdAsAdmin)
         }
         ApplicationRepoMock.verifyZeroInteractions()
@@ -103,7 +100,7 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     "given a subordinate application" should {
       "succeed for a developer" in new Setup {
-        val expectedUrisAfterChange = List(replacementUri.uri,untouchedUri.uri)
+        val expectedUrisAfterChange = List(replacementUri.uri, untouchedUri.uri)
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(subordinateApp) // Dont need to test the repo here so just return any app
 
         val result = await(underTest.process(subordinateApp, cmdAsDev).value).right.value
