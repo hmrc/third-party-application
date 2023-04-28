@@ -163,7 +163,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       result should contain theSameElementsAs Seq(application1, application2)
     }
 
-    //TODO use commands
+    // TODO use commands
     Scenario("Fetch application credentials") {
       Given("No applications exist")
       emptyApplicationRepository()
@@ -172,10 +172,11 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       Given("A third party application")
       val application: ApplicationResponse = createApplication(appName)
-      val cmd = ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString,  FixedClock.now)
+      val cmd                              =
+        ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, FixedClock.now)
 
       sendApplicationCommand(cmd, application)
-      val createdApp                       = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
+      val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
 
       When("We fetch the application credentials")
       val response = Http(s"$serviceUrl/application/${application.id.value}/credentials").asString
@@ -217,9 +218,9 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       emailStub.willPostEmailNotification()
 
       import com.github.t3hnar.bcrypt._
-      val secret = UUID.randomUUID().toString
+      val secret       = UUID.randomUUID().toString
       val hashedSecret = secret.bcrypt(4)
-      val cmd = ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, hashedSecret, FixedClock.now)
+      val cmd          = ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, hashedSecret, FixedClock.now)
 
       val addClientSecretResponse = sendApplicationCommand(cmd, application)
       addClientSecretResponse.code shouldBe OK
@@ -464,36 +465,37 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       createdApp.tokens.production.clientSecrets should have size 0
 
       When("I request to add a production client secret")
-      val cmd = ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, FixedClock.now)
+      val cmd =
+        ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, FixedClock.now)
 
-      val cmdResponse =  sendApplicationCommand(cmd, application)
+      val cmdResponse = sendApplicationCommand(cmd, application)
       cmdResponse.code shouldBe OK
-
 
       Then("The client secret is added to the production environment of the application")
       apiPlatformEventsStub.verifyClientSecretAddedEventSent()
-      val firstFetchResponse = Http(s"$serviceUrl/application/${application.id.value}/credentials").asString
-      val firstResponse : ApplicationTokenResponse = Json.parse(firstFetchResponse.body).as[ApplicationTokenResponse]
-      val secrets: List[ClientSecretResponse] = firstResponse.clientSecrets
+      val firstFetchResponse                      = Http(s"$serviceUrl/application/${application.id.value}/credentials").asString
+      val firstResponse: ApplicationTokenResponse = Json.parse(firstFetchResponse.body).as[ApplicationTokenResponse]
+      val secrets: List[ClientSecretResponse]     = firstResponse.clientSecrets
       secrets should have size 1
 
       When("I request to add a second production client secret")
-      val secondCmd = ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, FixedClock.now)
+      val secondCmd         =
+        ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, FixedClock.now)
       val secondCmdResponse = sendApplicationCommand(secondCmd, application)
       secondCmdResponse.code shouldBe OK
-      //check secret was added
+      // check secret was added
 
       Then("The client secret is added to the production environment of the application")
-      val secondFetchResponse = Http(s"$serviceUrl/application/${application.id.value}/credentials").asString
-      val secondResponse : ApplicationTokenResponse = Json.parse(secondFetchResponse.body).as[ApplicationTokenResponse]
-      val moreSecrets: List[ClientSecretResponse] = secondResponse.clientSecrets
+      val secondFetchResponse                      = Http(s"$serviceUrl/application/${application.id.value}/credentials").asString
+      val secondResponse: ApplicationTokenResponse = Json.parse(secondFetchResponse.body).as[ApplicationTokenResponse]
+      val moreSecrets: List[ClientSecretResponse]  = secondResponse.clientSecrets
 
       moreSecrets should have size 2
 
       val clientSecretId: ClientSecret.Id = moreSecrets.last.id
 
       When("I request to remove a production client secret")
-      val removeCmd = ApplicationCommands.RemoveClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail),  secondCmd.id, FixedClock.now)
+      val removeCmd         = ApplicationCommands.RemoveClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), secondCmd.id, FixedClock.now)
       val removeCmdResponse = sendApplicationCommand(removeCmd, application)
       removeCmdResponse.code shouldBe OK
 
@@ -633,7 +635,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       When("I request to unsubscribe the application from an API")
       apiPlatformEventsStub.willReceiveApiUnsubscribedEvent()
-      val cmd = ApplicationCommands.UnsubscribeFromApi(Actors.AppCollaborator("admin@example.com".toLaxEmail), ApiIdentifier(context, version), FixedClock.now)
+      val cmd      = ApplicationCommands.UnsubscribeFromApi(Actors.AppCollaborator("admin@example.com".toLaxEmail), ApiIdentifier(context, version), FixedClock.now)
       val response = sendApplicationCommand(cmd, application)
 
       Then("A 200 is returned")
@@ -717,7 +719,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
   }
 
   def sendApplicationCommand(cmd: ApplicationCommand, application: ApplicationResponse): HttpResponse[String] = {
-    val request = DispatchRequest(cmd, Set.empty)
+    val request         = DispatchRequest(cmd, Set.empty)
     implicit val writer = Json.writes[DispatchRequest]
     postData(s"/application/${application.id.value}/dispatch", Json.toJson(request).toString(), "PATCH")
   }

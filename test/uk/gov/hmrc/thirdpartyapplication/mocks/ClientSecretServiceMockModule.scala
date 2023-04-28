@@ -20,11 +20,12 @@ import scala.concurrent.Future
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientSecret}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
 
 trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
+
   object ClientSecretServiceMock {
     lazy val aMock: ClientSecretService = mock[ClientSecretService]
 

@@ -24,7 +24,7 @@ object ApiPlatformEventsStub extends Stub {
 
   override val stub: MockHost = MockHost(16700)
 
-  private val applicationEventsURL: String        = "/application-event"
+  private val applicationEventsURL: String = "/application-event"
 
   def willReceiveEventType(eventType: String): Unit = {
     stub.mock.register(

@@ -30,7 +30,7 @@ trait CommandHandlerBaseSpec
 
     testThis should have length 1 + msgs.length
     testThis.head shouldBe CommandFailures.GenericFailure(msg)
-    testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_))
+    testThis.tail shouldBe msgs.map(CommandFailures.GenericFailure(_)).toList
   }
 
   def checkFailsWith(fail: CommandFailure, fails: CommandFailure*)(fn: => CommandHandler.AppCmdResultT) = {

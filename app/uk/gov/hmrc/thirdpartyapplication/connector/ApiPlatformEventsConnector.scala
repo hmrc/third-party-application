@@ -33,8 +33,8 @@ object ApiPlatformEventsConnector {
 class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatformEventsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils
     with ApplicationLogger {
 
-  val serviceBaseUrl: String         = s"${config.baseUrl}"
-  private val applicationEventUri   = "/application-event"
+  val serviceBaseUrl: String      = s"${config.baseUrl}"
+  private val applicationEventUri = "/application-event"
 
   def sendApplicationEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, applicationEventUri)(hc)
 

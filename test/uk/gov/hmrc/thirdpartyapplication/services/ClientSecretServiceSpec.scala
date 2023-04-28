@@ -36,7 +36,6 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
 
   val underTest = new ClientSecretService(hashConfig, ApplicationRepoMock.aMock, FixedClock.clock)
 
-
   "clientSecretIsValid" should {
     val applicationId = ApplicationId.random
     val fooSecret     = ClientSecretData(name = "secret-1", createdOn = now, hashedSecret = "foo".bcrypt(myWorkFactor))

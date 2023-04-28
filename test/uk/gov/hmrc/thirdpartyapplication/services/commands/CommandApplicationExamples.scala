@@ -16,18 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator, PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, HasApplicationId}
 
 trait CommandApplicationExamples extends HasApplicationId {
   self: ApplicationTestData =>
 
-  val principalApp   = anApplicationData(applicationId).copy(
-    collaborators = Set(
+  val devAndAdminCollaborators: Set[Collaborator] =
+    Set(
       developerCollaborator,
       otherAdminCollaborator
     )
+
+  val principalApp   = anApplicationData(applicationId).copy(
+    collaborators = devAndAdminCollaborators
   )
   val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())
 
