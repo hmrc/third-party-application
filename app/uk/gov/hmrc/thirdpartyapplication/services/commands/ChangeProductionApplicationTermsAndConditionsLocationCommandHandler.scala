@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,72 +16,98 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
 import cats.Apply
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyChain, NonEmptyList, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationTermsAndConditionsLocation
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
-class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject()()(implicit val ec: ExecutionContext
+class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject() (
+    applicationRepository: ApplicationRepository
+  )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map3(
-      isAdminOnApp(cmd.instigator, app),
-      isNotInProcessOfBeingApproved(app),
-      isStandardAccess(app)
-    ) { case _ => app }
-  }
+  def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
+    def validate: Validated[Failures, String] = {
+      val newUrl       = cmd.newLocation match {
+        case TermsAndConditionsLocations.Url(value) => Some(value)
+        case _                                      => None
+      }
+      val ensureIsAUrl = mustBeDefined(newUrl, s"Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
 
-  import UpdateApplicationEvent._
+      Apply[Validated[Failures, *]].map4(
+        isAdminOnApp(cmd.instigator, app),
+        isNotInProcessOfBeingApproved(app),
+        isStandardAccess(app),
+        ensureIsAUrl
+      ) { case (_, _, _, url) => url }
+    }
 
-  private def buildEventForLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): Either[String,UpdateApplicationEvent] = {
-    cmd.newLocation match {
-      case TermsAndConditionsLocation.Url(newUrl) =>
-        Right(ProductionLegacyAppTermsConditionsLocationChanged(
-          id = UpdateApplicationEvent.Id.random,
+    def asEvents(newUrl: String): NonEmptyList[ApplicationEvent] = {
+      NonEmptyList.one(
+        ProductionLegacyAppTermsConditionsLocationChanged(
+          id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(getRequester(app, cmd.instigator)),
+          eventDateTime = cmd.timestamp.instant,
+          actor = Actors.AppCollaborator(getRequester(app, cmd.instigator)),
           oldUrl = oldUrl,
-          newUrl = newUrl,
-          requestingAdminEmail = getRequester(app, cmd.instigator)
-        ))
-      case _ => Left("Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
+          newUrl = newUrl
+        )
+      )
     }
+
+    for {
+      newUrl   <- E.fromEither(validate.toEither)
+      savedApp <- E.liftF(applicationRepository.updateLegacyApplicationTermsAndConditionsLocation(app.id, newUrl))
+      events    = asEvents(newUrl)
+    } yield (savedApp, events)
   }
 
-  private def buildEventForNewApp(oldLocation: TermsAndConditionsLocation, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): UpdateApplicationEvent =
-    ProductionAppTermsConditionsLocationChanged(
-      id = UpdateApplicationEvent.Id.random,
-      applicationId = app.id,
-      eventDateTime = cmd.timestamp,
-      actor = CollaboratorActor(getRequester(app, cmd.instigator)),
-      oldLocation = oldLocation,
-      newLocation = cmd.newLocation,
-      requestingAdminEmail = getRequester(app, cmd.instigator)
-    )
+  def processApp(oldLocation: TermsAndConditionsLocation, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
+    def validate: Validated[Failures, ApplicationData] = {
+      Apply[Validated[Failures, *]].map3(
+        isAdminOnApp(cmd.instigator, app),
+        isNotInProcessOfBeingApproved(app),
+        isStandardAccess(app)
+      ) { case _ => app }
+    }
 
-  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): Either[String,UpdateApplicationEvent] = {
+    def asEvents: NonEmptyList[ApplicationEvent] = {
+      NonEmptyList.one(
+        ProductionAppTermsConditionsLocationChanged(
+          id = EventId.random,
+          applicationId = app.id,
+          eventDateTime = cmd.timestamp.instant,
+          actor = Actors.AppCollaborator(getRequester(app, cmd.instigator)),
+          oldLocation = oldLocation,
+          newLocation = cmd.newLocation
+        )
+      )
+    }
+
+    for {
+      valid    <- E.fromEither(validate.toEither)
+      savedApp <- E.liftF(applicationRepository.updateApplicationTermsAndConditionsLocation(app.id, cmd.newLocation))
+      events    = asEvents
+    } yield (savedApp, events)
+  }
+
+  def process(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
     app.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) =>
-        Right(buildEventForNewApp(termsAndConditionsLocation, app, cmd))
-      case Standard(_, maybeTermsAndConditionsLocation, _, _, _, None) =>
-        buildEventForLegacyApp(maybeTermsAndConditionsLocation.getOrElse(""), app, cmd)
-      case _ =>
-        Left("Unexpected application access value found: " + app.access)
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => processApp(termsAndConditionsLocation, app, cmd)
+      case Standard(_, maybeTermsAndConditionsLocation, _, _, _, None)                                       => processLegacyApp(maybeTermsAndConditionsLocation.getOrElse(""), app, cmd)
+      case _                                                                                                 => processApp(TermsAndConditionsLocations.InDesktopSoftware, app, cmd) // This will not valdate
     }
-  }
-
-  def process(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): CommandHandler.Result = {
-    Future.successful(validate(app, cmd).fold(errs => Invalid(errs), _ => {
-      asEvents(app, cmd).fold(e => Invalid(NonEmptyChain.one(e)), event => Valid(NonEmptyList.one(event)))
-    }))
   }
 }

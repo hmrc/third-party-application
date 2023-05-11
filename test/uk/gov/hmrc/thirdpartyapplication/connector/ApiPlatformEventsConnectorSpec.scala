@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,113 +16,46 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.http.Status._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{GatekeeperUserActor, ProductionAppNameChanged}
-
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats._
 
-import java.time.LocalDateTime
+import com.github.tomakehurst.wiremock.client.WireMock._
+
+import play.api.http.Status._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  val teamMemberAddedEvent: TeamMemberAddedEvent = TeamMemberAddedEvent(
-    id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
-    teamMemberEmail = "teamMember@teamMember.com",
-    teamMemberRole = "ADMIN"
-  )
+  val eventAppId        = ApplicationId.random
+  val eventCollaborator = Actors.AppCollaborator("bob@bob.com".toLaxEmail)
 
-  val teamMemberRemovedEvent: TeamMemberRemovedEvent = TeamMemberRemovedEvent(
+  val exampleEvent: ProductionAppNameChangedEvent = ProductionAppNameChangedEvent(
     id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
-    teamMemberEmail = "teamMember@teamMember.com",
-    teamMemberRole = "ADMIN"
-  )
-
-  val clientSecretAddedEvent: ClientSecretAddedEvent = ClientSecretAddedEvent(
-    id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
-    clientSecretId = "1234"
-  )
-
-  val clientSecretRemovedEvent: ClientSecretRemovedEvent = ClientSecretRemovedEvent(
-    id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
-    clientSecretId = "1234"
-  )
-
-  val redirectUrisUpdatedEvent: RedirectUrisUpdatedEvent = RedirectUrisUpdatedEvent(
-    id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
-    oldRedirectUris = "originalUris",
-    newRedirectUris = "newRedirectUris"
-  )
-
-  val apiSubscribedEvent: ApiSubscribedEvent = ApiSubscribedEvent(
-    id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
-    context = "context",
-    version = "2.0"
-  )
-
-  val apiUnSubscribedEvent: ApiUnsubscribedEvent = ApiUnsubscribedEvent(
-    id = EventId.random,
-    applicationId = "jkkh",
-    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
-    context = "context",
-    version = "2.0"
-  )
-
-  val prodAppNameChangedEvent: ProductionAppNameChanged = ProductionAppNameChanged(
-    id = UpdateApplicationEvent.Id.random,
     applicationId = ApplicationId.random,
-    eventDateTime = LocalDateTime.now,
-    actor = GatekeeperUserActor("mr gatekeeper"),
+    eventDateTime = FixedClock.instant,
+    actor = Actors.GatekeeperUser("mr gatekeeper"),
     oldAppName = "old name",
     newAppName = "new name",
-    requestingAdminEmail = "admin@example.com"
+    requestingAdminEmail = "admin@example.com".toLaxEmail
   )
 
   abstract class Setup(enabled: Boolean = true) {
+    import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
+
     val http: HttpClient = app.injector.instanceOf[HttpClient]
 
     val config: ApiPlatformEventsConnector.Config = ApiPlatformEventsConnector.Config(wireMockUrl, enabled)
 
     val underTest = new ApiPlatformEventsConnector(http, config)
 
-    def apiApplicationEventsWillReturnCreated(request: ApplicationEvent) =
-      stubFor(
-        post(urlMatching("/application-events/.*"))
-          .withJsonRequestBody(request)
-          .willReturn(
-            aResponse()
-              .withStatus(CREATED)
-          )
-      )
-
-    def apiApplicationEventsWillFailWith(status: Int) =
-      stubFor(
-        post(urlMatching("/application-events/.*"))
-          .willReturn(
-            aResponse()
-              .withStatus(status)
-          )
-      )
-
-    def apiApplicationEventWillReturnCreated(request: UpdateApplicationEvent) =
+    def apiApplicationEventWillReturnCreated(request: ApplicationEvent) =
       stubFor(
         post(urlEqualTo("/application-event"))
           .withJsonRequestBody(request)
@@ -142,182 +75,25 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
       )
   }
 
-  "ApiPlatformEventsConnector" when {
+  "ApiPlatformEventsConnector" should {
+    "return true when httpclient receives CREATED status" in new Setup() {
+      apiApplicationEventWillReturnCreated(exampleEvent)
+      val result = await(underTest.sendApplicationEvent(exampleEvent)(hc))
 
-    "TeamMemberAddedEvents" should {
-      "return true when httpclient receives CREATED status" in new Setup() {
-        apiApplicationEventsWillReturnCreated(teamMemberAddedEvent)
-        val result = await(underTest.sendTeamMemberAddedEvent(teamMemberAddedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return true when connector is disabled" in new Setup(false) {
-        val result = await(underTest.sendTeamMemberAddedEvent(teamMemberAddedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return false when httpclient receives internal server error status" in new Setup() {
-        apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendTeamMemberAddedEvent(teamMemberAddedEvent)(hc))
-
-        result shouldBe false
-      }
+      result shouldBe true
     }
 
-    "TeamMemberRemovedEvents" should {
-      "return true when httpclient receives CREATED status" in new Setup() {
-        apiApplicationEventsWillReturnCreated(teamMemberRemovedEvent)
-        val result = await(underTest.sendTeamMemberRemovedEvent(teamMemberRemovedEvent)(hc))
+    "return true when connector is disabled" in new Setup(false) {
+      val result = await(underTest.sendApplicationEvent(exampleEvent)(hc))
 
-        result shouldBe true
-      }
-
-      "return true when connector is disabled" in new Setup(false) {
-        val result = await(underTest.sendTeamMemberRemovedEvent(teamMemberRemovedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return false when httpclient receives internal server error status" in new Setup() {
-        apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendTeamMemberRemovedEvent(teamMemberRemovedEvent)(hc))
-
-        result shouldBe false
-      }
+      result shouldBe true
     }
 
-    "ClientSecretAdded" should {
-      "return true when httpclient receives CREATED status" in new Setup() {
-        apiApplicationEventsWillReturnCreated(clientSecretAddedEvent)
-        val result = await(underTest.sendClientSecretAddedEvent(clientSecretAddedEvent)(hc))
+    "return false when httpclient receives internal server error status" in new Setup() {
+      apiApplicationEventWillFailWith(INTERNAL_SERVER_ERROR)
+      val result = await(underTest.sendApplicationEvent(exampleEvent)(hc))
 
-        result shouldBe true
-      }
-
-      "return true when connector is disabled" in new Setup(false) {
-        val result = await(underTest.sendClientSecretAddedEvent(clientSecretAddedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return false when httpclient receives internal server error status" in new Setup() {
-        apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendClientSecretAddedEvent(clientSecretAddedEvent)(hc))
-
-        result shouldBe false
-      }
-    }
-
-    "ClientSecretRemoved" should {
-      "return true when httpclient receives CREATED status" in new Setup() {
-        apiApplicationEventsWillReturnCreated(clientSecretRemovedEvent)
-        val result = await(underTest.sendClientSecretRemovedEvent(clientSecretRemovedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return true when connector is disabled" in new Setup(false) {
-        val result = await(underTest.sendClientSecretRemovedEvent(clientSecretRemovedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return false when httpclient receives internal server error status" in new Setup() {
-        apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendClientSecretRemovedEvent(clientSecretRemovedEvent)(hc))
-
-        result shouldBe false
-      }
-    }
-
-    "RedirectUrisUpdatedEvent" should {
-      "return true when httpclient receives CREATED status" in new Setup() {
-        apiApplicationEventsWillReturnCreated(redirectUrisUpdatedEvent)
-        val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return true when connector is disabled" in new Setup(false) {
-        val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return false when httpclient receives internal server error status" in new Setup() {
-        apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
-
-        result shouldBe false
-      }
-    }
-
-    "ApiSubscribedEvent" should {
-      "return true when httpclient receives CREATED status" in new Setup() {
-        apiApplicationEventsWillReturnCreated(apiSubscribedEvent)
-        val result = await(underTest.sendApiSubscribedEvent(apiSubscribedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return true when connector is disabled" in new Setup(false) {
-        val result = await(underTest.sendApiSubscribedEvent(apiSubscribedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return false when httpclient receives internal server error status" in new Setup() {
-        apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendApiSubscribedEvent(apiSubscribedEvent)(hc))
-
-        result shouldBe false
-      }
-    }
-
-    "ApiUnsubscribedEvent" should {
-      "return true when httpclient receives CREATED status" in new Setup() {
-        apiApplicationEventsWillReturnCreated(apiUnSubscribedEvent)
-        val result = await(underTest.sendApiUnsubscribedEvent(apiUnSubscribedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return true when connector is disabled" in new Setup(false) {
-        val result = await(underTest.sendApiUnsubscribedEvent(apiUnSubscribedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return false when httpclient receives internal server error status" in new Setup() {
-        apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendApiUnsubscribedEvent(apiUnSubscribedEvent)(hc))
-
-        result shouldBe false
-      }
-    }
-
-    "ProdAppNameChangeEvent" should {
-      "return true when httpclient receives CREATED status" in new Setup() {
-        apiApplicationEventWillReturnCreated(prodAppNameChangedEvent)
-        val result = await(underTest.sendApplicationEvent(prodAppNameChangedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return true when connector is disabled" in new Setup(false) {
-        val result = await(underTest.sendApplicationEvent(prodAppNameChangedEvent)(hc))
-
-        result shouldBe true
-      }
-
-      "return false when httpclient receives internal server error status" in new Setup() {
-        apiApplicationEventWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendApplicationEvent(prodAppNameChangedEvent)(hc))
-
-        result shouldBe false
-      }
+      result shouldBe false
     }
   }
 }

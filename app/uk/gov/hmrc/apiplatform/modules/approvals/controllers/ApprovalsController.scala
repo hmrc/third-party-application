@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,21 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.ControllerComponents
 
-import javax.inject.Inject
-import javax.inject.Singleton
-import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
-import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.{ApprovalsActionBuilders, JsonErrorResponse}
+import uk.gov.hmrc.apiplatform.modules.approvals.services.{GrantApprovalsService, RequestApprovalsService}
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService
-import play.api.libs.json.JsValue
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-
-import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.ApprovalsActionBuilders
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
-import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.JsonErrorResponse
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByName: String, requestedByEmailAddress: String)
@@ -46,6 +41,12 @@ object ApprovalsController {
 
   case class GrantedRequest(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])
   implicit val readsGrantedRequest = Json.reads[GrantedRequest]
+
+  case class TouUpliftRequest(gatekeeperUserName: String, reasons: String)
+  implicit val readsTouUpliftRequest = Json.reads[TouUpliftRequest]
+
+  case class TouGrantedRequest(gatekeeperUserName: String)
+  implicit val readsTouGrantedRequest = Json.reads[TouGrantedRequest]
 }
 
 @Singleton
@@ -92,6 +93,55 @@ class ApprovalsController @Inject() (
           case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
           case RejectedDueToIncorrectApplicationState =>
             PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'"))
+          case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
+        })
+    }
+      .recover(recovery)
+  }
+
+  def grantWithWarningsForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
+    import GrantApprovalsService._
+
+    withJsonBodyFromAnyContent[TouUpliftRequest] { upliftRequest =>
+      grantApprovalService.grantWithWarningsForTouUplift(request.application, request.submission, upliftRequest.gatekeeperUserName, upliftRequest.reasons)
+        .map(_ match {
+          case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
+          case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_WARNINGS_STATE", s"Submission for $applicationId was not in a warnings state"))
+          case RejectedDueToIncorrectApplicationState =>
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
+          case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
+        })
+    }
+      .recover(recovery)
+  }
+
+  def grantForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
+    import GrantApprovalsService._
+
+    withJsonBodyFromAnyContent[TouGrantedRequest] { grantedRequest =>
+      grantApprovalService.grantForTouUplift(request.application, request.submission, grantedRequest.gatekeeperUserName)
+        .map(_ match {
+          case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
+          case RejectedDueToIncorrectSubmissionState  =>
+            PreconditionFailed(asJsonError("NOT_IN_GRANTED_WITH_WARNINGS_STATE", s"Submission for $applicationId was not in a granted with warnings state"))
+          case RejectedDueToIncorrectApplicationState =>
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
+          case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
+        })
+    }
+      .recover(recovery)
+  }
+
+  def declineForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
+    import GrantApprovalsService._
+
+    withJsonBodyFromAnyContent[TouUpliftRequest] { upliftRequest =>
+      grantApprovalService.declineForTouUplift(request.application, request.submission, upliftRequest.gatekeeperUserName, upliftRequest.reasons)
+        .map(_ match {
+          case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
+          case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_WARNINGS_STATE", s"Submission for $applicationId was not in a warnings state"))
+          case RejectedDueToIncorrectApplicationState =>
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
           case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
         })
     }

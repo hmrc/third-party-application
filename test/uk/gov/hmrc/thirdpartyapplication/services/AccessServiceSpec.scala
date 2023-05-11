@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-
-import java.time.LocalDateTime
-
-class AccessServiceSpec extends AsyncHmrcSpec {
+class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with FixedClock {
 
   "Access service update scopes function" should {
 
@@ -176,7 +176,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       None,
       "wso2ApplicationName",
       ApplicationTokens(
@@ -184,8 +184,8 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       ),
       ApplicationState(),
       Privileged(None, scopes),
-      LocalDateTime.now,
-      Some(LocalDateTime.now)
+      now,
+      Some(now)
     )
 
   private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): ApplicationData =
@@ -193,7 +193,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       None,
       "wso2ApplicationName",
       ApplicationTokens(
@@ -201,8 +201,8 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       ),
       ApplicationState(),
       Ropc(scopes),
-      LocalDateTime.now,
-      Some(LocalDateTime.now)
+      now,
+      Some(now)
     )
 
   private def standardApplicationDataWithOverrides(applicationId: ApplicationId, overrides: Set[OverrideFlag]): ApplicationData =
@@ -210,7 +210,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       None,
       "wso2ApplicationName",
       ApplicationTokens(
@@ -218,7 +218,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       ),
       ApplicationState(),
       Standard(redirectUris = List.empty, overrides = overrides),
-      LocalDateTime.now,
-      Some(LocalDateTime.now)
+      now,
+      Some(now)
     )
 }

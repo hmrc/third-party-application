@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import uk.gov.hmrc.thirdpartyapplication.util.{HmrcSpec, UpliftRequestSamples}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Environment, _}
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, HmrcSpec, UpliftRequestSamples}
 
-class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
+class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with CollaboratorTestData {
   import ApiIdentifierSyntax._
 
   "ApplicationData" should {
@@ -32,7 +33,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
         val request = CreateApplicationRequestV1(
           name = "bob",
           environment = Environment.PRODUCTION,
-          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+          collaborators = Set("jim@example.com".admin()),
           subscriptions = None
         )
 
@@ -45,7 +46,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
         val request = CreateApplicationRequestV1(
           name = "bob",
           environment = Environment.PRODUCTION,
-          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+          collaborators = Set("jim@example.com".admin()),
           subscriptions = Some(Set("context".asIdentifier))
         )
 
@@ -58,7 +59,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
         val request = CreateApplicationRequestV1(
           name = "bob",
           environment = Environment.PRODUCTION,
-          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+          collaborators = Set("jim@example.com".admin()),
           subscriptions = None
         )
 
@@ -73,7 +74,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
       val request = CreateApplicationRequestV2(
         name = "bob",
         environment = Environment.PRODUCTION,
-        collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+        collaborators = Set("jim@example.com".admin()),
         upliftRequest = makeUpliftRequest(ApiIdentifier.random),
         requestedBy = "user@example.com",
         sandboxApplicationId = ApplicationId.random

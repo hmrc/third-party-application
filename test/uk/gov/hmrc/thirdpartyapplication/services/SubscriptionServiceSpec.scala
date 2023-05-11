@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,66 +16,52 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import com.github.t3hnar.bcrypt._
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-
-import play.api.libs.ws.WSResponse
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, GOLD, RateLimitTier}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
-
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
-class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
+import com.github.t3hnar.bcrypt._
 
-  private val loggedInUser    = "loggedin@example.com"
+import play.api.libs.ws.WSResponse
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
+
+class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with CollaboratorTestData {
+
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
-  trait Setup extends AuditServiceMockModule {
+  trait SetupWithoutHc extends AuditServiceMockModule with ApplicationCommandDispatcherMockModule {
 
-    lazy val locked                  = false
-    val mockApiGatewayStore          = mock[ApiGatewayStore](withSettings.lenient())
-    val mockApplicationRepository    = mock[ApplicationRepository](withSettings.lenient())
-    val mockStateHistoryRepository   = mock[StateHistoryRepository](withSettings.lenient())
-    val mockEmailConnector           = mock[EmailConnector](withSettings.lenient())
-    val mockSubscriptionRepository   = mock[SubscriptionRepository](withSettings.lenient())
-    val mockApiPlatformEventsService = mock[ApiPlatformEventService](withSettings.lenient())
-    val response                     = mock[WSResponse]
-
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
-      LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
-      LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
-    )
+    lazy val locked                    = false
+    val mockApplicationRepository      = mock[ApplicationRepository](withSettings.lenient())
+    val mockSubscriptionRepository     = mock[SubscriptionRepository](withSettings.lenient())
+    val mockApplicationCommandDispatch = mock[ApplicationCommandDispatcher](withSettings.lenient())
+    val response                       = mock[WSResponse]
 
     val underTest = new SubscriptionService(
       mockApplicationRepository,
       mockSubscriptionRepository,
-      AuditServiceMock.aMock,
-      mockApiPlatformEventsService,
-      mockApiGatewayStore
+      ApplicationCommandDispatcherMock.aMock
     )
-
-    when(mockApiGatewayStore.createApplication(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
     when(mockSubscriptionRepository.add(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
     when(mockSubscriptionRepository.remove(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
-    when(mockApiPlatformEventsService.sendApiSubscribedEvent(*, *[ApiContext], *[ApiVersion])(*)).thenReturn(successful(true))
-    when(mockApiPlatformEventsService.sendApiUnsubscribedEvent(*, *[ApiContext], *[ApiVersion])(*)).thenReturn(successful(true))
   }
 
-  private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
+  private def aSecret(secret: String) = ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   "isSubscribed" should {
     val applicationId = ApplicationId.random
@@ -96,6 +82,14 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       result shouldBe false
     }
+  }
+
+  trait Setup extends SetupWithoutHc {
+
+    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
+      LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser.text,
+      LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
+    )
   }
 
   "fetchAllSubscriptionsForApplication" should {
@@ -123,59 +117,56 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
   }
 
-  "createSubscriptionForApplicationMinusChecks" should {
-    val applicationId   = ApplicationId.random
-    val applicationData = anApplicationData(applicationId, rateLimitTier = Some(GOLD))
-    val api             = ApiIdentifier.random
-
-    "create a subscription in Mongo for the given application when an application exists in the repository" in new Setup {
-
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
-      AuditServiceMock.Audit.thenReturnSuccess()
-
-      val result: HasSucceeded = await(underTest.createSubscriptionForApplicationMinusChecks(applicationId, api))
-
-      result shouldBe HasSucceeded
-
-      verify(mockSubscriptionRepository).add(applicationId, api)
-      verify(mockApiPlatformEventsService).sendApiSubscribedEvent(any[ApplicationData], eqTo(api.context), eqTo(api.version))(any[HeaderCarrier])
-
-      val capturedParameters = AuditServiceMock.Audit.verifyData(Subscribed)
-      capturedParameters.get("applicationId") should be(Some(applicationId.value.toString))
-      capturedParameters.get("apiVersion") should be(Some(api.version.value))
-      capturedParameters.get("apiContext") should be(Some(api.context.value))
-    }
-  }
-
-  "removeSubscriptionForApplication" should {
+  "updateApplicationForApiSubscription" should {
     val applicationId = ApplicationId.random
-    val api           = ApiIdentifier.random
+    val apiIdentifier = ApiIdentifier.random
 
-    "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
+    "return successfully using the correct Actors.AppCollaborator if the collaborator is a member of the application" in new Setup {
+      val application = anApplicationData(applicationId)
+      val actor       = Actors.AppCollaborator(loggedInUser)
 
-      intercept[NotFoundException] {
-        await(underTest.removeSubscriptionForApplication(applicationId, api))
-      }
-    }
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(application)
 
-    "remove the API subscription from Mongo for the given application id when an application exists" in new Setup {
-      val applicationData = anApplicationData(applicationId)
-
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      AuditServiceMock.Audit.thenReturnSuccess()
-
-      val result = await(underTest.removeSubscriptionForApplication(applicationId, api))
+      val result = await(underTest.updateApplicationForApiSubscription(applicationId, application.name, application.collaborators, apiIdentifier))
 
       result shouldBe HasSucceeded
-      verify(mockSubscriptionRepository).remove(applicationId, api)
-      verify(mockApiPlatformEventsService).sendApiUnsubscribedEvent(any[ApplicationData], eqTo(api.context), eqTo(api.version))(any[HeaderCarrier])
+      ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
+    }
 
-      val capturedParameters = AuditServiceMock.Audit.verifyData(Unsubscribed)
-      capturedParameters.get("applicationId") should be(Some(applicationId.value.toString))
-      capturedParameters.get("apiVersion") should be(Some(api.version.value))
-      capturedParameters.get("apiContext") should be(Some(api.context.value))
+    "return successfully using a GatekeeperUserCollaborator if there are no developers in the header carrier" in new SetupWithoutHc {
+      implicit val hc     = HeaderCarrier()
+      val applicationData = anApplicationData(applicationId)
+      val actor           = Actors.GatekeeperUser("Gatekeeper Admin")
+
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
+
+      val result = await(underTest.updateApplicationForApiSubscription(applicationId, applicationData.name, applicationData.collaborators, apiIdentifier))
+
+      result shouldBe HasSucceeded
+      ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
+    }
+
+    "return successfully using a GatekeeperUserCollaborator if the logged in user is not a member of the application" in new Setup {
+      val applicationData = anApplicationData(applicationId, collaborators = Set.empty)
+      val actor           = Actors.GatekeeperUser(loggedInUser.text)
+
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
+
+      val result = await(underTest.updateApplicationForApiSubscription(applicationId, applicationData.name, applicationData.collaborators, apiIdentifier))
+
+      result shouldBe HasSucceeded
+      ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
+    }
+
+    "throw an exception if the application has not updated" in new Setup {
+      val applicationData = anApplicationData(applicationId, collaborators = Set.empty)
+      val errorMessage    = "Not valid"
+
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnFailed(errorMessage)
+
+      intercept[FailedToSubscribeException] {
+        await(underTest.updateApplicationForApiSubscription(applicationId, applicationData.name, applicationData.collaborators, apiIdentifier))
+      }
     }
   }
 
@@ -198,7 +189,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   private def anApplicationData(
       applicationId: ApplicationId,
       state: ApplicationState = productionState(requestedByEmail),
-      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random)),
+      collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
       rateLimitTier: Option[RateLimitTier] = Some(BRONZE)
     ) = {
     new ApplicationData(
@@ -211,8 +202,8 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       ApplicationTokens(productionToken),
       state,
       Standard(),
-      LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock)),
+      now,
+      Some(now),
       rateLimitTier = rateLimitTier
     )
   }

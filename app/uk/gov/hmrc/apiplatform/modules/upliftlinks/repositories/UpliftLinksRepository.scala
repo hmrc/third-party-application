@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,19 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import com.google.inject.{Inject, Singleton}
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.services.UpliftLinkJsonFormatter
+
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
-import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.services.UpliftLinkJsonFormatter
 
 @Singleton
 class UpliftLinksRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)

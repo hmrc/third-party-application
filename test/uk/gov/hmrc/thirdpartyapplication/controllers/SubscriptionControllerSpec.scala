@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,34 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import scala.concurrent.Future
+
 import akka.stream.Materializer
+import akka.stream.testkit.NoMaterializer
+
 import play.api.http.Writeable
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
-import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, SubscriptionRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
-import play.api.libs.json.Json
-import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 
-class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite with SubscriptionRepositoryMockModule {
+class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite with SubscriptionRepositoryMockModule with ApplicationRepositoryMockModule {
 
   import play.api.test.Helpers._
 
   override def builder(): GuiceApplicationBuilder =
     super.builder()
       .overrides(bind[SubscriptionRepository].to(SubscriptionRepoMock.aMock))
+      .overrides(bind[ApplicationRepository].to(ApplicationRepoMock.aMock))
 
   trait Setup {
     implicit lazy val materializer: Materializer                            = NoMaterializer
@@ -92,7 +96,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
 
     "return the subscriptions from the repository" in new Setup {
       val expectedSubscriptions = Set("hello/world".asIdentifier)
-      SubscriptionRepoMock.GetSubscriptionsForDeveloper.thenReturnWhen(userId)(expectedSubscriptions)
+      ApplicationRepoMock.GetSubscriptionsForDeveloper.thenReturnWhen(userId)(expectedSubscriptions)
 
       val result = callEndpointWith(FakeRequest(GET, s"/developer/${userId.value}/subscriptions"))
 
@@ -101,7 +105,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
     }
 
     "return 500 if something goes wrong" in new Setup {
-      SubscriptionRepoMock.GetSubscriptionsForDeveloper.thenFailWith(new RuntimeException("something went wrong"))
+      ApplicationRepoMock.GetSubscriptionsForDeveloper.thenFailWith(new RuntimeException("something went wrong"))
 
       val result = callEndpointWith(FakeRequest(GET, s"/developer/${userId.value}/subscriptions"))
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,43 +16,40 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+
 import cats.data.OptionT
+
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateGrantLengthRequest.toGrantLength
+import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
+import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAuthorisationActions, AuthKeyRefiner}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.utils._
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Future.successful
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
-import uk.gov.hmrc.thirdpartyapplication.controllers.actions.AuthKeyRefiner
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.controllers.actions.ApplicationTypeAuthorisationActions
 
 @Singleton
 class ApplicationController @Inject() (
@@ -62,7 +59,6 @@ class ApplicationController @Inject() (
     credentialService: CredentialService,
     subscriptionService: SubscriptionService,
     config: ApplicationControllerConfig,
-    gatekeeperService: GatekeeperService,
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
     upliftLinkService: UpliftLinkService,
@@ -105,12 +101,21 @@ class ApplicationController @Inject() (
           applicationResponse <- applicationService.create(createApplicationRequest)
           applicationId        = applicationResponse.application.id
           subs                 = createApplicationRequest.anySubscriptions
-          _                   <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationId, api)))
+          _                   <- Future.sequence(subs.map(api =>
+                                   subscriptionService.updateApplicationForApiSubscription(
+                                     applicationId,
+                                     applicationResponse.application.name,
+                                     applicationResponse.application.collaborators,
+                                     api
+                                   )
+                                 ))
           _                   <- onV2(createApplicationRequest, processV2(applicationId))
         } yield Created(toJson(applicationResponse))
       } recover {
-        case e: ApplicationAlreadyExists =>
+        case e: ApplicationAlreadyExists   =>
           Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
+        case e: FailedToSubscribeException =>
+          BadRequest(JsErrorResponse(FAILED_TO_SUBSCRIBE, s"${e.getMessage}"))
       } recover recovery
     }
   }
@@ -156,51 +161,12 @@ class ApplicationController @Inject() (
     handleOption(credentialService.fetchCredentials(applicationId))
   }
 
-  def addCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[AddCollaboratorRequest] { collaboratorRequest =>
-      applicationService.addCollaborator(applicationId, collaboratorRequest) map {
-        response => Ok(toJson(response))
-      } recover {
-        case _: UserAlreadyExists => Conflict(JsErrorResponse(USER_ALREADY_EXISTS, "This email address is already registered with different role, delete and add with desired role"))
-
-        case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid Role"))
-      } recover recovery
-    }
-  }
-
-  def deleteCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[DeleteCollaboratorRequest] { dcRequest =>
-      applicationService.deleteCollaborator(applicationId, dcRequest.email, dcRequest.adminsToEmail, dcRequest.notifyCollaborator) map (_ => NoContent) recover {
-        case _: ApplicationNeedsAdmin => Forbidden(JsErrorResponse(APPLICATION_NEEDS_ADMIN, "Application requires at least one admin"))
-      } recover recovery
-    }
-  }
-
   def fixCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[FixCollaboratorRequest] { fixCollaboratorRequest =>
       applicationService.fixCollaborator(applicationId, fixCollaboratorRequest).map {
         case Some(_) => Ok
         case None    => Conflict
       } recover recovery
-    }
-  }
-
-  def addClientSecret(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[ClientSecretRequest] { secret =>
-      credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(token)) } recover {
-        case e: NotFoundException          => handleNotFound(e.getMessage)
-        case _: InvalidEnumException       => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
-        case _: ClientSecretsLimitExceeded => Forbidden(JsErrorResponse(CLIENT_SECRET_LIMIT_EXCEEDED, "Client secret limit has been exceeded"))
-        case e                             => handleException(e)
-      }
-    }
-  }
-
-  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String) = {
-    Action.async(parse.json) { implicit request =>
-      withJsonBody[DeleteClientSecretRequest] { deleteClientSecretRequest =>
-        credentialService.deleteClientSecret(applicationId, clientSecretId, deleteClientSecretRequest.actorEmailAddress).map(_ => NoContent) recover recovery
-      }
     }
   }
 
@@ -319,7 +285,7 @@ class ApplicationController @Inject() (
     } recover recovery
 
   def fetchAllForCollaborator(userId: UserId) = Action.async {
-    applicationService.fetchAllForCollaborator(userId).map(apps => Ok(toJson(apps))) recover recovery
+    applicationService.fetchAllForCollaborator(userId, false).map(apps => Ok(toJson(apps))) recover recovery
   }
 
   private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String) = {
@@ -358,20 +324,6 @@ class ApplicationController @Inject() (
       case true  => Ok(toJson(api)).withHeaders(CACHE_CONTROL -> s"max-age=$subscriptionCacheExpiry")
       case false => NotFound(JsErrorResponse(SUBSCRIPTION_NOT_FOUND, s"Application ${applicationId.value} is not subscribed to $context $version"))
     } recover recovery
-  }
-
-  def createSubscriptionForApplication(applicationId: ApplicationId) =
-    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
-      implicit request =>
-        withJsonBody[ApiIdentifier] { api =>
-          subscriptionService.createSubscriptionForApplicationMinusChecks(applicationId, api).map(_ => NoContent) recover recovery
-        }
-    }
-
-  def removeSubscriptionForApplication(applicationId: ApplicationId, context: ApiContext, version: ApiVersion) = {
-    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
-      subscriptionService.removeSubscriptionForApplication(applicationId, ApiIdentifier(context, version)).map(_ => NoContent) recover recovery
-    }
   }
 
   def deleteApplication(id: ApplicationId): Action[AnyContent] = (Action andThen authKeyRefiner).async { implicit request: MaybeMatchesAuthorisationKeyRequest[AnyContent] =>

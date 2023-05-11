@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,36 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import org.scalatest.BeforeAndAfterAll
-import uk.gov.hmrc.mongo.lock.MongoLockRepository
-import uk.gov.hmrc.mongo.test.MongoSupport
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.PENDING_REQUESTER_VERIFICATION
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneAppPerSuite}
-
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit.{DAYS, HOURS, SECONDS}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
+import org.scalatest.BeforeAndAfterAll
+
+import uk.gov.hmrc.mongo.lock.MongoLockRepository
+import uk.gov.hmrc.mongo.test.MongoSupport
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.PENDING_REQUESTER_VERIFICATION
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, NoMetricsGuiceOneAppPerSuite}
+
 class UpliftVerificationExpiryJobSpec
     extends AsyncHmrcSpec
     with MongoSupport
     with BeforeAndAfterAll
     with ApplicationStateUtil
-    with NoMetricsGuiceOneAppPerSuite {
+    with NoMetricsGuiceOneAppPerSuite
+    with CollaboratorTestData {
 
-  final val FixedTimeNow     = LocalDateTime.now(ZoneOffset.UTC)
+  final val FixedTimeNow     = now
   final val expiryTimeInDays = 90
   final val sixty            = 60
   final val twentyFour       = 24
@@ -81,22 +86,22 @@ class UpliftVerificationExpiryJobSpec
         .thenAnswer((a: ApplicationData) => successful(a))
 
       await(underTest.execute)
-      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, LocalDateTime.now(clock).minusDays(expiryTimeInDays))
+      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, now.minusDays(expiryTimeInDays))
       verify(mockApplicationRepository).save(app1.copy(state = testingState()))
       verify(mockApplicationRepository).save(app2.copy(state = testingState()))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app1.id,
         State.TESTING,
-        OldActor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
+        Actors.ScheduledJob("UpliftVerificationExpiryJob"),
         Some(PENDING_REQUESTER_VERIFICATION),
-        changedAt = LocalDateTime.now(clock)
+        changedAt = now
       ))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app2.id,
         State.TESTING,
-        OldActor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
+        Actors.ScheduledJob("UpliftVerificationExpiryJob"),
         Some(PENDING_REQUESTER_VERIFICATION),
-        changedAt = LocalDateTime.now(clock)
+        changedAt = now
       ))
     }
 
@@ -121,7 +126,7 @@ class UpliftVerificationExpiryJobSpec
       val app1: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
       val app2: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
 
-      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[LocalDateTime]))
+      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), *))
         .thenReturn(Future.successful(List(app1, app2)))
       when(mockApplicationRepository.save(any[ApplicationData])).thenReturn(
         Future.failed(new RuntimeException("A failure on executing save db query"))
@@ -129,7 +134,7 @@ class UpliftVerificationExpiryJobSpec
 
       val result: underTest.Result = await(underTest.execute)
 
-      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, LocalDateTime.now(clock).minusDays(expiryTimeInDays))
+      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, now.minusDays(expiryTimeInDays))
       result.message shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing save db query'." +
         " The next execution of the job will do retry."
@@ -141,7 +146,7 @@ class UpliftVerificationExpiryJobSpec
       id,
       s"myApp-${id.value}",
       s"myapp-${id.value}",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
+      Set("user@example.com".admin()),
       Some("description"),
       "myapplication",
       ApplicationTokens(
@@ -149,8 +154,8 @@ class UpliftVerificationExpiryJobSpec
       ),
       state,
       Standard(),
-      LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock))
+      now,
+      Some(now)
     )
   }
 }

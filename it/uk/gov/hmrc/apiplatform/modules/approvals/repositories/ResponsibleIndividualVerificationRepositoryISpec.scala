@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,26 +20,168 @@ import cats.data.NonEmptyList
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
+  ResponsibleIndividualToUVerification,
+  ResponsibleIndividualTouUpliftVerification,
+  ResponsibleIndividualUpdateVerification,
+  ResponsibleIndividualVerification,
+  ResponsibleIndividualVerificationId
+}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApplicationEvent}
 import uk.gov.hmrc.utils.ServerBaseISpec
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor, ProductionAppNameChanged, ResponsibleIndividualVerificationStarted, ResponsibleIndividualChanged, ResponsibleIndividualSet, ResponsibleIndividualDeclined, ResponsibleIndividualDeclinedUpdate, ResponsibleIndividualDidNotVerify}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.util.UUID
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+
+object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
+  val appName = "my app"
+  val appId   = ApplicationId.random
+  val code    = "12341285217652137257396"
+
+  def buildRiVerificationStartedEvent(submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualVerificationStarted(
+      EventId.random,
+      appId,
+      appName,
+      FixedClock.instant,
+      Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      "ms admin",
+      "admin@example.com".toLaxEmail,
+      "ri name",
+      "ri@example.com".toLaxEmail,
+      SubmissionId(submissionId.value),
+      submissionIndex,
+      ResponsibleIndividualVerificationId.random.value
+    )
+
+  def buildResponsibleIndividualChangedEvent(submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualChanged(
+      EventId.random,
+      appId,
+      FixedClock.instant,
+      Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      "Mr Previous Ri",
+      "previous-ri@example.com".toLaxEmail,
+      "Mr New Ri",
+      "ri@example.com".toLaxEmail,
+      SubmissionId(submissionId.value),
+      submissionIndex,
+      code,
+      "Mr Admin",
+      "admin@example.com".toLaxEmail
+    )
+
+  def buildResponsibleIndividualDeclinedEvent(submissionId: SubmissionId, submissionIndex: Int) = {
+    ResponsibleIndividualDeclined(
+      EventId.random,
+      appId,
+      FixedClock.instant,
+      Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      "Mr New Ri",
+      "ri@example.com".toLaxEmail,
+      SubmissionId(submissionId.value),
+      submissionIndex,
+      code,
+      "Mr Admin",
+      "admin@example.com".toLaxEmail
+    )
+  }
+
+  def buildResponsibleIndividualDeclinedUpdateEvent(submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualDeclinedUpdate(
+      EventId.random,
+      appId,
+      FixedClock.instant,
+      Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      "Mr New Ri",
+      "ri@example.com".toLaxEmail,
+      SubmissionId(submissionId.value),
+      submissionIndex,
+      code,
+      "Mr Admin",
+      "admin@example.com".toLaxEmail
+    )
+
+  def buildResponsibleIndividualDidNotVerifyEvent(submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualDidNotVerify(
+      EventId.random,
+      appId,
+      FixedClock.instant,
+      Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      "Mr New Ri",
+      "ri@example.com".toLaxEmail,
+      SubmissionId(submissionId.value),
+      submissionIndex,
+      code,
+      "Mr Admin",
+      "admin@example.com".toLaxEmail
+    )
+
+  def buildResponsibleIndividualSetEvent(submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualSet(
+      EventId.random,
+      appId,
+      FixedClock.instant,
+      Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      "Mr New Ri",
+      "ri@example.com".toLaxEmail,
+      SubmissionId(submissionId.value),
+      submissionIndex,
+      code,
+      "Mr Admin",
+      "admin@example.com".toLaxEmail
+    )
+
+  def buildRiVerificationToURecord(id: ResponsibleIndividualVerificationId, submissionId: SubmissionId, submissionIndex: Int) =
+    buildRiVerificationToURecordWithAppId(id, appId, submissionId, submissionIndex)
+
+  def buildRiVerificationToURecordWithAppId(id: ResponsibleIndividualVerificationId, applicationId: ApplicationId, submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualToUVerification(
+      id,
+      applicationId,
+      submissionId,
+      submissionIndex,
+      appName,
+      now,
+      INITIAL
+    )
+
+  def buildRiVerificationRecord(id: ResponsibleIndividualVerificationId, submissionId: SubmissionId, submissionIndex: Int) =
+    buildRiVerificationRecordWithAppId(id, appId, submissionId, submissionIndex)
+
+  def buildRiVerificationRecordWithAppId(id: ResponsibleIndividualVerificationId, applicationId: ApplicationId, submissionId: SubmissionId, submissionIndex: Int) =
+    ResponsibleIndividualUpdateVerification(
+      id,
+      applicationId,
+      submissionId,
+      submissionIndex,
+      appName,
+      now,
+      ResponsibleIndividual.build("ri name", "ri@example.com"),
+      "ms admin",
+      "admin@example.com".toLaxEmail,
+      INITIAL
+    )
+}
 
 class ResponsibleIndividualVerificationRepositoryISpec
     extends ServerBaseISpec
     with SubmissionsTestData
     with BeforeAndAfterEach
     with FixedClock {
+
+  import ResponsibleIndividualVerificationRepositoryISpec._
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -51,9 +193,9 @@ class ResponsibleIndividualVerificationRepositoryISpec
   }
 
   val repository: ResponsibleIndividualVerificationRepository = app.injector.instanceOf[ResponsibleIndividualVerificationRepository]
-  val responsibleIndividual = ResponsibleIndividual.build("Bob Fleming", "bob@fleming.com")
-  val requestingAdminName = "Mr Admin"
-  val requestingAdminEmail = "admin@fleming.com"
+  val responsibleIndividual                                   = ResponsibleIndividual.build("Bob Fleming", "bob@fleming.com")
+  val requestingAdminName                                     = "Mr Admin"
+  val requestingAdminEmail                                    = "admin@fleming.com".toLaxEmail
 
   override def beforeEach(): Unit = {
     await(repository.collection.drop().toFuture())
@@ -62,24 +204,61 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   def buildToUDoc(
       state: ResponsibleIndividualVerificationState,
-      createdOn: LocalDateTime = LocalDateTime.now,
-      submissionId: Submission.Id = Submission.Id.random,
+      createdOn: LocalDateTime = now,
+      submissionId: SubmissionId = SubmissionId.random,
       submissionIndex: Int = 0
     ) =
-    ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, submissionId, submissionIndex, UUID.randomUUID().toString, createdOn, state)
+    ResponsibleIndividualToUVerification(
+      ResponsibleIndividualVerificationId.random,
+      ApplicationId.random,
+      submissionId,
+      submissionIndex,
+      UUID.randomUUID().toString,
+      createdOn,
+      state
+    )
+
+  def buildTouUpliftDoc(
+      state: ResponsibleIndividualVerificationState,
+      createdOn: LocalDateTime = now,
+      submissionId: SubmissionId = SubmissionId.random,
+      submissionIndex: Int = 0
+    ) =
+    ResponsibleIndividualTouUpliftVerification(
+      ResponsibleIndividualVerificationId.random,
+      ApplicationId.random,
+      submissionId,
+      submissionIndex,
+      UUID.randomUUID().toString,
+      createdOn,
+      requestingAdminName,
+      requestingAdminEmail,
+      state
+    )
 
   def buildUpdateDoc(
       state: ResponsibleIndividualVerificationState,
-      createdOn: LocalDateTime = LocalDateTime.now,
-      submissionId: Submission.Id = Submission.Id.random,
+      createdOn: LocalDateTime = now,
+      submissionId: SubmissionId = SubmissionId.random,
       submissionIndex: Int = 0
     ) =
-    ResponsibleIndividualUpdateVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, submissionId, submissionIndex, UUID.randomUUID().toString, createdOn, responsibleIndividual, requestingAdminName, requestingAdminEmail, state)
+    ResponsibleIndividualUpdateVerification(
+      ResponsibleIndividualVerificationId.random,
+      ApplicationId.random,
+      submissionId,
+      submissionIndex,
+      UUID.randomUUID().toString,
+      createdOn,
+      responsibleIndividual,
+      requestingAdminName,
+      requestingAdminEmail,
+      state
+    )
 
   def buildAndSaveDoc(
       state: ResponsibleIndividualVerificationState,
-      createdOn: LocalDateTime = LocalDateTime.now,
-      submissionId: Submission.Id = Submission.Id.random,
+      createdOn: LocalDateTime = now,
+      submissionId: SubmissionId = SubmissionId.random,
       submissionIndex: Int = 0
     ) = {
     await(repository.save(buildToUDoc(state, createdOn, submissionId, submissionIndex)))
@@ -91,7 +270,15 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "save" should {
     "save ToU document to the database" in {
-      val doc = buildToUDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val doc = buildToUDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
+      await(repository.save(doc))
+
+      val allDocs = await(repository.findAll)
+      allDocs mustBe List(doc)
+    }
+
+    "save ToU uplift document to the database" in {
+      val doc = buildTouUpliftDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
       await(repository.save(doc))
 
       val allDocs = await(repository.findAll)
@@ -99,7 +286,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
     }
 
     "save update document to the database" in {
-      val doc = buildUpdateDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val doc = buildUpdateDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
       await(repository.save(doc))
 
       val allDocs = await(repository.findAll)
@@ -109,7 +296,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "fetch" should {
     "retrieve a document by id" in {
-      val savedDoc   = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val savedDoc   = buildAndSaveDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
       val fetchedDoc = await(repository.fetch(savedDoc.id))
 
       Some(savedDoc) mustBe fetchedDoc
@@ -118,17 +305,17 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "delete" should {
     "remove a document by id" in {
-      val savedDoc = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val savedDoc = buildAndSaveDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
       await(repository.delete(savedDoc.id))
 
       await(repository.findAll) mustBe List()
     }
 
     "remove the record matching the latest submission instance only" in {
-      val submissionId                   = Submission.Id.random
-      val savedDocForSubmissionInstance0 = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO), submissionId, 0)
-      buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO), submissionId, 1)
-      val submissionWithTwoInstances     = Submission.addInstance(answersToQuestions, Submission.Status.Answering(LocalDateTime.now, true))(aSubmission.copy(id = submissionId))
+      val submissionId                   = SubmissionId.random
+      val savedDocForSubmissionInstance0 = buildAndSaveDoc(INITIAL, now.minusDays(FEW_DAYS_AGO), submissionId, 0)
+      buildAndSaveDoc(INITIAL, now.minusDays(FEW_DAYS_AGO), submissionId, 1)
+      val submissionWithTwoInstances     = Submission.addInstance(answersToQuestions, Submission.Status.Answering(now, true))(aSubmission.copy(id = submissionId))
       await(repository.delete(submissionWithTwoInstances))
 
       await(repository.findAll) mustBe List(savedDocForSubmissionInstance0)
@@ -137,12 +324,12 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "fetchByStateAndAge" should {
     "retrieve correct documents" in {
-      val initialWithOldDate = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
-      buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
-      buildAndSaveDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
-      buildAndSaveDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val initialWithOldDate = buildAndSaveDoc(INITIAL, now.minusDays(MANY_DAYS_AGO))
+      buildAndSaveDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
+      buildAndSaveDoc(REMINDERS_SENT, now.minusDays(MANY_DAYS_AGO))
+      buildAndSaveDoc(REMINDERS_SENT, now.minusDays(FEW_DAYS_AGO))
 
-      val results = await(repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, INITIAL, LocalDateTime.now.minusDays(UPDATE_THRESHOLD)))
+      val results = await(repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, INITIAL, now.minusDays(UPDATE_THRESHOLD)))
 
       results mustBe List(initialWithOldDate)
     }
@@ -163,7 +350,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "updateSetDefaultVerificationType" should {
     "not change any records where verificationType already exists" in {
-      val doc = buildUpdateDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val doc        = buildUpdateDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
       val updateType = await(repository.save(doc))
 
       val stateInitial      = buildAndSaveDoc(INITIAL)
@@ -176,168 +363,66 @@ class ResponsibleIndividualVerificationRepositoryISpec
     }
   }
 
+  "deleteAllByApplicationId" should {
+
+    "remove old records that match application when deleteAllByApplicationId" in {
+      val existingAppId = ApplicationId.random
+
+      val existingRecordMatchingApplication1   = buildRiVerificationRecordWithAppId(ResponsibleIndividualVerificationId.random, existingAppId, SubmissionId.random, 0)
+      val existingRecordMatchingApplication2   = buildRiVerificationRecordWithAppId(ResponsibleIndividualVerificationId.random, existingAppId, SubmissionId.random, 1)
+      val existingRecordMatchingApplication3   = buildRiVerificationToURecordWithAppId(ResponsibleIndividualVerificationId.random, existingAppId, SubmissionId.random, 0)
+      val existingRecordNotMatchingApplication = buildRiVerificationRecordWithAppId(ResponsibleIndividualVerificationId.random, ApplicationId.random, SubmissionId.random, 0)
+
+      await(repository.save(existingRecordMatchingApplication1))
+      await(repository.save(existingRecordMatchingApplication2))
+      await(repository.save(existingRecordMatchingApplication3))
+      await(repository.save(existingRecordNotMatchingApplication))
+
+      await(repository.deleteAllByApplicationId(existingAppId))
+
+      await(repository.findAll).toSet mustBe Set(existingRecordNotMatchingApplication)
+    }
+  }
+
   "applyEvents" should {
-    val appName = "my app"
-    val now = LocalDateTime.now(ZoneOffset.UTC)
-    val appId = ApplicationId.random
-    val code = "12341285217652137257396"
-
-    def buildRiVerificationStartedEvent(submissionId: Submission.Id, submissionIndex: Int) =
-      ResponsibleIndividualVerificationStarted(
-        UpdateApplicationEvent.Id.random,
-        appId,
-        appName,
-        now,
-        CollaboratorActor("requester@example.com"),
-        "ms admin",
-        "admin@example.com",
-        "ri name",
-        "ri@example.com",
-        submissionId,
-        submissionIndex,
-        ResponsibleIndividualVerificationId.random
-      )
-
-    def buildResponsibleIndividualChangedEvent(submissionId: Submission.Id, submissionIndex: Int) =
-      ResponsibleIndividualChanged(
-        UpdateApplicationEvent.Id.random,
-        appId,
-        now,
-        CollaboratorActor("requester@example.com"),
-        "Mr Previous Ri",
-        "previous-ri@example.com",
-        "Mr New Ri",
-        "ri@example.com",
-        submissionId,
-        submissionIndex,
-        code, 
-        "Mr Admin",
-        "admin@example.com"
-      )
-
-    def buildResponsibleIndividualDeclinedEvent(submissionId: Submission.Id, submissionIndex: Int) =
-      ResponsibleIndividualDeclined(
-        UpdateApplicationEvent.Id.random,
-        appId,
-        now,
-        CollaboratorActor("requester@example.com"),
-        "Mr New Ri",
-        "ri@example.com",
-        submissionId,
-        submissionIndex,
-        code, 
-        "Mr Admin",
-        "admin@example.com"
-      )
-
-    def buildResponsibleIndividualDeclinedUpdateEvent(submissionId: Submission.Id, submissionIndex: Int) =
-      ResponsibleIndividualDeclinedUpdate(
-        UpdateApplicationEvent.Id.random,
-        appId,
-        now,
-        CollaboratorActor("requester@example.com"),
-        "Mr New Ri",
-        "ri@example.com",
-        submissionId,
-        submissionIndex,
-        code, 
-        "Mr Admin",
-        "admin@example.com"
-      )
-
-    def buildResponsibleIndividualDidNotVerifyEvent(submissionId: Submission.Id, submissionIndex: Int) =
-      ResponsibleIndividualDidNotVerify(
-        UpdateApplicationEvent.Id.random,
-        appId,
-        now,
-        CollaboratorActor("requester@example.com"),
-        "Mr New Ri",
-        "ri@example.com",
-        submissionId,
-        submissionIndex,
-        code, 
-        "Mr Admin",
-        "admin@example.com"
-      )
-
-    def buildResponsibleIndividualSetEvent(submissionId: Submission.Id, submissionIndex: Int) =
-      ResponsibleIndividualSet(
-        UpdateApplicationEvent.Id.random,
-        appId,
-        now,
-        CollaboratorActor("requester@example.com"),
-        "Mr New Ri",
-        "ri@example.com",
-        submissionId,
-        submissionIndex,
-        code, 
-        "Mr Admin",
-        "admin@example.com"
-      )
-
-    def buildRiVerificationToURecord(id: ResponsibleIndividualVerificationId, submissionId: Submission.Id, submissionIndex: Int) =
-      ResponsibleIndividualToUVerification(
-        id,
-        appId,
-        submissionId,
-        submissionIndex,
-        appName,
-        now,
-        INITIAL
-      )
-
-    def buildRiVerificationRecord(id: ResponsibleIndividualVerificationId, submissionId: Submission.Id, submissionIndex: Int) =
-      ResponsibleIndividualUpdateVerification(
-        id,
-        appId,
-        submissionId,
-        submissionIndex,
-        appName,
-        now,
-        ResponsibleIndividual.build("ri name", "ri@example.com"),
-        "ms admin",
-        "admin@example.com",
-        INITIAL
-      )
-
     "handle ResponsibleIndividualVerificationStarted event correctly" in {
-      val submissionId = Submission.Id.random
+      val submissionId    = SubmissionId.random
       val submissionIndex = 1
-      val event = buildRiVerificationStartedEvent(submissionId, submissionIndex)
+      val event           = buildRiVerificationStartedEvent(submissionId, submissionIndex)
 
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
 
-      val expectedRecord = buildRiVerificationRecord(event.verificationId, submissionId, submissionIndex)
+      val expectedRecord = buildRiVerificationRecord(ResponsibleIndividualVerificationId(event.verificationId), submissionId, submissionIndex)
       await(repository.findAll) mustBe List(expectedRecord)
     }
 
     "remove old records that match submission when ResponsibleIndividualVerificationStarted event is received" in {
-      val existingSubmissionId = Submission.Id.random
+      val existingSubmissionId    = SubmissionId.random
       val existingSubmissionIndex = 1
 
-      val existingRecordMatchingSubmission = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, existingSubmissionId, existingSubmissionIndex)
-      val existingRecordNotMatchingSubmissionId = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, Submission.Id.random, existingSubmissionIndex)
+      val existingRecordMatchingSubmission         = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, existingSubmissionId, existingSubmissionIndex)
+      val existingRecordNotMatchingSubmissionId    = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, SubmissionId.random, existingSubmissionIndex)
       val existingRecordNotMatchingSubmissionIndex = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, existingSubmissionId, existingSubmissionIndex + 1)
 
       await(repository.save(existingRecordMatchingSubmission))
       await(repository.save(existingRecordNotMatchingSubmissionId))
       await(repository.save(existingRecordNotMatchingSubmissionIndex))
 
-      val updateTimestamp = LocalDateTime.now().plusHours(1)
-      val event = buildRiVerificationStartedEvent(existingSubmissionId, existingSubmissionIndex).copy(eventDateTime = updateTimestamp)
+      val updateTimestamp = now.plusHours(1)
+      val event           = buildRiVerificationStartedEvent(existingSubmissionId, existingSubmissionIndex).copy(eventDateTime = updateTimestamp.toInstant(ZoneOffset.UTC))
 
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
 
-      val expectedNewRecord = existingRecordMatchingSubmission.copy(id = event.verificationId, createdOn = updateTimestamp)
+      val expectedNewRecord = existingRecordMatchingSubmission.copy(id = ResponsibleIndividualVerificationId(event.verificationId), createdOn = updateTimestamp)
       await(repository.findAll).toSet mustBe Set(existingRecordNotMatchingSubmissionId, existingRecordNotMatchingSubmissionIndex, expectedNewRecord)
     }
 
     "handle ResponsibleIndividualChanged event correctly" in {
-      val submissionId = Submission.Id.random
+      val submissionId    = SubmissionId.random
       val submissionIndex = 1
-      val event = buildResponsibleIndividualChangedEvent(submissionId, submissionIndex)
+      val event           = buildResponsibleIndividualChangedEvent(submissionId, submissionIndex)
 
-      val existingRecordMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId(code), submissionId, 0)
+      val existingRecordMatchingCode    = buildRiVerificationRecord(ResponsibleIndividualVerificationId(code), submissionId, 0)
       val existingRecordNotMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, submissionId, 1)
 
       await(repository.save(existingRecordMatchingCode))
@@ -349,11 +434,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
     }
 
     "handle ResponsibleIndividualDeclined event correctly" in {
-      val submissionId = Submission.Id.random
+      val submissionId    = SubmissionId.random
       val submissionIndex = 0
-      val event = buildResponsibleIndividualDeclinedEvent(submissionId, submissionIndex)
+      val event           = buildResponsibleIndividualDeclinedEvent(submissionId, submissionIndex)
 
-      val existingRecordMatchingCode = buildRiVerificationToURecord(ResponsibleIndividualVerificationId.random, submissionId, 0)
+      val existingRecordMatchingCode    = buildRiVerificationToURecord(ResponsibleIndividualVerificationId.random, submissionId, 0)
       val existingRecordNotMatchingCode = buildRiVerificationToURecord(ResponsibleIndividualVerificationId.random, submissionId, 1)
 
       await(repository.save(existingRecordMatchingCode))
@@ -365,11 +450,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
     }
 
     "handle ResponsibleIndividualDeclinedUpdate event correctly" in {
-      val submissionId = Submission.Id.random
+      val submissionId    = SubmissionId.random
       val submissionIndex = 1
-      val event = buildResponsibleIndividualDeclinedUpdateEvent(submissionId, submissionIndex)
+      val event           = buildResponsibleIndividualDeclinedUpdateEvent(submissionId, submissionIndex)
 
-      val existingRecordMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId(code), submissionId, 0)
+      val existingRecordMatchingCode    = buildRiVerificationRecord(ResponsibleIndividualVerificationId(code), submissionId, 0)
       val existingRecordNotMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, submissionId, 1)
 
       await(repository.save(existingRecordMatchingCode))
@@ -381,11 +466,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
     }
 
     "handle ResponsibleIndividualDidNotVerify event correctly" in {
-      val submissionId = Submission.Id.random
+      val submissionId    = SubmissionId.random
       val submissionIndex = 0
-      val event = buildResponsibleIndividualDidNotVerifyEvent(submissionId, submissionIndex)
+      val event           = buildResponsibleIndividualDidNotVerifyEvent(submissionId, submissionIndex)
 
-      val existingRecordMatchingCode = buildRiVerificationToURecord(ResponsibleIndividualVerificationId.random, submissionId, 0)
+      val existingRecordMatchingCode    = buildRiVerificationToURecord(ResponsibleIndividualVerificationId.random, submissionId, 0)
       val existingRecordNotMatchingCode = buildRiVerificationToURecord(ResponsibleIndividualVerificationId.random, submissionId, 1)
 
       await(repository.save(existingRecordMatchingCode))
@@ -397,11 +482,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
     }
 
     "handle ResponsibleIndividualSet event correctly" in {
-      val submissionId = Submission.Id.random
+      val submissionId    = SubmissionId.random
       val submissionIndex = 1
-      val event = buildResponsibleIndividualSetEvent(submissionId, submissionIndex)
+      val event           = buildResponsibleIndividualSetEvent(submissionId, submissionIndex)
 
-      val existingRecordMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId(code), submissionId, 0)
+      val existingRecordMatchingCode    = buildRiVerificationRecord(ResponsibleIndividualVerificationId(code), submissionId, 0)
       val existingRecordNotMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, submissionId, 1)
 
       await(repository.save(existingRecordMatchingCode))
@@ -413,8 +498,14 @@ class ResponsibleIndividualVerificationRepositoryISpec
     }
 
     "handle other events correctly" in {
-      val event = ProductionAppNameChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), GatekeeperUserActor("gkuser@example.com"), "app name", "new name", "admin@example.com"
+      val event = ProductionAppNameChangedEvent(
+        EventId.random,
+        applicationId,
+        FixedClock.instant,
+        Actors.GatekeeperUser("gkuser@example.com"),
+        "app name",
+        "new name",
+        "admin@example.com".toLaxEmail
       )
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
       await(repository.findAll) mustBe List()

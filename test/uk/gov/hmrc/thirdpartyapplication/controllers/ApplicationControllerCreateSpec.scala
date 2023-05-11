@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,43 +16,43 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future.{failed, successful}
+
 import akka.stream.Materializer
+import akka.stream.testkit.NoMaterializer
 import org.scalatest.prop.TableDrivenPropertyChecks
+
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
-import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
-import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.failed
-import scala.concurrent.Future.successful
-import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
-import java.time.LocalDateTime
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, _}
+import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, UpliftRequestSamples}
 
 class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks
     with UpliftRequestSamples
-    with SubmissionsTestData {
+    with SubmissionsTestData
+    with CollaboratorTestData {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
@@ -63,15 +63,15 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   implicit lazy val materializer: Materializer = NoMaterializer
 
   val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
-    Collaborator("dev@example.com", DEVELOPER, UserId.random)
+    "admin@example.com".admin(),
+    "dev@example.com".developer()
   )
 
   private val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
   private val privilegedAccess = Privileged(scopes = Set("scope1"))
   private val ropcAccess       = Ropc()
 
-  trait Setup 
+  trait Setup
       extends SubmissionsServiceMockModule
       with UpliftLinkServiceMockModule
       with StrideGatekeeperRoleAuthorisationServiceMockModule
@@ -98,7 +98,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       mockCredentialService,
       mockSubscriptionService,
       config,
-      mockGatekeeperService,
       SubmissionsServiceMock.aMock,
       mockNamingService,
       UpliftLinkServiceMock.aMock,
@@ -119,7 +118,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully" in new Setup {
       ApplicationServiceMock.Create.onRequestReturn(standardApplicationRequest)(standardApplicationResponse)
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
@@ -131,7 +130,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully to legacy uplift" in new Setup {
       ApplicationServiceMock.Create.onRequestReturn(standardApplicationRequestV1)(standardApplicationResponse)
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
 
       val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequestV1)))
 
@@ -142,7 +141,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
       ApplicationServiceMock.Create.onRequestReturn(privilegedApplicationRequest)(privilegedApplicationResponse)
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
@@ -156,7 +155,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "succeed with a 201 (Created) for a valid ROPC application request when gatekeeper is logged in and service responds successfully" in new Setup {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
       ApplicationServiceMock.Create.onRequestReturn(ropcApplicationRequest)(ropcApplicationResponse)
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
@@ -172,7 +171,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       val applicationRequestWithOneSubscription = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
 
       ApplicationServiceMock.Create.onRequestReturn(applicationRequestWithOneSubscription)(standardApplicationResponse)
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)).thenReturn(successful(
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(
         HasSucceeded
       ))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
@@ -182,7 +181,12 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(applicationRequestWithOneSubscription))(*)
-      verify(mockSubscriptionService, times(1)).createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)
+      verify(mockSubscriptionService, times(1)).updateApplicationForApiSubscription(
+        eqTo(standardApplicationResponse.application.id),
+        eqTo(standardApplicationResponse.application.name),
+        eqTo(standardApplicationResponse.application.collaborators),
+        eqTo(testApi)
+      )(*)
     }
 
     "succeed with a 201 (Created) for a valid Standard application request with multiple subscriptions when service responds successfully" in new Setup {
@@ -196,14 +200,19 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
       apis.map(api =>
-        when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(api))(*)).thenReturn(successful(HasSucceeded))
+        when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
       )
 
       val result = underTest.create()(request.withBody(Json.toJson(applicationRequestWithTwoSubscriptions)))
 
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(applicationRequestWithTwoSubscriptions))(*)
-      verify(mockSubscriptionService, times(2)).createSubscriptionForApplicationMinusChecks(*[ApplicationId], *[ApiIdentifier])(*)
+      verify(mockSubscriptionService, times(2)).updateApplicationForApiSubscription(
+        eqTo(standardApplicationResponse.application.id),
+        eqTo(standardApplicationResponse.application.name),
+        eqTo(standardApplicationResponse.application.collaborators),
+        *[ApiIdentifier]
+      )(*)
     }
 
     "fail with a 401 (Unauthorized) for a valid Privileged application request when gatekeeper is not logged in" in new Setup {
@@ -306,9 +315,17 @@ class ApplicationControllerCreateSpec extends ControllerSpec
            |"name" : "My Application",
            |"description" : "Description",
            |"environment": "PRODUCTION",
-           |"redirectUris": ["http://example.com/redirect"],
-           |"termsAndConditionsUrl": "http://example.com/terms",
-           |"privacyPolicyUrl": "http://example.com/privacy",
+           |"access" : {
+           |  "redirectUris" : [ "http://example.com/redirect" ],
+           |  "overrides" : [ ]
+           |},
+           |"upliftRequest" : {
+           |  "sellResellOrDistribute" : "Yes",
+           |  "subscriptions" : [ {
+           |    "context" : "itkdcZFWi4",
+           |    "version" : "477.148"
+           |  } ]
+           |},
            |"collaborators": [
            |{
            |"emailAddress": "admin@example.com",
@@ -324,14 +341,10 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
       val result = underTest.create()(request.withBody(Json.parse(body)))
 
-      val expected: String =
-        s"""{
-           |"code": "INVALID_REQUEST_PAYLOAD",
-           |"message": "Enumeration expected of type: 'Role$$', but it does not contain 'developer'"
-           |}""".stripMargin.replaceAll("\n", "")
-
       status(result) shouldBe UNPROCESSABLE_ENTITY
-      contentAsJson(result) shouldBe Json.toJson(Json.parse(expected))
+      val content = contentAsJson(result).toString
+      content should include(""""code":"INVALID_REQUEST_PAYLOAD"""")
+      content should include(""""developer is not a recognised role"""")
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -355,8 +368,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       environment.toString,
       Some("Description"),
       collaborators,
-      LocalDateTime.now,
-      Some(LocalDateTime.now),
+      now,
+      Some(now),
       grantLengthInDays,
       None,
       standardAccess.redirectUris,
@@ -372,8 +385,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     Some("Description"),
     Environment.PRODUCTION,
     Set(
-      Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
-      Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
+      "admin@example.com".admin(),
+      "dev@example.com".developer()
     ),
     Some(Set(ApiIdentifier.random))
   )
@@ -384,8 +397,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     Some("Description"),
     Environment.PRODUCTION,
     Set(
-      Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
-      Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
+      "admin@example.com".admin(),
+      "dev@example.com".developer()
     ),
     makeUpliftRequest(ApiIdentifier.random),
     "bob@example.com",

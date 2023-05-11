@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -42,11 +43,9 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatCheckInformation = Json.format[CheckInformation]
 
   implicit val formatApplicationState  = Json.format[ApplicationState]
-  implicit val formatClientSecret      = Json.format[ClientSecret]
+  implicit val formatClientSecret      = Json.format[ClientSecretData]
   implicit val formatEnvironmentToken  = Json.format[Token]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
-
-  // implicit val formatApplicationData = Json.format[ApplicationData]
 
   implicit val formatUpdateApplicationRequest     = Json.format[UpdateApplicationRequest]
   implicit val formatApplicationResponse          = Json.format[ApplicationResponse]
@@ -61,24 +60,18 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   implicit val formatValidationRequest                = Json.format[ValidationRequest]
   implicit val formatApplicationNameValidationRequest = Json.format[ApplicationNameValidationRequest]
-  implicit val formatClientSecretRequest              = Json.format[ClientSecretRequest]
   implicit val formatApproveUpliftRequest             = Json.format[ApproveUpliftRequest]
   implicit val formatRejectUpliftRequest              = Json.format[RejectUpliftRequest]
   implicit val formatResendVerificationRequest        = Json.format[ResendVerificationRequest]
-  implicit val formatAddCollaboratorRequest           = Json.format[AddCollaboratorRequest]
   implicit val formatAddTermsOfUseAcceptanceRequest   = Json.format[AddTermsOfUseAcceptanceRequest]
   implicit val formatConfirmSetupCompleteRequest      = Json.format[ConfirmSetupCompleteRequest]
-  implicit val formatAddCollaboratorResponse          = Json.format[AddCollaboratorResponse]
   implicit val formatScopeRequest                     = Json.format[ScopeRequest]
   implicit val formatScopeResponse                    = Json.format[ScopeResponse]
   implicit val formatOverridesRequest                 = Json.format[OverridesRequest]
   implicit val formatOverridesResponse                = Json.format[OverridesResponse]
   implicit val formatApplicationWithUpliftRequest     = Json.format[ApplicationWithUpliftRequest]
   implicit val formatDeleteApplicationRequest         = Json.format[DeleteApplicationRequest]
-  implicit val formatDeleteClientSecretsRequest       = Json.format[DeleteClientSecretsRequest]
-  implicit val formatDeleteClientSecretRequest        = Json.format[DeleteClientSecretRequest]
   implicit val formatFixCollaboratorRequest           = Json.format[FixCollaboratorRequest]
-  implicit val formatDeleteCollaboratorRequest        = Json.format[DeleteCollaboratorRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
     JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecret]]

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,25 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.Json
-import play.api.mvc.ControllerComponents
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
-
-import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
+
+import play.api.libs.json.Json
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapGatekeeperRoleAuthorisationService
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitationActionBuilders
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.services._
 
 @Singleton
 class GatekeeperController @Inject() (
@@ -40,13 +43,16 @@ class GatekeeperController @Inject() (
     val ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService,
     val strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,
     gatekeeperService: GatekeeperService,
-    subscriptionService: SubscriptionService,
+    val termsOfUseInvitationService: TermsOfUseInvitationService,
+    val applicationDataService: ApplicationDataService,
+    val submissionsService: SubmissionsService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc)
-  with JsonUtils
-  with AnyGatekeeperRoleAuthorisationAction
-  with OnlyStrideGatekeeperRoleAuthoriseAction {
+    with JsonUtils
+    with AnyGatekeeperRoleAuthorisationAction
+    with OnlyStrideGatekeeperRoleAuthoriseAction
+    with TermsOfUseInvitationActionBuilders {
 
   private lazy val badStateResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'")
@@ -102,6 +108,10 @@ class GatekeeperController @Inject() (
     } recover recovery
   }
 
+  def fetchAllAppsWithSubscriptions(): Action[AnyContent] = anyAuthenticatedUserAction {
+    _ => gatekeeperService.fetchAllWithSubscriptions map { apps => Ok(Json.toJson(apps)) } recover recovery
+  }
+
   def fetchAppById(id: ApplicationId) = anyAuthenticatedUserAction { loggedInRequest =>
     gatekeeperService.fetchAppWithHistory(id) map (app => Ok(Json.toJson(app))) recover recovery
   }
@@ -114,21 +124,25 @@ class GatekeeperController @Inject() (
     gatekeeperService.fetchAppStateHistories() map (histories => Ok(Json.toJson(histories))) recover recovery
   }
 
+  def fetchAllForCollaborator(userId: UserId) = Action.async {
+    applicationService.fetchAllForCollaborator(userId, true).map(apps => Ok(Json.toJson(apps))) recover recovery
+  }
+
   // TODO - this should use a request with payload validation in the JSformatter
   def updateRateLimitTier(applicationId: ApplicationId) = requiresAuthentication().async(parse.json) { implicit request =>
     withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
       Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
         case Success(rateLimitTier) =>
-          applicationService.updateRateLimitTier(applicationId, rateLimitTier) map(_ => NoContent) recover recovery
-        case Failure(_)                        => 
+          applicationService.updateRateLimitTier(applicationId, rateLimitTier) map (_ => NoContent) recover recovery
+        case Failure(_)             =>
           successful(UnprocessableEntity(
             JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")
           ))
       }
     }
-    .recover(recovery)
+      .recover(recovery)
   }
- 
+
   def deleteApplication(id: ApplicationId) =
     requiresAuthentication().async { implicit request =>
       withJsonBodyFromAnyContent[DeleteApplicationRequest] { deleteApplicationPayload =>
@@ -137,4 +151,15 @@ class GatekeeperController @Inject() (
           .recover(recovery)
       }
     }
+
+  def createInvitation(
+      applicationId: ApplicationId
+    ) = anyAuthenticatedGatekeeperUserWithProductionApplicationAndNoSubmissionAndNoInvitation()(applicationId) { implicit applicationRequest =>
+    termsOfUseInvitationService
+      .createInvitation(applicationRequest.application)
+      .map {
+        case Some(invite) => Created
+        case _            => InternalServerError
+      }.recover(recovery)
+  }
 }

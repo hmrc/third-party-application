@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,15 @@
 package uk.gov.hmrc.apiplatform.modules.gkauth.config
 
 import javax.inject.{Inject, Provider, Singleton}
+
 import play.api.Configuration
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+
 @Singleton
-class StrideAuthConnectorConfigProvider @Inject()(configuration: Configuration) extends ServicesConfig(configuration) with Provider[StrideAuthConnector.Config] {
+class StrideAuthConnectorConfigProvider @Inject() (configuration: Configuration) extends ServicesConfig(configuration) with Provider[StrideAuthConnector.Config] {
+
   override def get(): StrideAuthConnector.Config = {
     val strideAuthBaseUrl = baseUrl("auth")
 

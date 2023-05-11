@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,30 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import org.scalatest.BeforeAndAfterAll
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.REMINDERS_SENT
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-
 import java.time.temporal.ChronoUnit.SECONDS
-import java.time.{Clock, LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
-class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
+import org.scalatest.BeforeAndAfterAll
 
-  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationUpdateServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.REMINDERS_SENT
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineResponsibleIndividualDidNotVerify
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationCommandDispatcherMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+
+class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil
+    with ApplicationTestData {
+
+  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationCommandDispatcherMockModule
       with SubmissionsTestData {
 
     val mockLockKeeper = mock[ResponsibleIndividualVerificationRemovalJobLockService]
-    val timeNow        = LocalDateTime.now
-    val fixedClock     = Clock.fixed(timeNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
     val riName         = "bob responsible"
     val riEmail        = "bob.responsible@example.com"
@@ -50,15 +51,15 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       None,
       ResponsibleIndividual.build(riName, riEmail),
       Set.empty,
-      TermsAndConditionsLocation.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )
 
     val app             = anApplicationData(
       ApplicationId.random,
       access = Standard(importantSubmissionData = Some(importantSubmissionData)),
-      state = ApplicationState().toPendingResponsibleIndividualVerification(requesterEmail, requesterName, fixedClock)
+      state = ApplicationState().toPendingResponsibleIndividualVerification(requesterEmail, requesterName, clock)
     ).copy(name = appName)
     val initialDelay    = FiniteDuration(1, MINUTES)
     val interval        = FiniteDuration(1, HOURS)
@@ -68,47 +69,62 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
     val job = new ResponsibleIndividualVerificationRemovalJob(
       mockLockKeeper,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
-      ApplicationUpdateServiceMock.aMock,
-      fixedClock,
+      ApplicationCommandDispatcherMock.aMock,
+      clock,
       jobConfig
     )
   }
 
   "ResponsibleIndividualVerificationRemovalJob" should {
     "send email and remove database record" in new Setup {
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(app)
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(app)
 
-      val code = "123242423432432432"
+      val code         = "123242423432432432"
       val verification =
-        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code), app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
+        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code), app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
 
       await(job.runJob)
 
-      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(ResponsibleIndividualVerification.VerificationTypeToU, REMINDERS_SENT, timeNow.minus(removalInterval.toSeconds, SECONDS))
-      val applicationUpdate = ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
-      val declineResponsibleIndividualDidNotVerify = applicationUpdate.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
+      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
+        ResponsibleIndividualVerification.VerificationTypeToU,
+        REMINDERS_SENT,
+        now.minus(removalInterval.toSeconds, SECONDS)
+      )
+      val command                                  = ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(app.id)
+      val declineResponsibleIndividualDidNotVerify = command.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
       declineResponsibleIndividualDidNotVerify.code shouldBe code
     }
 
     "continue after invalid records" in new Setup {
       val badApp = app.copy(id = ApplicationId.random)
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(app.id, app)
-      ApplicationUpdateServiceMock.Update.thenReturnError(badApp.id, "Error")
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(app)
+      ApplicationCommandDispatcherMock.Dispatch.thenReturnFailedFor(badApp.id)
 
-      val code1 = "123242423432432432"
+      val code1         = "123242423432432432"
       val verification1 =
-        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code1), badApp.id, completelyAnswerExtendedSubmission.submission.id, 0, badApp.name, LocalDateTime.now)
-      val code2 = "725446087565645698"
+        ResponsibleIndividualToUVerification(
+          ResponsibleIndividualVerificationId(code1),
+          badApp.id,
+          completelyAnswerExtendedSubmission.submission.id,
+          0,
+          badApp.name,
+          now
+        )
+      val code2         = "725446087565645698"
       val verification2 =
-        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code2), app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
+        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code2), app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification1, verification2)
 
       await(job.runJob)
 
-      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(ResponsibleIndividualVerification.VerificationTypeToU, REMINDERS_SENT, timeNow.minus(removalInterval.toSeconds, SECONDS))
-      val applicationUpdate = ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
-      val declineResponsibleIndividualDidNotVerify = applicationUpdate.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
+      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
+        ResponsibleIndividualVerification.VerificationTypeToU,
+        REMINDERS_SENT,
+        now.minus(removalInterval.toSeconds, SECONDS)
+      )
+      val command                                  = ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(app.id)
+      val declineResponsibleIndividualDidNotVerify = command.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
       declineResponsibleIndividualDidNotVerify.code shouldBe code2
     }
   }

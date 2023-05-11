@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
-import com.google.inject.Singleton
-import play.api.libs.json.OFormat
-
 import javax.inject.Inject
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
-import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
-import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.mongo.metrix.MetricSource
-
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+
+import com.google.inject.Singleton
+
+import play.api.libs.json.OFormat
+import uk.gov.hmrc.mongo.metrix.MetricSource
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifier
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 
 @Singleton
 class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: SubscriptionRepository)
@@ -40,8 +41,8 @@ class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: Subscript
 
     val result = numberOfSubscriptionsByApi
       .map(_.map {
-        case (apiName, count) => subscriptionCountKey(apiName) -> count }
-      )
+        case (apiName, count) => subscriptionCountKey(apiName) -> count
+      })
 
     result.onComplete({
       case Success(v) => logger.info(s"[METRIC] Success - ApisWithSubscriptionCount - api versions are: ${v.keys.size}")

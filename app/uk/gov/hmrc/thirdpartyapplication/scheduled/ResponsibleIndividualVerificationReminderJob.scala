@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,27 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import cats.data.OptionT
-import com.google.inject.Singleton
-
-import javax.inject.Inject
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, Standard}
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, HasSucceeded}
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-
+import java.time.temporal.ChronoUnit.SECONDS
 import java.time.{Clock, LocalDateTime}
+import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
+
+import cats.data.OptionT
 import cats.implicits._
+import com.google.inject.Singleton
+
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
-import java.time.temporal.ChronoUnit.SECONDS
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, Standard}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, HasSucceeded}
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 @Singleton
 class ResponsibleIndividualVerificationReminderJob @Inject() (
@@ -58,7 +59,8 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val remindIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.reminderInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
-      remindersDue <- repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.INITIAL, remindIfCreatedBeforeNow)
+      remindersDue <-
+        repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.INITIAL, remindIfCreatedBeforeNow)
       _            <- Future.sequence(remindersDue.map(sendReminderEmailsAndUpdateStatus(_)))
     } yield RunningOfJobSuccessful
     result.recoverWith {
@@ -77,7 +79,7 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
       requesterEmail <- OptionT.fromOption[Future](getRequesterEmail(app))
       _              <- OptionT.liftF(emailConnector.sendVerifyResponsibleIndividualNotification(
                           ri.fullName.value,
-                          ri.emailAddress.value,
+                          ri.emailAddress,
                           app.name,
                           requesterName,
                           verificationDueForReminder.id.value
@@ -98,8 +100,8 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
     app.state.requestedByName
   }
 
-  private def getRequesterEmail(app: ApplicationResponse): Option[String] = {
-    app.state.requestedByEmailAddress
+  private def getRequesterEmail(app: ApplicationResponse): Option[LaxEmailAddress] = {
+    app.state.requestedByEmailAddress.map(LaxEmailAddress(_)) // This should be an email address for these operations but this is not provable
   }
 }
 

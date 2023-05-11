@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,18 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
+import java.time.{Clock, LocalDateTime, ZoneOffset}
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
+import cats.data.NonEmptyList
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationApprovalRequestDeclined
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApplicationApprovalRequestDeclined
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import cats.data.NonEmptyList
-
-import java.time.{Clock, LocalDateTime}
 
 @Singleton
 class SubmissionsService @Inject() (
@@ -66,7 +64,7 @@ class SubmissionsService @Inject() (
       for {
         groups           <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
         allQuestionnaires = groups.flatMap(_.links)
-        submissionId      = Submission.Id.random
+        submissionId      = SubmissionId.random
         context          <- contextService.deriveContext(applicationId)
         newInstance       = Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(LocalDateTime.now(clock), requestedBy)))
         submission        = Submission(submissionId, applicationId, LocalDateTime.now(clock), groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
@@ -84,7 +82,7 @@ class SubmissionsService @Inject() (
     fetchAndExtend(fetchLatest(applicationId))
   }
 
-  def fetch(id: Submission.Id): Future[Option[ExtendedSubmission]] = {
+  def fetch(id: SubmissionId): Future[Option[ExtendedSubmission]] = {
     fetchAndExtend(submissionsDAO.fetch(id))
   }
 
@@ -99,7 +97,7 @@ class SubmissionsService @Inject() (
       .value
   }
 
-  def recordAnswers(submissionId: Submission.Id, questionId: Question.Id, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {
+  def recordAnswers(submissionId: SubmissionId, questionId: Question.Id, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {
     (
       for {
         initialSubmission <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
@@ -119,26 +117,36 @@ class SubmissionsService @Inject() (
   def store(submission: Submission): Future[Submission] =
     submissionsDAO.update(submission)
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[Option[Submission]] = {
-    events match {
-      case NonEmptyList(e, Nil)  => applyEvent(e)
-      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
-    }
-  }
-
-  private def applyEvent(event: UpdateApplicationEvent): Future[Option[Submission]] = {
-    event match {
-      case evt : ApplicationApprovalRequestDeclined => declineApplicationApprovalRequest(evt)
-      case _ => Future.successful(None)
-    }
-  }
-
-  private def declineApplicationApprovalRequest(evt : ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
+  def declineApplicationApprovalRequest(evt: ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
     (
       for {
-        extSubmission            <- fromOptionF(fetch(evt.submissionId), "submission not found")
-        updatedSubmission        =  Submission.decline(evt.eventDateTime, evt.decliningUserEmail, evt.reasons)(extSubmission.submission)
-        savedSubmission          <- liftF(store(updatedSubmission))
+        extSubmission    <- fromOptionF(fetch(SubmissionId(evt.submissionId.value)), "submission not found")
+        updatedSubmission = Submission.decline(LocalDateTime.ofInstant(evt.eventDateTime, ZoneOffset.UTC), evt.decliningUserEmail.text, evt.reasons)(extSubmission.submission) // Is this correct use of email addresss or should we use decliningUserName ?
+        savedSubmission  <- liftF(store(updatedSubmission))
+      } yield savedSubmission
+    )
+      .toOption
+      .value
+  }
+
+  def declineSubmission(appId: ApplicationId, requestedByEmailAddress: String, reasons: String): Future[Option[Submission]] = {
+    (
+      for {
+        submission       <- fromOptionF(fetchLatest(appId), "submission not found")
+        updatedSubmission = Submission.decline(LocalDateTime.now(clock), requestedByEmailAddress, reasons)(submission)
+        savedSubmission  <- liftF(store(updatedSubmission))
+      } yield savedSubmission
+    )
+      .toOption
+      .value
+  }
+
+  def markSubmission(appId: ApplicationId, requestedByEmailAddress: String): Future[Option[Submission]] = {
+    (
+      for {
+        submission       <- fromOptionF(fetchLatest(appId), "submission not found")
+        updatedSubmission = Submission.automaticallyMark(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
+        savedSubmission  <- liftF(store(updatedSubmission))
       } yield savedSubmission
     )
       .toOption

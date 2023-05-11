@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.config
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
 import com.google.inject.AbstractModule
+
 import play.api.inject.ApplicationLifecycle
 import play.api.{Application, LoggerLike}
+
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 class SchedulerModule extends AbstractModule with ApplicationLogger {
 
@@ -40,6 +42,8 @@ class Scheduler @Inject() (
     upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
     bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
     resetLastAccessDateJob: ResetLastAccessDateJob,
+    productionCredentialsRequestExpiryWarningJob: ProductionCredentialsRequestExpiryWarningJob,
+    productionCredentialsRequestExpiredJob: ProductionCredentialsRequestExpiredJob,
     responsibleIndividualVerificationReminderJob: ResponsibleIndividualVerificationReminderJob,
     responsibleIndividualVerificationRemovalJob: ResponsibleIndividualVerificationRemovalJob,
     responsibleIndividualVerificationSetDefaultTypeJob: ResponsibleIndividualVerificationSetDefaultTypeJob,
@@ -53,6 +57,8 @@ class Scheduler @Inject() (
     Seq(
       upliftVerificationExpiryJob,
       resetLastAccessDateJob,
+      productionCredentialsRequestExpiryWarningJob,
+      productionCredentialsRequestExpiredJob,
       responsibleIndividualVerificationReminderJob,
       responsibleIndividualVerificationRemovalJob,
       responsibleIndividualUpdateVerificationRemovalJob,

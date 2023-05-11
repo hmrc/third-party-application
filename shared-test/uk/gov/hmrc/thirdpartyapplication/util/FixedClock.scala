@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
+import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
 
-trait FixedClock {
+trait FixedClockOld {
 
   val utc = ZoneOffset.UTC
 
-  final val clock = Clock.fixed(Instant.ofEpochMilli(1650878658447L), utc)
+  val clock = Clock.fixed(Instant.ofEpochMilli(1650878658447L), utc)
 
   def clockMinusHours(hours: Long) = {
     val newInstant = LocalDateTime
@@ -31,4 +32,10 @@ trait FixedClock {
       .toInstant(utc)
     Clock.fixed(newInstant, utc)
   }
+}
+
+object FixedClockOld extends FixedClockOld {
+  val now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS)
+
+  val instant = now.toInstant(ZoneOffset.UTC)
 }

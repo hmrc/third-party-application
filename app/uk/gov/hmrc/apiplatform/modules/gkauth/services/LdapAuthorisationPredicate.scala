@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.gkauth.services
 import uk.gov.hmrc.internalauth.client.{IAAction, Predicate, Resource, ResourceLocation, ResourceType}
 
 object LdapAuthorisationPredicate {
+
   val gatekeeperReadPermission = Predicate.Permission(
     Resource(
       ResourceType("api-gatekeeper-frontend"),

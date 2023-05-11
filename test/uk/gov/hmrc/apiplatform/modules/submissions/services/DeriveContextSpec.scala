@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,33 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPrevention
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
-import uk.gov.hmrc.thirdpartyapplication.domain.models.SellResellOrDistribute
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationState, SellResellOrDistribute}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.util.{HmrcSpec, UpliftRequestSamples}
 
 class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftRequestSamples {
 
   val fpContext1 = FraudPrevention.contexts.head
   val fpSubs     = List(fpContext1.asIdentifier, fpContext1.asIdentifier("2.0"), ApiContext.random.asIdentifier)
   val nonFpSubs  = List(ApiContext.random.asIdentifier, ApiContext.random.asIdentifier, ApiContext.random.asIdentifier)
+  val newUplift  = "No"
 
   "DeriveContext" when {
     "deriveFraudPrevention is called" should {
       "return 'Yes' when at least one subscription is a fraud prevention candidate" in {
 
-        DeriveContext.deriveFraudPrevention(fpSubs) shouldBe "Yes"
+        DeriveContext.deriveFraudPrevention(newUplift, fpSubs) shouldBe "Yes"
       }
       "return 'No' when not a single subscription is a fraud prevention candidate" in {
 
-        DeriveContext.deriveFraudPrevention(nonFpSubs) shouldBe "No"
+        DeriveContext.deriveFraudPrevention(newUplift, nonFpSubs) shouldBe "No"
+      }
+      "return 'No' when new uplift and at least one subscription is a fraud prevention candidate" in {
+
+        DeriveContext.deriveFraudPrevention("Yes", fpSubs) shouldBe "No"
       }
     }
   }
@@ -48,14 +51,23 @@ class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftReq
     "return the appropriate context when one subscription is a fraud prevention candidate" in {
       val aMock: ApplicationData = mock[ApplicationData]
       when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("Yes")))
+      when(aMock.state).thenReturn(ApplicationState.testing)
 
-      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "Yes", Keys.IN_HOUSE_SOFTWARE -> "No")
+      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "Yes", Keys.IN_HOUSE_SOFTWARE -> "No", Keys.NEW_TERMS_OF_USE_UPLIFT -> "No")
     }
     "return the appropriate context when no subscription is a fraud prevention candidate" in {
       val aMock: ApplicationData = mock[ApplicationData]
       when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("No")))
+      when(aMock.state).thenReturn(ApplicationState.testing)
 
-      DeriveContext.deriveFor(aMock, nonFpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "No", Keys.IN_HOUSE_SOFTWARE -> "Yes")
+      DeriveContext.deriveFor(aMock, nonFpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "No", Keys.IN_HOUSE_SOFTWARE -> "Yes", Keys.NEW_TERMS_OF_USE_UPLIFT -> "No")
+    }
+    "return the appropriate context when the application is already in production" in {
+      val aMock: ApplicationData = mock[ApplicationData]
+      when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("Yes")))
+      when(aMock.state).thenReturn(ApplicationState.production("requesterEmail", "requesterName"))
+
+      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "No", Keys.IN_HOUSE_SOFTWARE -> "No", Keys.NEW_TERMS_OF_USE_UPLIFT -> "Yes")
     }
   }
 }

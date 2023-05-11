@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import org.apache.commons.codec.binary.Base64
-import play.api.libs.json.{Format, OFormat}
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
-import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
-
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.time.temporal.ChronoUnit
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.{util => ju}
+
+import play.api.libs.json.{Format, OFormat}
+import play.shaded.oauth.org.apache.commons.codec.binary.Base64
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
+import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
 
 case class ApplicationState(
     name: State = TESTING,
@@ -47,6 +49,8 @@ case class ApplicationState(
   def isPendingRequesterVerification                                   = name == State.PENDING_REQUESTER_VERIFICATION
   def isInPreProductionOrProduction                                    = name == State.PRE_PRODUCTION || name == State.PRODUCTION
   def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification = name == State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION || name == State.PENDING_GATEKEEPER_APPROVAL
+  def isInProduction                                                   = name == State.PRODUCTION
+  def isDeleted                                                        = name == State.DELETED
 
   def toProduction(clock: Clock) = {
     requireState(requirement = State.PRE_PRODUCTION, transitionTo = PRODUCTION)
@@ -58,18 +62,17 @@ case class ApplicationState(
     copy(name = PRE_PRODUCTION, updatedOn = LocalDateTime.now(clock))
   }
 
-  def toTesting(clock: Clock) = copy(name = TESTING, requestedByEmailAddress = None, verificationCode = None, updatedOn = LocalDateTime.now(clock))
+  def toTesting(clock: Clock) = copy(name = TESTING, requestedByEmailAddress = None, requestedByName = None, verificationCode = None, updatedOn = LocalDateTime.now(clock))
 
-  def toPendingGatekeeperApproval(requestedByEmailAddress: String, clock: Clock) = {
+  def toPendingGatekeeperApproval(requestedByEmailAddress: String, requestedByName: String, clock: Clock) = {
     requireState(requirement = TESTING, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
 
-    copy(name = State.PENDING_GATEKEEPER_APPROVAL, updatedOn = LocalDateTime.now(clock), requestedByEmailAddress = Some(requestedByEmailAddress))
-  }
-
-  def toPendingGatekeeperApproval(clock: Clock) = {
-    requireState(requirement = PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
-
-    copy(name = State.PENDING_GATEKEEPER_APPROVAL, updatedOn = LocalDateTime.now(clock))
+    copy(
+      name = State.PENDING_GATEKEEPER_APPROVAL,
+      updatedOn = LocalDateTime.now(clock),
+      requestedByEmailAddress = Some(requestedByEmailAddress),
+      requestedByName = Some(requestedByName)
+    )
   }
 
   def toPendingResponsibleIndividualVerification(requestedByEmailAddress: String, requestedByName: String, clock: Clock) = {
@@ -94,6 +97,8 @@ case class ApplicationState(
     }
     copy(name = State.PENDING_REQUESTER_VERIFICATION, verificationCode = Some(verificationCode()), updatedOn = LocalDateTime.now(clock))
   }
+
+  def toDeleted(clock: Clock) = copy(name = DELETED, verificationCode = None, updatedOn = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS))
 }
 
 object ApplicationState {
@@ -117,4 +122,7 @@ object ApplicationState {
 
   def production(requestedByEmail: String, requestedByName: String) =
     ApplicationState(State.PRODUCTION, Some(requestedByEmail), Some(requestedByName))
+
+  def deleted(requestedByEmail: String, requestedByName: String) =
+    ApplicationState(State.DELETED, Some(requestedByEmail), Some(requestedByName))
 }

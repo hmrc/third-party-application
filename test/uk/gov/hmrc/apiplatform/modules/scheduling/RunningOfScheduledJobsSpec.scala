@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,26 @@
 
 package uk.gov.hmrc.apiplatform.modules.scheduling
 
-import akka.actor.{Cancellable, Scheduler}
-import org.scalatest.concurrent.Eventually
-import play.api.Application
-import play.api.inject.{bind, ApplicationLifecycle}
-
+import java.time.Clock
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+
+import akka.actor.{Cancellable, Scheduler}
 import org.mockito.scalatest.MockitoSugar
-import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.concurrent.Eventually
 import org.scalatest.matchers.should.Matchers
-
-import java.util.concurrent.{CountDownLatch, TimeUnit}
 import org.scalatest.time.{Minute, Span}
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.Helpers.{await, defaultAwaitTimeout}
-import uk.gov.hmrc.thirdpartyapplication.config.{ClockModule, SchedulerModule}
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-import java.time.Clock
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.inject.{ApplicationLifecycle, bind}
+import play.api.test.Helpers.{await, defaultAwaitTimeout}
+
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.config.{ClockModule, SchedulerModule}
 
 class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventually with MockitoSugar with GuiceOneAppPerTest with FixedClock {
 

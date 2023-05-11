@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +16,33 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+import java.time.format.DateTimeFormatter
+
 import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.ActualAnswersAsText
-import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{ActualAnswersAsText, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-
-import java.time.format.DateTimeFormatter
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
   trait Setup extends AuditServiceMockModule
       with ApplicationRepositoryMockModule
       with StateHistoryRepositoryMockModule
+      with TermsOfUseInvitationRepositoryMockModule
       with SubmissionsServiceMockModule
       with EmailConnectorMockModule
       with ApplicationTestData
-      with SubmissionsTestData
-      with FixedClock {
+      with SubmissionsTestData {
 
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
@@ -52,7 +51,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     val fmt = DateTimeFormatter.ISO_DATE_TIME
 
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val acceptanceDate        = LocalDateTime.now(clock)
+    val acceptanceDate        = now
 
     val acceptance = TermsOfUseAcceptance(
       responsibleIndividual,
@@ -65,8 +64,8 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),
-      TermsAndConditionsLocation.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List(acceptance)
     )
 
@@ -76,11 +75,27 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
+    val prodAppId = ApplicationId.random
+
+    val applicationProduction: ApplicationData = anApplicationData(
+      prodAppId,
+      productionState("bob@fastshow.com"),
+      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+    )
+
     val underTest =
-      new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, clock)
+      new GrantApprovalsService(
+        AuditServiceMock.aMock,
+        ApplicationRepoMock.aMock,
+        StateHistoryRepoMock.aMock,
+        TermsOfUseInvitationRepositoryMock.aMock,
+        SubmissionsServiceMock.aMock,
+        EmailConnectorMock.aMock,
+        clock
+      )
   }
 
-  "GrantApprovalsService" should {
+  "GrantApprovalsService.grant" should {
     "grant the specified application" in new Setup {
       import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 
@@ -148,6 +163,104 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     "fail to grant the specified application if the submission is not in the submitted state" in new Setup {
       val result = await(underTest.grant(applicationPendingGKApproval, answeredSubmission, gatekeeperUserName, None, None))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
+    }
+  }
+
+  "GrantApprovalsService.grantWithWarningsForTouUplift" should {
+    "grant the specified ToU application with warnings" in new Setup {
+
+      SubmissionsServiceMock.Store.thenReturn()
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn
+
+      val warning = "Here are some warnings"
+      val result  = await(underTest.grantWithWarningsForTouUplift(applicationProduction, warningsSubmission, gatekeeperUserName, warning))
+
+      result should matchPattern {
+        case GrantApprovalsService.Actioned(app) =>
+      }
+      SubmissionsServiceMock.Store.verifyCalledWith().status.isGrantedWithWarnings shouldBe true
+      SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
+        case Submission.Status.GrantedWithWarnings(_, gatekeeperUserName, warning, None) =>
+      }
+    }
+
+    "fail to grant the specified application if the application is in the incorrect state" in new Setup {
+      val warning = "Here are some warnings"
+      val result  = await(underTest.grantWithWarningsForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName, warning))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
+    }
+
+    "fail to grant the specified application if the submission is not in the warnings state" in new Setup {
+      val warning = "Here are some warnings"
+      val result  = await(underTest.grantWithWarningsForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, warning))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
+    }
+  }
+
+  "GrantApprovalsService.grantForTouUplift" should {
+    "grant the specified ToU application" in new Setup {
+
+      SubmissionsServiceMock.Store.thenReturn()
+      ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(applicationProduction)
+      EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn
+
+      val result = await(underTest.grantForTouUplift(applicationProduction, grantedWithWarningsSubmission, gatekeeperUserName))
+
+      result should matchPattern {
+        case GrantApprovalsService.Actioned(app) =>
+      }
+      SubmissionsServiceMock.Store.verifyCalledWith().status.isGranted shouldBe true
+      SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
+        case Submission.Status.Granted(_, gatekeeperUserName) =>
+      }
+    }
+
+    "fail to grant the specified application if the application is in the incorrect state" in new Setup {
+      val result = await(underTest.grantForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
+    }
+
+    "fail to grant the specified application if the submission is not in the granted with warnings state" in new Setup {
+      val result = await(underTest.grantForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
+    }
+  }
+
+  "GrantApprovalsService.declineForTouUplift" should {
+    "decline the specified ToU application" in new Setup {
+
+      SubmissionsServiceMock.Store.thenReturn()
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn
+
+      val warning = "Here are some warnings"
+      val result  = await(underTest.declineForTouUplift(applicationProduction, failSubmission, gatekeeperUserName, warning))
+
+      result should matchPattern {
+        case GrantApprovalsService.Actioned(app) =>
+      }
+      SubmissionsServiceMock.Store.verifyCalledWith().status.isAnswering shouldBe true
+      SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
+        case Submission.Status.Answering(_, gatekeeperUserName) =>
+      }
+    }
+
+    "fail to decline the specified application if the application is in the incorrect state" in new Setup {
+      val warning = "Here are some warnings"
+      val result  = await(underTest.declineForTouUplift(anApplicationData(applicationId, testingState()), failSubmission, gatekeeperUserName, warning))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
+    }
+
+    "fail to decline the specified application if the submission is not in the fails state" in new Setup {
+      val warning = "Here are some warnings"
+      val result  = await(underTest.declineForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
     }

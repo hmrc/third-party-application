@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,26 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-
 import java.time.{Clock, LocalDateTime}
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
+
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
 @Singleton
 class GatekeeperService @Inject() (
@@ -85,7 +87,7 @@ class GatekeeperService @Inject() (
   def fetchAppStateHistories(): Future[Seq[ApplicationStateHistory]] = {
     for {
       appsWithHistory <- applicationRepository.fetchProdAppStateHistories()
-      history = appsWithHistory.map(a => ApplicationStateHistory(a.id, a.name, a.version, a.states.map(s => ApplicationStateHistoryItem(s.state, s.changedAt))))
+      history          = appsWithHistory.map(a => ApplicationStateHistory(a.id, a.name, a.version, a.states.map(s => ApplicationStateHistoryItem(s.state, s.changedAt))))
     } yield history
   }
 
@@ -95,17 +97,17 @@ class GatekeeperService @Inject() (
     def sendEmails(app: ApplicationData) = {
       val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
       val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
-      val recipients       = app.admins.map(_.emailAddress).filterNot(email => email.equals(requesterEmail))
+      val recipients       = app.admins.map(_.emailAddress).filterNot(email => email.equals(LaxEmailAddress(requesterEmail)))
 
       if (recipients.nonEmpty) emailConnector.sendApplicationApprovedNotification(app.name, recipients)
 
-      emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(requesterEmail))
+      emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(LaxEmailAddress(requesterEmail)))
     }
 
     for {
       app    <- fetchApp(applicationId)
       newApp <- applicationRepository.save(approve(app))
-      _      <- insertStateHistory(newApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL), gatekeeperUserId, GATEKEEPER, applicationRepository.save)
+      _      <- insertStateHistory(newApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL), Actors.GatekeeperUser(gatekeeperUserId), applicationRepository.save)
       _       = logger.info(s"UPLIFT04: Approved uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
                   s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} gatekeeperUserId:$gatekeeperUserId")
       _       = auditService.auditGatekeeperAction(gatekeeperUserId, newApp, ApplicationUpliftApproved)
@@ -126,7 +128,7 @@ class GatekeeperService @Inject() (
     for {
       app    <- fetchApp(applicationId)
       newApp <- applicationRepository.save(reject(app))
-      _      <- insertStateHistory(app, TESTING, Some(PENDING_GATEKEEPER_APPROVAL), request.gatekeeperUserId, GATEKEEPER, applicationRepository.save, Some(request.reason))
+      _      <- insertStateHistory(app, TESTING, Some(PENDING_GATEKEEPER_APPROVAL), Actors.GatekeeperUser(request.gatekeeperUserId), applicationRepository.save, Some(request.reason))
       _       = logger.info(s"UPLIFT03: Rejected uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
                   s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} reason:${request.reason}" +
                   s" gatekeeperUserId:${request.gatekeeperUserId}")
@@ -144,7 +146,7 @@ class GatekeeperService @Inject() (
     def sendEmails(app: ApplicationData) = {
       val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
       val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
-      emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(requesterEmail))
+      emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(LaxEmailAddress(requesterEmail)))
     }
 
     for {
@@ -158,7 +160,7 @@ class GatekeeperService @Inject() (
 
   def deleteApplication(applicationId: ApplicationId, request: DeleteApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def audit(app: ApplicationData): Future[AuditResult] = {
-      auditService.auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress))
+      auditService.auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress.text))
     }
     for {
       _ <- applicationService.deleteApplication(applicationId, Some(request), audit)
@@ -188,6 +190,12 @@ class GatekeeperService @Inject() (
     } yield Unblocked
   }
 
+  def fetchAllWithSubscriptions(): Future[List[ApplicationWithSubscriptionsResponse]] = {
+    applicationRepository.getAppsWithSubscriptions map {
+      _.map(application => ApplicationWithSubscriptionsResponse(application))
+    }
+  }
+
   private def fetchApp(applicationId: ApplicationId): Future[ApplicationData] = {
     lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
     applicationRepository.fetch(applicationId).flatMap {
@@ -200,12 +208,11 @@ class GatekeeperService @Inject() (
       snapshotApp: ApplicationData,
       newState: State,
       oldState: Option[State],
-      requestedBy: String,
-      actorType: ActorType.ActorType,
+      actor: Actor,
       rollback: ApplicationData => Any,
       notes: Option[String] = None
     ): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, OldActor(requestedBy, actorType), oldState, notes, LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, notes, LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)

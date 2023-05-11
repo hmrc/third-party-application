@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,84 +16,152 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.data.NonEmptyChain
-import cats.data.Validated.Invalid
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
+import uk.gov.hmrc.http.HeaderCarrier
 
-  trait Setup {
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationTermsAndConditionsLocation
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+
+class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec extends CommandHandlerBaseSpec {
+
+  trait Setup extends ApplicationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val applicationId         = ApplicationId.random
-    val devEmail              = "dev@example.com"
-    val adminEmail            = "admin@example.com"
-    val oldLocation           = TermsAndConditionsLocation.InDesktopSoftware
-    val newLocation           = TermsAndConditionsLocation.Url("http://example.com")
-    val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
+    val oldUrl      = "http://example.com/old"
+    val newUrl      = "http://example.com/new"
+    val newLocation = TermsAndConditionsLocations.Url(newUrl)
 
-    val testImportantSubmissionData = ImportantSubmissionData(
-      Some("organisationUrl.com"),
-      responsibleIndividual,
-      Set(ServerLocation.InUK),
-      oldLocation,
-      PrivacyPolicyLocation.InDesktopSoftware,
-      List.empty
-    )
-
-    val app = anApplicationData(applicationId).copy(
+    val newJourneyApp = anApplicationData(applicationId).copy(
       collaborators = Set(
-        Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
-        Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
+        developerCollaborator,
+        otherAdminCollaborator
       ),
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
-    val userId    = idsByEmail(adminEmail)
-    val timestamp = LocalDateTime.now
-    val update    = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
-    val actor     = CollaboratorActor(adminEmail)
 
-    val underTest = new ChangeProductionApplicationTermsAndConditionsLocationCommandHandler()
+    val oldJourneyApp = anApplicationData(applicationId).copy(
+      collaborators = Set(
+        developerCollaborator,
+        otherAdminCollaborator
+      ),
+      access = Standard(termsAndConditionsUrl = Some(oldUrl))
+    )
+
+    val userId    = idOf(anAdminEmail)
+    val timestamp = FixedClock.instant
+    val actor     = otherAdminAsActor
+
+    val update = ChangeProductionApplicationTermsAndConditionsLocation(userId, now, newLocation)
+
+    val underTest = new ChangeProductionApplicationTermsAndConditionsLocationCommandHandler(ApplicationRepoMock.aMock)
+
+    def checkSuccessResult(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
+      val testThis = await(fn.value).right.value
+
+      inside(testThis) { case (app, events) =>
+        events should have size 1
+        val event = events.head
+
+        inside(event) {
+          case ProductionAppTermsConditionsLocationChanged(_, appId, eventDateTime, actor, oldLocation, eNewLocation) =>
+            appId shouldBe applicationId
+            actor shouldBe expectedActor
+            eventDateTime shouldBe timestamp
+            oldLocation shouldBe termsAndConditionsLocation
+            eNewLocation shouldBe newLocation
+        }
+      }
+    }
+
+    def checkLegacySuccessResult(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
+      val testThis = await(fn.value).right.value
+
+      inside(testThis) { case (app, events) =>
+        events should have size 1
+        val event = events.head
+
+        inside(event) {
+          case ProductionLegacyAppTermsConditionsLocationChanged(_, appId, eventDateTime, actor, eOldUrl, eNewUrl) =>
+            appId shouldBe applicationId
+            actor shouldBe expectedActor
+            eventDateTime shouldBe timestamp
+            eOldUrl shouldBe oldUrl
+            eNewUrl shouldBe newUrl
+        }
+      }
+    }
   }
 
-  "process" should {
+  "process with a new journey app" should {
+
     "create correct events for a valid request" in new Setup {
-      val result = await(underTest.process(app, update))
+      ApplicationRepoMock.UpdateTermsAndConditionsPolicyLocation.succeeds()
 
-      result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[ProductionAppTermsConditionsLocationChanged]
-      event.applicationId shouldBe applicationId
-      event.actor shouldBe actor
-      event.eventDateTime shouldBe timestamp
-      event.oldLocation shouldBe oldLocation
-      event.newLocation shouldBe newLocation
+      checkSuccessResult(actor)(underTest.process(newJourneyApp, update))
     }
+
     "return an error if instigator is not a collaborator on the application" in new Setup {
-      val result = await(underTest.process(app, update.copy(instigator = UserId.random)))
-
-      result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))
+      checkFailsWith("User must be an ADMIN") {
+        underTest.process(newJourneyApp, update.copy(instigator = UserId.random))
+      }
     }
+
     "return an error if instigator is not an admin on the application" in new Setup {
-      val result = await(underTest.process(app, update.copy(instigator = idsByEmail(devEmail))))
-
-      result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))
+      checkFailsWith("User must be an ADMIN") {
+        underTest.process(newJourneyApp, update.copy(instigator = idOf(devEmail)))
+      }
     }
+
     "return an error if application is still in the process of being approved" in new Setup {
-      val result = await(underTest.process(app.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update))
-
-      result shouldBe Invalid(NonEmptyChain.one("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION"))
+      checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
+        underTest.process(newJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update)
+      }
     }
-    "return an error if application is non-standard" in new Setup {
-      val result = await(underTest.process(app.copy(access = Privileged()), update))
 
-      result shouldBe Invalid(NonEmptyChain.one("App must have a STANDARD access type"))
+    "return an error if application is non-standard" in new Setup {
+      checkFailsWith("App must have a STANDARD access type") {
+        underTest.process(newJourneyApp.copy(access = Privileged()), update)
+      }
+    }
+  }
+
+  "process with a legacy journey app" should {
+    "create correct events for a valid request" in new Setup {
+      ApplicationRepoMock.UpdateLegacyTermsAndConditionsPolicyLocation.succeeds()
+
+      checkLegacySuccessResult(actor)(underTest.process(oldJourneyApp, update))
+    }
+
+    "return an error if instigator is not a collaborator on the application" in new Setup {
+      checkFailsWith("User must be an ADMIN") {
+        underTest.process(oldJourneyApp, update.copy(instigator = UserId.random))
+      }
+    }
+
+    "return an error if instigator is not an admin on the application" in new Setup {
+      checkFailsWith("User must be an ADMIN") {
+        underTest.process(oldJourneyApp, update.copy(instigator = idOf(devEmail)))
+      }
+    }
+
+    "return an error if application is still in the process of being approved" in new Setup {
+      checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
+        underTest.process(oldJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update)
+      }
+    }
+
+    "return an error if application is non-standard" in new Setup {
+      checkFailsWith("App must have a STANDARD access type") {
+        underTest.process(oldJourneyApp.copy(access = Privileged()), update)
+      }
     }
   }
 }

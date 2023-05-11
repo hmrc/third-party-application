@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
+import java.time.LocalDateTime
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, ClientSecret, Collaborator}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationWithSubscriptions}
 
 trait CreateApplicationRequest {
   def name: String
@@ -34,13 +36,13 @@ trait CreateApplicationRequest {
   def accessType: AccessType.AccessType
 
   protected def lowerCaseEmails(in: Set[Collaborator]): Set[Collaborator] = {
-    in.map(c => c.copy(emailAddress = c.emailAddress.toLowerCase))
+    in.map(c => c.normalise)
   }
 
   def validate(in: CreateApplicationRequest): Unit = {
     require(in.name.nonEmpty, "name is required")
-    require(in.collaborators.exists(_.role == Role.ADMINISTRATOR), "at least one ADMINISTRATOR collaborator is required")
-    require(in.collaborators.size == collaborators.map(_.emailAddress.toLowerCase).size, "duplicate email in collaborator")
+    require(in.collaborators.exists(_.isAdministrator), "at least one ADMINISTRATOR collaborator is required")
+    require(in.collaborators.size == collaborators.map(_.normalise).size, "duplicate email in collaborator")
   }
 }
 
@@ -286,7 +288,7 @@ object ApplicationTokenResponse {
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_) }
     )
 
-  def apply(token: Token, newClientSecretId: String, newClientSecret: String): ApplicationTokenResponse =
+  def apply(token: Token, newClientSecretId: ClientSecret.Id, newClientSecret: String): ApplicationTokenResponse =
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
@@ -294,14 +296,15 @@ object ApplicationTokenResponse {
     )
 }
 
-case class ClientSecretResponse(id: String, name: String, secret: Option[String], createdOn: LocalDateTime, lastAccess: Option[LocalDateTime])
+// TODO - remove when deprecated addClientSecret endpoint is removed - use the one from domain lib instead.
+case class ClientSecretResponse(id: ClientSecret.Id, name: String, secret: Option[String], createdOn: LocalDateTime, lastAccess: Option[LocalDateTime])
 
 object ClientSecretResponse {
 
-  def apply(clientSecret: ClientSecret): ClientSecretResponse =
+  def apply(clientSecret: ClientSecretData): ClientSecretResponse =
     ClientSecretResponse(clientSecret.id, clientSecret.name, None, clientSecret.createdOn, clientSecret.lastAccess)
 
-  def apply(clientSecret: ClientSecret, newClientSecretId: String, newClientSecret: String): ClientSecretResponse =
+  def apply(clientSecret: ClientSecretData, newClientSecretId: ClientSecret.Id, newClientSecret: String): ClientSecretResponse =
     ClientSecretResponse(
       clientSecret.id,
       clientSecret.name,
@@ -327,4 +330,16 @@ object ApplicationWithUpliftRequest {
     ApplicationWithUpliftRequest(app.id, app.name, upliftRequest.changedAt, app.state.name)
   }
 
+}
+
+case class ApplicationWithSubscriptionsResponse(id: ApplicationId, name: String, lastAccess: Option[LocalDateTime], apiIdentifiers: Set[ApiIdentifier])
+
+object ApplicationWithSubscriptionsResponse {
+  import play.api.libs.json.{Format, Json}
+
+  implicit val format: Format[ApplicationWithSubscriptionsResponse] = Json.format[ApplicationWithSubscriptionsResponse]
+
+  def apply(application: ApplicationWithSubscriptions): ApplicationWithSubscriptionsResponse = {
+    ApplicationWithSubscriptionsResponse(application.id, application.name, application.lastAccess, application.apiIdentifiers)
+  }
 }

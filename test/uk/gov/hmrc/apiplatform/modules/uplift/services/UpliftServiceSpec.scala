@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,25 @@
 
 package uk.gov.hmrc.apiplatform.modules.uplift.services
 
-import uk.gov.hmrc.thirdpartyapplication.mocks._
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-
-import scala.concurrent.Future.successful
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.thirdpartyapplication.models._
+import scala.concurrent.Future.successful
+
 import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories.UpliftLinksRepositoryMockModule
-
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks._
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 class UpliftServiceSpec extends AsyncHmrcSpec {
 
@@ -47,8 +46,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       with UpliftNamingServiceMockModule
       with UpliftLinksRepositoryMockModule
       with ApiGatewayStoreMockModule
-      with ApplicationTestData
-      with FixedClock {
+      with ApplicationTestData {
 
     val applicationId: ApplicationId = ApplicationId.random
 
@@ -61,8 +59,8 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
   }
 
   "requestUplift" should {
-    val requestedName     = "application name"
-    val upliftRequestedBy = "email@example.com"
+    val requestedName          = "application name"
+    val upliftRequestedByEmail = "email@example.com".toLaxEmail
 
     "update the state of the application" in new Setup {
       AuditServiceMock.Audit.thenReturnSuccess()
@@ -70,14 +68,14 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
 
       val application: ApplicationData         = anApplicationData(applicationId, testingState())
       val expectedApplication: ApplicationData =
-        application.copy(state = pendingGatekeeperApprovalState(upliftRequestedBy), name = requestedName, normalisedName = requestedName.toLowerCase)
+        application.copy(state = pendingGatekeeperApprovalState(upliftRequestedByEmail.text), name = requestedName, normalisedName = requestedName.toLowerCase)
 
       val expectedStateHistory = StateHistory(
         applicationId = expectedApplication.id,
         state = PENDING_GATEKEEPER_APPROVAL,
-        actor = OldActor(upliftRequestedBy, COLLABORATOR),
+        actor = Actors.AppCollaborator(upliftRequestedByEmail),
         previousState = Some(TESTING),
-        changedAt = LocalDateTime.now(clock)
+        changedAt = now
       )
 
       ApplicationRepoMock.Fetch.thenReturn(application)
@@ -86,7 +84,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
       StateHistoryRepoMock.Insert.thenAnswer()
 
-      val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+      val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
 
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplication)
       StateHistoryRepoMock.Insert.verifyCalledWith(expectedStateHistory)
@@ -102,7 +100,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
 
       intercept[RuntimeException] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
       }
 
       ApplicationRepoMock.Save.verifyCalledWith(application)
@@ -117,7 +115,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
       StateHistoryRepoMock.Insert.thenAnswer()
 
-      await(underTest.requestUplift(applicationId, application.name, upliftRequestedBy))
+      await(underTest.requestUplift(applicationId, application.name, upliftRequestedByEmail))
       AuditServiceMock.Audit.verifyCalledWith(ApplicationUpliftRequested, Map("applicationId" -> application.id.value.toString), hc)
     }
 
@@ -130,7 +128,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
       StateHistoryRepoMock.Insert.thenAnswer()
 
-      await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+      await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
 
       val expectedAuditDetails: Map[String, String] = Map("applicationId" -> application.id.value.toString, "newApplicationName" -> requestedName)
       AuditServiceMock.Audit.verifyCalledWith(ApplicationUpliftRequested, expectedAuditDetails, hc)
@@ -142,7 +140,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Fetch.thenReturn(application)
 
       intercept[InvalidStateTransition] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
       }
       ApplicationRepoMock.FetchByName.veryNeverCalled()
     }
@@ -158,7 +156,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
       intercept[ApplicationAlreadyExists] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
       }
     }
 
@@ -166,13 +164,13 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Fetch.thenFail(new RuntimeException("Expected test failure"))
 
       intercept[RuntimeException] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
       }
     }
   }
 
   "verifyUplift" should {
-    val upliftRequestedBy = "email@example.com"
+    val upliftRequestedBy = "email@example.com".toLaxEmail
 
     "update the state of the application and create app in the API gateway when application is in pendingRequesterVerification state" in new Setup {
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
@@ -180,12 +178,12 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
 
       val expectedStateHistory =
-        StateHistory(applicationId, State.PRE_PRODUCTION, OldActor(upliftRequestedBy, COLLABORATOR), Some(PENDING_REQUESTER_VERIFICATION), changedAt = LocalDateTime.now(clock))
-      val upliftRequest        = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, OldActor(upliftRequestedBy, COLLABORATOR), Some(TESTING), changedAt = LocalDateTime.now(clock))
+        StateHistory(applicationId, State.PRE_PRODUCTION, Actors.AppCollaborator(upliftRequestedBy), Some(PENDING_REQUESTER_VERIFICATION), changedAt = now)
+      val upliftRequest        = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator(upliftRequestedBy), Some(TESTING), changedAt = now)
 
-      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
+      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy.text))
 
-      val expectedApplication: ApplicationData = application.copy(state = preProductionState(upliftRequestedBy))
+      val expectedApplication: ApplicationData = application.copy(state = preProductionState(upliftRequestedBy.text))
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
       StateHistoryRepoMock.FetchLatestByStateForApplication.thenReturnWhen(applicationId, PENDING_GATEKEEPER_APPROVAL)(upliftRequest)
@@ -202,7 +200,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
 
     "fail if the application save fails" in new Setup {
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
-      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
+      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy.text))
       val saveException                = new RuntimeException("application failed to save")
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
@@ -215,7 +213,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
 
     "rollback if saving the state history fails" in new Setup {
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
-      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
+      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy.text))
       ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
       StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))
@@ -228,7 +226,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
     }
 
     "not update the state but result in success of the application when application is already in production state" in new Setup {
-      val application: ApplicationData = anApplicationData(applicationId, productionState(upliftRequestedBy))
+      val application: ApplicationData = anApplicationData(applicationId, productionState(upliftRequestedBy.text))
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
 
@@ -248,7 +246,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail when application is in pendingGatekeeperApproval state" in new Setup {
-      val application: ApplicationData = anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy))
+      val application: ApplicationData = anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy.text))
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
 
@@ -258,7 +256,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail when application is not found by verification code" in new Setup {
-      anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy))
+      anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy.text))
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnNoneWhen(generatedVerificationCode)
 

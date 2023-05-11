@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,31 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import com.github.t3hnar.bcrypt._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import scala.concurrent.ExecutionContext.Implicits.global
 
-import java.time.LocalDateTime
+import com.github.t3hnar.bcrypt._
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientSecretsHashingConfig}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMockModule with FixedClock {
 
-  val fastWorkFactor = 4
+  val myWorkFactor   = 5
+  val config: Config = ConfigFactory.empty().withValue("application-domain-lib.client-secrets-hashing.work-factor", ConfigValueFactory.fromAnyRef(myWorkFactor))
+  val hashConfig     = ClientSecretsHashingConfig(config)
 
-  val underTest = new ClientSecretService(ApplicationRepoMock.aMock, ClientSecretServiceConfig(fastWorkFactor))
-
-  "generateClientSecret" should {
-    "create new ClientSecret object using UUID for secret value" in {
-      val generatedClientSecret: (ClientSecret, String) = underTest.generateClientSecret()
-
-      val clientSecret      = generatedClientSecret._1
-      val clientSecretValue = generatedClientSecret._2
-
-      clientSecret.id.isEmpty should be(false)
-      clientSecret.name should be(clientSecretValue takeRight 4)
-
-      val hashedSecretCheck = clientSecretValue.isBcryptedSafe(clientSecret.hashedSecret)
-      hashedSecretCheck.isSuccess should be(true)
-      hashedSecretCheck.get should be(true)
-    }
-  }
+  val underTest = new ClientSecretService(hashConfig, ApplicationRepoMock.aMock, FixedClock.clock)
 
   "clientSecretIsValid" should {
     val applicationId = ApplicationId.random
-    val fooSecret     = ClientSecret(name = "secret-1", createdOn = LocalDateTime.now(clock), hashedSecret = "foo".bcrypt(fastWorkFactor))
-    val barSecret     = ClientSecret(name = "secret-2", createdOn = LocalDateTime.now(clock), hashedSecret = "bar".bcrypt(fastWorkFactor))
-    val bazSecret     = ClientSecret(name = "secret-3", createdOn = LocalDateTime.now(clock), hashedSecret = "baz".bcrypt(fastWorkFactor))
+    val fooSecret     = ClientSecretData(name = "secret-1", createdOn = now, hashedSecret = "foo".bcrypt(myWorkFactor))
+    val barSecret     = ClientSecretData(name = "secret-2", createdOn = now, hashedSecret = "bar".bcrypt(myWorkFactor))
+    val bazSecret     = ClientSecretData(name = "secret-3", createdOn = now, hashedSecret = "baz".bcrypt(myWorkFactor))
 
     "return the ClientSecret that matches the provided secret value" in {
       val matchingSecret = await(underTest.clientSecretIsValid(applicationId, "bar", Seq(fooSecret, barSecret, bazSecret)))
@@ -61,7 +50,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
     }
 
     "return the ClientSecret that matches the provided secret value and rehash it if the work factor has changed" in {
-      val secretWithDifferentWorkFactor = ClientSecret(name = "secret-4", createdOn = LocalDateTime.now(clock), hashedSecret = "different-work-factor".bcrypt(fastWorkFactor + 1))
+      val secretWithDifferentWorkFactor = ClientSecretData(name = "secret-4", createdOn = now, hashedSecret = "different-work-factor".bcrypt(myWorkFactor - 1))
 
       ApplicationRepoMock.UpdateClientSecretHash.thenReturn(applicationId, secretWithDifferentWorkFactor.id)(mock[ApplicationData])
 
@@ -78,13 +67,12 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
       matchingSecret should be(None)
       ApplicationRepoMock.verifyZeroInteractions()
     }
-
   }
 
   "lastUsedOrdering" should {
-    val mostRecent = ClientSecret(name = "secret-1", hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = Some(LocalDateTime.now(clock)))
-    val middle     = ClientSecret(name = "secret-2", hashedSecret = "bar".bcrypt(fastWorkFactor), lastAccess = Some(LocalDateTime.now(clock) minusDays (1)))
-    val agesAgo    = ClientSecret(name = "secret-3", hashedSecret = "baz".bcrypt(fastWorkFactor), lastAccess = Some(LocalDateTime.now(clock).minusDays(10)))
+    val mostRecent = ClientSecretData(name = "secret-1", hashedSecret = "foo", lastAccess = Some(now))
+    val middle     = ClientSecretData(name = "secret-2", hashedSecret = "bar", lastAccess = Some(now.minusDays(1)))
+    val agesAgo    = ClientSecretData(name = "secret-3", hashedSecret = "baz", lastAccess = Some(now.minusDays(10)))
 
     "sort client secrets by most recently used" in {
       val sortedList = List(middle, agesAgo, mostRecent).sortWith(underTest.lastUsedOrdering)
@@ -95,7 +83,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
     }
 
     "sort client secrets with no last used date to the end" in {
-      val noLastUsedDate = ClientSecret(name = "secret-1", createdOn = LocalDateTime.now(clock), hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = None)
+      val noLastUsedDate = ClientSecretData(name = "secret-1", createdOn = now, hashedSecret = "foo", lastAccess = None)
 
       val sortedList = List(noLastUsedDate, middle, agesAgo, mostRecent).sortWith(underTest.lastUsedOrdering)
 
@@ -108,13 +96,19 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
 
   "requiresRehash" should {
     "return true if work factor used on existing hash is different to current configuration" in {
-      val hashedSecret = "foo".bcrypt(fastWorkFactor + 1)
+      val hashedSecret = "foo".bcrypt(myWorkFactor - 1)
 
       underTest.requiresRehash(hashedSecret) should be(true)
     }
 
     "return false if work factor used on existing hash matches current configuration" in {
-      val hashedSecret = underTest.hashSecret("foo")
+      val hashedSecret = underTest.timedHashSecret("foo")
+
+      underTest.requiresRehash(hashedSecret) should be(false)
+    }
+
+    "return false if work factor used on existing hash is better than current configuration" in {
+      val hashedSecret = "foo".bcrypt(myWorkFactor + 1)
 
       underTest.requiresRehash(hashedSecret) should be(false)
     }
@@ -122,10 +116,10 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
 
   "workFactorOfHash" should {
     "correctly identify the work factor used to hash a secret" in {
-      val workFactor   = 6
-      val hashedSecret = "foo".bcrypt(workFactor)
+      val expectedWorkFactor = 5
+      val hashedSecret       = underTest.timedHashSecret("foo")
 
-      underTest.workFactorOfHash(hashedSecret) should be(workFactor)
+      underTest.workFactorOfHash(hashedSecret) should be(expectedWorkFactor)
     }
   }
 }

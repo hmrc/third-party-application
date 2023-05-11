@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
 import scala.collection._
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ApiGatewayStore {
+import akka.actor.ActorSystem
+
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
+trait ApiGatewayStore extends EitherTHelper[String] {
 
   /*
    * API-3862: As a legacy of out use of WSO2, we had an identifer for applications named 'wso2ApplicationName'. This is the name of the property in the
@@ -41,7 +44,6 @@ trait ApiGatewayStore {
   def deleteApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded]
 
   def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded]
-
 }
 
 @Singleton
@@ -58,11 +60,10 @@ class AwsApiGatewayStore @Inject() (awsApiGatewayConnector: AwsApiGatewayConnect
 
   override def deleteApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
     awsApiGatewayConnector.deleteApplication(wso2ApplicationName)(hc)
-
 }
 
 @Singleton
-class StubApiGatewayStore @Inject() () extends ApiGatewayStore {
+class StubApiGatewayStore @Inject() (implicit val ec: ExecutionContext) extends ApiGatewayStore {
 
   lazy val stubApplications: concurrent.Map[String, mutable.ListBuffer[ApiIdentifier]] = concurrent.TrieMap()
 

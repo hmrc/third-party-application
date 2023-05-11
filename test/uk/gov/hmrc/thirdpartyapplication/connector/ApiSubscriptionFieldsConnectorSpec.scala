@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import com.github.tomakehurst.wiremock.client.WireMock._
+
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
-import com.github.tomakehurst.wiremock.client.WireMock._
-import scala.concurrent.ExecutionContext.Implicits.global
-import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.http.Status._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 

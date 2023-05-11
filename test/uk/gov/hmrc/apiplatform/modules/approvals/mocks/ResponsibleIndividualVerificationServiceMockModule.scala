@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,23 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.mocks
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
-import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-
-import java.time.{Clock, LocalDateTime}
 import scala.concurrent.Future
 
-trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
+  ResponsibleIndividualToUVerification,
+  ResponsibleIndividualTouUpliftVerification,
+  ResponsibleIndividualVerificationId
+}
+import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
+trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with FixedClock {
 
   protected trait BaseResponsibleIndividualVerificationServiceMock {
     def aMock: ResponsibleIndividualVerificationService
@@ -36,10 +42,22 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
     object CreateNewVerification {
 
       def thenCreateNewVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
-        when(aMock.createNewToUVerification(*[ApplicationData], *[Submission.Id], *)).thenAnswer((appData: ApplicationData, submissionId: Submission.Id, index: Int) =>
+        when(aMock.createNewToUVerification(*[ApplicationData], *[SubmissionId], *)).thenAnswer((appData: ApplicationData, submissionId: SubmissionId, index: Int) =>
           Future.successful(
-            ResponsibleIndividualToUVerification(verificationId, appData.id, submissionId, index, appData.name, LocalDateTime.now(Clock.systemUTC()))
+            ResponsibleIndividualToUVerification(verificationId, appData.id, submissionId, index, appData.name, now)
           )
+        )
+      }
+    }
+
+    object CreateNewTouUpliftVerification {
+
+      def thenCreateNewTouUpliftVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
+        when(aMock.createNewTouUpliftVerification(*[ApplicationData], *[SubmissionId], *, *, *[LaxEmailAddress])).thenAnswer(
+          (appData: ApplicationData, submissionId: SubmissionId, index: Int, requesterName: String, requesterEmail: LaxEmailAddress) =>
+            Future.successful(
+              ResponsibleIndividualTouUpliftVerification(verificationId, appData.id, submissionId, index, appData.name, now, requesterName, requesterEmail)
+            )
         )
       }
     }
@@ -52,10 +70,10 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
             ResponsibleIndividualToUVerification(
               ResponsibleIndividualVerificationId(code),
               ApplicationId.random,
-              Submission.Id.random,
+              SubmissionId.random,
               0,
               "App name",
-              LocalDateTime.now(Clock.systemUTC())
+              now
             )
           ))
         )

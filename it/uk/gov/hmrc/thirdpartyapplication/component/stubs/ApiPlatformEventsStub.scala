@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,86 +24,63 @@ object ApiPlatformEventsStub extends Stub {
 
   override val stub: MockHost = MockHost(16700)
 
-  private val clientSecretAddedEventURL: String   = "/application-events/clientSecretAdded"
-  private val clientSecretRemovedEventURL: String = "/application-events/clientSecretRemoved"
-  private val apiSubscribedEventURL: String       = "/application-events/apiSubscribed"
-  private val apiUnsubscribedEventURL: String     = "/application-events/apiUnsubscribed"
-  private val teamMemberAddedEventURL: String     = "/application-events/teamMemberAdded"
-  private val teamMemberRemovedEventURL: String   = "/application-events/teamMemberRemoved"
+  private val applicationEventsURL: String = "/application-event"
+
+  def willReceiveEventType(eventType: String): Unit = {
+    stub.mock.register(
+      post(urlEqualTo(applicationEventsURL))
+        .withRequestBody(containing(s""""eventType":"$eventType""""))
+        .willReturn(
+          aResponse()
+            .withStatus(CREATED)
+        )
+    )
+  }
 
   def verifyClientSecretAddedEventSent(): Unit = {
-    verifyStubCalled(clientSecretAddedEventURL)
+    verifyStubCalledForEvent(applicationEventsURL, "CLIENT_SECRET_ADDED_V2")
   }
 
   def verifyClientSecretRemovedEventSent(): Unit = {
-    verifyStubCalled(clientSecretRemovedEventURL)
-  }
-
-  def verifyTeamMemberAddedEventSent(): Unit = {
-    verifyStubCalled(teamMemberAddedEventURL)
-  }
-
-  def verifyTeamMemberRemovedEventSent(): Unit = {
-    verifyStubCalled(teamMemberRemovedEventURL)
+    verifyStubCalledForEvent(applicationEventsURL, "CLIENT_SECRET_REMOVED_V2")
   }
 
   def verifyApiSubscribedEventSent(): Unit = {
-    verifyStubCalled(apiSubscribedEventURL)
+    verifyStubCalledForEvent(applicationEventsURL, "API_SUBSCRIBED_V2")
   }
 
   def verifyApiUnsubscribedEventSent(): Unit = {
-    verifyStubCalled(apiUnsubscribedEventURL)
+    verifyStubCalledForEvent(applicationEventsURL, "API_UNSUBSCRIBED_V2")
   }
 
-  private def verifyStubCalled(urlString: String) = {
-    stub.mock.verifyThat(postRequestedFor(urlEqualTo(urlString)))
+  private def verifyStubCalledForEvent(urlString: String, eventType: String) = {
+    stub.mock.verifyThat(postRequestedFor(urlEqualTo(urlString)).withRequestBody(containing(s""""eventType":"$eventType"""")))
+  }
+
+  def verifyApplicationEventPostBody(body: String) = {
+    stubFor(
+      post(urlEqualTo(applicationEventsURL))
+        .withRequestBody(equalToJson(body))
+        .willReturn(
+          aResponse()
+            .withStatus(CREATED)
+        )
+    )
   }
 
   def willReceiveClientSecretAddedEvent() = {
-    stub.mock.register(post(urlEqualTo(clientSecretAddedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
+    willReceiveEventType("CLIENT_SECRET_ADDED_V2")
   }
 
   def willReceiveClientRemovedEvent() = {
-    stub.mock.register(post(urlEqualTo(clientSecretRemovedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
+    willReceiveEventType("CLIENT_SECRET_REMOVED_V2")
   }
 
   def willReceiveApiSubscribedEvent() = {
-    stub.mock.register(post(urlEqualTo(apiSubscribedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
+    willReceiveEventType("API_SUBSCRIBED_V2")
   }
 
   def willReceiveApiUnsubscribedEvent() = {
-    stub.mock.register(post(urlEqualTo(apiUnsubscribedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
-  }
-
-  def willReceiveTeamMemberAddedEvent() = {
-    stub.mock.register(post(urlEqualTo(teamMemberAddedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
-  }
-
-  def willReceiveTeamMemberRemovedEvent() = {
-    stub.mock.register(post(urlEqualTo(teamMemberRemovedEventURL))
-      .willReturn(
-        aResponse()
-          .withStatus(CREATED)
-      ))
+    willReceiveEventType("API_UNSUBSCRIBED_V2")
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import cats.data.NonEmptyList
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO.Questionnaires
-
 import scala.collection.immutable.ListMap
+
+import cats.data.NonEmptyList
 import cats.implicits._
+
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO.Questionnaires
 
 trait QuestionnaireTestData {
 
@@ -133,7 +134,7 @@ trait QuestionnaireTestData {
       hintText = StatementText("For example https://example.com").some,
       absence = ("My organisation doesn't have a website", Fail).some,
       validation = TextValidation.Url.some,
-      errorInfo = ErrorInfo("Enter the URL, like https://example.com", "URL cannot be blank").some
+      errorInfo = ErrorInfo("Enter a URL in the correct format, like https://example.com", "Enter a URL in the correct format, like https://example.com").some
     )
 
     val question2 = ChooseOneOfQuestion(
@@ -407,8 +408,8 @@ trait QuestionnaireTestData {
 
   val sampleAnswersToQuestions = Map(
     (DevelopmentPractices.question1.id             -> SingleChoiceAnswer("Yes")),
-    (DevelopmentPractices.question2.id             -> SingleChoiceAnswer("No")),
-    (DevelopmentPractices.question3.id             -> SingleChoiceAnswer("No")),
+    (DevelopmentPractices.question2.id             -> SingleChoiceAnswer("Yes")),
+    (DevelopmentPractices.question3.id             -> SingleChoiceAnswer("Yes")),
     (OrganisationDetails.question1.id              -> TextAnswer("https://example.com")),
     (OrganisationDetails.questionRI1.id            -> SingleChoiceAnswer("No")),
     (OrganisationDetails.questionRI2.id            -> TextAnswer("Bob Cratchett")),
@@ -420,7 +421,7 @@ trait QuestionnaireTestData {
     (CustomersAuthorisingYourSoftware.question4.id -> SingleChoiceAnswer("Yes")),
     (CustomersAuthorisingYourSoftware.question5.id -> TextAnswer("https://example.com/privacy-policy")),
     (CustomersAuthorisingYourSoftware.question6.id -> SingleChoiceAnswer("Yes")),
-    (CustomersAuthorisingYourSoftware.question7.id -> NoAnswer)
+    (CustomersAuthorisingYourSoftware.question7.id -> TextAnswer("https://example.com/terms-and-conds"))
   )
 
   def firstQuestion(questionnaire: Questionnaire) = questionnaire.questions.head.question.id

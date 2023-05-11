@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
-
 import scala.concurrent.Future
+
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 trait NotificationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
 
@@ -33,7 +34,7 @@ trait NotificationServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     object SendNotifications {
 
       def thenReturnSuccess() =
-        when(aMock.sendNotifications(*[ApplicationData], *)(*)).thenReturn(Future.successful(List(HasSucceeded)))
+        when(aMock.sendNotifications(*[ApplicationData], *, *)(*)).thenReturn(Future.successful(List(HasSucceeded)))
     }
   }
 

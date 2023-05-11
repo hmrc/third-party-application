@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,31 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import cats.data.NonEmptyList
 import org.mockito.MockitoSugar.{mock, times, verify, verifyNoMoreInteractions}
 import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens, ApplicationWithStateHistory}
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess => _, _}
+import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
-
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.time.{Clock, Duration, LocalDateTime, ZoneOffset}
-import java.util.UUID
 import scala.util.Random.nextString
 
 class ApplicationRepositoryISpec
@@ -46,8 +48,12 @@ class ApplicationRepositoryISpec
     with SubmissionsTestData
     with ApplicationTestData
     with JavaDateTimeTestUtils
+    with ApplicationStateUtil
     with BeforeAndAfterEach
-    with MetricsHelper {
+    with MetricsHelper
+    with FixedClock {
+
+  val adminName = "Admin Example"
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -68,13 +74,18 @@ class ApplicationRepositoryISpec
   private val stateHistoryRepository =
     app.injector.instanceOf[StateHistoryRepository]
 
+  private val notificationRepository =
+    app.injector.instanceOf[NotificationRepository]
+
   override def beforeEach(): Unit = {
     super.beforeEach()
     await(applicationRepository.collection.drop.toFuture())
     await(subscriptionRepository.collection.drop.toFuture())
+    await(notificationRepository.collection.drop.toFuture())
 
     await(applicationRepository.ensureIndexes)
     await(subscriptionRepository.ensureIndexes)
+    await(notificationRepository.ensureIndexes)
   }
 
   lazy val defaultGrantLength = 547
@@ -125,7 +136,7 @@ class ApplicationRepositoryISpec
             productionState("requestorEmail@example.com")
           ).copy(
             rateLimitTier = Some(RateLimitTier.BRONZE),
-            lastAccess = Some(LocalDateTime.now(clock))
+            lastAccess = Some(now)
           )
         )
       )
@@ -219,6 +230,26 @@ class ApplicationRepositoryISpec
     }
   }
 
+  "updateRedirectUris" should {
+    "set the redirectUris on an Application document" in {
+      val applicationId = ApplicationId.random
+      await(applicationRepository.save(anApplicationDataForTest(applicationId)))
+
+      val updateRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
+      val updatedApplication = await(
+        applicationRepository.updateRedirectUris(
+          applicationId,
+          updateRedirectUris
+        )
+      )
+
+      updatedApplication.access match {
+        case access: Standard => access.redirectUris mustBe updateRedirectUris
+        case _                => fail("Wrong access - expecting standard")
+      }
+    }
+  }
+
   "recordApplicationUsage" should {
 
     "update the lastAccess property" in {
@@ -231,7 +262,7 @@ class ApplicationRepositoryISpec
           productionState("requestorEmail@example.com")
         )
           .copy(lastAccess =
-            Some(LocalDateTime.now(clock).minusDays(20))
+            Some(now.minusDays(20))
           ) // scalastyle:ignore magic.number
 
       await(applicationRepository.save(application))
@@ -252,7 +283,7 @@ class ApplicationRepositoryISpec
           grantLength = newGrantLength
         )
           .copy(lastAccess =
-            Some(LocalDateTime.now(clock).minusDays(20))
+            Some(now.minusDays(20))
           ) // scalastyle:ignore magic.number
 
       await(applicationRepository.save(application))
@@ -273,7 +304,7 @@ class ApplicationRepositoryISpec
           productionState("requestorEmail@example.com")
         )
           .copy(lastAccess =
-            Some(LocalDateTime.now(clock).minusDays(20))
+            Some(now.minusDays(20))
           ) // scalastyle:ignore magic.number
 
       application.tokens.production.lastAccessTokenUsage mustBe None
@@ -324,9 +355,9 @@ class ApplicationRepositoryISpec
           ClientId("aaa"),
           generateAccessToken,
           List(
-            ClientSecret(
+            aClientSecret(
               name = "Default",
-              lastAccess = Some(LocalDateTime.now(clock).minusDays(20)),
+              lastAccess = Some(now.minusDays(20)),
               hashedSecret = "hashed-secret"
             )
           )
@@ -360,12 +391,12 @@ class ApplicationRepositoryISpec
     }
 
     "update the correct client secret when there are multiple" in {
-      val testStartTime     = LocalDateTime.now(clock)
+      val testStartTime     = now
       val applicationId     = ApplicationId.random
       val secretToUpdate    =
-        ClientSecret(
+        aClientSecret(
           name = "SecretToUpdate",
-          lastAccess = Some(LocalDateTime.now(clock).minusDays(20)),
+          lastAccess = Some(now.minusDays(20)),
           hashedSecret = "hashed-secret"
         )
       val applicationTokens =
@@ -375,9 +406,9 @@ class ApplicationRepositoryISpec
             generateAccessToken,
             List(
               secretToUpdate,
-              ClientSecret(
+              aClientSecret(
                 name = "SecretToLeave",
-                lastAccess = Some(LocalDateTime.now(clock).minusDays(20)),
+                lastAccess = Some(now.minusDays(20)),
                 hashedSecret = "hashed-secret"
               )
             )
@@ -473,6 +504,24 @@ class ApplicationRepositoryISpec
       retrieved1.map(_.grantLength) mustBe Some(grantLength1)
       retrieved2.map(_.grantLength) mustBe Some(grantLength2)
     }
+
+    "do not retrieve the application for a given client id when it has a matching client id but is deleted" in {
+      val application1 = anApplicationDataForTest(
+        ApplicationId.random,
+        ClientId("aaa"),
+        deletedState("requestorEmail@example.com")
+      )
+
+      await(applicationRepository.save(application1))
+
+      val retrieved = await(
+        applicationRepository.fetchByClientId(
+          application1.tokens.production.clientId
+        )
+      )
+
+      retrieved mustBe None
+    }
   }
 
   "fetchByServerToken" should {
@@ -500,6 +549,24 @@ class ApplicationRepositoryISpec
 
       retrieved mustBe Some(application2)
     }
+
+    "do not retrieve the application when it is matched for access token but is deleted" in {
+      val application1 = anApplicationDataForTest(
+        ApplicationId.random,
+        ClientId("aaa"),
+        deletedState("requestorEmail@example.com")
+      )
+
+      await(applicationRepository.save(application1))
+
+      val retrieved = await(
+        applicationRepository.fetchByServerToken(
+          application1.tokens.production.accessToken
+        )
+      )
+
+      retrieved mustBe None
+    }
   }
 
   "fetchAllForEmailAddress" should {
@@ -512,9 +579,15 @@ class ApplicationRepositoryISpec
         id = ApplicationId.random,
         prodClientId = generateClientId
       )
+      val application3 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId,
+        deletedState("requestorEmail@example.com")
+      )
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
 
       val retrieved =
         await(applicationRepository.fetchAllForEmailAddress("user@example.com"))
@@ -524,7 +597,7 @@ class ApplicationRepositoryISpec
   }
 
   "fetchStandardNonTestingApps" should {
-    "retrieve all the standard applications not in TESTING state" in {
+    "retrieve all the standard applications not in TESTING (or DELETED) state" in {
       val application1 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
@@ -544,11 +617,17 @@ class ApplicationRepositoryISpec
         prodClientId = generateClientId,
         state = pendingRequesterVerificationState("user2")
       )
+      val application5 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId,
+        state = deletedState("user2")
+      )
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
       await(applicationRepository.save(application4))
+      await(applicationRepository.save(application5))
 
       val retrieved = await(applicationRepository.fetchStandardNonTestingApps())
 
@@ -579,8 +658,14 @@ class ApplicationRepositoryISpec
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
     }
 
-    "return empty list when all apps  in TESTING state" in {
+    "return empty list when all apps in TESTING state" in {
       val application1 = anApplicationDataForTest(ApplicationId.random)
+      await(applicationRepository.save(application1))
+      await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
+    }
+
+    "return empty list when all apps in DELETED state" in {
+      val application1 = anApplicationDataForTest(ApplicationId.random, state = deletedState("user2"))
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
     }
@@ -615,11 +700,25 @@ class ApplicationRepositoryISpec
 
       retrieved mustBe List.empty
     }
+
+    "dont retrieve the application with the matching name if its deleted" in {
+      val applicationName           = "appName"
+      val applicationNormalisedName = "appname"
+
+      val application = anApplicationDataForTest(id = ApplicationId.random, state = deletedState("user2"))
+        .copy(normalisedName = applicationNormalisedName)
+
+      await(applicationRepository.save(application))
+      val retrieved =
+        await(applicationRepository.fetchApplicationsByName(applicationName))
+
+      retrieved mustBe List.empty
+    }
   }
 
   "fetchAllByStatusDetails" should {
 
-    val dayOfExpiry          = LocalDateTime.now(clock)
+    val dayOfExpiry          = now
     val expiryOnTheDayBefore = dayOfExpiry.minusDays(1)
     val expiryOnTheDayAfter  = dayOfExpiry.plusDays(1)
 
@@ -731,6 +830,129 @@ class ApplicationRepositoryISpec
     }
   }
 
+  "fetchByStatusDetailsAndEnvironment" should {
+
+    val currentDate        = now
+    val yesterday          = currentDate.minusDays(1)
+    val dayBeforeYesterday = currentDate.minusDays(2)
+    val lastWeek           = currentDate.minusDays(7)
+
+    def verifyApplications(
+        responseApplications: Seq[ApplicationData],
+        expectedState: State.State,
+        expectedNumber: Int
+      ): Unit = {
+      responseApplications.foreach(app => app.state.name mustBe expectedState)
+      withClue(
+        s"The expected number of applications with state $expectedState is $expectedNumber"
+      ) {
+        responseApplications.size mustBe expectedNumber
+      }
+    }
+
+    "retrieve the only application with TESTING state that have been updated before the expiryDay" in {
+      val applications = Seq(
+        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
+      )
+      applications.foreach(application =>
+        await(applicationRepository.save(application))
+      )
+
+      val applicationDetails = await(
+        applicationRepository.fetchByStatusDetailsAndEnvironment(
+          State.TESTING,
+          yesterday,
+          Environment.PRODUCTION
+        )
+      )
+
+      verifyApplications(
+        applicationDetails,
+        State.TESTING,
+        2
+      )
+    }
+  }
+
+  "fetchByStatusDetailsAndEnvironmentNotAleadyNotified" should {
+
+    val currentDate        = now
+    val yesterday          = currentDate.minusDays(1)
+    val dayBeforeYesterday = currentDate.minusDays(2)
+    val lastWeek           = currentDate.minusDays(7)
+
+    def verifyApplications(
+        responseApplications: Seq[ApplicationData],
+        expectedState: State.State,
+        expectedNumber: Int
+      ): Unit = {
+      responseApplications.foreach(app => app.state.name mustBe expectedState)
+      withClue(
+        s"The expected number of applications with state $expectedState is $expectedNumber"
+      ) {
+        responseApplications.size mustBe expectedNumber
+      }
+    }
+
+    "retrieve the only application with TESTING state that have been updated before the expiryDay" in {
+      val applications = Seq(
+        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
+      )
+      applications.foreach(application =>
+        await(applicationRepository.save(application))
+      )
+
+      val applicationDetails = await(
+        applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(
+          State.TESTING,
+          yesterday,
+          Environment.PRODUCTION
+        )
+      )
+
+      verifyApplications(
+        applicationDetails,
+        State.TESTING,
+        2
+      )
+    }
+
+    "retrieve the only application with TESTING state that have been updated before the expiryDay and don't return already notified ones" in {
+      val app4 = createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
+
+      val applications = Seq(
+        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
+        app4
+      )
+      applications.foreach(application =>
+        await(applicationRepository.save(application))
+      )
+      await(notificationRepository.createEntity(Notification(app4.id, lastWeek, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
+
+      val applicationDetails = await(
+        applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(
+          State.TESTING,
+          yesterday,
+          Environment.PRODUCTION
+        )
+      )
+
+      verifyApplications(
+        applicationDetails,
+        State.TESTING,
+        1
+      )
+    }
+  }
+
   "fetchVerifiableBy" should {
 
     "retrieve the application with verificationCode when in pendingRequesterVerification state" in {
@@ -770,9 +992,96 @@ class ApplicationRepositoryISpec
       )
       retrieved mustBe None
     }
+
+    "not retrieve the application with verificationCode when in deleted state" in {
+      val application = anApplicationDataForTest(
+        ApplicationId.random,
+        state = pendingRequesterVerificationState("requestorEmail@example.com")
+      )
+      await(applicationRepository.save(application))
+      await(applicationRepository.delete(application.id, now))
+
+      val retrieved = await(
+        applicationRepository.fetchVerifiableUpliftBy(generatedVerificationCode)
+      )
+      retrieved mustBe None
+    }
+  }
+
+  "AppsWithSubscriptions" should {
+    "return Apps with their subscriptions" in {
+      val api1        = "api-1"
+      val api2        = "api-2"
+      val api3        = "api-3"
+      val api1Version = "api-1-version-1"
+      val api2Version = "api-2-version-2"
+      val api3Version = "api-3-version-3"
+
+      val application1 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = ClientId("aaa"))
+      val application2 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = ClientId("aab"))
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData(api1, api1Version, application1.id, application2.id))
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData(api2, api2Version, application1.id, application2.id))
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData(api3, api3Version, application2.id))
+          .toFuture()
+      )
+
+      val expectedResult = List(
+        ApplicationWithSubscriptions(
+          application1.id,
+          application1.name,
+          application1.lastAccess,
+          Set(ApiIdentifier(ApiContext(api1), ApiVersion(api1Version)), ApiIdentifier(ApiContext(api2), ApiVersion(api2Version)))
+        ),
+        ApplicationWithSubscriptions(
+          application2.id,
+          application2.name,
+          application2.lastAccess,
+          Set(
+            ApiIdentifier(ApiContext(api1), ApiVersion(api1Version)),
+            ApiIdentifier(ApiContext(api2), ApiVersion(api2Version)),
+            ApiIdentifier(ApiContext(api3), ApiVersion(api3Version))
+          )
+        )
+      )
+
+      val result = await(applicationRepository.getAppsWithSubscriptions)
+
+      result must contain theSameElementsAs expectedResult
+    }
   }
 
   "delete" should {
+
+    "change an application's state to Deleted" in {
+      val application = anApplicationDataForTest(ApplicationId.random)
+      await(applicationRepository.save(application))
+
+      val retrieved = await(applicationRepository.fetch(application.id)).get
+      retrieved mustBe application
+
+      await(applicationRepository.delete(application.id, now))
+      val result = await(applicationRepository.fetch(application.id))
+
+      result.isDefined mustBe true
+      result.get.state.name mustBe State.DELETED
+    }
+  }
+
+  "hardDelete" should {
 
     "delete an application from the database" in {
       val application = anApplicationDataForTest(ApplicationId.random)
@@ -781,12 +1090,11 @@ class ApplicationRepositoryISpec
       val retrieved = await(applicationRepository.fetch(application.id)).get
       retrieved mustBe application
 
-      await(applicationRepository.delete(application.id))
+      await(applicationRepository.hardDelete(application.id))
       val result = await(applicationRepository.fetch(application.id))
 
       result mustBe None
     }
-
   }
 
   "fetch" should {
@@ -1099,13 +1407,13 @@ class ApplicationRepositoryISpec
       result.applications.head.id mustBe application2.id // as a result of pageNumber = 2
     }
 
-    "return applications based on application state filter" in {
+    "return applications based on application state filter Active" in {
       val applicationInTest       = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
       )
       val applicationInProduction =
-        createAppWithStatusUpdatedOn(State.PRODUCTION, LocalDateTime.now(clock))
+        createAppWithStatusUpdatedOn(State.PRODUCTION, now)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationInProduction))
 
@@ -1120,6 +1428,52 @@ class ApplicationRepositoryISpec
       result.matching.head.total mustBe 1
       result.applications.size mustBe 1
       result.applications.head.id mustBe applicationInProduction.id
+    }
+
+    "return applications based on application state filter WasDeleted" in {
+      val applicationInTest  = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      )
+      val applicationDeleted =
+        createAppWithStatusUpdatedOn(State.DELETED, now)
+      await(applicationRepository.save(applicationInTest))
+      await(applicationRepository.save(applicationDeleted))
+
+      val applicationSearch = new ApplicationSearch(filters = List(WasDeleted), includeDeleted = true)
+
+      val result =
+        await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size mustBe 1
+      result.totals.head.total mustBe 2
+      result.matching.size mustBe 1
+      result.matching.head.total mustBe 1
+      result.applications.size mustBe 1
+      result.applications.head.id mustBe applicationDeleted.id
+    }
+
+    "return applications based on application state filter ExcludingDeleted" in {
+      val applicationInTest  = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      )
+      val applicationDeleted =
+        createAppWithStatusUpdatedOn(State.DELETED, now)
+      await(applicationRepository.save(applicationInTest))
+      await(applicationRepository.save(applicationDeleted))
+
+      val applicationSearch = new ApplicationSearch(filters = List(ExcludingDeleted), includeDeleted = true)
+
+      val result =
+        await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size mustBe 1
+      result.totals.head.total mustBe 2
+      result.matching.size mustBe 1
+      result.matching.head.total mustBe 1
+      result.applications.size mustBe 1
+      result.applications.head.id mustBe applicationInTest.id
     }
 
     "return applications based on access type filter" in {
@@ -1258,15 +1612,22 @@ class ApplicationRepositoryISpec
       val applicationId   = ApplicationId.random
       val applicationName = "Test Application 2"
 
-      val application            = aNamedApplicationData(
+      val application              = aNamedApplicationData(
         applicationId,
         applicationName,
         prodClientId = generateClientId
       )
-      val randomOtherApplication = anApplicationDataForTest(
+      val randomOtherApplication   = anApplicationDataForTest(
         ApplicationId.random,
         prodClientId = generateClientId
       )
+      val randomDeletedApplication = aNamedApplicationData(
+        ApplicationId.random,
+        applicationName,
+        prodClientId = generateClientId
+      )
+      await(applicationRepository.save(randomDeletedApplication))
+      await(applicationRepository.delete(randomDeletedApplication.id, now))
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -1279,11 +1640,52 @@ class ApplicationRepositoryISpec
         await(applicationRepository.searchApplications(applicationSearch))
 
       result.totals.size mustBe 1
-      result.totals.head.total mustBe 2
+      result.totals.head.total mustBe 3
       result.matching.size mustBe 1
       result.matching.head.total mustBe 1
       result.applications.size mustBe 1
       result.applications.head.id mustBe applicationId
+    }
+
+    "return applications with search text matching application name including deleted" in {
+      val applicationId   = ApplicationId.random
+      val applicationName = "Test Application 2"
+
+      val application              = aNamedApplicationData(
+        applicationId,
+        applicationName,
+        prodClientId = generateClientId
+      )
+      val randomOtherApplication   = anApplicationDataForTest(
+        ApplicationId.random,
+        prodClientId = generateClientId
+      )
+      val randomDeletedApplication = aNamedApplicationData(
+        ApplicationId.random,
+        applicationName,
+        prodClientId = generateClientId
+      )
+      await(applicationRepository.save(randomDeletedApplication))
+      await(applicationRepository.delete(randomDeletedApplication.id, now))
+      await(applicationRepository.save(application))
+      await(applicationRepository.save(randomOtherApplication))
+
+      val applicationSearch = new ApplicationSearch(
+        filters = List(ApplicationTextSearch),
+        textToSearch = Some(applicationName),
+        includeDeleted = true
+      )
+
+      val result =
+        await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size mustBe 1
+      result.totals.head.total mustBe 3
+      result.matching.size mustBe 1
+      result.matching.head.total mustBe 2
+      result.applications.size mustBe 2
+      result.applications.head.id mustBe randomDeletedApplication.id
+      result.applications.tail.head.id mustBe applicationId
     }
 
     "return applications with search text matching client id" in {
@@ -1491,13 +1893,13 @@ class ApplicationRepositoryISpec
 
     "return applications last used before a certain date" in {
       val oldApplicationId = ApplicationId.random
-      val cutoffDate       = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate       = now.minusMonths(12)
 
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             oldApplicationId,
-            LocalDateTime.now(clock).minusMonths(18)
+            now.minusMonths(18)
           )
         )
       )
@@ -1505,7 +1907,7 @@ class ApplicationRepositoryISpec
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            LocalDateTime.now(clock)
+            now
           )
         )
       )
@@ -1527,17 +1929,17 @@ class ApplicationRepositoryISpec
     "include applications with no lastAccess date where they were created before cutoff date" in {
       val oldApplicationId = ApplicationId.random
       val oldApplication   = anApplicationDataForTest(oldApplicationId).copy(
-        createdOn = LocalDateTime.now(clock).minusMonths(18),
+        createdOn = now.minusMonths(18),
         lastAccess = None
       )
-      val cutoffDate       = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate       = now.minusMonths(12)
 
       await(applicationRepository.save(oldApplication))
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            LocalDateTime.now(clock)
+            now
           )
         )
       )
@@ -1558,7 +1960,7 @@ class ApplicationRepositoryISpec
 
     "return applications that are equal to the specified cutoff date when searching for older applications" in {
       val oldApplicationId = ApplicationId.random
-      val cutoffDate       = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate       = now.minusMonths(12)
 
       await(
         applicationRepository.save(
@@ -1581,12 +1983,12 @@ class ApplicationRepositoryISpec
     }
 
     "return no results if no applications are last used before the cutoff date" in {
-      val cutoffDate = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate = now.minusMonths(12)
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            LocalDateTime.now(clock)
+            now
           )
         )
       )
@@ -1602,13 +2004,13 @@ class ApplicationRepositoryISpec
 
     "return applications last used after a certain date" in {
       val newerApplicationId = ApplicationId.random
-      val cutoffDate         = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate         = now.minusMonths(12)
 
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             newerApplicationId,
-            LocalDateTime.now(clock)
+            now
           )
         )
       )
@@ -1616,7 +2018,7 @@ class ApplicationRepositoryISpec
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            LocalDateTime.now(clock).minusMonths(18)
+            now.minusMonths(18)
           )
         )
       )
@@ -1639,14 +2041,14 @@ class ApplicationRepositoryISpec
       val newerApplicationId = ApplicationId.random
       val newerApplication   =
         anApplicationDataForTest(newerApplicationId).copy(lastAccess = None)
-      val cutoffDate         = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate         = now.minusMonths(12)
 
       await(applicationRepository.save(newerApplication))
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            LocalDateTime.now(clock).minusMonths(18)
+            now.minusMonths(18)
           )
         )
       )
@@ -1667,7 +2069,7 @@ class ApplicationRepositoryISpec
 
     "return applications that are equal to the specified cutoff date when searching for newer applications" in {
       val applicationId = ApplicationId.random
-      val cutoffDate    = LocalDateTime.now(clock).minusMonths(12)
+      val cutoffDate    = now.minusMonths(12)
 
       await(
         applicationRepository.save(
@@ -1690,12 +2092,12 @@ class ApplicationRepositoryISpec
     }
 
     "return no results if no applications are last used after the cutoff date" in {
-      val cutoffDate = LocalDateTime.now(clock)
+      val cutoffDate = now
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            LocalDateTime.now(clock).minusMonths(6)
+            now.minusMonths(6)
           )
         )
       )
@@ -1774,8 +2176,8 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by submitted ascending" in {
-      val firstCreatedOn    = LocalDateTime.now(clock).minusDays(2)
-      val secondCreatedOn   = LocalDateTime.now(clock).minusDays(1)
+      val firstCreatedOn    = now.minusDays(2)
+      val secondCreatedOn   = now.minusDays(1)
       val firstApplication  =
         anApplicationDataForTest(
           id = ApplicationId.random,
@@ -1804,8 +2206,8 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by submitted descending" in {
-      val firstCreatedOn    = LocalDateTime.now(clock).minusDays(2)
-      val secondCreatedOn   = LocalDateTime.now(clock).minusDays(1)
+      val firstCreatedOn    = now.minusDays(2)
+      val secondCreatedOn   = now.minusDays(1)
       val firstApplication  =
         anApplicationDataForTest(
           id = ApplicationId.random,
@@ -1834,8 +2236,8 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by lastAccess ascending" in {
-      val mostRecentlyAccessedDate = LocalDateTime.now(clock).minusDays(1)
-      val oldestLastAccessDate     = LocalDateTime.now(clock).minusDays(2)
+      val mostRecentlyAccessedDate = now.minusDays(1)
+      val oldestLastAccessDate     = now.minusDays(2)
       val firstApplication         = applicationWithLastAccessDate(
         ApplicationId.random,
         mostRecentlyAccessedDate
@@ -1862,8 +2264,8 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by lastAccess descending" in {
-      val mostRecentlyAccessedDate = LocalDateTime.now(clock).minusDays(1)
-      val oldestLastAccessDate     = LocalDateTime.now(clock).minusDays(2)
+      val mostRecentlyAccessedDate = now.minusDays(1)
+      val oldestLastAccessDate     = now.minusDays(2)
       val firstApplication         = applicationWithLastAccessDate(
         ApplicationId.random,
         mostRecentlyAccessedDate
@@ -2019,7 +2421,7 @@ class ApplicationRepositoryISpec
       )
 
       val clientSecret       =
-        ClientSecret("secret-name", hashedSecret = "hashed-secret")
+        aClientSecret(name = "secret-name", hashedSecret = "hashed-secret")
       val updatedApplication = await(
         applicationRepository.addClientSecret(applicationId, clientSecret)
       )
@@ -2032,31 +2434,29 @@ class ApplicationRepositoryISpec
   }
 
   "updateClientSecretName" should {
-    def namedClientSecret(id: String, name: String): ClientSecret =
-      ClientSecret(id = id, name = name, hashedSecret = "hashed-secret")
     def clientSecretWithId(
         application: ApplicationData,
-        clientSecretId: String
-      ): ClientSecret =
+        clientSecretId: ClientSecret.Id
+      ): ClientSecretData =
       application.tokens.production.clientSecrets
         .find(_.id == clientSecretId)
         .get
     def otherClientSecrets(
         application: ApplicationData,
-        clientSecretId: String
-      ): Seq[ClientSecret] =
+        clientSecretId: ClientSecret.Id
+      ): Seq[ClientSecretData] =
       application.tokens.production.clientSecrets
         .filterNot(_.id == clientSecretId)
 
     "populate the name where it was an empty String" in {
       val applicationId  = ApplicationId.random
-      val clientSecretId = UUID.randomUUID().toString
+      val clientSecretId = ClientSecret.Id.random
 
       await(
         applicationRepository.save(
           anApplicationDataForTest(
             applicationId,
-            clientSecrets = List(namedClientSecret(clientSecretId, ""))
+            clientSecrets = List(aClientSecret(clientSecretId))
           )
         )
       )
@@ -2077,13 +2477,13 @@ class ApplicationRepositoryISpec
 
     "populate the name where it was Default" in {
       val applicationId  = ApplicationId.random
-      val clientSecretId = UUID.randomUUID().toString
+      val clientSecretId = ClientSecret.Id.random
 
       await(
         applicationRepository.save(
           anApplicationDataForTest(
             applicationId,
-            clientSecrets = List(namedClientSecret(clientSecretId, "Default"))
+            clientSecrets = List(aClientSecret(clientSecretId, name = "Default"))
           )
         )
       )
@@ -2104,16 +2504,16 @@ class ApplicationRepositoryISpec
 
     "populate the name where it was a masked String" in {
       val applicationId  = ApplicationId.random
-      val clientSecretId = UUID.randomUUID().toString
+      val clientSecretId = ClientSecret.Id.random
 
       await(
         applicationRepository.save(
           anApplicationDataForTest(
             applicationId,
             clientSecrets = List(
-              namedClientSecret(
+              aClientSecret(
                 clientSecretId,
-                "••••••••••••••••••••••••••••••••abc1"
+                name = "••••••••••••••••••••••••••••••••abc1"
               )
             )
           )
@@ -2136,17 +2536,11 @@ class ApplicationRepositoryISpec
 
     "update correct client secret where there are multiple" in {
       val applicationId  = ApplicationId.random
-      val clientSecretId = UUID.randomUUID().toString
+      val clientSecretId = ClientSecret.Id.random
 
-      val clientSecret1 = namedClientSecret(
-        UUID.randomUUID().toString,
-        "secret-that-should-not-change"
-      )
-      val clientSecret2 = namedClientSecret(
-        UUID.randomUUID().toString,
-        "secret-that-should-not-change"
-      )
-      val clientSecret3 = namedClientSecret(clientSecretId, "secret-3")
+      val clientSecret1 = aClientSecret(name = "secret-that-should-not-change")
+      val clientSecret2 = aClientSecret(name = "secret-that-should-not-change")
+      val clientSecret3 = aClientSecret(clientSecretId, name = "secret-3")
 
       await(
         applicationRepository.save(
@@ -2180,10 +2574,10 @@ class ApplicationRepositoryISpec
     "update the application correctly" in {
       val responsibleIndividual   = ResponsibleIndividual(
         ResponsibleIndividual.Name("bob"),
-        ResponsibleIndividual.EmailAddress("bob@example.com")
+        LaxEmailAddress("bob@example.com")
       )
-      val acceptanceDate          = LocalDateTime.now(clock)
-      val submissionId            = Submission.Id.random
+      val acceptanceDate          = now
+      val submissionId            = SubmissionId.random
       val acceptance              = TermsOfUseAcceptance(
         responsibleIndividual,
         acceptanceDate,
@@ -2195,8 +2589,8 @@ class ApplicationRepositoryISpec
         None,
         responsibleIndividual,
         Set.empty,
-        TermsAndConditionsLocation.InDesktopSoftware,
-        PrivacyPolicyLocation.InDesktopSoftware,
+        TermsAndConditionsLocations.InDesktopSoftware,
+        PrivacyPolicyLocations.InDesktopSoftware,
         termsOfUseAcceptances = List()
       )
       val application             = anApplicationDataForTest(applicationId).copy(access =
@@ -2233,7 +2627,7 @@ class ApplicationRepositoryISpec
     "overwrite an existing hashedSecretField" in {
       val applicationId = ApplicationId.random
       val clientSecret  =
-        ClientSecret("secret-name", hashedSecret = "old-hashed-secret")
+        aClientSecret(name = "secret-name", hashedSecret = "old-hashed-secret")
 
       val savedApplication = await(
         applicationRepository.save(
@@ -2263,12 +2657,9 @@ class ApplicationRepositoryISpec
     "update correct client secret where there are multiple" in {
       val applicationId = ApplicationId.random
 
-      val clientSecret1 =
-        ClientSecret("secret-name-1", hashedSecret = "old-hashed-secret-1")
-      val clientSecret2 =
-        ClientSecret("secret-name-2", hashedSecret = "old-hashed-secret-2")
-      val clientSecret3 =
-        ClientSecret("secret-name-3", hashedSecret = "old-hashed-secret-3")
+      val clientSecret1 = aClientSecret(name = "secret-name-1", hashedSecret = "old-hashed-secret-1")
+      val clientSecret2 = aClientSecret(name = "secret-name-2", hashedSecret = "old-hashed-secret-2")
+      val clientSecret3 = aClientSecret(name = "secret-name-3", hashedSecret = "old-hashed-secret-3")
 
       await(
         applicationRepository.save(
@@ -2309,12 +2700,9 @@ class ApplicationRepositoryISpec
     "remove client secret with matching id" in {
       val applicationId = ApplicationId.random
 
-      val clientSecretToRemove =
-        ClientSecret("secret-name-1", hashedSecret = "old-hashed-secret-1")
-      val clientSecret2        =
-        ClientSecret("secret-name-2", hashedSecret = "old-hashed-secret-2")
-      val clientSecret3        =
-        ClientSecret("secret-name-3", hashedSecret = "old-hashed-secret-3")
+      val clientSecretToRemove = aClientSecret(name = "secret-name-1", hashedSecret = "old-hashed-secret-1")
+      val clientSecret2        = aClientSecret(name = "secret-name-2", hashedSecret = "old-hashed-secret-2")
+      val clientSecret3        = aClientSecret(name = "secret-name-3", hashedSecret = "old-hashed-secret-3")
 
       await(
         applicationRepository.save(
@@ -2346,25 +2734,57 @@ class ApplicationRepositoryISpec
   }
 
   "fetchAllForUserId" should {
-    "return two applications when both have the same userId" in {
+    "return two applications when all have the same userId" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
+      val applicationId3 = ApplicationId.random
       val userId         = UserId.random
 
-      val collaborator     =
-        Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+      val collaborator     = "user@example.com".admin(userId)
       val testApplication1 = anApplicationDataForTest(applicationId1)
         .copy(collaborators = Set(collaborator))
       val testApplication2 =
         anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
           .copy(collaborators = Set(collaborator))
+      val testApplication3 =
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = deletedState("user1"))
+          .copy(collaborators = Set(collaborator))
 
       await(applicationRepository.save(testApplication1))
       await(applicationRepository.save(testApplication2))
+      await(applicationRepository.save(testApplication3))
 
-      val result = await(applicationRepository.fetchAllForUserId(userId))
+      val result = await(applicationRepository.fetchAllForUserId(userId, false))
 
       result.size mustBe 2
+      result.map(
+        _.collaborators.map(collaborator => collaborator.userId mustBe userId)
+      )
+    }
+
+    "return three applications when all have the same userId and one is deleted" in {
+      val applicationId1 = ApplicationId.random
+      val applicationId2 = ApplicationId.random
+      val applicationId3 = ApplicationId.random
+      val userId         = UserId.random
+
+      val collaborator     = "user@example.com".admin(userId)
+      val testApplication1 = anApplicationDataForTest(applicationId1)
+        .copy(collaborators = Set(collaborator))
+      val testApplication2 =
+        anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
+          .copy(collaborators = Set(collaborator))
+      val testApplication3 =
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = deletedState("user1"))
+          .copy(collaborators = Set(collaborator))
+
+      await(applicationRepository.save(testApplication1))
+      await(applicationRepository.save(testApplication2))
+      await(applicationRepository.save(testApplication3))
+
+      val result = await(applicationRepository.fetchAllForUserId(userId, true))
+
+      result.size mustBe 3
       result.map(
         _.collaborators.map(collaborator => collaborator.userId mustBe userId)
       )
@@ -2372,25 +2792,28 @@ class ApplicationRepositoryISpec
   }
 
   "fetchAllForUserIdAndEnvironment" should {
-    "return one application when both apps have the same userId but only one is in Production" in {
+    "return one application when 3 apps have the same userId but only one is in Production and not deleted" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
+      val applicationId3 = ApplicationId.random
       val userId         = UserId.random
       val productionEnv  = Environment.PRODUCTION.toString
 
-      val collaborator =
-        Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+      val collaborator = "user@example.com".admin(userId)
 
-      val prodApplication    = anApplicationDataForTest(applicationId1)
+      val prodApplication1   = anApplicationDataForTest(applicationId1)
+        .copy(environment = productionEnv, collaborators = Set(collaborator))
+      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = deletedState("user2"))
         .copy(environment = productionEnv, collaborators = Set(collaborator))
       val sandboxApplication =
-        anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"))
           .copy(
             environment = Environment.SANDBOX.toString,
             collaborators = Set(collaborator)
           )
 
-      await(applicationRepository.save(prodApplication))
+      await(applicationRepository.save(prodApplication1))
+      await(applicationRepository.save(prodApplication2))
       await(applicationRepository.save(sandboxApplication))
 
       val result = await(
@@ -2409,30 +2832,33 @@ class ApplicationRepositoryISpec
   }
 
   "fetchAllForEmailAddressAndEnvironment" should {
-    "return one application when both apps have the same user email but only one is in Production" in {
+    "return one application when 3 apps have the same user email but only one is in Production and not deleted" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
+      val applicationId3 = ApplicationId.random
       val userId         = UserId.random
       val productionEnv  = Environment.PRODUCTION.toString
 
-      val collaborator =
-        Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+      val collaborator = "user@example.com".admin(userId)
 
-      val prodApplication    = anApplicationDataForTest(applicationId1)
+      val prodApplication1   = anApplicationDataForTest(applicationId1)
+        .copy(environment = productionEnv, collaborators = Set(collaborator))
+      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = deletedState("user"))
         .copy(environment = productionEnv, collaborators = Set(collaborator))
       val sandboxApplication =
-        anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"))
           .copy(
             environment = Environment.SANDBOX.toString,
             collaborators = Set(collaborator)
           )
 
-      await(applicationRepository.save(prodApplication))
+      await(applicationRepository.save(prodApplication1))
+      await(applicationRepository.save(prodApplication2))
       await(applicationRepository.save(sandboxApplication))
 
       val result = await(
         applicationRepository.fetchAllForEmailAddressAndEnvironment(
-          collaborator.emailAddress,
+          collaborator.emailAddress.text,
           productionEnv
         )
       )
@@ -2490,251 +2916,235 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "applyEvents" should {
-    val gkUserName    = "Mr Gate Keeperr"
-    val gkUser        = GatekeeperUserActor(gkUserName)
-    val adminEmail    = "admin@example.com"
-    val adminName     = "Mr Admin"
+  "handle addCollaborator correctly" in {
+    val applicationId = ApplicationId.random
 
-    "handle multiple events correctly" in {
-      val applicationId = ApplicationId.random
-      val oldName       = "oldName"
-      val newestName    = "name3"
-      val app           = anApplicationData(applicationId).copy(name = oldName)
-      await(applicationRepository.save(app))
+    val app = anApplicationData(applicationId)
+    await(applicationRepository.save(app))
 
-      val events             = List("name1", "name2", newestName).map(
-        ProductionAppNameChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldName, _, adminEmail)
-      )
-      val appWithUpdatedName = await(
-        applicationRepository.applyEvents(NonEmptyList.fromList(events).get)
-      )
-      appWithUpdatedName.name mustBe newestName
-      appWithUpdatedName.normalisedName mustBe newestName.toLowerCase
-    }
+    val collaborator          = "email".developer()
+    val existingCollaborators = app.collaborators
 
-    "handle NameChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldName       = "oldName"
-      val newName       = "newName"
-      val app           = anApplicationData(applicationId).copy(name = oldName)
-      await(applicationRepository.save(app))
+    val appWithNewCollaborator = await(applicationRepository.addCollaborator(applicationId, collaborator))
+    appWithNewCollaborator.collaborators must contain only (existingCollaborators.toList ++ List(collaborator): _*)
+  }
 
-      val event = ProductionAppNameChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldName, newName, adminEmail)
-      val appWithUpdatedName =
-        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedName.name mustBe newName
-      appWithUpdatedName.normalisedName mustBe newName.toLowerCase
-    }
+  "handle removeCollaborator correctly" in {
+    val applicationId = ApplicationId.random
 
-    "handle ProductionAppPrivacyPolicyLocationChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldLocation   = PrivacyPolicyLocation.InDesktopSoftware
-      val newLocation   = PrivacyPolicyLocation.Url("http://example.com")
-      val access        = Standard(List.empty, None, None, Set.empty, None, Some(
-        ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty,
-          TermsAndConditionsLocation.InDesktopSoftware, oldLocation, List.empty)
-      ))
-      val app = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
+    val developerCollaborator = "email".developer()
+    val adminCollaborator     = "email2".admin()
+    val app                   = anApplicationData(applicationId, collaborators = Set(developerCollaborator, adminCollaborator))
+    await(applicationRepository.save(app))
 
-      val event = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldLocation, newLocation, adminEmail)
-      val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedPrivacyPolicyLocation.access match {
-        case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
-        case _ => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
-      }
-    }
+    val existingCollaborators = app.collaborators
+    val userIdToDelete        = existingCollaborators.head.userId
 
-    "handle ProductionLegacyAppPrivacyPolicyLocationChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldUrl = "http://example.com/old"
-      val newUrl = "http://example.com/new"
-      val access = Standard(List.empty, None, Some(oldUrl), Set.empty, None, None)
-      val app = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
+    val appWithOutDeletedCollaborator = await(applicationRepository.removeCollaborator(applicationId, userIdToDelete))
+    appWithOutDeletedCollaborator.collaborators must contain only (existingCollaborators.toList.filterNot(_.userId == userIdToDelete): _*)
+  }
 
-      val event = ProductionLegacyAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldUrl, newUrl, adminEmail)
-      val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedPrivacyPolicyLocation.access match {
-        case Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
-        case _ => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
-      }
-    }
-
-    "handle ProductionAppTermsConditionsLocationChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldLocation   = TermsAndConditionsLocation.InDesktopSoftware
-      val newLocation   = TermsAndConditionsLocation.Url("http://example.com")
-      val access        = Standard(List.empty, None, None, Set.empty, None, Some(
-        ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty,
-          oldLocation, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
-      ))
-      val app = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val event = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldLocation, newLocation, adminEmail)
-      val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedTermsConditionsLocation.access match {
-        case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation mustBe newLocation
-        case _ => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
-      }
-    }
-
-    "handle ProductionLegacyAppTermsConditionsLocationChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val oldUrl = "http://example.com/old"
-      val newUrl = "http://example.com/new"
-      val access = Standard(List.empty, Some(oldUrl), None, Set.empty, None, None)
-      val app = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val event = ProductionLegacyAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldUrl, newUrl, adminEmail)
-      val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedTermsConditionsLocation.access match {
-        case Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
-        case _ => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
-      }
-    }
-
-    "handle ResponsibleIndividualChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val riName = "Mr Responsible"
-      val riEmail = "ri@example.com"
-      val oldRi = ResponsibleIndividual.build("old ri name", "old@example.com")
-      val submissionId = Submission.Id.random
-      val submissionIndex = 1
-      val code = "code123456789"
-      val importantSubmissionData = ImportantSubmissionData(None, oldRi, Set.empty,
-        TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List(TermsOfUseAcceptance(oldRi, LocalDateTime.now, submissionId, submissionIndex)))
-      val access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-      val app = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val devHubUser = CollaboratorActor("admin@example.com")
-      val event = ResponsibleIndividualChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, 
-        oldRi.fullName.value, oldRi.emailAddress.value, riName, riEmail, 
-        submissionId, submissionIndex, code, adminName, adminEmail)
-      val appWithUpdatedRI = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedRI.access match {
-        case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
-          importantSubmissionData.responsibleIndividual.fullName.value mustBe riName
-          importantSubmissionData.responsibleIndividual.emailAddress.value mustBe riEmail
-          importantSubmissionData.termsOfUseAcceptances.size mustBe 2
-          val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
-          latestAcceptance.responsibleIndividual.fullName.value mustBe riName
-          latestAcceptance.responsibleIndividual.emailAddress.value mustBe riEmail
-        }
-        case _ => fail("unexpected access type: " + appWithUpdatedRI.access)
-      }
-    }
-
-    "handle ResponsibleIndividualSet event correctly" in {
-      val applicationId = ApplicationId.random
-      val code = "23547235416352165129"
-      val riName = "Mr Responsible"
-      val riEmail = "ri@example.com"
-      val oldRi = ResponsibleIndividual.build("old ri name", "old@example.com")
-      val submissionId = Submission.Id.random
-      val submissionIndex = 1
-      val importantSubmissionData = ImportantSubmissionData(None, oldRi, Set.empty,
-        TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
-      val access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-      val app = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val devHubUser = CollaboratorActor("admin@example.com")
-      val event = ResponsibleIndividualSet(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, 
-        riName, riEmail, submissionId, submissionIndex, code, adminName, adminEmail)
-      val appWithUpdatedRI = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedRI.access match {
-        case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
-          importantSubmissionData.termsOfUseAcceptances.size mustBe 1
-          val latestAcceptance = importantSubmissionData.termsOfUseAcceptances.head
-          latestAcceptance.responsibleIndividual.fullName.value mustBe riName
-          latestAcceptance.responsibleIndividual.emailAddress.value mustBe riEmail
-        }
-        case _ => fail("unexpected access type: " + appWithUpdatedRI.access)
-      }
-    }
-
-    "handle ApplicationStateChanged event correctly" in {
-      val applicationId = ApplicationId.random
-      val ts = LocalDateTime.now
-      val oldRi = ResponsibleIndividual.build("old ri name", "old@example.com")
-      val importantSubmissionData = ImportantSubmissionData(None, oldRi, Set.empty,
-        TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
-      val access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-      val app = anApplicationData(applicationId).copy(access = access)
-      await(applicationRepository.save(app))
-
-      val devHubUser = CollaboratorActor("admin@example.com")
-      val event = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random, applicationId, ts, devHubUser, 
-        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, State.PENDING_GATEKEEPER_APPROVAL,
-        adminName, adminEmail)
-      val appWithUpdatedState = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedState.state.name mustBe State.PENDING_GATEKEEPER_APPROVAL
-      appWithUpdatedState.state.updatedOn mustBe ts
-      appWithUpdatedState.state.requestedByEmailAddress mustBe Some(adminEmail)
-      appWithUpdatedState.state.requestedByName mustBe Some(adminName)
-    }
-
-    "handle ResponsibleIndividualVerificationStarted event correctly" in {
-      val app = anApplicationData(applicationId)
-      await(applicationRepository.save(app))
-
-      val event = ResponsibleIndividualVerificationStarted(
-        UpdateApplicationEvent.Id.random, applicationId, "app name", LocalDateTime.now, CollaboratorActor("admin@example.com"),
-        "ms admin", "admin@example.com", "ri name", "ri@example.com", Submission.Id.random, 1, ResponsibleIndividualVerificationId.random)
-      val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
-      appWithUpdatedTermsConditionsLocation mustBe app
-    }
-
-    "throw an error if events relate to different applications" in {
-      val appId1 = ApplicationId.random
-      val appId2 = ApplicationId.random
-      val events = List(appId1, appId2).map(
-        ProductionAppNameChanged(UpdateApplicationEvent.Id.random, _, LocalDateTime.now, gkUser, "old name", "new name", adminEmail)
-      )
-      await(
-        applicationRepository.save(
-          anApplicationDataForTest(appId1, ClientId.random)
+  "handle ProductionAppPrivacyPolicyLocationChanged correctly" in {
+    val applicationId = ApplicationId.random
+    val oldLocation   = PrivacyPolicyLocations.InDesktopSoftware
+    val newLocation   = PrivacyPolicyLocations.Url("http://example.com")
+    val access        = Standard(
+      List.empty,
+      None,
+      None,
+      Set.empty,
+      None,
+      Some(
+        ImportantSubmissionData(
+          None,
+          ResponsibleIndividual.build("bob example", "bob@example.com"),
+          Set.empty,
+          TermsAndConditionsLocations.InDesktopSoftware,
+          oldLocation,
+          List.empty
         )
       )
-      await(
-        applicationRepository.save(
-          anApplicationDataForTest(appId2, ClientId.random)
-        )
-      )
+    )
+    val app           = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
 
-      intercept[IllegalArgumentException] {
-        await(
-          applicationRepository.applyEvents(NonEmptyList.fromList(events).get)
-        )
+    val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateApplicationPrivacyPolicyLocation(applicationId, newLocation))
+    appWithUpdatedPrivacyPolicyLocation.access match {
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
+      case _                                                                                            => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+    }
+  }
+
+  "handle ProductionLegacyAppPrivacyPolicyLocationChanged correctly" in {
+    val applicationId = ApplicationId.random
+    val oldUrl        = "http://example.com/old"
+    val newUrl        = "http://example.com/new"
+    val access        = Standard(List.empty, None, Some(oldUrl), Set.empty, None, None)
+    val app           = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateLegacyApplicationPrivacyPolicyLocation(applicationId, newUrl))
+    appWithUpdatedPrivacyPolicyLocation.access match {
+      case Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
+      case _                                                  => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+    }
+  }
+
+  "handle ProductionAppTermsConditionsLocationChanged event correctly" in {
+    val applicationId = ApplicationId.random
+    val oldLocation   = TermsAndConditionsLocations.InDesktopSoftware
+    val newLocation   = TermsAndConditionsLocations.Url("http://example.com")
+    val access        = Standard(
+      List.empty,
+      None,
+      None,
+      Set.empty,
+      None,
+      Some(
+        ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty, oldLocation, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
+      )
+    )
+    val app           = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateApplicationTermsAndConditionsLocation(applicationId, newLocation))
+    appWithUpdatedTermsConditionsLocation.access match {
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation mustBe newLocation
+      case _                                                                                                 => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
+    }
+  }
+
+  "handle ProductionLegacyAppTermsConditionsLocationChanged event correctly" in {
+    val applicationId = ApplicationId.random
+    val oldUrl        = "http://example.com/old"
+    val newUrl        = "http://example.com/new"
+    val access        = Standard(List.empty, Some(oldUrl), None, Set.empty, None, None)
+    val app           = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateLegacyApplicationTermsAndConditionsLocation(applicationId, newUrl))
+    appWithUpdatedTermsConditionsLocation.access match {
+      case Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
+      case _                                                       => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
+    }
+  }
+
+  "handle updateApplicationState correctly" in {
+    val applicationId           = ApplicationId.random
+    val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
+    val importantSubmissionData =
+      ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocations.InDesktopSoftware, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
+    val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+    val app                     = anApplicationData(applicationId).copy(access = access)
+
+    await(applicationRepository.save(app))
+    app.state.name mustBe State.PRODUCTION
+    val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, now, anAdminEmail.text, adminName))
+    appWithUpdatedState.state.name mustBe State.PENDING_GATEKEEPER_APPROVAL
+    appWithUpdatedState.state.updatedOn mustBe now
+    appWithUpdatedState.state.requestedByEmailAddress mustBe Some(anAdminEmail.text)
+    appWithUpdatedState.state.requestedByName mustBe Some(adminName)
+  }
+
+  "handle updateApplicationChangeResponsibleIndividualToSelf correctly" in {
+    val applicationId = ApplicationId.random
+
+    val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
+    val submissionId            = SubmissionId.random
+    val submissionIndex         = 1
+    val importantSubmissionData = ImportantSubmissionData(
+      None,
+      oldRi,
+      Set.empty,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
+      List(TermsOfUseAcceptance(oldRi, now, submissionId, submissionIndex))
+    )
+    val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+    val app                     = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedRI =
+      await(applicationRepository.updateApplicationChangeResponsibleIndividualToSelf(applicationId, adminName, anAdminEmail, now, submissionId, submissionIndex))
+
+    appWithUpdatedRI.access match {
+      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
+        importantSubmissionData.responsibleIndividual.fullName.value mustBe adminName
+        importantSubmissionData.responsibleIndividual.emailAddress mustBe anAdminEmail
+        importantSubmissionData.termsOfUseAcceptances.size mustBe 2
+        val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
+        latestAcceptance.responsibleIndividual.fullName.value mustBe adminName
+        latestAcceptance.responsibleIndividual.emailAddress mustBe anAdminEmail
       }
+      case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
+    }
+  }
+
+  "handle NameChanged event correctly" in {
+    val applicationId = ApplicationId.random
+    val oldName       = "oldName"
+    val newName       = "newName"
+
+    val app = anApplicationData(applicationId).copy(name = oldName)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedName = await(applicationRepository.updateApplicationName(applicationId, newName))
+    appWithUpdatedName.name mustBe newName
+    appWithUpdatedName.normalisedName mustBe newName.toLowerCase
+
+    await(applicationRepository.hardDelete(applicationId))
+  }
+
+  "handle updateApplicationChangeResponsibleIndividual" in {
+    val applicationId           = ApplicationId.random
+    val riName                  = "Mr Responsible"
+    val riEmail                 = "ri@example.com".toLaxEmail
+    val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
+    val submissionId            = SubmissionId.random
+    val submissionIndex         = 1
+    val importantSubmissionData = ImportantSubmissionData(
+      None,
+      oldRi,
+      Set.empty,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
+      List(TermsOfUseAcceptance(oldRi, now, submissionId, submissionIndex))
+    )
+    val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+    val app                     = anApplicationData(applicationId).copy(access = access)
+    await(applicationRepository.save(app))
+
+    val appWithUpdatedRI = await(applicationRepository.updateApplicationChangeResponsibleIndividual(applicationId, riName, riEmail, now, submissionId, submissionIndex))
+    appWithUpdatedRI.access match {
+      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
+        importantSubmissionData.responsibleIndividual.fullName.value mustBe riName
+        importantSubmissionData.responsibleIndividual.emailAddress mustBe riEmail
+        importantSubmissionData.termsOfUseAcceptances.size mustBe 2
+        val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
+        latestAcceptance.responsibleIndividual.fullName.value mustBe riName
+        latestAcceptance.responsibleIndividual.emailAddress mustBe riEmail
+      }
+      case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
     }
   }
 
   "fetchProdAppStateHistories" should {
     def saveApp(state: State, timeOffset: Duration, isNewJourney: Boolean = true, environment: Environment = Environment.PRODUCTION) = {
       val appId = ApplicationId.random
-      val app = anApplicationData(appId).copy(
-        state = ApplicationState(name = state),
+      val app   = anApplicationData(appId).copy(
+        state = ApplicationState(name = state, updatedOn = now),
         access = Standard(importantSubmissionData = isNewJourney match {
-          case true => Some(ImportantSubmissionData(
-            None,
-            ResponsibleIndividual.build("ri name", "ri@example.com"),
-            Set.empty,
-            TermsAndConditionsLocation.InDesktopSoftware,
-            PrivacyPolicyLocation.InDesktopSoftware,
-            List.empty
-          ))
+          case true  => Some(ImportantSubmissionData(
+              None,
+              ResponsibleIndividual.build("ri name", "ri@example.com"),
+              Set.empty,
+              TermsAndConditionsLocations.InDesktopSoftware,
+              PrivacyPolicyLocations.InDesktopSoftware,
+              List.empty
+            ))
           case false => None
         }),
-        createdOn = LocalDateTime.now.plus(timeOffset),
+        createdOn = now.plus(timeOffset),
         environment = environment.toString,
         tokens = ApplicationTokens(Token(ClientId.random, "access token"))
       )
@@ -2742,15 +3152,16 @@ class ApplicationRepositoryISpec
       app
     }
 
-    def saveHistoryStatePair(appId: ApplicationId, oldState: State, newState: State, timeOffset: Duration) = saveHistory(appId, Some(oldState), newState, timeOffset)
+    def saveHistoryStatePair(appId: ApplicationId, oldState: State, newState: State, timeOffset: Duration)     = saveHistory(appId, Some(oldState), newState, timeOffset)
     def saveHistory(appId: ApplicationId, maybeOldState: Option[State], newState: State, timeOffset: Duration) = {
-      val stateHistory = StateHistory(appId, newState, OldActor("actor", ActorType.GATEKEEPER), maybeOldState, None, LocalDateTime.now.plus(timeOffset))
+      val stateHistory =
+        StateHistory(appId, newState, Actors.GatekeeperUser("actor"), maybeOldState, None, now.plus(timeOffset))
       await(stateHistoryRepository.insert(stateHistory))
       stateHistory
     }
 
     "return app state history correctly for new journey app" in {
-      val app = saveApp(State.PRODUCTION, Duration.ZERO, true)
+      val app           = saveApp(State.PRODUCTION, Duration.ZERO, true)
       val stateHistory1 = saveHistoryStatePair(app.id, State.TESTING, State.PENDING_REQUESTER_VERIFICATION, Duration.ofHours(1))
       val stateHistory2 = saveHistoryStatePair(app.id, State.PENDING_REQUESTER_VERIFICATION, State.PENDING_GATEKEEPER_APPROVAL, Duration.ofHours(2))
       val stateHistory3 = saveHistoryStatePair(app.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(3))
@@ -2760,7 +3171,7 @@ class ApplicationRepositoryISpec
     }
 
     "return app state history correctly for old journey app" in {
-      val app = saveApp(State.PRODUCTION, Duration.ZERO, false)
+      val app           = saveApp(State.PRODUCTION, Duration.ZERO, false)
       val stateHistory1 = saveHistoryStatePair(app.id, State.TESTING, State.PENDING_REQUESTER_VERIFICATION, Duration.ofHours(1))
       val stateHistory2 = saveHistoryStatePair(app.id, State.PENDING_REQUESTER_VERIFICATION, State.PENDING_GATEKEEPER_APPROVAL, Duration.ofHours(2))
       val stateHistory3 = saveHistoryStatePair(app.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(3))
@@ -2770,13 +3181,13 @@ class ApplicationRepositoryISpec
     }
 
     "return app state histories sorted correctly" in {
-      val app1 = saveApp(State.PRODUCTION, Duration.ofHours(1))
+      val app1        = saveApp(State.PRODUCTION, Duration.ofHours(1))
       val app1History = saveHistory(app1.id, None, State.TESTING, Duration.ofHours(1))
 
-      val app2 = saveApp(State.PRODUCTION, Duration.ofHours(3))
+      val app2        = saveApp(State.PRODUCTION, Duration.ofHours(3))
       val app2History = saveHistory(app2.id, None, State.TESTING, Duration.ofHours(3))
 
-      val app3 = saveApp(State.PRODUCTION, Duration.ofHours(2))
+      val app3        = saveApp(State.PRODUCTION, Duration.ofHours(2))
       val app3History = saveHistory(app3.id, None, State.TESTING, Duration.ofHours(2))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
@@ -2788,7 +3199,7 @@ class ApplicationRepositoryISpec
     }
 
     "return only prod app state histories and not sandbox" in {
-      val prodApp = saveApp(State.PRODUCTION, Duration.ofHours(1))
+      val prodApp       = saveApp(State.PRODUCTION, Duration.ofHours(1))
       val stateHistory1 = saveHistoryStatePair(prodApp.id, State.TESTING, State.PENDING_GATEKEEPER_APPROVAL, Duration.ofHours(1))
       val stateHistory2 = saveHistoryStatePair(prodApp.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(2))
 
@@ -2797,6 +3208,73 @@ class ApplicationRepositoryISpec
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
       results mustBe List(ApplicationWithStateHistory(prodApp.id, prodApp.name, 2, List(stateHistory1, stateHistory2)))
+    }
+
+    "do not return app state history for a deleted app" in {
+      val app = saveApp(State.DELETED, Duration.ZERO, true)
+      saveHistoryStatePair(app.id, State.TESTING, State.PENDING_REQUESTER_VERIFICATION, Duration.ofHours(1))
+      saveHistoryStatePair(app.id, State.PENDING_REQUESTER_VERIFICATION, State.DELETED, Duration.ofHours(2))
+
+      val results = await(applicationRepository.fetchProdAppStateHistories())
+      results mustBe List.empty
+    }
+  }
+
+  "getSubscriptionsForDeveloper" should {
+    val developerEmail1 = "john.doe@example.com"
+    val developerEmail2 = "someone-else@example.com"
+
+    val user1 = developerEmail1.developer()
+    val user2 = developerEmail2.developer()
+
+    "return only the APIs that the user's apps are subscribed to, without duplicates" in {
+      val app1            = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+      await(applicationRepository.save(app1))
+      val app2            = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+      await(applicationRepository.save(app2))
+      val someoneElsesApp = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user2))
+      await(applicationRepository.save(someoneElsesApp))
+
+      val helloWorldApi1 = "hello-world".asIdentifier("1.0")
+      val helloWorldApi2 = "hello-world".asIdentifier("2.0")
+      val helloVatApi    = "hello-vat".asIdentifier("1.0")
+      val helloAgentsApi = "hello-agents".asIdentifier("1.0")
+
+      await(subscriptionRepository.add(app1.id, helloWorldApi1))
+      await(subscriptionRepository.add(app1.id, helloVatApi))
+      await(subscriptionRepository.add(app2.id, helloWorldApi2))
+      await(subscriptionRepository.add(app2.id, helloVatApi))
+      await(subscriptionRepository.add(someoneElsesApp.id, helloAgentsApi))
+
+      val result: Set[ApiIdentifier] = await(applicationRepository.getSubscriptionsForDeveloper(user1.userId))
+
+      result mustBe Set(helloWorldApi1, helloVatApi, helloWorldApi2)
+    }
+
+    "return empty when the user is not a collaborator of any apps" in {
+      val app1 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user2))
+      val app2 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+
+      await(applicationRepository.save(app1))
+      await(applicationRepository.save(app2))
+
+      val api = "hello-world".asIdentifier("1.0")
+      await(subscriptionRepository.add(app1.id, api))
+
+      val developerId                = app2.collaborators.head.userId
+      val result: Set[ApiIdentifier] = await(applicationRepository.getSubscriptionsForDeveloper(developerId))
+
+      result mustBe Set.empty
+    }
+
+    "return empty when the user's apps are not subscribed to any API" in {
+      val app = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+      await(applicationRepository.save(app))
+
+      val developerId                = app.collaborators.head.userId
+      val result: Set[ApiIdentifier] = await(applicationRepository.getSubscriptionsForDeveloper(developerId))
+
+      result mustBe Set.empty
     }
   }
 
@@ -2831,16 +3309,10 @@ class ApplicationRepositoryISpec
       access: Access = Standard(),
       grantLength: Int = defaultGrantLength,
       users: Set[Collaborator] = Set(
-        Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)
+        "user@example.com".admin()
       ),
       checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[ClientSecret] = List(
-        ClientSecret(
-          "",
-          createdOn = LocalDateTime.now(clock),
-          hashedSecret = "hashed-secret"
-        )
-      )
+      clientSecrets: List[ClientSecretData] = List(aClientSecret(hashedSecret = "hashed-secret"))
     ): ApplicationData = {
 
     aNamedApplicationData(
@@ -2862,13 +3334,9 @@ class ApplicationRepositoryISpec
       prodClientId: ClientId = ClientId("aaa"),
       state: ApplicationState = testingState(),
       access: Access = Standard(),
-      users: Set[Collaborator] = Set(
-        Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)
-      ),
+      users: Set[Collaborator] = Set("user@example.com".admin()),
       checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[ClientSecret] = List(
-        ClientSecret("", hashedSecret = "hashed-secret")
-      ),
+      clientSecrets: List[ClientSecretData] = List(aClientSecret(hashedSecret = "hashed-secret")),
       grantLength: Int = defaultGrantLength
     ): ApplicationData = {
 
@@ -2884,11 +3352,20 @@ class ApplicationRepositoryISpec
       ),
       state,
       access,
-      LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock)),
+      now,
+      Some(now),
       grantLength = grantLength,
       checkInformation = checkInformation
     )
   }
+
+  def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[LocalDateTime] = None, hashedSecret: String = "") =
+    ClientSecretData(
+      id = id,
+      name = name,
+      lastAccess = lastAccess,
+      hashedSecret = hashedSecret,
+      createdOn = now
+    )
 
 }

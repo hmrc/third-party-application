@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import cats.implicits._
+
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 object ValidateAnswers {
 
@@ -45,16 +46,18 @@ object ValidateAnswers {
   }
 
   def validateAgainstPossibleAnswers(question: MultiChoiceQuestion, rawAnswers: Set[String]): Either[String, ActualAnswer] = {
-    if (rawAnswers subsetOf question.choices.map(_.value))
+    if (rawAnswers subsetOf question.choices.map(_.value)) {
       Either.right(MultipleChoiceAnswer(rawAnswers))
-    else
+    } else {
       Either.left("Not all answers are valid")
+    }
   }
 
   def validateAgainstPossibleAnswers(question: SingleChoiceQuestion, rawAnswer: String): Either[String, ActualAnswer] = {
-    if (question.choices.map(_.value).contains(rawAnswer))
+    if (question.choices.map(_.value).contains(rawAnswer)) {
       Either.right(SingleChoiceAnswer(rawAnswer))
-    else
+    } else {
       Either.left("Answer is not valid")
+    }
   }
 }

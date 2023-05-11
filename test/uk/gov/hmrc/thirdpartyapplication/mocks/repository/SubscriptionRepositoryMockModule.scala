@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
-import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
-import org.mockito.verification.VerificationMode
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 import scala.concurrent.Future.{failed, successful}
+
+import org.mockito.verification.VerificationMode
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
 trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -46,6 +46,15 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
         when(aMock.getSubscriptions(eqTo(id))).thenReturn(successful(subs.toList))
     }
 
+    object IsSubscribed {
+
+      def isTrue() =
+        when(aMock.isSubscribed(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(true))
+
+      def isFalse() =
+        when(aMock.isSubscribed(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(false))
+    }
+
     object GetSubscribers {
 
       def thenReturnWhen(apiIdentifier: ApiIdentifier)(subs: ApplicationId*) =
@@ -58,19 +67,18 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
         when(aMock.getSubscribers(*[ApiIdentifier])).thenReturn(failed(ex))
     }
 
-    object GetSubscriptionsForDeveloper {
+    object Add {
 
-      def thenReturnWhen(userId: UserId)(apis: Set[ApiIdentifier]) =
-        when(aMock.getSubscriptionsForDeveloper(eqTo(userId))).thenReturn(successful(apis))
-
-      def thenFailWith(ex: Exception) =
-        when(aMock.getSubscriptionsForDeveloper(*[UserId])).thenReturn(failed(ex))
+      def succeeds() =
+        when(aMock.add(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(HasSucceeded))
     }
 
     object Remove {
 
-      def thenReturnHasSucceeded() =
+      def succeeds() =
         when(aMock.remove(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(HasSucceeded))
+
+      def thenReturnHasSucceeded() = succeeds()
 
       def verifyCalledWith(appId: ApplicationId, apiIdentifier: ApiIdentifier) =
         verify.remove(eqTo(appId), eqTo(apiIdentifier))

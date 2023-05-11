@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,26 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-
 import scala.concurrent.Future
 
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
 object ResponsibleIndividualChangedNotification {
-  
-  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, previousResponsibleIndividualEmail: String, requestingAdminName: String, previousResponsibleIndividualName: String, newResponsibleIndividualName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
+  def sendAdviceEmail(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      previousResponsibleIndividualEmail: LaxEmailAddress,
+      requestingAdminName: String,
+      previousResponsibleIndividualName: String,
+      newResponsibleIndividualName: String
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ Set(previousResponsibleIndividualEmail)
     emailConnector.sendChangeOfResponsibleIndividual(
       requestingAdminName,
@@ -36,7 +46,7 @@ object ResponsibleIndividualChangedNotification {
     )
   }
 
-  private def getRecipients(app: ApplicationData): Set[String] = {
+  private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
     app.collaborators.map(_.emailAddress)
   }
 }

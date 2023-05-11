@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
+import scala.concurrent.Future.successful
+
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import play.api.mvc.Results._
-import scala.concurrent.Future.successful
 
 trait LdapGatekeeperRoleAuthorisationServiceMockModule {
   self: MockitoSugar with ArgumentMatchersSugar =>
@@ -29,12 +29,12 @@ trait LdapGatekeeperRoleAuthorisationServiceMockModule {
     def aMock: LdapGatekeeperRoleAuthorisationService
 
     object EnsureHasGatekeeperRole {
-      def authorised[A] = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(None))
+      def authorised[A] = when(aMock.ensureHasGatekeeperRole()(*)).thenReturn(successful(None))
 
-      def notAuthorised[A] = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(Some(Unauthorized("Boo"))))
+      def notAuthorised[A] = when(aMock.ensureHasGatekeeperRole()(*)).thenReturn(successful(Some(Unauthorized("Boo"))))
     }
   }
-  
+
   object LdapGatekeeperRoleAuthorisationServiceMock extends BaseLdapGatekeeperRoleAuthorisationServiceMock {
     val aMock = mock[LdapGatekeeperRoleAuthorisationService]
   }

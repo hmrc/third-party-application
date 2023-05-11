@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
-import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
-import org.mockito.verification.VerificationMode
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateChange
-
 import scala.concurrent.Future.{failed, successful}
+
+import org.mockito.verification.VerificationMode
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftVerified
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, UpliftVerified}
 
 trait UpliftServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -40,15 +40,15 @@ trait UpliftServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
     object RequestUplift {
 
-      def thenReturnWhen(appId: ApplicationId, name: String, email: String)(value: ApplicationStateChange) =
+      def thenReturnWhen(appId: ApplicationId, name: String, email: LaxEmailAddress)(value: ApplicationStateChange) =
         when(aMock.requestUplift(eqTo(appId), eqTo(name), eqTo(email))(*)).thenReturn(successful(value))
 
       def thenReturn(value: ApplicationStateChange) = {
-        when(aMock.requestUplift(*[ApplicationId], *, *)(*)).thenReturn(successful(value))
+        when(aMock.requestUplift(*[ApplicationId], *, *[LaxEmailAddress])(*)).thenReturn(successful(value))
       }
 
       def thenFailsWith(ex: Exception) =
-        when(aMock.requestUplift(*[ApplicationId], *, *)(*)).thenReturn(failed(ex))
+        when(aMock.requestUplift(*[ApplicationId], *, *[LaxEmailAddress])(*)).thenReturn(failed(ex))
     }
 
     object VerifyUplift {

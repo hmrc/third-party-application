@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.service
 
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories.UpliftLinksRepository
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+
 import cats.data.OptionT
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories.UpliftLinksRepository
 
 @Singleton
 class UpliftLinkService @Inject() (upliftLinksRepository: UpliftLinksRepository)(implicit ec: ExecutionContext) {

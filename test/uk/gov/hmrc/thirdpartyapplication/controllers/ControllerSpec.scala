@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.LogSuppressing
 import scala.concurrent.Future
+
 import play.api.mvc.Result
+
+import uk.gov.hmrc.thirdpartyapplication.LogSuppressing
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 abstract class ControllerSpec extends AsyncHmrcSpec
     with LogSuppressing {

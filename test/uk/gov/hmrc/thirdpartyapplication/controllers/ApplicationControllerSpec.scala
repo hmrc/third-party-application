@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,48 +16,46 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import java.time.temporal.ChronoUnit
+import java.time.{LocalDateTime, ZoneOffset}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.Future.{failed, successful}
+
 import akka.stream.Materializer
+import akka.stream.testkit.NoMaterializer
 import cats.data.OptionT
 import cats.implicits._
 import com.github.t3hnar.bcrypt._
 import org.scalatest.prop.TableDrivenPropertyChecks
+
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
-import play.api.test.Helpers
-import play.api.test.FakeRequest
+import play.api.test.{FakeRequest, Helpers}
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.Enrolment
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
-import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
-import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-
-import java.{util => ju}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.Future.failed
-import scala.concurrent.Future.successful
-import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-
-import java.time.{LocalDateTime, ZoneOffset}
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -70,7 +68,7 @@ class ApplicationControllerSpec
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-  trait Setup 
+  trait Setup
       extends AuthConfigSetup
       with SubmissionsServiceMockModule
       with UpliftLinkServiceMockModule
@@ -99,7 +97,6 @@ class ApplicationControllerSpec
       mockCredentialService,
       mockSubscriptionService,
       config,
-      mockGatekeeperService,
       SubmissionsServiceMock.aMock,
       mockUpliftNamingService,
       UpliftLinkServiceMock.aMock,
@@ -107,7 +104,6 @@ class ApplicationControllerSpec
     )
   }
 
-  
   trait PrivilegedAndRopcSetup extends Setup {
 
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
@@ -146,10 +142,10 @@ class ApplicationControllerSpec
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
   val credentialServiceResponseToken: ApplicationTokenResponse =
-    ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
+    ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecretData("3333", hashedSecret = "3333".bcrypt(4)))))
 
   "update approval" should {
-    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", LocalDateTime.now, "1.0".asVersion.value)
+    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", now, "1.0".asVersion.value)
     val checkInformation    = CheckInformation(
       contactDetails = Some(ContactDetails("Tester", "test@example.com", "12345677890")),
       termsOfUseAgreements = List(termsOfUseAgreement)
@@ -238,7 +234,7 @@ class ApplicationControllerSpec
   "confirmSetupComplete" should {
     "call applicationService correctly" in new Setup {
       val applicationId               = ApplicationId.random
-      val emailAddress                = "bob@example.com"
+      val emailAddress                = "bob@example.com".toLaxEmail
       val confirmSetupCompleteRequest = ConfirmSetupCompleteRequest(emailAddress)
 
       when(underTest.applicationService.confirmSetupComplete(eqTo(applicationId), eqTo(emailAddress))).thenReturn(successful(mock[ApplicationData]))
@@ -246,352 +242,6 @@ class ApplicationControllerSpec
       val result = underTest.confirmSetupComplete(applicationId)(request.withBody(Json.toJson(confirmSetupCompleteRequest)))
 
       status(result) shouldBe NO_CONTENT
-    }
-  }
-
-  "add collaborators with UserId" should {
-    val applicationId                                      = ApplicationId.random
-    val admin                                              = "admin@example.com"
-    val email                                              = "test@example.com"
-    val role                                               = DEVELOPER
-    val isRegistered                                       = false
-    val adminsToEmail                                      = Set.empty[String]
-    val userId                                             = UserId.random
-    val addCollaboratorRequestWithUserId                   = AddCollaboratorRequest(Collaborator(email, role, userId), isRegistered, adminsToEmail)
-    val payload                                            =
-      s"""{"adminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"$role", "userId": "${userId.value}"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
-    val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.parse(payload))
-
-    "succeed with a 200 (ok) for a STANDARD application" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
-      val response = AddCollaboratorResponse(registeredUser = true)
-      when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequestWithUserId))(*)).thenReturn(successful(response))
-
-      val result = underTest.addCollaborator(applicationId)(addRequest(request))
-
-      status(result) shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(response)
-    }
-  }
-
-  "add collaborators" should {
-    val applicationId                                      = ApplicationId.random
-    val email                                              = "test@example.com"
-    val role                                               = DEVELOPER
-    val userId                                             = UserId.random
-    val isRegistered                                       = false
-    val adminsToEmail                                      = Set.empty[String]
-    val addCollaboratorRequest                             = AddCollaboratorRequest(Collaborator(email, role, userId), isRegistered, adminsToEmail)
-    val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.toJson(addCollaboratorRequest))
-
-    "succeed with a 200 (ok) for a STANDARD application" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
-      val response = AddCollaboratorResponse(registeredUser = true)
-      when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(successful(response))
-
-      val result = underTest.addCollaborator(applicationId)(addRequest(request))
-
-      status(result) shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(response)
-    }
-
-    "succeed with a 200 (ok) for a PRIVILEGED or ROPC application and the gatekeeper is logged in" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperLoggedIn(
-        applicationId, {
-          val response = AddCollaboratorResponse(registeredUser = true)
-          when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(successful(response))
-
-          StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-          val result = underTest.addCollaborator(applicationId)(addRequest(request))
-
-          status(result) shouldBe OK
-          contentAsJson(result) shouldBe Json.toJson(response)
-        }
-      )
-    }
-
-    "succeed with a 200 (ok) for a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
-        applicationId, {
-          val response = AddCollaboratorResponse(registeredUser = true)
-          when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(successful(response))
-
-          val result = underTest.addCollaborator(applicationId)(addRequest(request))
-
-          status(result) shouldBe OK
-          contentAsJson(result) shouldBe Json.toJson(response)
-        }
-      )
-    }
-
-    "fail with a 404 (not found) if no application exists for the given id" in new Setup {
-      when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*))
-        .thenReturn(failed(new NotFoundException(s"application not found for id: ${applicationId.value}")))
-
-      val result = underTest.addCollaborator(applicationId)(addRequest(request))
-
-      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
-    }
-
-    "fail with a 422 (unprocessable) if role is invalid" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
-
-      val result = underTest.addCollaborator(applicationId)(request.withBody(Json.obj("emailAddress" -> s"$email", "role" -> "invalid")))
-
-      verifyErrorResult(result, UNPROCESSABLE_ENTITY, ErrorCode.INVALID_REQUEST_PAYLOAD)
-    }
-
-    "fail with a 409 (conflict) if email already registered with different role" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
-      when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*))
-        .thenReturn(failed(new UserAlreadyExists))
-
-      val result = underTest.addCollaborator(applicationId)(addRequest(request))
-
-      verifyErrorResult(result, CONFLICT, ErrorCode.USER_ALREADY_EXISTS)
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
-      when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*))
-        .thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.addCollaborator(applicationId)(addRequest(request))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-
-  }
-
-  "remove collaborator" should {
-    val applicationId      = ApplicationId.random
-    val admin              = "admin@example.com"
-    val collaborator       = "dev@example.com"
-    val adminsToEmailSet   = Set.empty[String]
-    val notifyCollaborator = true
-    lazy val myRequest     =
-      FakeRequest()
-        .withMethod(POST)
-        .withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
-        .withBody(Json.toJson(DeleteCollaboratorRequest(collaborator, adminsToEmailSet, notifyCollaborator)))
-
-    "succeed with a 204 (No Content) for a STANDARD application" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
-      when(underTest.applicationService.deleteCollaborator(
-        eqTo(applicationId),
-        eqTo(collaborator),
-        eqTo(adminsToEmailSet),
-        eqTo(notifyCollaborator)
-      )(*))
-        .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
-
-      val result = underTest.deleteCollaborator(applicationId)(myRequest)
-
-      status(result) shouldBe NO_CONTENT
-    }
-
-    "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      testWithPrivilegedAndRopcGatekeeperLoggedIn(
-        applicationId, {
-          when(underTest.applicationService.deleteCollaborator(
-            eqTo(applicationId),
-            eqTo(collaborator),
-            eqTo(adminsToEmailSet),
-            eqTo(notifyCollaborator)
-          )(*))
-            .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
-
-          val result = underTest.deleteCollaborator(applicationId)(myRequest)
-
-          status(result) shouldBe NO_CONTENT
-        }
-      )
-    }
-
-    "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
-        applicationId, {
-          when(underTest.applicationService.deleteCollaborator(
-            eqTo(applicationId),
-            eqTo(collaborator),
-            eqTo(adminsToEmailSet),
-            eqTo(notifyCollaborator)
-          )(*))
-            .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
-
-          val result = underTest.deleteCollaborator(applicationId)(myRequest)
-
-          status(result) shouldBe NO_CONTENT
-        }
-      )
-    }
-
-    "fail with a 404 (not found) if no application exists for the given id" in new Setup {
-      when(underTest.applicationService.deleteCollaborator(
-        eqTo(applicationId),
-        eqTo(collaborator),
-        eqTo(adminsToEmailSet),
-        eqTo(notifyCollaborator)
-      )(*))
-        .thenReturn(failed(new NotFoundException(s"application not found for id: ${applicationId.value}")))
-
-      val result = underTest.deleteCollaborator(applicationId)(myRequest)
-
-      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
-    }
-
-    "fail with a 403 (forbidden) if deleting the only admin" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
-      when(underTest.applicationService.deleteCollaborator(
-        eqTo(applicationId),
-        eqTo(collaborator),
-        eqTo(adminsToEmailSet),
-        eqTo(notifyCollaborator)
-      )(*))
-        .thenReturn(failed(new ApplicationNeedsAdmin))
-
-      val result = underTest.deleteCollaborator(applicationId)(myRequest)
-
-      verifyErrorResult(result, FORBIDDEN, ErrorCode.APPLICATION_NEEDS_ADMIN)
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
-      when(underTest.applicationService.deleteCollaborator(
-        eqTo(applicationId),
-        eqTo(collaborator),
-        eqTo(adminsToEmailSet),
-        eqTo(notifyCollaborator)
-      )(*))
-        .thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.deleteCollaborator(applicationId)(myRequest)
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-  }
-
-  "add client secret" should {
-    val applicationId             = ApplicationId.random
-    val applicationTokensResponse =
-      ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
-    val secretRequest             = ClientSecretRequest("actor@example.com")
-
-    "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperLoggedIn(
-        applicationId, {
-          when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
-            .thenReturn(successful(applicationTokensResponse))
-
-          val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
-
-          status(result) shouldBe OK
-          contentAsJson(result) shouldBe Json.toJson(applicationTokensResponse)
-        }
-      )
-    }
-
-    "succeed with a 200 (ok) when request originates from outside gatekeeper" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
-        applicationId, {
-          when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
-            .thenReturn(successful(applicationTokensResponse))
-
-          val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
-
-          status(result) shouldBe OK
-          contentAsJson(result) shouldBe Json.toJson(applicationTokensResponse)
-        }
-      )
-    }
-
-    "fail with a 403 (Forbidden) when the environment has already the maximum number of secrets set" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperLoggedIn(
-        applicationId, {
-          when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
-            .thenReturn(failed(new ClientSecretsLimitExceeded))
-
-          val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
-
-          verifyErrorResult(result, FORBIDDEN, ErrorCode.CLIENT_SECRET_LIMIT_EXCEEDED)
-        }
-      )
-    }
-
-    "fail with a 404 (not found) when no application exists for the given id" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperLoggedIn(
-        applicationId, {
-          when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
-            .thenReturn(failed(new NotFoundException("application not found")))
-
-          val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
-
-          verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
-        }
-      )
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperLoggedIn(
-        applicationId, {
-          when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
-            .thenReturn(failed(new RuntimeException))
-
-          val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
-
-          status(result) shouldBe INTERNAL_SERVER_ERROR
-        }
-      )
-    }
-
-  }
-
-  "deleteClientSecret" should {
-
-    val applicationId     = ApplicationId.random
-    val clientSecretId    = ju.UUID.randomUUID().toString
-    val actorEmailAddress = "actor@example.com"
-    val secretRequest     = DeleteClientSecretRequest(actorEmailAddress)
-    val tokenResponse     = ApplicationTokenResponse(ClientId("aaa"), "bbb", List.empty)
-
-    "succeed with a 204 for a STANDARD application" in new Setup {
-
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
-      when(mockCredentialService.deleteClientSecret(eqTo(applicationId), eqTo(clientSecretId), eqTo(actorEmailAddress))(*))
-        .thenReturn(successful(tokenResponse))
-
-      val result = underTest.deleteClientSecret(applicationId, clientSecretId)(request.withBody(Json.toJson(secretRequest)))
-
-      status(result) shouldBe NO_CONTENT
-    }
-
-    "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperLoggedIn(
-        applicationId, {
-          when(mockCredentialService.deleteClientSecret(eqTo(applicationId), eqTo(clientSecretId), eqTo(actorEmailAddress))(*))
-            .thenReturn(successful(tokenResponse))
-
-          val result = underTest.deleteClientSecret(applicationId, clientSecretId)(request.withBody(Json.toJson(secretRequest)))
-
-          status(result) shouldBe NO_CONTENT
-        }
-      )
-    }
-
-    "succeed with a 204 for a PRIVILEGED or ROPC application when the request originates outside gatekeeper" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
-        applicationId, {
-          when(mockCredentialService.deleteClientSecret(eqTo(applicationId), eqTo(clientSecretId), eqTo(actorEmailAddress))(*))
-            .thenReturn(successful(tokenResponse))
-
-          val result = underTest.deleteClientSecret(applicationId, clientSecretId)(request.withBody(Json.toJson(secretRequest)))
-
-          status(result) shouldBe NO_CONTENT
-        }
-      )
     }
   }
 
@@ -696,11 +346,10 @@ class ApplicationControllerSpec
   }
 
   "query dispatcher" should {
-    val clientId    = ClientId("A123XC")
-    val serverToken = "b3c83934c02df8b111e7f9f8700000"
+    val clientId = ClientId("A123XC")
 
     trait LastAccessedSetup extends Setup {
-      val updatedLastAccessTime: LocalDateTime = LocalDateTime.now()
+      val updatedLastAccessTime: LocalDateTime = now.truncatedTo(ChronoUnit.MILLIS)
       val lastAccessTime: LocalDateTime        = updatedLastAccessTime.minusDays(10) // scalastyle:ignore magic.number
       val applicationId: ApplicationId         = ApplicationId.random
 
@@ -855,14 +504,14 @@ class ApplicationControllerSpec
     val userId = UserId.random
 
     "succeed with a 200 when applications are found for the collaborator by user id" in new Setup with ExtendedResponses {
-      when(underTest.applicationService.fetchAllForCollaborator(userId))
+      when(underTest.applicationService.fetchAllForCollaborator(userId, false))
         .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
 
       status(underTest.fetchAllForCollaborator(userId)(request)) shouldBe OK
     }
 
     "succeed with a 200 when no applications are found for the collaborator by user id" in new Setup {
-      when(underTest.applicationService.fetchAllForCollaborator(userId)).thenReturn(successful(Nil))
+      when(underTest.applicationService.fetchAllForCollaborator(userId, false)).thenReturn(successful(Nil))
 
       val result = underTest.fetchAllForCollaborator(userId)(request)
 
@@ -871,13 +520,12 @@ class ApplicationControllerSpec
     }
 
     "fail with a 500 when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetchAllForCollaborator(userId)).thenReturn(failed(new RuntimeException("Expected test failure")))
+      when(underTest.applicationService.fetchAllForCollaborator(userId, false)).thenReturn(failed(new RuntimeException("Expected test failure")))
 
       val result = underTest.fetchAllForCollaborator(userId)(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
-
   }
 
   "fetchAllBySubscription" when {
@@ -1073,135 +721,6 @@ class ApplicationControllerSpec
     }
   }
 
-  "createSubscriptionForApplication" should {
-    val applicationId = ApplicationId.random
-    val body          = anAPIJson()
-
-    "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnNothingFor(applicationId)
-
-      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
-
-      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
-    }
-
-    "succeed with a 204 (no content) when a subscription is successfully added to a STANDARD application" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
-        .thenReturn(successful(HasSucceeded))
-
-      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
-
-      status(result) shouldBe NO_CONTENT
-    }
-
-    "succeed with a 204 (no content) when a subscription is successfully added to a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
-      new PrivilegedAndRopcSetup {
-
-        StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-        testWithPrivilegedAndRopcGatekeeperLoggedIn(
-          applicationId, {
-            when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
-              .thenReturn(successful(HasSucceeded))
-
-            status(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))) shouldBe NO_CONTENT
-          }
-        )
-      }
-
-    "fail with 401 (Unauthorized) when adding a subscription to a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
-      new PrivilegedAndRopcSetup {
-
-        testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
-          applicationId, {
-            val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
-
-            status(result) shouldBe UNAUTHORIZED
-          }
-        )
-      }
-
-    "fail with a 422 (unprocessable entity) when unexpected json is provided" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
-
-      val body = """{ "json": "invalid" }"""
-
-      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
-
-      status(result) shouldBe UNPROCESSABLE_ENTITY
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturn(aNewApplicationResponse())
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
-        .thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-
-  }
-
-  "removeSubscriptionForApplication" should {
-    val applicationId = ApplicationId.random
-
-    "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnNothingFor(applicationId)
-
-      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)
-
-      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
-    }
-
-    "succeed with a 204 (no content) when a subscription is successfully removed from a STANDARD application" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturn(aNewApplicationResponse())
-      when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
-        .thenReturn(successful(HasSucceeded))
-
-      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)
-
-      status(result) shouldBe NO_CONTENT
-    }
-
-    "succeed with a 204 (no content) when a subscription is successfully removed from a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
-      new PrivilegedAndRopcSetup {
-
-        StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-        testWithPrivilegedAndRopcGatekeeperLoggedIn(
-          applicationId, {
-            when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
-              .thenReturn(successful(HasSucceeded))
-
-            status(underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)) shouldBe NO_CONTENT
-          }
-        )
-      }
-
-    "fail with a 401 (unauthorized) when trying to remove a subscription from a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
-      new PrivilegedAndRopcSetup {
-        testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
-          applicationId, {
-            status(underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)) shouldBe UNAUTHORIZED
-          }
-        )
-      }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturn(aNewApplicationResponse())
-      when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
-        .thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-
-  }
-
-
   "update IP allowlist" should {
     "succeed with a 204 (no content) when the IP allowlist is successfully added to the application" in new Setup {
       val applicationId: ApplicationId        = ApplicationId.random
@@ -1287,11 +806,11 @@ class ApplicationControllerSpec
   }
 
   "notStrideUserDeleteApplication" should {
-    val application                                  = aNewApplicationResponse(environment = SANDBOX, state = ApplicationState(State.PRODUCTION))
-    val applicationId                                = application.id
-    val gatekeeperUserId                             = "big.boss.gatekeeper"
-    val requestedByEmailAddress                      = "admin@example.com"
-    val deleteRequest                                = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
+    val application             = aNewApplicationResponse(environment = SANDBOX, state = ApplicationState(State.PRODUCTION))
+    val applicationId           = application.id
+    val gatekeeperUserId        = "big.boss.gatekeeper"
+    val requestedByEmailAddress = "admin@example.com".toLaxEmail
+    val deleteRequest           = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
     "succeed when a sandbox application is successfully deleted" in new Setup with SandboxAuthSetup {
       ApplicationServiceMock.Fetch.thenReturn(application)
@@ -1324,7 +843,6 @@ class ApplicationControllerSpec
       ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(inPendingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
- 
 
       status(result) shouldBe NO_CONTENT
       verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(inPendingId), eqTo(None), *)(*)
@@ -1372,11 +890,11 @@ class ApplicationControllerSpec
       ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(applicationId)(
-          request
+        request
           .withBody(Json.toJson(deleteRequest))
           .withHeaders(AUTHORIZATION -> base64Encode(authorisationKey.reverse))
           .asInstanceOf[FakeRequest[AnyContent]]
-        )
+      )
 
       status(result) shouldBe BAD_REQUEST
       verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
@@ -1385,12 +903,11 @@ class ApplicationControllerSpec
     "succeed when a production application is requested to be deleted and authorisation key is valid" in new Setup with ProductionAuthSetup {
       ApplicationServiceMock.Fetch.thenReturn(application)
       ApplicationServiceMock.DeleteApplication.thenSucceeds
-      
+
       val result = underTest.deleteApplication(applicationId)(request
         .withBody(Json.toJson(deleteRequest))
         .withHeaders(AUTHORIZATION -> base64Encode(authorisationKey))
-        .asInstanceOf[FakeRequest[AnyContent]]
-        )
+        .asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NO_CONTENT
       verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
@@ -1406,5 +923,3 @@ class ApplicationControllerSpec
     }
   }
 }
-
-

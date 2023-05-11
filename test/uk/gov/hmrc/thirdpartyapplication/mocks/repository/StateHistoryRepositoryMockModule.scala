@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
-import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
+import scala.concurrent.Future.{failed, successful}
+
 import org.mockito.captor.ArgCaptor
 import org.mockito.verification.VerificationMode
-import scala.concurrent.Future
-import scala.concurrent.Future.{failed, successful}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
+import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 
 trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -43,6 +42,8 @@ trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatcher
 
       def thenAnswer() =
         when(aMock.insert(*)).thenAnswer((sh: StateHistory) => successful(sh))
+
+      def succeeds() = thenAnswer()
 
       def thenFailsWith(ex: Exception) =
         when(aMock.insert(*)).thenReturn(failed(ex))
@@ -83,12 +84,6 @@ trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatcher
 
       def thenFailWith(ex: Exception) =
         when(aMock.fetchByApplicationId(*[ApplicationId])).thenReturn(failed(ex))
-    }
-
-    object ApplyEvents {
-      def succeeds() = {
-        when(aMock.applyEvents(*)).thenReturn(Future.successful(HasSucceeded))
-      }
     }
   }
 

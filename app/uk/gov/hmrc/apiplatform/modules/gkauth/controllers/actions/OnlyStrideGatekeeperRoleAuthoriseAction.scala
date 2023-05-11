@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import play.api.mvc.BaseController
-import scala.concurrent.ExecutionContext
-import play.api.mvc._
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+
+import play.api.mvc.{BaseController, _}
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
+
 import uk.gov.hmrc.apiplatform.modules.gkauth.services._
 
 trait OnlyStrideGatekeeperRoleAuthoriseAction {
@@ -28,11 +29,14 @@ trait OnlyStrideGatekeeperRoleAuthoriseAction {
   implicit val ec: ExecutionContext
 
   def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
- 
+
   private def authenticationAction = new ActionFilter[Request] {
     protected def executionContext: ExecutionContext = ec
 
-    def filter[A](input: Request[A]): Future[Option[Result]] = strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole(input)
+    def filter[A](input: Request[A]): Future[Option[Result]] = {
+      implicit val hc = HeaderCarrierConverter.fromRequest(input)
+      strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
+    }
   }
 
   def requiresAuthentication(): ActionBuilder[Request, AnyContent] = Action andThen authenticationAction

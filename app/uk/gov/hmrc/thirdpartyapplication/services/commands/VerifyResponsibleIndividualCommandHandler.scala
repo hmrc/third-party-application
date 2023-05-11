@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,71 +16,81 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
+import cats.Apply
+import cats.data.{NonEmptyList, Validated}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.VerifyResponsibleIndividual
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
 @Singleton
-class VerifyResponsibleIndividualCommandHandler @Inject()(
-    submissionService: SubmissionsService
+class VerifyResponsibleIndividualCommandHandler @Inject() (
+    submissionService: SubmissionsService,
+    responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
   import CommandHandler._
+  import CommandFailures._
 
-  private def isNotCurrentRi(name: String, email: String, app: ApplicationData) =
-    cond(app.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
-        ! responsibleIndividual.fullName.value.equalsIgnoreCase(name) || ! responsibleIndividual.emailAddress.value.equalsIgnoreCase(email)
-      case _ => true
-    }, s"The specified individual is already the RI for this application")
+  private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
+    cond(
+      app.access match {
+        case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
+          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.equalsIgnoreCase(email)
+        case _                                                                                            => true
+      },
+      s"The specified individual is already the RI for this application"
+    )
 
-  private def validate(app: ApplicationData, cmd: VerifyResponsibleIndividual): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map4(
+  private def validate(app: ApplicationData, cmd: VerifyResponsibleIndividual): Validated[Failures, Collaborator] = {
+    Apply[Validated[Failures, *]].map5(
       isStandardNewJourneyApp(app),
       isApproved(app),
       isAdminOnApp(cmd.instigator, app),
-      isNotCurrentRi(cmd.riName, cmd.riEmail, app)
-    ) { case _ => app }
+      isNotCurrentRi(cmd.riName, cmd.riEmail, app),
+      ensureRequesterEmailDefined(app)
+    ) { case (_, _, instigator, _, _) => instigator }
   }
 
-  import UpdateApplicationEvent._
-
-  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission): NonEmptyList[UpdateApplicationEvent] = {
-    val requesterEmail = getRequester(app, cmd.instigator)
+  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: LaxEmailAddress): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ResponsibleIndividualVerificationStarted(
-        id = UpdateApplicationEvent.Id.random,
+        id = EventId.random,
         applicationId = app.id,
         app.name,
-        eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(requesterEmail),
+        eventDateTime = cmd.timestamp.instant,
+        actor = Actors.AppCollaborator(requesterEmail),
         cmd.requesterName,
         requestingAdminEmail = getRequester(app, cmd.instigator),
         responsibleIndividualName = cmd.riName,
         responsibleIndividualEmail = cmd.riEmail,
         submission.id,
         submission.latestInstance.index,
-        ResponsibleIndividualVerificationId.random
+        ResponsibleIndividualVerificationId.random.value
       )
     )
   }
 
-  def process(app: ApplicationData, cmd: VerifyResponsibleIndividual): CommandHandler.Result = {
-    submissionService.fetchLatest(app.id).map(maybeSubmission => {
-      maybeSubmission match {
-        case Some(submission) => validate(app, cmd) map { _ =>
-          asEvents(app, cmd, submission)
-        }
-        case _ => Validated.Invalid(NonEmptyChain.one(s"No submission found for application ${app.id}"))
-      }
-    })
+  def process(app: ApplicationData, cmd: VerifyResponsibleIndividual): AppCmdResultT = {
+    lazy val noSubmission = NonEmptyList.one(GenericFailure(s"No submission found for application ${app.id}"))
+
+    for {
+      submission <- E.fromOptionF(submissionService.fetchLatest(app.id), noSubmission)
+      instigator <- E.fromEither(validate(app, cmd).toEither)
+      events      = asEvents(app, cmd, submission, instigator.emailAddress)
+      _          <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
+    } yield (app, events)
   }
 }

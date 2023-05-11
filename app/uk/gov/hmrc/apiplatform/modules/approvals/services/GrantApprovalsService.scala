@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,32 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.services.AuditService
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
-
-import scala.concurrent.Future.successful
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, LocalDateTime}
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
+
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, TermsOfUseAcceptance}
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.services.AuditService
 
 object GrantApprovalsService {
   sealed trait Result
@@ -57,6 +59,7 @@ class GrantApprovalsService @Inject() (
     auditService: AuditService,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
+    termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     submissionService: SubmissionsService,
     emailConnector: EmailConnector,
     clock: Clock
@@ -161,15 +164,111 @@ class GrantApprovalsService @Inject() (
   }
 
   private def writeStateHistory(snapshotApp: ApplicationData, name: String) =
-    insertStateHistory(snapshotApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL), name, GATEKEEPER, (a: ApplicationData) => applicationRepository.save(a))
+    insertStateHistory(
+      snapshotApp,
+      PENDING_REQUESTER_VERIFICATION,
+      Some(PENDING_GATEKEEPER_APPROVAL),
+      Actors.GatekeeperUser(name),
+      (a: ApplicationData) => applicationRepository.save(a)
+    )
 
   private def sendEmails(app: ApplicationData)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
+    val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found")).toLaxEmail
     val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
-    val recipients       = app.admins.map(_.emailAddress).filterNot(email => email.equals(requesterEmail))
+    val recipients       = app.admins.map(_.emailAddress).filterNot(email => email.equalsIgnoreCase(requesterEmail))
 
     if (recipients.nonEmpty) emailConnector.sendApplicationApprovedNotification(app.name, recipients)
 
     emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(requesterEmail))
+  }
+
+  private def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
+    submission.status match {
+      case Granted(_, _)                   => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
+      case GrantedWithWarnings(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2_WITH_WARNINGS)
+      case Warnings(_, _)                  => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
+      case Failed(_, _)                    => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
+      case Answering(_, _)                 => termsOfUseInvitationRepository.updateState(applicationId, EMAIL_SENT)
+      case _                               => successful(HasSucceeded)
+    }
+  }
+
+  def grantWithWarningsForTouUplift(
+      originalApp: ApplicationData,
+      submission: Submission,
+      gatekeeperUserName: String,
+      reasons: String
+    ): Future[GrantApprovalsService.Result] = {
+    import cats.implicits._
+    import cats.instances.future.catsStdInstancesForFuture
+
+    val ET = EitherTHelper.make[Result]
+    (
+      for {
+        _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
+        _ <- ET.cond(submission.status.isWarnings, (), RejectedDueToIncorrectSubmissionState)
+
+        updatedSubmission = Submission.grantWithWarnings(LocalDateTime.now(clock), gatekeeperUserName, reasons, None)(submission)
+        savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
+        _                <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
+      } yield Actioned(originalApp)
+    )
+      .fold[Result](identity, identity)
+  }
+
+  def grantForTouUplift(
+      originalApp: ApplicationData,
+      submission: Submission,
+      gatekeeperUserName: String
+    )(implicit hc: HeaderCarrier
+    ): Future[GrantApprovalsService.Result] = {
+    import cats.implicits._
+    import cats.instances.future.catsStdInstancesForFuture
+
+    val ET = EitherTHelper.make[Result]
+    (
+      for {
+        _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
+        _ <- ET.cond(submission.status.isGrantedWithWarnings, (), RejectedDueToIncorrectSubmissionState)
+
+        updatedSubmission      = Submission.grant(LocalDateTime.now(clock), gatekeeperUserName)(submission)
+        savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
+        _                     <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
+        responsibleIndividual <- ET.fromOption(getResponsibleIndividual(originalApp), RejectedDueToIncorrectApplicationData)
+        acceptance             = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submission.id, submission.latestInstance.index)
+        _                     <- ET.liftF(applicationRepository.addApplicationTermsOfUseAcceptance(originalApp.id, acceptance))
+        _                     <- ET.liftF(emailConnector.sendNewTermsOfUseConfirmation(originalApp.name, originalApp.admins.map(_.emailAddress)))
+      } yield Actioned(originalApp)
+    )
+      .fold[Result](identity, identity)
+  }
+
+  private def getResponsibleIndividual(app: ApplicationData) =
+    app.access match {
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
+      case _                                                                                            => None
+    }
+
+  def declineForTouUplift(
+      originalApp: ApplicationData,
+      submission: Submission,
+      gatekeeperUserName: String,
+      reasons: String
+    ): Future[GrantApprovalsService.Result] = {
+    import cats.implicits._
+    import cats.instances.future.catsStdInstancesForFuture
+
+    val ET = EitherTHelper.make[Result]
+    (
+      for {
+        _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
+        _ <- ET.cond(submission.status.isFailed, (), RejectedDueToIncorrectSubmissionState)
+
+        updatedSubmission = Submission.decline(LocalDateTime.now(clock), gatekeeperUserName, reasons)(submission)
+        savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
+        _                <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
+      } yield Actioned(originalApp)
+    )
+      .fold[Result](identity, identity)
   }
 }

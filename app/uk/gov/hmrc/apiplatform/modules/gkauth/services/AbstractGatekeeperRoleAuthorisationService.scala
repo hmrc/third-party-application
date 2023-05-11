@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,28 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
-import play.api.mvc._
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
+
+import play.api.mvc._
+import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ErrorCode, JsErrorResponse}
 
 abstract class AbstractGatekeeperRoleAuthorisationService(authControlConfig: AuthControlConfig) extends ApplicationLogger {
 
   lazy val UNAUTHORIZED_RESPONSE = successful(Some(Results.Unauthorized(JsErrorResponse(ErrorCode.UNAUTHORIZED, "Unauthorised"))))
   protected lazy val OK_RESPONSE = successful(None)
 
-  def ensureHasGatekeeperRole[A](request: Request[A]): Future[Option[Result]] = {
+  def ensureHasGatekeeperRole[A]()(implicit hc: HeaderCarrier): Future[Option[Result]] = {
     if (authControlConfig.enabled) {
-      innerEnsureHasGatekeeperRole(request)
+      innerEnsureHasGatekeeperRole()
     } else {
       Future.successful(None)
     }
   }
 
-  protected def innerEnsureHasGatekeeperRole[A](request: Request[A]): Future[Option[Result]]
+  protected def innerEnsureHasGatekeeperRole[A]()(implicit hc: HeaderCarrier): Future[Option[Result]]
 }

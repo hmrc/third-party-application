@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,15 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, StateHistory}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 
 case class ApplicationWithStateHistory private (id: ApplicationId, name: String, version: Int, states: List[StateHistory])
 
 object ApplicationWithStateHistory {
   def apply(id: ApplicationId, name: String, version: Int, states: List[StateHistory]) = new ApplicationWithStateHistory(id, name, version, states.sorted)
 
-  implicit val dateTimeFormatter = MongoJavatimeFormats.localDateTimeReads
+  implicit val dateTimeFormatter                 = MongoJavatimeFormats.localDateTimeReads
   implicit val formatApplicationWithStateHistory = Json.format[ApplicationWithStateHistory]
 }
-

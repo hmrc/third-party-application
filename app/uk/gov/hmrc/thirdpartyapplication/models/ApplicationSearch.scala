@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime}
+
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates
 import org.mongodb.scala.model.Filters._
+
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
-import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+
+// scalastyle:off number.of.types
 
 case class ApplicationSearch(
     pageNumber: Int = 1,
@@ -33,7 +37,8 @@ case class ApplicationSearch(
     textToSearch: Option[String] = None,
     apiContext: Option[ApiContext] = None,
     apiVersion: Option[ApiVersion] = None,
-    sort: ApplicationSort = SubmittedAscending
+    sort: ApplicationSort = SubmittedAscending,
+    includeDeleted: Boolean = false
   ) {
   def hasSubscriptionFilter()            = filters.exists(filter => filter.isInstanceOf[APISubscriptionFilter])
   def hasSpecificApiSubscriptionFilter() = filters.exists(filter => filter.isInstanceOf[SpecificAPISubscription.type])
@@ -62,12 +67,13 @@ object ApplicationSearch {
       .flatten
       .toList
 
-    def searchText = queryString.getOrElse("search", List.empty).headOption
-    def apiContext = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").headOption.map(ApiContext(_)))
-    def apiVersion = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").lift(1).map(ApiVersion(_)))
-    def sort       = ApplicationSort(queryString.getOrElse("sort", List.empty).headOption)
+    def searchText     = queryString.getOrElse("search", List.empty).headOption
+    def apiContext     = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").headOption.map(ApiContext(_)))
+    def apiVersion     = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").lift(1).map(ApiVersion(_)))
+    def sort           = ApplicationSort(queryString.getOrElse("sort", List.empty).headOption)
+    def includeDeleted = queryString.getOrElse("includeDeleted", List.empty).headOption.getOrElse("false").toBoolean
 
-    new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort)
+    new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort, includeDeleted)
   }
 }
 
@@ -110,6 +116,8 @@ case object PendingResponsibleIndividualVerification extends StatusFilter
 case object PendingGatekeeperCheck                   extends StatusFilter
 case object PendingSubmitterVerification             extends StatusFilter
 case object Active                                   extends StatusFilter
+case object WasDeleted                               extends StatusFilter
+case object ExcludingDeleted                         extends StatusFilter
 
 case object ApplicationStatusFilter extends StatusFilter {
 
@@ -120,6 +128,8 @@ case object ApplicationStatusFilter extends StatusFilter {
       case "PENDING_GATEKEEPER_CHECK"                    => Some(PendingGatekeeperCheck)
       case "PENDING_SUBMITTER_VERIFICATION"              => Some(PendingSubmitterVerification)
       case "ACTIVE"                                      => Some(Active)
+      case "DELETED"                                     => Some(WasDeleted)
+      case "EXCLUDING_DELETED"                           => Some(ExcludingDeleted)
       case _                                             => None
     }
   }
@@ -213,3 +223,5 @@ object ApplicationSort extends ApplicationSort {
     case _                      => SubmittedAscending
   }
 }
+
+// scalastyle:on number.of.types

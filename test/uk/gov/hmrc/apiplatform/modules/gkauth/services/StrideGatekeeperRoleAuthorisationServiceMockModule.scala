@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
-import play.api.mvc.Results._
 import scala.concurrent.Future.successful
+
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import play.api.mvc.Results._
 
 trait StrideGatekeeperRoleAuthorisationServiceMockModule {
   self: MockitoSugar with ArgumentMatchersSugar =>
@@ -28,12 +29,12 @@ trait StrideGatekeeperRoleAuthorisationServiceMockModule {
     def aMock: StrideGatekeeperRoleAuthorisationService
 
     object EnsureHasGatekeeperRole {
-      def authorised = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(None))
+      def authorised = when(aMock.ensureHasGatekeeperRole()(*)).thenReturn(successful(None))
 
-      def notAuthorised = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(Some(Unauthorized("bang"))))
+      def notAuthorised = when(aMock.ensureHasGatekeeperRole()(*)).thenReturn(successful(Some(Unauthorized("bang"))))
     }
   }
-  
+
   object StrideGatekeeperRoleAuthorisationServiceMock extends BaseStrideGatekeeperRoleAuthorisationServiceMock {
     val aMock = mock[StrideGatekeeperRoleAuthorisationService]
   }

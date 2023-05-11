@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,41 +16,44 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import akka.stream.Materializer
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import play.api.libs.json.Json
-import play.api.mvc.{RequestHeader, Result}
-import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import cats.implicits._
-
+import java.time.temporal.ChronoUnit._
+import java.time.{Instant, LocalDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
-import cats.data.OptionT
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
+
+import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import cats.data.OptionT
+import cats.implicits._
 
-import java.time.LocalDateTime
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import play.api.mvc.AnyContentAsJson
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapGatekeeperRoleAuthorisationServiceMockModule
+import play.api.libs.json.Json
+import play.api.mvc.{AnyContentAsJson, RequestHeader, Result}
+import play.api.test.{FakeRequest, Helpers}
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
-class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with ApplicationLogger {
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationServiceMockModule, StrideGatekeeperRoleAuthorisationServiceMockModule}
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
+import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+
+class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with ApplicationLogger
+    with ControllerTestData with ApplicationTestData {
 
   import play.api.test.Helpers._
 
@@ -58,23 +61,16 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   implicit lazy val materializer: Materializer = NoMaterializer
   implicit lazy val request                    = FakeRequest()
 
-  private val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
-  private val privilegedAccess = Privileged(scopes = Set("scope1"))
-  private val ropcAccess       = Ropc()
-
-  val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
-    Collaborator("dev@example.com", DEVELOPER, UserId.random)
-  )
-
-  trait Setup 
+  trait Setup
       extends StrideGatekeeperRoleAuthorisationServiceMockModule
       with LdapGatekeeperRoleAuthorisationServiceMockModule
       with ApplicationServiceMockModule
-    {
-    val mockGatekeeperService           = mock[GatekeeperService]
-    val mockSubscriptionService         = mock[SubscriptionService]
-    implicit val headers                = HeaderCarrier()
+      with TermsOfUseServiceMockModule
+      with ApplicationDataServiceMockModule
+      with SubmissionsServiceMockModule
+      with SubmissionsTestData {
+    val mockGatekeeperService = mock[GatekeeperService]
+    implicit val headers      = HeaderCarrier()
 
     lazy val underTest =
       new GatekeeperController(
@@ -82,7 +78,9 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
         LdapGatekeeperRoleAuthorisationServiceMock.aMock,
         StrideGatekeeperRoleAuthorisationServiceMock.aMock,
         mockGatekeeperService,
-        mockSubscriptionService,
+        TermsOfUseServiceMock.aMock,
+        ApplicationDataServiceMock.aMock,
+        SubmissionsServiceMock.aMock,
         Helpers.stubControllerComponents()
       ) {
         override implicit def hc(implicit request: RequestHeader): HeaderCarrier = headers
@@ -112,28 +110,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       testBlock
       testBlock
     }
-  }
-
-  private def aNewApplicationResponse(access: Access, environment: Environment = Environment.PRODUCTION) = {
-    val grantLengthInDays = 547
-
-    new ApplicationResponse(
-      ApplicationId.random,
-      ClientId("clientId"),
-      "gatewayId",
-      "My Application",
-      environment.toString,
-      Some("Description"),
-      collaborators,
-      LocalDateTime.now,
-      Some(LocalDateTime.now),
-      grantLengthInDays,
-      None,
-      standardAccess.redirectUris,
-      standardAccess.termsAndConditionsUrl,
-      standardAccess.privacyPolicyUrl,
-      access
-    )
   }
 
   def verifyForbidden(result: Future[Result]): Unit = {
@@ -188,7 +164,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
       val result = underTest.fetchAppById(appId)(request)
-      
+
       status(result) shouldBe UNAUTHORIZED
 
       verifyZeroInteractions(mockGatekeeperService)
@@ -205,7 +181,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       status(result) shouldBe 200
       contentAsJson(result) shouldBe Json.toJson(expected)
     }
-    
+
     "return app with history for Gatekeeper user" in new Setup {
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
@@ -266,11 +242,16 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   "fetchAppStateHistories" should {
     val expectedAppStateHistories = List(
-      ApplicationStateHistory(ApplicationId.random, "app 1", 1, List(
-        ApplicationStateHistoryItem(State.TESTING, LocalDateTime.parse("2022-07-01T12:00:00")),
-        ApplicationStateHistoryItem(State.PENDING_GATEKEEPER_APPROVAL, LocalDateTime.parse("2022-07-01T13:00:00")),
-        ApplicationStateHistoryItem(State.PRODUCTION, LocalDateTime.parse("2022-07-01T14:00:00"))
-      )),
+      ApplicationStateHistory(
+        ApplicationId.random,
+        "app 1",
+        1,
+        List(
+          ApplicationStateHistoryItem(State.TESTING, LocalDateTime.parse("2022-07-01T12:00:00")),
+          ApplicationStateHistoryItem(State.PENDING_GATEKEEPER_APPROVAL, LocalDateTime.parse("2022-07-01T13:00:00")),
+          ApplicationStateHistoryItem(State.PRODUCTION, LocalDateTime.parse("2022-07-01T14:00:00"))
+        )
+      ),
       ApplicationStateHistory(ApplicationId.random, "app 2", 2, List())
     )
 
@@ -298,8 +279,64 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
   }
 
+  "fetchAllAppsWithSubscriptions" should {
+    val expected = List(
+      ApplicationWithSubscriptionsResponse(ApplicationId.random, "Application Name", None, Set())
+    )
+
+    "return app with subs for Stride GK User" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      when(mockGatekeeperService.fetchAllWithSubscriptions()).thenReturn(successful(expected))
+
+      val result = underTest.fetchAllAppsWithSubscriptions()(request)
+
+      status(result) shouldBe 200
+      contentAsJson(result) shouldBe Json.toJson(expected)
+    }
+
+    "return app with subs for LDAP GK User" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      when(mockGatekeeperService.fetchAllWithSubscriptions()).thenReturn(successful(expected))
+
+      val result = underTest.fetchAllAppsWithSubscriptions()(request)
+
+      status(result) shouldBe 200
+      contentAsJson(result) shouldBe Json.toJson(expected)
+    }
+  }
+  "fetchAllForCollaborator" should {
+    val userId                                                   = UserId.random
+    val standardApplicationResponse: ExtendedApplicationResponse = aNewExtendedApplicationResponse(access = Standard())
+
+    "succeed with a 200 when applications are found for the collaborator by user id" in new Setup {
+      when(underTest.applicationService.fetchAllForCollaborator(userId, true))
+        .thenReturn(successful(List(standardApplicationResponse)))
+
+      status(underTest.fetchAllForCollaborator(userId)(request)) shouldBe OK
+    }
+
+    "succeed with a 200 when no applications are found for the collaborator by user id" in new Setup {
+      when(underTest.applicationService.fetchAllForCollaborator(userId, true)).thenReturn(successful(Nil))
+
+      val result = underTest.fetchAllForCollaborator(userId)(request)
+
+      status(result) shouldBe OK
+      contentAsString(result) shouldBe "[]"
+    }
+
+    "fail with a 500 when an exception is thrown" in new Setup {
+      when(underTest.applicationService.fetchAllForCollaborator(userId, true)).thenReturn(failed(new RuntimeException("Expected test failure")))
+
+      val result = underTest.fetchAllForCollaborator(userId)(request)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+  }
+
   "approveUplift" should {
-    val applicationId        = ApplicationId.random
     val gatekeeperUserId     = "big.boss.gatekeeper"
     val approveUpliftRequest = ApproveUpliftRequest(gatekeeperUserId)
 
@@ -324,7 +361,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
     "return 404 if the application doesn't exist" in new Setup {
       withSuppressedLoggingFrom(logger, "application doesn't exist") { suppressedLogs =>
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+        StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
         when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId))
           .thenReturn(failed(new NotFoundException("application doesn't exist")))
@@ -361,7 +398,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "reject Uplift" should {
-    val applicationId       = ApplicationId.random
     val gatekeeperUserId    = "big.boss.gatekeeper"
     val rejectUpliftRequest = RejectUpliftRequest(gatekeeperUserId, "Test error")
     val testReq             = request.withBody(Json.toJson(rejectUpliftRequest)).withHeaders(authTokenHeader)
@@ -422,7 +458,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "resendVerification" should {
-    val applicationId             = ApplicationId.random
     val gatekeeperUserId          = "big.boss.gatekeeper"
     val resendVerificationRequest = ResendVerificationRequest(gatekeeperUserId)
 
@@ -480,8 +515,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "blockApplication" should {
-    val applicationId: ApplicationId = ApplicationId.random
-
     "block the application" in new Setup {
 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
@@ -497,8 +530,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "unblockApplication" should {
-    val applicationId: ApplicationId = ApplicationId.random
-
     "unblock the application" in new Setup {
 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
@@ -515,8 +546,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   "update rate limit tier" should {
     import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.SILVER
-    
-    val applicationId                  = ApplicationId.random
+
     val invalidUpdateRateLimitTierJson = Json.parse("""{ "foo" : "bar" }""")
     val validUpdateRateLimitTierJson   = Json.parse("""{ "rateLimitTier" : "silver" }""")
 
@@ -536,7 +566,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-
       val result = underTest.updateRateLimitTier(applicationId)(request.withBody(Json.parse("""{ "rateLimitTier" : "multicoloured" }""")))
       status(result) shouldBe UNPROCESSABLE_ENTITY
       contentAsJson(result) shouldBe Json.toJson(Json.parse(
@@ -553,7 +582,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-
       when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
 
       val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
@@ -566,7 +594,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
 
       when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*))
         .thenReturn(failed(new RuntimeException("Expected test exception")))
@@ -588,9 +615,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "strideUserDeleteApplication" should {
-    val applicationId           = ApplicationId.random
     val gatekeeperUserId        = "big.boss.gatekeeper"
-    val requestedByEmailAddress = "admin@example.com"
+    val requestedByEmailAddress = "admin@example.com".toLaxEmail
     val deleteRequest           = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
     "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {
@@ -621,16 +647,104 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
   }
 
-  private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, OldActor("anEmail", COLLABORATOR), None, LocalDateTime.now)
+  "create terms of use invitation" should {
+    "return NOT_FOUND when an application for the given id is not found" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      ApplicationDataServiceMock.FetchApp.thenReturnNone
+
+      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
+
+      status(result) shouldBe NOT_FOUND
+    }
+
+    "return CREATED when an application exists with no submission and a terms of use invitation is created" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationState.production("", "")))
+
+      SubmissionsServiceMock.FetchLatest.thenReturnNone()
+
+      TermsOfUseServiceMock.FetchInvitation.thenReturnNone
+      TermsOfUseServiceMock.CreateInvitations.thenReturnSuccess(TermsOfUseInvitation(ApplicationId.random))
+
+      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
+
+      status(result) shouldBe CREATED
+    }
+
+    "return CONFLICT when a terms of use invitation already exists for the application" in new Setup {
+      val nowInstant     = Instant.now().truncatedTo(MILLIS)
+      val dueDateInstant = nowInstant.plus(60, DAYS)
+
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationState.production("", "")))
+
+      SubmissionsServiceMock.FetchLatest.thenReturnNone()
+
+      val response = TermsOfUseInvitationResponse(
+        applicationId,
+        nowInstant,
+        nowInstant,
+        dueDateInstant,
+        None,
+        EMAIL_SENT
+      )
+
+      TermsOfUseServiceMock.FetchInvitation.thenReturn(response)
+
+      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
+
+      status(result) shouldBe CONFLICT
+    }
+
+    "return CONFLICT when an application exists with a submission" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationState.production("", "")))
+
+      SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.hasCompletelyAnswered)
+
+      TermsOfUseServiceMock.FetchInvitation.thenReturnNone
+      TermsOfUseServiceMock.CreateInvitations.thenReturnSuccess(TermsOfUseInvitation(ApplicationId.random))
+
+      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
+
+      status(result) shouldBe CONFLICT
+    }
+
+    "return INTERNAL_SERVER_ERROR when a terms of use invitation is NOT created" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationState.production("", "")))
+
+      SubmissionsServiceMock.FetchLatest.thenReturnNone()
+
+      TermsOfUseServiceMock.FetchInvitation.thenReturnNone
+      TermsOfUseServiceMock.CreateInvitations.thenFail()
+
+      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
   }
 
-  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: LocalDateTime = LocalDateTime.now, state: ApplicationState = testingState()) = {
+  private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
+    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, now)
+  }
+
+  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: LocalDateTime = now, state: ApplicationState = testingState()) = {
     ApplicationWithUpliftRequest(id, "app 1", submittedOn, state.name)
   }
 
   private def anAppResponse(appId: ApplicationId) = {
     val grantLengthInDays = 547
-    new ApplicationResponse(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, LocalDateTime.now, Some(LocalDateTime.now), grantLengthInDays)
+    new ApplicationResponse(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, now, Some(now), grantLengthInDays)
   }
 }

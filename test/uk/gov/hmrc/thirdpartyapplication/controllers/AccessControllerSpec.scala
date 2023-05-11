@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,26 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import akka.stream.Materializer
-import cats.data.OptionT
-import cats.implicits._
-import play.api.libs.json.Json
-import play.api.mvc.{AnyContentAsEmpty, Result}
-import play.api.test.FakeRequest
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import akka.stream.testkit.NoMaterializer
 
-import java.time.LocalDateTime
+import akka.stream.Materializer
+import akka.stream.testkit.NoMaterializer
+import cats.data.OptionT
+import cats.implicits._
+
+import play.api.libs.json.Json
+import play.api.mvc.{AnyContentAsEmpty, Result}
+import play.api.test.FakeRequest
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
 
 class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule {
   import play.api.test.Helpers._
@@ -196,8 +197,8 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
         "PRODUCTION",
         Some("description"),
         Set.empty,
-        LocalDateTime.now,
-        Some(LocalDateTime.now),
+        now,
+        Some(now),
         grantLengthInDays,
         access = Standard()
       )
@@ -209,7 +210,7 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
 
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
-        ApplicationResponse(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, LocalDateTime.now, Some(LocalDateTime.now), grantLengthInDays)
+        ApplicationResponse(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, now, Some(now), grantLengthInDays)
       when(mockApplicationService.fetch(applicationId)).thenReturn(
         OptionT.pure[Future](
           applicationResponse.copy(clientId = ClientId("privilegedClientId"), name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))

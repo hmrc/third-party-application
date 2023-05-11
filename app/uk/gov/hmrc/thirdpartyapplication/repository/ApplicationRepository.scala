@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import cats.data.NonEmptyList
+import java.time.LocalDateTime
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
@@ -27,22 +30,30 @@ import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{excludeId, fields, include}
 import org.mongodb.scala.model._
+
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualChanged, ResponsibleIndividualChangedToSelf, ResponsibleIndividualSet, ApplicationStateChanged}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 
-import java.time.LocalDateTime
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+object ApplicationRepository {
+  case class SubsByUser(apiIdentifiers: List[ApiIdentifier])
+
+  implicit val subsByUserFormat = Json.format[SubsByUser]
+}
 
 @Singleton
 class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
@@ -106,9 +117,16 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
           IndexOptions()
             .name("collaboratorsEmailAddressIndex")
             .background(true)
+        ),
+        IndexModel(
+          ascending("collaborators.userId"),
+          IndexOptions()
+            .name("collaboratorsUserIdIndex")
+            .background(true)
         )
       ),
-      replaceIndexes = true
+      replaceIndexes = true,
+      extraCodecs = Seq(Codecs.playFormatCodec(LaxEmailAddress.formatter))
     ) with MetricsHelper {
 
   import MongoJsonFormatterOverrides._
@@ -178,10 +196,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
-  def updateClientSecretField(applicationId: ApplicationId, clientSecretId: String, fieldName: String, fieldValue: String): Future[ApplicationData] = {
+  def updateClientSecretField(applicationId: ApplicationId, clientSecretId: ClientSecret.Id, fieldName: String, fieldValue: String): Future[ApplicationData] = {
     val query = and(
       equal("id", Codecs.toBson(applicationId)),
-      equal("tokens.production.clientSecrets.id", clientSecretId)
+      equal("tokens.production.clientSecrets.id", Codecs.toBson(clientSecretId))
     )
 
     collection.findOneAndUpdate(
@@ -191,19 +209,19 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
-  def addClientSecret(applicationId: ApplicationId, clientSecret: ClientSecret): Future[ApplicationData] =
+  def addClientSecret(applicationId: ApplicationId, clientSecret: ClientSecretData): Future[ApplicationData] =
     updateApplication(applicationId, Updates.push("tokens.production.clientSecrets", Codecs.toBson(clientSecret)))
 
-  def updateClientSecretName(applicationId: ApplicationId, clientSecretId: String, newName: String): Future[ApplicationData] =
+  def updateClientSecretName(applicationId: ApplicationId, clientSecretId: ClientSecret.Id, newName: String): Future[ApplicationData] =
     updateClientSecretField(applicationId, clientSecretId, "name", newName)
 
-  def updateClientSecretHash(applicationId: ApplicationId, clientSecretId: String, hashedSecret: String): Future[ApplicationData] =
+  def updateClientSecretHash(applicationId: ApplicationId, clientSecretId: ClientSecret.Id, hashedSecret: String): Future[ApplicationData] =
     updateClientSecretField(applicationId, clientSecretId, "hashedSecret", hashedSecret)
 
-  def recordClientSecretUsage(applicationId: ApplicationId, clientSecretId: String): Future[ApplicationData] = {
+  def recordClientSecretUsage(applicationId: ApplicationId, clientSecretId: ClientSecret.Id): Future[ApplicationData] = {
     val query = and(
       equal("id", Codecs.toBson(applicationId)),
-      equal("tokens.production.clientSecrets.id", clientSecretId)
+      equal("tokens.production.clientSecrets.id", Codecs.toBson(clientSecretId))
     )
 
     collection.findOneAndUpdate(
@@ -213,7 +231,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
-  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String): Future[ApplicationData] = {
+  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: ClientSecret.Id): Future[ApplicationData] = {
     val query = equal("id", Codecs.toBson(applicationId))
 
     collection.findOneAndUpdate(
@@ -226,7 +244,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def fetchStandardNonTestingApps(): Future[Seq[ApplicationData]] = {
     val query = and(
       equal("access.accessType", Codecs.toBson(AccessType.STANDARD)),
-      notEqual("state.name", Codecs.toBson(State.TESTING))
+      notEqual("state.name", Codecs.toBson(State.TESTING)),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
     )
 
     collection.find(query).toFuture()
@@ -237,11 +256,21 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   }
 
   def fetchApplicationsByName(name: String): Future[Seq[ApplicationData]] = {
-    collection.find(equal("normalisedName", name.toLowerCase)).toFuture()
+    val query = and(
+      equal("normalisedName", name.toLowerCase),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
+    )
+
+    collection.find(query).toFuture()
   }
 
   def fetchVerifiableUpliftBy(verificationCode: String): Future[Option[ApplicationData]] = {
-    collection.find(equal("state.verificationCode", verificationCode)).headOption()
+    val query = and(
+      equal("state.verificationCode", verificationCode),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
+    )
+
+    collection.find(query).headOption()
   }
 
   def fetchAllByStatusDetails(state: State.State, updatedBefore: LocalDateTime): Future[Seq[ApplicationData]] = {
@@ -253,35 +282,151 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     collection.find(query).toFuture()
   }
 
+  def fetchByStatusDetailsAndEnvironment(state: State.State, updatedBefore: LocalDateTime, environment: Environment.Environment): Future[Seq[ApplicationData]] = {
+    collection.aggregate(
+      Seq(
+        filter(equal("state.name", Codecs.toBson(state))),
+        filter(equal("environment", Codecs.toBson(environment))),
+        filter(lte("state.updatedOn", updatedBefore))
+      )
+    ).toFuture()
+  }
+
+  def fetchByStatusDetailsAndEnvironmentNotAleadyNotified(state: State.State, updatedBefore: LocalDateTime, environment: Environment.Environment): Future[Seq[ApplicationData]] = {
+    collection.aggregate(
+      Seq(
+        filter(equal("state.name", Codecs.toBson(state))),
+        filter(equal("environment", Codecs.toBson(environment))),
+        filter(lte("state.updatedOn", updatedBefore)),
+        lookup(from = "notifications", localField = "id", foreignField = "applicationId", as = "matched"),
+        filter(size("matched", 0))
+      )
+    ).toFuture()
+  }
+
   def fetchByClientId(clientId: ClientId): Future[Option[ApplicationData]] = {
-    collection.find(equal("tokens.production.clientId", Codecs.toBson(clientId))).headOption()
+    val query = and(
+      equal("tokens.production.clientId", Codecs.toBson(clientId)),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
+    )
+
+    collection.find(query).headOption()
   }
 
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationData]] = {
-    collection.find(equal("tokens.production.accessToken", serverToken)).headOption()
+    val query = and(
+      equal("tokens.production.accessToken", serverToken),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
+    )
+
+    collection.find(query).headOption()
   }
 
-  def fetchAllForUserId(userId: UserId): Future[Seq[ApplicationData]] = {
-    collection.find(equal("collaborators.userId", Codecs.toBson(userId))).toFuture()
+  def fetchAllForUserId(userId: UserId, includeDeleted: Boolean): Future[Seq[ApplicationData]] = {
+
+    def query = {
+      if (includeDeleted) {
+        equal("collaborators.userId", Codecs.toBson(userId))
+      } else {
+        and(
+          equal("collaborators.userId", Codecs.toBson(userId)),
+          notEqual("state.name", Codecs.toBson(State.DELETED))
+        )
+      }
+    }
+
+    collection.find(query).toFuture()
   }
 
   def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[Seq[ApplicationData]] = {
     val query = and(
       equal("collaborators.userId", Codecs.toBson(userId)),
-      equal("environment", environment)
+      equal("environment", environment),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
     )
 
     collection.find(query).toFuture()
   }
 
+  /*
+    db.application.aggregate( [
+        {
+            $match:
+            {
+                "collaborators.userId" : "85682eda-5758-4a13-8b97-057c94b3657b"
+            }
+        },
+        {
+            $lookup:
+            {
+                from: "subscription",
+                localField: "id",
+                foreignField: "applications",
+                as: "subs"
+            }
+        },
+        {
+            $project:
+            {
+                _id: 0,
+                "apiIdentifier": "$subs.apiIdentifier"
+            }
+        },
+        {
+            $unwind: "$apiIdentifier"
+        },
+        {
+            $project: {
+                _id: 0,
+                "context": "$apiIdentifier.context",
+                "version": "$apiIdentifier.version"
+            }
+        }
+    ] )
+   */
+  def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
+
+    import org.mongodb.scala.model.Projections.{computed, excludeId}
+
+    val pipeline = Seq(
+      matches(equal("collaborators.userId", Codecs.toBson(userId))),
+      lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subs"),
+      project(
+        fields(
+          excludeId(),
+          computed("apiIdentifier", "$subs.apiIdentifier")
+        )
+      ),
+      unwind("$apiIdentifier"),
+      project(
+        fields(
+          excludeId(),
+          computed("context", "$apiIdentifier.context"),
+          computed("version", "$apiIdentifier.version")
+        )
+      )
+    )
+
+    collection.aggregate[BsonValue](pipeline)
+      .map(Codecs.fromBson[ApiIdentifier])
+      .toFuture()
+      .map(_.toSet)
+  }
+
   def fetchAllForEmailAddress(emailAddress: String): Future[Seq[ApplicationData]] = {
-    collection.find(equal("collaborators.emailAddress", emailAddress)).toFuture()
+    val query = and(
+      equal("collaborators.emailAddress", emailAddress),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
+    )
+
+    collection.find(query).toFuture()
   }
 
   def fetchAllForEmailAddressAndEnvironment(emailAddress: String, environment: String): Future[Seq[ApplicationData]] = {
     val query = and(
       equal("collaborators.emailAddress", emailAddress),
-      equal("environment", environment)
+      equal("environment", environment),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
     )
 
     collection.find(query).toFuture()
@@ -290,6 +435,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def fetchProdAppStateHistories(): Future[Seq[ApplicationWithStateHistory]] = {
     val pipeline: Seq[Bson] = Seq(
       matches(equal("environment", Codecs.toBson(Environment.PRODUCTION))),
+      matches(notEqual("state.name", Codecs.toBson(State.DELETED))),
       addFields(Field("version", cond(Document("$not" -> BsonString("$access.importantSubmissionData")), 1, 2))),
       lookup(from = "stateHistory", localField = "id", foreignField = "applicationId", as = "states"),
       sort(ascending("createdOn", "states.changedAt"))
@@ -298,7 +444,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   }
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationData] = {
-    val filters = applicationSearch.filters.map(filter => convertFilterToQueryClause(filter, applicationSearch))
+    val filters = applicationSearch.filters.map(filter => convertFilterToQueryClause(filter, applicationSearch)) ++ deletedFilter(applicationSearch)
     val sort    = convertToSortClause(applicationSearch.sort)
 
     val pagination = List(
@@ -317,14 +463,25 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ))
   }
 
+  private def deletedFilter(applicationSearch: ApplicationSearch): List[Bson] = {
+    // Filter out Deleted applications, unless specifically asked for
+    if (!applicationSearch.includeDeleted) {
+      List(matches(notEqual("state.name", Codecs.toBson(State.DELETED))))
+    } else {
+      List()
+    }
+  }
 
   private def matches(predicates: Bson): Bson = filter(predicates)
 
   private def in(fieldName: String, values: Seq[String]): Bson = matches(Filters.in(fieldName, values: _*))
 
+  // scalastyle:off cyclomatic.complexity
   private def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter, applicationSearch: ApplicationSearch): Bson = {
 
     def applicationStatusMatch(states: State*): Bson = in("state.name", states.map(_.toString))
+
+    def applicationStatusNotEqual(state: State): Bson = matches(notEqual("state.name", Codecs.toBson(State.DELETED)))
 
     def accessTypeMatch(accessType: AccessType): Bson = matches(equal("access.accessType", Codecs.toBson(accessType)))
 
@@ -342,6 +499,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     }
 
     applicationSearchFilter match {
+
       // API Subscriptions
       case NoAPISubscriptions        => matches(size("subscribedApis", 0))
       case OneOrMoreAPISubscriptions => matches(Document(s"""{$$expr: {$$gte: [{$$size:"$$subscribedApis"}, 1] }}"""))
@@ -353,6 +511,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case PendingGatekeeperCheck                   => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
       case PendingSubmitterVerification             => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
       case Active                                   => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
+      case WasDeleted                               => applicationStatusMatch(State.DELETED)
+      case ExcludingDeleted                         => applicationStatusNotEqual(State.DELETED)
 
       // Access Type
       case StandardAccess   => accessTypeMatch(AccessType.STANDARD)
@@ -368,6 +528,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case _                                 => Document() // Only here to complete the match
     }
   }
+  // scalastyle:on cyclomatic.complexity
 
   private def convertToSortClause(sort: ApplicationSort): List[Bson] = sort match {
     case NameAscending         => List(Aggregates.sort(Sorts.ascending("name")))
@@ -453,16 +614,26 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   }
 
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
-    collection.find()
+    collection.find(notEqual("state.name", Codecs.toBson(State.DELETED)))
       .map(function)
       .toFuture()
       .map(_ => ())
   }
 
-  def delete(id: ApplicationId): Future[HasSucceeded] = {
+  def hardDelete(id: ApplicationId): Future[HasSucceeded] = {
     collection.deleteOne(equal("id", Codecs.toBson(id)))
       .toFuture()
       .map(_ => HasSucceeded)
+  }
+
+  def delete(id: ApplicationId, updatedOn: LocalDateTime): Future[ApplicationData] = {
+    updateApplication(
+      id,
+      Updates.combine(
+        Updates.set("state.name", Codecs.toBson(State.DELETED)),
+        Updates.set("state.updatedOn", updatedOn)
+      )
+    )
   }
 
   def documentsWithFieldMissing(fieldName: String): Future[Int] = {
@@ -479,6 +650,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   def getApplicationWithSubscriptionCount(): Future[Map[String, Int]] = {
     val pipeline = Seq(
+      matches(notEqual("state.name", Codecs.toBson(State.DELETED))),
       lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis"),
       unwind("$subscribedApis"),
       group(Document("id" -> "$id", "name" -> "$name"), Accumulators.sum("count", 1))
@@ -491,101 +663,154 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
         .toMap)
   }
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[ApplicationData] = {
-    require(events.map(_.applicationId).toList.toSet.size == 1, "Events must all be for the same application")
+  def addCollaborator(applicationId: ApplicationId, collaborator: Collaborator) =
+    updateApplication(
+      applicationId,
+      Updates.push(
+        "collaborators",
+        Codecs.toBson(collaborator)
+      )
+    )
 
-    events match {
-      case NonEmptyList(e, Nil)  => applyEvent(e)
-      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
-    }
-  }
+  def removeCollaborator(applicationId: ApplicationId, userId: UserId) =
+    updateApplication(
+      applicationId,
+      Updates.pull(
+        "collaborators",
+        Codecs.toBson(Json.obj("userId" -> userId))
+      )
+    )
 
-  private def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
-    updateApplication(applicationId, Updates.combine(
-      Updates.set("name", name),
-      Updates.set("normalisedName", name.toLowerCase)
-    ))
+  def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[String]) =
+    updateApplication(applicationId, Updates.set("access.redirectUris", Codecs.toBson(redirectUris)))
 
-  private def updateApplicationPrivacyPolicyLocation(applicationId: ApplicationId, location: PrivacyPolicyLocation): Future[ApplicationData] =
+  def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
+    updateApplication(
+      applicationId,
+      Updates.combine(
+        Updates.set("name", name),
+        Updates.set("normalisedName", name.toLowerCase)
+      )
+    )
+
+  def updateApplicationPrivacyPolicyLocation(applicationId: ApplicationId, location: PrivacyPolicyLocation): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData.privacyPolicyLocation", Codecs.toBson(location)))
 
-  private def updateLegacyApplicationPrivacyPolicyLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
+  def updateLegacyApplicationPrivacyPolicyLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.privacyPolicyUrl", url))
 
-  private def updateApplicationTermsAndConditionsLocation(applicationId: ApplicationId, location: TermsAndConditionsLocation): Future[ApplicationData] =
+  def updateApplicationTermsAndConditionsLocation(applicationId: ApplicationId, location: TermsAndConditionsLocation): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData.termsAndConditionsLocation", Codecs.toBson(location)))
 
-  private def updateLegacyApplicationTermsAndConditionsLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
+  def updateLegacyApplicationTermsAndConditionsLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.termsAndConditionsUrl", url))
 
-  private def updateApplicationChangeResponsibleIndividual(event: ResponsibleIndividualChanged): Future[ApplicationData] =
-    updateApplication(event.applicationId, Updates.combine(
-      Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", event.newResponsibleIndividualName),
-      Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", event.newResponsibleIndividualEmail),
-      Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(TermsOfUseAcceptance(
-        ResponsibleIndividual.build(event.newResponsibleIndividualName, event.newResponsibleIndividualEmail),
-        event.eventDateTime,
-        event.submissionId,
-        event.submissionIndex
-      )))
-    ))
+  def updateApplicationChangeResponsibleIndividual(
+      applicationId: ApplicationId,
+      newResponsibleIndividualName: String,
+      newResponsibleIndividualEmail: LaxEmailAddress,
+      eventDateTime: LocalDateTime,
+      submissionId: SubmissionId,
+      submissionIndex: Int
+    ): Future[ApplicationData] =
+    updateApplication(
+      applicationId,
+      Updates.combine(
+        Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", newResponsibleIndividualName),
+        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", Codecs.toBson(newResponsibleIndividualEmail)),
+        Updates.push(
+          "access.importantSubmissionData.termsOfUseAcceptances",
+          Codecs.toBson(TermsOfUseAcceptance(
+            ResponsibleIndividual.build(newResponsibleIndividualName, newResponsibleIndividualEmail.text),
+            eventDateTime,
+            submissionId,
+            submissionIndex
+          ))
+        )
+      )
+    )
 
-  private def updateApplicationChangeResponsibleIndividualToSelf(event: ResponsibleIndividualChangedToSelf): Future[ApplicationData] =
-    updateApplication(event.applicationId, Updates.combine(
-      Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", event.requestingAdminName),
-      Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", event.requestingAdminEmail),
-      Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(TermsOfUseAcceptance(
-        ResponsibleIndividual.build(event.requestingAdminName, event.requestingAdminEmail),
-        event.eventDateTime,
-        event.submissionId,
-        event.submissionIndex
-      )))
-    ))
+  def updateApplicationChangeResponsibleIndividualToSelf(
+      applicationId: ApplicationId,
+      requestingAdminName: String,
+      requestingAdminEmail: LaxEmailAddress,
+      timeOfChange: LocalDateTime,
+      submissionId: SubmissionId,
+      submissionIndex: Int
+    ): Future[ApplicationData] =
+    updateApplication(
+      applicationId,
+      Updates.combine(
+        Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", requestingAdminName),
+        Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", Codecs.toBson(requestingAdminEmail)),
+        Updates.push(
+          "access.importantSubmissionData.termsOfUseAcceptances",
+          Codecs.toBson(TermsOfUseAcceptance(
+            ResponsibleIndividual.build(requestingAdminName, requestingAdminEmail.text),
+            timeOfChange,
+            submissionId,
+            submissionIndex
+          ))
+        )
+      )
+    )
 
-  private def updateApplicationSetResponsibleIndividual(event: ResponsibleIndividualSet): Future[ApplicationData] =
-    updateApplication(event.applicationId, Updates.combine(
-      Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(TermsOfUseAcceptance(
-        ResponsibleIndividual.build(event.responsibleIndividualName, event.responsibleIndividualEmail),
-        event.eventDateTime,
-        event.submissionId,
-        event.submissionIndex
-      )))
-    ))
-  
-  private def updateApplicationState(event: ApplicationStateChanged): Future[ApplicationData] =
-    updateApplication(event.applicationId, Updates.combine(
-      Updates.set("state.name", Codecs.toBson(event.newAppState)),
-      Updates.set("state.updatedOn", event.eventDateTime),
-      Updates.set("state.requestedByEmailAddress", event.requestingAdminEmail),
-      Updates.set("state.requestedByName", event.requestingAdminName)
-    ))
+  def updateApplicationSetResponsibleIndividual(
+      applicationId: ApplicationId,
+      responsibleIndividualName: String,
+      responsibleIndividualEmail: LaxEmailAddress,
+      eventDateTime: LocalDateTime,
+      submissionId: SubmissionId,
+      submissionIndex: Int
+    ): Future[ApplicationData] =
+    updateApplication(
+      applicationId,
+      Updates.combine(
+        Updates.push(
+          "access.importantSubmissionData.termsOfUseAcceptances",
+          Codecs.toBson(TermsOfUseAcceptance(
+            ResponsibleIndividual.build(responsibleIndividualName, responsibleIndividualEmail.text),
+            eventDateTime,
+            submissionId,
+            submissionIndex
+          ))
+        )
+      )
+    )
 
-  private def noOp(event: UpdateApplicationEvent): Future[ApplicationData] = fetch(event.applicationId).map(_.get)
+  def updateApplicationState(
+      applicationId: ApplicationId,
+      newAppState: State,
+      timestamp: LocalDateTime,
+      requestingAdminEmail: String,
+      requestingAdminName: String
+    ): Future[ApplicationData] =
+    updateApplication(
+      applicationId,
+      Updates.combine(
+        Updates.set("state.name", Codecs.toBson(newAppState)),
+        Updates.set("state.updatedOn", timestamp),
+        Updates.set("state.requestedByEmailAddress", requestingAdminEmail),
+        Updates.set("state.requestedByName", requestingAdminName)
+      )
+    )
 
-  private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
-    import UpdateApplicationEvent._
+  def getAppsWithSubscriptions: Future[List[ApplicationWithSubscriptions]] = {
+    val pipeline = Seq(
+      lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis"),
+      unwind("$subscribedApis"),
+      group(
+        Document("id" -> "$id", "name" -> "$name"),
+        Accumulators.first("id", "$id"),
+        Accumulators.first("name", "$name"),
+        Accumulators.first("lastAccess", "$lastAccess"),
+        Accumulators.addToSet("apiIdentifiers", "$subscribedApis.apiIdentifier")
+      )
+    )
 
-    event match {
-      case evt : ProductionAppNameChanged => updateApplicationName(evt.applicationId, evt.newAppName)
-      case evt : ProductionAppPrivacyPolicyLocationChanged => updateApplicationPrivacyPolicyLocation(evt.applicationId, evt.newLocation)
-      case evt : ProductionLegacyAppPrivacyPolicyLocationChanged => updateLegacyApplicationPrivacyPolicyLocation(evt.applicationId, evt.newUrl)
-      case evt : ProductionAppTermsConditionsLocationChanged => updateApplicationTermsAndConditionsLocation(evt.applicationId, evt.newLocation)
-      case evt : ProductionLegacyAppTermsConditionsLocationChanged => updateLegacyApplicationTermsAndConditionsLocation(evt.applicationId, evt.newUrl)
-      case evt : ResponsibleIndividualSet => updateApplicationSetResponsibleIndividual(evt)
-      case evt : ResponsibleIndividualChanged => updateApplicationChangeResponsibleIndividual(evt)
-      case evt : ResponsibleIndividualChangedToSelf => updateApplicationChangeResponsibleIndividualToSelf(evt)
-      case evt : ApplicationStateChanged => updateApplicationState(evt)
-      case _ : ResponsibleIndividualVerificationStarted => noOp(event)
-      case _ : ResponsibleIndividualDeclined => noOp(event)
-      case _ : ResponsibleIndividualDeclinedUpdate => noOp(event)
-      case _ : ResponsibleIndividualDidNotVerify => noOp(event)
-      case _ : ApplicationApprovalRequestDeclined => noOp(event)
-    }
+    collection.aggregate[BsonValue](pipeline)
+      .map(Codecs.fromBson[ApplicationWithSubscriptions])
+      .toFuture()
+      .map(_.toList)
   }
 }
-
-sealed trait ApplicationModificationResult
-
-final case class SuccessfulApplicationModificationResult(numberOfDocumentsUpdated: Int) extends ApplicationModificationResult
-
-final case class UnsuccessfulApplicationModificationResult(message: Option[String]) extends ApplicationModificationResult

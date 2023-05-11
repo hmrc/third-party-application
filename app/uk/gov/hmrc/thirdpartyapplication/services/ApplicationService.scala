@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,48 +16,41 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import akka.actor.ActorSystem
-import org.apache.commons.net.util.SubnetUtils
-import uk.gov.hmrc.http.ForbiddenException
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.NotFoundException
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorRequest
-import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
-import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
-import uk.gov.hmrc.thirdpartyapplication.controllers.FixCollaboratorRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
-import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
-import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-
+import java.time.{Clock, LocalDateTime}
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{apply => _, _}
 import scala.concurrent.duration.{Duration, DurationInt}
-import scala.util.Failure
-import scala.util.Try
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Try}
+
+import akka.actor.ActorSystem
+import org.apache.commons.net.util.SubnetUtils
+
+import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
-
-import java.time.{Clock, LocalDateTime}
+import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, FixCollaboratorRequest}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator}
 
 @Singleton
 class ApplicationService @Inject() (
@@ -78,9 +71,10 @@ class ApplicationService @Inject() (
     tokenService: TokenService,
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
+    applicationCommandDispatcher: ApplicationCommandDispatcher,
     clock: Clock
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger {
+  ) extends ApplicationLogger with ActorHelper {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
@@ -109,68 +103,20 @@ class ApplicationService @Inject() (
     } yield ApplicationResponse(data = savedApp)
   }
 
-  def addCollaborator(applicationId: ApplicationId, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
-
-    def validateCollaborator(app: ApplicationData, email: String, role: Role, userId: UserId): Collaborator = {
-      val normalised = email.toLowerCase
-      if (app.collaborators.exists(_.emailAddress == normalised)) throw new UserAlreadyExists
-
-      Collaborator(normalised, role, userId)
-    }
-
-    def addUser(app: ApplicationData, collaborator: Collaborator): Future[Set[Collaborator]] = {
-      val updated = app.collaborators + collaborator
-      applicationRepository.save(app.copy(collaborators = updated)) map (_.collaborators)
-    }
-
-    def sendNotificationEmails(
-        applicationName: String,
-        collaborator: Collaborator,
-        registeredUser: Boolean,
-        adminsToEmail: Set[String]
-      )(implicit hc: HeaderCarrier
-      ): Future[HasSucceeded] = {
-      def roleForEmail(role: Role) = {
-        role match {
-          case ADMINISTRATOR => "admin"
-          case DEVELOPER     => "developer"
-          case _             => throw new RuntimeException(s"Unexpected role $role")
-        }
-      }
-
-      val role: String = roleForEmail(collaborator.role)
-
-      if (adminsToEmail.nonEmpty) {
-        emailConnector.sendAddedCollaboratorNotification(collaborator.emailAddress, role, applicationName, adminsToEmail)
-      }
-
-      emailConnector.sendAddedCollaboratorConfirmation(role, applicationName, Set(collaborator.emailAddress))
-    }
-
-    for {
-      app         <- fetchApp(applicationId)
-      collaborator = validateCollaborator(app, request.collaborator.emailAddress, request.collaborator.role, request.collaborator.userId)
-      _           <- addUser(app, collaborator)
-      _            = auditService.audit(CollaboratorAdded, AuditHelper.applicationId(app.id) ++ CollaboratorAdded.details(collaborator))
-      _            = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)
-      _            = sendNotificationEmails(app.name, collaborator, request.isRegistered, request.adminsToEmail)
-    } yield AddCollaboratorResponse(request.isRegistered)
-  }
-
   def addTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] = {
     for {
       updatedApp <- applicationRepository.addApplicationTermsOfUseAcceptance(applicationId, acceptance)
     } yield updatedApp
   }
 
-  def confirmSetupComplete(applicationId: ApplicationId, requesterEmailAddress: String): Future[ApplicationData] = {
+  def confirmSetupComplete(applicationId: ApplicationId, requesterEmailAddress: LaxEmailAddress): Future[ApplicationData] = {
     for {
       app            <- fetchApp(applicationId)
       oldState        = app.state
       newState        = app.state.toProduction(clock)
       appWithNewState = app.copy(state = newState)
       updatedApp     <- applicationRepository.save(appWithNewState)
-      stateHistory    = StateHistory(applicationId, newState.name, OldActor(requesterEmailAddress, COLLABORATOR), Some(oldState.name), None, app.state.updatedOn)
+      stateHistory    = StateHistory(applicationId, newState.name, Actors.AppCollaborator(requesterEmailAddress), Some(oldState.name), None, app.state.updatedOn)
       _              <- stateHistoryRepository.insert(stateHistory)
     } yield updatedApp
   }
@@ -240,7 +186,7 @@ class ApplicationService @Inject() (
       _   <- deleteSubscriptions(app)
       _   <- thirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(app.tokens.production.clientId)
       _   <- apiGatewayStore.deleteApplication(app.wso2ApplicationName)
-      _   <- applicationRepository.delete(applicationId)
+      _   <- applicationRepository.hardDelete(applicationId)
       _   <- submissionsService.deleteAllAnswersForApplication(app.id)
       _   <- stateHistoryRepository.deleteByApplicationId(applicationId)
       _    = auditFunction(app)
@@ -250,51 +196,8 @@ class ApplicationService @Inject() (
     }
   }
 
-  def deleteCollaborator(
-      applicationId: ApplicationId,
-      collaborator: String,
-      adminsToEmail: Set[String],
-      notifyCollaborator: Boolean
-    )(implicit hc: HeaderCarrier
-    ): Future[Set[Collaborator]] = {
-    def deleteUser(app: ApplicationData): Future[ApplicationData] = {
-      val updatedCollaborators = app.collaborators.filterNot(_.emailAddress equalsIgnoreCase collaborator)
-      if (!hasAdmin(updatedCollaborators)) failed(new ApplicationNeedsAdmin)
-      else applicationRepository.save(app.copy(collaborators = updatedCollaborators))
-    }
-
-    def sendEmails(applicationName: String, collaboratorEmail: String, adminsToEmail: Set[String]): Future[Unit] = {
-      if (adminsToEmail.nonEmpty) emailConnector.sendRemovedCollaboratorNotification(collaboratorEmail, applicationName, adminsToEmail)
-      if (notifyCollaborator) emailConnector.sendRemovedCollaboratorConfirmation(applicationName, Set(collaboratorEmail)).map(_ => ()) else successful(())
-    }
-
-    def audit(collaborator: Option[Collaborator]) = collaborator match {
-      case Some(c) => auditService.audit(CollaboratorRemoved, AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(c))
-      case None    => logger.warn(s"Failed to audit collaborator removal for: $collaborator")
-    }
-
-    def findCollaborator(app: ApplicationData): Option[Collaborator] = app.collaborators.find(_.emailAddress == collaborator.toLowerCase)
-
-    def sendEvent(app: ApplicationData, maybeColab: Option[Collaborator]) = maybeColab match {
-      case Some(collaborator) => apiPlatformEventService.sendTeamMemberRemovedEvent(app, collaborator.emailAddress, collaborator.role.toString)
-      case None               => logger.warn(s"Failed to send TeamMemberRemovedEvent for appId: ${app.id}")
-    }
-
-    for {
-      app     <- fetchApp(applicationId)
-      updated <- deleteUser(app)
-      _        = audit(findCollaborator(app))
-      _        = sendEvent(app, findCollaborator(app))
-      _        = recoverAll(sendEmails(app.name, collaborator.toLowerCase, adminsToEmail))
-    } yield updated.collaborators
-  }
-
   def fixCollaborator(applicationId: ApplicationId, fixCollaboratorRequest: FixCollaboratorRequest): Future[Option[ApplicationData]] = {
     applicationRepository.updateCollaboratorId(applicationId, fixCollaboratorRequest.emailAddress, fixCollaboratorRequest.userId)
-  }
-
-  private def hasAdmin(updated: Set[Collaborator]): Boolean = {
-    updated.exists(_.role == Role.ADMINISTRATOR)
   }
 
   def fetchByClientId(clientId: ClientId): Future[Option[ApplicationResponse]] = {
@@ -338,8 +241,8 @@ class ApplicationService @Inject() (
     Future.sequence(apps.map(asExtendedResponse))
   }
 
-  def fetchAllForCollaborator(userId: UserId): Future[List[ExtendedApplicationResponse]] = {
-    applicationRepository.fetchAllForUserId(userId).flatMap(x => asExtendedResponses(x.toList))
+  def fetchAllForCollaborator(userId: UserId, includeDeleted: Boolean): Future[List[ExtendedApplicationResponse]] = {
+    applicationRepository.fetchAllForUserId(userId, includeDeleted).flatMap(x => asExtendedResponses(x.toList))
   }
 
   def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[List[ExtendedApplicationResponse]] = {
@@ -454,10 +357,10 @@ class ApplicationService @Inject() (
 
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {
     val actor = appData.access.accessType match {
-      case PRIVILEGED | ROPC => OldActor("", GATEKEEPER)
-      case _                 => OldActor(loggedInUser, COLLABORATOR)
+      case PRIVILEGED | ROPC => Actors.Unknown
+      case _                 => loggedInActor
     }
-    insertStateHistory(appData, appData.state.name, None, actor.id, actor.actorType, (a: ApplicationData) => applicationRepository.delete(a.id))
+    insertStateHistory(appData, appData.state.name, None, actor, (a: ApplicationData) => applicationRepository.hardDelete(a.id))
   }
 
   private def auditAppCreated(app: ApplicationData)(implicit hc: HeaderCarrier) =
@@ -496,23 +399,12 @@ class ApplicationService @Inject() (
       existing <- fetchApp(applicationId)
       _         = checkAccessType(existing)
       savedApp <- applicationRepository.save(updatedApplication(existing))
-      _         = sendEventIfRedirectUrisChanged(existing, savedApp)
       _         = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
     } yield savedApp
   }
 
-  private def sendEventIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)(implicit hc: HeaderCarrier): Unit = {
-    (previousAppData.access, updatedAppData.access) match {
-      case (previous: Standard, updated: Standard) =>
-        if (previous.redirectUris != updated.redirectUris) {
-          apiPlatformEventService.sendRedirectUrisUpdatedEvent(updatedAppData, previous.redirectUris.mkString(","), updated.redirectUris.mkString(","))
-        }
-      case _                                       => ()
-    }
-  }
-
   private def fetchApp(applicationId: ApplicationId) = {
-    val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
+    lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
     applicationRepository.fetch(applicationId).flatMap {
       case None      => failed(notFoundException)
       case Some(app) => successful(app)
@@ -523,11 +415,10 @@ class ApplicationService @Inject() (
       snapshotApp: ApplicationData,
       newState: State,
       oldState: Option[State],
-      requestedBy: String,
-      actorType: ActorType.ActorType,
+      actor: Actor,
       rollback: ApplicationData => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, OldActor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)
@@ -540,9 +431,8 @@ class ApplicationService @Inject() (
     }
   }
 
-  private def loggedInUser(implicit hc: HeaderCarrier) =
-    hc.valueOf(LOGGED_IN_USER_EMAIL_HEADER)
-      .getOrElse("")
+  private def loggedInActor(implicit hc: HeaderCarrier): Actor =
+    hc.valueOf(LOGGED_IN_USER_EMAIL_HEADER).fold[Actor](Actors.Unknown)(text => Actors.AppCollaborator(LaxEmailAddress(text)))
 }
 
 @Singleton

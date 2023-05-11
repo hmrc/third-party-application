@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,41 @@
 
 package uk.gov.hmrc.thirdpartyapplication
 
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
-
-import java.time.LocalDateTime
 
 trait ApplicationStateUtil extends FixedClock {
   val generatedVerificationCode: String = "verificationCode"
 
-  def testingState() = ApplicationState(name = State.TESTING, updatedOn = LocalDateTime.now(clock))
+  def testingState() = ApplicationState(name = State.TESTING, updatedOn = now)
 
   def preProductionState(requestedBy: String) = ApplicationState(
     name = State.PRE_PRODUCTION,
     requestedByEmailAddress = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
-    updatedOn = LocalDateTime.now(clock)
+    updatedOn = now
   )
 
   def productionState(requestedBy: String) = ApplicationState(
     name = State.PRODUCTION,
     requestedByEmailAddress = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
-    updatedOn = LocalDateTime.now(clock)
+    updatedOn = now
   )
 
   def pendingRequesterVerificationState(requestedBy: String) = ApplicationState(
     name = State.PENDING_REQUESTER_VERIFICATION,
     requestedByEmailAddress = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
-    updatedOn = LocalDateTime.now(clock)
+    updatedOn = now
   )
 
   def pendingGatekeeperApprovalState(requestedBy: String) = ApplicationState(
     name = State.PENDING_GATEKEEPER_APPROVAL,
     requestedByEmailAddress = Some(requestedBy),
+    requestedByName = Some(requestedBy),
     verificationCode = None,
-    updatedOn = LocalDateTime.now(clock)
+    updatedOn = now
   )
 
   def pendingResponsibleIndividualVerificationState(requestedBy: String, requestedByEmail: String) = ApplicationState(
@@ -59,6 +58,14 @@ trait ApplicationStateUtil extends FixedClock {
     requestedByEmailAddress = Some(requestedByEmail),
     requestedByName = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
-    updatedOn = LocalDateTime.now(clock)
+    updatedOn = now
+  )
+
+  def deletedState(requestedBy: String) = ApplicationState(
+    name = State.DELETED,
+    requestedByEmailAddress = Some(requestedBy),
+    requestedByName = Some(requestedBy),
+    verificationCode = None,
+    updatedOn = now
   )
 }

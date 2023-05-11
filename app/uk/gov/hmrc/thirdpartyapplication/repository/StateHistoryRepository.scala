@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,20 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import org.mongodb.scala.model.Filters.{and, equal}
-import org.mongodb.scala.model.{IndexModel, IndexOptions}
-import org.mongodb.scala.model.Indexes.{ascending, descending}
-import cats.data.NonEmptyList
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
+import org.mongodb.scala.model.Filters.{and, equal}
+import org.mongodb.scala.model.Indexes.{ascending, descending}
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
+
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApplicationStateChanged
-import uk.gov.hmrc.thirdpartyapplication.domain.models.OldActor
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
-
-import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 @Singleton
 class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
@@ -97,27 +94,8 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
   }
 
   def deleteByApplicationId(applicationId: ApplicationId): Future[HasSucceeded] = {
-    collection.deleteOne(equal("applicationId", Codecs.toBson(applicationId)))
+    collection.deleteOne(equal("applicationId", Codecs.toBson(applicationId))) // TODO - deleteMany ???
       .toFuture()
       .map(_ => HasSucceeded)
-  }
-
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[HasSucceeded] = {
-    events match {
-      case NonEmptyList(e, Nil)  => applyEvent(e)
-      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
-    }
-  }
-
-  private def applyEvent(event: UpdateApplicationEvent): Future[HasSucceeded] = {
-    event match {
-      case evt : ApplicationStateChanged => addStateHistoryRecord(evt)
-      case _ => Future.successful(HasSucceeded)
-    }
-  }
-
-  private def addStateHistoryRecord(evt: ApplicationStateChanged) = {
-    val stateHistory = StateHistory(evt.applicationId, evt.newAppState, OldActor(evt.requestingAdminEmail, COLLABORATOR), Some(evt.oldAppState), changedAt = evt.eventDateTime)
-    insert(stateHistory).map(_ => HasSucceeded)
   }
 }

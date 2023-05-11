@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,30 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import com.google.inject.Singleton
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.DeclineResponsibleIndividualDidNotVerify
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-
 import java.time.temporal.ChronoUnit.SECONDS
 import java.time.{Clock, LocalDateTime}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
+
 import cats.implicits._
+import com.google.inject.Singleton
+
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
+
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 
 @Singleton
 class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
     responsibleIndividualUpdateVerificationRemovalJobLockService: ResponsibleIndividualUpdateVerificationRemovalJobLockService,
     repository: ResponsibleIndividualVerificationRepository,
-    applicationUpdateService: ApplicationUpdateService,
+    commandDispatcher: ApplicationCommandDispatcher,
     val clock: Clock,
     jobConfig: ResponsibleIndividualUpdateVerificationRemovalJobConfig
   )(implicit val ec: ExecutionContext
@@ -53,7 +55,8 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val removeIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
-      removalsDue <- repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeUpdate, ResponsibleIndividualVerificationState.INITIAL, removeIfCreatedBeforeNow)
+      removalsDue <-
+        repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeUpdate, ResponsibleIndividualVerificationState.INITIAL, removeIfCreatedBeforeNow)
       _           <- Future.sequence(removalsDue.map(sendRemovalEmailAndRemoveRecord(_)))
     } yield RunningOfJobSuccessful
     result.recoverWith {
@@ -69,7 +72,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
 
     logger.info(s"Responsible individual update verification timed out for application ${verificationDueForRemoval.applicationName} (started at ${verificationDueForRemoval.createdOn})")
     (for {
-      savedApp       <- applicationUpdateService.update(verificationDueForRemoval.applicationId, request)
+      savedApp <- commandDispatcher.dispatch(verificationDueForRemoval.applicationId, request, Set.empty)
     } yield HasSucceeded).value
   }
 }

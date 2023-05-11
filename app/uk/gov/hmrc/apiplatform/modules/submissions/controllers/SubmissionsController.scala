@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.controllers
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import play.api.mvc.ControllerComponents
 import scala.concurrent.ExecutionContext
+
 import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import play.api.mvc.Results
+import play.api.mvc.{ControllerComponents, Results}
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 
 object SubmissionsController {
 
@@ -58,7 +58,7 @@ class SubmissionsController @Inject() (
     }
   }
 
-  def fetchSubmission(id: Submission.Id) = Action.async { _ =>
+  def fetchSubmission(id: SubmissionId) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
 
     val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
@@ -90,7 +90,7 @@ class SubmissionsController @Inject() (
     service.fetchLatestMarkedSubmission(applicationId).map(_.fold(failed, success))
   }
 
-  def recordAnswers(submissionId: Submission.Id, questionId: Question.Id) = Action.async(parse.json) { implicit request =>
+  def recordAnswers(submissionId: SubmissionId, questionId: Question.Id) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
     val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))

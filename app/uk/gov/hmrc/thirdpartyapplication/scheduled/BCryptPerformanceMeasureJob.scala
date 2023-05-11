@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,17 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 
 import com.github.t3hnar.bcrypt._
 import com.google.inject.Singleton
-import javax.inject.Inject
+
 import play.api.LoggerLike
-import uk.gov.hmrc.apiplatform.modules.scheduling.ExclusiveScheduledJob
 import uk.gov.hmrc.time.DateTimeUtils
 
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.apiplatform.modules.scheduling.ExclusiveScheduledJob
 
 @Singleton
 class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike) extends ExclusiveScheduledJob {

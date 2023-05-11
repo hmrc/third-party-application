@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,23 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-
 import scala.concurrent.Future
 
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ResponsibleIndividualVerificationStarted
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+
 object VerifyResponsibleIndividualUpdateNotification {
-  
-  def sendAdviceEmail(emailConnector: EmailConnector, event: UpdateApplicationEvent.ResponsibleIndividualVerificationStarted)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
+  def sendAdviceEmail(emailConnector: EmailConnector, event: ResponsibleIndividualVerificationStarted)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     emailConnector.sendVerifyResponsibleIndividualUpdateNotification(
       event.responsibleIndividualName,
       event.responsibleIndividualEmail,
       event.applicationName,
       event.requestingAdminName,
-      event.verificationId.value
+      event.verificationId
     )
   }
 }

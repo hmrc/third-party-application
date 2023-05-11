@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers.actions
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
+
+import cats.implicits._
+
 import play.api.mvc._
+
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.MaybeMatchesAuthorisationKeyRequest
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.Try
-import java.util.Base64
-import java.nio.charset.StandardCharsets
-import cats.implicits._
 
 trait AuthKeyRefiner {
   self: BaseController =>
-  
+
   def authControlConfig: AuthControlConfig
 
   def authKeyRefiner(implicit ec: ExecutionContext): ActionRefiner[Request, MaybeMatchesAuthorisationKeyRequest] =

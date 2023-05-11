@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import play.api.libs.json._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.play.json.Union
+
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
 
@@ -53,17 +54,23 @@ trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
 
   implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
 
-  implicit val RejectedStatusFormat             = Json.format[Declined]
-  implicit val AcceptedStatusFormat             = Json.format[Granted]
-  implicit val AcceptedWithWarningsStatusFormat = Json.format[GrantedWithWarnings]
-  implicit val SubmittedStatusFormat            = Json.format[Submitted]
-  implicit val answeringStatusFormat            = Json.format[Answering]
-  implicit val CreatedStatusFormat              = Json.format[Created]
+  implicit val RejectedStatusFormat                     = Json.format[Declined]
+  implicit val AcceptedStatusFormat                     = Json.format[Granted]
+  implicit val AcceptedWithWarningsStatusFormat         = Json.format[GrantedWithWarnings]
+  implicit val failedStatusFormat                       = Json.format[Failed]
+  implicit val warningsStatusFormat                     = Json.format[Warnings]
+  implicit val pendingResponsibleIndividualStatusFormat = Json.format[PendingResponsibleIndividual]
+  implicit val SubmittedStatusFormat                    = Json.format[Submitted]
+  implicit val answeringStatusFormat                    = Json.format[Answering]
+  implicit val CreatedStatusFormat                      = Json.format[Created]
 
   implicit val submissionStatus = Union.from[Submission.Status]("Submission.StatusType")
     .and[Declined]("declined")
     .and[Granted]("granted")
     .and[GrantedWithWarnings]("grantedWithWarnings")
+    .and[Failed]("failed")
+    .and[Warnings]("warnings")
+    .and[PendingResponsibleIndividual]("pendingResponsibleIndividual")
     .and[Submitted]("submitted")
     .and[Answering]("answering")
     .and[Created]("created")
@@ -81,17 +88,23 @@ trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters wi
 
   implicit val utcReads = DefaultLocalDateTimeReads
 
-  implicit val rejectedStatusFormat             = Json.format[Declined]
-  implicit val acceptedStatusFormat             = Json.format[Granted]
-  implicit val acceptedWithWarningsStatusFormat = Json.format[GrantedWithWarnings]
-  implicit val submittedStatusFormat            = Json.format[Submitted]
-  implicit val answeringStatusFormat            = Json.format[Answering]
-  implicit val createdStatusFormat              = Json.format[Created]
+  implicit val rejectedStatusFormat                     = Json.format[Declined]
+  implicit val acceptedStatusFormat                     = Json.format[Granted]
+  implicit val acceptedWithWarningsStatusFormat         = Json.format[GrantedWithWarnings]
+  implicit val failedStatusFormat                       = Json.format[Failed]
+  implicit val warningsStatusFormat                     = Json.format[Warnings]
+  implicit val pendingResponsibleIndividualStatusFormat = Json.format[PendingResponsibleIndividual]
+  implicit val submittedStatusFormat                    = Json.format[Submitted]
+  implicit val answeringStatusFormat                    = Json.format[Answering]
+  implicit val createdStatusFormat                      = Json.format[Created]
 
   implicit val submissionStatus = Union.from[Submission.Status]("Submission.StatusType")
     .and[Declined]("declined")
     .and[Granted]("granted")
     .and[GrantedWithWarnings]("grantedWithWarnings")
+    .and[Failed]("failed")
+    .and[Warnings]("warnings")
+    .and[PendingResponsibleIndividual]("pendingResponsibleIndividual")
     .and[Submitted]("submitted")
     .and[Answering]("answering")
     .and[Created]("created")

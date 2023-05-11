@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,27 @@
 
 package uk.gov.hmrc.apiplatform.modules.uplift.controllers
 
-import play.api.mvc.AnyContentAsEmpty
-import play.api.test.FakeRequest
-import org.scalatest.prop.TableDrivenPropertyChecks
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerSpec
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode
-import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerTestData
+import org.scalatest.prop.TableDrivenPropertyChecks
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftRequested
-import uk.gov.hmrc.http.NotFoundException
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
-import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
-import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
+import play.api.mvc.AnyContentAsEmpty
+import play.api.test.FakeRequest
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController._
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ControllerSpec, ControllerTestData, ErrorCode}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, UpliftRequested}
+import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, InvalidStateTransition}
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 class UpliftControllerSpec
     extends ControllerSpec
@@ -70,12 +68,12 @@ class UpliftControllerSpec
 
   "requestUplift" should {
     val applicationId           = ApplicationId.random
-    val requestedByEmailAddress = "big.boss@example.com"
+    val requestedByEmailAddress = "big.boss@example.com".toLaxEmail
     val requestedName           = "Application Name"
     val upliftRequest           = UpliftApplicationRequest(requestedName, requestedByEmailAddress)
 
     "return updated application if successful" in new Setup {
-      aNewApplicationResponse().copy(state = pendingGatekeeperApprovalState(requestedByEmailAddress))
+      aNewApplicationResponse().copy(state = pendingGatekeeperApprovalState(requestedByEmailAddress.text))
 
       UpliftServiceMock.RequestUplift.thenReturn(UpliftRequested)
 

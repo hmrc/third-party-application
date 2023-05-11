@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,24 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
+  ResponsibleIndividualToUVerification,
+  ResponsibleIndividualVerificationId,
+  ResponsibleIndividualVerificationWithDetails
+}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
-
-import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
 
@@ -40,20 +45,20 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       with ResponsibleIndividualVerificationRepositoryMockModule
       with ApplicationServiceMockModule
       with SubmissionsServiceMockModule
-      with EmailConnectorMockModule
-      with FixedClock {
+      with EmailConnectorMockModule {
 
     val appName                 = "my shiny app"
     val submissionInstanceIndex = 0
     val responsibleIndividual   = ResponsibleIndividual.build("bob example", "bob@example.com")
+    val requestingAdminName     = "Bob Fleming"
     val requestingAdminEmail    = "bob.fleming@yahoo.com"
 
     val testImportantSubmissionData = ImportantSubmissionData(
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),
-      TermsAndConditionsLocation.InDesktopSoftware,
-      PrivacyPolicyLocation.InDesktopSoftware,
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )
 
@@ -78,10 +83,10 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     val riVerification            = ResponsibleIndividualToUVerification(
       riVerificationId,
       application.id,
-      Submission.Id.random,
+      SubmissionId.random,
       0,
       appName,
-      LocalDateTime.now(clock)
+      now
     )
     val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual, "Rick Deckard", "rick@submitter.com")
   }
@@ -101,6 +106,20 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     }
   }
 
+  "createNewTouUpliftVerification" should {
+    "create a new ToU uplift verification object and save it to the database" in new Setup {
+      ResponsibleIndividualVerificationRepositoryMock.Save.thenReturnSuccess()
+
+      val result = await(underTest.createNewTouUpliftVerification(application, submissionId, submissionInstanceIndex, requestingAdminName, LaxEmailAddress(requestingAdminEmail)))
+
+      result.applicationId shouldBe applicationId
+      result.submissionId shouldBe submissionId
+      result.submissionInstance shouldBe submissionInstanceIndex
+      result.applicationName shouldBe appName
+
+      ResponsibleIndividualVerificationRepositoryMock.Save.verifyCalledWith(result)
+    }
+  }
   "getVerification" should {
     "get a RI verification record" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification)

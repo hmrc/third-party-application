@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,30 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
+
 import play.api.mvc._
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
-import scala.util.control.NonFatal
-import javax.inject.{Singleton, Inject}
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
 @Singleton
-class StrideGatekeeperRoleAuthorisationService @Inject() (authControlConfig: AuthControlConfig, strideAuthRoles: StrideAuthRoles, strideAuthConnector: StrideAuthConnector)(implicit val ec: ExecutionContext) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
+class StrideGatekeeperRoleAuthorisationService @Inject() (
+    authControlConfig: AuthControlConfig,
+    strideAuthRoles: StrideAuthRoles,
+    strideAuthConnector: StrideAuthConnector
+  )(implicit val ec: ExecutionContext
+  ) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
 
   private lazy val hasAnyGatekeeperEnrolment = Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
 
-  protected def innerEnsureHasGatekeeperRole[A](input: Request[A]): Future[Option[Result]] = {
-    implicit val hc = HeaderCarrierConverter.fromRequest(input)
+  protected def innerEnsureHasGatekeeperRole[A]()(implicit hc: HeaderCarrier): Future[Option[Result]] = {
     strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval)
       .map(_ => None)
       .recoverWith {

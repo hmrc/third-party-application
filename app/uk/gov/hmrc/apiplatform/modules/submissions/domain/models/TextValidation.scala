@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.models
 
+import scala.util.{Success, Try}
+
 import org.apache.commons.validator.routines.EmailValidator
+
 import play.api.libs.json.Json
-import scala.util.Try
-import scala.util.Success
 
 sealed trait TextValidation {
   def isValid(text: String): Boolean = this.validate(text).isRight
@@ -32,10 +33,11 @@ sealed trait TextValidation {
       }
 
     case TextValidation.Email =>
-      if (TextValidation.emailValidator.isValid(text))
+      if (TextValidation.emailValidator.isValid(text)) {
         Right(text)
-      else
+      } else {
         Left(s"$text is not a valid email")
+      }
 
     case TextValidation.MatchRegex(regex) => {
       val matcher = regex.r

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,21 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsDAOMockModule
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationApprovalRequestDeclined, ResponsibleIndividualDidNotVerify, ApplicationStateChanged, CollaboratorActor}
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks._
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-
-import org.scalatest.Inside
 import cats.data.NonEmptyList
-import java.time.{LocalDateTime, ZoneOffset}
+import org.scalatest.Inside
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.{SubmissionsDAOMockModule, _}
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, _}
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
@@ -230,53 +229,25 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
       }
     }
 
-    "applyEvents" should {
-    val now = LocalDateTime.now(ZoneOffset.UTC)
-    val appId = ApplicationId.random
-    val submissionId = Submission.Id.random
-    val reasons = "reasons description"
-    val code = "5324763549732592387659238746"
+    "declineApplicationApprovalRequest" should {
 
-    def buildApplicationApprovalRequestDeclinedEvent() =
-      ApplicationApprovalRequestDeclined(
-        UpdateApplicationEvent.Id.random,
-        appId,
-        now,
-        CollaboratorActor("requester@example.com"),
-        "Mr New Ri",
-        "ri@example.com",
-        submissionId,
-        0,
-        reasons, 
-        "Mr Admin",
-        "admin@example.com"
-      )
+      val appId        = ApplicationId.random
+      val submissionId = SubmissionId.random
+      val reasons      = "reasons description"
 
-    def buildResponsibleIndividualDidNotVerifyEvent() =
-      ResponsibleIndividualDidNotVerify(
-        UpdateApplicationEvent.Id.random,
-        appId,
-        now,
-        CollaboratorActor("requester@example.com"),
-        "Mr New Ri",
-        "ri@example.com",
-        submissionId,
-        0,
-        code, 
-        "Mr Admin",
-        "admin@example.com"
-      )
-
-      def buildApplicationStateChangedEvent() =
-        ApplicationStateChanged(
-          UpdateApplicationEvent.Id.random,
+      def buildApplicationApprovalRequestDeclinedEvent() =
+        ApplicationApprovalRequestDeclined(
+          EventId.random,
           appId,
-          now,
-          CollaboratorActor("requester@example.com"),
-          State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
-          State.TESTING,
+          FixedClock.instant,
+          Actors.AppCollaborator("requester@example.com".toLaxEmail),
+          "Mr New Ri",
+          "ri@example.com".toLaxEmail,
+          SubmissionId(submissionId.value),
+          0,
+          reasons,
           "Mr Admin",
-          "admin@example.com"
+          "admin@example.com".toLaxEmail
         )
 
       "decline a submission given an ApplicationApprovalRequestDeclined event" in new Setup {
@@ -285,24 +256,41 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         SubmissionsDAOMock.Fetch.thenReturn(submittedSubmission)
         SubmissionsDAOMock.Update.thenReturn()
 
-        val result = await(underTest.applyEvents(NonEmptyList.one(event)))
+        val result = await(underTest.declineApplicationApprovalRequest(event))
 
         val out = result.value
         out.instances.length shouldBe submittedSubmission.instances.length + 1
-        out.instances.tail.head.status.isDeclined shouldBe true 
+        out.instances.tail.head.status.isDeclined shouldBe true
         SubmissionsDAOMock.Update.verifyCalled()
       }
+    }
 
-      "process many events including an ApplicationApprovalRequestDeclined event" in new Setup {
-        val event1 = buildApplicationApprovalRequestDeclinedEvent()
-        val event2 = buildResponsibleIndividualDidNotVerifyEvent()
-        val event3 = buildApplicationStateChangedEvent()
-
-        SubmissionsDAOMock.Fetch.thenReturn(submittedSubmission)
+    "markSubmission" should {
+      "mark the latest submission for an application id" in new Setup {
+        val requesterEmail = "bob@example.com"
+        SubmissionsDAOMock.FetchLatest.thenReturn(submittedSubmission)
         SubmissionsDAOMock.Update.thenReturn()
 
-        await(underTest.applyEvents(NonEmptyList.of(event1, event2, event3)))
+        val result = await(underTest.markSubmission(applicationId, requesterEmail))
 
+        val out = result.value
+        out.latestInstance.status.isSubmitted shouldBe false
+        SubmissionsDAOMock.Update.verifyCalled()
+      }
+    }
+
+    "declineSubmission" should {
+      "decline the latest submission for an application id" in new Setup {
+        val requesterEmail = "bob@example.com"
+        SubmissionsDAOMock.FetchLatest.thenReturn(pendingRISubmission)
+        SubmissionsDAOMock.Update.thenReturn()
+
+        val result = await(underTest.declineSubmission(applicationId, requesterEmail, reasons))
+
+        val out = result.value
+        out.latestInstance.status.isAnswering shouldBe true
+        out.instances.length shouldBe pendingRISubmission.instances.length + 1
+        out.instances.tail.head.status.isDeclined shouldBe true
         SubmissionsDAOMock.Update.verifyCalled()
       }
     }

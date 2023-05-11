@@ -8,62 +8,58 @@ GET           /applications                                          uk.gov.hmrc
 GET           /application                                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.queryDispatcher()
 GET           /application/subscriptions                             uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllAPISubscriptions()
 
-GET           /application/:id                                       uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetch(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+GET           /application/:id                                       uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetch(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 POST          /application                                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.create
-POST          /application/:id                                       uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.update(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-PATCH         /application/:id                                       uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationUpdateController.update(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+POST          /application/:id                                       uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.update(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+PATCH         /application/:id                                       uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController.update(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+PATCH         /application/:id/dispatch                              uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController.dispatch(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
-PUT           /application/:id/ipAllowlist                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateIpAllowlist(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-PUT           /application/:id/grantlength                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateGrantLength(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+PUT           /application/:id/ipAllowlist                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateIpAllowlist(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+PUT           /application/:id/grantlength                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateGrantLength(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
-GET           /application/:id/access/scopes                         uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.readScopes(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-PUT           /application/:id/access/scopes                         uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.updateScopes(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+GET           /application/:id/access/scopes                         uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.readScopes(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+PUT           /application/:id/access/scopes                         uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.updateScopes(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
-GET           /application/:id/access/overrides                      uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.readOverrides(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-PUT           /application/:id/access/overrides                      uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.updateOverrides(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+GET           /application/:id/access/overrides                      uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.readOverrides(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+PUT           /application/:id/access/overrides                      uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.updateOverrides(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
-GET           /application/:id/credentials                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchCredentials(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+GET           /application/:id/credentials                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchCredentials(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 POST          /application/credentials/validate                      uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.validateCredentials
 POST          /application/name/validate                             uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.validateApplicationName
 
-POST          /application/:id/collaborator                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.addCollaborator(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-PUT           /application/:id/collaborator                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fixCollaborator(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-POST          /application/:id/collaborator/delete                   uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteCollaborator(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+PUT           /application/:id/collaborator                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fixCollaborator(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
-GET           /application/:id/subscription                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllSubscriptions(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-GET           /application/:id/subscription/:context/:version        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.isSubscribed(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId, context: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiContext, version: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiVersion)
-POST          /application/:id/subscription                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.createSubscriptionForApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-DELETE        /application/:id/subscription                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.removeSubscriptionForApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId, context: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiContext, version: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiVersion)
+GET           /application/:id/subscription                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllSubscriptions(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+GET           /application/:id/subscription/:context/:version        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.isSubscribed(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId, context: uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext, version: uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersion)
 
-POST          /application/:id/client-secret                         uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.addClientSecret(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-POST          /application/:id/client-secret/:clientSecretId         uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteClientSecret(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId, clientSecretId: String)
+POST          /application/:id/delete                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteApplication(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
-POST          /application/:id/delete                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-
-POST          /application/:id/request-uplift                        uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController.requestUplift(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+POST          /application/:id/request-uplift                        uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController.requestUplift(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 POST          /verify-uplift/:code                                   uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController.verifyUplift(code: String)
 
 # Gatekeeper ONLY routes
 GET           /gatekeeper/applications                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppsForGatekeeper
-GET           /gatekeeper/application/:id                            uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppById(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-GET           /gatekeeper/application/:id/stateHistory               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistoryById(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+GET           /gatekeeper/application/:id                            uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppById(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+GET           /gatekeeper/application/:id/stateHistory               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistoryById(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 GET           /gatekeeper/applications/stateHistory                  uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistories
-POST          /gatekeeper/application/:id/delete                     uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.deleteApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-POST          /application/:id/approve-uplift                        uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.approveUplift(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-POST          /application/:id/reject-uplift                         uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.rejectUplift(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-POST          /application/:id/resend-verification                   uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.resendVerification(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-POST          /application/:id/block                                 uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.blockApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-POST          /application/:id/unblock                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.unblockApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-POST          /application/:id/rate-limit-tier                       uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.updateRateLimitTier(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+GET           /gatekeeper/applications/subscriptions                 uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAllAppsWithSubscriptions
+GET           /gatekeeper/developer/:userId/applications             uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAllForCollaborator(userId: uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId)
+POST          /gatekeeper/application/:id/delete                     uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.deleteApplication(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+POST          /application/:id/approve-uplift                        uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.approveUplift(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+POST          /application/:id/reject-uplift                         uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.rejectUplift(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+POST          /application/:id/resend-verification                   uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.resendVerification(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+POST          /application/:id/block                                 uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.blockApplication(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+POST          /application/:id/unblock                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.unblockApplication(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
+POST          /application/:id/rate-limit-tier                       uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.updateRateLimitTier(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
-POST          /application/:id/check-information                     uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCheck(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+POST          /application/:id/check-information                     uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCheck(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
-GET           /apis/*context/versions/:version/subscribers           uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscribers(context: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiContext, version: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiVersion)
-GET           /developer/:developerId/subscriptions                  uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscriptionsForDeveloper(developerId: uk.gov.hmrc.thirdpartyapplication.domain.models.UserId)
-GET           /developer/:userId/applications                        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllForCollaborator(userId: uk.gov.hmrc.thirdpartyapplication.domain.models.UserId)
+GET           /apis/*context/versions/:version/subscribers           uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscribers(context: uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext, version: uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersion)
+GET           /developer/:developerId/subscriptions                  uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscriptionsForDeveloper(developerId: uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId)
+GET           /developer/:userId/applications                        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllForCollaborator(userId: uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId)
 
 POST          /admin/application/restore-aws-data                    uk.gov.hmrc.thirdpartyapplication.controllers.AwsRestoreController.restoreAwsData()
 
-GET           /application/:id/linked-subordinate-id                 uk.gov.hmrc.apiplatform.modules.upliftlinks.controllers.UpliftLinksController.getSandboxAppIdForProductionApp(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+GET           /application/:id/linked-subordinate-id                 uk.gov.hmrc.apiplatform.modules.upliftlinks.controllers.UpliftLinksController.getSandboxAppIdForProductionApp(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
-POST          /application/:id/confirm-setup-complete                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.confirmSetupComplete(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+POST          /application/:id/confirm-setup-complete                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.confirmSetupComplete(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)

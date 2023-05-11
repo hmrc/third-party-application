@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,16 +24,21 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
-
-import java.time.{Clock, LocalDateTime}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import java.time.Clock
 import scala.util.Random.nextString
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 class SubscriptionRepositoryISpec
     extends ServerBaseISpec
@@ -45,7 +50,9 @@ class SubscriptionRepositoryISpec
     with ApplicationStateUtil
     with Eventually
     with TableDrivenPropertyChecks
-    with FixedClock {
+    with ApiIdentifierSyntax
+    with FixedClock
+    with CollaboratorTestData {
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -183,61 +190,6 @@ class SubscriptionRepositoryISpec
     }
   }
 
-  "getSubscriptionsForDeveloper" should {
-    val developerEmail = "john.doe@example.com"
-
-    "return only the APIs that the user's apps are subscribed to, without duplicates" in {
-      val app1            = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
-      await(applicationRepository.save(app1))
-      val app2            = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
-      await(applicationRepository.save(app2))
-      val someoneElsesApp = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List("someone-else@example.com"))
-      await(applicationRepository.save(someoneElsesApp))
-
-      val helloWorldApi1 = "hello-world".asIdentifier("1.0")
-      val helloWorldApi2 = "hello-world".asIdentifier("2.0")
-      val helloVatApi    = "hello-vat".asIdentifier("1.0")
-      val helloAgentsApi = "hello-agents".asIdentifier("1.0")
-
-      await(subscriptionRepository.add(app1.id, helloWorldApi1))
-      await(subscriptionRepository.add(app1.id, helloVatApi))
-      await(subscriptionRepository.add(app2.id, helloWorldApi2))
-      await(subscriptionRepository.add(app2.id, helloVatApi))
-      await(subscriptionRepository.add(someoneElsesApp.id, helloAgentsApi))
-
-      val developerId                = app1.collaborators.head.userId
-      val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
-
-      result mustBe Set(helloWorldApi1, helloVatApi)
-    }
-
-    "return empty when the user is not a collaborator of any apps" in {
-      val app1 = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List("someone-else@example.com"))
-      val app2 = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
-
-      await(applicationRepository.save(app1))
-      await(applicationRepository.save(app2))
-
-      val api = "hello-world".asIdentifier("1.0")
-      await(subscriptionRepository.add(app1.id, api))
-
-      val developerId                = app2.collaborators.head.userId
-      val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
-
-      result mustBe Set.empty
-    }
-
-    "return empty when the user's apps are not subscribed to any API" in {
-      val app = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
-      await(applicationRepository.save(app))
-
-      val developerId                = app.collaborators.head.userId
-      val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
-
-      result mustBe Set.empty
-    }
-  }
-
   "getSubscribers" should {
     val application1 = ApplicationId.random
     val application2 = ApplicationId.random
@@ -297,7 +249,7 @@ class SubscriptionRepositoryISpec
 
       val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.version, None))
 
-      val expectedEmails = app1.collaborators.map(c => c.emailAddress) ++ app2.collaborators.map(c => c.emailAddress)
+      val expectedEmails = (app1.collaborators.map(c => c.emailAddress) ++ app2.collaborators.map(c => c.emailAddress)).map(_.text)
       result.toSet mustBe expectedEmails
     }
 
@@ -324,9 +276,9 @@ class SubscriptionRepositoryISpec
 
   "ApisWithSubscriptionCount" should {
     "return APIs with a count of subscriptions" in {
-      val api1 = "api-1"
-      val api2 = "api-2"
-      val api3 = "api-3"
+      val api1        = "api-1"
+      val api2        = "api-2"
+      val api3        = "api-3"
       val api1Version = "api-1-version-1"
       val api2Version = "api-2-version-2"
       val api3Version = "api-3-version-3"
@@ -354,7 +306,7 @@ class SubscriptionRepositoryISpec
           .insertOne(aSubscriptionData(api3, api3Version, application3.id))
           .toFuture()
       )
-      
+
       val expectedResult = List(
         SubscriptionCountByApi(ApiIdentifier(ApiContext(api1), ApiVersion(api1Version)), 2),
         SubscriptionCountByApi(ApiIdentifier(ApiContext(api2), ApiVersion(api2Version)), 2)
@@ -364,6 +316,28 @@ class SubscriptionRepositoryISpec
 
       result must contain theSameElementsAs expectedResult
     }
+  }
+
+  "handle ApiSubscribed event correctly" in {
+    val applicationId = ApplicationId.random
+    val apiIdentifier = "some-context".asIdentifier("1.0.0")
+
+    val result = await(subscriptionRepository.add(applicationId, apiIdentifier))
+
+    result mustBe HasSucceeded
+    await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier)) mustBe true
+  }
+
+  "handle ApiUnsubscribed event correctly" in {
+    val applicationId = ApplicationId.random
+    val apiIdentifier = "some-context".asIdentifier("1.0.0")
+
+    await(subscriptionRepository.add(applicationId, apiIdentifier))
+
+    val result = await(subscriptionRepository.remove(applicationId, apiIdentifier))
+
+    result mustBe HasSucceeded
+    await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier)) mustBe false
   }
 
   def subscriptionData(apiContext: ApiContext, version: ApiVersion, applicationIds: ApplicationId*): SubscriptionData = {
@@ -376,7 +350,7 @@ class SubscriptionRepositoryISpec
   def aSubscriptionData(apiContext: String, version: String, applicationIds: ApplicationId*): SubscriptionData = {
     subscriptionData(ApiContext(apiContext), ApiVersion(version), applicationIds: _*)
   }
-  
+
   def anApplicationData(
       id: ApplicationId,
       clientId: ClientId = ClientId("aaa"),
@@ -399,7 +373,7 @@ class SubscriptionRepositoryISpec
       checkInformation: Option[CheckInformation] = None
     ): ApplicationData = {
 
-    val collaborators = user.map(email => Collaborator(email, Role.ADMINISTRATOR, UserId.random)).toSet
+    val collaborators: Set[Collaborator] = user.map(email => email.admin()).toSet
 
     ApplicationData(
       id,
@@ -411,8 +385,8 @@ class SubscriptionRepositoryISpec
       ApplicationTokens(Token(clientId, generateAccessToken)),
       state,
       access,
-      LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock)),
+      now,
+      Some(now),
       checkInformation = checkInformation
     )
   }

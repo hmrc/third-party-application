@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,17 @@
 
 package uk.gov.hmrc.apiplatform.modules.scheduling
 
-import akka.actor.{Cancellable, Scheduler}
-import org.apache.commons.lang3.time.StopWatch
-import play.api.Application
-import play.api.inject.ApplicationLifecycle
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
+
+import akka.actor.{Cancellable, Scheduler}
+import org.apache.commons.lang3.time.StopWatch
+
+import play.api.Application
+import play.api.inject.ApplicationLifecycle
+
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 /** All implementing classes must be singletons - see https://www.playframework.com/documentation/2.6.x/ScalaDependencyInjection#Stopping/cleaning-up
   */

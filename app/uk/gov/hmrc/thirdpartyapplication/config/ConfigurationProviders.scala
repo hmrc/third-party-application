@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,31 @@
 
 package uk.gov.hmrc.thirdpartyapplication.config
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import play.api.inject.{Binding, Module}
-import play.api.{Configuration, Environment}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
-import uk.gov.hmrc.thirdpartyapplication.scheduled._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, ClientSecretServiceConfig, CredentialConfig}
-
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit._
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.duration.{Duration, FiniteDuration}
+
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+import play.api.inject.{Binding, Module}
+import play.api.{Configuration, Environment}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecretsHashingConfig
+import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
+import uk.gov.hmrc.thirdpartyapplication.scheduled._
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, CredentialConfig}
 
 class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
     List(
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
+      bind[ProductionCredentialsRequestExpiryWarningJobConfig].toProvider[ProductionCredentialsRequestExpiryWarningJobConfigProvider],
+      bind[ProductionCredentialsRequestExpiredJobConfig].toProvider[ProductionCredentialsRequestExpiredJobConfigProvider],
       bind[ResponsibleIndividualVerificationReminderJobConfig].toProvider[ResponsibleIndividualVerificationReminderJobConfigProvider],
       bind[ResponsibleIndividualVerificationRemovalJobConfig].toProvider[ResponsibleIndividualVerificationRemovalJobConfigProvider],
       bind[ResponsibleIndividualUpdateVerificationRemovalJobConfig].toProvider[ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider],
@@ -50,7 +55,7 @@ class ConfigurationModule extends Module {
       bind[ThirdPartyDelegatedAuthorityConnector.Config].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
-      bind[ClientSecretServiceConfig].toProvider[ClientSecretServiceConfigProvider],
+      bind[ClientSecretsHashingConfig].toProvider[ClientSecretsHashingConfigProvider],
       bind[ApplicationNamingService.ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider],
       bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider]
     )
@@ -77,6 +82,38 @@ class UpliftVerificationExpiryJobConfigProvider @Inject() (val configuration: Co
       .getOrElse(Duration(90, DAYS)) // scalastyle:off magic.number
 
     UpliftVerificationExpiryJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, validity)
+  }
+}
+
+@Singleton
+class ProductionCredentialsRequestExpiryWarningJobConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[ProductionCredentialsRequestExpiryWarningJobConfig] {
+
+  override def get() = {
+    val jobConfig = configuration.underlying.as[Option[JobConfig]]("productionCredentialsRequestExpiryWarningJob")
+      .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true)) // scalastyle:off magic.number
+
+    val warningInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("productionCredentialsRequestExpiryWarningJob.warningInterval")
+      .getOrElse(Duration(150, DAYS)) // scalastyle:off magic.number
+
+    ProductionCredentialsRequestExpiryWarningJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, warningInterval)
+  }
+}
+
+@Singleton
+class ProductionCredentialsRequestExpiredJobConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[ProductionCredentialsRequestExpiredJobConfig] {
+
+  override def get() = {
+    val jobConfig = configuration.underlying.as[Option[JobConfig]]("productionCredentialsRequestExpiredJob")
+      .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true)) // scalastyle:off magic.number
+
+    val deleteInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("productionCredentialsRequestExpiredJob.deleteInterval")
+      .getOrElse(Duration(183, DAYS)) // scalastyle:off magic.number
+
+    ProductionCredentialsRequestExpiredJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, deleteInterval)
   }
 }
 
@@ -114,7 +151,7 @@ class ResponsibleIndividualVerificationRemovalJobConfigProvider @Inject() (val c
 
 @Singleton
 class ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider @Inject() (val configuration: Configuration)
-  extends ServicesConfig(configuration)
+    extends ServicesConfig(configuration)
     with Provider[ResponsibleIndividualUpdateVerificationRemovalJobConfig] {
 
   override def get() = {
@@ -130,7 +167,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider @Inject() 
 
 @Singleton
 class ResponsibleIndividualVerificationSetDefaultTypeJobConfigProvider @Inject() (val configuration: Configuration)
-  extends ServicesConfig(configuration)
+    extends ServicesConfig(configuration)
     with Provider[ResponsibleIndividualVerificationSetDefaultTypeJobConfig] {
 
   override def get() = {
@@ -247,13 +284,12 @@ class CredentialConfigProvider @Inject() (val configuration: Configuration)
 }
 
 @Singleton
-class ClientSecretServiceConfigProvider @Inject() (val configuration: Configuration)
+class ClientSecretsHashingConfigProvider @Inject() (val configuration: Configuration)
     extends ServicesConfig(configuration)
-    with Provider[ClientSecretServiceConfig] {
+    with Provider[ClientSecretsHashingConfig] {
 
-  override def get(): ClientSecretServiceConfig = {
-    val hashFunctionWorkFactor: Int = ConfigHelper.getConfig("hashFunctionWorkFactor", configuration.getOptional[Int])
-    ClientSecretServiceConfig(hashFunctionWorkFactor)
+  override def get(): ClientSecretsHashingConfig = {
+    new ClientSecretsHashingConfig(configuration.underlying)
   }
 }
 

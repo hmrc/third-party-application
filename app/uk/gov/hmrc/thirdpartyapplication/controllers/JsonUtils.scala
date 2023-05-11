@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
+
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Reads}
 import play.api.mvc.{AnyContent, Request, Result, Results}
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.{InvalidGrantLengthException, InvalidIpAllowlistException, ScopeNotFoundException}
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-
-import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
 
 // TODO : Sort these helper methods with plans to remove them - APIS-4766
 trait JsonUtils extends Results with ApplicationLogger {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
+import scala.concurrent.Future
+
 import cats.data.NonEmptyList
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.services.ApiPlatformEventService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-
-import scala.concurrent.Future
 
 trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
 
@@ -30,11 +31,20 @@ trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatche
 
     def aMock: ApiPlatformEventService
 
+    object Reset {
+
+      def resetMock(): Unit = {
+        reset(aMock)
+      }
+    }
+
     object ApplyEvents {
+
       def succeeds = {
         when(aMock.applyEvents(*)(*)).thenReturn(Future.successful(true))
       }
-      def verifyCalledWith(events: NonEmptyList[UpdateApplicationEvent]) = {
+
+      def verifyCalledWith(events: NonEmptyList[ApplicationEvent]) = {
         verify(aMock).applyEvents(eqTo(events))(*)
       }
     }

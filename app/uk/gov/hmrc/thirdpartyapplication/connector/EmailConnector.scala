@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,26 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId}
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+
 import play.api.libs.json.Json
 import play.mvc.Http.Status._
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpClient
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, Collaborator, Collaborators}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 object EmailConnector {
   case class Config(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)
 
   private[connector] case class SendEmailRequest(
-      to: Set[String],
+      to: Set[LaxEmailAddress],
       templateId: String,
       parameters: Map[String, String],
       force: Boolean = false,
@@ -68,6 +66,8 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   val applicationApprovedNotification           = "apiApplicationApprovedNotification"
   val applicationRejectedNotification           = "apiApplicationRejectedNotification"
   val applicationDeletedNotification            = "apiApplicationDeletedNotification"
+  val productionCredentialsRequestExpiryWarning = "apiProductionCredentialsRequestExpiryWarning"
+  val productionCredentialsRequestExpired       = "apiProductionCredentialsRequestExpired"
   val addedClientSecretNotification             = "apiAddedClientSecretNotification"
   val removedClientSecretNotification           = "apiRemovedClientSecretNotification"
   val verifyResponsibleIndividual               = "apiVerifyResponsibleIndividual"
@@ -75,21 +75,30 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   val responsibleIndividualReminderToAdmin      = "apiResponsibleIndividualReminderToAdmin"
   val responsibleIndividualDidNotVerify         = "apiResponsibleIndividualDidNotVerify"
   val responsibleIndividualDeclined             = "apiResponsibleIndividualDeclined"
+  val responsibleIndividualDeclinedV2           = "apiResponsibleIndividualDeclinedV2"
   val responsibleIndividualNotChanged           = "apiResponsibleIndividualNotChanged"
   val changeOfApplicationName                   = "apiChangeOfApplicationName"
   val changeOfApplicationDetails                = "apiChangeOfApplicationDetails"
   val changeOfApplicationDetailsNoValue         = "apiChangeOfApplicationDetailsNoValue"
   val changeOfResponsibleIndividual             = "apiChangeOfResponsibleIndividual"
+  val newTermsOfUseInvitation                   = "apiNewTermsOfUseInvitation"
+  val newTermsOfUseConfirmation                 = "apiNewTermsOfUseConfirmation"
 
-  def sendAddedCollaboratorConfirmation(role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    val article = if (role == "admin") "an" else "a"
+  private def getRoleForDisplay(role: Collaborator) =
+    role match {
+      case _: Collaborators.Administrator => "admin"
+      case _: Collaborators.Developer     => "developer"
+    }
+
+  def sendCollaboratorAddedConfirmation(collaborator: Collaborator, application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    val article = if (collaborator.isAdministrator) "an" else "a"
 
     post(SendEmailRequest(
       recipients,
       addedCollaboratorConfirmation,
       Map(
         "article"           -> article,
-        "role"              -> role,
+        "role"              -> getRoleForDisplay(collaborator),
         "applicationName"   -> application,
         "developerHubTitle" -> devHubTitle
       )
@@ -97,25 +106,29 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       .map(_ => HasSucceeded)
   }
 
-  def sendAddedCollaboratorNotification(email: String, role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, addedCollaboratorNotification, Map("email" -> email, "role" -> s"$role", "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
+  def sendCollaboratorAddedNotification(collaborator: Collaborator, application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    post(SendEmailRequest(
+      recipients,
+      addedCollaboratorNotification,
+      Map("email" -> collaborator.emailAddress.text, "role" -> s"${getRoleForDisplay(collaborator)}", "applicationName" -> application, "developerHubTitle" -> devHubTitle)
+    ))
       .map(_ => HasSucceeded)
   }
 
-  def sendRemovedCollaboratorConfirmation(application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendRemovedCollaboratorConfirmation(application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(recipients, removedCollaboratorConfirmation, Map("applicationName" -> application, "developerHubTitle" -> devHubTitle)))
       .map(_ => HasSucceeded)
   }
 
-  def sendRemovedCollaboratorNotification(email: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, removedCollaboratorNotification, Map("email" -> email, "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
+  def sendRemovedCollaboratorNotification(email: LaxEmailAddress, application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    post(SendEmailRequest(recipients, removedCollaboratorNotification, Map("email" -> email.text, "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
   }
 
-  def sendApplicationApprovedGatekeeperConfirmation(email: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, applicationApprovedGatekeeperConfirmation, Map("email" -> email, "applicationName" -> application)))
+  def sendApplicationApprovedGatekeeperConfirmation(email: LaxEmailAddress, application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    post(SendEmailRequest(recipients, applicationApprovedGatekeeperConfirmation, Map("email" -> email.text, "applicationName" -> application)))
   }
 
-  def sendApplicationApprovedAdminConfirmation(application: String, code: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendApplicationApprovedAdminConfirmation(application: String, code: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(
       recipients,
       applicationApprovedAdminConfirmation,
@@ -123,11 +136,11 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
     ))
   }
 
-  def sendApplicationApprovedNotification(application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendApplicationApprovedNotification(application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(recipients, applicationApprovedNotification, Map("applicationName" -> application)))
   }
 
-  def sendApplicationRejectedNotification(application: String, recipients: Set[String], reason: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendApplicationRejectedNotification(application: String, recipients: Set[LaxEmailAddress], reason: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(
       recipients,
       applicationRejectedNotification,
@@ -143,37 +156,65 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   def sendApplicationDeletedNotification(
       applicationName: String,
       applicationId: ApplicationId,
-      requesterEmail: String,
-      recipients: Set[String]
+      requesterEmail: LaxEmailAddress,
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(
       SendEmailRequest(
         recipients,
         applicationDeletedNotification,
-        Map("applicationName" -> applicationName, "requestor" -> requesterEmail, "applicationId" -> applicationId.value.toString)
+        Map("applicationName" -> applicationName, "requestor" -> requesterEmail.text, "applicationId" -> applicationId.value.toString)
+      )
+    )
+  }
+
+  def sendProductionCredentialsRequestExpiryWarning(
+      applicationName: String,
+      recipients: Set[LaxEmailAddress]
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    post(
+      SendEmailRequest(
+        recipients,
+        productionCredentialsRequestExpiryWarning,
+        Map("applicationName" -> applicationName)
+      )
+    )
+  }
+
+  def sendProductionCredentialsRequestExpired(
+      applicationName: String,
+      recipients: Set[LaxEmailAddress]
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    post(
+      SendEmailRequest(
+        recipients,
+        productionCredentialsRequestExpired,
+        Map("applicationName" -> applicationName)
       )
     )
   }
 
   def sendAddedClientSecretNotification(
-      actorEmailAddress: String,
+      actorEmailAddress: LaxEmailAddress,
       clientSecretName: String,
       applicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
-    sendClientSecretNotification(addedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
+    sendClientSecretNotification(addedClientSecretNotification, actorEmailAddress.text, clientSecretName, applicationName, recipients)
   }
 
   def sendRemovedClientSecretNotification(
-      actorEmailAddress: String,
+      actorEmailAddress: LaxEmailAddress,
       clientSecretName: String,
       applicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
-    sendClientSecretNotification(removedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
+    sendClientSecretNotification(removedClientSecretNotification, actorEmailAddress.text, clientSecretName, applicationName, recipients)
   }
 
   private def sendClientSecretNotification(
@@ -181,7 +222,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       actorEmailAddress: String,
       clientSecretName: String,
       applicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(
@@ -199,7 +240,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
   def sendVerifyResponsibleIndividualNotification(
       responsibleIndividualName: String,
-      responsibleIndividualEmailAddress: String,
+      responsibleIndividualEmailAddress: LaxEmailAddress,
       applicationName: String,
       requesterName: String,
       verifyResponsibleIndividualUniqueId: String
@@ -218,11 +259,11 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   }
 
   def sendVerifyResponsibleIndividualUpdateNotification(
-     responsibleIndividualName: String,
-     responsibleIndividualEmailAddress: String,
-     applicationName: String,
-     requesterName: String,
-     verifyResponsibleIndividualUniqueId: String
+      responsibleIndividualName: String,
+      responsibleIndividualEmailAddress: LaxEmailAddress,
+      applicationName: String,
+      requesterName: String,
+      verifyResponsibleIndividualUniqueId: String
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(
@@ -239,7 +280,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
   def sendVerifyResponsibleIndividualReminderToAdmin(
       responsibleIndividualName: String,
-      adminEmailAddress: String,
+      adminEmailAddress: LaxEmailAddress,
       applicationName: String,
       requesterName: String
     )(implicit hc: HeaderCarrier
@@ -257,7 +298,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
   def sendResponsibleIndividualDidNotVerify(
       responsibleIndividualName: String,
-      adminEmailAddress: String,
+      adminEmailAddress: LaxEmailAddress,
       applicationName: String,
       requesterName: String
     )(implicit hc: HeaderCarrier
@@ -275,7 +316,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
   def sendResponsibleIndividualDeclined(
       responsibleIndividualName: String,
-      adminEmailAddress: String,
+      adminEmailAddress: LaxEmailAddress,
       applicationName: String,
       requesterName: String
     )(implicit hc: HeaderCarrier
@@ -291,10 +332,26 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
     ))
   }
 
+  def sendResponsibleIndividualDeclinedOrDidNotVerify(
+      responsibleIndividualName: String,
+      applicationName: String,
+      recipients: Set[LaxEmailAddress]
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    post(SendEmailRequest(
+      recipients,
+      responsibleIndividualDeclinedV2,
+      Map(
+        "responsibleIndividualName" -> responsibleIndividualName,
+        "applicationName"           -> applicationName
+      )
+    ))
+  }
+
   def sendResponsibleIndividualNotChanged(
       responsibleIndividualName: String,
       applicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(
@@ -311,7 +368,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       requesterName: String,
       previousApplicationName: String,
       newApplicationName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(
@@ -331,7 +388,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       fieldName: String,
       previousValue: String,
       newValue: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(
@@ -351,7 +408,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       requesterName: String,
       applicationName: String,
       fieldName: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(
@@ -370,7 +427,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       applicationName: String,
       previousResponsibleIndividual: String,
       newResponsibleIndividual: String,
-      recipients: Set[String]
+      recipients: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(
@@ -385,6 +442,38 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
     ))
   }
 
+  def sendNewTermsOfUseInvitation(
+      dueBy: Instant,
+      applicationName: String,
+      recipients: Set[LaxEmailAddress]
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] =
+    post(
+      SendEmailRequest(
+        recipients,
+        newTermsOfUseInvitation,
+        Map(
+          "completeBy"      -> DateTimeFormatter.ofPattern("dd MMMM yyyy").withZone(ZoneId.systemDefault()).format(dueBy),
+          "applicationName" -> applicationName
+        )
+      )
+    )
+
+  def sendNewTermsOfUseConfirmation(
+      applicationName: String,
+      recipients: Set[LaxEmailAddress]
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] =
+    post(
+      SendEmailRequest(
+        recipients,
+        newTermsOfUseConfirmation,
+        Map(
+          "applicationName" -> applicationName
+        )
+      )
+    )
+
   private def post(payload: SendEmailRequest)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val url = s"$serviceUrl/hmrc/email"
 
@@ -397,16 +486,25 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       }
     }
 
-    import uk.gov.hmrc.http.HttpReads.Implicits._
+    def makeCall() = {
+      import uk.gov.hmrc.http.HttpReads.Implicits._
 
-    httpClient.POST[SendEmailRequest, HttpResponse](url, payload)
-      .map { response =>
-        logger.info(s"Sent '${payload.templateId}' to: ${payload.to.mkString(",")} with response: ${response.status}")
-        response.status match {
-          case status if status >= 200 && status <= 299 => HasSucceeded
-          case NOT_FOUND                                => throw new RuntimeException(s"Unable to send email. Downstream endpoint not found: $url")
-          case _                                        => throw extractError(response)
+      httpClient.POST[SendEmailRequest, HttpResponse](url, payload)
+        .map { response =>
+          logger.info(s"Sent '${payload.templateId}' with response: ${response.status}")
+          response.status match {
+            case status if status >= 200 && status <= 299 => HasSucceeded
+            case NOT_FOUND                                => throw new RuntimeException(s"Unable to send email. Downstream endpoint not found: $url")
+            case _                                        => throw extractError(response)
+          }
         }
-      }
+    }
+
+    if (payload.to.isEmpty) {
+      logger.warn(s"Sending email ${payload.templateId} abandoned due to lack of any recipients")
+      Future.successful(HasSucceeded)
+    } else {
+      makeCall()
+    }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.helpers
 
-import org.slf4j
-import play.api.{LoggerLike, MarkerContext}
-
 import scala.collection.mutable.ListBuffer
+
 import org.mockito.MockitoSugar
+import org.slf4j
+
+import play.api.{LoggerLike, MarkerContext}
 
 class StubLogger extends LoggerLike with MockitoSugar {
   override val logger: slf4j.Logger = mock[slf4j.Logger]

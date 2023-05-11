@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,23 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers.actions
 
+import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
+
 import cats.data.OptionT
 import cats.implicits._
+
 import play.api.libs.json.Json
 import play.api.mvc._
 import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
+import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.Future.successful
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
-import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
 
 trait ApplicationTypeAuthorisationActions {
   self: BaseController =>
@@ -37,7 +40,6 @@ trait ApplicationTypeAuthorisationActions {
   implicit def ec: ExecutionContext
   def applicationService: ApplicationService
   def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
-
 
   def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request, AnyContent] =
     Action andThen PayloadBasedApplicationTypeFilter(accessTypes.toList)
@@ -47,8 +49,6 @@ trait ApplicationTypeAuthorisationActions {
 
   def requiresAuthenticationForPrivilegedOrRopcApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
     Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(PRIVILEGED, ROPC), false)
-
-
 
   private abstract class ApplicationTypeFilter(toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)(implicit ec: ExecutionContext)
       extends ActionFilter[Request] {
@@ -60,16 +60,17 @@ trait ApplicationTypeAuthorisationActions {
       case e: NotFoundException => Some(Results.NotFound(JsErrorResponse(APPLICATION_NOT_FOUND, e.getMessage)))
     }
 
-    def filter[A](request: Request[A]): Future[Option[Result]] =
+    def filter[A](request: Request[A]): Future[Option[Result]] = {
+      implicit val hc = HeaderCarrierConverter.fromRequest(request)
       deriveAccessType(request) flatMap {
-        case Some(accessType) if toMatchAccessTypes.contains(accessType) => strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole(request)
+        case Some(accessType) if toMatchAccessTypes.contains(accessType) => strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
         case Some(_) if failOnAccessTypeMismatch                         => FAILED_ACCESS_TYPE
         case _                                                           => successful(None)
       } recover localRecovery
+    }
 
     protected def deriveAccessType[A](request: Request[A]): Future[Option[AccessType]]
   }
-
 
   private case class PayloadBasedApplicationTypeFilter(accessTypes: List[AccessType]) extends ApplicationTypeFilter(accessTypes, false) {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,72 +16,103 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.Apply
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyChain, NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationPrivacyPolicyLocation, ImportantSubmissionData, PrivacyPolicyLocation, Standard, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+
+import cats.Apply
+import cats.data.{NonEmptyList, Validated}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocation, PrivacyPolicyLocations}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationPrivacyPolicyLocation
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
-class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject()()(implicit val ec: ExecutionContext
+class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
+    applicationRepository: ApplicationRepository
+  )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map3(
-      isAdminOnApp(cmd.instigator, app),
-      isNotInProcessOfBeingApproved(app),
-      isStandardAccess(app)
-    ) { case _ => app }
-  }
+  def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
+    def validate: Validated[Failures, String] = {
+      val newUrl     = cmd.newLocation match {
+        case PrivacyPolicyLocations.Url(value) => Some(value)
+        case _                                 => None
+      }
+      val isJustAUrl = cond(newUrl.isDefined, "Unexpected new PrivacyPolicyLocation type specified for legacy application: " + cmd.newLocation)
 
-  import UpdateApplicationEvent._
+      Apply[Validated[Failures, *]].map4(
+        isAdminOnApp(cmd.instigator, app),
+        isNotInProcessOfBeingApproved(app),
+        isStandardAccess(app),
+        isJustAUrl
+      ) { case _ => newUrl.get }
+    }
 
-  private def buildEventForLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): Either[String,UpdateApplicationEvent] = {
-    cmd.newLocation match {
-      case PrivacyPolicyLocation.Url(newUrl) =>
-        Right(ProductionLegacyAppPrivacyPolicyLocationChanged(
-          id = UpdateApplicationEvent.Id.random,
+    def asEvents(newUrl: String): NonEmptyList[ApplicationEvent] = {
+      NonEmptyList.one(
+        ProductionLegacyAppPrivacyPolicyLocationChanged(
+          id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp,
-          actor = CollaboratorActor(getRequester(app, cmd.instigator)),
+          eventDateTime = cmd.timestamp.instant,
+          actor = Actors.AppCollaborator(getRequester(app, cmd.instigator)),
           oldUrl = oldUrl,
-          newUrl = newUrl,
-          requestingAdminEmail = getRequester(app, cmd.instigator)
-        ))
-      case _ => Left("Unexpected new PrivacyPolicyLocation type specified for legacy application: " + cmd.newLocation)
-    }
-  }
-
-  private def buildEventForNewApp(oldLocation: PrivacyPolicyLocation, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): UpdateApplicationEvent =
-      ProductionAppPrivacyPolicyLocationChanged(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(getRequester(app, cmd.instigator)),
-        oldLocation = oldLocation,
-        newLocation = cmd.newLocation,
-        requestingAdminEmail = getRequester(app, cmd.instigator)
+          newUrl = newUrl
+        )
       )
-
-  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): Either[String,UpdateApplicationEvent] = {
-    app.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) =>
-        Right(buildEventForNewApp(privacyPolicyLocation, app, cmd))
-      case Standard(_, _, maybePrivacyPolicyUrl, _, _, None) =>
-        buildEventForLegacyApp(maybePrivacyPolicyUrl.getOrElse(""), app, cmd)
-      case _ =>
-        Left("Unexpected application access value found: " + app.access)
     }
+
+    cmd.newLocation match {
+      case PrivacyPolicyLocations.Url(value) => value
+      case _                                 => false
+    }
+
+    for {
+      newUrl   <- E.fromEither(validate.toEither)
+      savedApp <- E.liftF(applicationRepository.updateLegacyApplicationPrivacyPolicyLocation(app.id, newUrl))
+      events    = asEvents(newUrl)
+    } yield (savedApp, events)
   }
 
-  def process(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): CommandHandler.Result = {
-    Future.successful(validate(app, cmd).fold(errs => Invalid(errs), _ => {
-      asEvents(app, cmd).fold(e => Invalid(NonEmptyChain.one(e)), event => Valid(NonEmptyList.one(event)))
-    }))
+  def processApp(oldLocation: PrivacyPolicyLocation, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
+    def validate: Validated[Failures, ApplicationData] = {
+      Apply[Validated[Failures, *]].map3(
+        isAdminOnApp(cmd.instigator, app),
+        isNotInProcessOfBeingApproved(app),
+        isStandardAccess(app)
+      ) { case _ => app }
+    }
+
+    def asEvents: NonEmptyList[ApplicationEvent] = {
+      NonEmptyList.one(
+        ProductionAppPrivacyPolicyLocationChanged(
+          id = EventId.random,
+          applicationId = app.id,
+          eventDateTime = cmd.timestamp.instant,
+          actor = Actors.AppCollaborator(getRequester(app, cmd.instigator)),
+          oldLocation = oldLocation,
+          newLocation = cmd.newLocation
+        )
+      )
+    }
+
+    for {
+      valid    <- E.fromEither(validate.toEither)
+      savedApp <- E.liftF(applicationRepository.updateApplicationPrivacyPolicyLocation(app.id, cmd.newLocation))
+      events    = asEvents
+    } yield (savedApp, events)
+  }
+
+  def process(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
+    app.access match {
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => processApp(privacyPolicyLocation, app, cmd)
+      case Standard(_, _, maybePrivacyPolicyUrl, _, _, None)                                            => processLegacyApp(maybePrivacyPolicyUrl.getOrElse(""), app, cmd)
+      case _                                                                                            => processApp(PrivacyPolicyLocations.InDesktopSoftware, app, cmd) // This will not valdate
+    }
   }
 }

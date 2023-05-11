@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,45 +16,52 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{EventId, ProductionAppNameChangedEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
+
   trait Setup extends EmailConnectorMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val applicationId = ApplicationId.random
-    val devEmail = "dev@example.com"
-    val adminEmail = "admin@example.com"
-    val oldName = "old app name"
-    val newName = "new app name"
+    val applicationId         = ApplicationId.random
+    val devEmail              = "dev@example.com".toLaxEmail
+    val anAdminEmail          = "admin@example.com".toLaxEmail
+    val oldName               = "old app name"
+    val newName               = "new app name"
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
-                              responsibleIndividual,
-                              Set(ServerLocation.InUK),
-                              TermsAndConditionsLocation.InDesktopSoftware,
-                              PrivacyPolicyLocation.InDesktopSoftware,
-                              List.empty)
 
-    val app = anApplicationData(applicationId).copy(
+    val testImportantSubmissionData = ImportantSubmissionData(
+      Some("organisationUrl.com"),
+      responsibleIndividual,
+      Set(ServerLocation.InUK),
+      TermsAndConditionsLocations.InDesktopSoftware,
+      PrivacyPolicyLocations.InDesktopSoftware,
+      List.empty
+    )
+
+    val app                  = anApplicationData(applicationId).copy(
       collaborators = Set(
-        Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
-        Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
+        devEmail.developer(),
+        anAdminEmail.admin()
       ),
       name = oldName,
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
-    val timestamp = LocalDateTime.now
-    val gatekeeperUser = "gkuser"
-    val eventId = UpdateApplicationEvent.Id.random
-    val actor = UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser)
-    val nameChangeEmailEvent = UpdateApplicationEvent.ProductionAppNameChanged(eventId, applicationId, timestamp, actor, oldName, newName, "admin@example.com")
+    val timestamp            = now
+    val gatekeeperUser       = "gkuser"
+    val eventId              = EventId.random
+    val actor                = Actors.GatekeeperUser(gatekeeperUser)
+    val nameChangeEmailEvent = ProductionAppNameChangedEvent(eventId, applicationId, instant, actor, oldName, newName, "admin@example.com".toLaxEmail)
   }
 
   "sendAdviceEmail" should {
@@ -62,7 +69,7 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
       EmailConnectorMock.SendChangeOfApplicationName.thenReturnSuccess()
       val result = await(ProductionAppNameChangedNotification.sendAdviceEmail(EmailConnectorMock.aMock, app, nameChangeEmailEvent))
       result shouldBe HasSucceeded
-      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(adminEmail, oldName, newName, Set(adminEmail, devEmail, responsibleIndividual.emailAddress.value))
+      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(anAdminEmail.text, oldName, newName, Set(anAdminEmail, devEmail, responsibleIndividual.emailAddress))
     }
   }
 }

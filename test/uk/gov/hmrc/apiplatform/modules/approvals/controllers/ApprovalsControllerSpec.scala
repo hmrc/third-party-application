@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,24 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
-
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.test.Helpers._
-import play.api.test.Helpers
-import uk.gov.hmrc.apiplatform.modules.approvals.mocks.RequestApprovalsServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.approvals.mocks.GrantApprovalsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
-import play.api.test.FakeRequest
-import akka.stream.testkit.NoMaterializer
-import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatform.modules.approvals.services._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationState
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 
-class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData with FixedClock {
+import akka.stream.testkit.NoMaterializer
+
+import play.api.libs.json.Json
+import play.api.test.Helpers._
+import play.api.test.{FakeRequest, Helpers}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.approvals.mocks.{GrantApprovalsServiceMockModule, RequestApprovalsServiceMockModule}
+import uk.gov.hmrc.apiplatform.modules.approvals.services._
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationState
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+
+class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
   implicit val mat = NoMaterializer
   val name         = "bob example"
   val emailAddress = "test@example.com"

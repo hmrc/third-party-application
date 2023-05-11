@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
 import org.mongodb.scala.bson.BsonValue
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.bson.conversions.Bson
@@ -25,14 +28,15 @@ import org.mongodb.scala.model.Filters.{and, equal, not, size}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
 import org.mongodb.scala.model.{IndexModel, IndexOptions, UpdateOptions, Updates}
+
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
+import uk.gov.hmrc.thirdpartyapplication.models._
 
 @Singleton
 class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
@@ -114,25 +118,6 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
     collection.find(equal("applications", Codecs.toBson(applicationId)))
       .toFuture()
       .map(_.map(_.apiIdentifier).toList)
-  }
-
-  def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
-    val pipeline = Seq(
-      lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
-      filter(equal("applications.collaborators.userId", Codecs.toBson(userId))),
-      project(
-        fields(
-          excludeId(),
-          computed("context", "$apiIdentifier.context"),
-          computed("version", "$apiIdentifier.version")
-        )
-      )
-    )
-
-    collection.aggregate[BsonValue](pipeline)
-      .map(Codecs.fromBson[ApiIdentifier])
-      .toFuture()
-      .map(_.toSet)
   }
 
   def getSubscriptionCountByApiCheckingApplicationExists: Future[List[SubscriptionCountByApi]] = {

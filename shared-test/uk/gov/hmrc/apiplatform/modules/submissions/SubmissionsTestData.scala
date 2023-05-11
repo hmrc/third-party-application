@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,46 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions
 
-import cats.data.NonEmptyList
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.LocalDateTime
 import scala.util.Random
 
+import cats.data.NonEmptyList
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.util.HasApplicationId
+
 trait StatusTestDataHelper {
+  self: FixedClock =>
 
   implicit class StatusHistorySyntax(submission: Submission) {
 
     def hasCompletelyAnsweredWith(answers: Submission.AnswersToQuestions): Submission = {
       (
-        Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, true)) andThen
+        Submission.addStatusHistory(Submission.Status.Answering(now, true)) andThen
           Submission.updateLatestAnswersTo(answers)
       )(submission)
     }
 
     def hasCompletelyAnswered: Submission = {
-      Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, true))(submission)
+      Submission.addStatusHistory(Submission.Status.Answering(now, true))(submission)
     }
 
     def answeringWith(answers: Submission.AnswersToQuestions): Submission = {
       (
-        Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, false)) andThen
+        Submission.addStatusHistory(Submission.Status.Answering(now, false)) andThen
           Submission.updateLatestAnswersTo(answers)
       )(submission)
     }
 
     def answering: Submission = {
-      Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, false))(submission)
+      Submission.addStatusHistory(Submission.Status.Answering(now, false))(submission)
     }
 
     def submitted: Submission = {
-      Submission.submit(LocalDateTime.now, "bob@example.com")(submission)
+      Submission.submit(now, "bob@example.com")(submission)
     }
   }
 }
@@ -83,24 +87,22 @@ trait ProgressTestDataHelper {
   }
 }
 
-trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper {
+trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper with FixedClock {
 
-  val submissionId  = Submission.Id.random
-  val applicationId = ApplicationId.random
+  val submissionId = SubmissionId.random
 
   val standardContext: AskWhen.Context = Map(
-    AskWhen.Context.Keys.IN_HOUSE_SOFTWARE -> "No",
-    AskWhen.Context.Keys.VAT_OR_ITSA       -> "No"
+    AskWhen.Context.Keys.IN_HOUSE_SOFTWARE       -> "No",
+    AskWhen.Context.Keys.VAT_OR_ITSA             -> "No",
+    AskWhen.Context.Keys.NEW_TERMS_OF_USE_UPLIFT -> "No"
   )
-  val now                              = LocalDateTime.now
+  val aSubmission                      = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
 
-  val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
-
-  val altSubmissionId = Submission.Id.random
+  val altSubmissionId = SubmissionId.random
   require(altSubmissionId != submissionId)
   val altSubmission   = Submission.create("bob@example.com", altSubmissionId, applicationId, now.plusSeconds(100), testGroups, testQuestionIdsOfInterest, standardContext)
 
-  val completedSubmissionId = Submission.Id.random
+  val completedSubmissionId = SubmissionId.random
   require(completedSubmissionId != submissionId)
 
   val completelyAnswerExtendedSubmission =
@@ -112,15 +114,19 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
   val reasons            = "some reasons"
   val warnings           = "this is a warning"
 
-  val createdSubmission   = aSubmission
-  val answeringSubmission = createdSubmission.answeringWith(answersToQuestions)
-  val answeredSubmission  = createdSubmission.hasCompletelyAnsweredWith(AnsweringQuestionsHelper.answersForGroups(Pass)(answeringSubmission.groups))
-  val submittedSubmission = Submission.submit(now, "bob@example.com")(answeredSubmission)
-  val declinedSubmission  = Submission.decline(now, gatekeeperUserName, reasons)(submittedSubmission)
-  val grantedSubmission   = Submission.grant(now, gatekeeperUserName)(submittedSubmission)
+  val createdSubmission             = aSubmission
+  val answeringSubmission           = createdSubmission.answeringWith(answersToQuestions)
+  val answeredSubmission            = createdSubmission.hasCompletelyAnsweredWith(AnsweringQuestionsHelper.answersForGroups(Pass)(answeringSubmission.groups))
+  val submittedSubmission           = Submission.submit(now, "bob@example.com")(answeredSubmission)
+  val declinedSubmission            = Submission.decline(now, gatekeeperUserName, reasons)(submittedSubmission)
+  val grantedSubmission             = Submission.grant(now, gatekeeperUserName)(submittedSubmission)
+  val grantedWithWarningsSubmission = Submission.grantWithWarnings(now, gatekeeperUserName, "Warnings", None)(submittedSubmission)
+  val pendingRISubmission           = Submission.pendingResponsibleIndividual(now, "bob@example.com")(submittedSubmission)
+  val warningsSubmission            = Submission.warnings(now, "bob@example.com")(submittedSubmission)
+  val failSubmission                = Submission.fail(now, "bob@example.com")(submittedSubmission)
 
   def buildSubmissionWithQuestions(): Submission = {
-    val subId = Submission.Id.random
+    val subId = SubmissionId.random
     val appId = ApplicationId.random
 
     val question1               = yesNoQuestion(1)
@@ -166,7 +172,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
       "bob@example.com",
       subId,
       appId,
-      LocalDateTime.now,
+      now,
       questionnaireGroups,
       QuestionIdsOfInterest(
         questionName.id,
@@ -313,7 +319,7 @@ trait MarkedSubmissionsTestData extends SubmissionsTestData with AnsweringQuesti
 
   val markedSubmission = MarkedSubmission(submittedSubmission, markedAnswers)
 
-  def markAsPass(now: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC), requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
+  def markAsPass(now: LocalDateTime = now, requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
     val answers = answersForGroups(Pass)(submission.groups)
     val marks   = answers.map { case (q, a) => q -> Pass }
 

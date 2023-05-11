@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.mocks
 
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import scala.concurrent.Future
 import scala.concurrent.Future.successful
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+
 import org.mockito.captor.{ArgCaptor, Captor}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 
 trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -71,19 +71,19 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     object Fetch {
 
       def thenReturn(extSubmission: ExtendedSubmission) =
-        when(aMock.fetch(*[Submission.Id])).thenReturn(successful(Some(extSubmission)))
+        when(aMock.fetch(*[SubmissionId])).thenReturn(successful(Some(extSubmission)))
 
       def thenReturnNone() =
-        when(aMock.fetch(*[Submission.Id])).thenReturn(successful(None))
+        when(aMock.fetch(*[SubmissionId])).thenReturn(successful(None))
     }
 
     object RecordAnswers {
 
       def thenReturn(extSubmission: ExtendedSubmission) =
-        when(aMock.recordAnswers(*[Submission.Id], *[Question.Id], *[List[String]])).thenReturn(successful(Right(extSubmission)))
+        when(aMock.recordAnswers(*[SubmissionId], *[Question.Id], *[List[String]])).thenReturn(successful(Right(extSubmission)))
 
       def thenFails(error: String) =
-        when(aMock.recordAnswers(*[Submission.Id], *[Question.Id], *[List[String]])).thenReturn(successful(Left(error)))
+        when(aMock.recordAnswers(*[SubmissionId], *[Question.Id], *[List[String]])).thenReturn(successful(Left(error)))
     }
 
     object DeleteAll {
@@ -104,10 +104,27 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
       }
     }
 
-    object ApplyEvents {
+    object DeclineApprovalRequest {
+
       def succeeds() = {
-        when(aMock.applyEvents(*)).thenReturn(Future.successful(None))
+        when(aMock.declineApplicationApprovalRequest(*)).thenReturn(successful(None))
       }
+
+      def succeedsWith(submission: Submission) = {
+        when(aMock.declineApplicationApprovalRequest(*)).thenReturn(successful(Some(submission)))
+      }
+    }
+
+    object MarkSubmission {
+
+      def thenReturn(submission: Submission) =
+        when(aMock.markSubmission(*[ApplicationId], *)).thenReturn(successful(Some(submission)))
+    }
+
+    object DeclineSubmission {
+
+      def thenReturn(submission: Submission) =
+        when(aMock.declineSubmission(*[ApplicationId], *, *)).thenReturn(successful(Some(submission)))
     }
   }
 

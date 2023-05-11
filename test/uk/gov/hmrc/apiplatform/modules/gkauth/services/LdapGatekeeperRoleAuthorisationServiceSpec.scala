@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,40 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.test.FakeRequest
-import uk.gov.hmrc.internalauth.client.test.BackendAuthComponentsStub
-import uk.gov.hmrc.internalauth.client.test.StubBehaviour
-import uk.gov.hmrc.internalauth.client.Retrieval
-import play.api.test.StubControllerComponentsFactory
-import play.api.mvc.ControllerComponents
 import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import play.api.http.Status.UNAUTHORIZED
+
 import play.api.http.HeaderNames.AUTHORIZATION
+import play.api.http.Status.UNAUTHORIZED
+import play.api.mvc.ControllerComponents
+import play.api.test.{FakeRequest, StubControllerComponentsFactory}
+import uk.gov.hmrc.internalauth.client.Retrieval
+import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
+
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
   val fakeRequest = FakeRequest()
-  
+
   val cc: ControllerComponents = stubControllerComponents()
 
   val expectedRetrieval = Retrieval.username ~ Retrieval.hasPredicate(LdapAuthorisationPredicate.gatekeeperReadPermission)
 
   trait Setup {
-    val mockStubBehaviour = mock[StubBehaviour]
+    val mockStubBehaviour     = mock[StubBehaviour]
     val backendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(cc, implicitly)
-    
+
     def authControlConfig: AuthControlConfig
     lazy val underTest = new LdapGatekeeperRoleAuthorisationService(authControlConfig, backendAuthComponents)
 
-    protected def stub(isAuth: Boolean) = when(mockStubBehaviour.stubAuth(None, expectedRetrieval)).thenReturn(Future.successful(uk.gov.hmrc.internalauth.client.~[Retrieval.Username, Boolean](Retrieval.Username("Bob"), isAuth)))
+    protected def stub(
+        isAuth: Boolean
+      ) = when(mockStubBehaviour.stubAuth(None, expectedRetrieval)).thenReturn(Future.successful(uk.gov.hmrc.internalauth.client.~[Retrieval.Username, Boolean](
+      Retrieval.Username("Bob"),
+      isAuth
+    )))
   }
 
   trait DisabledAuth {
@@ -59,12 +64,14 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
 
   trait AuthHeaderPresent {
     self: Setup =>
-    val request = fakeRequest.withHeaders((AUTHORIZATION, "xxx")) //.withSession("authToken" -> "Token some-token")
+    val request     = fakeRequest.withHeaders((AUTHORIZATION, "xxx")) // .withSession("authToken" -> "Token some-token")
+    implicit val hc = HeaderCarrierConverter.fromRequest(request)
   }
 
   trait NoAuthHeaderPresent {
     self: Setup =>
-    val request = fakeRequest
+    val request     = fakeRequest
+    implicit val hc = HeaderCarrierConverter.fromRequest(request)
   }
 
   trait Authorised {
@@ -79,10 +86,9 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
     stub(false)
   }
 
-
   "with auth disabled" should {
     "return None (good result) when auth is not enabled" in new Setup with DisabledAuth with NoAuthHeaderPresent {
-      val result = await(underTest.ensureHasGatekeeperRole(request))
+      val result = await(underTest.ensureHasGatekeeperRole())
 
       result shouldBe None
     }
@@ -90,21 +96,21 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
 
   "with auth enabled" should {
     "return None (good result) when user should be authorised " in new Setup with EnabledAuth with AuthHeaderPresent with Authorised {
-      val result = await(underTest.ensureHasGatekeeperRole(request))
+      val result = await(underTest.ensureHasGatekeeperRole())
 
       result shouldBe None
     }
 
     "return Some(...) (unauthorized) when user is present but not authorised" in new Setup with EnabledAuth with AuthHeaderPresent with Unauthorised {
-       val result = await(underTest.ensureHasGatekeeperRole(request))
+      val result = await(underTest.ensureHasGatekeeperRole())
 
-       result.value.header.status shouldBe UNAUTHORIZED
+      result.value.header.status shouldBe UNAUTHORIZED
     }
 
     "return Some(...) (unauthorized) when user is absent" in new Setup with EnabledAuth with NoAuthHeaderPresent {
-       val result = await(underTest.ensureHasGatekeeperRole(request))
+      val result = await(underTest.ensureHasGatekeeperRole())
 
-       result.value.header.status shouldBe UNAUTHORIZED
+      result.value.header.status shouldBe UNAUTHORIZED
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
+import java.time.LocalDateTime
+
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 
 case class Token(
     clientId: ClientId,
     accessToken: String,
-    clientSecrets: List[ClientSecret] = List(),
+    clientSecrets: List[ClientSecretData] = List(),
     lastAccessTokenUsage: Option[LocalDateTime] = None
   )
 

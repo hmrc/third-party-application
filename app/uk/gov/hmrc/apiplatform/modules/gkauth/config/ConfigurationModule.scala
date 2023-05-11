@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.config
 
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
+
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
 class StrideConfigurationModule extends Module {
+
   override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
     List(
       bind[StrideAuthConnector.Config].toProvider[StrideAuthConnectorConfigProvider],

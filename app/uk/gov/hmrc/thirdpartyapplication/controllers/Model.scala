@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +16,27 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import play.api.libs.json.{JsObject, Json}
-import play.api.libs.json.Json.JsValueWrapper
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.InvalidGrantLengthException
-
 import java.time.LocalDateTime
+
+import play.api.libs.json.Json.JsValueWrapper
+import play.api.libs.json.{JsObject, Json}
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{IpAllowlist, _}
+import uk.gov.hmrc.thirdpartyapplication.models.InvalidGrantLengthException
 
 case class ValidationRequest(clientId: ClientId, clientSecret: String)
 
 case class ApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[ApplicationId])
-
-case class ClientSecretRequest(actorEmailAddress: String)
-
-case class DeleteClientSecretRequest(actorEmailAddress: String)
-
-case class DeleteClientSecretsRequest(actorEmailAddress: String, secrets: List[String])
 
 case class ApproveUpliftRequest(gatekeeperUserId: String)
 
 case class RejectUpliftRequest(gatekeeperUserId: String, reason: String)
 
 case class ResendVerificationRequest(gatekeeperUserId: String)
-
-case class AddCollaboratorRequest(collaborator: Collaborator, isRegistered: Boolean, adminsToEmail: Set[String])
-
-case class AddCollaboratorResponse(registeredUser: Boolean)
 
 case class ScopeRequest(scopes: Set[String])
 
@@ -76,21 +69,15 @@ object UpdateIpAllowlistRequest {
   }
 }
 
-case class DeleteApplicationRequest(gatekeeperUserId: String, requestedByEmailAddress: String)
+case class DeleteApplicationRequest(gatekeeperUserId: String, requestedByEmailAddress: LaxEmailAddress)
 
 case class DeleteSubordinateApplicationRequest(applicationId: String)
 
 case class FixCollaboratorRequest(emailAddress: String, userId: UserId)
 
-case class DeleteCollaboratorRequest(
-    email: String,
-    adminsToEmail: Set[String],
-    notifyCollaborator: Boolean
-  )
+case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: LocalDateTime, submissionId: SubmissionId)
 
-case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: LocalDateTime, submissionId: Submission.Id)
-
-case class ConfirmSetupCompleteRequest(requesterEmailAddress: String)
+case class ConfirmSetupCompleteRequest(requesterEmailAddress: LaxEmailAddress)
 
 object ErrorCode extends Enumeration {
   type ErrorCode = Value
@@ -112,6 +99,7 @@ object ErrorCode extends Enumeration {
   val INVALID_IP_ALLOWLIST         = Value("INVALID_IP_ALLOWLIST")
   val INVALID_GRANT_LENGTH         = Value("INVALID_GRANT_LENGTH_IN_DAYS")
   val BAD_QUERY_PARAMETER          = Value("BAD_QUERY_PARAMETER")
+  val FAILED_TO_SUBSCRIBE          = Value("FAILED_TO_SUBSCRIBE")
 }
 
 object JsErrorResponse {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,30 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.{ExecutionContext, Future}
+
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
 
 @Singleton
 class SubscriptionService @Inject() (
     applicationRepository: ApplicationRepository,
     subscriptionRepository: SubscriptionRepository,
-    auditService: AuditService,
-    apiPlatformEventService: ApiPlatformEventService,
-    apiGatewayStore: ApiGatewayStore
+    applicationCommandDispatcher: ApplicationCommandDispatcher
   )(implicit val ec: ExecutionContext
-  ) {
-
-  val IgnoredContexts: List[String] = List("sso-in/sso", "web-session/sso-api")
+  ) extends ApplicationLogger with ActorHelper {
 
   def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmailMatch: Option[String]): Future[List[String]] = {
     subscriptionRepository.searchCollaborators(context, version, partialEmailMatch)
@@ -56,33 +58,21 @@ class SubscriptionService @Inject() (
     subscriptionRepository.isSubscribed(applicationId, api)
   }
 
-  def createSubscriptionForApplicationMinusChecks(applicationId: ApplicationId, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    for {
-      app <- fetchApp(applicationId)
-      _   <- subscriptionRepository.add(applicationId, apiIdentifier)
-      _   <- apiPlatformEventService.sendApiSubscribedEvent(app, apiIdentifier.context, apiIdentifier.version)
-      _   <- auditSubscription(Subscribed, applicationId, apiIdentifier)
-    } yield HasSucceeded
-  }
-
-  def removeSubscriptionForApplication(applicationId: ApplicationId, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    for {
-      app <- fetchApp(applicationId)
-      _   <- subscriptionRepository.remove(applicationId, apiIdentifier)
-      _   <- apiPlatformEventService.sendApiUnsubscribedEvent(app, apiIdentifier.context, apiIdentifier.version)
-      _   <- auditSubscription(Unsubscribed, applicationId, apiIdentifier)
-    } yield HasSucceeded
-  }
-
-  private def auditSubscription(action: AuditAction, applicationId: ApplicationId, api: ApiIdentifier)(implicit hc: HeaderCarrier): Future[AuditResult] = {
-    auditService.audit(
-      action,
-      Map(
-        "applicationId" -> applicationId.value.toString,
-        "apiVersion"    -> api.version.value,
-        "apiContext"    -> api.context.value
-      )
-    )
+  def updateApplicationForApiSubscription(
+      applicationId: ApplicationId,
+      applicationName: String,
+      collaborators: Set[Collaborator],
+      api: ApiIdentifier
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    val actor          = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators).getOrElse(Actors.Unknown)
+    val subscribeToApi = ApplicationCommands.SubscribeToApi(actor, api, LocalDateTime.now())
+    applicationCommandDispatcher.dispatch(applicationId, subscribeToApi, Set.empty).value.map {
+      case Left(e)  =>
+        logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")
+        throw FailedToSubscribeException(applicationName, api)
+      case Right(_) => HasSucceeded
+    }
   }
 
   private def fetchApp(applicationId: ApplicationId) = {
@@ -91,5 +81,4 @@ class SubscriptionService @Inject() (
       case _         => failed(new NotFoundException(s"Application not found for id: ${applicationId.value}"))
     }
   }
-
 }

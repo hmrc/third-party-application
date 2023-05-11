@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 
 class UserAlreadyExists extends RuntimeException
 
@@ -34,6 +34,9 @@ case class ApplicationAlreadyExists(applicationName: String) extends RuntimeExce
 
 case class SubscriptionAlreadyExistsException(name: String, api: ApiIdentifier)
     extends RuntimeException(s"""Application: '$name' is already Subscribed to API: ${api.asText(": ")}""")
+
+case class FailedToSubscribeException(applicationName: String, api: ApiIdentifier)
+    extends RuntimeException(s"""Failed to Subscribe API: ${api.asText(": ")} to Application: '$applicationName'""")
 
 case class ScopeNotFoundException(scope: String) extends RuntimeException(s"Scope '$scope' not found")
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,37 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
+import cats._
+import cats.data._
+import cats.implicits._
+
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationName
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
-import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ChangeProductionApplicationName
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName}
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
-
-import scala.concurrent.ExecutionContext
-import javax.inject.{Inject, Singleton}
-import cats.Apply
-import cats.data.ValidatedNec
-import cats.data.NonEmptyList
 
 @Singleton
 class ChangeProductionApplicationNameCommandHandler @Inject() (
+    applicationRepository: ApplicationRepository,
     namingService: UpliftNamingService
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: ChangeProductionApplicationName, nameValidationResult: ApplicationNameValidationResult): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map5(
+  private def validate(
+      app: ApplicationData,
+      cmd: ChangeProductionApplicationName,
+      nameValidationResult: ApplicationNameValidationResult
+    ): Validated[Failures, ApplicationData] = {
+    Apply[Validated[Failures, *]].map5(
       isAdminOnApp(cmd.instigator, app),
       isNotInProcessOfBeingApproved(app),
       cond(app.name != cmd.newName, "App already has that name"),
@@ -49,15 +55,13 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
     ) { case _ => app }
   }
 
-  import UpdateApplicationEvent._
-
-  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationName): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationName): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      ProductionAppNameChanged(
-        id = UpdateApplicationEvent.Id.random,
+      ProductionAppNameChangedEvent(
+        id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = GatekeeperUserActor(cmd.gatekeeperUser),
+        eventDateTime = cmd.timestamp.instant,
+        actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         oldAppName = app.name,
         newAppName = cmd.newName,
         requestingAdminEmail = getRequester(app, cmd.instigator)
@@ -65,11 +69,12 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeProductionApplicationName): CommandHandler.Result = {
-    namingService.validateApplicationName(cmd.newName, noExclusions) map { nameValidationResult =>
-      validate(app, cmd, nameValidationResult) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
+  def process(app: ApplicationData, cmd: ChangeProductionApplicationName): AppCmdResultT = {
+    for {
+      nameValidationResult <- E.liftF(namingService.validateApplicationName(cmd.newName, noExclusions))
+      valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
+      savedApp             <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName))
+      events                = asEvents(savedApp, cmd)
+    } yield (savedApp, events)
   }
 }
