@@ -56,26 +56,22 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
         case evt: ClientSecretAddedV2                               => ClientSecretAddedNotification.sendClientSecretAddedNotification(emailConnector, app, evt)
         case evt: ClientSecretRemovedV2                             => ClientSecretRemovedNotification.sendClientSecretRemovedNotification(emailConnector, app, evt)
         case evt: ProductionAppNameChangedEvent                     => ProductionAppNameChangedNotification.sendAdviceEmail(emailConnector, app, evt)
-        case evt: ProductionAppPrivacyPolicyLocationChanged         => StandardChangedNotification.sendAdviceEmail(
+        case evt: ProductionAppPrivacyPolicyLocationChanged         => ApplicationChangedNoValueNotification.sendAdviceEmail(
             emailConnector,
             app,
             getActorAsString(evt.actor),
-            "privacy policy URL",
-            evt.oldLocation.describe(),
-            evt.newLocation.describe()
+            "privacy policy URL"
           )
         case evt: ProductionLegacyAppPrivacyPolicyLocationChanged   =>
-          StandardChangedNotification.sendAdviceEmail(emailConnector, app, getActorAsString(evt.actor), "privacy policy URL", evt.oldUrl, evt.newUrl)
-        case evt: ProductionAppTermsConditionsLocationChanged       => StandardChangedNotification.sendAdviceEmail(
+          ApplicationChangedNoValueNotification.sendAdviceEmail(emailConnector, app, getActorAsString(evt.actor), "privacy policy URL")
+        case evt: ProductionAppTermsConditionsLocationChanged       => ApplicationChangedNoValueNotification.sendAdviceEmail(
             emailConnector,
             app,
             getActorAsString(evt.actor),
-            "terms and conditions URL",
-            evt.oldLocation.describe,
-            evt.newLocation.describe
+            "terms and conditions URL"
           )
         case evt: ProductionLegacyAppTermsConditionsLocationChanged =>
-          StandardChangedNotification.sendAdviceEmail(emailConnector, app, getActorAsString(evt.actor), "terms and conditions URL", evt.oldUrl, evt.newUrl)
+          ApplicationChangedNoValueNotification.sendAdviceEmail(emailConnector, app, getActorAsString(evt.actor), "terms and conditions URL")
         case evt: ResponsibleIndividualVerificationStarted          => VerifyResponsibleIndividualUpdateNotification.sendAdviceEmail(emailConnector, evt)
         case evt: ResponsibleIndividualChanged                      => ResponsibleIndividualChangedNotification.sendAdviceEmail(
             emailConnector,

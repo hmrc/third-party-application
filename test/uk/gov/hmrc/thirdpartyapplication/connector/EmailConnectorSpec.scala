@@ -387,6 +387,26 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       verifySent
     }
 
+    "send change of application details with no values" in new Setup {
+      val requesterName                           = "bob@example.com"
+      val applicationName                         = "App name"
+      val fieldName                               = "privacy policy URL"
+      val expectedParameters: Map[String, String] = Map(
+        "requesterName"   -> requesterName,
+        "applicationName" -> applicationName,
+        "fieldName"       -> fieldName
+      )
+      val recipients                              = Set("admin@example.com".toLaxEmail, "dev@example.com".toLaxEmail, "ri@example.com".toLaxEmail)
+      val expectedRequest: SendEmailRequest       = SendEmailRequest(recipients, "apiChangeOfApplicationDetailsNoValue", expectedParameters)
+      
+      emailWillReturn(expectedRequest)
+
+      val result = await(connector.sendChangeOfApplicationDetailsNoValue(requesterName, applicationName, fieldName, recipients))
+
+      result shouldBe HasSucceeded
+      verifySent
+    }
+
     "send verify responsible individual update notification" in new Setup {
       val responsibleIndividualName  = "Bob Example"
       val responsibleIndividualEmail = "bob@example.com".toLaxEmail

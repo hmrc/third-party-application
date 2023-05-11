@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModu
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
-class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
+class ApplicationChangedNoValueNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
 
   trait Setup extends EmailConnectorMockModule {
 
@@ -65,25 +65,19 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
 
   "sendAdviceEmail" should {
     "successfully send email for PrivacyPolicyUrlChanged" in new Setup {
-      EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
-      val previousPrivacyPolicyUrl = PrivacyPolicyLocations.Url("https://example.com/old-privacy-policy")
-      val newPrivacyPolicyUrl      = PrivacyPolicyLocations.Url("https://example.com/new-privacy-policy")
+      EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.thenReturnSuccess()
 
-      val result = await(StandardChangedNotification.sendAdviceEmail(
+      val result = await(ApplicationChangedNoValueNotification.sendAdviceEmail(
         EmailConnectorMock.aMock,
         app,
         "admin@example.com",
-        "privacy policy URL",
-        previousPrivacyPolicyUrl.value,
-        newPrivacyPolicyUrl.value
+        "privacy policy URL"
       ))
       result shouldBe HasSucceeded
-      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(
+      EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
         anAdminEmail.text,
         app.name,
         "privacy policy URL",
-        previousPrivacyPolicyUrl.value,
-        newPrivacyPolicyUrl.value,
         Set(anAdminEmail, devEmail, responsibleIndividual.emailAddress)
       )
     }

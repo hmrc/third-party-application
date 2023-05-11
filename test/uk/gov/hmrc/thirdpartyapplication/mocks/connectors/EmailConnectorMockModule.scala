@@ -226,6 +226,18 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
       def verifyNeverCalled() = EmailConnectorMock.verify(never).sendChangeOfApplicationDetails(*, *, *, *, *, *)(*)
     }
 
+    object SendChangeOfApplicationDetailsNoValue {
+
+      def thenReturnSuccess() = {
+        when(aMock.sendChangeOfApplicationDetailsNoValue(*, *, *, *)(*)).thenReturn(successful(HasSucceeded))
+      }
+
+      def verifyCalledWith(requester: String, applicationName: String, fieldName: String, recipients: Set[LaxEmailAddress]) =
+        verify.sendChangeOfApplicationDetailsNoValue(eqTo(requester), eqTo(applicationName), eqTo(fieldName), eqTo(recipients))(*)
+
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendChangeOfApplicationDetailsNoValue(*, *, *, *)(*)
+    }
+
     object SendChangeOfResponsibleIndividual {
 
       def thenReturnSuccess() = {

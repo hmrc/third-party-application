@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
 import scala.concurrent.Future
-
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
@@ -26,19 +25,11 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
-object StandardChangedNotification {
-
-  def sendAdviceEmail(
-      emailConnector: EmailConnector,
-      app: ApplicationData,
-      requestingAdminEmail: String,
-      fieldName: String,
-      previousValue: String,
-      newValue: String
-    )(implicit hc: HeaderCarrier
-    ): Future[HasSucceeded] = {
+object ApplicationChangedNoValueNotification {
+  
+  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, requestingAdminEmail: String, fieldName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
-    emailConnector.sendChangeOfApplicationDetails(requestingAdminEmail, app.name, fieldName, previousValue, newValue, recipients)
+    emailConnector.sendChangeOfApplicationDetailsNoValue(requestingAdminEmail, app.name, fieldName, recipients)
   }
 
   private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {

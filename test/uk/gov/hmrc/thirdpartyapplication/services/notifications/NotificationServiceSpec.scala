@@ -92,7 +92,7 @@ class NotificationServiceSpec
     }
 
     "when receive a ProductionAppPrivacyPolicyLocationChanged, call the event handler and return successfully" in new Setup {
-      EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
+      EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.thenReturnSuccess()
       val previousPrivacyPolicyUrl = PrivacyPolicyLocations.Url("https://example.com/old-privacy-policy")
       val newPrivacyPolicyUrl      = PrivacyPolicyLocations.Url("https://example.com/new-privacy-policy")
       val event                    = ProductionAppPrivacyPolicyLocationChanged(
@@ -106,18 +106,16 @@ class NotificationServiceSpec
 
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
-      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(
+      EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
         anAdminEmail.text,
         applicationData.name,
         "privacy policy URL",
-        previousPrivacyPolicyUrl.value,
-        newPrivacyPolicyUrl.value,
         collaboratorEmails + responsibleIndividual.emailAddress
       )
     }
 
     "when receive a ProductionLegacyAppPrivacyPolicyLocationChanged, call the event handler and return successfully" in new Setup {
-      EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
+      EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.thenReturnSuccess()
       val previousPrivacyPolicyUrl = "https://example.com/old-privacy-policy"
       val newPrivacyPolicyUrl      = "https://example.com/new-privacy-policy"
       val event                    = ProductionLegacyAppPrivacyPolicyLocationChanged(
@@ -131,18 +129,16 @@ class NotificationServiceSpec
 
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
-      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(
+      EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
         anAdminEmail.text,
         applicationData.name,
         "privacy policy URL",
-        previousPrivacyPolicyUrl,
-        newPrivacyPolicyUrl,
         collaboratorEmails + responsibleIndividual.emailAddress
       )
     }
 
     "when receive a ProductionAppTermsConditionsLocationChanged, call the event handler and return successfully" in new Setup {
-      EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
+      EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.thenReturnSuccess()
       val previousTermsAndConditionsUrl = TermsAndConditionsLocations.Url("https://example.com/old-terms-conds")
       val newTermsAndConditionsUrl      = TermsAndConditionsLocations.Url("https://example.com/new-terms-conds")
       val event                         = ProductionAppTermsConditionsLocationChanged(
@@ -156,18 +152,16 @@ class NotificationServiceSpec
 
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
-      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(
+      EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
         anAdminEmail.text,
         applicationData.name,
         "terms and conditions URL",
-        previousTermsAndConditionsUrl.value,
-        newTermsAndConditionsUrl.value,
         collaboratorEmails + responsibleIndividual.emailAddress
       )
     }
 
     "when receive a ProductionLegacyAppTermsConditionsLocationChanged, call the event handler and return successfully" in new Setup {
-      EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
+      EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.thenReturnSuccess()
       val previousTermsAndConditionsUrl = "https://example.com/old-terms-conds"
       val newTermsAndConditionsUrl      = "https://example.com/new-terms-conds"
       val event                         = ProductionLegacyAppTermsConditionsLocationChanged(
@@ -181,12 +175,10 @@ class NotificationServiceSpec
 
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
-      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(
+      EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
         anAdminEmail.text,
         applicationData.name,
         "terms and conditions URL",
-        previousTermsAndConditionsUrl,
-        newTermsAndConditionsUrl,
         collaboratorEmails + responsibleIndividual.emailAddress
       )
     }
