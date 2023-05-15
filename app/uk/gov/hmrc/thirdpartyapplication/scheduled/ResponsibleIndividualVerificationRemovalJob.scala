@@ -57,6 +57,7 @@ class ResponsibleIndividualVerificationRemovalJob @Inject() (
     val result: Future[RunningOfJobSuccessful.type] = for {
       removalsDue <-
         repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.REMINDERS_SENT, removeIfCreatedBeforeNow)
+      _            = logger.info(s"Scheduled job $name found ${removalsDue.size} records")
       _           <- Future.sequence(removalsDue.map(sendRemovalEmailAndRemoveRecord(_)))
     } yield RunningOfJobSuccessful
     result.recoverWith {

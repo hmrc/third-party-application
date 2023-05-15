@@ -61,6 +61,7 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
     val result: Future[RunningOfJobSuccessful.type] = for {
       remindersDue <-
         repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.INITIAL, remindIfCreatedBeforeNow)
+      _             = logger.info(s"Scheduled job $name found ${remindersDue.size} records")
       _            <- Future.sequence(remindersDue.map(sendReminderEmailsAndUpdateStatus(_)))
     } yield RunningOfJobSuccessful
     result.recoverWith {
