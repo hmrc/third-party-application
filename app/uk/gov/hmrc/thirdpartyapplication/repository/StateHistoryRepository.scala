@@ -90,7 +90,7 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
       equal("state", Codecs.toBson(state))
     ))
       .sort(descending("changedAt"))
-      .headOption
+      .headOption()
   }
 
   def deleteByApplicationId(applicationId: ApplicationId): Future[HasSucceeded] = {

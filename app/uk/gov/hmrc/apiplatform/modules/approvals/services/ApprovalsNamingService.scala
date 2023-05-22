@@ -21,6 +21,7 @@ import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
@@ -51,7 +52,7 @@ class ApprovalsNamingService @Inject() (
     for {
       validationResult <- validateApplicationName(applicationName, approvalsFilter(appId))
       _                <- validationResult match {
-                            case ValidName     => successful(Unit)
+                            case ValidName     => successful(Success)
                             case DuplicateName => auditDeniedDueToNaming(applicationName, accessType, Some(appId))
                             case InvalidName   => auditDeniedDueToDenyListed(applicationName, accessType, Some(appId))
                           }

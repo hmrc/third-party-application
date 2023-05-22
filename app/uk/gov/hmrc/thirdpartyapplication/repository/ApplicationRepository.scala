@@ -133,7 +133,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   def save(application: ApplicationData): Future[ApplicationData] = {
     val query = equal("id", Codecs.toBson(application.id))
-    collection.find(query).headOption flatMap {
+    collection.find(query).headOption() flatMap {
       case Some(_: ApplicationData) =>
         collection.replaceOne(
           filter = query,

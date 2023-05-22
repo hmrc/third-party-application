@@ -117,16 +117,15 @@ class RequestApprovalsService @Inject() (
         }
       )
 
-    import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
     val ET = EitherTHelper.make[ApprovalRejectedResult]
 
     import SubmissionDataExtracter._
 
+    logStartingApprovalRequestProcessing(originalApp.id)
     (
       for {
-        _                                  <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
         _                                  <- ET.cond(originalApp.isInTesting, (), ApprovalRejectedDueToIncorrectApplicationState)
         _                                  <- ET.cond(submission.status.isAnsweredCompletely, (), ApprovalRejectedDueToIncorrectSubmissionState(submission.status))
         appName                             = getApplicationName(submission).get                                                   // Safe at this point
@@ -175,16 +174,15 @@ class RequestApprovalsService @Inject() (
       }
     }
 
-    import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
     val ET = EitherTHelper.make[ApprovalRejectedResult]
 
     import SubmissionDataExtracter._
 
+    logStartingApprovalRequestProcessing(originalApp.id)
     (
       for {
-        _                                  <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
         _                                  <- ET.cond(originalApp.isInProduction, (), ApprovalRejectedDueToIncorrectApplicationState)
         touInvite                          <- ET.fromOptionF(termsOfUseInvitationRepository.fetch(originalApp.id), ApprovalRejectedDueToIncorrectApplicationState)
         _                                  <- ET.cond(submission.status.isAnsweredCompletely, (), ApprovalRejectedDueToIncorrectSubmissionState(submission.status))
@@ -214,9 +212,8 @@ class RequestApprovalsService @Inject() (
       .fold[RequestApprovalResult](identity, identity)
   }
 
-  private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Future[Unit] = {
+  private def logStartingApprovalRequestProcessing(applicationId: ApplicationId) = {
     logger.info(s"Approval-01: approval request made for appId:${applicationId}")
-    successful(Unit)
   }
 
   private def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {

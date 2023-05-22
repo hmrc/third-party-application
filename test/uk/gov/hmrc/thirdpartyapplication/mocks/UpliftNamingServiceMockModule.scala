@@ -21,6 +21,7 @@ import scala.concurrent.Future.{failed, successful}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
+import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -41,7 +42,7 @@ trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     object AssertAppHasUniqueNameAndAudit {
 
       def thenSucceeds() = {
-        when(aMock.assertAppHasUniqueNameAndAudit(*, *, *)(*)).thenReturn(successful(Unit))
+        when(aMock.assertAppHasUniqueNameAndAudit(*, *, *)(*)).thenReturn(successful(Success))
       }
 
       def thenFailsWithApplicationAlreadyExists() = {

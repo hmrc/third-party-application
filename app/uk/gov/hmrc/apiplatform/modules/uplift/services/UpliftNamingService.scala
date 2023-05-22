@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.http.HeaderCarrier
-
+import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -61,7 +61,7 @@ class UpliftNamingService @Inject() (
         if (duplicate) {
           auditDeniedDueToNaming(submittedAppName, accessType, existingApp.map(_.id))
           throw ApplicationAlreadyExists(submittedAppName)
-        } else { Unit }
+        } else { Success }
     } yield ()
   }
 }

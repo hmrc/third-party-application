@@ -77,22 +77,17 @@ class GrantApprovalsService @Inject() (
       escalatedTo: Option[String]
     )(implicit hc: HeaderCarrier
     ): Future[GrantApprovalsService.Result] = {
-    import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
-
-    def logStart(applicationId: ApplicationId): Future[Unit] = {
-      logger.info(s"Granted-01: grant appId:${applicationId}")
-      successful(Unit)
-    }
 
     def logDone(app: ApplicationData, submission: Submission) =
       logger.info(s"Granted-02: grant appId:${app.id} ${app.state.name} ${submission.status}")
 
     val ET    = EitherTHelper.make[Result]
     val appId = originalApp.id
+
+    logger.info(s"Granted-01: grant appId:${appId}")
     (
       for {
-        _ <- ET.liftF(logStart(appId))
         _ <- ET.cond(originalApp.isPendingGatekeeperApproval, (), RejectedDueToIncorrectApplicationState)
         _ <- ET.cond(submission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
 
@@ -199,7 +194,6 @@ class GrantApprovalsService @Inject() (
       gatekeeperUserName: String,
       reasons: String
     ): Future[GrantApprovalsService.Result] = {
-    import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
     val ET = EitherTHelper.make[Result]
@@ -222,7 +216,6 @@ class GrantApprovalsService @Inject() (
       gatekeeperUserName: String
     )(implicit hc: HeaderCarrier
     ): Future[GrantApprovalsService.Result] = {
-    import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
     val ET = EitherTHelper.make[Result]
@@ -255,7 +248,6 @@ class GrantApprovalsService @Inject() (
       gatekeeperUserName: String,
       reasons: String
     ): Future[GrantApprovalsService.Result] = {
-    import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
     val ET = EitherTHelper.make[Result]

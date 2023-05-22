@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit._
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -26,7 +28,7 @@ import com.github.t3hnar.bcrypt._
 import com.google.inject.Singleton
 
 import play.api.LoggerLike
-import uk.gov.hmrc.time.DateTimeUtils
+//import uk.gov.hmrc.time.DateTimeUtils
 
 import uk.gov.hmrc.apiplatform.modules.scheduling.ExclusiveScheduledJob
 
@@ -45,9 +47,9 @@ class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike) extends Exclusi
     logger.info("[bcrypt Performance] Starting performance measurement")
 
     val timings = workFactorRangeToTest.map(workFactor => {
-      val startTime = DateTimeUtils.now.getMillis
+      val startTime = Instant.now().truncatedTo(MILLIS).toEpochMilli()
       stringToHash.bcrypt(workFactor)
-      val endTime   = DateTimeUtils.now.getMillis
+      val endTime   = Instant.now().truncatedTo(MILLIS).toEpochMilli()
 
       s"Hashing with Work Factor [$workFactor] took [${endTime - startTime}ms]"
     }).mkString("\n")

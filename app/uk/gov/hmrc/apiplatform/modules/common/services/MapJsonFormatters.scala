@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.common.services
 
 import scala.collection.immutable.ListMap
+import scala.collection.Seq
 
 import play.api.libs.json._
 

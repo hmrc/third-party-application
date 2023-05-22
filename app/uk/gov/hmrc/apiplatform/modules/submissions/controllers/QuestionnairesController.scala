@@ -41,7 +41,7 @@ class QuestionnairesController @Inject() (
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.GroupOfQuestionnairesJsonFormatters._
 
   def activeQuestionnaires = Action.async {
-    dao.fetchActiveGroupsOfQuestionnaires.map(xs => Ok(Json.toJson(xs)))
+    dao.fetchActiveGroupsOfQuestionnaires().map(xs => Ok(Json.toJson(xs)))
   }
 
   def fetch(questionnaireId: Questionnaire.Id) = Action.async { _ =>

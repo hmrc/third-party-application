@@ -172,7 +172,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     "grant the specified ToU application with warnings" in new Setup {
 
       SubmissionsServiceMock.Store.thenReturn()
-      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
       val warning = "Here are some warnings"
       val result  = await(underTest.grantWithWarningsForTouUplift(applicationProduction, warningsSubmission, gatekeeperUserName, warning))
@@ -207,7 +207,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       SubmissionsServiceMock.Store.thenReturn()
       ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(applicationProduction)
       EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
-      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
       val result = await(underTest.grantForTouUplift(applicationProduction, grantedWithWarningsSubmission, gatekeeperUserName))
 
@@ -237,7 +237,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     "decline the specified ToU application" in new Setup {
 
       SubmissionsServiceMock.Store.thenReturn()
-      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
       val warning = "Here are some warnings"
       val result  = await(underTest.declineForTouUplift(applicationProduction, failSubmission, gatekeeperUserName, warning))

@@ -138,7 +138,7 @@ trait TermsOfUseInvitationActionBuilders {
     ): Action[AnyContent] = {
     Action.async { implicit request =>
       (
-        anyAuthenticatedUserRefiner andThen
+        anyAuthenticatedUserRefiner() andThen
           applicationRequestRefiner(applicationId) andThen
           noSubmissionRefiner(applicationId) andThen
           noInvitationRefiner(applicationId)

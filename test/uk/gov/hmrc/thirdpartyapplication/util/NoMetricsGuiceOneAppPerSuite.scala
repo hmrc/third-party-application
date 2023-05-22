@@ -32,7 +32,7 @@ trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite {
   self: TestSuite =>
 
   final override def fakeApplication(): Application =
-    builder().build
+    builder().build()
 
   def builder(): GuiceApplicationBuilder = {
     GuiceApplicationBuilder()

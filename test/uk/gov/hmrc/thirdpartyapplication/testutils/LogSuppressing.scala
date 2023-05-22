@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.classic.{Level, Logger}
@@ -27,7 +27,7 @@ import ch.qos.logback.core.spi.FilterReply
 import play.api.LoggerLike
 
 class SuppressedLogFilter(val messagesContaining: String) extends Filter[ILoggingEvent] {
-  private val suppressedEntries = new mutable.MutableList[ILoggingEvent]()
+  private val suppressedEntries = ListBuffer[ILoggingEvent]()
 
   override def decide(event: ILoggingEvent): FilterReply = {
     if (event.getMessage.contains(messagesContaining)) {

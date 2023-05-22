@@ -126,6 +126,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
     "invoke audit service" in new OverridesFixture {
       val oldOverrides = Set[OverrideFlag](override1)
       val newOverrides = Set[OverrideFlag](override2)
+      AuditServiceMock.Audit.thenReturnSuccess()
 
       val applicationDataWithOverrides = standardApplicationDataWithOverrides(applicationId, oldOverrides)
       ApplicationRepoMock.Fetch.thenReturn(applicationDataWithOverrides)

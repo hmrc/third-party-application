@@ -11,15 +11,11 @@ lazy val appName = "third-party-application"
 lazy val plugins: Seq[Plugins]         = Seq(PlayScala, SbtDistributablesPlugin)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
-ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
+scalaVersion := "2.13.8"
 
-inThisBuild(
-  List(
-    scalaVersion := "2.12.15",
-    semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision
-  )
-)
+ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
+ThisBuild / semanticdbEnabled := true
+ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(plugins: _*)
@@ -30,7 +26,6 @@ lazy val microservice = Project(appName, file("."))
   .settings(ScoverageSettings())
   .settings(
     name            := appName,
-    scalaVersion    := "2.12.15",
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator,
@@ -63,9 +58,6 @@ lazy val microservice = Project(appName, file("."))
     IntegrationTest / testGrouping      := oneForkedJvmPerTest((IntegrationTest / definedTests).value),
     IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     IntegrationTest / parallelExecution := false
-  )
-  .settings(
-    scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification")
   )
   .settings(
     scalacOptions ++= Seq(
