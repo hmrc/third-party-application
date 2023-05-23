@@ -29,7 +29,6 @@ import com.github.t3hnar.bcrypt._
 import com.google.inject.Singleton
 
 import play.api.LoggerLike
-//import uk.gov.hmrc.time.DateTimeUtils
 
 import uk.gov.hmrc.apiplatform.modules.scheduling.ExclusiveScheduledJob
 
