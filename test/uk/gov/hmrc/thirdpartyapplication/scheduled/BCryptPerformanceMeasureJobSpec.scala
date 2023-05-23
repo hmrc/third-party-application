@@ -18,16 +18,17 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.helpers.StubLogger
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class BCryptPerformanceMeasureJobSpec extends AsyncHmrcSpec {
 
-  trait Setup {
+  trait Setup extends FixedClock {
     val testedWorkFactorRange: Seq[Int] = 5 to 10 // Only need to run faster hashes to as not to make test too slow
     val stubLogger                      = new StubLogger()
 
-    val jobUnderTest: BCryptPerformanceMeasureJob = new BCryptPerformanceMeasureJob(stubLogger) {
+    val jobUnderTest: BCryptPerformanceMeasureJob = new BCryptPerformanceMeasureJob(stubLogger, clock) {
       override val workFactorRangeToTest: Seq[Int] = testedWorkFactorRange
     }
   }

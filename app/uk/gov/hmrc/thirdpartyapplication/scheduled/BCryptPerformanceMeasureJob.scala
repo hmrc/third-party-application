@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.Instant
-import java.time.temporal.ChronoUnit._
+import java.time.Clock
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.apiplatform.modules.common.services.SimpleTimer
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
 
 import com.github.t3hnar.bcrypt._
 import com.google.inject.Singleton
@@ -33,7 +34,7 @@ import play.api.LoggerLike
 import uk.gov.hmrc.apiplatform.modules.scheduling.ExclusiveScheduledJob
 
 @Singleton
-class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike) extends ExclusiveScheduledJob {
+class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike, val clock: Clock) extends ExclusiveScheduledJob with ClockNow with SimpleTimer {
 
   override def name: String                 = "bcrypt Performance Measurement"
   override def initialDelay: FiniteDuration = FiniteDuration(10, TimeUnit.MINUTES)
@@ -47,11 +48,11 @@ class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike) extends Exclusi
     logger.info("[bcrypt Performance] Starting performance measurement")
 
     val timings = workFactorRangeToTest.map(workFactor => {
-      val startTime = Instant.now().truncatedTo(MILLIS).toEpochMilli()
-      stringToHash.bcrypt(workFactor)
-      val endTime   = Instant.now().truncatedTo(MILLIS).toEpochMilli()
 
-      s"Hashing with Work Factor [$workFactor] took [${endTime - startTime}ms]"
+      val (hashedSecretValue, duration) = timeThis(() => stringToHash.bcrypt(workFactor))
+
+      s"Hashing with Work Factor [$workFactor] took [${duration.toMillis()}ms]"
+
     }).mkString("\n")
 
     logger.info(s"[bcrypt Performance] Performance measurement results:\n$timings")
