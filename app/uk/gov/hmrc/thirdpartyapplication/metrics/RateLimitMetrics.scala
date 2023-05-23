@@ -42,7 +42,7 @@ class RateLimitMetrics @Inject() (applicationRepository: ApplicationRepository)
   }
 
   def numberOfApplicationsByRateLimit(implicit ec: ExecutionContext): Future[Map[Option[RateLimitTier], Int]] = {
-    val result = applicationRepository.fetchAll().map(applications => applications.groupBy(_.rateLimitTier).mapValues(_.size))
+    val result = applicationRepository.fetchAll().map(applications => applications.groupBy(_.rateLimitTier).view.mapValues(_.size).toMap)
 
     result.onComplete({
       case Success(v) => logger.info(s"[METRIC] Success - RateLimitMetrics: ${v}")

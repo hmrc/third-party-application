@@ -41,7 +41,7 @@ trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     object AssertAppHasUniqueNameAndAudit {
 
       def thenSucceeds() = {
-        when(aMock.assertAppHasUniqueNameAndAudit(*, *, *)(*)).thenReturn(successful(Unit))
+        when(aMock.assertAppHasUniqueNameAndAudit(*, *, *)(*)).thenReturn(successful(()))
       }
 
       def thenFailsWithApplicationAlreadyExists() = {

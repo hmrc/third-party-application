@@ -814,7 +814,7 @@ class ApplicationControllerSpec
 
     "succeed when a sandbox application is successfully deleted" in new Setup with SandboxAuthSetup {
       ApplicationServiceMock.Fetch.thenReturn(application)
-      ApplicationServiceMock.DeleteApplication.thenSucceeds
+      ApplicationServiceMock.DeleteApplication.thenSucceeds()
 
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
@@ -827,7 +827,7 @@ class ApplicationControllerSpec
       val inTestingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inTestingId)(inTesting)
-      ApplicationServiceMock.DeleteApplication.thenSucceeds
+      ApplicationServiceMock.DeleteApplication.thenSucceeds()
 
       val result = underTest.deleteApplication(inTestingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
@@ -840,7 +840,7 @@ class ApplicationControllerSpec
       val inPendingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inPendingId)(inPending)
-      ApplicationServiceMock.DeleteApplication.thenSucceeds
+      ApplicationServiceMock.DeleteApplication.thenSucceeds()
 
       val result = underTest.deleteApplication(inPendingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
@@ -853,7 +853,7 @@ class ApplicationControllerSpec
       val inPendingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inPendingId)(inPending)
-      ApplicationServiceMock.DeleteApplication.thenSucceeds
+      ApplicationServiceMock.DeleteApplication.thenSucceeds()
 
       val result = underTest.deleteApplication(inPendingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
@@ -866,7 +866,7 @@ class ApplicationControllerSpec
       val inProdId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inProdId)(inProd)
-      ApplicationServiceMock.DeleteApplication.thenSucceeds
+      ApplicationServiceMock.DeleteApplication.thenSucceeds()
 
       val result = underTest.deleteApplication(inProdId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
@@ -876,7 +876,7 @@ class ApplicationControllerSpec
 
     "fail with a bad request error when a production application is requested to be deleted and authorisation key is missing" in new Setup with ProductionAuthSetup {
       ApplicationServiceMock.Fetch.thenReturn(application)
-      ApplicationServiceMock.DeleteApplication.thenSucceeds
+      ApplicationServiceMock.DeleteApplication.thenSucceeds()
 
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
@@ -887,7 +887,7 @@ class ApplicationControllerSpec
     "fail with a bad request when a production application is requested to be deleted and auth key is invalid" in new Setup with ProductionAuthSetup {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       ApplicationServiceMock.Fetch.thenReturn(application)
-      ApplicationServiceMock.DeleteApplication.thenSucceeds
+      ApplicationServiceMock.DeleteApplication.thenSucceeds()
 
       val result = underTest.deleteApplication(applicationId)(
         request
@@ -902,7 +902,7 @@ class ApplicationControllerSpec
 
     "succeed when a production application is requested to be deleted and authorisation key is valid" in new Setup with ProductionAuthSetup {
       ApplicationServiceMock.Fetch.thenReturn(application)
-      ApplicationServiceMock.DeleteApplication.thenSucceeds
+      ApplicationServiceMock.DeleteApplication.thenSucceeds()
 
       val result = underTest.deleteApplication(applicationId)(request
         .withBody(Json.toJson(deleteRequest))

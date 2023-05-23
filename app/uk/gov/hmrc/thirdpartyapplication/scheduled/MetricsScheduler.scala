@@ -61,7 +61,7 @@ class MetricsScheduler @Inject() (
     actorSystem.scheduler.scheduleWithFixedDelay(initialDelay, refreshInterval)(() => {
       metricOrchestrator
         .attemptMetricRefresh()
-        .map(_.log)
+        .map(_.log())
         .recover({ case e: RuntimeException =>
           logger.error(s"[METRIC] An error occurred processing metrics: ${e.getMessage}", e)
         })

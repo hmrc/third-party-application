@@ -322,7 +322,7 @@ class ApplicationService @Inject() (
       _              <- createApplicationRequest.accessType match {
                           case PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, PRIVILEGED)
                           case ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, ROPC)
-                          case _          => successful(Unit)
+                          case _          => successful(())
                         }
       totp           <- generateApplicationTotp(createApplicationRequest.accessType)
       modifiedRequest = applyTotpForPrivAppsOnly(totp, req)

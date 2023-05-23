@@ -109,7 +109,7 @@ class GatekeeperController @Inject() (
   }
 
   def fetchAllAppsWithSubscriptions(): Action[AnyContent] = anyAuthenticatedUserAction {
-    _ => gatekeeperService.fetchAllWithSubscriptions map { apps => Ok(Json.toJson(apps)) } recover recovery
+    _ => gatekeeperService.fetchAllWithSubscriptions() map { apps => Ok(Json.toJson(apps)) } recover recovery
   }
 
   def fetchAppById(id: ApplicationId) = anyAuthenticatedUserAction { loggedInRequest =>

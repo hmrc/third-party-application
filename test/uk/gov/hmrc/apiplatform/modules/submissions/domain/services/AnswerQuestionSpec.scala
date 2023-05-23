@@ -120,7 +120,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
         val answers = emptyAnswers
         val res     = AnswerQuestion.deriveProgressOfQuestionnaire(DevelopmentPractices.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(QuestionnaireState.NotStarted, DevelopmentPractices.questionnaire.questions.asIds)
+        res shouldBe QuestionnaireProgress(QuestionnaireState.NotStarted, DevelopmentPractices.questionnaire.questions.asIds())
       }
 
       "return in progress, with answerable questions when a question is answered" in new Setup {
@@ -128,7 +128,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
         val answers = Map(ServiceManagementPractices.question1.id -> SingleChoiceAnswer("Yes"))
         val res     = AnswerQuestion.deriveProgressOfQuestionnaire(ServiceManagementPractices.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(QuestionnaireState.InProgress, ServiceManagementPractices.questionnaire.questions.asIds)
+        res shouldBe QuestionnaireProgress(QuestionnaireState.InProgress, ServiceManagementPractices.questionnaire.questions.asIds())
       }
 
       "return completed, with answerable questions when all questions are answered" in new Setup {
@@ -136,7 +136,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
         val answers = Map(ServiceManagementPractices.question1.id -> SingleChoiceAnswer("Yes"), ServiceManagementPractices.question2.id -> SingleChoiceAnswer("Yes"))
         val res     = AnswerQuestion.deriveProgressOfQuestionnaire(ServiceManagementPractices.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(QuestionnaireState.Completed, ServiceManagementPractices.questionnaire.questions.asIds)
+        res shouldBe QuestionnaireProgress(QuestionnaireState.Completed, ServiceManagementPractices.questionnaire.questions.asIds())
       }
 
       "return not started for questionnaire that skips third question due to context regardless of answers" in new Setup {
@@ -181,7 +181,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
         val answers = Map(SoftwareSecurity.question1.id -> SingleChoiceAnswer("Yes"))
         val res     = AnswerQuestion.deriveProgressOfQuestionnaire(SoftwareSecurity.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(QuestionnaireState.InProgress, SoftwareSecurity.questionnaire.questions.asIds)
+        res shouldBe QuestionnaireProgress(QuestionnaireState.InProgress, SoftwareSecurity.questionnaire.questions.asIds())
       }
     }
   }

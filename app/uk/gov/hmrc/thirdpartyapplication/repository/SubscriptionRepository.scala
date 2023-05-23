@@ -136,7 +136,7 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
 
   def getSubscribers(apiIdentifier: ApiIdentifier): Future[Set[ApplicationId]] = {
     collection.find(contextAndVersionFilter(apiIdentifier))
-      .headOption
+      .headOption()
       .map {
         case Some(data) => data.applications
         case _          => Set.empty

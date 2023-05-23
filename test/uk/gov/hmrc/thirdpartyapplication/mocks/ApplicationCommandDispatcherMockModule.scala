@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.mocks
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.{EitherT, NonEmptyList}
-import cats.implicits.catsStdInstancesForFuture
 import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 

@@ -51,7 +51,7 @@ class ApprovalsNamingService @Inject() (
     for {
       validationResult <- validateApplicationName(applicationName, approvalsFilter(appId))
       _                <- validationResult match {
-                            case ValidName     => successful(Unit)
+                            case ValidName     => successful(())
                             case DuplicateName => auditDeniedDueToNaming(applicationName, accessType, Some(appId))
                             case InvalidName   => auditDeniedDueToDenyListed(applicationName, accessType, Some(appId))
                           }

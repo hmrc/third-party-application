@@ -64,7 +64,7 @@ class GatekeeperService @Inject() (
       apps      <- appsFuture
       appIds     = apps.map(_.id)
       histories <- stateHistoryFuture.map(_.filter(h => appIds.contains(h.applicationId)))
-      appsMap    = apps.groupBy(_.id).mapValues(_.head)
+      appsMap    = apps.groupBy(_.id).view.mapValues(_.head).toMap
       historyMap = latestUpliftRequestState(histories)
     } yield DataUtil.zipper(appsMap, historyMap, ApplicationWithUpliftRequest.create, appError, historyError)
   }
