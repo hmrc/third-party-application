@@ -41,7 +41,7 @@ class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(im
   def update(submission: Submission): Future[Submission] = {
     val query = equal("id", Codecs.toBson(submission.id))
 
-    collection.find(query).headOption() flatMap {
+    collection.find(query).headOption().flatMap {
       case Some(_: Submission) =>
         collection.replaceOne(
           filter = query,
