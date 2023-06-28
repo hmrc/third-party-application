@@ -2113,7 +2113,9 @@ class ApplicationRepositoryISpec
 
     "return applications sorted by name ascending" in {
       val firstName         = "AAA first"
-      val secondName        = "ZZZ second"
+      val secondName        = "ZZZ third"
+      val lowerCaseName     = "aaa second"
+      
       val firstApplication  =
         aNamedApplicationData(
           id = ApplicationId.random,
@@ -2126,20 +2128,28 @@ class ApplicationRepositoryISpec
           name = secondName,
           prodClientId = generateClientId
         )
+        val lowerCaseApplication =
+        aNamedApplicationData(
+          id = ApplicationId.random,
+          name = lowerCaseName,
+          prodClientId = generateClientId
+        )
 
       await(applicationRepository.save(secondApplication))
       await(applicationRepository.save(firstApplication))
+      await(applicationRepository.save(lowerCaseApplication))
 
       val applicationSearch = new ApplicationSearch(sort = NameAscending)
       val result            =
         await(applicationRepository.searchApplications(applicationSearch))
 
       result.totals.size mustBe 1
-      result.totals.head.total mustBe 2
+      result.totals.head.total mustBe 3
       result.matching.size mustBe 1
-      result.matching.head.total mustBe 2
-      result.applications.size mustBe 2
+      result.matching.head.total mustBe 3
+      result.applications.size mustBe 3
       result.applications.head.name mustBe firstName
+      result.applications.tail.head.name mustBe lowerCaseName
       result.applications.last.name mustBe secondName
     }
 
