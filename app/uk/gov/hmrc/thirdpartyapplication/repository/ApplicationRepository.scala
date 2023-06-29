@@ -531,14 +531,14 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   // scalastyle:on cyclomatic.complexity
 
   private def convertToSortClause(sort: ApplicationSort): List[Bson] = sort match {
-    case NameAscending         => List(Aggregates.sort(Sorts.ascending("name")))
-    case NameDescending        => List(Aggregates.sort(Sorts.descending("name")))
+    case NameAscending         => List(Aggregates.sort(Sorts.ascending("normalisedName")))
+    case NameDescending        => List(Aggregates.sort(Sorts.descending("normalisedName")))
     case SubmittedAscending    => List(Aggregates.sort(Sorts.ascending("createdOn")))
     case SubmittedDescending   => List(Aggregates.sort(Sorts.descending("createdOn")))
     case LastUseDateAscending  => List(Aggregates.sort(Sorts.ascending("lastAccess")))
     case LastUseDateDescending => List(Aggregates.sort(Sorts.descending("lastAccess")))
     case NoSorting             => List()
-    case _                     => List(Aggregates.sort(Sorts.ascending("name")))
+    case _                     => List(Aggregates.sort(Sorts.ascending("normalisedName")))
   }
 
   private def regexTextSearch(fields: List[String], searchText: String): Bson = {
