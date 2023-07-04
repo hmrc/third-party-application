@@ -213,7 +213,8 @@ class GrantApprovalsService @Inject() (
   def grantForTouUplift(
       originalApp: ApplicationData,
       submission: Submission,
-      gatekeeperUserName: String
+      gatekeeperUserName: String,
+      comments: String
     )(implicit hc: HeaderCarrier
     ): Future[GrantApprovalsService.Result] = {
     import cats.instances.future.catsStdInstancesForFuture
@@ -224,7 +225,7 @@ class GrantApprovalsService @Inject() (
         _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
         _ <- ET.cond(submission.status.isGrantedWithWarnings, (), RejectedDueToIncorrectSubmissionState)
 
-        updatedSubmission      = Submission.grant(LocalDateTime.now(clock), gatekeeperUserName, None)(submission)
+        updatedSubmission      = Submission.grant(LocalDateTime.now(clock), gatekeeperUserName, Some(comments))(submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
         _                     <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
         responsibleIndividual <- ET.fromOption(getResponsibleIndividual(originalApp), RejectedDueToIncorrectApplicationData)

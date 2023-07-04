@@ -209,7 +209,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
       TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
-      val result = await(underTest.grantForTouUplift(applicationProduction, grantedWithWarningsSubmission, gatekeeperUserName))
+      val result = await(underTest.grantForTouUplift(applicationProduction, grantedWithWarningsSubmission, gatekeeperUserName, reasons))
 
       result should matchPattern {
         case GrantApprovalsService.Actioned(app) =>
@@ -221,13 +221,13 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to grant the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.grantForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName))
+      val result = await(underTest.grantForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName, reasons))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
 
     "fail to grant the specified application if the submission is not in the granted with warnings state" in new Setup {
-      val result = await(underTest.grantForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName))
+      val result = await(underTest.grantForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, reasons))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
     }
