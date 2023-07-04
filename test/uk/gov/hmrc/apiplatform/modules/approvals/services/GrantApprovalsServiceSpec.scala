@@ -113,7 +113,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Save.verifyCalled().state.name shouldBe PENDING_REQUESTER_VERIFICATION
       SubmissionsServiceMock.Store.verifyCalledWith().status.isGranted shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
-        case Submission.Status.Granted(_, gatekeeperUserName) =>
+        case Submission.Status.Granted(_, gatekeeperUserName, _) =>
       }
 
       val (someQuestionId, expectedAnswer) = submittedSubmission.latestInstance.answersToQuestions.head
@@ -216,7 +216,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       }
       SubmissionsServiceMock.Store.verifyCalledWith().status.isGranted shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
-        case Submission.Status.Granted(_, gatekeeperUserName) =>
+        case Submission.Status.Granted(_, gatekeeperUserName, _) =>
       }
     }
 
