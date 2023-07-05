@@ -107,6 +107,7 @@ class ApplicationRepositoryISpec
       val retrieved = await(applicationRepository.fetch(application.id)).get
 
       retrieved mustBe application
+      retrieved.allowAutoDelete mustBe true
     }
 
     "update an application" in {
