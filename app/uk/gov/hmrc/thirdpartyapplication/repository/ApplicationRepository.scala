@@ -144,6 +144,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     }
   }
 
+  def updateAllowAutoDelete(applicationId: ApplicationId, allowAutoDelete: Boolean): Future[ApplicationData] =
+    updateApplication(applicationId, Updates.set("allowAutoDelete", Codecs.toBson(allowAutoDelete)))
+
   def updateApplicationRateLimit(applicationId: ApplicationId, rateLimit: RateLimitTier): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("rateLimitTier", Codecs.toBson(rateLimit)))
 

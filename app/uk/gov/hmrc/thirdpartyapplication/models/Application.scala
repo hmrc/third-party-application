@@ -165,7 +165,8 @@ case class ApplicationResponse(
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,
     trusted: Boolean = false,
-    ipAllowlist: IpAllowlist = IpAllowlist()
+    ipAllowlist: IpAllowlist = IpAllowlist(),
+    moreApplicationResponse: MoreApplicationResponse = MoreApplicationResponse()
   )
 
 object ApplicationResponse {

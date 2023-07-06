@@ -125,7 +125,30 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "updateApplicationRateLimit" should {
+  "updateAllowAutoDelete" should {
+
+    "set the allowAutoDelete field on an Application document to false" in {
+      val applicationId = ApplicationId.random
+      val savedApplication = await(
+        applicationRepository.save(
+          anApplicationDataForTest(applicationId)
+        )
+      )
+
+      savedApplication.allowAutoDelete mustBe true
+
+      val updatedApplication = await(
+        applicationRepository.updateAllowAutoDelete(
+          applicationId,
+          false
+        )
+      )
+
+      updatedApplication.allowAutoDelete mustBe false
+    }
+  }
+
+    "updateApplicationRateLimit" should {
 
     "set the rateLimitTier field on an Application document" in {
       val applicationId = ApplicationId.random
