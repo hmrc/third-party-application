@@ -128,7 +128,7 @@ class ApplicationRepositoryISpec
   "updateAllowAutoDelete" should {
 
     "set the allowAutoDelete field on an Application document to false" in {
-      val applicationId = ApplicationId.random
+      val applicationId    = ApplicationId.random
       val savedApplication = await(
         applicationRepository.save(
           anApplicationDataForTest(applicationId)
@@ -148,7 +148,7 @@ class ApplicationRepositoryISpec
     }
   }
 
-    "updateApplicationRateLimit" should {
+  "updateApplicationRateLimit" should {
 
     "set the rateLimitTier field on an Application document" in {
       val applicationId = ApplicationId.random
@@ -2136,23 +2136,23 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by name ascending" in {
-      val firstName         = "AAA first"
-      val secondName        = "ZZZ third"
-      val lowerCaseName     = "aaa second"
-      
-      val firstApplication  =
+      val firstName     = "AAA first"
+      val secondName    = "ZZZ third"
+      val lowerCaseName = "aaa second"
+
+      val firstApplication     =
         aNamedApplicationData(
           id = ApplicationId.random,
           name = firstName,
           prodClientId = generateClientId
         )
-      val secondApplication =
+      val secondApplication    =
         aNamedApplicationData(
           id = ApplicationId.random,
           name = secondName,
           prodClientId = generateClientId
         )
-        val lowerCaseApplication =
+      val lowerCaseApplication =
         aNamedApplicationData(
           id = ApplicationId.random,
           name = lowerCaseName,
