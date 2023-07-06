@@ -41,6 +41,11 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTime
 import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.time.{Clock, Duration, LocalDateTime, ZoneOffset}
+
+import org.bson.json.JsonObject
+import org.mongodb.scala.{Document, SingleObservable}
+import uk.gov.hmrc.mongo.MongoComponent
+
 import scala.util.Random.nextString
 
 class ApplicationRepositoryISpec
@@ -67,6 +72,9 @@ class ApplicationRepositoryISpec
 
   private val applicationRepository =
     app.injector.instanceOf[ApplicationRepository]
+
+  private val mongoComponent =
+    app.injector.instanceOf[MongoComponent]
 
   private val subscriptionRepository =
     app.injector.instanceOf[SubscriptionRepository]
@@ -3289,7 +3297,26 @@ class ApplicationRepositoryISpec
     }
   }
 
-  def createAppWithStatusUpdatedOn(
+  "updateAllApplicationsWithDeleteAllowed" should {
+    val developerEmail1 = "john.doe@example.com"
+    val user1 = developerEmail1.developer()
+
+    "add attribute and set to true" in {
+      val app1 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+
+      await(applicationRepository.save(app1))
+
+      val retrieved: Document = await(mongoComponent.database.getCollection("application").find().first().head())
+      retrieved.contains("allowAutoDelete") mustBe(false)
+
+      await(applicationRepository.updateAllApplicationsWithDeleteAllowed())
+
+      val retrievedAfterUpdate: Document = await(mongoComponent.database.getCollection("application").find().first().head())
+      retrievedAfterUpdate.contains("allowAutoDelete") mustBe(true)
+    }
+  }
+
+      def createAppWithStatusUpdatedOn(
       state: State.State,
       updatedOn: LocalDateTime
     ): ApplicationData =
