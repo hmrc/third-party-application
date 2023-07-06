@@ -55,7 +55,8 @@ case class ApplicationData(
     environment: String = Environment.PRODUCTION.toString,
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,
-    ipAllowlist: IpAllowlist = IpAllowlist()
+    ipAllowlist: IpAllowlist = IpAllowlist(),
+    allowAutoDelete: Boolean = true
   ) {
   lazy val admins = collaborators.filter(_.isAdministrator)
 
@@ -147,7 +148,8 @@ object ApplicationData {
       (JsPath \ "environment").read[String] and
       (JsPath \ "checkInformation").readNullable[CheckInformation] and
       ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
-      ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist()))
+      ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
+      ((JsPath \ "allowAutoDelete").read[Boolean] or Reads.pure(true))
   )(ApplicationData.apply _)
 
   implicit val format: Format[ApplicationData] = Format(applicationDataReads, Json.writes[ApplicationData])
