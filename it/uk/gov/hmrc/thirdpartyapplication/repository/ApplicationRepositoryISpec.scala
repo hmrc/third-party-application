@@ -42,8 +42,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.time.{Clock, Duration, LocalDateTime, ZoneOffset}
 
-import org.bson.json.JsonObject
-import org.mongodb.scala.{Document, SingleObservable}
+import org.mongodb.scala.Document
 import uk.gov.hmrc.mongo.MongoComponent
 
 import scala.util.Random.nextString
