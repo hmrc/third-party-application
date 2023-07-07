@@ -113,7 +113,7 @@ class ApplicationCommandDispatcherSpec
 
       allCommandHandlers.foreach(handler => verifyZeroInteractions(handler))
 
-      verifyNoCommonServicesCalled
+      verifyNoCommonServicesCalled()
     }
   }
 

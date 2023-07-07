@@ -73,7 +73,7 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
     "succeed for an admin" in new Setup {
       ApplicationRepoMock.DeleteClientSecret.succeeds(principalApp, clientSecret.id)
 
-      val result = await(underTest.process(principalApp, removeClientSecretByAdmin).value).right.value
+      val result = await(underTest.process(principalApp, removeClientSecretByAdmin).value).value
 
       checkSuccessResult(adminActor)(result)
     }
@@ -109,7 +109,7 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
       ApplicationRepoMock.DeleteClientSecret.succeeds(subordinateApp, clientSecret.id)
 
       println(subordinateApp.tokens.production.clientSecrets)
-      val result = await(underTest.process(subordinateApp, removeClientSecretByDev).value).right.value
+      val result = await(underTest.process(subordinateApp, removeClientSecretByDev).value).value
 
       checkSuccessResult(developerActor)(result)
     }

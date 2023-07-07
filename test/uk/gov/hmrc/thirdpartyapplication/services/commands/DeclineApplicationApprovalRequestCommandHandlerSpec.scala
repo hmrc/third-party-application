@@ -127,13 +127,13 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
       ApplicationRepoMock.UpdateApplicationState.thenReturn(applicationData.copy(state = testingState()))
       StateHistoryRepoMock.Insert.succeeds()
 
-      val result = await(underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, now)).value).right.value
+      val result = await(underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, now)).value).value
 
       checkSuccessResult()(result)
     }
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
-      SubmissionsServiceMock.FetchLatest.thenReturnNone
+      SubmissionsServiceMock.FetchLatest.thenReturnNone()
       checkFailsWith(s"No submission found for application ${applicationData.id.value}") {
         underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, now))
       }

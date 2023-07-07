@@ -52,7 +52,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
         val result = await(underTest.create(applicationId, "bob@example.com"))
 
-        inside(result.right.value) {
+        inside(result.value) {
           case s @ Submission(_, applicationId, _, groupings, testQuestionIdsOfInterest, instances, _) =>
             applicationId shouldBe applicationId
             instances.head.answersToQuestions.size shouldBe 0
@@ -69,7 +69,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseStandardOnes()
         val result1 = await(underTest.create(applicationId, "bob@example.com"))
 
-        inside(result1.right.value) {
+        inside(result1.value) {
           case s @ Submission(_, applicationId, _, _, testQuestionIdsOfInterest, answersToQuestions, _) =>
             applicationId shouldBe applicationId
             s.allQuestionnaires.size shouldBe allQuestionnaires.size
@@ -78,7 +78,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseChangedOnes()
 
         val result2 = await(underTest.create(applicationId, "bob@example.com"))
-        inside(result2.right.value) {
+        inside(result2.value) {
           case s @ Submission(_, applicationId, _, _, testQuestionIdsOfInterest, answersToQuestions, _) =>
             s.allQuestionnaires.size shouldBe allQuestionnaires.size - 1 // The number from the dropped group
         }
@@ -161,7 +161,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
         val result = await(underTest.fetchLatestMarkedSubmission(applicationId))
 
-        result.right.value.submission shouldBe completeSubmission
+        result.value.submission shouldBe completeSubmission
       }
 
       "fail when given an invalid application id" in new Setup {
@@ -191,7 +191,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
         val result = await(underTest.recordAnswers(submissionId, questionId, List("Yes")))
 
-        val out = result.right.value
+        val out = result.value
         out.submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
         SubmissionsDAOMock.Update.verifyCalled()
       }
@@ -203,7 +203,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
         val result = await(underTest.recordAnswers(submissionId, optionalQuestionId, List.empty))
 
-        val out = result.right.value
+        val out = result.value
         out.submission.latestInstance.answersToQuestions.get(optionalQuestionId).value shouldBe NoAnswer
         SubmissionsDAOMock.Update.verifyCalled()
       }

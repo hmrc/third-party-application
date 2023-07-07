@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ListBuffer
 
 import ch.qos.logback.classic.spi.ILoggingEvent
@@ -53,10 +53,10 @@ class SuppressedLogFilter(val messagesContaining: String) extends Filter[ILoggin
 
 trait LogSuppressing {
 
-  def withSuppressedLoggingFrom(logger: Logger, messagesContaining: String)(body: (=> SuppressedLogFilter) => Unit) {
+  def withSuppressedLoggingFrom(logger: Logger, messagesContaining: String)(body: (=> SuppressedLogFilter) => Unit): Unit = {
 
     val appenders            = logger.iteratorForAppenders().asScala
-    val appendersWithFilters = appenders.map(appender => appender -> appender.getCopyOfAttachedFiltersList)
+    val appendersWithFilters = appenders.map(appender => appender -> appender.getCopyOfAttachedFiltersList())
 
     val filter = new SuppressedLogFilter(messagesContaining)
     appenders.foreach(_.addFilter(filter))
@@ -64,13 +64,13 @@ trait LogSuppressing {
     try body(filter)
     finally {
       appendersWithFilters.foreach { case (appender, filters) =>
-        appender.clearAllFilters
+        appender.clearAllFilters()
         filters.asScala.foreach(appender.addFilter(_))
       }
     }
   }
 
-  def withSuppressedLoggingFrom(logger: LoggerLike, messagesContaining: String)(body: (=> SuppressedLogFilter) => Unit) {
+  def withSuppressedLoggingFrom(logger: LoggerLike, messagesContaining: String)(body: (=> SuppressedLogFilter) => Unit): Unit = {
     withSuppressedLoggingFrom(logger.logger.asInstanceOf[Logger], messagesContaining)(body)
   }
 }

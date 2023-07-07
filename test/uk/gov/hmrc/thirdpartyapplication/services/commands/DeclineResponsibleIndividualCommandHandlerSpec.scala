@@ -128,7 +128,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
     )
 
     def checkSuccessResultToU()(fn: => CommandHandler.AppCmdResultT) = {
-      val testMe = await(fn.value).right.value
+      val testMe = await(fn.value).value
 
       inside(testMe) { case (app, events) =>
         events should have size 3
@@ -172,7 +172,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
     }
 
     def checkSuccessResultUpdate()(fn: => CommandHandler.AppCmdResultT) = {
-      val testMe = await(fn.value).right.value
+      val testMe = await(fn.value).value
 
       inside(testMe) { case (app, events) =>
         events should have size 1
@@ -221,7 +221,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationTouUplift)
       ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
       SubmissionsServiceMock.DeclineSubmission.thenReturn(declinedSubmission)
-      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
       val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
 

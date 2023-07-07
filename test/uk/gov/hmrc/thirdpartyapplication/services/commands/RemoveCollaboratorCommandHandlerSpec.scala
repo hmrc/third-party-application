@@ -84,7 +84,7 @@ class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.RemoveCollaborator.succeeds(app)
 
-      val result = await(underTest.process(app, removeCollaborator.copy(actor = gkUserActor)).value).right.value
+      val result = await(underTest.process(app, removeCollaborator.copy(actor = gkUserActor)).value).value
 
       checkSuccessResult(gkUserActor)(result)
     }
@@ -92,7 +92,7 @@ class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
     "succeed as Actors.AppCollaborator" in new Setup {
       ApplicationRepoMock.RemoveCollaborator.succeeds(app)
 
-      val result = await(underTest.process(app, removeCollaborator).value).right.value
+      val result = await(underTest.process(app, removeCollaborator).value).value
 
       checkSuccessResult(adminActor)(result)
     }

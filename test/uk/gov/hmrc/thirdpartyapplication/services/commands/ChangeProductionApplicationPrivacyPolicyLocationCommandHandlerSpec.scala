@@ -64,7 +64,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
     val underTest = new ChangeProductionApplicationPrivacyPolicyLocationCommandHandler(ApplicationRepoMock.aMock)
 
     def checkSuccessResult(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
-      val testThis = await(fn.value).right.value
+      val testThis = await(fn.value).value
 
       inside(testThis) { case (app, events) =>
         events should have size 1
@@ -82,7 +82,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
     }
 
     def checkLegacySuccessResult(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
-      val testThis = await(fn.value).right.value
+      val testThis = await(fn.value).value
 
       inside(testThis) { case (app, events) =>
         events should have size 1

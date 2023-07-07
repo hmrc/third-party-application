@@ -30,7 +30,7 @@ class StateHistorySpec extends HmrcSpec with ActorTestData with FixedClock {
       val stateHistory1 = StateHistory(applicationId, State.TESTING, otherAdminAsActor, changedAt = now.minusHours(5))
       val stateHistory2 = StateHistory(applicationId, State.TESTING, otherAdminAsActor, changedAt = now.minusHours(3))
 
-      Seq(stateHistory2, stateHistory1).sortBy(_.changedAt) should contain inOrder (stateHistory1, stateHistory2)
+      Seq(stateHistory2, stateHistory1).sortBy(_.changedAt) should contain.inOrder(stateHistory1, stateHistory2)
     }
   }
 }

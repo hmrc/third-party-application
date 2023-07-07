@@ -69,7 +69,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
       "succeed when application is standardAccess" in new Setup {
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(newRedirectUris)(applicationData) // Dont need to test the repo here so just return any app
 
-        val result = await(underTest.process(applicationData, cmdAsAdmin).value).right.value
+        val result = await(underTest.process(applicationData, cmdAsAdmin).value).value
 
         checkSuccessResult(adminActor)(result)
 
@@ -101,7 +101,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
       "succeed for a developer" in new Setup {
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(newRedirectUris)(subordinateApp) // Dont need to test the repo here so just return any app
 
-        val result = await(underTest.process(subordinateApp, cmdAsDev).value).right.value
+        val result = await(underTest.process(subordinateApp, cmdAsDev).value).value
 
         checkSuccessResult(developerActor)(result)
       }

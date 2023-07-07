@@ -127,7 +127,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       )
 
     def checkSuccessResultToU()(fn: => CommandHandler.AppCmdResultT) = {
-      val testMe = await(fn.value).right.value
+      val testMe = await(fn.value).value
 
       inside(testMe) { case (app, events) =>
         events should have size 2
@@ -159,7 +159,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
     }
 
     def checkSuccessResultTouUplift(isPassed: Boolean)(fn: => CommandHandler.AppCmdResultT) = {
-      val testMe = await(fn.value).right.value
+      val testMe = await(fn.value).value
 
       if (isPassed) {
         inside(testMe) { case (app, events) =>
@@ -208,7 +208,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
     }
 
     def checkSuccessResultUpdate()(fn: => CommandHandler.AppCmdResultT) = {
-      val testMe = await(fn.value).right.value
+      val testMe = await(fn.value).value
 
       inside(testMe) { case (app, events) =>
         events should have size 1
@@ -253,7 +253,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationTouUplift)
       SubmissionsServiceMock.MarkSubmission.thenReturn(warningsSubmission)
       ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
-      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
       checkSuccessResultTouUplift(false) {
         underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, now))
@@ -268,7 +268,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       SubmissionsServiceMock.MarkSubmission.thenReturn(grantedSubmission)
       ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(prodApp)
       ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
-      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
       checkSuccessResultTouUplift(true) {
         underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, now))

@@ -52,7 +52,7 @@ class ContextServiceSpec
 
       val expectedContext = Map(Keys.IN_HOUSE_SOFTWARE -> "Yes", Keys.VAT_OR_ITSA -> "No", Keys.NEW_TERMS_OF_USE_UPLIFT -> "Yes")
 
-      result.right.value shouldBe expectedContext
+      result.value shouldBe expectedContext
     }
   }
 }

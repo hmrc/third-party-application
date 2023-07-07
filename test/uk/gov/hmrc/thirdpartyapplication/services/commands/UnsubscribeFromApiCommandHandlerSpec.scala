@@ -50,7 +50,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with A
     val unsubscribeFromApi = UnsubscribeFromApi(gatekeeperUserActor, apiIdentifier, now)
 
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
-      val testThis = await(fn.value).right.value
+      val testThis = await(fn.value).value
 
       inside(testThis) { case (app, events) =>
         events should have size 1

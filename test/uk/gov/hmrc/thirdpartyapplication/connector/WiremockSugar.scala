@@ -39,12 +39,12 @@ trait WiremockSugar extends BeforeAndAfterEach with BeforeAndAfterAll {
     WireMock.configureFor(stubHost, stubPort)
   }
 
-  override protected def afterAll() {
+  override protected def afterAll(): Unit = {
     wireMockServer.stop()
     super.afterAll()
   }
 
-  override def afterEach() {
+  override def afterEach(): Unit = {
     wireMockServer.resetMappings()
     super.afterEach()
   }

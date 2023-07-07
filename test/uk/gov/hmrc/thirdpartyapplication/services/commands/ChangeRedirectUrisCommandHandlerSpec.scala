@@ -71,7 +71,7 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
         val expectedUrisAfterChange = List(replacementUri.uri, untouchedUri.uri)
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(principalApp) // Dont need to test the repo here so just return any app
 
-        val result = await(underTest.process(principalApp, cmdAsAdmin).value).right.value
+        val result = await(underTest.process(principalApp, cmdAsAdmin).value).value
 
         checkSuccessResult(adminActor)(result)
       }
@@ -103,7 +103,7 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
         val expectedUrisAfterChange = List(replacementUri.uri, untouchedUri.uri)
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(subordinateApp) // Dont need to test the repo here so just return any app
 
-        val result = await(underTest.process(subordinateApp, cmdAsDev).value).right.value
+        val result = await(underTest.process(subordinateApp, cmdAsDev).value).value
 
         checkSuccessResult(developerActor)(result)
       }
