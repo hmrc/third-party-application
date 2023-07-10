@@ -44,9 +44,6 @@ object ApprovalsController {
 
   case class TouUpliftRequest(gatekeeperUserName: String, reasons: String)
   implicit val readsTouUpliftRequest = Json.reads[TouUpliftRequest]
-
-  case class TouGrantedRequest(gatekeeperUserName: String)
-  implicit val readsTouGrantedRequest = Json.reads[TouGrantedRequest]
 }
 
 @Singleton
@@ -118,8 +115,8 @@ class ApprovalsController @Inject() (
   def grantForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
     import GrantApprovalsService._
 
-    withJsonBodyFromAnyContent[TouGrantedRequest] { grantedRequest =>
-      grantApprovalService.grantForTouUplift(request.application, request.submission, grantedRequest.gatekeeperUserName)
+    withJsonBodyFromAnyContent[TouUpliftRequest] { upliftRequest =>
+      grantApprovalService.grantForTouUplift(request.application, request.submission, upliftRequest.gatekeeperUserName, upliftRequest.reasons)
         .map(_ match {
           case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
           case RejectedDueToIncorrectSubmissionState  =>
