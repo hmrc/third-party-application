@@ -906,7 +906,7 @@ class ApplicationServiceSpec
 
     "return a state change to indicate that the application has been deleted" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded
+      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
       ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       val result = await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
@@ -915,7 +915,7 @@ class ApplicationServiceSpec
 
     "call to ApiGatewayStore to delete the application" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded
+      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
       ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
@@ -925,7 +925,7 @@ class ApplicationServiceSpec
 
     "call to the API Subscription Fields service to delete subscription field data" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded
+      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
       ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
@@ -935,7 +935,7 @@ class ApplicationServiceSpec
 
     "delete the application subscriptions from the repository" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded
+      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
       ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
@@ -946,7 +946,7 @@ class ApplicationServiceSpec
 
     "delete the application from the repository" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded
+      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
       ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
@@ -956,7 +956,7 @@ class ApplicationServiceSpec
 
     "delete the application state history from the repository" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded
+      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
       ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
@@ -966,7 +966,7 @@ class ApplicationServiceSpec
 
     "audit the application deletion" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded
+      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
       ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       when(auditFunction.apply(any[ApplicationData])).thenReturn(Future.successful(mock[AuditResult]))
@@ -978,7 +978,7 @@ class ApplicationServiceSpec
 
     "audit the application when the deletion has not worked" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded
+      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
       ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       when(auditFunction.apply(any[ApplicationData])).thenReturn(Future.failed(new RuntimeException))
@@ -990,7 +990,7 @@ class ApplicationServiceSpec
 
     "send the application deleted notification email" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded
+      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
       ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))

@@ -37,12 +37,14 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val oldName        = "old app name"
-    val newName        = "new app name"
+    val oldName        = app.name
+    val newName        = "New app name"
     val gatekeeperUser = "gkuser"
     val requester      = "requester"
 
     val userId = idOf(anAdminEmail)
+
+    val newApp = app.copy(name = newName, normalisedName = newName.toLowerCase())
 
     val timestamp = FixedClock.instant
     val update    = ChangeProductionApplicationName(gatekeeperUser, userId, now, newName)
@@ -50,19 +52,20 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
-      val testMe = await(fn.value).right.value
+      val testMe = await(fn.value).value
 
       inside(testMe) { case (app, events) =>
         events should have size 1
         val event = events.head
 
         inside(event) {
-          case ProductionAppNameChangedEvent(_, appId, eventDateTime, actor, oldName, eNewName, requestingAdminEmail) =>
+          case ProductionAppNameChangedEvent(_, appId, eventDateTime, actor, anOldName, aNewName, requestingAdminEmail) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            oldName shouldBe app.name
-            eNewName shouldBe newName
+            aNewName shouldBe newName
+            anOldName shouldBe oldName
+            anOldName should not be aNewName
             requestingAdminEmail shouldBe anAdminEmail
         }
       }
@@ -72,7 +75,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
   "process" should {
     "create correct events for a valid request with a standard app" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      ApplicationRepoMock.UpdateApplicationName.thenReturn(app) // unmodified
+      ApplicationRepoMock.UpdateApplicationName.thenReturn(newApp)
 
       checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
         underTest.process(app, update)

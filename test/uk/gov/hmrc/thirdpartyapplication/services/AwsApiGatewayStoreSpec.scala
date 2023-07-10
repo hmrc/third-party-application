@@ -76,7 +76,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     "update rate limiting tier in AWS" in new Setup {
       when(mockAwsApiGatewayConnector.createOrUpdateApplication(applicationName, serverToken, SILVER)(hc)).thenReturn(successful(HasSucceeded))
 
-      await(underTest updateApplication (app, SILVER))
+      await(underTest.updateApplication(app, SILVER))
 
       verify(mockAwsApiGatewayConnector).createOrUpdateApplication(applicationName, serverToken, SILVER)(hc)
     }

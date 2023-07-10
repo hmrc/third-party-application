@@ -102,7 +102,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
       NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
       StateHistoryRepoMock.Insert.succeeds()
 
-      val result = await(underTest.process(app, cmd).value).right.value
+      val result = await(underTest.process(app, cmd).value).value
 
       checkSuccessResult()(result)
     }

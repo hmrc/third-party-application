@@ -82,8 +82,6 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
         "applicationName"   -> applicationName,
         "developerHubTitle" -> hubTestTitle
       )
-      val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
-
       // No stubbing so we cannot call POST
 
       await(connector.sendCollaboratorAddedConfirmation(administrator, applicationName, expectedToEmails)) shouldBe HasSucceeded
@@ -384,7 +382,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       val result = await(connector.sendChangeOfApplicationDetails(requesterName, applicationName, fieldName, previousValue, newValue, recipients))
 
       result shouldBe HasSucceeded
-      verifySent
+      verifySent()
     }
 
     "send change of application details with no values" in new Setup {
@@ -404,7 +402,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       val result = await(connector.sendChangeOfApplicationDetailsNoValue(requesterName, applicationName, fieldName, recipients))
 
       result shouldBe HasSucceeded
-      verifySent
+      verifySent()
     }
 
     "send verify responsible individual update notification" in new Setup {
@@ -428,7 +426,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       val result = await(connector.sendVerifyResponsibleIndividualUpdateNotification(responsibleIndividualName, responsibleIndividualEmail, appName, adminName, verificationId))
 
       result shouldBe HasSucceeded
-      verifySent
+      verifySent()
     }
   }
 }

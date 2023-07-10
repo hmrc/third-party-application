@@ -62,7 +62,7 @@ class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
         val updatedApp = principalApp // Don't need the ClientSecrets fixed here
         ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(updatedApp)
 
-        val result = await(underTest.process(principalApp, addClientSecretByAdmin).value).right.value
+        val result = await(underTest.process(principalApp, addClientSecretByAdmin).value).value
 
         checkSuccessResult(adminActor)(result)
       }
@@ -84,7 +84,7 @@ class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
       "succeed for a developer" in new Setup {
         ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(subordinateApp)
 
-        val result = await(underTest.process(subordinateApp, addClientSecretByDev).value).right.value
+        val result = await(underTest.process(subordinateApp, addClientSecretByDev).value).value
 
         checkSuccessResult(developerActor)(result)
       }

@@ -108,7 +108,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
       ThirdPartyDelegatedAuthorityServiceMock.RevokeApplicationAuthorities.succeeds()
       NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
 
-      val result = await(underTest.process(app, cmd).value).right.value
+      val result = await(underTest.process(app, cmd).value).value
 
       checkSuccessResult()(result)
     }

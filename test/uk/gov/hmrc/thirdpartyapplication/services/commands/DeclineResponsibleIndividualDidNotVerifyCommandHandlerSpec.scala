@@ -110,7 +110,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
     )
 
     def checkSuccessResultToU(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
-      val testMe = await(fn.value).right.value
+      val testMe = await(fn.value).value
 
       inside(testMe) { case (app, events) =>
         events should have size 3
@@ -154,7 +154,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
     }
 
     def checkSuccessResultUpdate(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
-      val testMe = await(fn.value).right.value
+      val testMe = await(fn.value).value
 
       inside(testMe) { case (app, events) =>
         events should have size 1

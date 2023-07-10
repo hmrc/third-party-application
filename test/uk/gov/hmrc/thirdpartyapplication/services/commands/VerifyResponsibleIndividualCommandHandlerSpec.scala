@@ -76,7 +76,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
 
-      val result = await(underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail)).value).right.value
+      val result = await(underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail)).value).value
 
       inside(result) { case (app, events) =>
         events should have size 1
