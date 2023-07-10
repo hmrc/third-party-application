@@ -108,7 +108,7 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
   val completelyAnswerExtendedSubmission =
     aSubmission.copy(id = completedSubmissionId)
       .hasCompletelyAnsweredWith(answersToQuestions)
-      .withCompletedProgresss
+      .withCompletedProgresss()
 
   val gatekeeperUserName = "gatekeeperUserName"
   val reasons            = "some reasons"
@@ -119,7 +119,7 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
   val answeredSubmission            = createdSubmission.hasCompletelyAnsweredWith(AnsweringQuestionsHelper.answersForGroups(Pass)(answeringSubmission.groups))
   val submittedSubmission           = Submission.submit(now, "bob@example.com")(answeredSubmission)
   val declinedSubmission            = Submission.decline(now, gatekeeperUserName, reasons)(submittedSubmission)
-  val grantedSubmission             = Submission.grant(now, gatekeeperUserName)(submittedSubmission)
+  val grantedSubmission             = Submission.grant(now, gatekeeperUserName, None)(submittedSubmission)
   val grantedWithWarningsSubmission = Submission.grantWithWarnings(now, gatekeeperUserName, "Warnings", None)(submittedSubmission)
   val pendingRISubmission           = Submission.pendingResponsibleIndividual(now, "bob@example.com")(submittedSubmission)
   val warningsSubmission            = Submission.warnings(now, "bob@example.com")(submittedSubmission)
