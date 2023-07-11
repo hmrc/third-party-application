@@ -173,7 +173,7 @@ object ApplicationResponse {
 
   def allowAutoDelete(data: ApplicationData): MoreApplicationResponse = Option(data.allowAutoDelete) match {
     case Some(allowAutoDeleteFlag: Boolean) => MoreApplicationResponse(allowAutoDeleteFlag)
-    case _ => MoreApplicationResponse()
+    case _                                  => MoreApplicationResponse()
   }
 
   def redirectUris(data: ApplicationData): List[String] = data.access match {
