@@ -171,6 +171,11 @@ case class ApplicationResponse(
 
 object ApplicationResponse {
 
+  def allowAutoDelete(data: ApplicationData): MoreApplicationResponse = Option(data.allowAutoDelete) match {
+    case Some(allowAutoDeleteFlag: Boolean) => MoreApplicationResponse(allowAutoDeleteFlag)
+    case _ => MoreApplicationResponse()
+  }
+
   def redirectUris(data: ApplicationData): List[String] = data.access match {
     case a: Standard => a.redirectUris
     case _           => List.empty
@@ -207,7 +212,8 @@ object ApplicationResponse {
       data.rateLimitTier.getOrElse(BRONZE),
       data.checkInformation,
       data.blocked,
-      ipAllowlist = data.ipAllowlist
+      ipAllowlist = data.ipAllowlist,
+      moreApplicationResponse = allowAutoDelete(data)
     )
   }
 }
