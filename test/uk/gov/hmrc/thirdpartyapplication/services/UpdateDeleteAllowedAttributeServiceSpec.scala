@@ -22,7 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 class UpdateDeleteAllowedAttributeServiceSpec extends AsyncHmrcSpec {
 
   trait Setup extends ApplicationRepositoryMockModule {
-    val underTest                                          = new UpdateDeleteAllowedAttributeService(ApplicationRepoMock.aMock)
+    val underTest = new UpdateDeleteAllowedAttributeService(ApplicationRepoMock.aMock)
 
   }
 

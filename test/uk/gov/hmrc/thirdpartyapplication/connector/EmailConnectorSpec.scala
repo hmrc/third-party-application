@@ -396,7 +396,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       )
       val recipients                              = Set("admin@example.com".toLaxEmail, "dev@example.com".toLaxEmail, "ri@example.com".toLaxEmail)
       val expectedRequest: SendEmailRequest       = SendEmailRequest(recipients, "apiChangeOfApplicationDetailsNoValue", expectedParameters)
-      
+
       emailWillReturn(expectedRequest)
 
       val result = await(connector.sendChangeOfApplicationDetailsNoValue(requesterName, applicationName, fieldName, recipients))

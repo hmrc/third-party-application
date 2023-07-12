@@ -2114,23 +2114,23 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by name ascending" in {
-      val firstName         = "AAA first"
-      val secondName        = "ZZZ third"
-      val lowerCaseName     = "aaa second"
-      
-      val firstApplication  =
+      val firstName     = "AAA first"
+      val secondName    = "ZZZ third"
+      val lowerCaseName = "aaa second"
+
+      val firstApplication     =
         aNamedApplicationData(
           id = ApplicationId.random,
           name = firstName,
           prodClientId = generateClientId
         )
-      val secondApplication =
+      val secondApplication    =
         aNamedApplicationData(
           id = ApplicationId.random,
           name = secondName,
           prodClientId = generateClientId
         )
-        val lowerCaseApplication =
+      val lowerCaseApplication =
         aNamedApplicationData(
           id = ApplicationId.random,
           name = lowerCaseName,
@@ -3292,10 +3292,10 @@ class ApplicationRepositoryISpec
 
   "updateAllApplicationsWithDeleteAllowed" should {
     val developerEmail1 = "john.doe@example.com"
-    val user1 = developerEmail1.developer()
+    val user1           = developerEmail1.developer()
 
     "add attribute and set to true" in {
-      val app = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+      val app                     = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
       val appWithoutDeleteAllowed = app.copy(allowAutoDelete = false)
 
       await(applicationRepository.save(appWithoutDeleteAllowed))
@@ -3310,7 +3310,7 @@ class ApplicationRepositoryISpec
     }
   }
 
-      def createAppWithStatusUpdatedOn(
+  def createAppWithStatusUpdatedOn(
       state: State.State,
       updatedOn: LocalDateTime
     ): ApplicationData =

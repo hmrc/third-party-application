@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-
 import javax.inject.Inject
+
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
-class UpdateDeleteAllowedAttributeService @Inject()(applicationRepository: ApplicationRepository) extends ApplicationLogger {
+class UpdateDeleteAllowedAttributeService @Inject() (applicationRepository: ApplicationRepository) extends ApplicationLogger {
 
   def updateDeleteAllowedAttribute(): Unit = {
     logger.info(s"About to run Startup job to add allowAutoDelete flag and set to true")

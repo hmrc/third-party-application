@@ -477,6 +477,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object UpdateAllApplicationsWithDeleteAllowed {
+
       def succeeds(numberOfApplicationsUpdated: Long) =
         when(aMock.updateAllApplicationsWithDeleteAllowed()).thenReturn(successful(numberOfApplicationsUpdated))
 

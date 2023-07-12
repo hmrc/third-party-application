@@ -17,11 +17,11 @@
 package uk.gov.hmrc.apiplatform.modules.startup
 
 import com.google.inject.AbstractModule
-import uk.gov.hmrc.thirdpartyapplication.services.UpdateDeleteAllowedAttributeService
 
+import uk.gov.hmrc.thirdpartyapplication.services.UpdateDeleteAllowedAttributeService
 
 class Module extends AbstractModule {
 
-    override def configure(): Unit =
-      bind(classOf[UpdateDeleteAllowedAttributeService]).asEagerSingleton()
+  override def configure(): Unit =
+    bind(classOf[UpdateDeleteAllowedAttributeService]).asEagerSingleton()
 }

@@ -19,21 +19,23 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.bson.{BsonArray, BsonInt32, BsonString, Document}
-import org.mongodb.scala.{SingleObservable, model}
+import org.mongodb.scala.model
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{excludeId, fields, include}
 import org.mongodb.scala.model._
-import org.mongodb.scala.result.UpdateResult
+
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
@@ -194,7 +196,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
- def updateAllApplicationsWithDeleteAllowed(): Future[Long] = {
+  def updateAllApplicationsWithDeleteAllowed(): Future[Long] = {
     collection.updateMany(
       filter = Filters.empty(),
       update = Updates.set("allowAutoDelete", true)
