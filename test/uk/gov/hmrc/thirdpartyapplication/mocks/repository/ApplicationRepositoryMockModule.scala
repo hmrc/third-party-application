@@ -475,6 +475,14 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def succeeds() =
         when(aMock.updateLegacyApplicationTermsAndConditionsLocation(*[ApplicationId], *)).thenReturn(successful(mock[ApplicationData]))
     }
+
+    object UpdateAllApplicationsWithDeleteAllowed {
+      def succeeds(numberOfApplicationsUpdated: Long) =
+        when(aMock.updateAllApplicationsWithDeleteAllowed()).thenReturn(successful(numberOfApplicationsUpdated))
+
+      def verifyCalled() =
+        verify.updateAllApplicationsWithDeleteAllowed()
+    }
   }
 
   object ApplicationRepoMock extends BaseApplicationRepoMock {

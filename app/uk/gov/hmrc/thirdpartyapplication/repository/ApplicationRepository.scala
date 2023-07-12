@@ -17,15 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.time.LocalDateTime
-
 import javax.inject.{Inject, Singleton}
-
 import scala.concurrent.{ExecutionContext, Future}
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.bson.{BsonArray, BsonInt32, BsonString, Document}
-import org.mongodb.scala.model
+import org.mongodb.scala.{SingleObservable, model}
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
@@ -196,11 +194,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
- def updateAllApplicationsWithDeleteAllowed(): Future[UpdateResult] = {
+ def updateAllApplicationsWithDeleteAllowed(): Future[Long] = {
     collection.updateMany(
       filter = Filters.empty(),
       update = Updates.set("allowAutoDelete", true)
-    ).toFuture()
+    ).toFuture().map(_.getModifiedCount)
   }
 
   def updateClientSecretField(applicationId: ApplicationId, clientSecretId: ClientSecret.Id, fieldName: String, fieldValue: String): Future[ApplicationData] = {

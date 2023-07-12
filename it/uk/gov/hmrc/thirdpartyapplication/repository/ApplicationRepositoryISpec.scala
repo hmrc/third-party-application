@@ -3302,7 +3302,8 @@ class ApplicationRepositoryISpec
       val retrieved = await(applicationRepository.fetch(appWithoutDeleteAllowed.id)).head
       retrieved.allowAutoDelete mustBe false
 
-      await(applicationRepository.updateAllApplicationsWithDeleteAllowed())
+      val numberOfApplicationsUpdated = await(applicationRepository.updateAllApplicationsWithDeleteAllowed())
+      numberOfApplicationsUpdated mustBe 1
 
       val retrievedAfterUpdate = await(applicationRepository.fetch(appWithoutDeleteAllowed.id)).head
       retrievedAfterUpdate.allowAutoDelete mustBe true
