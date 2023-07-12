@@ -23,13 +23,12 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 class UpdateDeleteAllowedAttributeService @Inject() (applicationRepository: ApplicationRepository) extends ApplicationLogger {
 
-  def updateDeleteAllowedAttribute(): Unit = {
-    logger.info(s"About to run Startup job to add allowAutoDelete flag and set to true")
+  private def updateDeleteAllowedAttribute() = {
+    logger.info(s"Running startup job to add allowAutoDelete flag and set to true")
 
-    val applicationsUpdated = applicationRepository.updateAllApplicationsWithDeleteAllowed
+    applicationRepository.updateAllApplicationsWithDeleteAllowed()
 
-    logger.info(s"Added / Updated allowAutoDelete flag to $applicationsUpdated Applications")
   }
 
-  updateDeleteAllowedAttribute
+  updateDeleteAllowedAttribute()
 }
