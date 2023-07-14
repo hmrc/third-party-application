@@ -108,7 +108,7 @@ class GrantApprovalsService @Inject() (
 
   private def grantSubmission(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])(submission: Submission) = {
     warnings.fold(
-      Submission.grant(LocalDateTime.now(clock), gatekeeperUserName, None)(submission)
+      Submission.grant(LocalDateTime.now(clock), gatekeeperUserName)(submission)
     )(value =>
       Submission.grantWithWarnings(LocalDateTime.now(clock), gatekeeperUserName, value, escalatedTo)(submission)
     )
@@ -179,7 +179,7 @@ class GrantApprovalsService @Inject() (
 
   private def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
     submission.status match {
-      case Granted(_, _, _)                => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
+      case Granted(_, _)                   => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
       case GrantedWithWarnings(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2_WITH_WARNINGS)
       case Warnings(_, _)                  => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
       case Failed(_, _)                    => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
@@ -213,8 +213,7 @@ class GrantApprovalsService @Inject() (
   def grantForTouUplift(
       originalApp: ApplicationData,
       submission: Submission,
-      gatekeeperUserName: String,
-      comments: String
+      gatekeeperUserName: String
     )(implicit hc: HeaderCarrier
     ): Future[GrantApprovalsService.Result] = {
     import cats.instances.future.catsStdInstancesForFuture
@@ -225,7 +224,7 @@ class GrantApprovalsService @Inject() (
         _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
         _ <- ET.cond(submission.status.isGrantedWithWarnings, (), RejectedDueToIncorrectSubmissionState)
 
-        updatedSubmission      = Submission.grant(LocalDateTime.now(clock), gatekeeperUserName, Some(comments))(submission)
+        updatedSubmission      = Submission.grant(LocalDateTime.now(clock), gatekeeperUserName)(submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
         _                     <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
         responsibleIndividual <- ET.fromOption(getResponsibleIndividual(originalApp), RejectedDueToIncorrectApplicationData)

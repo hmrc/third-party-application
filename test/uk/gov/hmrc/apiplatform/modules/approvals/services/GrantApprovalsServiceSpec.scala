@@ -113,7 +113,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Save.verifyCalled().state.name shouldBe PENDING_REQUESTER_VERIFICATION
       SubmissionsServiceMock.Store.verifyCalledWith().status.isGranted shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
-        case Submission.Status.Granted(_, gatekeeperUserName, _) =>
+        case Submission.Status.Granted(_, gatekeeperUserName) =>
       }
 
       val (someQuestionId, expectedAnswer) = submittedSubmission.latestInstance.answersToQuestions.head
@@ -209,25 +209,25 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
       TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
-      val result = await(underTest.grantForTouUplift(applicationProduction, grantedWithWarningsSubmission, gatekeeperUserName, reasons))
+      val result = await(underTest.grantForTouUplift(applicationProduction, grantedWithWarningsSubmission, gatekeeperUserName))
 
       result should matchPattern {
         case GrantApprovalsService.Actioned(app) =>
       }
       SubmissionsServiceMock.Store.verifyCalledWith().status.isGranted shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
-        case Submission.Status.Granted(_, gatekeeperUserName, _) =>
+        case Submission.Status.Granted(_, gatekeeperUserName) =>
       }
     }
 
     "fail to grant the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.grantForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName, reasons))
+      val result = await(underTest.grantForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
 
     "fail to grant the specified application if the submission is not in the granted with warnings state" in new Setup {
-      val result = await(underTest.grantForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, reasons))
+      val result = await(underTest.grantForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
     }
