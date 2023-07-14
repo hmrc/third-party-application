@@ -21,7 +21,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 
-trait NoOpMetricsTimer extends MetricsTimer with ApplicationLogger{
+trait NoOpMetricsTimer extends MetricsTimer with ApplicationLogger {
 
   override def timeFuture[A](name: String, metricRootName: MetricRootName)(block: => Future[A])(implicit ec: ExecutionContext): Future[A] = {
     block

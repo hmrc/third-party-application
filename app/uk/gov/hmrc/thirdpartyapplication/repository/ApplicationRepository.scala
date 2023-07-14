@@ -130,7 +130,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       replaceIndexes = true,
       extraCodecs = Seq(Codecs.playFormatCodec(LaxEmailAddress.formatter))
     ) with MetricsTimer
-      with ApplicationLogger {
+    with ApplicationLogger {
 
   import MongoJsonFormatterOverrides._
 
@@ -368,6 +368,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       collection.find(query).toFuture()
     }
   }
+
   /*
     db.application.aggregate( [
         {
@@ -404,7 +405,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         }
     ] )
    */
-  def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
+  def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]]                           = {
     timeFuture("Get Subscriptions for Developer", "application.repository.getSubscriptionsForDeveloper") {
 
       import org.mongodb.scala.model.Projections.{computed, excludeId}
@@ -434,7 +435,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         .map(_.toSet)
     }
   }
-  
+
   def fetchAllForEmailAddress(emailAddress: String): Future[Seq[ApplicationData]] = {
     val query = and(
       equal("collaborators.emailAddress", emailAddress),
@@ -480,7 +481,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       runAggregationQuery(filters, pagination, sort, applicationSearch.hasSubscriptionFilter(), applicationSearch.hasSpecificApiSubscriptionFilter())
     }
   }
-  
+
   private def cond[T](condition: Document, trueValue: Int, falseValue: Int): Bson = {
     Document("$cond" -> BsonArray(
       condition,

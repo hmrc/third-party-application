@@ -56,7 +56,7 @@ import com.kenshoo.play.metrics.Metrics
 
 @Singleton
 class ApplicationService @Inject() (
-  val metrics: Metrics,
+    val metrics: Metrics,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     subscriptionRepository: SubscriptionRepository,

@@ -103,9 +103,8 @@ class ApplicationServiceSpec
     val mockGatekeeperService                     = mock[GatekeeperService]
     val mockApiPlatformEventService               = mock[ApiPlatformEventService]
     val applicationResponseCreator                = new ApplicationResponseCreator()
-    val metrics = mock[Metrics]
+    val metrics                                   = mock[Metrics]
 
-        
     val hcForLoggedInCollaborator = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser.text,
       LOGGED_IN_USER_NAME_HEADER  -> "John Smith"

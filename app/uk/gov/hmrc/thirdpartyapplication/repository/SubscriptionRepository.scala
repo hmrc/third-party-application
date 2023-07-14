@@ -155,7 +155,7 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent, val metrics: Metr
         }
     }
   }
-  
+
   def findAll: Future[List[SubscriptionData]] = {
     timeFuture("Find All Subscriptions", "subscription.repository.findAll") {
       collection.find()

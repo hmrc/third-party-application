@@ -2113,23 +2113,23 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by name ascending" in {
-      val firstName         = "AAA first"
-      val secondName        = "ZZZ third"
-      val lowerCaseName     = "aaa second"
-      
-      val firstApplication  =
+      val firstName     = "AAA first"
+      val secondName    = "ZZZ third"
+      val lowerCaseName = "aaa second"
+
+      val firstApplication     =
         aNamedApplicationData(
           id = ApplicationId.random,
           name = firstName,
           prodClientId = generateClientId
         )
-      val secondApplication =
+      val secondApplication    =
         aNamedApplicationData(
           id = ApplicationId.random,
           name = secondName,
           prodClientId = generateClientId
         )
-        val lowerCaseApplication =
+      val lowerCaseApplication =
         aNamedApplicationData(
           id = ApplicationId.random,
           name = lowerCaseName,
