@@ -56,6 +56,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import com.kenshoo.play.metrics.Metrics
+import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -101,7 +103,9 @@ class ApplicationServiceSpec
     val mockGatekeeperService                     = mock[GatekeeperService]
     val mockApiPlatformEventService               = mock[ApiPlatformEventService]
     val applicationResponseCreator                = new ApplicationResponseCreator()
+    val metrics = mock[Metrics]
 
+        
     val hcForLoggedInCollaborator = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser.text,
       LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
@@ -121,6 +125,7 @@ class ApplicationServiceSpec
       .thenReturn(true)
 
     val underTest = new ApplicationService(
+      metrics,
       ApplicationRepoMock.aMock,
       StateHistoryRepoMock.aMock,
       SubscriptionRepoMock.aMock,
@@ -140,7 +145,7 @@ class ApplicationServiceSpec
       UpliftNamingServiceMock.aMock,
       ApplicationCommandDispatcherMock.aMock,
       clock
-    )
+    ) with NoOpMetricsTimer
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
     StateHistoryRepoMock.Insert.thenAnswer()
