@@ -218,10 +218,10 @@ class RequestApprovalsService @Inject() (
 
   private def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
     submission.status match {
-      case Granted(_, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
-      case Warnings(_, _)   => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
-      case Failed(_, _)     => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
-      case _                => successful(HasSucceeded)
+      case Granted(_, _)  => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
+      case Warnings(_, _) => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
+      case Failed(_, _)   => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
+      case _              => successful(HasSucceeded)
     }
   }
 
