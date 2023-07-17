@@ -288,7 +288,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object SearchApplications {
 
       def thenReturn(data: PaginatedApplicationData) =
-        when(aMock.searchApplications(*)).thenReturn(successful(data))
+        when(aMock.searchApplications(*)(*)).thenReturn(successful(data))
     }
 
     object ProcessAll {

@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, NoMetricsGuiceOneAppPerSuite}
+import com.kenshoo.play.metrics.Metrics
 
 class ResetLastAccessDateJobSpec
     extends AsyncHmrcSpec
@@ -46,8 +47,9 @@ class ResetLastAccessDateJobSpec
   implicit val m: Materializer                           = app.materializer
   implicit val dateTimeFormatters: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
   implicit val dateFormatters: Format[LocalDate]         = MongoJavatimeFormats.localDateFormat
+  implicit val metrics                                   = app.injector.instanceOf[Metrics]
 
-  val applicationRepository = new ApplicationRepository(mongoComponent)
+  val applicationRepository = new ApplicationRepository(mongoComponent, metrics)
 
   override protected def beforeEach(): Unit = {
     await(mongoDatabase.drop().toFuture())

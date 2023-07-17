@@ -51,9 +51,12 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator}
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
+import com.kenshoo.play.metrics.Metrics
 
 @Singleton
 class ApplicationService @Inject() (
+    val metrics: Metrics,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     subscriptionRepository: SubscriptionRepository,
@@ -74,7 +77,7 @@ class ApplicationService @Inject() (
     applicationCommandDispatcher: ApplicationCommandDispatcher,
     clock: Clock
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger with ActorHelper {
+  ) extends MetricsTimer with ApplicationLogger with ActorHelper {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
@@ -207,17 +210,21 @@ class ApplicationService @Inject() (
   }
 
   def recordApplicationUsage(applicationId: ApplicationId): Future[ExtendedApplicationResponse] = {
-    for {
-      app           <- applicationRepository.recordApplicationUsage(applicationId)
-      subscriptions <- subscriptionRepository.getSubscriptions(app.id)
-    } yield ExtendedApplicationResponse(app, subscriptions)
+    timeFuture("Service Record Application Usage", "application.service.recordApplicationUsage") {
+      for {
+        app           <- applicationRepository.recordApplicationUsage(applicationId)
+        subscriptions <- subscriptionRepository.getSubscriptions(app.id)
+      } yield ExtendedApplicationResponse(app, subscriptions)
+    }
   }
 
   def recordServerTokenUsage(applicationId: ApplicationId): Future[ExtendedApplicationResponse] = {
-    for {
-      app           <- applicationRepository.recordServerTokenUsage(applicationId)
-      subscriptions <- subscriptionRepository.getSubscriptions(app.id)
-    } yield ExtendedApplicationResponse(app, subscriptions)
+    timeFuture("Service Record Server Token Usage", "application.service.recordServerTokenUsage") {
+      for {
+        app           <- applicationRepository.recordServerTokenUsage(applicationId)
+        subscriptions <- subscriptionRepository.getSubscriptions(app.id)
+      } yield ExtendedApplicationResponse(app, subscriptions)
+    }
   }
 
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationResponse]] = {
@@ -282,7 +289,7 @@ class ApplicationService @Inject() (
       .map(application => ApplicationResponse(data = application))
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationResponse] = {
-    applicationRepository.searchApplications(applicationSearch).map { data =>
+    applicationRepository.searchApplications("applicationSearch")(applicationSearch).map { data =>
       PaginatedApplicationResponse(
         page = applicationSearch.pageNumber,
         pageSize = applicationSearch.pageSize,
