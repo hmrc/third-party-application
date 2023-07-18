@@ -26,13 +26,13 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Simpl
 import uk.gov.hmrc.apiplatform.modules.crypto.services.SecretsHashingService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import java.util.concurrent.Executors
+// API-7200 // mport java.util.concurrent.Executors
 
 @Singleton
-class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applicationRepository: ApplicationRepository, val clock: Clock)
+class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applicationRepository: ApplicationRepository, val clock: Clock)(implicit ec: ExecutionContext)
     extends SecretsHashingService with ApplicationLogger with SimpleTimer with ClockNow {
 
-  implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  // API-7200 // implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
   override val workFactor = config.workFactor
 
   def clientSecretIsValid(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecretData]): Future[Option[ClientSecretData]] = {
