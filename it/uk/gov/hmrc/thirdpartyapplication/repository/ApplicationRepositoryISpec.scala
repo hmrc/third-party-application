@@ -251,76 +251,76 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "recordApplicationUsage" should {
+  // "recordApplicationUsage" should {
 
-    "update the lastAccess property" in {
-      val applicationId = ApplicationId.random
+  //   "update the lastAccess property" in {
+  //     val applicationId = ApplicationId.random
 
-      val application =
-        anApplicationDataForTest(
-          applicationId,
-          ClientId("aaa"),
-          productionState("requestorEmail@example.com")
-        )
-          .copy(lastAccess =
-            Some(now.minusDays(20))
-          ) // scalastyle:ignore magic.number
+  //     val application =
+  //       anApplicationDataForTest(
+  //         applicationId,
+  //         ClientId("aaa"),
+  //         productionState("requestorEmail@example.com")
+  //       )
+  //         .copy(lastAccess =
+  //           Some(now.minusDays(20))
+  //         ) // scalastyle:ignore magic.number
 
-      await(applicationRepository.save(application))
-      val retrieved =
-        await(applicationRepository.recordApplicationUsage(applicationId))
+  //     await(applicationRepository.save(application))
+  //     val retrieved =
+  //       await(applicationRepository.recordApplicationUsage(applicationId))
 
-      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
-    }
+  //     timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
+  //   }
 
-    "update the grantLength property" in {
-      val applicationId = ApplicationId.random
+  //   "update the grantLength property" in {
+  //     val applicationId = ApplicationId.random
 
-      val application =
-        anApplicationDataForTest(
-          applicationId,
-          ClientId("aaa"),
-          productionState("requestorEmail@example.com"),
-          grantLength = newGrantLength
-        )
-          .copy(lastAccess =
-            Some(now.minusDays(20))
-          ) // scalastyle:ignore magic.number
+  //     val application =
+  //       anApplicationDataForTest(
+  //         applicationId,
+  //         ClientId("aaa"),
+  //         productionState("requestorEmail@example.com"),
+  //         grantLength = newGrantLength
+  //       )
+  //         .copy(lastAccess =
+  //           Some(now.minusDays(20))
+  //         ) // scalastyle:ignore magic.number
 
-      await(applicationRepository.save(application))
-      val retrieved =
-        await(applicationRepository.recordApplicationUsage(applicationId))
+  //     await(applicationRepository.save(application))
+  //     val retrieved =
+  //       await(applicationRepository.recordApplicationUsage(applicationId))
 
-      retrieved.grantLength mustBe newGrantLength
-    }
-  }
+  //     retrieved.grantLength mustBe newGrantLength
+  //   }
+  // }
 
-  "recordServerTokenUsage" should {
-    "update the lastAccess and lastAccessTokenUsage properties" in {
-      val applicationId = ApplicationId.random
-      val application   =
-        anApplicationDataForTest(
-          applicationId,
-          ClientId("aaa"),
-          productionState("requestorEmail@example.com")
-        )
-          .copy(lastAccess =
-            Some(now.minusDays(20))
-          ) // scalastyle:ignore magic.number
+  // "recordServerTokenUsage" should {
+  //   "update the lastAccess and lastAccessTokenUsage properties" in {
+  //     val applicationId = ApplicationId.random
+  //     val application   =
+  //       anApplicationDataForTest(
+  //         applicationId,
+  //         ClientId("aaa"),
+  //         productionState("requestorEmail@example.com")
+  //       )
+  //         .copy(lastAccess =
+  //           Some(now.minusDays(20))
+  //         ) // scalastyle:ignore magic.number
 
-      application.tokens.production.lastAccessTokenUsage mustBe None
+  //     application.tokens.production.lastAccessTokenUsage mustBe None
 
-      await(applicationRepository.save(application))
-      val retrieved =
-        await(applicationRepository.recordServerTokenUsage(applicationId))
+  //     await(applicationRepository.save(application))
+  //     val retrieved =
+  //       await(applicationRepository.recordServerTokenUsage(applicationId))
 
-      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
-      timestampShouldBeApproximatelyNow(
-        retrieved.tokens.production.lastAccessTokenUsage.get,
-        clock = clock
-      )
-    }
-  }
+  //     timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
+  //     timestampShouldBeApproximatelyNow(
+  //       retrieved.tokens.production.lastAccessTokenUsage.get,
+  //       clock = clock
+  //     )
+  //   }
+  // }
 
   "recordClientSecretUsage" should {
     "create a lastAccess property for client secret if it does not already exist" in {

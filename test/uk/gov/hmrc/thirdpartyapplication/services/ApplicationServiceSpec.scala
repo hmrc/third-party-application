@@ -508,13 +508,14 @@ class ApplicationServiceSpec
   "recordApplicationUsage" should {
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
       val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
-      ApplicationRepoMock.RecordApplicationUsage.thenReturnWhen(applicationId)(applicationData)
+      val clientId = applicationData.tokens.production.clientId
+      ApplicationRepoMock.FindAndRecordApplicationUsage.thenReturnWhen(clientId)(applicationData)
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions: _*)
 
-      val applicationResponse: ExtendedApplicationResponse = await(underTest.recordApplicationUsage(applicationId))
+      val result = await(underTest.findAndRecordApplicationUsage(clientId))
 
-      applicationResponse.id shouldBe applicationId
-      applicationResponse.subscriptions shouldBe subscriptions
+      result.value.id shouldBe applicationId
+      result.value.subscriptions shouldBe subscriptions
     }
   }
 
@@ -551,17 +552,18 @@ class ApplicationServiceSpec
     }
   }
 
-  "recordServerTokenUsage" should {
+  "findAndRecordServerTokenUsage" should {
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
       val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
-      ApplicationRepoMock.RecordServerTokenUsage.thenReturnWhen(applicationId)(applicationData)
+      val serverToken = applicationData.tokens.production.accessToken
+      ApplicationRepoMock.FindAndRecordServerTokenUsage.thenReturnWhen(serverToken)(applicationData)
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions: _*)
 
-      val applicationResponse: ExtendedApplicationResponse = await(underTest.recordServerTokenUsage(applicationId))
+      val result = await(underTest.findAndRecordServerTokenUsage(serverToken))
 
-      applicationResponse.id shouldBe applicationId
-      applicationResponse.subscriptions shouldBe subscriptions
-      ApplicationRepoMock.RecordServerTokenUsage.verifyCalledWith(applicationId)
+      result.value.id shouldBe applicationId
+      result.value.subscriptions shouldBe subscriptions
+      ApplicationRepoMock.FindAndRecordServerTokenUsage.verifyCalledWith(serverToken)
     }
   }
 

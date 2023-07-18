@@ -159,15 +159,33 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] =
     updateApplication(applicationId, Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(acceptance)))
 
-  def recordApplicationUsage(applicationId: ApplicationId): Future[ApplicationData] =
-    timeFuture("Record Application Usage", "application.repository.recordApplicationUsage") {
-      updateApplication(applicationId, Updates.currentDate("lastAccess"))
+  def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[ApplicationData]] = {
+    timeFuture("Find and Record Application Usage", "application.repository.findAndRecordApplicationUsage") {
+      val query = and(
+        equal("tokens.production.clientId", Codecs.toBson(clientId)),
+        notEqual("state.name", Codecs.toBson(State.DELETED))
+      )
+      collection.findOneAndUpdate(
+        filter = query,
+        update = Updates.currentDate("lastAccess"),
+        options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
+      ).headOption()
     }
-
-  def recordServerTokenUsage(applicationId: ApplicationId): Future[ApplicationData] =
-    timeFuture("Record Application Server Token Usage", "application.repository.recordServerTokenUsage") {
-      updateApplication(applicationId, Updates.combine(Updates.currentDate("lastAccess"), Updates.currentDate("tokens.production.lastAccessTokenUsage")))
+  }
+  
+  def findAndRecordServerTokenUsage(serverToken: String): Future[Option[ApplicationData]] = {
+    timeFuture("Find and Record Application Server Token Usage", "application.repository.findAndRecordServerTokenUsage") {
+      val query = and(
+        equal("tokens.production.accessToken", serverToken),
+        notEqual("state.name", Codecs.toBson(State.DELETED))
+      )
+      collection.findOneAndUpdate(
+        filter = query,
+        update = Updates.combine(Updates.currentDate("lastAccess"), Updates.currentDate("tokens.production.lastAccessTokenUsage")),
+        options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
+      ).headOption()
     }
+  }
 
   // Historically emailAddress was the unique identifier for User and it didn't have a userId.
   // So this method was to back fix any records without the userId.
