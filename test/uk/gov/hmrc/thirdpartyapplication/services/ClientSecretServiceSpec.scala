@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
 
