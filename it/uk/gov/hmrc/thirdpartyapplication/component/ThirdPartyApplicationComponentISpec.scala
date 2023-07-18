@@ -63,7 +63,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
     "mongodb.uri"                                                -> "mongodb://localhost:27017/third-party-application-test"
   )
 
-  override def fakeApplication: Application = {
+  override def fakeApplication(): Application = {
     GuiceApplicationBuilder()
       .configure(configOverrides + ("metrics.jvm" -> false))
       .overrides(bind[CredentialGenerator].to[DummyCredentialGenerator])
@@ -104,8 +104,8 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
   }
 
   override protected def afterEach(): Unit = {
-    result(subscriptionRepository.collection.drop.toFuture(), timeout)
-    result(applicationRepository.collection.drop.toFuture(), timeout)
+    result(subscriptionRepository.collection.drop().toFuture(), timeout)
+    result(applicationRepository.collection.drop().toFuture(), timeout)
     super.afterEach()
   }
 

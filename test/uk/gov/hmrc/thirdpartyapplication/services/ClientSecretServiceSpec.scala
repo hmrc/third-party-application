@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
 import com.github.t3hnar.bcrypt._
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 

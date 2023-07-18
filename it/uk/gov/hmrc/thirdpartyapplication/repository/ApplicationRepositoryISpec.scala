@@ -255,11 +255,12 @@ class ApplicationRepositoryISpec
 
     "update the lastAccess property" in {
       val applicationId = ApplicationId.random
+      val clientId      = ClientId("aaa")
 
       val application =
         anApplicationDataForTest(
           applicationId,
-          ClientId("aaa"),
+          clientId,
           productionState("requestorEmail@example.com")
         )
           .copy(lastAccess =
@@ -268,7 +269,7 @@ class ApplicationRepositoryISpec
 
       await(applicationRepository.save(application))
       val retrieved =
-        await(applicationRepository.recordApplicationUsage(applicationId))
+        await(applicationRepository.findAndRecordApplicationUsage(clientId)).get
 
       timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
     }
@@ -276,10 +277,11 @@ class ApplicationRepositoryISpec
     "update the grantLength property" in {
       val applicationId = ApplicationId.random
 
+      val clientId    = ClientId("aaa")
       val application =
         anApplicationDataForTest(
           applicationId,
-          ClientId("aaa"),
+          clientId,
           productionState("requestorEmail@example.com"),
           grantLength = newGrantLength
         )
@@ -289,7 +291,7 @@ class ApplicationRepositoryISpec
 
       await(applicationRepository.save(application))
       val retrieved =
-        await(applicationRepository.recordApplicationUsage(applicationId))
+        await(applicationRepository.findAndRecordApplicationUsage(clientId)).get
 
       retrieved.grantLength mustBe newGrantLength
     }
@@ -312,7 +314,7 @@ class ApplicationRepositoryISpec
 
       await(applicationRepository.save(application))
       val retrieved =
-        await(applicationRepository.recordServerTokenUsage(applicationId))
+        await(applicationRepository.findAndRecordServerTokenUsage(application.tokens.production.accessToken)).get
 
       timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
       timestampShouldBeApproximatelyNow(

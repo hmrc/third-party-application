@@ -26,22 +26,14 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Simpl
 import uk.gov.hmrc.apiplatform.modules.crypto.services.SecretsHashingService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import java.util.concurrent.Executors
 
 @Singleton
-class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applicationRepository: ApplicationRepository, val clock: Clock)(implicit ec: ExecutionContext)
+class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applicationRepository: ApplicationRepository, val clock: Clock)
     extends SecretsHashingService with ApplicationLogger with SimpleTimer with ClockNow {
 
+  implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
   override val workFactor = config.workFactor
-
-  def timedHashSecret(secretValue: String): String = {
-    val (hashedSecretValue, duration) = timeThis(() => hashSecret(secretValue))
-
-    logger.info(
-      s"[ClientSecretService] Hashing Secret with Work Factor of [${workFactor}] took [${duration.toString()}]"
-    )
-
-    hashedSecretValue
-  }
 
   def clientSecretIsValid(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecretData]): Future[Option[ClientSecretData]] = {
     /*
@@ -70,6 +62,16 @@ class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applica
         } yield matchingClientSecret
       }
     }
+  }
+
+  def timedHashSecret(secretValue: String): String = {
+    val (hashedSecretValue, duration) = timeThis(() => hashSecret(secretValue))
+
+    logger.info(
+      s"[ClientSecretService] Hashing Secret with Work Factor of [${workFactor}] took [${duration.toString()}]"
+    )
+
+    hashedSecretValue
   }
 
   def lastUsedOrdering: (ClientSecretData, ClientSecretData) => Boolean = {

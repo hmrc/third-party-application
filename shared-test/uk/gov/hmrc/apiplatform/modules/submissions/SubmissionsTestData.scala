@@ -108,7 +108,7 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
   val completelyAnswerExtendedSubmission =
     aSubmission.copy(id = completedSubmissionId)
       .hasCompletelyAnsweredWith(answersToQuestions)
-      .withCompletedProgresss
+      .withCompletedProgresss()
 
   val gatekeeperUserName = "gatekeeperUserName"
   val reasons            = "some reasons"

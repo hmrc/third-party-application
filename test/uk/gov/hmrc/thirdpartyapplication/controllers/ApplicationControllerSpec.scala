@@ -435,8 +435,7 @@ class ApplicationControllerSpec
 
       forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
         when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
-        when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
-        when(underTest.applicationService.recordServerTokenUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+        when(underTest.applicationService.findAndRecordServerTokenUsage(serverToken)).thenReturn(Future(Some(updatedApplicationResponse)))
 
         val result               = underTest.queryDispatcher()(request.withHeaders(headers: _*))
         val actualLastAccessTime = (contentAsJson(result) \ "lastAccess").as[Long]
@@ -444,7 +443,7 @@ class ApplicationControllerSpec
         actualLastAccessTime shouldBe expectedLastAccessTime
         validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), Some(SERVER_TOKEN_HEADER))
         if (shouldUpdate) {
-          verify(underTest.applicationService).recordServerTokenUsage(eqTo(applicationId))
+          verify(underTest.applicationService).findAndRecordServerTokenUsage(eqTo(serverToken))
         }
         reset(underTest.applicationService)
       }
@@ -463,8 +462,7 @@ class ApplicationControllerSpec
 
       forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
         when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(applicationResponse)))
-        when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
-        when(underTest.applicationService.recordServerTokenUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+        when(underTest.applicationService.findAndRecordApplicationUsage(clientId)).thenReturn(Future(Some(updatedApplicationResponse)))
 
         val result =
           underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}").withHeaders(headers: _*))
@@ -472,7 +470,7 @@ class ApplicationControllerSpec
         validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), None)
         (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
         if (shouldUpdate) {
-          verify(underTest.applicationService).recordApplicationUsage(eqTo(applicationId))
+          verify(underTest.applicationService).findAndRecordApplicationUsage(eqTo(clientId))
         }
         reset(underTest.applicationService)
       }
