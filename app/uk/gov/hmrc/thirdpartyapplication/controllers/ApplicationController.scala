@@ -252,37 +252,44 @@ class ApplicationController @Inject() (
     }
   }
 
-  private def fetchByServerToken(serverToken: String)(implicit hc: HeaderCarrier): Future[Result] =
-    fetchAndUpdateApplication(
-      () => applicationService.fetchByServerToken(serverToken),
-      appId => applicationService.recordServerTokenUsage(appId),
-      "No application was found for server token"
-    )
+  private def hasGatewayUserAgent(implicit hc: HeaderCarrier): Boolean = {
+    hc.extraHeaders
+      .find(_._1 == INTERNAL_USER_AGENT)
+      .map(_._2)
+      .map(_.split(","))
+      .flatMap(_.find(_ == apiGatewayUserAgent))
+      .isDefined
+  }
 
-  private def fetchByClientId(clientId: ClientId)(implicit hc: HeaderCarrier): Future[Result] =
-    fetchAndUpdateApplication(
-      () => applicationService.fetchByClientId(clientId),
-      appId => applicationService.recordApplicationUsage(appId),
-      "No application was found for client id"
-    )
+  private def asJsonResult[T](notFoundMessage: String)(maybeApplication: Option[T])(implicit writes: Writes[T]): Result = {
+    maybeApplication.fold(handleNotFound(notFoundMessage))(t => Ok(toJson(t)))
+  }
 
-  private def fetchAndUpdateApplication(
-      fetchFunction: () => Future[Option[ApplicationResponse]],
-      updateFunction: ApplicationId => Future[ExtendedApplicationResponse],
-      notFoundMessage: String
-    )(implicit hc: HeaderCarrier
-    ): Future[Result] =
-    fetchFunction().flatMap {
-      case Some(application) =>
-        // If request has originated from an API gateway, record usage of the Application
-        hc.extraHeaders
-          .find(_._1 == INTERNAL_USER_AGENT)
-          .map(_._2)
-          .map(_.split(","))
-          .flatMap(_.find(_ == apiGatewayUserAgent))
-          .fold(successful(Ok(toJson(application))))(_ => updateFunction(application.id).map(updatedApp => Ok(toJson(updatedApp))))
-      case None              => successful(handleNotFound(notFoundMessage))
-    } recover recovery
+  private def fetchByServerToken(serverToken: String)(implicit hc: HeaderCarrier): Future[Result] = {
+    lazy val notFoundMessage = "No application was found for server token"
+
+    // If request has originated from an API gateway, record usage of the Application
+    (
+      if(hasGatewayUserAgent) {
+        applicationService.findAndRecordServerTokenUsage(serverToken).map(asJsonResult(notFoundMessage))
+      } else {
+        applicationService.fetchByServerToken(serverToken).map(asJsonResult(notFoundMessage))
+      }
+    ) recover recovery
+  }
+
+  private def fetchByClientId(clientId: ClientId)(implicit hc: HeaderCarrier): Future[Result] = {
+    lazy val notFoundMessage = "No application was found for client id"
+
+    // If request has originated from an API gateway, record usage of the Application
+    (
+      if(hasGatewayUserAgent) {
+        applicationService.findAndRecordApplicationUsage(clientId).map(asJsonResult(notFoundMessage))
+      } else {
+        applicationService.fetchByClientId(clientId).map(asJsonResult(notFoundMessage))
+      }
+    ) recover recovery
+  }
 
   def fetchAllForCollaborator(userId: UserId) = Action.async {
     applicationService.fetchAllForCollaborator(userId, false).map(apps => Ok(toJson(apps))) recover recovery

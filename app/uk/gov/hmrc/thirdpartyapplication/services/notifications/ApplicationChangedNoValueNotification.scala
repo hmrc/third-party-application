@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 object ApplicationChangedNoValueNotification {
-  
+
   def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, requestingAdminEmail: String, fieldName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
     emailConnector.sendChangeOfApplicationDetailsNoValue(requestingAdminEmail, app.name, fieldName, recipients)

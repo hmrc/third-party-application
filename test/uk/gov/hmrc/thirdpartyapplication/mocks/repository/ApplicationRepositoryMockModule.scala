@@ -252,19 +252,19 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.getAppsWithSubscriptions).thenReturn(successful(Nil))
     }
 
-    object RecordApplicationUsage {
+    object FindAndRecordApplicationUsage {
 
-      def thenReturnWhen(applicationId: ApplicationId)(applicationData: ApplicationData) =
-        when(aMock.recordApplicationUsage(eqTo(applicationId))).thenReturn(successful(applicationData))
+      def thenReturnWhen(clientId: ClientId)(applicationData: ApplicationData) =
+        when(aMock.findAndRecordApplicationUsage(eqTo(clientId))).thenReturn(successful(Some(applicationData)))
     }
 
-    object RecordServerTokenUsage {
+    object FindAndRecordServerTokenUsage {
 
-      def thenReturnWhen(applicationId: ApplicationId)(applicationData: ApplicationData) =
-        when(aMock.recordServerTokenUsage(eqTo(applicationId))).thenReturn(successful(applicationData))
+      def thenReturnWhen(serverToken: String)(applicationData: ApplicationData) =
+        when(aMock.findAndRecordServerTokenUsage(eqTo(serverToken))).thenReturn(successful(Some(applicationData)))
 
-      def verifyCalledWith(applicationId: ApplicationId) =
-        ApplicationRepoMock.verify.recordServerTokenUsage(eqTo(applicationId))
+      def verifyCalledWith(serverToken: String) =
+        ApplicationRepoMock.verify.findAndRecordServerTokenUsage(eqTo(serverToken))
     }
 
     object UpdateIpAllowlist {
@@ -288,7 +288,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object SearchApplications {
 
       def thenReturn(data: PaginatedApplicationData) =
-        when(aMock.searchApplications(*)).thenReturn(successful(data))
+        when(aMock.searchApplications(*)(*)).thenReturn(successful(data))
     }
 
     object ProcessAll {
