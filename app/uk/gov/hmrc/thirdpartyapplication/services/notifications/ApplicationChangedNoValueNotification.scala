@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
 import scala.concurrent.Future
+
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
