@@ -22,14 +22,14 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.apiplatform.modules.common.services.SimpleTimer
-import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
 
 import com.github.t3hnar.bcrypt._
 import com.google.inject.Singleton
 
 import play.api.LoggerLike
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
+import uk.gov.hmrc.apiplatform.modules.common.services.SimpleTimer
 import uk.gov.hmrc.apiplatform.modules.scheduling.ExclusiveScheduledJob
 
 @Singleton
