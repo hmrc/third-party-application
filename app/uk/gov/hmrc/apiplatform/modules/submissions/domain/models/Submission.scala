@@ -108,7 +108,7 @@ object Submission {
       val markedSubmission: MarkedSubmission = MarkedSubmission(s, MarkAnswer.markSubmission(s))
 
       if (markedSubmission.isPass) {
-        Submission.grant(timestamp, name, Some("Automatically passed"))(s)
+        Submission.grant(timestamp, name, Some("Automatically passed"), None)(s)
       } else if (markedSubmission.isFail) {
         Submission.fail(timestamp, name)(s)
       } else {
@@ -125,7 +125,7 @@ object Submission {
     addDeclinedStatus andThen addNewlyAnsweringInstance
   }
 
-  val grant: (LocalDateTime, String, Option[String]) => Submission => Submission = (timestamp, name, comments) => addStatusHistory(Status.Granted(timestamp, name, comments))
+  val grant: (LocalDateTime, String, Option[String], Option[String]) => Submission => Submission = (timestamp, name, comments, escalatedTo) => addStatusHistory(Status.Granted(timestamp, name, comments, escalatedTo))
 
   val grantWithWarnings: (LocalDateTime, String, String, Option[String]) => Submission => Submission = (timestamp, name, warnings, escalatedTo) => {
     addStatusHistory(Status.GrantedWithWarnings(timestamp, name, warnings, escalatedTo))
@@ -214,7 +214,8 @@ object Submission {
     case class Granted(
         timestamp: LocalDateTime,
         name: String,
-        comments: Option[String]
+        comments: Option[String],
+        escalatedTo: Option[String]
       ) extends Status
 
     case class GrantedWithWarnings(
