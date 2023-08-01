@@ -16,22 +16,23 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
 import cats.data._
 import cats.implicits._
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.{AllowApplicationAutoDelete, BlockApplicationAutoDelete}
+
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.BlockApplicationAutoDelete
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
-
 @Singleton
-class BlockApplicationAutoDeleteCommandHandler @Inject()(
-                                                          applicationRepository: ApplicationRepository
-                                                        )(implicit val ec: ExecutionContext
-                                                        ) extends CommandHandler {
+class BlockApplicationAutoDeleteCommandHandler @Inject() (
+    applicationRepository: ApplicationRepository
+  )(implicit val ec: ExecutionContext
+  ) extends CommandHandler {
 
   import CommandHandler._
 
@@ -53,9 +54,9 @@ class BlockApplicationAutoDeleteCommandHandler @Inject()(
   def process(app: ApplicationData, cmd: BlockApplicationAutoDelete): AppCmdResultT = {
 
     for {
-      valid <- E.fromEither(validate(app).toEither)
+      valid    <- E.fromEither(validate(app).toEither)
       savedApp <- E.liftF(applicationRepository.updateAllowAutoDelete(app.id, false))
-      events = asEvents(app, cmd)
+      events    = asEvents(app, cmd)
     } yield (savedApp, events)
   }
 }

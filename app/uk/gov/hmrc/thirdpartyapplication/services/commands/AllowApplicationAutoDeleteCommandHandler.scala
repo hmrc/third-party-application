@@ -16,19 +16,20 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
 import cats.data._
 import cats.implicits._
+
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AllowApplicationAutoDelete
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
-
 @Singleton
-class AllowApplicationAutoDeleteCommandHandler @Inject()(
+class AllowApplicationAutoDeleteCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
