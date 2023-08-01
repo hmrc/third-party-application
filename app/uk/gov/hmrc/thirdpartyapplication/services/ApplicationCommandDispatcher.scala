@@ -38,30 +38,30 @@ class ApplicationCommandDispatcher @Inject() (
     notificationService: NotificationService,
     apiPlatformEventService: ApiPlatformEventService,
     auditService: AuditService,
-    addClientSecretCommandHandler: AddClientSecretCommandHandler,
-    addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
+    addClientSecretCmdHdlr: AddClientSecretCommandHandler,
+    addCollaboratorCmdHdlr: AddCollaboratorCommandHandler,
     addRedirectUriCommandHandle: AddRedirectUriCommandHandler,
-    removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
+    removeClientSecretCmdHdlr: RemoveClientSecretCommandHandler,
     changeGrantLengthCmdHdlr: ChangeGrantLengthCommandHandler,
     changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-    removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
+    removeCollaboratorCmdHdlr: RemoveCollaboratorCommandHandler,
     changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
     changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
-    changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
-    changeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler,
-    changeRedirectUriCommandHandler: ChangeRedirectUriCommandHandler,
-    verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
-    declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
-    declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
-    declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler,
-    deleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler,
-    deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
-    deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
-    deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
-    deleteRedirectUriCommandHandler: DeleteRedirectUriCommandHandler,
-    subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
-    unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
-    updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler
+    changeResponsibleIndividualToSelfCmdHdlr: ChangeResponsibleIndividualToSelfCommandHandler,
+    changeResponsibleIndividualToOtherCmdHdlr: ChangeResponsibleIndividualToOtherCommandHandler,
+    changeRedirectUriCmdHdlr: ChangeRedirectUriCommandHandler,
+    verifyResponsibleIndividualCmdHdlr: VerifyResponsibleIndividualCommandHandler,
+    declineResponsibleIndividualCmdHdlr: DeclineResponsibleIndividualCommandHandler,
+    declineResponsibleIndividualDidNotVerifyCmdHdlr: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
+    declineApplicationApprovalRequestCmdHdlr: DeclineApplicationApprovalRequestCommandHandler,
+    deleteApplicationByCollaboratorCmdHdlr: DeleteApplicationByCollaboratorCommandHandler,
+    deleteApplicationByGatekeeperCmdHdlr: DeleteApplicationByGatekeeperCommandHandler,
+    deleteUnusedApplicationCmdHdlr: DeleteUnusedApplicationCommandHandler,
+    deleteProductionCredentialsApplicationCmdHdlr: DeleteProductionCredentialsApplicationCommandHandler,
+    deleteRedirectUriCmdHdlr: DeleteRedirectUriCommandHandler,
+    subscribeToApiCmdHdlr: SubscribeToApiCommandHandler,
+    unsubscribeFromApiCmdHdlr: UnsubscribeFromApiCommandHandler,
+    updateRedirectUrisCmdHdlr: UpdateRedirectUrisCommandHandler
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -86,30 +86,30 @@ class ApplicationCommandDispatcher @Inject() (
   private def processUpdate(app: ApplicationData, command: ApplicationCommand)(implicit hc: HeaderCarrier): AppCmdResultT = {
     import ApplicationCommands._
     command match {
-      case cmd: AddCollaborator                                       => addCollaboratorCommandHandler.process(app, cmd)
-      case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
-      case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
+      case cmd: AddCollaborator                                       => addCollaboratorCmdHdlr.process(app, cmd)
+      case cmd: RemoveCollaborator                                    => removeCollaboratorCmdHdlr.process(app, cmd)
+      case cmd: AddClientSecret                                       => addClientSecretCmdHdlr.process(app, cmd)
       case cmd: AddRedirectUri                                        => addRedirectUriCommandHandle.process(app, cmd)
-      case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)
+      case cmd: RemoveClientSecret                                    => removeClientSecretCmdHdlr.process(app, cmd)
       case cmd: ChangeGrantLength                                     => changeGrantLengthCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
-      case cmd: ChangeRedirectUri                                     => changeRedirectUriCommandHandler.process(app, cmd)
-      case cmd: ChangeResponsibleIndividualToSelf                     => changeResponsibleIndividualToSelfCommandHandler.process(app, cmd)
-      case cmd: ChangeResponsibleIndividualToOther                    => changeResponsibleIndividualToOtherCommandHandler.process(app, cmd)
-      case cmd: VerifyResponsibleIndividual                           => verifyResponsibleIndividualCommandHandler.process(app, cmd)
-      case cmd: DeclineResponsibleIndividual                          => declineResponsibleIndividualCommandHandler.process(app, cmd)
-      case cmd: DeclineResponsibleIndividualDidNotVerify              => declineResponsibleIndividualDidNotVerifyCommandHandler.process(app, cmd)
-      case cmd: DeclineApplicationApprovalRequest                     => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
-      case cmd: DeleteApplicationByCollaborator                       => deleteApplicationByCollaboratorCommandHandler.process(app, cmd)
-      case cmd: DeleteApplicationByGatekeeper                         => deleteApplicationByGatekeeperCommandHandler.process(app, cmd)
-      case cmd: DeleteUnusedApplication                               => deleteUnusedApplicationCommandHandler.process(app, cmd)
-      case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCommandHandler.process(app, cmd)
-      case cmd: DeleteRedirectUri                                     => deleteRedirectUriCommandHandler.process(app, cmd)
-      case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
-      case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
-      case cmd: UpdateRedirectUris                                    => updateRedirectUrisCommandHandler.process(app, cmd)
+      case cmd: ChangeRedirectUri                                     => changeRedirectUriCmdHdlr.process(app, cmd)
+      case cmd: ChangeResponsibleIndividualToSelf                     => changeResponsibleIndividualToSelfCmdHdlr.process(app, cmd)
+      case cmd: ChangeResponsibleIndividualToOther                    => changeResponsibleIndividualToOtherCmdHdlr.process(app, cmd)
+      case cmd: VerifyResponsibleIndividual                           => verifyResponsibleIndividualCmdHdlr.process(app, cmd)
+      case cmd: DeclineResponsibleIndividual                          => declineResponsibleIndividualCmdHdlr.process(app, cmd)
+      case cmd: DeclineResponsibleIndividualDidNotVerify              => declineResponsibleIndividualDidNotVerifyCmdHdlr.process(app, cmd)
+      case cmd: DeclineApplicationApprovalRequest                     => declineApplicationApprovalRequestCmdHdlr.process(app, cmd)
+      case cmd: DeleteApplicationByCollaborator                       => deleteApplicationByCollaboratorCmdHdlr.process(app, cmd)
+      case cmd: DeleteApplicationByGatekeeper                         => deleteApplicationByGatekeeperCmdHdlr.process(app, cmd)
+      case cmd: DeleteUnusedApplication                               => deleteUnusedApplicationCmdHdlr.process(app, cmd)
+      case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCmdHdlr.process(app, cmd)
+      case cmd: DeleteRedirectUri                                     => deleteRedirectUriCmdHdlr.process(app, cmd)
+      case cmd: SubscribeToApi                                        => subscribeToApiCmdHdlr.process(app, cmd)
+      case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCmdHdlr.process(app, cmd)
+      case cmd: UpdateRedirectUris                                    => updateRedirectUrisCmdHdlr.process(app, cmd)
     }
   }
   // scalastyle:on cyclomatic.complexity
