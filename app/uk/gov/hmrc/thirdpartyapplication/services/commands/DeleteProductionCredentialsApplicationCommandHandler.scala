@@ -56,7 +56,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
   private def asEvents(app: ApplicationData, cmd: DeleteProductionCredentialsApplication, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
     val clientId = app.tokens.production.clientId
     NonEmptyList.of(
-      ProductionCredentialsApplicationDeleted(
+      ApplicationEvents.ProductionCredentialsApplicationDeleted(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,

@@ -54,15 +54,15 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
-            case _: ApplicationStateChanged | _: ApplicationDeletedByGatekeeper => true
-            case _                                                              => false
+            case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ApplicationDeletedByGatekeeper => true
+            case _                                                                                                  => false
           }
         )
         filteredEvents.size shouldBe 2
 
         filteredEvents.foreach(event =>
           inside(event) {
-            case ApplicationDeletedByGatekeeper(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons, requestingAdminEmail) =>
+            case ApplicationEvents.ApplicationDeletedByGatekeeper(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons, requestingAdminEmail) =>
               appId shouldBe appId
               actor shouldBe actor
               eventDateTime shouldBe ts
@@ -71,7 +71,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
               wsoApplicationName shouldBe app.wso2ApplicationName
               requestingAdminEmail shouldBe requestedByEmail
 
-            case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
+            case ApplicationEvents.ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
               appId shouldBe appId
               evtActor shouldBe actor
               eventDateTime shouldBe ts

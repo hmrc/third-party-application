@@ -60,7 +60,7 @@ class DeleteRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
 
   private def asEvents(app: ApplicationData, cmd: DeleteRedirectUri): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      RedirectUriDeleted(
+      ApplicationEvents.RedirectUriDeleted(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,

@@ -156,7 +156,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     }
   }
 
-  private def addResponsibleIndividualVerification(evt: ResponsibleIndividualVerificationStarted): Future[HasSucceeded] = {
+  private def addResponsibleIndividualVerification(evt: ApplicationEvents.ResponsibleIndividualVerificationStarted): Future[HasSucceeded] = {
     val verification = ResponsibleIndividualUpdateVerification(
       ResponsibleIndividualVerificationId(evt.verificationId),
       evt.applicationId,
@@ -181,13 +181,13 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
 
   private def applyEvent(event: ApplicationEvent): Future[HasSucceeded] = {
     event match {
-      case evt: ResponsibleIndividualVerificationStarted => addResponsibleIndividualVerification(evt)
-      case evt: ResponsibleIndividualSet                 => deleteResponsibleIndividualVerification(evt.code)
-      case evt: ResponsibleIndividualChanged             => deleteResponsibleIndividualVerification(evt.code)
-      case evt: ResponsibleIndividualDeclined            => deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
-      case evt: ResponsibleIndividualDeclinedUpdate      => deleteResponsibleIndividualVerification(evt.code)
-      case evt: ResponsibleIndividualDidNotVerify        => deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
-      case _                                             => Future.successful(HasSucceeded)
+      case evt: ApplicationEvents.ResponsibleIndividualVerificationStarted => addResponsibleIndividualVerification(evt)
+      case evt: ApplicationEvents.ResponsibleIndividualSet                 => deleteResponsibleIndividualVerification(evt.code)
+      case evt: ApplicationEvents.ResponsibleIndividualChanged             => deleteResponsibleIndividualVerification(evt.code)
+      case evt: ApplicationEvents.ResponsibleIndividualDeclined            => deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
+      case evt: ApplicationEvents.ResponsibleIndividualDeclinedUpdate      => deleteResponsibleIndividualVerification(evt.code)
+      case evt: ApplicationEvents.ResponsibleIndividualDidNotVerify        => deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
+      case _                                                               => Future.successful(HasSucceeded)
     }
   }
 }

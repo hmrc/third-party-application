@@ -22,6 +22,7 @@ import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
 
 import akka.stream.Materializer
+import com.kenshoo.play.metrics.Metrics
 
 import play.api.libs.json.Format
 import uk.gov.hmrc.mongo.lock.MongoLockRepository
@@ -34,7 +35,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, NoMetricsGuiceOneAppPerSuite}
-import com.kenshoo.play.metrics.Metrics
 
 class ResetLastAccessDateJobSpec
     extends AsyncHmrcSpec

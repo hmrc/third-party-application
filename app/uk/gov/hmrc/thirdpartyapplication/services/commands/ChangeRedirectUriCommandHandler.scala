@@ -58,7 +58,7 @@ class ChangeRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
 
   private def asEvents(app: ApplicationData, cmd: ChangeRedirectUri): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      RedirectUriChanged(
+      ApplicationEvents.RedirectUriChanged(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,

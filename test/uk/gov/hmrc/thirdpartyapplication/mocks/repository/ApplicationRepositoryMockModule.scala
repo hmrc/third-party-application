@@ -278,6 +278,8 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object UpdateGrantLength {
 
+      def thenReturn() = when(aMock.updateApplicationGrantLength(*[ApplicationId], *)).thenReturn(successful(mock[ApplicationData]))
+
       def verifyCalledWith(applicationId: ApplicationId, newGrantLength: Int) =
         ApplicationRepoMock.verify.updateApplicationGrantLength(eqTo(applicationId), eqTo(newGrantLength))
 

@@ -54,7 +54,7 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
         val event = events.head
 
         inside(event) {
-          case RedirectUriChanged(_, appId, eventDateTime, actor, oldUri, newUri) =>
+          case ApplicationEvents.RedirectUriChanged(_, appId, eventDateTime, actor, oldUri, newUri) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp

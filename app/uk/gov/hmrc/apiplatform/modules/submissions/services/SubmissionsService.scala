@@ -24,7 +24,7 @@ import cats.data.NonEmptyList
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationApprovalRequestDeclined
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
@@ -117,7 +117,7 @@ class SubmissionsService @Inject() (
   def store(submission: Submission): Future[Submission] =
     submissionsDAO.update(submission)
 
-  def declineApplicationApprovalRequest(evt: ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
+  def declineApplicationApprovalRequest(evt: ApplicationEvents.ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
     (
       for {
         extSubmission    <- fromOptionF(fetch(SubmissionId(evt.submissionId.value)), "submission not found")

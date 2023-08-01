@@ -33,10 +33,10 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
 
 class ApplicationCommandDispatcherSpec
@@ -126,9 +126,9 @@ class ApplicationCommandDispatcherSpec
 
   "dispatch" when {
     "AddClientSecret is received" should {
-      val id                       = ClientSecret.Id.random
-      val cmd: AddClientSecret     = AddClientSecret(otherAdminAsActor, "name", id, "hashedSecret", now)
-      val evt: ClientSecretAddedV2 = ClientSecretAddedV2(EventId.random, applicationId, instant, otherAdminAsActor, "name", id.value.toString)
+      val id                                         = ClientSecret.Id.random
+      val cmd: AddClientSecret                       = AddClientSecret(otherAdminAsActor, "name", id, "hashedSecret", now)
+      val evt: ApplicationEvents.ClientSecretAddedV2 = ApplicationEvents.ClientSecretAddedV2(EventId.random, applicationId, instant, otherAdminAsActor, "name", id.value.toString)
 
       "call AddClientSecretCommand Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
@@ -146,8 +146,9 @@ class ApplicationCommandDispatcherSpec
     }
 
     "RemoveClientSecret is received" should {
-      val cmd: RemoveClientSecret    = RemoveClientSecret(otherAdminAsActor, ClientSecret.Id.random, now)
-      val evt: ClientSecretRemovedV2 = ClientSecretRemovedV2(EventId.random, applicationId, instant, otherAdminAsActor, cmd.clientSecretId.value.toString(), "someName")
+      val cmd: RemoveClientSecret                      = RemoveClientSecret(otherAdminAsActor, ClientSecret.Id.random, now)
+      val evt: ApplicationEvents.ClientSecretRemovedV2 =
+        ApplicationEvents.ClientSecretRemovedV2(EventId.random, applicationId, instant, otherAdminAsActor, cmd.clientSecretId.value.toString(), "someName")
 
       "call RemoveClientSecretCommand Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
@@ -166,16 +167,15 @@ class ApplicationCommandDispatcherSpec
     }
 
     "AddCollaborator is received" should {
-      val collaborator             = "email".developer()
-      val adminsToEmail            = Set("email1".toLaxEmail, "email2".toLaxEmail)
-      val cmd: AddCollaborator     = AddCollaborator(otherAdminAsActor, collaborator, now)
-      val evt: CollaboratorAddedV2 = CollaboratorAddedV2(
+      val collaborator                               = "email".developer()
+      val adminsToEmail                              = Set("email1".toLaxEmail, "email2".toLaxEmail)
+      val cmd: AddCollaborator                       = AddCollaborator(otherAdminAsActor, collaborator, now)
+      val evt: ApplicationEvents.CollaboratorAddedV2 = ApplicationEvents.CollaboratorAddedV2(
         EventId.random,
         applicationId,
         instant,
         otherAdminAsActor,
-        collaborator,
-        adminsToEmail
+        collaborator
       )
 
       "call AddCollaboratorCommand Handler and relevant common services if application exists" in new Setup {
@@ -196,16 +196,15 @@ class ApplicationCommandDispatcherSpec
 
     "RemoveCollaborator is received" should {
 
-      val collaborator               = "email".developer()
-      val adminsToEmail              = Set("email1".toLaxEmail, "email2".toLaxEmail)
-      val cmd: RemoveCollaborator    = RemoveCollaborator(otherAdminAsActor, collaborator, now)
-      val evt: CollaboratorRemovedV2 = CollaboratorRemovedV2(
+      val collaborator                                 = "email".developer()
+      val adminsToEmail                                = Set("email1".toLaxEmail, "email2".toLaxEmail)
+      val cmd: RemoveCollaborator                      = RemoveCollaborator(otherAdminAsActor, collaborator, now)
+      val evt: ApplicationEvents.CollaboratorRemovedV2 = ApplicationEvents.CollaboratorRemovedV2(
         EventId.random,
         applicationId,
         instant,
         otherAdminAsActor,
-        collaborator,
-        adminsToEmail
+        collaborator
       )
 
       "call RemoveCollaboratorCommand Handler and relevant common services if application exists" in new Setup {
@@ -235,7 +234,7 @@ class ApplicationCommandDispatcherSpec
 
       val timestamp = now
       val cmd       = ChangeProductionApplicationName(gatekeeperUser, userId, timestamp, newName)
-      val evt       = ProductionAppNameChangedEvent(
+      val evt       = ApplicationEvents.ProductionAppNameChangedEvent(
         EventId.random,
         applicationId,
         instant,
@@ -273,7 +272,7 @@ class ApplicationCommandDispatcherSpec
       val actor       = otherAdminAsActor
 
       val cmd = ChangeProductionApplicationPrivacyPolicyLocation(userId, timestamp, newLocation)
-      val evt = ProductionAppPrivacyPolicyLocationChanged(
+      val evt = ApplicationEvents.ProductionAppPrivacyPolicyLocationChanged(
         EventId.random,
         applicationId,
         instant,
@@ -310,7 +309,7 @@ class ApplicationCommandDispatcherSpec
       val actor       = otherAdminAsActor
 
       val cmd = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
-      val evt = ProductionAppTermsConditionsLocationChanged(
+      val evt = ApplicationEvents.ProductionAppTermsConditionsLocationChanged(
         EventId.random,
         applicationId,
         instant,
@@ -340,7 +339,7 @@ class ApplicationCommandDispatcherSpec
     "ChangeResponsibleIndividualToSelf is received" should {
 
       val cmd = ChangeResponsibleIndividualToSelf(UserId.random, timestamp, requestedByName, requestedByEmail)
-      val evt = ResponsibleIndividualChangedToSelf(
+      val evt = ApplicationEvents.ResponsibleIndividualChangedToSelf(
         EventId.random,
         applicationId,
         instant,
@@ -374,7 +373,7 @@ class ApplicationCommandDispatcherSpec
     "ChangeResponsibleIndividualToOther is received" should {
       val code = "someCode"
       val cmd  = ChangeResponsibleIndividualToOther(code, timestamp)
-      val evt  = ResponsibleIndividualChanged(
+      val evt  = ApplicationEvents.ResponsibleIndividualChanged(
         EventId.random,
         applicationId,
         instant,
@@ -414,7 +413,7 @@ class ApplicationCommandDispatcherSpec
       val actor     = Actors.GatekeeperUser(gatekeeperUser)
 
       val cmd = DeclineApplicationApprovalRequest(actor.user, reasons, timestamp)
-      val evt = ApplicationApprovalRequestDeclined(
+      val evt = ApplicationEvents.ApplicationApprovalRequestDeclined(
         EventId.random,
         applicationId,
         instant,
@@ -450,7 +449,7 @@ class ApplicationCommandDispatcherSpec
     " DeleteApplicationByCollaborator is received" should {
 
       val cmd = DeleteApplicationByCollaborator(UserId.random, reasons, timestamp)
-      val evt = ApplicationDeleted(
+      val evt = ApplicationEvents.ApplicationDeleted(
         EventId.random,
         applicationId,
         instant,
@@ -482,7 +481,7 @@ class ApplicationCommandDispatcherSpec
     "DeleteApplicationByGatekeeper is received" should {
 
       val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, timestamp)
-      val evt = ApplicationDeletedByGatekeeper(
+      val evt = ApplicationEvents.ApplicationDeletedByGatekeeper(
         EventId.random,
         applicationId,
         instant,
@@ -515,7 +514,7 @@ class ApplicationCommandDispatcherSpec
     " DeleteUnusedApplication is received" should {
       val authKey = "kjghhjgdasijgdkgjhsa"
       val cmd     = DeleteUnusedApplication(jobId, authKey, reasons, timestamp)
-      val evt     = ApplicationDeleted(
+      val evt     = ApplicationEvents.ApplicationDeleted(
         EventId.random,
         applicationId,
         instant,
@@ -546,7 +545,7 @@ class ApplicationCommandDispatcherSpec
 
     "DeleteProductionCredentialsApplication is received" should {
       val cmd = DeleteProductionCredentialsApplication(jobId, reasons, timestamp)
-      val evt = ProductionCredentialsApplicationDeleted(
+      val evt = ApplicationEvents.ProductionCredentialsApplicationDeleted(
         EventId.random,
         applicationId,
         instant,
@@ -580,7 +579,7 @@ class ApplicationCommandDispatcherSpec
       val version       = ApiVersion("version")
       val apiIdentifier = ApiIdentifier(context, version)
       val cmd           = SubscribeToApi(otherAdminAsActor, apiIdentifier, timestamp)
-      val evt           = ApiSubscribedV2(
+      val evt           = ApplicationEvents.ApiSubscribedV2(
         EventId.random,
         applicationId,
         instant,
@@ -613,7 +612,7 @@ class ApplicationCommandDispatcherSpec
       val version       = ApiVersion("version")
       val apiIdentifier = ApiIdentifier(context, version)
       val cmd           = UnsubscribeFromApi(otherAdminAsActor, apiIdentifier, timestamp)
-      val evt           = ApiUnsubscribedV2(
+      val evt           = ApplicationEvents.ApiUnsubscribedV2(
         EventId.random,
         applicationId,
         instant,
@@ -645,7 +644,7 @@ class ApplicationCommandDispatcherSpec
       val oldUris = List("uri1", "uri2")
       val newUris = List("uri3", "uri4")
       val cmd     = UpdateRedirectUris(otherAdminAsActor, oldUris, newUris, timestamp)
-      val evt     = RedirectUrisUpdatedV2(
+      val evt     = ApplicationEvents.RedirectUrisUpdatedV2(
         EventId.random,
         applicationId,
         instant,

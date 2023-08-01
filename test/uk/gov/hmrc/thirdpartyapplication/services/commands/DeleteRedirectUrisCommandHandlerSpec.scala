@@ -53,7 +53,7 @@ class DeleteRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
         val event = events.head
 
         inside(event) {
-          case RedirectUriDeleted(_, appId, eventDateTime, actor, deleted) =>
+          case ApplicationEvents.RedirectUriDeleted(_, appId, eventDateTime, actor, deleted) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp

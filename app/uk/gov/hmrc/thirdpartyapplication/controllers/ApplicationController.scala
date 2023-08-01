@@ -270,7 +270,7 @@ class ApplicationController @Inject() (
 
     // If request has originated from an API gateway, record usage of the Application
     (
-      if(hasGatewayUserAgent) {
+      if (hasGatewayUserAgent) {
         applicationService.findAndRecordServerTokenUsage(serverToken).map(asJsonResult(notFoundMessage))
       } else {
         applicationService.fetchByServerToken(serverToken).map(asJsonResult(notFoundMessage))
@@ -283,7 +283,7 @@ class ApplicationController @Inject() (
 
     // If request has originated from an API gateway, record usage of the Application
     (
-      if(hasGatewayUserAgent) {
+      if (hasGatewayUserAgent) {
         applicationService.findAndRecordApplicationUsage(clientId).map(asJsonResult(notFoundMessage))
       } else {
         applicationService.fetchByClientId(clientId).map(asJsonResult(notFoundMessage))

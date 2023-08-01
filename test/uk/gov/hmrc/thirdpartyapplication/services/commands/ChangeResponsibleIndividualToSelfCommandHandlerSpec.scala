@@ -77,7 +77,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
         val event = events.head
 
         inside(event) {
-          case ResponsibleIndividualChangedToSelf(
+          case ApplicationEvents.ResponsibleIndividualChangedToSelf(
                 _,
                 applicationId,
                 eventDateTime,

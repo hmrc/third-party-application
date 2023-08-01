@@ -55,7 +55,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
     val requesterEmail = cmd.requestedByEmailAddress
     val clientId       = app.tokens.production.clientId
     NonEmptyList.of(
-      ApplicationDeletedByGatekeeper(
+      ApplicationEvents.ApplicationDeletedByGatekeeper(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,

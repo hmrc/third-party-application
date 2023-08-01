@@ -22,15 +22,8 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiContext, ApiVersio
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{
-  ApiSubscribedV2,
-  ApiUnsubscribedV2,
-  ApplicationDeletedByGatekeeper,
-  ApplicationEvent,
-  ClientSecretAddedV2,
-  ClientSecretRemovedV2,
-  EventId
-}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
+
 import uk.gov.hmrc.thirdpartyapplication.component.stubs.ApiPlatformEventsStub
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.utils.ServerBaseISpec
@@ -39,6 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.WiremockSugar
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import java.time.format.DateTimeFormatterBuilder
 import java.time.ZoneOffset
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
 
 class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar with ApplicationLogger with FixedClock {
 

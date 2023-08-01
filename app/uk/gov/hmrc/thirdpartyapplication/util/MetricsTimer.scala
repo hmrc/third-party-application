@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import com.codahale.metrics._
 import com.kenshoo.play.metrics.Metrics
 
-import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 trait MetricsTimer extends MetricsHelper {
@@ -28,7 +29,7 @@ trait MetricsTimer extends MetricsHelper {
   type MetricRootName = String
 
   val metrics: Metrics
-  
+
   val logExceedingMillis: Long = 100
 
   def timeFuture[A](name: String, metricRootName: MetricRootName)(block: => Future[A])(implicit ec: ExecutionContext): Future[A] = {

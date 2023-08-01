@@ -46,7 +46,7 @@ class UpliftLinksRepositoryISpec
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    await(repository.collection.drop.toFuture())
+    await(repository.collection.drop().toFuture())
 
     await(repository.ensureIndexes)
   }

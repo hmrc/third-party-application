@@ -71,7 +71,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
         val event = events.head
 
         inside(event) {
-          case ProductionAppPrivacyPolicyLocationChanged(_, appId, eventDateTime, actor, oldLocation, eNewLocation) =>
+          case ApplicationEvents.ProductionAppPrivacyPolicyLocationChanged(_, appId, eventDateTime, actor, oldLocation, eNewLocation) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
@@ -89,7 +89,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
         val event = events.head
 
         inside(event) {
-          case ProductionLegacyAppPrivacyPolicyLocationChanged(_, appId, eventDateTime, actor, eOldUrl, eNewUrl) =>
+          case ApplicationEvents.ProductionLegacyAppPrivacyPolicyLocationChanged(_, appId, eventDateTime, actor, eOldUrl, eNewUrl) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
