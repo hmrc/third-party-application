@@ -30,8 +30,6 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 
-// ChangeGrantLength(gatekeeperUser: String, timestamp: LocalDateTime, grantLengthInDays: Int)
-
 @Singleton
 class ChangeGrantLengthCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
