@@ -70,8 +70,8 @@ class ApprovalsControllerISpec
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    await(applicationRepo.collection.drop.toFuture())
-    await(submissionRepo.collection.drop.toFuture())
+    await(applicationRepo.collection.drop().toFuture())
+    await(submissionRepo.collection.drop().toFuture())
   }
 
   def callPostEndpoint(

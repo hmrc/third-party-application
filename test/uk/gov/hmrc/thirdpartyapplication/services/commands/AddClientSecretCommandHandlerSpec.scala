@@ -25,6 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ClientSecretAddedV2
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
+import uk.gov.hmrc.thirdpartyapplication.services.commands.AddClientSecretCommandHandler
 
 class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
 

@@ -40,6 +40,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.services.commands.AddClientSecretCommandHandler
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils

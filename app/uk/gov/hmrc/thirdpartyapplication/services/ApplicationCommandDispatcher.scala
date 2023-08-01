@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
+import uk.gov.hmrc.thirdpartyapplication.services.commands.AddClientSecretCommandHandler
 
 @Singleton
 class ApplicationCommandDispatcher @Inject() (
@@ -42,6 +43,7 @@ class ApplicationCommandDispatcher @Inject() (
     addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
     addRedirectUriCommandHandle: AddRedirectUriCommandHandler,
     removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
+    changeGrantLengthCmdHdlr: ChangeGrantLengthCommandHandler,
     changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
     removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
     changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
@@ -90,6 +92,7 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
       case cmd: AddRedirectUri                                        => addRedirectUriCommandHandle.process(app, cmd)
       case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)
+      case cmd: ChangeGrantLength                                     => changeGrantLengthCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
