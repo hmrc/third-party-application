@@ -64,7 +64,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     val clientId       = app.tokens.production.clientId
     val requesterEmail = instigator.emailAddress
     NonEmptyList.of(
-      ApplicationDeleted(
+      ApplicationEvents.ApplicationDeleted(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,

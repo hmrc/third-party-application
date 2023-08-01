@@ -54,7 +54,7 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
         val event = events.head
 
         inside(event) {
-          case RedirectUriAdded(_, appId, eventDateTime, actor, added) =>
+          case ApplicationEvents.RedirectUriAdded(_, appId, eventDateTime, actor, added) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp

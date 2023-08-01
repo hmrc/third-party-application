@@ -24,7 +24,7 @@ import cats.data._
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddClientSecret
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ClientSecretAddedV2, EventId}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
@@ -49,7 +49,7 @@ class AddClientSecretCommandHandler @Inject() (
 
   private def asEvents(app: ApplicationData, cmd: AddClientSecret): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      ClientSecretAddedV2(
+      ApplicationEvents.ClientSecretAddedV2(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,

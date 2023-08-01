@@ -52,7 +52,7 @@ class AddRedirectUriCommandHandler @Inject() (applicationRepository: Application
 
   private def asEvents(app: ApplicationData, cmd: AddRedirectUri): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      RedirectUriAdded(
+      ApplicationEvents.RedirectUriAdded(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,

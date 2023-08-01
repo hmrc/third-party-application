@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApiUnsubscribedV2
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ApiUnsubscribedV2
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule

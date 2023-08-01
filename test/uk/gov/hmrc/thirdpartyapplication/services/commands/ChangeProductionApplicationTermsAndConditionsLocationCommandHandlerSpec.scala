@@ -71,7 +71,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
         val event = events.head
 
         inside(event) {
-          case ProductionAppTermsConditionsLocationChanged(_, appId, eventDateTime, actor, oldLocation, eNewLocation) =>
+          case ApplicationEvents.ProductionAppTermsConditionsLocationChanged(_, appId, eventDateTime, actor, oldLocation, eNewLocation) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
@@ -89,7 +89,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
         val event = events.head
 
         inside(event) {
-          case ProductionLegacyAppTermsConditionsLocationChanged(_, appId, eventDateTime, actor, eOldUrl, eNewUrl) =>
+          case ApplicationEvents.ProductionLegacyAppTermsConditionsLocationChanged(_, appId, eventDateTime, actor, eOldUrl, eNewUrl) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp

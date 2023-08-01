@@ -73,7 +73,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
-            case _: ApplicationStateChanged | _: ApplicationApprovalRequestDeclined => true
+            case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ApplicationApprovalRequestDeclined => true
             case _                                                                  => false
           }
         )
@@ -81,7 +81,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
         filteredEvents.foreach(event =>
           inside(event) {
-            case ApplicationApprovalRequestDeclined(
+            case ApplicationEvents.ApplicationApprovalRequestDeclined(
                   _,
                   appId,
                   eventDateTime,
@@ -105,7 +105,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
               requestingAdminEmail shouldBe requesterEmail
               requestingAdminName shouldBe requesterName
 
-            case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
+            case ApplicationEvents.ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
               appId shouldBe app.id
               evtActor shouldBe Actors.GatekeeperUser(gatekeeperUser)
               eventDateTime shouldBe ts

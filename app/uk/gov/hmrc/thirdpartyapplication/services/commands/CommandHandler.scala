@@ -48,7 +48,7 @@ object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[
   }
 
   def fromStateHistory(stateHistory: StateHistory, requestingAdminName: String, requestingAdminEmail: LaxEmailAddress) =
-    ApplicationStateChanged(
+    ApplicationEvents.ApplicationStateChanged(
       id = EventId.random,
       applicationId = stateHistory.applicationId,
       eventDateTime = stateHistory.changedAt.instant,

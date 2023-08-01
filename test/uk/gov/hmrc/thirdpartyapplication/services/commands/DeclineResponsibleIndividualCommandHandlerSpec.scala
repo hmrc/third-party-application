@@ -134,7 +134,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
         events should have size 3
 
         events.collect {
-          case riDeclined: ResponsibleIndividualDeclined =>
+          case riDeclined: ApplicationEvents.ResponsibleIndividualDeclined =>
             riDeclined.applicationId shouldBe applicationId
             riDeclined.eventDateTime shouldBe ts
             riDeclined.actor shouldBe Actors.AppCollaborator(appAdminEmail)
@@ -146,7 +146,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
             riDeclined.code shouldBe code
         }
         events.collect {
-          case appApprovalRequestDeclined: ApplicationApprovalRequestDeclined =>
+          case appApprovalRequestDeclined: ApplicationEvents.ApplicationApprovalRequestDeclined =>
             appApprovalRequestDeclined.applicationId shouldBe applicationId
             appApprovalRequestDeclined.eventDateTime shouldBe ts
             appApprovalRequestDeclined.actor shouldBe Actors.AppCollaborator(appAdminEmail)
@@ -159,7 +159,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
         }
 
         events.collect {
-          case stateEvent: ApplicationStateChanged =>
+          case stateEvent: ApplicationEvents.ApplicationStateChanged =>
             stateEvent.applicationId shouldBe applicationId
             stateEvent.eventDateTime shouldBe ts
             stateEvent.actor shouldBe Actors.AppCollaborator(appAdminEmail)
@@ -178,7 +178,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
         events should have size 1
 
         events.collect {
-          case riDeclined: ResponsibleIndividualDeclinedUpdate =>
+          case riDeclined: ApplicationEvents.ResponsibleIndividualDeclinedUpdate =>
             riDeclined.applicationId shouldBe applicationId
             riDeclined.eventDateTime shouldBe ts
             riDeclined.actor shouldBe Actors.AppCollaborator(appAdminEmail)

@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Comma
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.CollaboratorRemovedV2
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.CollaboratorRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
@@ -70,7 +70,7 @@ class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
         val event = events.head
 
         inside(event) {
-          case CollaboratorRemovedV2(_, appId, eventDateTime, actor, evtCollaborator, verifiedAdminsToEmail) =>
+          case CollaboratorRemovedV2(_, appId, eventDateTime, actor, evtCollaborator) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp

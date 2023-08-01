@@ -57,7 +57,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
 
   private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationName): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      ProductionAppNameChangedEvent(
+      ApplicationEvents.ProductionAppNameChangedEvent(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,

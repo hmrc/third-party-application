@@ -58,7 +58,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
       inside(result) { case (app, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
-            case _: ApplicationStateChanged | _: ApplicationDeleted => true
+            case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ApplicationDeleted => true
             case _                                                  => false
           }
         )
@@ -66,7 +66,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
         filteredEvents.foreach(event =>
           inside(event) {
-            case ApplicationDeleted(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons) =>
+            case ApplicationEvents.ApplicationDeleted(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons) =>
               appId shouldBe appId
               actor shouldBe actor
               eventDateTime shouldBe ts
@@ -74,7 +74,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
               evtReasons shouldBe reasons
               wsoApplicationName shouldBe app.wso2ApplicationName
 
-            case ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
+            case ApplicationEvents.ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
               appId shouldBe appId
               evtActor shouldBe actor
               eventDateTime shouldBe ts

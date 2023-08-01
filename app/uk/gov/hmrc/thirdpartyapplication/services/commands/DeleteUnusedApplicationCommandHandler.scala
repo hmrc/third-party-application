@@ -64,7 +64,7 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
   private def asEvents(app: ApplicationData, cmd: DeleteUnusedApplication, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
     val clientId = app.tokens.production.clientId
     NonEmptyList.of(
-      ApplicationDeleted(
+      ApplicationEvents.ApplicationDeleted(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,

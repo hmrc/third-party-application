@@ -236,7 +236,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
       val reasons      = "reasons description"
 
       def buildApplicationApprovalRequestDeclinedEvent() =
-        ApplicationApprovalRequestDeclined(
+        ApplicationEvents.ApplicationApprovalRequestDeclined(
           EventId.random,
           appId,
           FixedClock.instant,

@@ -22,7 +22,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddClientSecret
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ClientSecretAddedV2
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ClientSecretAddedV2
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
 

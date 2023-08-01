@@ -59,7 +59,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
         val event = events.head
 
         inside(event) {
-          case ProductionAppNameChangedEvent(_, appId, eventDateTime, actor, anOldName, aNewName, requestingAdminEmail) =>
+          case ApplicationEvents.ProductionAppNameChangedEvent(_, appId, eventDateTime, actor, anOldName, aNewName, requestingAdminEmail) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
