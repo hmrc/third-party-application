@@ -33,14 +33,11 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.services.commands.AddClientSecretCommandHandler
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
@@ -129,8 +126,8 @@ class ApplicationCommandDispatcherSpec
 
   "dispatch" when {
     "AddClientSecret is received" should {
-      val id                       = ClientSecret.Id.random
-      val cmd: AddClientSecret     = AddClientSecret(otherAdminAsActor, "name", id, "hashedSecret", now)
+      val id                                         = ClientSecret.Id.random
+      val cmd: AddClientSecret                       = AddClientSecret(otherAdminAsActor, "name", id, "hashedSecret", now)
       val evt: ApplicationEvents.ClientSecretAddedV2 = ApplicationEvents.ClientSecretAddedV2(EventId.random, applicationId, instant, otherAdminAsActor, "name", id.value.toString)
 
       "call AddClientSecretCommand Handler and relevant common services if application exists" in new Setup {
@@ -149,8 +146,9 @@ class ApplicationCommandDispatcherSpec
     }
 
     "RemoveClientSecret is received" should {
-      val cmd: RemoveClientSecret    = RemoveClientSecret(otherAdminAsActor, ClientSecret.Id.random, now)
-      val evt: ApplicationEvents.ClientSecretRemovedV2 = ApplicationEvents.ClientSecretRemovedV2(EventId.random, applicationId, instant, otherAdminAsActor, cmd.clientSecretId.value.toString(), "someName")
+      val cmd: RemoveClientSecret                      = RemoveClientSecret(otherAdminAsActor, ClientSecret.Id.random, now)
+      val evt: ApplicationEvents.ClientSecretRemovedV2 =
+        ApplicationEvents.ClientSecretRemovedV2(EventId.random, applicationId, instant, otherAdminAsActor, cmd.clientSecretId.value.toString(), "someName")
 
       "call RemoveClientSecretCommand Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
@@ -169,9 +167,9 @@ class ApplicationCommandDispatcherSpec
     }
 
     "AddCollaborator is received" should {
-      val collaborator             = "email".developer()
-      val adminsToEmail            = Set("email1".toLaxEmail, "email2".toLaxEmail)
-      val cmd: AddCollaborator     = AddCollaborator(otherAdminAsActor, collaborator, now)
+      val collaborator                               = "email".developer()
+      val adminsToEmail                              = Set("email1".toLaxEmail, "email2".toLaxEmail)
+      val cmd: AddCollaborator                       = AddCollaborator(otherAdminAsActor, collaborator, now)
       val evt: ApplicationEvents.CollaboratorAddedV2 = ApplicationEvents.CollaboratorAddedV2(
         EventId.random,
         applicationId,
@@ -198,9 +196,9 @@ class ApplicationCommandDispatcherSpec
 
     "RemoveCollaborator is received" should {
 
-      val collaborator               = "email".developer()
-      val adminsToEmail              = Set("email1".toLaxEmail, "email2".toLaxEmail)
-      val cmd: RemoveCollaborator    = RemoveCollaborator(otherAdminAsActor, collaborator, now)
+      val collaborator                                 = "email".developer()
+      val adminsToEmail                                = Set("email1".toLaxEmail, "email2".toLaxEmail)
+      val cmd: RemoveCollaborator                      = RemoveCollaborator(otherAdminAsActor, collaborator, now)
       val evt: ApplicationEvents.CollaboratorRemovedV2 = ApplicationEvents.CollaboratorRemovedV2(
         EventId.random,
         applicationId,

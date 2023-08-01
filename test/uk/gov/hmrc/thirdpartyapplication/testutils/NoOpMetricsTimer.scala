@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.testutils
 
-import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
+import scala.concurrent.{ExecutionContext, Future}
+
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 trait NoOpMetricsTimer extends MetricsTimer with ApplicationLogger {
 

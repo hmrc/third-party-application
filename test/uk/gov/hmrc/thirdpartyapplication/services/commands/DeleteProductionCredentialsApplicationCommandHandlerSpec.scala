@@ -59,7 +59,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
         val filteredEvents = events.toList.filter(evt =>
           evt match {
             case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ProductionCredentialsApplicationDeleted => true
-            case _                                                                       => false
+            case _                                                                                                           => false
           }
         )
         filteredEvents.size shouldBe 2

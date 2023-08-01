@@ -25,6 +25,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
 import akka.actor.ActorSystem
+import cats.data.OptionT
+import com.kenshoo.play.metrics.Metrics
 import org.apache.commons.net.util.SubnetUtils
 
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, NotFoundException}
@@ -50,10 +52,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator}
-import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
-import com.kenshoo.play.metrics.Metrics
-import cats.data.OptionT
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, MetricsTimer}
 
 @Singleton
 class ApplicationService @Inject() (
@@ -209,17 +208,17 @@ class ApplicationService @Inject() (
       _.map(application => ApplicationResponse(data = application))
     }
   }
-  
+
   def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[ExtendedApplicationResponse]] = {
     timeFuture("Service Find And Record Application Usage", "application.service.findAndRecordApplicationUsage") {
       (
-          for {
+        for {
           app           <- OptionT(applicationRepository.findAndRecordApplicationUsage(clientId))
           subscriptions <- OptionT.liftF(subscriptionRepository.getSubscriptions(app.id))
         } yield ExtendedApplicationResponse(app, subscriptions)
       )
-      .value
-      }
+        .value
+    }
   }
 
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationResponse]] = {
@@ -233,12 +232,12 @@ class ApplicationService @Inject() (
   def findAndRecordServerTokenUsage(serverToken: String): Future[Option[ExtendedApplicationResponse]] = {
     timeFuture("Service Find And Record Server Token Usage", "application.service.findAndRecordServerTokenUsage") {
       (
-          for {
+        for {
           app           <- OptionT(applicationRepository.findAndRecordServerTokenUsage(serverToken))
           subscriptions <- OptionT.liftF(subscriptionRepository.getSubscriptions(app.id))
         } yield ExtendedApplicationResponse(app, subscriptions)
       )
-      .value
+        .value
     }
   }
 

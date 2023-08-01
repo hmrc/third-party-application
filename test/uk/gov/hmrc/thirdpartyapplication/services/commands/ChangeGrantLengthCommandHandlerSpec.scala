@@ -20,30 +20,30 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 
 class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   val originalGrantLength = 100
-  val app = principalApp.copy(grantLength = originalGrantLength)
+  val app                 = principalApp.copy(grantLength = originalGrantLength)
 
   trait Setup extends ApplicationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val gatekeeperUser = "gkuser"
+    val gatekeeperUser         = "gkuser"
     val replaceWithGrantLength = 250
-    val newApp = app.copy(grantLength = replaceWithGrantLength)
+    val newApp                 = app.copy(grantLength = replaceWithGrantLength)
 
     val timestamp = FixedClock.instant
     val update    = ApplicationCommands.ChangeGrantLength(gatekeeperUser, now, replaceWithGrantLength)
 
     val underTest = new ChangeGrantLengthCommandHandler(ApplicationRepoMock.aMock)
-    
+
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
@@ -74,14 +74,14 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     "return an error if the application already has the specified grant length" in new Setup {
       val updateWithSameGrantLength = update.copy(grantLengthInDays = app.grantLength)
-      
+
       checkFailsWith("Grant length is already 100 days") {
-        underTest.process(app,updateWithSameGrantLength)
+        underTest.process(app, updateWithSameGrantLength)
       }
     }
 
     "return an error if the grant length is too short" in new Setup {
-       val updateWithGrantLengthOfZero = update.copy(grantLengthInDays = 0)
+      val updateWithGrantLengthOfZero = update.copy(grantLengthInDays = 0)
 
       checkFailsWith("Grant length must be between 1 day and 100 years") {
         underTest.process(app, updateWithGrantLengthOfZero)
@@ -90,7 +90,7 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     "return an error if the grant length is too long" in new Setup {
       val updateWithGrantLengthOf36526 = update.copy(grantLengthInDays = 36526)
-      
+
       checkFailsWith("Grant length must be between 1 day and 100 years") {
         underTest.process(app, updateWithGrantLengthOf36526)
       }

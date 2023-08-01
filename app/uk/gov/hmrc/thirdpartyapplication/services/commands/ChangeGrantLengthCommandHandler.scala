@@ -23,12 +23,12 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeGrantLength
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository._
 
 // ChangeGrantLength(gatekeeperUser: String, timestamp: LocalDateTime, grantLengthInDays: Int)
 
@@ -46,7 +46,7 @@ class ChangeGrantLengthCommandHandler @Inject() (
     Apply[Validated[Failures, *]].map2(
       cond((cmd.grantLengthInDays >= 1 && cmd.grantLengthInDays <= maxDays), CommandFailures.GenericFailure("Grant length must be between 1 day and 100 years")),
       cond((cmd.grantLengthInDays != app.grantLength), CommandFailures.GenericFailure(s"Grant length is already ${app.grantLength} days"))
-    ){ case _ => () }
+    ) { case _ => () }
   }
 
   private def asEvents(app: ApplicationData, cmd: ChangeGrantLength): NonEmptyList[ApplicationEvent] = {

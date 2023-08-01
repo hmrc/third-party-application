@@ -20,6 +20,7 @@ import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import com.kenshoo.play.metrics.Metrics
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
@@ -39,6 +40,7 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
@@ -47,9 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import com.kenshoo.play.metrics.Metrics
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 object ApplicationRepository {
   case class SubsByUser(apiIdentifiers: List[ApiIdentifier])
@@ -175,7 +175,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       ).headOption()
     }
   }
-  
+
   def findAndRecordServerTokenUsage(serverToken: String): Future[Option[ApplicationData]] = {
     timeFuture("Find and Record Application Server Token Usage", "application.repository.findAndRecordServerTokenUsage") {
       val query = and(
@@ -426,7 +426,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         }
     ] )
    */
-  def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]]                           = {
+  def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
     timeFuture("Get Subscriptions for Developer", "application.repository.getSubscriptionsForDeveloper") {
 
       import org.mongodb.scala.model.Projections.{computed, excludeId}
