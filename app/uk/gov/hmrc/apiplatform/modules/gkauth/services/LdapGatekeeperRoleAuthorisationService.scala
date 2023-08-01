@@ -31,17 +31,17 @@ class LdapGatekeeperRoleAuthorisationService @Inject() (authControlConfig: AuthC
 
   protected def innerEnsureHasGatekeeperRole[A]()(implicit hc: HeaderCarrier): Future[Option[Result]] = {
     hc.authorization.fold[Future[Option[Result]]]({
-      logger.debug("No Header Carrier Authorisation")
+      logger.warn("No Header Carrier Authorisation")
       UNAUTHORIZED_RESPONSE
     })(authorization => {
       auth.authConnector.authenticate(predicate = None, Retrieval.username ~ Retrieval.hasPredicate(LdapAuthorisationPredicate.gatekeeperReadPermission))
         .flatMap {
           case (name ~ true)  => OK_RESPONSE
           case (name ~ false) =>
-            logger.debug("No LDAP predicate matched")
+            logger.warn("No LDAP predicate matched")
             UNAUTHORIZED_RESPONSE
           case _              =>
-            logger.debug("LDAP Authenticate failed to find user")
+            logger.warn("LDAP Authenticate failed to find user")
             UNAUTHORIZED_RESPONSE
         }
     })
