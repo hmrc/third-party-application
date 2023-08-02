@@ -33,9 +33,9 @@ class BlockApplicationAutoDeleteCommandHandlerSpec extends CommandHandlerBaseSpe
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val app       = anApplicationData(applicationId, environment = Environment.SANDBOX)
-    val newApp    = app.copy(allowAutoDelete = false)
-    val timestamp = FixedClock.instant
+    val appWithAutoDeleteAllowed = anApplicationData(applicationId, environment = Environment.SANDBOX)
+    val appWithAutoDeleteBlocked = appWithAutoDeleteAllowed.copy(allowAutoDelete = false)
+    val timestamp                = FixedClock.instant
 
     val underTest = new BlockApplicationAutoDeleteCommandHandler(ApplicationRepoMock.aMock)
 
@@ -60,10 +60,17 @@ class BlockApplicationAutoDeleteCommandHandlerSpec extends CommandHandlerBaseSpe
     val cmd = BlockApplicationAutoDelete(gatekeeperUser, now)
 
     "create correct event for a valid request with app" in new Setup {
-      ApplicationRepoMock.UpdateAllowAutoDelete.thenReturnWhen(false)(newApp)
+      ApplicationRepoMock.UpdateAllowAutoDelete.thenReturnWhen(false)(appWithAutoDeleteBlocked)
 
       checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
-        underTest.process(app, cmd)
+        underTest.process(appWithAutoDeleteAllowed, cmd)
+      }
+    }
+
+    "return an error if auto delete is already blocked" in new Setup {
+
+      checkFailsWith("Auto Delete is already blocked") {
+        underTest.process(appWithAutoDeleteBlocked, cmd)
       }
     }
 

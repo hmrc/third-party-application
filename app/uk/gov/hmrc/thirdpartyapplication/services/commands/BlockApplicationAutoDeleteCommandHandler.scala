@@ -19,10 +19,12 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
+import cats._
 import cats.data._
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.BlockApplicationAutoDelete
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -36,8 +38,10 @@ class BlockApplicationAutoDeleteCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData): Validated[Failures, ApplicationData] = {
-    Validated.validNel(app)
+  private def validate(app: ApplicationData): Validated[Failures, Unit] = {
+    Apply[Validated[Failures, *]].map(
+      cond((app.allowAutoDelete), CommandFailures.GenericFailure(s"Auto Delete is already blocked"))
+    ) { case _ => () }
   }
 
   private def asEvents(app: ApplicationData, cmd: BlockApplicationAutoDelete): NonEmptyList[ApplicationEvent] = {
