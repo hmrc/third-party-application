@@ -89,6 +89,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockAddRedirectUriCommandHandler: AddRedirectUriCommandHandler                                                     = mock[AddRedirectUriCommandHandler]
     val mockChangeRedirectUriCommandHandler: ChangeRedirectUriCommandHandler                                               = mock[ChangeRedirectUriCommandHandler]
     val mockDeleteRedirectUriCommandHandler: DeleteRedirectUriCommandHandler                                               = mock[DeleteRedirectUriCommandHandler]
+    val mockAllowApplicationAutoDeleteCommandHandler: AllowApplicationAutoDeleteCommandHandler                             = mock[AllowApplicationAutoDeleteCommandHandler]
+    val mockBlockApplicationAutoDeleteCommandHandler: BlockApplicationAutoDeleteCommandHandler                             = mock[BlockApplicationAutoDeleteCommandHandler]
 
     val underTest = new ApplicationCommandDispatcher(
       ApplicationRepoMock.aMock,
@@ -118,7 +120,9 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockDeleteRedirectUriCommandHandler,
       mockSubscribeToApiCommandHandler,
       mockUnsubscribeFromApiCommandHandler,
-      mockUpdateRedirectUrisCommandHandler
+      mockUpdateRedirectUrisCommandHandler,
+      mockAllowApplicationAutoDeleteCommandHandler,
+      mockBlockApplicationAutoDeleteCommandHandler
     )
   }
 }
