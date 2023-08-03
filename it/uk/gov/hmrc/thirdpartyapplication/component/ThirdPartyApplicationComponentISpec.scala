@@ -492,8 +492,6 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       moreSecrets should have size 2
 
-      val clientSecretId: ClientSecret.Id = moreSecrets.last.id
-
       When("I request to remove a production client secret")
       val removeCmd         = ApplicationCommands.RemoveClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), secondCmd.id, FixedClock.now)
       val removeCmdResponse = sendApplicationCommand(removeCmd, application)

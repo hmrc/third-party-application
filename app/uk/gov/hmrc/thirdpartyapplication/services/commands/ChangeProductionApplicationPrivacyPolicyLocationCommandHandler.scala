@@ -25,7 +25,7 @@ import cats.data.{NonEmptyList, Validated}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocation, PrivacyPolicyLocations}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationPrivacyPolicyLocation
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -56,7 +56,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
 
     def asEvents(newUrl: String): NonEmptyList[ApplicationEvent] = {
       NonEmptyList.one(
-        ProductionLegacyAppPrivacyPolicyLocationChanged(
+        ApplicationEvents.ProductionLegacyAppPrivacyPolicyLocationChanged(
           id = EventId.random,
           applicationId = app.id,
           eventDateTime = cmd.timestamp.instant,
@@ -90,7 +90,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
 
     def asEvents: NonEmptyList[ApplicationEvent] = {
       NonEmptyList.one(
-        ProductionAppPrivacyPolicyLocationChanged(
+        ApplicationEvents.ProductionAppPrivacyPolicyLocationChanged(
           id = EventId.random,
           applicationId = app.id,
           eventDateTime = cmd.timestamp.instant,

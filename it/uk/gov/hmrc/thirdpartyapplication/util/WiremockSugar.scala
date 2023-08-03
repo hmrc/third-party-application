@@ -44,7 +44,7 @@ trait WiremockSugar extends BeforeAndAfterEach with BeforeAndAfterAll {
     super.afterAll()
   }
 
-  override def afterEach(): Unit =  {
+  override def afterEach(): Unit = {
     wireMockServer.resetMappings()
     super.afterEach()
   }

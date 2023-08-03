@@ -28,7 +28,8 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.VerifyResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ResponsibleIndividualVerificationStarted
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard}
@@ -69,9 +70,9 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
       ResponsibleIndividualVerificationStarted(
         id = EventId.random,
         applicationId = app.id,
-        app.name,
         eventDateTime = cmd.timestamp.instant,
         actor = Actors.AppCollaborator(requesterEmail),
+        app.name,
         cmd.requesterName,
         requestingAdminEmail = getRequester(app, cmd.instigator),
         responsibleIndividualName = cmd.riName,

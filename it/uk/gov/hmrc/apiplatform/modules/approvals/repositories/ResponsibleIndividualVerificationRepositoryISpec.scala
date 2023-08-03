@@ -41,8 +41,9 @@ import java.util.UUID
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
 
 object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
   val appName = "my app"
@@ -53,9 +54,9 @@ object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
     ResponsibleIndividualVerificationStarted(
       EventId.random,
       appId,
-      appName,
       FixedClock.instant,
       Actors.AppCollaborator("requester@example.com".toLaxEmail),
+      appName,
       "ms admin",
       "admin@example.com".toLaxEmail,
       "ri name",

@@ -36,7 +36,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
   val eventAppId        = ApplicationId.random
   val eventCollaborator = Actors.AppCollaborator("bob@bob.com".toLaxEmail)
 
-  val exampleEvent: ProductionAppNameChangedEvent = ProductionAppNameChangedEvent(
+  val exampleEvent = ApplicationEvents.ProductionAppNameChangedEvent(
     id = EventId.random,
     applicationId = ApplicationId.random,
     eventDateTime = FixedClock.instant,

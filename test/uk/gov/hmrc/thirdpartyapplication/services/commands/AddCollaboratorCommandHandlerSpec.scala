@@ -50,7 +50,7 @@ class AddCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
         val event = events.head
 
         inside(event) {
-          case CollaboratorAddedV2(_, appId, eventDateTime, actor, collaborator, verifiedAdminsToEmail) =>
+          case ApplicationEvents.CollaboratorAddedV2(_, appId, eventDateTime, actor, collaborator) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp

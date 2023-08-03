@@ -83,7 +83,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     val previousResponsibleIndividual = getResponsibleIndividual(app).get
 
     NonEmptyList.of(
-      ResponsibleIndividualChangedToSelf(
+      ApplicationEvents.ResponsibleIndividualChangedToSelf(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,

@@ -55,7 +55,7 @@ class RemoveClientSecretCommandHandler @Inject() (
   private def asEvents(app: ApplicationData, cmd: RemoveClientSecret): NonEmptyList[ApplicationEvent] = {
     val clientSecret: Option[ClientSecretData] = app.tokens.production.clientSecrets.find(_.id == cmd.clientSecretId)
     NonEmptyList.of(
-      ClientSecretRemovedV2(
+      ApplicationEvents.ClientSecretRemovedV2(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,

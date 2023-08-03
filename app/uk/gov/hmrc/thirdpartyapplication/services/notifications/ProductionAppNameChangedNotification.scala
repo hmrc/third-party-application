@@ -21,7 +21,7 @@ import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ProductionAppNameChangedEvent
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ProductionAppNameChangedEvent
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded

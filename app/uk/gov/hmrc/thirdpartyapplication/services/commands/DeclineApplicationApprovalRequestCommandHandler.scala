@@ -69,10 +69,10 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
       requesterEmail: LaxEmailAddress,
       requesterName: String,
       stateHistory: StateHistory
-    ): (ApplicationApprovalRequestDeclined, ApplicationStateChanged) = {
+    ): (ApplicationEvents.ApplicationApprovalRequestDeclined, ApplicationEvents.ApplicationStateChanged) = {
 
     (
-      ApplicationApprovalRequestDeclined(
+      ApplicationEvents.ApplicationApprovalRequestDeclined(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,

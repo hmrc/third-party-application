@@ -37,7 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{
   ThirdPartyDelegatedAuthorityServiceMockModule
 }
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
@@ -82,12 +82,15 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockSubscribeToApiCommandHandler: SubscribeToApiCommandHandler                                                     = mock[SubscribeToApiCommandHandler]
     val mockUnsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler                                             = mock[UnsubscribeFromApiCommandHandler]
     val mockUpdateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler                                             = mock[UpdateRedirectUrisCommandHandler]
+    val mockChangeGrantLengthCommandHandler: ChangeGrantLengthCommandHandler                                               = mock[ChangeGrantLengthCommandHandler]
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler                   = mock[ChangeProductionApplicationNameCommandHandler]
     val mockAddClientSecretCommandHandler: AddClientSecretCommandHandler                                                   = mock[AddClientSecretCommandHandler]
     val mockRemoveClientSecretCommandHandler: RemoveClientSecretCommandHandler                                             = mock[RemoveClientSecretCommandHandler]
     val mockAddRedirectUriCommandHandler: AddRedirectUriCommandHandler                                                     = mock[AddRedirectUriCommandHandler]
     val mockChangeRedirectUriCommandHandler: ChangeRedirectUriCommandHandler                                               = mock[ChangeRedirectUriCommandHandler]
     val mockDeleteRedirectUriCommandHandler: DeleteRedirectUriCommandHandler                                               = mock[DeleteRedirectUriCommandHandler]
+    val mockAllowApplicationAutoDeleteCommandHandler: AllowApplicationAutoDeleteCommandHandler                             = mock[AllowApplicationAutoDeleteCommandHandler]
+    val mockBlockApplicationAutoDeleteCommandHandler: BlockApplicationAutoDeleteCommandHandler                             = mock[BlockApplicationAutoDeleteCommandHandler]
 
     val underTest = new ApplicationCommandDispatcher(
       ApplicationRepoMock.aMock,
@@ -98,6 +101,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockAddCollaboratorCommandHandler,
       mockAddRedirectUriCommandHandler,
       mockRemoveClientSecretCommandHandler,
+      mockChangeGrantLengthCommandHandler,
       mockChangeProductionApplicationNameCommandHandler,
       mockRemoveCollaboratorCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
@@ -116,7 +120,9 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockDeleteRedirectUriCommandHandler,
       mockSubscribeToApiCommandHandler,
       mockUnsubscribeFromApiCommandHandler,
-      mockUpdateRedirectUrisCommandHandler
+      mockUpdateRedirectUrisCommandHandler,
+      mockAllowApplicationAutoDeleteCommandHandler,
+      mockBlockApplicationAutoDeleteCommandHandler
     )
   }
 }

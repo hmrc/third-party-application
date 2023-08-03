@@ -63,7 +63,7 @@ class ApplicationRepositorySerialisationISpec
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    await(applicationRepository.collection.drop.toFuture())
+    await(applicationRepository.collection.drop().toFuture())
     await(applicationRepository.ensureIndexes)
   }
 

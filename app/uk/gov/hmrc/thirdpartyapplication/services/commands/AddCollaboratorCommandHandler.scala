@@ -25,7 +25,7 @@ import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddCollaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
@@ -50,13 +50,12 @@ class AddCollaboratorCommandHandler @Inject() (
 
   private def asEvents(app: ApplicationData, cmd: AddCollaborator): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      CollaboratorAddedV2(
+      ApplicationEvents.CollaboratorAddedV2(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
-        collaborator = cmd.collaborator,
-        verifiedAdminsToEmail = Set.empty
+        collaborator = cmd.collaborator
       )
     )
   }

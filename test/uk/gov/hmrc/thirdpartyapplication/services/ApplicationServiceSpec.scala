@@ -25,6 +25,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 import akka.actor.ActorSystem
 import cats.implicits._
+import com.kenshoo.play.metrics.Metrics
 import org.mockito.captor.ArgCaptor
 import org.scalatest.BeforeAndAfterAll
 
@@ -54,10 +55,9 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import com.kenshoo.play.metrics.Metrics
-import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -508,7 +508,7 @@ class ApplicationServiceSpec
   "recordApplicationUsage" should {
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
       val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
-      val clientId = applicationData.tokens.production.clientId
+      val clientId                           = applicationData.tokens.production.clientId
       ApplicationRepoMock.FindAndRecordApplicationUsage.thenReturnWhen(clientId)(applicationData)
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions: _*)
 
@@ -555,7 +555,7 @@ class ApplicationServiceSpec
   "findAndRecordServerTokenUsage" should {
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
       val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
-      val serverToken = applicationData.tokens.production.accessToken
+      val serverToken                        = applicationData.tokens.production.accessToken
       ApplicationRepoMock.FindAndRecordServerTokenUsage.thenReturnWhen(serverToken)(applicationData)
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions: _*)
 
