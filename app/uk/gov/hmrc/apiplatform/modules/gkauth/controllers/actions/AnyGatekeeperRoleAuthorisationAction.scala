@@ -21,12 +21,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 import play.api.mvc.{Action, AnyContent, Request, Result}
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import uk.gov.hmrc.apiplatform.modules.gkauth.services._
 
-trait AnyGatekeeperRoleAuthorisationAction {
+trait AnyGatekeeperRoleAuthorisationAction extends ApplicationLogger {
   self: BackendController =>
 
   implicit val ec: ExecutionContext
@@ -37,7 +38,10 @@ trait AnyGatekeeperRoleAuthorisationAction {
     Action.async { implicit request =>
       implicit val hc = HeaderCarrierConverter.fromRequest(request)
       ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
-        .recoverWith { case NonFatal(_) => ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE }
+        .recoverWith { case NonFatal(_) =>
+          logger.warn("LDAP Authenticate errored trying to find user, trying stride")
+          ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE
+        }
         .flatMap(_ match {
           case Some(failureToAuthorise) =>
             strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
