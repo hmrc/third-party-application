@@ -30,8 +30,6 @@ trait MetricsTimer extends MetricsHelper {
 
   val metrics: Metrics
 
-  val logExceedingMillis: Long = 100
-
   def timeFuture[A](name: String, metricRootName: MetricRootName)(block: => Future[A])(implicit ec: ExecutionContext): Future[A] = {
     val timer = startTimer(metricRootName)
     block andThen { case _ => stopAndLog(name, timer) }
@@ -50,8 +48,6 @@ trait MetricsTimer extends MetricsHelper {
 
   protected def stopAndLog[A](name: String, timer: Timer.Context): Unit = {
     val timeMillis = timer.stop() / 1000000
-
-    lazy val msg = f"$name took ${timeMillis}%8d ms"
-    if (timeMillis > logExceedingMillis) logger.info(msg) else logger.debug(msg)
+    logger.debug(f"$name took ${timeMillis}%8d ms")
   }
 }
