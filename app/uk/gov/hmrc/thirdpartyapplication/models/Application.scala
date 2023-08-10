@@ -166,14 +166,14 @@ case class ApplicationResponse(
     blocked: Boolean = false,
     trusted: Boolean = false,
     ipAllowlist: IpAllowlist = IpAllowlist(),
-    moreApplicationResponse: MoreApplicationResponse = MoreApplicationResponse()
+    moreApplication: MoreApplication = MoreApplication()
   )
 
 object ApplicationResponse {
 
-  def allowAutoDelete(data: ApplicationData): MoreApplicationResponse = Option(data.allowAutoDelete) match {
-    case Some(allowAutoDeleteFlag: Boolean) => MoreApplicationResponse(allowAutoDeleteFlag)
-    case _                                  => MoreApplicationResponse()
+  def allowAutoDelete(data: ApplicationData): MoreApplication = Option(data.allowAutoDelete) match {
+    case Some(allowAutoDeleteFlag: Boolean) => MoreApplication(allowAutoDeleteFlag)
+    case _                                  => MoreApplication()
   }
 
   def redirectUris(data: ApplicationData): List[String] = data.access match {
@@ -213,7 +213,7 @@ object ApplicationResponse {
       data.checkInformation,
       data.blocked,
       ipAllowlist = data.ipAllowlist,
-      moreApplicationResponse = allowAutoDelete(data)
+      moreApplication = allowAutoDelete(data)
     )
   }
 }
