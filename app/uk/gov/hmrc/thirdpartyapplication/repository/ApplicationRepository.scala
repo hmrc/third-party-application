@@ -533,7 +533,13 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
     def accessTypeMatch(accessType: AccessType): Bson = matches(equal("access.accessType", Codecs.toBson(accessType)))
 
-    def allowAutoDeleteMatch(allowAutoDelete: Boolean): Bson = matches(equal("allowAutoDelete", Codecs.toBson(allowAutoDelete)))
+    def allowAutoDeleteMatch(allowAutoDelete: Boolean): Bson = {
+      allowAutoDelete match {
+        case false => matches(equal("allowAutoDelete", Codecs.toBson(allowAutoDelete)))
+        case true => matches(or(equal("allowAutoDelete", Codecs.toBson(allowAutoDelete)), exists("allowAutoDelete", false)))
+      }
+
+    }
 
     def specificAPISubscription(apiContext: ApiContext, apiVersion: Option[ApiVersion]) = {
       apiVersion.fold(
