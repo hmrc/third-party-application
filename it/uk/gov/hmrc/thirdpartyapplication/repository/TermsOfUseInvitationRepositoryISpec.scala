@@ -31,6 +31,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.time.Clock
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
@@ -122,6 +123,33 @@ class TermsOfUseInvitationRepositoryISpec
       await(termsOfUseInvitationRepository.create(touInvite1))
       await(termsOfUseInvitationRepository.create(touInvite2))
       val result = await(termsOfUseInvitationRepository.fetchByStatus(EMAIL_SENT))
+
+      result.size mustBe 1
+      result.head mustBe touInvite1
+    }
+  }
+
+  "fetchByStatusBeforeDueBy" should {
+    "fetch an entry" in {
+      val applicationId1 = ApplicationId.random
+      val applicationId2 = ApplicationId.random
+      val applicationId3 = ApplicationId.random
+      val startDate1     = Instant.parse("2023-06-01T12:01:02.000Z")
+      val dueBy1         = startDate1.plus(60, ChronoUnit.DAYS)
+      val startDate2     = Instant.parse("2023-06-14T12:02:04.000Z")
+      val dueBy2         = startDate2.plus(60, ChronoUnit.DAYS)
+      val startDate3     = Instant.parse("2023-06-28T12:03:06.000Z")
+      val dueBy3         = startDate3.plus(60, ChronoUnit.DAYS)
+
+      val touInvite1     = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
+      val touInvite2     = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, EMAIL_SENT)
+      val touInvite3     = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, TERMS_OF_USE_V2)
+
+      await(termsOfUseInvitationRepository.create(touInvite1))
+      await(termsOfUseInvitationRepository.create(touInvite2))
+      await(termsOfUseInvitationRepository.create(touInvite3))
+      val findDueBy      = Instant.parse("2023-08-03T12:00:00.000Z")
+      val result = await(termsOfUseInvitationRepository.fetchByStatusBeforeDueBy(EMAIL_SENT, findDueBy))
 
       result.size mustBe 1
       result.head mustBe touInvite1

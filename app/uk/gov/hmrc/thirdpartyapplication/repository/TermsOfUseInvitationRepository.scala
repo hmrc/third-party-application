@@ -22,7 +22,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
-import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Aggregates._
+import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Updates}
 
@@ -79,6 +80,15 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
       equal("status", Codecs.toBson(state))
     ).toFuture()
       .map(_.toList)
+  }
+
+  def fetchByStatusBeforeDueBy(state: TermsOfUseInvitationState, dueByBefore: Instant): Future[Seq[TermsOfUseInvitation]] = {
+    collection.aggregate(
+      Seq(
+        filter(equal("status", Codecs.toBson(state))),
+        filter(lte("dueBy", dueByBefore))
+      )
+    ).toFuture()
   }
 
   def updateState(applicationId: ApplicationId, newState: TermsOfUseInvitationState): Future[HasSucceeded] = {
