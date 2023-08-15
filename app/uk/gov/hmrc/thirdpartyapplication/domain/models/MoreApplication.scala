@@ -18,8 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import play.api.libs.json.{Format, Json}
 
-case class MoreApplicationResponse(allowAutoDelete: Boolean = true)
+case class MoreApplication(allowAutoDelete: Boolean = true)
 
-object MoreApplicationResponse {
-  implicit val format: Format[MoreApplicationResponse] = Json.format[MoreApplicationResponse]
+object MoreApplication {
+  implicit val format: Format[MoreApplication] = Json.format[MoreApplication]
 }
