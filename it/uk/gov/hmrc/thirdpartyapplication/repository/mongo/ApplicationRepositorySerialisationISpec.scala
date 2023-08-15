@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess => _}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSearch, AutoDeleteAllowed, StandardAccess => _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
@@ -125,6 +125,15 @@ class ApplicationRepositorySerialisationISpec
         }
         case None              => fail()
       }
+
+      val applicationSearch = new ApplicationSearch(filters = List(AutoDeleteAllowed))
+      val appSearchResult = await(applicationRepository.searchApplications("testing")(applicationSearch))
+
+      appSearchResult.applications.size mustBe 1
+      appSearchResult.applications.head.id mustBe applicationId
+      appSearchResult.applications.head.allowAutoDelete mustBe true
+      }
+
     }
 
     "create application with allowAutoDelete set to false and read it back correctly" in new Setup {
@@ -153,7 +162,6 @@ class ApplicationRepositorySerialisationISpec
         }
         case None              => fail()
       }
-    }
   }
 
 }
