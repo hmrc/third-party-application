@@ -34,6 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.TermsOfUseInvitationState
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
 @Singleton
@@ -95,6 +96,18 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(
       Updates.set("status", Codecs.toBson(newState)),
+      Updates.set("lastUpdated", Instant.now(clock).truncatedTo(MILLIS))
+    )
+    collection.updateOne(filter, update)
+      .toFuture()
+      .map(_ => HasSucceeded)
+  }
+
+  def updateReminderSent(applicationId: ApplicationId): Future[HasSucceeded] = {
+    val filter = equal("applicationId", Codecs.toBson(applicationId))
+    val update = Updates.combine(
+      Updates.set("status", Codecs.toBson(REMINDER_EMAIL_SENT)),
+      Updates.set("reminderSent", Instant.now(clock).truncatedTo(MILLIS)),
       Updates.set("lastUpdated", Instant.now(clock).truncatedTo(MILLIS))
     )
     collection.updateOne(filter, update)

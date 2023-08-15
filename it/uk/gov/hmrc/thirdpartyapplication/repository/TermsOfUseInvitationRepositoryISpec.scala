@@ -25,7 +25,7 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{EMAIL_SENT, TERMS_OF_USE_V2}
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
@@ -168,6 +168,21 @@ class TermsOfUseInvitationRepositoryISpec
 
       val fetch = await(termsOfUseInvitationRepository.fetch(applicationId))
       fetch mustBe Some(TermsOfUseInvitation(applicationId, now, now, now, None, TERMS_OF_USE_V2))
+    }
+  }
+
+  "updateReminderSent" should {
+    "update the status and reminder sent date of an existing entry" in {
+      val applicationId = ApplicationId.random
+      val now           = Instant.now(clock)
+      val touInvite     = TermsOfUseInvitation(applicationId, now, now, now, None, EMAIL_SENT)
+
+      await(termsOfUseInvitationRepository.create(touInvite))
+      val result = await(termsOfUseInvitationRepository.updateReminderSent(applicationId))
+      result mustBe HasSucceeded
+
+      val fetch = await(termsOfUseInvitationRepository.fetch(applicationId))
+      fetch mustBe Some(TermsOfUseInvitation(applicationId, now, now, now, Some(now), REMINDER_EMAIL_SENT))
     }
   }
 }
