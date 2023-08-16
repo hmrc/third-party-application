@@ -34,6 +34,9 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
@@ -45,28 +48,43 @@ class TermsOfUseInvitationReminderJob @Inject() (
     termsOfUseInvitationReminderLockService: TermsOfUseInvitationReminderJobLockService,
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     applicationRepository: ApplicationRepository,
+    submissionService: SubmissionsService,
     emailConnector: EmailConnector,
     clock: Clock,
     jobConfig: TermsOfUseInvitationReminderJobConfig
   )(implicit val ec: ExecutionContext
   ) extends ScheduledMongoJob with ApplicationLogger {
 
-  val termsOfUseInvitationReminderInterval: FiniteDuration       = jobConfig.reminderInterval
-  override def name: String                                      = "TermsOfUseInvitationReminderJob"
-  override def interval: FiniteDuration                          = jobConfig.interval
-  override def initialDelay: FiniteDuration                      = jobConfig.initialDelay
-  override val isEnabled: Boolean                                = jobConfig.enabled
-  override val lockService: LockService                          = termsOfUseInvitationReminderLockService
-  implicit val hc: HeaderCarrier                                 = HeaderCarrier()
+  val termsOfUseInvitationReminderInterval: FiniteDuration = jobConfig.reminderInterval
+  override def name: String                                = "TermsOfUseInvitationReminderJob"
+  override def interval: FiniteDuration                    = jobConfig.interval
+  override def initialDelay: FiniteDuration                = jobConfig.initialDelay
+  override val isEnabled: Boolean                          = jobConfig.enabled
+  override val lockService: LockService                    = termsOfUseInvitationReminderLockService
+  implicit val hc: HeaderCarrier                           = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val reminderDueTime: Instant = Instant.now().truncatedTo(MILLIS).plus(termsOfUseInvitationReminderInterval.toDays.toInt, ChronoUnit.DAYS)
+    def getSubmission(applicationId: ApplicationId): Future[Option[Submission]]                                  = {
+      submissionService.fetchLatest(applicationId)
+    }
+    def filterInvitations(invites: Seq[TermsOfUseInvitation], subs: List[Submission]): Seq[TermsOfUseInvitation] = {
+      // Filter out any invitations where the corresponding submission has more
+      // than one instance (i.e. remove ones that have been submitted already).
+      // Note it's OK for an invitation not to have a submission.
+      invites.filter(inv =>
+        !subs.exists(sub => inv.applicationId == sub.applicationId) ||
+          subs.exists(sub => inv.applicationId == sub.applicationId && sub.instances.size == 1)
+      )
+    }
+    val reminderDueTime: Instant = Instant.now(clock).truncatedTo(MILLIS).plus(termsOfUseInvitationReminderInterval.toDays.toInt, ChronoUnit.DAYS)
     logger.info(s"Send terms of use reminders for invitations having status of EMAIL_SENT with dueBy earlier than $reminderDueTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
-      invitations <- termsOfUseInvitationRepository.fetchByStatusBeforeDueBy(TermsOfUseInvitationState.EMAIL_SENT, reminderDueTime)
-      _            = logger.info(s"Found ${invitations.size} invitations")
-      _           <- Future.sequence(invitations.map(sendReminderForInvitation(_)))
+      invitations        <- termsOfUseInvitationRepository.fetchByStatusBeforeDueBy(TermsOfUseInvitationState.EMAIL_SENT, reminderDueTime)
+      submissions        <- Future.sequence(invitations.map(invite => getSubmission(invite.applicationId)).toList).map(_.flatten)
+      filteredInvitations = filterInvitations(invitations, submissions)
+      _                   = logger.info(s"Found ${filteredInvitations.size} invitations")
+      _                  <- Future.sequence(filteredInvitations.map(sendReminderForInvitation(_)))
     } yield RunningOfJobSuccessful
 
     result.recoverWith {
@@ -81,16 +99,16 @@ class TermsOfUseInvitationReminderJob @Inject() (
 
     (
       for {
-        app        <- E.fromOptionF(applicationRepository.fetch(invite.applicationId), s"Couldn't find application with id=${invite.applicationId}")
-        recipients =  getRecipients(app)
-        sent       <- E.liftF(emailConnector.sendNewTermsOfUseInvitation(invite.dueBy, app.name, recipients))
-        _          <- E.liftF(termsOfUseInvitationRepository.updateReminderSent(invite.applicationId))
+        app       <- E.fromOptionF(applicationRepository.fetch(invite.applicationId), s"Couldn't find application with id=${invite.applicationId}")
+        recipients = getRecipients(app)
+        sent      <- E.liftF(emailConnector.sendNewTermsOfUseInvitation(invite.dueBy, app.name, recipients))
+        _         <- E.liftF(termsOfUseInvitationRepository.updateReminderSent(invite.applicationId))
       } yield HasSucceeded
     ).value
   }
 
   private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
-    app.collaborators.map(_.emailAddress)
+    app.admins.map(_.emailAddress)
   }
 }
 

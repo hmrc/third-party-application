@@ -55,6 +55,12 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
           IndexOptions()
             .name("statusIndex")
             .background(true)
+        ),
+        IndexModel(
+          ascending("dueBy"),
+          IndexOptions()
+            .name("dueByIndex")
+            .background(true)
         )
       ),
       replaceIndexes = true
