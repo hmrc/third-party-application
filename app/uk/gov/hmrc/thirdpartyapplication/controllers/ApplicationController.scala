@@ -136,6 +136,7 @@ class ApplicationController @Inject() (
     }
   }
 
+  @deprecated("use new application command ChangeGrantLength", "0.679.0")
   def updateGrantLength(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpdateGrantLengthRequest] { updatedGrantLengthRequest =>
       applicationService.updateGrantLength(applicationId, toGrantLength(updatedGrantLengthRequest)) map { _ =>

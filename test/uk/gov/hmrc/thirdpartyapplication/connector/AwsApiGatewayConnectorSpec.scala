@@ -28,15 +28,15 @@ import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, OK}
 import play.api.libs.json._
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HttpClient, UpstreamErrorResponse}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.SILVER
+
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 class AwsApiGatewayConnectorSpec extends ConnectorSpec {
   import AwsApiGatewayConnector.{RequestId, UpdateApplicationUsagePlanRequest}
 
   private val applicationName                         = "api-platform-app"
-  private val requestedUsagePlan: RateLimitTier.Value = SILVER
+  private val requestedUsagePlan: RateLimitTier = RateLimitTier.SILVER
   private val apiKeyValue: String                     = UUID.randomUUID().toString
 
   implicit val requestIdWrites: Writes[RequestId] =
@@ -71,7 +71,7 @@ class AwsApiGatewayConnectorSpec extends ConnectorSpec {
           )
       )
 
-      await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc)) shouldBe HasSucceeded
+      await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, RateLimitTier.SILVER)(hc)) shouldBe HasSucceeded
 
       wireMockServer.verify(
         postRequestedFor(urlEqualTo(expectedUpdateURL))
@@ -88,7 +88,7 @@ class AwsApiGatewayConnectorSpec extends ConnectorSpec {
         ))
 
       intercept[UpstreamErrorResponse] {
-        await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc))
+        await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, RateLimitTier.SILVER)(hc))
       }.statusCode shouldBe INTERNAL_SERVER_ERROR
 
     }

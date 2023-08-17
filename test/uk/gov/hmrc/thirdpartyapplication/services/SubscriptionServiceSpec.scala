@@ -30,7 +30,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -38,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with CollaboratorTestData {
 
@@ -190,7 +190,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
       applicationId: ApplicationId,
       state: ApplicationState = productionState(requestedByEmail),
       collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
-      rateLimitTier: Option[RateLimitTier] = Some(BRONZE)
+      rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE)
     ) = {
     new ApplicationData(
       applicationId,

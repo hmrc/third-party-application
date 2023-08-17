@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ChangeGrantLengthCommandHandler
 
 abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     with ApplicationStateUtil

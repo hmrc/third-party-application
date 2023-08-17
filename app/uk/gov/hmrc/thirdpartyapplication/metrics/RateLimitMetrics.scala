@@ -25,8 +25,8 @@ import com.google.inject.Singleton
 import uk.gov.hmrc.mongo.metrix.MetricSource
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 @Singleton
 class RateLimitMetrics @Inject() (applicationRepository: ApplicationRepository)

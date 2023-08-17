@@ -26,12 +26,12 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.BRONZE
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock with CollaboratorTestData {
 
@@ -64,14 +64,14 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
       val application: ApplicationData = buildApplication("foo", serverToken)
 
       ApplicationRepoMock.ProcessAll.thenReturn()
-      when(mockApiGatewayConnector.createOrUpdateApplication(application.wso2ApplicationName, serverToken, BRONZE)(hc))
+      when(mockApiGatewayConnector.createOrUpdateApplication(application.wso2ApplicationName, serverToken, RateLimitTier.BRONZE)(hc))
         .thenReturn(Future.successful(HasSucceeded))
 
       await(awsRestoreService.restoreData())
 
       val functionCaptured = ApplicationRepoMock.ProcessAll.verify()
       functionCaptured(application)
-      verify(mockApiGatewayConnector).createOrUpdateApplication(application.wso2ApplicationName, serverToken, BRONZE)(hc)
+      verify(mockApiGatewayConnector).createOrUpdateApplication(application.wso2ApplicationName, serverToken, RateLimitTier.BRONZE)(hc)
     }
   }
 }

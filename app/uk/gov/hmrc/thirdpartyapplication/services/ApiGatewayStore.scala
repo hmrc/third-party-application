@@ -27,9 +27,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 trait ApiGatewayStore extends EitherTHelper[String] {
 
@@ -51,7 +51,7 @@ class AwsApiGatewayStore @Inject() (awsApiGatewayConnector: AwsApiGatewayConnect
 
   override def createApplication(wso2ApplicationName: String, accessToken: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
-      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, accessToken, BRONZE)(hc)
+      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, accessToken, RateLimitTier.BRONZE)(hc)
     } yield HasSucceeded
   }
 

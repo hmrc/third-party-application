@@ -46,7 +46,6 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{RateLimitTier, SILVER}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
@@ -58,6 +57,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -664,7 +664,7 @@ class ApplicationServiceSpec
     }
 
     "return an application when it exists in the repository for the given application id" in new Setup {
-      val data: ApplicationData = anApplicationData(applicationId, rateLimitTier = Some(SILVER))
+      val data: ApplicationData = anApplicationData(applicationId, rateLimitTier = Some(RateLimitTier.SILVER))
 
       ApplicationRepoMock.Fetch.thenReturn(data)
 
@@ -687,7 +687,7 @@ class ApplicationServiceSpec
         privacyPolicyUrl = None,
         access = data.access,
         state = data.state,
-        rateLimitTier = SILVER
+        rateLimitTier = RateLimitTier.SILVER
       ))
     }
   }
@@ -822,15 +822,15 @@ class ApplicationServiceSpec
 
     "update the application on AWS and in mongo" in new Setup {
       val originalApplicationData: ApplicationData = anApplicationData(applicationId)
-      val updatedApplicationData: ApplicationData  = originalApplicationData copy (rateLimitTier = Some(SILVER))
+      val updatedApplicationData: ApplicationData  = originalApplicationData copy (rateLimitTier = Some(RateLimitTier.SILVER))
       ApplicationRepoMock.Fetch.thenReturn(originalApplicationData)
       ApiGatewayStoreMock.UpdateApplication.thenReturnHasSucceeded()
-      ApplicationRepoMock.UpdateApplicationRateLimit.thenReturn(applicationId, SILVER)(updatedApplicationData)
+      ApplicationRepoMock.UpdateApplicationRateLimit.thenReturn(applicationId, RateLimitTier.SILVER)(updatedApplicationData)
 
-      await(underTest.updateRateLimitTier(applicationId, SILVER))
+      await(underTest.updateRateLimitTier(applicationId, RateLimitTier.SILVER))
 
-      ApiGatewayStoreMock.UpdateApplication.verifyCalledWith(originalApplicationData, SILVER)
-      ApplicationRepoMock.UpdateApplicationRateLimit.verifyCalledWith(applicationId, SILVER)
+      ApiGatewayStoreMock.UpdateApplication.verifyCalledWith(originalApplicationData, RateLimitTier.SILVER)
+      ApplicationRepoMock.UpdateApplicationRateLimit.verifyCalledWith(applicationId, RateLimitTier.SILVER)
     }
 
   }

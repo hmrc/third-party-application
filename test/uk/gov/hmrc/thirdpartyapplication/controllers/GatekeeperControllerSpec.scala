@@ -51,6 +51,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with ApplicationLogger
     with ControllerTestData with ApplicationTestData {
@@ -545,7 +546,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "update rate limit tier" should {
-    import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.SILVER
 
     val invalidUpdateRateLimitTierJson = Json.parse("""{ "foo" : "bar" }""")
     val validUpdateRateLimitTierJson   = Json.parse("""{ "rateLimitTier" : "silver" }""")
@@ -558,7 +558,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       val result = underTest.updateRateLimitTier(applicationId)(request.withBody(invalidUpdateRateLimitTierJson))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
-      verify(underTest.applicationService, never).updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)
+      verify(underTest.applicationService, never).updateRateLimitTier(eqTo(applicationId), eqTo(RateLimitTier.SILVER))(*)
     }
 
     "fail with a 422 (unprocessable entity) when request json is valid but rate limit tier is an invalid value" in new Setup {
@@ -582,12 +582,12 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
+      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(RateLimitTier.SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
 
       val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
 
       status(result) shouldBe NO_CONTENT
-      verify(underTest.applicationService).updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)
+      verify(underTest.applicationService).updateRateLimitTier(eqTo(applicationId), eqTo(RateLimitTier.SILVER))(*)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -595,7 +595,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*))
+      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(RateLimitTier.SILVER))(*))
         .thenReturn(failed(new RuntimeException("Expected test exception")))
 
       val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
@@ -607,7 +607,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
-      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
+      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(RateLimitTier.SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
 
       val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
       status(result) shouldBe UNAUTHORIZED

@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 @Singleton
 class GatekeeperController @Inject() (
@@ -129,15 +130,18 @@ class GatekeeperController @Inject() (
   }
 
   // TODO - this should use a request with payload validation in the JSformatter
+  @deprecated("use new application command ChangeRateLimitTier", "0.679.0")
   def updateRateLimitTier(applicationId: ApplicationId) = requiresAuthentication().async(parse.json) { implicit request =>
     withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
-      Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
-        case Success(rateLimitTier) =>
+      RateLimitTier.apply(updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
+        case Some(rateLimitTier) =>
           applicationService.updateRateLimitTier(applicationId, rateLimitTier) map (_ => NoContent) recover recovery
-        case Failure(_)             =>
-          successful(UnprocessableEntity(
-            JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")
-          ))
+        case _           =>
+          successful(
+            UnprocessableEntity(
+              JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")
+            )
+          )
       }
     }
       .recover(recovery)

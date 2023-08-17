@@ -21,10 +21,10 @@ import java.time.LocalDateTime
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, ClientSecret, Collaborator}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationWithSubscriptions}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 trait CreateApplicationRequest {
   def name: String
@@ -161,7 +161,7 @@ case class ApplicationResponse(
     privacyPolicyUrl: Option[String] = None,
     access: Access = Standard(),
     state: ApplicationState = ApplicationState(name = State.TESTING),
-    rateLimitTier: RateLimitTier = BRONZE,
+    rateLimitTier: RateLimitTier = RateLimitTier.BRONZE,
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,
     trusted: Boolean = false,
@@ -209,7 +209,7 @@ object ApplicationResponse {
       privacyPolicyUrl(data),
       data.access,
       data.state,
-      data.rateLimitTier.getOrElse(BRONZE),
+      data.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
       data.checkInformation,
       data.blocked,
       ipAllowlist = data.ipAllowlist,
@@ -234,7 +234,7 @@ case class ExtendedApplicationResponse(
     privacyPolicyUrl: Option[String] = None,
     access: Access = Standard(),
     state: ApplicationState = ApplicationState(name = TESTING),
-    rateLimitTier: RateLimitTier = BRONZE,
+    rateLimitTier: RateLimitTier = RateLimitTier.BRONZE,
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,
     trusted: Boolean = false,
@@ -262,7 +262,7 @@ object ExtendedApplicationResponse {
       ApplicationResponse.privacyPolicyUrl(data),
       data.access,
       data.state,
-      data.rateLimitTier.getOrElse(BRONZE),
+      data.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
       data.checkInformation,
       data.blocked,
       serverToken = data.tokens.production.accessToken,

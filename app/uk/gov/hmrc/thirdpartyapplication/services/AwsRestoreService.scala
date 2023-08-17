@@ -23,14 +23,15 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
+
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 @Singleton
 class AwsRestoreService @Inject() (awsApiGatewayConnector: AwsApiGatewayConnector, applicationRepository: ApplicationRepository)
     extends ApplicationLogger {
 
-  val DefaultRateLimitTier: RateLimitTier = BRONZE
+  val DefaultRateLimitTier: RateLimitTier = RateLimitTier.BRONZE
 
   def restoreData()(implicit hc: HeaderCarrier): Future[Unit] = {
     logger.info("Republishing all Applications to AWS API Gateway")

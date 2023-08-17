@@ -25,11 +25,11 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, Collaborator}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 case class ApplicationTokens(production: Token)
 
@@ -51,7 +51,7 @@ case class ApplicationData(
     createdOn: LocalDateTime,
     lastAccess: Option[LocalDateTime],
     grantLength: Int = grantLengthConfig,
-    rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
+    rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
     environment: String = Environment.PRODUCTION.toString,
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,
