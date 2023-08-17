@@ -56,8 +56,9 @@ trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with Argumen
     }
 
     object UpdateReminderSent {
-      def thenReturn()                                   = when(aMock.updateReminderSent(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
-      def verifyCalledWith(applicationId: ApplicationId) = verify(aMock).updateReminderSent(eqTo(applicationId))
+      def thenReturn()                                        = when(aMock.updateReminderSent(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
+      def verifyCalledWith(applicationId: ApplicationId)      = verify(aMock).updateReminderSent(eqTo(applicationId))
+      def verifyNeverCalled()                                 = verify(aMock, never).updateReminderSent(*[ApplicationId])
     }
   }
 

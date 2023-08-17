@@ -56,13 +56,15 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
     val application1   = anApplicationData(applicationId1)
     val recipients1    = application1.admins.map(_.emailAddress)
     val application2   = anApplicationData(applicationId2)
+    val recipients2    = application2.admins.map(_.emailAddress)
     val application3   = anApplicationData(applicationId3)
+    val recipients3    = application3.admins.map(_.emailAddress)
 
     val startDate1     = nowInstant.minus(100, ChronoUnit.DAYS)
     val dueBy1         = startDate1.plus(60, ChronoUnit.DAYS)
-    val startDate2     = nowInstant.minus(32, ChronoUnit.DAYS)
+    val startDate2     = nowInstant.minus(59, ChronoUnit.DAYS)
     val dueBy2         = startDate2.plus(60, ChronoUnit.DAYS)
-    val startDate3     = nowInstant.minus(1, ChronoUnit.DAYS)
+    val startDate3     = nowInstant.minus(32, ChronoUnit.DAYS)
     val dueBy3         = startDate3.plus(60, ChronoUnit.DAYS)
 
     val touInvite1     = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
@@ -70,17 +72,17 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
     val touInvite3     = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, EMAIL_SENT)
 
     val submission1 = aSubmission.copy(applicationId = applicationId1)
+    val submission2 = aSubmission.copy(applicationId = applicationId2)
 
-    val initialDelay     = FiniteDuration(1, MINUTES)
-    val interval         = FiniteDuration(1, HOURS)
+    val initialDelay     = FiniteDuration(6, MINUTES)
+    val interval         = FiniteDuration(8, HOURS)
     val reminderInterval = FiniteDuration(30, DAYS)
     val jobConfig        = TermsOfUseInvitationReminderJobConfig(initialDelay, interval, true, reminderInterval)
     val job              = new TermsOfUseInvitationReminderJob(mockLockKeeper, mockTermsOfUseRepo, mockApplicationRepo, mockSubmissionService, EmailConnectorMock.aMock, clock, jobConfig)
   }
 
   "TermsOfUseInvitationReminderJob" should {
-    "send email correctly and update state of database record" in new Setup {
-
+    "send email correctly and update state of database record for single record with submission" in new Setup {
       TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.thenReturn(List(touInvite1))
       ApplicationRepoMock.Fetch.thenReturn(application1)
       SubmissionsServiceMock.FetchLatest.thenReturn(submission1)
@@ -92,6 +94,54 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
       TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
       EmailConnectorMock.SendNewTermsOfUseInvitation.verifyCalledWith(touInvite1.dueBy, application1.name, recipients1)
       TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyCalledWith(applicationId1)
+    }
+
+    "send email correctly and update state of database record for single record with no submission" in new Setup {
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.thenReturn(List(touInvite1))
+      ApplicationRepoMock.Fetch.thenReturn(application1)
+      SubmissionsServiceMock.FetchLatest.thenReturnNone()
+      EmailConnectorMock.SendNewTermsOfUseInvitation.thenReturnSuccess()
+      TermsOfUseInvitationRepositoryMock.UpdateReminderSent.thenReturn()
+
+      await(job.runJob)
+
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
+      EmailConnectorMock.SendNewTermsOfUseInvitation.verifyCalledWith(touInvite1.dueBy, application1.name, recipients1)
+      TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyCalledWith(applicationId1)
+    }
+
+    "send email correctly and update state of database record for multiple records" in new Setup {
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.thenReturn(List(touInvite1, touInvite2, touInvite3))
+      ApplicationRepoMock.Fetch.thenReturn(application1)
+      ApplicationRepoMock.Fetch.thenReturn(application2)
+      ApplicationRepoMock.Fetch.thenReturn(application3)
+      SubmissionsServiceMock.FetchLatest.thenReturnWhen(submission1)
+      SubmissionsServiceMock.FetchLatest.thenReturnWhen(submission2)
+      SubmissionsServiceMock.FetchLatest.thenReturnNoneWhen(applicationId3)
+      EmailConnectorMock.SendNewTermsOfUseInvitation.thenReturnSuccess()
+      TermsOfUseInvitationRepositoryMock.UpdateReminderSent.thenReturn()
+
+      await(job.runJob)
+
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
+      EmailConnectorMock.SendNewTermsOfUseInvitation.verifyCalledWith(touInvite1.dueBy, application1.name, recipients1)
+      EmailConnectorMock.SendNewTermsOfUseInvitation.verifyCalledWith(touInvite2.dueBy, application2.name, recipients2)
+      EmailConnectorMock.SendNewTermsOfUseInvitation.verifyCalledWith(touInvite3.dueBy, application3.name, recipients3)
+      TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyCalledWith(applicationId1)
+      TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyCalledWith(applicationId2)
+      TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyCalledWith(applicationId3)
+    }
+
+    "don't send email or update state of database record for single record with submission with 2 instances" in new Setup {
+      val submissionWith2Instances = declinedSubmission.copy(applicationId = applicationId1)
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.thenReturn(List(touInvite1))
+      SubmissionsServiceMock.FetchLatest.thenReturn(submissionWith2Instances)
+
+      await(job.runJob)
+
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
+      EmailConnectorMock.SendNewTermsOfUseInvitation.verifyNeverCalled()
+      TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyNeverCalled()
     }
   }
 }

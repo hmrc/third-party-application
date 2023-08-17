@@ -303,6 +303,8 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
       def verifyCalledWith(dueBy: Instant, applicationName: String, recipients: Set[LaxEmailAddress]) =
         verify.sendNewTermsOfUseInvitation(eqTo(dueBy), eqTo(applicationName), eqTo(recipients))(*)
+
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendNewTermsOfUseInvitation(*, *, *)(*)
     }
 
     object SendNewTermsOfUseConfirmation {
