@@ -29,9 +29,8 @@ import com.google.inject.Singleton
 import play.api.LoggerLike
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
-import uk.gov.hmrc.apiplatform.modules.common.services.SimpleTimer
+import uk.gov.hmrc.apiplatform.modules.common.services.{SimpleTimer, TimedValue}
 import uk.gov.hmrc.apiplatform.modules.scheduling.ExclusiveScheduledJob
-import uk.gov.hmrc.apiplatform.modules.common.services.TimedValue
 
 @Singleton
 class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike, val clock: Clock) extends ExclusiveScheduledJob with ClockNow with SimpleTimer {

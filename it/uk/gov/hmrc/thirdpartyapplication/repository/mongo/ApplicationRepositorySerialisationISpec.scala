@@ -127,41 +127,41 @@ class ApplicationRepositorySerialisationISpec
       }
 
       val applicationSearch = new ApplicationSearch(filters = List(AutoDeleteAllowed))
-      val appSearchResult = await(applicationRepository.searchApplications("testing")(applicationSearch))
+      val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
 
       appSearchResult.applications.size mustBe 1
       appSearchResult.applications.head.id mustBe applicationId
       appSearchResult.applications.head.allowAutoDelete mustBe true
-      }
-
     }
 
-    "create application with allowAutoDelete set to false and read it back correctly" in new Setup {
-      val rawJson: JsObject = applicationToMongoJson(applicationData, Some(false))
-      saveApplicationAsMongoJson(rawJson)
-      val result            = await(applicationRepository.fetch(applicationId))
+  }
 
-      result match {
-        case Some(application) => {
-          application.id mustBe applicationId
-          application.allowAutoDelete mustBe false
-        }
-        case None              => fail()
+  "create application with allowAutoDelete set to false and read it back correctly" in new Setup {
+    val rawJson: JsObject = applicationToMongoJson(applicationData, Some(false))
+    saveApplicationAsMongoJson(rawJson)
+    val result            = await(applicationRepository.fetch(applicationId))
+
+    result match {
+      case Some(application) => {
+        application.id mustBe applicationId
+        application.allowAutoDelete mustBe false
       }
+      case None              => fail()
     }
+  }
 
-    "create application with allowAutoDelete set to true and read it back correctly" in new Setup {
-      val rawJson: JsObject = applicationToMongoJson(applicationData, Some(true))
-      saveApplicationAsMongoJson(rawJson)
-      val result            = await(applicationRepository.fetch(applicationId))
+  "create application with allowAutoDelete set to true and read it back correctly" in new Setup {
+    val rawJson: JsObject = applicationToMongoJson(applicationData, Some(true))
+    saveApplicationAsMongoJson(rawJson)
+    val result            = await(applicationRepository.fetch(applicationId))
 
-      result match {
-        case Some(application) => {
-          application.id mustBe applicationId
-          application.allowAutoDelete mustBe true
-        }
-        case None              => fail()
+    result match {
+      case Some(application) => {
+        application.id mustBe applicationId
+        application.allowAutoDelete mustBe true
       }
+      case None              => fail()
+    }
   }
 
 }

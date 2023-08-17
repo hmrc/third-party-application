@@ -22,11 +22,10 @@ import scala.concurrent.{ExecutionContext, Future, blocking}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientSecretsHashingConfig}
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
-import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, SimpleTimer}
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, SimpleTimer, TimedValue}
 import uk.gov.hmrc.apiplatform.modules.crypto.services.SecretsHashingService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.apiplatform.modules.common.services.TimedValue
 // API-7200 // mport java.util.concurrent.Executors
 
 @Singleton

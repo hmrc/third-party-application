@@ -536,7 +536,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     def allowAutoDeleteMatch(allowAutoDelete: Boolean): Bson = {
       allowAutoDelete match {
         case false => matches(equal("allowAutoDelete", Codecs.toBson(allowAutoDelete)))
-        case true => matches(or(equal("allowAutoDelete", Codecs.toBson(allowAutoDelete)), exists("allowAutoDelete", false)))
+        case true  => matches(or(equal("allowAutoDelete", Codecs.toBson(allowAutoDelete)), exists("allowAutoDelete", false)))
       }
 
     }
