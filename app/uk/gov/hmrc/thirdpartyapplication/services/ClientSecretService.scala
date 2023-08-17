@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Simpl
 import uk.gov.hmrc.apiplatform.modules.crypto.services.SecretsHashingService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.common.services.TimedValue
 // API-7200 // mport java.util.concurrent.Executors
 
 @Singleton
@@ -65,13 +66,13 @@ class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applica
   }
 
   def timedHashSecret(secretValue: String): String = {
-    val (hashedSecretValue, duration) = timeThis(() => hashSecret(secretValue))
+    val timedValue: TimedValue[String] = timeThis(() => hashSecret(secretValue))
 
     logger.info(
-      s"[ClientSecretService] Hashing Secret with Work Factor of [${workFactor}] took [${duration.toString()}]"
+      s"[ClientSecretService] Hashing Secret with Work Factor of [${workFactor}] took [${timedValue.duration.toString()}]"
     )
 
-    hashedSecretValue
+    timedValue.value
   }
 
   def lastUsedOrdering: (ClientSecretData, ClientSecretData) => Boolean = {

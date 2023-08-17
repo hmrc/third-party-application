@@ -36,14 +36,11 @@ class ChangeGrantLengthCommandHandler @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
-  final val maxDays = 36525 // 100 years
-
   import CommandHandler._
 
   private def validate(app: ApplicationData, cmd: ChangeGrantLength): Validated[Failures, Unit] = {
-    Apply[Validated[Failures, *]].map2(
-      cond((cmd.grantLengthInDays >= 1 && cmd.grantLengthInDays <= maxDays), CommandFailures.GenericFailure("Grant length must be between 1 day and 100 years")),
-      cond((cmd.grantLengthInDays != app.grantLength), CommandFailures.GenericFailure(s"Grant length is already ${app.grantLength} days"))
+    Apply[Validated[Failures, *]].map(
+      cond((cmd.grantLengthInDays.days != app.grantLength), CommandFailures.GenericFailure(s"Grant length is already ${app.grantLength} days"))
     ) { case _ => () }
   }
 
@@ -55,7 +52,7 @@ class ChangeGrantLengthCommandHandler @Inject() (
         eventDateTime = cmd.timestamp.instant,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         oldGrantLengthInDays = app.grantLength,
-        newGrantLengthInDays = cmd.grantLengthInDays
+        newGrantLengthInDays = cmd.grantLengthInDays.days
       )
     )
   }
@@ -64,7 +61,7 @@ class ChangeGrantLengthCommandHandler @Inject() (
 
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
-      savedApp <- E.liftF(applicationRepository.updateApplicationGrantLength(app.id, cmd.grantLengthInDays))
+      savedApp <- E.liftF(applicationRepository.updateApplicationGrantLength(app.id, cmd.grantLengthInDays.days))
       events    = asEvents(app, cmd)
     } yield (savedApp, events)
   }

@@ -25,10 +25,11 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.GrantLength
 
 class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  val originalGrantLength = 100
+  val originalGrantLength = GrantLength.SIX_MONTHS.days
   val app                 = principalApp.copy(grantLength = originalGrantLength)
 
   trait Setup extends ApplicationRepositoryMockModule {
@@ -36,8 +37,8 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val gatekeeperUser         = "gkuser"
-    val replaceWithGrantLength = 250
-    val newApp                 = app.copy(grantLength = replaceWithGrantLength)
+    val replaceWithGrantLength = GrantLength.ONE_YEAR
+    val newApp                 = app.copy(grantLength = replaceWithGrantLength.days)
 
     val timestamp = FixedClock.instant
     val update    = ApplicationCommands.ChangeGrantLength(gatekeeperUser, now, replaceWithGrantLength)
@@ -57,7 +58,7 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
             anActor shouldBe expectedActor
             eventDateTime shouldBe timestamp
             anOldGrantLength shouldBe originalGrantLength
-            aNewGrantLength shouldBe replaceWithGrantLength
+            aNewGrantLength shouldBe replaceWithGrantLength.days
         }
       }
     }
@@ -65,7 +66,7 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   "process" should {
     "create correct events for a valid request with app" in new Setup {
-      ApplicationRepoMock.UpdateGrantLength.thenReturnWhen(app.id, replaceWithGrantLength)(newApp)
+      ApplicationRepoMock.UpdateGrantLength.thenReturnWhen(app.id, replaceWithGrantLength.days)(newApp)
 
       checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
         underTest.process(app, update)
@@ -73,27 +74,12 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
     }
 
     "return an error if the application already has the specified grant length" in new Setup {
-      val updateWithSameGrantLength = update.copy(grantLengthInDays = app.grantLength)
+      val updateWithSameGrantLength = update.copy(grantLengthInDays = GrantLength.SIX_MONTHS)
 
-      checkFailsWith("Grant length is already 100 days") {
+      checkFailsWith("Grant length is already 180 days") {
         underTest.process(app, updateWithSameGrantLength)
       }
     }
 
-    "return an error if the grant length is too short" in new Setup {
-      val updateWithGrantLengthOfZero = update.copy(grantLengthInDays = 0)
-
-      checkFailsWith("Grant length must be between 1 day and 100 years") {
-        underTest.process(app, updateWithGrantLengthOfZero)
-      }
-    }
-
-    "return an error if the grant length is too long" in new Setup {
-      val updateWithGrantLengthOf36526 = update.copy(grantLengthInDays = 36526)
-
-      checkFailsWith("Grant length must be between 1 day and 100 years") {
-        underTest.process(app, updateWithGrantLengthOf36526)
-      }
-    }
   }
 }
