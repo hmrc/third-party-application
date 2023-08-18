@@ -19,13 +19,12 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
-import scala.util.{Failure, Success, Try}
 
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, RateLimitTier}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
@@ -36,7 +35,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 @Singleton
 class GatekeeperController @Inject() (
@@ -136,7 +134,7 @@ class GatekeeperController @Inject() (
       RateLimitTier.apply(updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
         case Some(rateLimitTier) =>
           applicationService.updateRateLimitTier(applicationId, rateLimitTier) map (_ => NoContent) recover recovery
-        case _           =>
+        case _                   =>
           successful(
             UnprocessableEntity(
               JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")

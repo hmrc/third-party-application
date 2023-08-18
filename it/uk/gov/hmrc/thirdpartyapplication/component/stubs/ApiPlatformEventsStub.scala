@@ -58,7 +58,7 @@ object ApiPlatformEventsStub extends Stub {
   }
 
   def verifyRatelLimitChangedEventSent(): Unit = {
-     verifyStubCalledForEvent(applicationEventsURL, "RATE_LIMIT_CHANGED")
+    verifyStubCalledForEvent(applicationEventsURL, "RATE_LIMIT_CHANGED")
   }
 
   private def verifyStubCalledForEvent(urlString: String, eventType: String) = {
@@ -96,7 +96,7 @@ object ApiPlatformEventsStub extends Stub {
     willReceiveEventType("GRANT_LENGTH_CHANGED")
   }
 
-  def willReceiveChangeRateLimitEvent() ={
-     willReceiveEventType("RATE_LIMIT_CHANGED")
+  def willReceiveChangeRateLimitEvent() = {
+    willReceiveEventType("RATE_LIMIT_CHANGED")
   }
 }

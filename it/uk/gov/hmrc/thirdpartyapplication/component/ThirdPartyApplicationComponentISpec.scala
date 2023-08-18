@@ -644,8 +644,8 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
     }
   }
 
-   Feature("Grant Length") {
-     Scenario("change grant length for an application") {
+  Feature("Grant Length") {
+    Scenario("change grant length for an application") {
 
       Given("No applications exist")
       emptyApplicationRepository()
@@ -656,7 +656,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       Given("I have updated the grant lenth to six months")
       apiPlatformEventsStub.willReceiveChangeGrantLengthEvent()
-      val subcmd = ApplicationCommands.ChangeGrantLength("admin@example.com", FixedClock.now, GrantLength.SIX_MONTHS)
+      val subcmd   = ApplicationCommands.ChangeGrantLength("admin@example.com", FixedClock.now, GrantLength.SIX_MONTHS)
       val response = sendApplicationCommand(subcmd, application)
       response.body.contains("\"grantLength\":180")
 
@@ -667,8 +667,8 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
     }
   }
 
-   Feature("Rate Limit") {
-     Scenario("change ratelimit for an application") {
+  Feature("Rate Limit") {
+    Scenario("change ratelimit for an application") {
 
       Given("No applications exist")
       emptyApplicationRepository()
@@ -679,7 +679,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       Given("I have updated the rate limit to GOLD")
       apiPlatformEventsStub.willReceiveChangeRateLimitEvent()
-      val subcmd = ApplicationCommands.ChangeRateLimitTier("admin@example.com", FixedClock.now, RateLimitTier.GOLD)
+      val subcmd   = ApplicationCommands.ChangeRateLimitTier("admin@example.com", FixedClock.now, RateLimitTier.GOLD)
       val response = sendApplicationCommand(subcmd, application)
       response.body.contains("\"rateLimitTier\":\"GOLD\"") shouldBe true
 

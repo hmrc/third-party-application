@@ -28,16 +28,15 @@ import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, OK}
 import play.api.libs.json._
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HttpClient, UpstreamErrorResponse}
 
-
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 class AwsApiGatewayConnectorSpec extends ConnectorSpec {
   import AwsApiGatewayConnector.{RequestId, UpdateApplicationUsagePlanRequest}
 
-  private val applicationName                         = "api-platform-app"
+  private val applicationName                   = "api-platform-app"
   private val requestedUsagePlan: RateLimitTier = RateLimitTier.SILVER
-  private val apiKeyValue: String                     = UUID.randomUUID().toString
+  private val apiKeyValue: String               = UUID.randomUUID().toString
 
   implicit val requestIdWrites: Writes[RequestId] =
     (JsPath \ "RequestId").write[String].contramap((r: RequestId) => r.value)

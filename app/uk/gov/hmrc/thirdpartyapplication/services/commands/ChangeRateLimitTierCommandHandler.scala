@@ -22,15 +22,15 @@ import scala.concurrent.ExecutionContext
 import cats.data._
 import cats.implicits._
 
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeRateLimitTier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeRateLimitTier
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
-import uk.gov.hmrc.http.HeaderCarrier
-
 
 @Singleton
 class ChangeRateLimitTierCommandHandler @Inject() (
@@ -40,8 +40,6 @@ class ChangeRateLimitTierCommandHandler @Inject() (
   ) extends CommandHandler {
 
   import CommandHandler._
-
-
 
   private def asEvents(app: ApplicationData, cmd: ChangeRateLimitTier): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(

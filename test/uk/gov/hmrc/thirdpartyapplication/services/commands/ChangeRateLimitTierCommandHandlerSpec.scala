@@ -20,26 +20,26 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApiGatewayStoreMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 class ChangeRateLimitTierCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   val originalRateLimitTier = RateLimitTier.BRONZE
-  val app                 = principalApp.copy(rateLimitTier = Some(originalRateLimitTier))
+  val app                   = principalApp.copy(rateLimitTier = Some(originalRateLimitTier))
 
   trait Setup extends ApiGatewayStoreMockModule with ApplicationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val gatekeeperUser         = "gkuser"
+    val gatekeeperUser           = "gkuser"
     val replaceWithRateLimitTier = RateLimitTier.RHODIUM
-    val newApp                 = app.copy(rateLimitTier = Some(replaceWithRateLimitTier))
+    val newApp                   = app.copy(rateLimitTier = Some(replaceWithRateLimitTier))
 
     val timestamp = FixedClock.instant
     val update    = ApplicationCommands.ChangeRateLimitTier(gatekeeperUser, now, replaceWithRateLimitTier)
