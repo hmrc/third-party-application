@@ -44,6 +44,7 @@ class ApplicationCommandDispatcher @Inject() (
     addRedirectUriCommandHandle: AddRedirectUriCommandHandler,
     removeClientSecretCmdHdlr: RemoveClientSecretCommandHandler,
     changeGrantLengthCmdHdlr: ChangeGrantLengthCommandHandler,
+    changeRateLimitTierCmdHdlr: ChangeRateLimitTierCommandHandler,
     changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
     removeCollaboratorCmdHdlr: RemoveCollaboratorCommandHandler,
     changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
@@ -95,6 +96,7 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: AddRedirectUri                                        => addRedirectUriCommandHandle.process(app, cmd)
       case cmd: RemoveClientSecret                                    => removeClientSecretCmdHdlr.process(app, cmd)
       case cmd: ChangeGrantLength                                     => changeGrantLengthCmdHdlr.process(app, cmd)
+      case cmd: ChangeRateLimitTier                                   => changeRateLimitTierCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)

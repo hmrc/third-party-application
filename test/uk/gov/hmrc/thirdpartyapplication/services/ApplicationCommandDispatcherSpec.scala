@@ -38,6 +38,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.GrantLength
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
@@ -78,6 +80,8 @@ class ApplicationCommandDispatcherSpec
       mockChangeProductionApplicationNameCommandHandler,
       mockAddCollaboratorCommandHandler,
       mockRemoveCollaboratorCommandHandler,
+      mockChangeGrantLengthCommandHandler,
+      mockChangeRateLimitTierCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
       mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
       mockChangeResponsibleIndividualToSelfCommandHandler,
@@ -337,7 +341,6 @@ class ApplicationCommandDispatcherSpec
     }
 
     "ChangeResponsibleIndividualToSelf is received" should {
-
       val cmd = ChangeResponsibleIndividualToSelf(UserId.random, timestamp, requestedByName, requestedByEmail)
       val evt = ApplicationEvents.ResponsibleIndividualChangedToSelf(
         EventId.random,
@@ -367,7 +370,6 @@ class ApplicationCommandDispatcherSpec
       "bubble up exception when application fetch fails" in new Setup {
         testFailure(cmd)
       }
-
     }
 
     "ChangeResponsibleIndividualToOther is received" should {
@@ -404,11 +406,9 @@ class ApplicationCommandDispatcherSpec
       "bubble up exception when application fetch fails" in new Setup {
         testFailure(cmd)
       }
-
     }
 
     "DeclineApplicationApprovalRequest is received" should {
-
       val timestamp = now
       val actor     = Actors.GatekeeperUser(gatekeeperUser)
 
@@ -446,7 +446,7 @@ class ApplicationCommandDispatcherSpec
 
     }
 
-    " DeleteApplicationByCollaborator is received" should {
+    "DeleteApplicationByCollaborator is received" should {
 
       val cmd = DeleteApplicationByCollaborator(UserId.random, reasons, timestamp)
       val evt = ApplicationEvents.ApplicationDeleted(
@@ -459,7 +459,7 @@ class ApplicationCommandDispatcherSpec
         reasons
       )
 
-      "call  DeleteApplicationByCollaborator Handler and relevant common services if application exists" in new Setup {
+      "call DeleteApplicationByCollaborator Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
         when(mockDeleteApplicationByCollaboratorCommandHandler.process(*[ApplicationData], *[DeleteApplicationByCollaborator])(*[HeaderCarrier])).thenReturn(E.pure((
@@ -511,7 +511,7 @@ class ApplicationCommandDispatcherSpec
 
     }
 
-    " DeleteUnusedApplication is received" should {
+    "DeleteUnusedApplication is received" should {
       val authKey = "kjghhjgdasijgdkgjhsa"
       val cmd     = DeleteUnusedApplication(jobId, authKey, reasons, timestamp)
       val evt     = ApplicationEvents.ApplicationDeleted(
@@ -640,7 +640,7 @@ class ApplicationCommandDispatcherSpec
 
     }
 
-    " UpdateRedirectUris is received" should {
+    "UpdateRedirectUris is received" should {
       val oldUris = List("uri1", "uri2")
       val newUris = List("uri3", "uri4")
       val cmd     = UpdateRedirectUris(otherAdminAsActor, oldUris, newUris, timestamp)
@@ -669,7 +669,60 @@ class ApplicationCommandDispatcherSpec
       "bubble up exception when application fetch fails" in new Setup {
         testFailure(cmd)
       }
+    }
 
+    "ChangeGrantLength is received" should {
+      val oldGrantLength = GrantLength.SIX_MONTHS
+      val newGrantLength = GrantLength.ONE_HUNDRED_YEARS
+      val cmd     = ChangeGrantLength(gatekeeperUser, timestamp, newGrantLength)
+      val evt     = ApplicationEvents.GrantLengthChanged(
+        EventId.random,
+        applicationId,
+        instant,
+        gatekeeperActor,
+        oldGrantLength.days,
+        newGrantLength.days
+      )
+
+      "call ChangeGrantLength Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(mockChangeGrantLengthCommandHandler.process(*[ApplicationData], *[ChangeGrantLength])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
+
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[ChangeGrantLengthCommandHandler]()
+      }
+    }
+
+    "ChangeRateLimitTier is received" should {
+      val oldRateLimitTier = RateLimitTier.BRONZE
+      val newRateLimitTier = RateLimitTier.GOLD
+      val cmd     = ChangeRateLimitTier(gatekeeperUser, timestamp, newRateLimitTier)
+      val evt     = ApplicationEvents.RateLimitChanged(
+        EventId.random,
+        applicationId,
+        instant,
+        gatekeeperActor,
+        oldRateLimitTier,
+        newRateLimitTier
+      )
+
+    "call ChangeRateLimitTier Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(mockChangeRateLimitTierCommandHandler.process(*[ApplicationData], *[ChangeRateLimitTier])(*)).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
+
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[ChangeRateLimitTierCommandHandler]()
+      }
     }
   }
 }
