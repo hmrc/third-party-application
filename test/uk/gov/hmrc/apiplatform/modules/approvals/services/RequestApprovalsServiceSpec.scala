@@ -214,7 +214,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
         val updatedSubmission = SubmissionsServiceMock.Store.verifyCalledWith()
         updatedSubmission.status should matchPattern {
-          case Submission.Status.Granted(_, requestedByEmail, _) =>
+          case Submission.Status.Granted(_, requestedByEmail, _, _) =>
         }
       }
 
