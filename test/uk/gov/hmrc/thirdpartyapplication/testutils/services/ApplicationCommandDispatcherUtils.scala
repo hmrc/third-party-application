@@ -37,7 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{
   ThirdPartyDelegatedAuthorityServiceMockModule
 }
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, _}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, ChangeGrantLengthCommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
@@ -83,6 +83,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockUnsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler                                             = mock[UnsubscribeFromApiCommandHandler]
     val mockUpdateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler                                             = mock[UpdateRedirectUrisCommandHandler]
     val mockChangeGrantLengthCommandHandler: ChangeGrantLengthCommandHandler                                               = mock[ChangeGrantLengthCommandHandler]
+    val mockChangeRateLimitTierCommandHandler: ChangeRateLimitTierCommandHandler                                           = mock[ChangeRateLimitTierCommandHandler]
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler                   = mock[ChangeProductionApplicationNameCommandHandler]
     val mockAddClientSecretCommandHandler: AddClientSecretCommandHandler                                                   = mock[AddClientSecretCommandHandler]
     val mockRemoveClientSecretCommandHandler: RemoveClientSecretCommandHandler                                             = mock[RemoveClientSecretCommandHandler]
@@ -102,6 +103,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockAddRedirectUriCommandHandler,
       mockRemoveClientSecretCommandHandler,
       mockChangeGrantLengthCommandHandler,
+      mockChangeRateLimitTierCommandHandler,
       mockChangeProductionApplicationNameCommandHandler,
       mockRemoveCollaboratorCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,

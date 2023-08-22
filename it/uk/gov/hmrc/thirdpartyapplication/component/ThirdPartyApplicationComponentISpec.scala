@@ -45,6 +45,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, ApplicationCommands}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.GrantLength
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
@@ -528,8 +530,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       fetchResponse.code shouldBe NOT_FOUND
     }
 
-    Scenario("Change rate limit tier for an application") {
-
+    Scenario("Change rate limit tier for an application OLD ENDPOINT") {
       Given("The gatekeeper is logged in")
       authStub.willValidateLoggedInUserHasGatekeeperRole()
 
@@ -640,6 +641,52 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       response.code shouldBe OK
 
       apiPlatformEventsStub.verifyApiUnsubscribedEventSent()
+    }
+  }
+
+  Feature("Grant Length") {
+    Scenario("change grant length for an application") {
+
+      Given("No applications exist")
+      emptyApplicationRepository()
+
+      Given("A third party application")
+      val application = createApplication()
+      application.grantLength shouldBe GrantLength.EIGHTEEN_MONTHS.days
+
+      Given("I have updated the grant lenth to six months")
+      apiPlatformEventsStub.willReceiveChangeGrantLengthEvent()
+      val subcmd   = ApplicationCommands.ChangeGrantLength("admin@example.com", FixedClock.now, GrantLength.SIX_MONTHS)
+      val response = sendApplicationCommand(subcmd, application)
+      response.body.contains("\"grantLength\":180")
+
+      Then("A 200 is returned")
+      response.code shouldBe OK
+
+      apiPlatformEventsStub.verifyGrantLengthChangedEventSent()
+    }
+  }
+
+  Feature("Rate Limit") {
+    Scenario("change ratelimit for an application") {
+
+      Given("No applications exist")
+      emptyApplicationRepository()
+
+      Given("A third party application")
+      val application: ApplicationResponse = createApplication()
+      application.rateLimitTier shouldBe RateLimitTier.BRONZE
+
+      Given("I have updated the rate limit to GOLD")
+      apiPlatformEventsStub.willReceiveChangeRateLimitEvent()
+      val subcmd   = ApplicationCommands.ChangeRateLimitTier("admin@example.com", FixedClock.now, RateLimitTier.GOLD)
+      val response = sendApplicationCommand(subcmd, application)
+      response.body.contains("\"rateLimitTier\":\"GOLD\"") shouldBe true
+
+      Then("A 200 is returned")
+      response.code shouldBe OK
+
+      apiPlatformEventsStub.verifyRatelLimitChangedEventSent()
     }
   }
 

@@ -19,8 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.metrics
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec

@@ -24,10 +24,9 @@ import akka.actor.ActorSystem
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
@@ -63,22 +62,22 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   "createApplication" should {
     "create an application in AWS" in new Setup {
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(eqTo(applicationName), *, eqTo(BRONZE))(eqTo(hc)))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(eqTo(applicationName), *, eqTo(RateLimitTier.BRONZE))(eqTo(hc)))
         .thenReturn(successful(HasSucceeded))
 
       await(underTest.createApplication(applicationName, serverToken))
 
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(eqTo(applicationName), *, eqTo(BRONZE))(eqTo(hc))
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(eqTo(applicationName), *, eqTo(RateLimitTier.BRONZE))(eqTo(hc))
     }
   }
 
   "updateApplication" should {
     "update rate limiting tier in AWS" in new Setup {
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(applicationName, serverToken, SILVER)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(applicationName, serverToken, RateLimitTier.SILVER)(hc)).thenReturn(successful(HasSucceeded))
 
-      await(underTest.updateApplication(app, SILVER))
+      await(underTest.updateApplication(app, RateLimitTier.SILVER))
 
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(applicationName, serverToken, SILVER)(hc)
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(applicationName, serverToken, RateLimitTier.SILVER)(hc)
     }
 
   }

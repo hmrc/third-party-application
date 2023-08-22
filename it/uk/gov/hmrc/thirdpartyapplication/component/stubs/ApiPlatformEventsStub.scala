@@ -53,6 +53,14 @@ object ApiPlatformEventsStub extends Stub {
     verifyStubCalledForEvent(applicationEventsURL, "API_UNSUBSCRIBED_V2")
   }
 
+  def verifyGrantLengthChangedEventSent(): Unit = {
+    verifyStubCalledForEvent(applicationEventsURL, "GRANT_LENGTH_CHANGED")
+  }
+
+  def verifyRatelLimitChangedEventSent(): Unit = {
+    verifyStubCalledForEvent(applicationEventsURL, "RATE_LIMIT_CHANGED")
+  }
+
   private def verifyStubCalledForEvent(urlString: String, eventType: String) = {
     stub.mock.verifyThat(postRequestedFor(urlEqualTo(urlString)).withRequestBody(containing(s""""eventType":"$eventType"""")))
   }
@@ -82,5 +90,13 @@ object ApiPlatformEventsStub extends Stub {
 
   def willReceiveApiUnsubscribedEvent() = {
     willReceiveEventType("API_UNSUBSCRIBED_V2")
+  }
+
+  def willReceiveChangeGrantLengthEvent() = {
+    willReceiveEventType("GRANT_LENGTH_CHANGED")
+  }
+
+  def willReceiveChangeRateLimitEvent() = {
+    willReceiveEventType("RATE_LIMIT_CHANGED")
   }
 }

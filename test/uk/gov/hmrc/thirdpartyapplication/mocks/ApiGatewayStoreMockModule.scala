@@ -21,7 +21,7 @@ import scala.concurrent.Future.{failed, successful}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
@@ -66,7 +66,7 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
         when(aMock.updateApplication(*, *)(*)).thenReturn(failed(failsWith))
       }
 
-      def verifyCalledWith(applicationData: ApplicationData, tier: RateLimitTier.Value) =
+      def verifyCalledWith(applicationData: ApplicationData, tier: RateLimitTier) =
         verify.updateApplication(eqTo(applicationData), refEq(tier))(*)
 
       def verifyCalled() =

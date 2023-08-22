@@ -29,13 +29,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, _}
 
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples with CollaboratorTestData {
 
-  "RateLimitTier" should {
-    "have all rate limit tiers" in {
-      import RateLimitTier._
-      RateLimitTier.values shouldBe Set(RHODIUM, PLATINUM, GOLD, SILVER, BRONZE)
-    }
-  }
-
   "Application with Uplift request" should {
     val app     =
       ApplicationData(
