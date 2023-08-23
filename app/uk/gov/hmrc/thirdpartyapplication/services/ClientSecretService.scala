@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future, blocking}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientSecretsHashingConfig}
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
-import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, SimpleTimer}
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, SimpleTimer, TimedValue}
 import uk.gov.hmrc.apiplatform.modules.crypto.services.SecretsHashingService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -65,13 +65,13 @@ class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applica
   }
 
   def timedHashSecret(secretValue: String): String = {
-    val (hashedSecretValue, duration) = timeThis(() => hashSecret(secretValue))
+    val timedValue: TimedValue[String] = timeThis(() => hashSecret(secretValue))
 
     logger.info(
-      s"[ClientSecretService] Hashing Secret with Work Factor of [${workFactor}] took [${duration.toString()}]"
+      s"[ClientSecretService] Hashing Secret with Work Factor of [${workFactor}] took [${timedValue.duration.toString()}]"
     )
 
-    hashedSecretValue
+    timedValue.value
   }
 
   def lastUsedOrdering: (ClientSecretData, ClientSecretData) => Boolean = {

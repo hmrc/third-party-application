@@ -29,7 +29,7 @@ import com.google.inject.Singleton
 import play.api.LoggerLike
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
-import uk.gov.hmrc.apiplatform.modules.common.services.SimpleTimer
+import uk.gov.hmrc.apiplatform.modules.common.services.{SimpleTimer, TimedValue}
 import uk.gov.hmrc.apiplatform.modules.scheduling.ExclusiveScheduledJob
 
 @Singleton
@@ -48,9 +48,9 @@ class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike, val clock: Cloc
 
     val timings = workFactorRangeToTest.map(workFactor => {
 
-      val (hashedSecretValue, duration) = timeThis(() => stringToHash.bcrypt(workFactor))
+      val timedValue: TimedValue[String] = timeThis(() => stringToHash.bcrypt(workFactor))
 
-      s"Hashing with Work Factor [$workFactor] took [${duration.toMillis()}ms]"
+      s"Hashing with Work Factor [$workFactor] took [${timedValue.duration.toMillis()}ms]"
 
     }).mkString("\n")
 

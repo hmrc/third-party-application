@@ -20,31 +20,31 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.GrantLength
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApiGatewayStoreMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.services.commands.ChangeGrantLengthCommandHandler
 
-class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
+class ChangeRateLimitTierCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  val originalGrantLength = GrantLength.SIX_MONTHS.days
-  val app                 = principalApp.copy(grantLength = originalGrantLength)
+  val originalRateLimitTier = RateLimitTier.BRONZE
+  val app                   = principalApp.copy(rateLimitTier = Some(originalRateLimitTier))
 
-  trait Setup extends ApplicationRepositoryMockModule {
+  trait Setup extends ApiGatewayStoreMockModule with ApplicationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val gatekeeperUser         = "gkuser"
-    val replaceWithGrantLength = GrantLength.ONE_YEAR
-    val newApp                 = app.copy(grantLength = replaceWithGrantLength.days)
+    val gatekeeperUser           = "gkuser"
+    val replaceWithRateLimitTier = RateLimitTier.RHODIUM
+    val newApp                   = app.copy(rateLimitTier = Some(replaceWithRateLimitTier))
 
     val timestamp = FixedClock.instant
-    val update    = ApplicationCommands.ChangeGrantLength(gatekeeperUser, now, replaceWithGrantLength)
+    val update    = ApplicationCommands.ChangeRateLimitTier(gatekeeperUser, now, replaceWithRateLimitTier)
 
-    val underTest = new ChangeGrantLengthCommandHandler(ApplicationRepoMock.aMock)
+    val underTest = new ChangeRateLimitTierCommandHandler(ApiGatewayStoreMock.aMock, ApplicationRepoMock.aMock)
 
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
@@ -54,12 +54,12 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
         val event = events.head
 
         inside(event) {
-          case ApplicationEvents.GrantLengthChanged(_, appId, eventDateTime, anActor, anOldGrantLength, aNewGrantLength) =>
+          case ApplicationEvents.RateLimitChanged(_, appId, eventDateTime, anActor, oldRateLimit, newRateLimit) =>
             appId shouldBe applicationId
             anActor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            anOldGrantLength shouldBe originalGrantLength
-            aNewGrantLength shouldBe replaceWithGrantLength.days
+            oldRateLimit shouldBe originalRateLimitTier
+            newRateLimit shouldBe replaceWithRateLimitTier
         }
       }
     }
@@ -67,20 +67,12 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   "process" should {
     "create correct events for a valid request with app" in new Setup {
-      ApplicationRepoMock.UpdateGrantLength.thenReturnWhen(app.id, replaceWithGrantLength.days)(newApp)
+      ApplicationRepoMock.UpdateApplicationRateLimit.thenReturn(app.id, replaceWithRateLimitTier)(newApp)
+      ApiGatewayStoreMock.UpdateApplication.thenReturnHasSucceeded()
 
       checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
         underTest.process(app, update)
       }
     }
-
-    "return an error if the application already has the specified grant length" in new Setup {
-      val updateWithSameGrantLength = update.copy(grantLengthInDays = GrantLength.SIX_MONTHS)
-
-      checkFailsWith("Grant length is already 180 days") {
-        underTest.process(app, updateWithSameGrantLength)
-      }
-    }
-
   }
 }

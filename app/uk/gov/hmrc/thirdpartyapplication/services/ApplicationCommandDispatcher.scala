@@ -29,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, CommandHandler, _}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, ChangeGrantLengthCommandHandler, CommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 
 @Singleton
@@ -43,6 +43,7 @@ class ApplicationCommandDispatcher @Inject() (
     addRedirectUriCommandHandle: AddRedirectUriCommandHandler,
     removeClientSecretCmdHdlr: RemoveClientSecretCommandHandler,
     changeGrantLengthCmdHdlr: ChangeGrantLengthCommandHandler,
+    changeRateLimitTierCmdHdlr: ChangeRateLimitTierCommandHandler,
     changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
     removeCollaboratorCmdHdlr: RemoveCollaboratorCommandHandler,
     changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
@@ -94,6 +95,7 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: AddRedirectUri                                        => addRedirectUriCommandHandle.process(app, cmd)
       case cmd: RemoveClientSecret                                    => removeClientSecretCmdHdlr.process(app, cmd)
       case cmd: ChangeGrantLength                                     => changeGrantLengthCmdHdlr.process(app, cmd)
+      case cmd: ChangeRateLimitTier                                   => changeRateLimitTierCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)

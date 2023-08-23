@@ -19,13 +19,12 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
-import scala.util.{Failure, Success, Try}
 
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, RateLimitTier}
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
@@ -129,15 +128,18 @@ class GatekeeperController @Inject() (
   }
 
   // TODO - this should use a request with payload validation in the JSformatter
+  @deprecated("use new application command ChangeRateLimitTier", "0.679.0")
   def updateRateLimitTier(applicationId: ApplicationId) = requiresAuthentication().async(parse.json) { implicit request =>
     withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
-      Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
-        case Success(rateLimitTier) =>
+      RateLimitTier.apply(updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
+        case Some(rateLimitTier) =>
           applicationService.updateRateLimitTier(applicationId, rateLimitTier) map (_ => NoContent) recover recovery
-        case Failure(_)             =>
-          successful(UnprocessableEntity(
-            JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")
-          ))
+        case _                   =>
+          successful(
+            UnprocessableEntity(
+              JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")
+            )
+          )
       }
     }
       .recover(recovery)
