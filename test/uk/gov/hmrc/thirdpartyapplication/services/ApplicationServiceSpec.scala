@@ -57,6 +57,9 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.NotificationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.TermsOfUseInvitationRepositoryMockModule
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -87,6 +90,9 @@ class ApplicationServiceSpec
       with UpliftNamingServiceMockModule
       with StateHistoryRepositoryMockModule
       with SubscriptionRepositoryMockModule
+      with NotificationRepositoryMockModule
+      with ResponsibleIndividualVerificationRepositoryMockModule
+      with TermsOfUseInvitationRepositoryMockModule
       with ApplicationCommandDispatcherMockModule {
 
     val applicationId: ApplicationId     = ApplicationId.random
@@ -127,6 +133,9 @@ class ApplicationServiceSpec
       ApplicationRepoMock.aMock,
       StateHistoryRepoMock.aMock,
       SubscriptionRepoMock.aMock,
+      NotificationRepositoryMock.aMock,
+      ResponsibleIndividualVerificationRepositoryMock.aMock,
+      TermsOfUseInvitationRepositoryMock.aMock,
       AuditServiceMock.aMock,
       mockApiPlatformEventService,
       mockEmailConnector,
@@ -903,6 +912,9 @@ class ApplicationServiceSpec
       SubscriptionRepoMock.Remove.thenReturnHasSucceeded()
 
       StateHistoryRepoMock.Delete.thenReturnHasSucceeded()
+      NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
+      TermsOfUseInvitationRepositoryMock.Delete.thenReturn()
 
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
 

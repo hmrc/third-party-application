@@ -120,4 +120,12 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
       .toFuture()
       .map(_ => HasSucceeded)
   }
+
+  def delete(id: ApplicationId): Future[HasSucceeded] = {
+    collection.deleteOne(
+      equal("applicationId", Codecs.toBson(id))
+    )
+      .toFuture()
+      .map(_ => HasSucceeded)
+  }
 }

@@ -57,7 +57,8 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
       NotificationRepositoryMock.aMock,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       ThirdPartyDelegatedAuthorityServiceMock.aMock,
-      StateHistoryRepoMock.aMock
+      StateHistoryRepoMock.aMock,
+      TermsOfUseInvitationRepositoryMock.aMock
     )
 
     def checkSuccessResult()(result: CommandHandler.Success) = {
@@ -107,6 +108,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
       ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.RevokeApplicationAuthorities.succeeds()
       NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
+      TermsOfUseInvitationRepositoryMock.Delete.thenReturn()
 
       val result = await(underTest.process(app, cmd).value).value
 

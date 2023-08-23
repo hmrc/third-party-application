@@ -34,7 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 
 @Singleton
@@ -45,7 +45,9 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
     val notificationRepository: NotificationRepository,
     val responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
-    val stateHistoryRepository: StateHistoryRepository
+    val stateHistoryRepository: StateHistoryRepository,
+    val termsOfUseInvitationRepository: TermsOfUseInvitationRepository
+
   )(implicit val ec: ExecutionContext
   ) extends DeleteApplicationCommandHandler {
 

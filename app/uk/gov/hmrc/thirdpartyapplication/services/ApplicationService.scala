@@ -35,6 +35,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, RateLimitTier}
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
@@ -47,7 +48,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, SubscriptionRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -59,6 +60,9 @@ class ApplicationService @Inject() (
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     subscriptionRepository: SubscriptionRepository,
+    notificationRepository: NotificationRepository,
+    responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
+    termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     auditService: AuditService,
     apiPlatformEventService: ApiPlatformEventService,
     emailConnector: EmailConnector,
@@ -191,6 +195,9 @@ class ApplicationService @Inject() (
       _   <- applicationRepository.hardDelete(applicationId)
       _   <- submissionsService.deleteAllAnswersForApplication(app.id)
       _   <- stateHistoryRepository.deleteByApplicationId(applicationId)
+      _   <- notificationRepository.deleteAllByApplicationId(applicationId)
+      _   <- responsibleIndividualVerificationRepository.deleteAllByApplicationId(applicationId)
+      _   <- termsOfUseInvitationRepository.delete(applicationId)
       _    = auditFunction(app)
       _    = recoverAll(sendEmailsIfRequestedByEmailAddressPresent(app))
     } yield Deleted).recover {

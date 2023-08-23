@@ -60,6 +60,10 @@ trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with Argumen
       def verifyCalledWith(applicationId: ApplicationId)      = verify(aMock).updateReminderSent(eqTo(applicationId))
       def verifyNeverCalled()                                 = verify(aMock, never).updateReminderSent(*[ApplicationId])
     }
+
+    object Delete {
+      def thenReturn() = when(aMock.delete(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
+    }
   }
 
   object TermsOfUseInvitationRepositoryMock extends BaseTermsOfUseInvitationRepositoryMock {

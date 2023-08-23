@@ -185,4 +185,29 @@ class TermsOfUseInvitationRepositoryISpec
       fetch mustBe Some(TermsOfUseInvitation(applicationId, now, now, now, Some(now), REMINDER_EMAIL_SENT))
     }
   }
+
+  "delete" should {
+    "delete an entry" in {
+      val applicationId = ApplicationId.random
+      val now           = Instant.now(clock)
+      val touInvite     = TermsOfUseInvitation(applicationId, now, now, now, None, EMAIL_SENT)
+
+      val result = await(termsOfUseInvitationRepository.create(touInvite))
+      result mustBe Some(touInvite)
+
+      val delete = await(termsOfUseInvitationRepository.delete(applicationId))
+      delete mustBe HasSucceeded
+
+      await(termsOfUseInvitationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 0
+    }
+
+    "not fail if no record found" in {
+      val applicationId = ApplicationId.random
+
+      val delete = await(termsOfUseInvitationRepository.delete(applicationId))
+      delete mustBe HasSucceeded
+
+      await(termsOfUseInvitationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 0
+    }    
+  }
 }

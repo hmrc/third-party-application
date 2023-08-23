@@ -32,6 +32,7 @@ trait DeleteApplicationCommandHandler extends CommandHandler {
   val responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository
   val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService
   val stateHistoryRepository: StateHistoryRepository
+  val termsOfUseInvitationRepository: TermsOfUseInvitationRepository
 
   def deleteApplication(
       app: ApplicationData,
@@ -44,6 +45,7 @@ trait DeleteApplicationCommandHandler extends CommandHandler {
       _ <- E.liftF(responsibleIndividualVerificationRepository.deleteAllByApplicationId(app.id))
       _ <- E.liftF(apiGatewayStore.deleteApplication(app.wso2ApplicationName))
       _ <- E.liftF(notificationRepository.deleteAllByApplicationId(app.id))
+      _ <- E.liftF(termsOfUseInvitationRepository.delete(app.id))
     } yield HasSucceeded
   }
 }
