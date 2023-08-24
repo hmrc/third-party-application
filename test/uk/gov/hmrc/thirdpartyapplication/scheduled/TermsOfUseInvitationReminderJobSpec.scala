@@ -132,7 +132,7 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
       TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyCalledWith(applicationId3)
     }
 
-    "don't send email or update state of database record for single record with submission with 2 instances" in new Setup {
+    "not send email or update state of database record for single record with submission with 2 instances" in new Setup {
       val submissionWith2Instances = declinedSubmission.copy(applicationId = applicationId1)
       TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.thenReturn(List(touInvite1))
       SubmissionsServiceMock.FetchLatest.thenReturn(submissionWith2Instances)
@@ -143,5 +143,33 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
       EmailConnectorMock.SendNewTermsOfUseInvitation.verifyNeverCalled()
       TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyNeverCalled()
     }
+
+    "not send email if no application record" in new Setup {
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.thenReturn(List(touInvite1))
+      ApplicationRepoMock.Fetch.thenReturnNone()
+      SubmissionsServiceMock.FetchLatest.thenReturnNone()
+
+      await(job.runJob)
+
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
+      EmailConnectorMock.SendNewTermsOfUseInvitation.verifyNeverCalled()
+      TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyNeverCalled()
+    }    
+
+    "not send email if application record has state of DELETED" in new Setup with ApplicationTestData {
+      val deletedAppId1 = ApplicationId.random
+      val deletedApp    = anApplicationData(applicationId = deletedAppId1, state = deletedState("requestedBy@example.com"))
+      val touInviteDel  = TermsOfUseInvitation(deletedAppId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
+
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.thenReturn(List(touInviteDel))
+      ApplicationRepoMock.Fetch.thenReturn(deletedApp)
+      SubmissionsServiceMock.FetchLatest.thenReturnNone()
+
+      await(job.runJob)
+
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
+      EmailConnectorMock.SendNewTermsOfUseInvitation.verifyNeverCalled()
+      TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyNeverCalled()
+    }    
   }
 }

@@ -88,7 +88,10 @@ class TermsOfUseInvitationReminderJob @Inject() (
     } yield RunningOfJobSuccessful
 
     result.recoverWith {
-      case e: Throwable => Future.failed(RunningOfJobFailed(name, e))
+      case e: Throwable => {
+        logger.error(s"Scheduled job $name failed with an exception", e)
+        Future.failed(RunningOfJobFailed(name, e))
+      }
     }
   }
 
@@ -100,6 +103,7 @@ class TermsOfUseInvitationReminderJob @Inject() (
     (
       for {
         app       <- E.fromOptionF(applicationRepository.fetch(invite.applicationId), s"Couldn't find application with id=${invite.applicationId}")
+        _         <- E.cond(!app.state.isDeleted, (), s"The application ${invite.applicationId} has been deleted")
         recipients = getRecipients(app)
         sent      <- E.liftF(emailConnector.sendNewTermsOfUseInvitation(invite.dueBy, app.name, recipients))
         _         <- E.liftF(termsOfUseInvitationRepository.updateReminderSent(invite.applicationId))
