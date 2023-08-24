@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit._
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
@@ -30,10 +29,10 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
+import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil with FixedClock {
@@ -46,30 +45,30 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
     val mockApplicationRepo   = ApplicationRepoMock.aMock
     val mockSubmissionService = SubmissionsServiceMock.aMock
 
-    val nowInstant     = Instant.now(clock).truncatedTo(MILLIS)
-    val dueBy          = nowInstant.plus(30, ChronoUnit.DAYS)
+    val nowInstant = Instant.now(clock).truncatedTo(MILLIS)
+    val dueBy      = nowInstant.plus(30, ChronoUnit.DAYS)
 
     val applicationId1 = ApplicationId.random
     val applicationId2 = ApplicationId.random
     val applicationId3 = ApplicationId.random
 
-    val application1   = anApplicationData(applicationId1)
-    val recipients1    = application1.admins.map(_.emailAddress)
-    val application2   = anApplicationData(applicationId2)
-    val recipients2    = application2.admins.map(_.emailAddress)
-    val application3   = anApplicationData(applicationId3)
-    val recipients3    = application3.admins.map(_.emailAddress)
+    val application1 = anApplicationData(applicationId1)
+    val recipients1  = application1.admins.map(_.emailAddress)
+    val application2 = anApplicationData(applicationId2)
+    val recipients2  = application2.admins.map(_.emailAddress)
+    val application3 = anApplicationData(applicationId3)
+    val recipients3  = application3.admins.map(_.emailAddress)
 
-    val startDate1     = nowInstant.minus(100, ChronoUnit.DAYS)
-    val dueBy1         = startDate1.plus(60, ChronoUnit.DAYS)
-    val startDate2     = nowInstant.minus(59, ChronoUnit.DAYS)
-    val dueBy2         = startDate2.plus(60, ChronoUnit.DAYS)
-    val startDate3     = nowInstant.minus(32, ChronoUnit.DAYS)
-    val dueBy3         = startDate3.plus(60, ChronoUnit.DAYS)
+    val startDate1 = nowInstant.minus(100, ChronoUnit.DAYS)
+    val dueBy1     = startDate1.plus(60, ChronoUnit.DAYS)
+    val startDate2 = nowInstant.minus(59, ChronoUnit.DAYS)
+    val dueBy2     = startDate2.plus(60, ChronoUnit.DAYS)
+    val startDate3 = nowInstant.minus(32, ChronoUnit.DAYS)
+    val dueBy3     = startDate3.plus(60, ChronoUnit.DAYS)
 
-    val touInvite1     = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
-    val touInvite2     = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, EMAIL_SENT)
-    val touInvite3     = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, EMAIL_SENT)
+    val touInvite1 = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
+    val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, EMAIL_SENT)
+    val touInvite3 = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, EMAIL_SENT)
 
     val submission1 = aSubmission.copy(applicationId = applicationId1)
     val submission2 = aSubmission.copy(applicationId = applicationId2)
@@ -154,7 +153,7 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
       TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
       EmailConnectorMock.SendNewTermsOfUseInvitation.verifyNeverCalled()
       TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyNeverCalled()
-    }    
+    }
 
     "not send email if application record has state of DELETED" in new Setup with ApplicationTestData {
       val deletedAppId1 = ApplicationId.random
@@ -170,6 +169,6 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
       TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
       EmailConnectorMock.SendNewTermsOfUseInvitation.verifyNeverCalled()
       TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyNeverCalled()
-    }    
+    }
   }
 }

@@ -44,7 +44,6 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
     val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
     val stateHistoryRepository: StateHistoryRepository,
     val termsOfUseInvitationRepository: TermsOfUseInvitationRepository
-
   )(implicit val ec: ExecutionContext
   ) extends DeleteApplicationCommandHandler {
 

@@ -23,9 +23,9 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.TermsOfUseInvitationState
 
 trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -56,9 +56,9 @@ trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with Argumen
     }
 
     object UpdateReminderSent {
-      def thenReturn()                                        = when(aMock.updateReminderSent(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
-      def verifyCalledWith(applicationId: ApplicationId)      = verify(aMock).updateReminderSent(eqTo(applicationId))
-      def verifyNeverCalled()                                 = verify(aMock, never).updateReminderSent(*[ApplicationId])
+      def thenReturn()                                   = when(aMock.updateReminderSent(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
+      def verifyCalledWith(applicationId: ApplicationId) = verify(aMock).updateReminderSent(eqTo(applicationId))
+      def verifyNeverCalled()                            = verify(aMock, never).updateReminderSent(*[ApplicationId])
     }
 
     object Delete {

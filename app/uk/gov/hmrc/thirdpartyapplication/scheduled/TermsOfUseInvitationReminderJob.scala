@@ -16,11 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.Clock
-import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit._
-
+import java.time.{Clock, Instant}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,16 +29,14 @@ import com.google.inject.Singleton
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationState}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, TermsOfUseInvitationRepository}
 
 @Singleton
@@ -76,7 +72,7 @@ class TermsOfUseInvitationReminderJob @Inject() (
           subs.exists(sub => inv.applicationId == sub.applicationId && sub.instances.size == 1)
       )
     }
-    val reminderDueTime: Instant = Instant.now(clock).truncatedTo(MILLIS).plus(termsOfUseInvitationReminderInterval.toDays.toInt, ChronoUnit.DAYS)
+    val reminderDueTime: Instant                                                                                 = Instant.now(clock).truncatedTo(MILLIS).plus(termsOfUseInvitationReminderInterval.toDays.toInt, ChronoUnit.DAYS)
     logger.info(s"Send terms of use reminders for invitations having status of EMAIL_SENT with dueBy earlier than $reminderDueTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {

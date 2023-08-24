@@ -208,6 +208,6 @@ class TermsOfUseInvitationRepositoryISpec
       delete mustBe HasSucceeded
 
       await(termsOfUseInvitationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 0
-    }    
+    }
   }
 }
