@@ -624,7 +624,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           "createdOn",
           "lastAccess",
           "rateLimitTier",
-          "environment"
+          "environment",
+          "allowAutoDelete"
         )
       ))
 

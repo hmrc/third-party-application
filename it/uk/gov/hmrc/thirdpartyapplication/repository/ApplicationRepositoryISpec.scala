@@ -1458,6 +1458,7 @@ class ApplicationRepositoryISpec
       result.matching.head.total mustBe 1
       result.applications.size mustBe 1
       result.applications.head.id mustBe applicationBlockedFromDeletion.id
+      result.applications.head.allowAutoDelete mustBe false
     }
 
     "return application allowed to be deleted" in {
@@ -1485,6 +1486,7 @@ class ApplicationRepositoryISpec
       result.matching.head.total mustBe 1
       result.applications.size mustBe 1
       result.applications.head.id mustBe applicationAllowedToBeDeleted.id
+      result.applications.head.allowAutoDelete mustBe true
     }
 
     "return applications based on application state filter Active" in {
