@@ -48,6 +48,7 @@ class Scheduler @Inject() (
     responsibleIndividualVerificationRemovalJob: ResponsibleIndividualVerificationRemovalJob,
     responsibleIndividualVerificationSetDefaultTypeJob: ResponsibleIndividualVerificationSetDefaultTypeJob,
     responsibleIndividualUpdateVerificationRemovalJob: ResponsibleIndividualUpdateVerificationRemovalJob,
+    termsOfUseInvitationReminderJob: TermsOfUseInvitationReminderJob,
     override val applicationLifecycle: ApplicationLifecycle,
     override val application: Application
   )(implicit val ec: ExecutionContext
@@ -62,7 +63,8 @@ class Scheduler @Inject() (
       responsibleIndividualVerificationReminderJob,
       responsibleIndividualVerificationRemovalJob,
       responsibleIndividualUpdateVerificationRemovalJob,
-      responsibleIndividualVerificationSetDefaultTypeJob
+      responsibleIndividualVerificationSetDefaultTypeJob,
+      termsOfUseInvitationReminderJob
     )
       .filter(_.isEnabled) ++ Seq(bcryptPerformanceMeasureJob)
   }

@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
+import java.time.Instant
 import scala.concurrent.Future.successful
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
 
@@ -44,8 +46,23 @@ trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with Argumen
       def thenReturn(invitations: List[TermsOfUseInvitation]) = when(aMock.fetchAll()).thenAnswer(successful(invitations))
     }
 
+    object FetchByStatusBeforeDueBy {
+      def thenReturn(invitations: List[TermsOfUseInvitation])                 = when(aMock.fetchByStatusBeforeDueBy(*, *)).thenAnswer(successful(invitations))
+      def verifyCalledWith(status: TermsOfUseInvitationState, dueBy: Instant) = verify(aMock).fetchByStatusBeforeDueBy(eqTo(status), eqTo(dueBy))
+    }
+
     object UpdateState {
       def thenReturn() = when(aMock.updateState(*[ApplicationId], *)).thenAnswer(successful(HasSucceeded))
+    }
+
+    object UpdateReminderSent {
+      def thenReturn()                                   = when(aMock.updateReminderSent(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
+      def verifyCalledWith(applicationId: ApplicationId) = verify(aMock).updateReminderSent(eqTo(applicationId))
+      def verifyNeverCalled()                            = verify(aMock, never).updateReminderSent(*[ApplicationId])
+    }
+
+    object Delete {
+      def thenReturn() = when(aMock.delete(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
     }
   }
 

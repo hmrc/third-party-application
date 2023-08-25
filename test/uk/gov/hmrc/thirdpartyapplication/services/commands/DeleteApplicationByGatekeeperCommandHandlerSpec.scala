@@ -47,7 +47,8 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
       NotificationRepositoryMock.aMock,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       ThirdPartyDelegatedAuthorityServiceMock.aMock,
-      StateHistoryRepoMock.aMock
+      StateHistoryRepoMock.aMock,
+      TermsOfUseInvitationRepositoryMock.aMock
     )
 
     def checkSuccessResult()(result: CommandHandler.Success) = {
@@ -99,6 +100,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
       ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.RevokeApplicationAuthorities.succeeds()
       NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
+      TermsOfUseInvitationRepositoryMock.Delete.thenReturn()
 
       val result = await(underTest.process(app, cmd).value).value
 

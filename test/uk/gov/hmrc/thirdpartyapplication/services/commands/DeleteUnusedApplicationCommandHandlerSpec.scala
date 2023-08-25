@@ -51,7 +51,8 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
       NotificationRepositoryMock.aMock,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       ThirdPartyDelegatedAuthorityServiceMock.aMock,
-      StateHistoryRepoMock.aMock
+      StateHistoryRepoMock.aMock,
+      TermsOfUseInvitationRepositoryMock.aMock
     )
 
     def checkSuccessResult()(result: CommandHandler.Success) = {
@@ -101,6 +102,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
       ThirdPartyDelegatedAuthorityServiceMock.RevokeApplicationAuthorities.succeeds()
       NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
       StateHistoryRepoMock.Insert.succeeds()
+      TermsOfUseInvitationRepositoryMock.Delete.thenReturn()
 
       val result = await(underTest.process(app, cmd).value).value
 

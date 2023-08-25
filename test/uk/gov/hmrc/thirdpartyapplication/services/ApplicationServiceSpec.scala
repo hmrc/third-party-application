@@ -50,7 +50,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, SubscriptionRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -87,6 +87,9 @@ class ApplicationServiceSpec
       with UpliftNamingServiceMockModule
       with StateHistoryRepositoryMockModule
       with SubscriptionRepositoryMockModule
+      with NotificationRepositoryMockModule
+      with ResponsibleIndividualVerificationRepositoryMockModule
+      with TermsOfUseInvitationRepositoryMockModule
       with ApplicationCommandDispatcherMockModule {
 
     val applicationId: ApplicationId     = ApplicationId.random
@@ -127,6 +130,9 @@ class ApplicationServiceSpec
       ApplicationRepoMock.aMock,
       StateHistoryRepoMock.aMock,
       SubscriptionRepoMock.aMock,
+      NotificationRepositoryMock.aMock,
+      ResponsibleIndividualVerificationRepositoryMock.aMock,
+      TermsOfUseInvitationRepositoryMock.aMock,
       AuditServiceMock.aMock,
       mockApiPlatformEventService,
       mockEmailConnector,
@@ -903,6 +909,9 @@ class ApplicationServiceSpec
       SubscriptionRepoMock.Remove.thenReturnHasSucceeded()
 
       StateHistoryRepoMock.Delete.thenReturnHasSucceeded()
+      NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
+      TermsOfUseInvitationRepositoryMock.Delete.thenReturn()
 
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
 

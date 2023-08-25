@@ -22,7 +22,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
-import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Aggregates._
+import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Updates}
 
@@ -32,7 +33,7 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.TermsOfUseInvitationState
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{TermsOfUseInvitationState, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
 @Singleton
@@ -52,6 +53,12 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
           ascending("status"),
           IndexOptions()
             .name("statusIndex")
+            .background(true)
+        ),
+        IndexModel(
+          ascending("dueBy"),
+          IndexOptions()
+            .name("dueByIndex")
             .background(true)
         )
       ),
@@ -81,6 +88,15 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
       .map(_.toList)
   }
 
+  def fetchByStatusBeforeDueBy(state: TermsOfUseInvitationState, dueByBefore: Instant): Future[Seq[TermsOfUseInvitation]] = {
+    collection.aggregate(
+      Seq(
+        filter(equal("status", Codecs.toBson(state))),
+        filter(lte("dueBy", dueByBefore))
+      )
+    ).toFuture()
+  }
+
   def updateState(applicationId: ApplicationId, newState: TermsOfUseInvitationState): Future[HasSucceeded] = {
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(
@@ -88,6 +104,26 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
       Updates.set("lastUpdated", Instant.now(clock).truncatedTo(MILLIS))
     )
     collection.updateOne(filter, update)
+      .toFuture()
+      .map(_ => HasSucceeded)
+  }
+
+  def updateReminderSent(applicationId: ApplicationId): Future[HasSucceeded] = {
+    val filter = equal("applicationId", Codecs.toBson(applicationId))
+    val update = Updates.combine(
+      Updates.set("status", Codecs.toBson(REMINDER_EMAIL_SENT)),
+      Updates.set("reminderSent", Instant.now(clock).truncatedTo(MILLIS)),
+      Updates.set("lastUpdated", Instant.now(clock).truncatedTo(MILLIS))
+    )
+    collection.updateOne(filter, update)
+      .toFuture()
+      .map(_ => HasSucceeded)
+  }
+
+  def delete(id: ApplicationId): Future[HasSucceeded] = {
+    collection.deleteOne(
+      equal("applicationId", Codecs.toBson(id))
+    )
       .toFuture()
       .map(_ => HasSucceeded)
   }
