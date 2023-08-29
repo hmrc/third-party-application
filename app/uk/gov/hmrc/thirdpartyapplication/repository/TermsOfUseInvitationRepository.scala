@@ -97,6 +97,16 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
     ).toFuture()
   }
 
+  def fetchByStatusesBeforeDueBy(dueByBefore: Instant, states: TermsOfUseInvitationState*): Future[Seq[TermsOfUseInvitation]] = {
+    val bsonStates = states.map(s => Codecs.toBson(s))
+    collection.aggregate(
+      Seq(
+        filter(in("status", bsonStates: _*)),
+        filter(lte("dueBy", dueByBefore))
+      )
+    ).toFuture()
+  }
+
   def updateState(applicationId: ApplicationId, newState: TermsOfUseInvitationState): Future[HasSucceeded] = {
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(

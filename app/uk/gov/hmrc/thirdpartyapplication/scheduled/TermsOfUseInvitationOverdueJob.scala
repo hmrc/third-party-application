@@ -59,7 +59,7 @@ class TermsOfUseInvitationOverdueJob @Inject() (
     logger.info(s"Set terms of use overdue for invitations having status of EMAIL_SENT or REMINDER_EMAIL_SENT with dueBy earlier than $overdueTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
-      invitations <- termsOfUseInvitationRepository.fetchByStatusBeforeDueBy(TermsOfUseInvitationState.EMAIL_SENT, overdueTime)
+      invitations <- termsOfUseInvitationRepository.fetchByStatusesBeforeDueBy(overdueTime, TermsOfUseInvitationState.EMAIL_SENT, TermsOfUseInvitationState.REMINDER_EMAIL_SENT)
       _            = logger.info(s"Found ${invitations.size} invitations")
       _           <- Future.sequence(invitations.map(setInvitationOverdue(_)))
     } yield RunningOfJobSuccessful
