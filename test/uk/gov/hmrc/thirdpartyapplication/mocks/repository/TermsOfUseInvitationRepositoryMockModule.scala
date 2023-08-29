@@ -62,7 +62,7 @@ trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with Argumen
     }
 
     object UpdateResetBackToEmailSent {
-      def thenReturn()                                   = when(aMock.updateResetBackToEmailSent(*[ApplicationId], *)).thenAnswer(successful(HasSucceeded))
+      def thenReturn() = when(aMock.updateResetBackToEmailSent(*[ApplicationId], *)).thenAnswer(successful(HasSucceeded))
     }
 
     object Delete {

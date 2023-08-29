@@ -46,6 +46,7 @@ class ConfigurationModule extends Module {
       bind[ResponsibleIndividualUpdateVerificationRemovalJobConfig].toProvider[ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider],
       bind[ResponsibleIndividualVerificationSetDefaultTypeJobConfig].toProvider[ResponsibleIndividualVerificationSetDefaultTypeJobConfigProvider],
       bind[TermsOfUseInvitationReminderJobConfig].toProvider[TermsOfUseInvitationReminderJobConfigProvider],
+      bind[TermsOfUseInvitationOverdueJobConfig].toProvider[TermsOfUseInvitationOverdueJobConfigProvider],
       bind[ApiSubscriptionFieldsConnector.Config].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
       bind[AuthControlConfig].toProvider[AuthControlConfigProvider],
@@ -192,6 +193,19 @@ class TermsOfUseInvitationReminderJobConfigProvider @Inject() (val configuration
       .getOrElse(Duration(30, DAYS)) // scalastyle:off magic.number
 
     TermsOfUseInvitationReminderJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, reminderInterval)
+  }
+}
+
+@Singleton
+class TermsOfUseInvitationOverdueJobConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[TermsOfUseInvitationOverdueJobConfig] {
+
+  override def get() = {
+    val jobConfig = configuration.underlying.as[Option[JobConfig]]("termsOfUseInvitationOverdueJob")
+      .getOrElse(JobConfig(FiniteDuration(8, MINUTES), FiniteDuration(8, HOURS), enabled = true)) // scalastyle:off magic.number
+
+    TermsOfUseInvitationOverdueJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
 }
 

@@ -185,10 +185,10 @@ class GrantApprovalsService @Inject() (
       case GrantedWithWarnings(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2_WITH_WARNINGS)
       case Warnings(_, _)                  => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
       case Failed(_, _)                    => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
-      case Answering(_, _)                 => { 
-                                                val newDueByDate = Instant.now().truncatedTo(MILLIS).plus(30, ChronoUnit.DAYS)
-                                                termsOfUseInvitationRepository.updateResetBackToEmailSent(applicationId, newDueByDate)
-                                              }
+      case Answering(_, _)                 => {
+        val newDueByDate = Instant.now().truncatedTo(MILLIS).plus(30, ChronoUnit.DAYS)
+        termsOfUseInvitationRepository.updateResetBackToEmailSent(applicationId, newDueByDate)
+      }
       case _                               => successful(HasSucceeded)
     }
   }
