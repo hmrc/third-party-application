@@ -120,6 +120,18 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
       .map(_ => HasSucceeded)
   }
 
+  def updateResetBackToEmailSent(applicationId: ApplicationId, newDueBy: Instant): Future[HasSucceeded] = {
+    val filter = equal("applicationId", Codecs.toBson(applicationId))
+    val update = Updates.combine(
+      Updates.set("status", Codecs.toBson(EMAIL_SENT)),
+      Updates.set("dueBy", newDueBy),
+      Updates.set("lastUpdated", Instant.now(clock).truncatedTo(MILLIS))
+    )
+    collection.updateOne(filter, update)
+      .toFuture()
+      .map(_ => HasSucceeded)
+  }
+
   def delete(id: ApplicationId): Future[HasSucceeded] = {
     collection.deleteOne(
       equal("applicationId", Codecs.toBson(id))

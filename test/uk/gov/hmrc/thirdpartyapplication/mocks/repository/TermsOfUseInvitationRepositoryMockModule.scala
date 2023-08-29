@@ -61,6 +61,10 @@ trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with Argumen
       def verifyNeverCalled()                            = verify(aMock, never).updateReminderSent(*[ApplicationId])
     }
 
+    object UpdateResetBackToEmailSent {
+      def thenReturn()                                   = when(aMock.updateResetBackToEmailSent(*[ApplicationId], *)).thenAnswer(successful(HasSucceeded))
+    }
+
     object Delete {
       def thenReturn() = when(aMock.delete(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
     }

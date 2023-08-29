@@ -186,6 +186,22 @@ class TermsOfUseInvitationRepositoryISpec
     }
   }
 
+  "updateResetBackToEmailSent" should {
+    "update the status and due by date of an existing entry" in {
+      val applicationId = ApplicationId.random
+      val now           = Instant.now(clock)
+      val newDueByDate  = now.plus(30, ChronoUnit.DAYS)
+      val touInvite     = TermsOfUseInvitation(applicationId, now, now, now, None, FAILED)
+
+      await(termsOfUseInvitationRepository.create(touInvite))
+      val result = await(termsOfUseInvitationRepository.updateResetBackToEmailSent(applicationId, newDueByDate))
+      result mustBe HasSucceeded
+
+      val fetch = await(termsOfUseInvitationRepository.fetch(applicationId))
+      fetch mustBe Some(TermsOfUseInvitation(applicationId, now, now, newDueByDate, None, EMAIL_SENT))
+    }
+  }
+
   "delete" should {
     "delete an entry" in {
       val applicationId = ApplicationId.random

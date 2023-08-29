@@ -17,7 +17,9 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import java.time.format.DateTimeFormatter
-import java.time.{Clock, LocalDateTime}
+import java.time.temporal.ChronoUnit
+import java.time.temporal.ChronoUnit._
+import java.time.{Clock, Instant, LocalDateTime}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -183,7 +185,10 @@ class GrantApprovalsService @Inject() (
       case GrantedWithWarnings(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2_WITH_WARNINGS)
       case Warnings(_, _)                  => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
       case Failed(_, _)                    => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
-      case Answering(_, _)                 => termsOfUseInvitationRepository.updateState(applicationId, EMAIL_SENT)
+      case Answering(_, _)                 => { 
+                                                val newDueByDate = Instant.now().truncatedTo(MILLIS).plus(30, ChronoUnit.DAYS)
+                                                termsOfUseInvitationRepository.updateResetBackToEmailSent(applicationId, newDueByDate)
+                                              }
       case _                               => successful(HasSucceeded)
     }
   }
