@@ -70,7 +70,7 @@ class UpliftVerificationExpiryJob @Inject() (
 
     val result: Future[RunningOfJobSuccessful.type] = for {
       expiredApps <- applicationRepository.fetchAllByStatusDetails(state = State.PENDING_REQUESTER_VERIFICATION, updatedBefore = expiredTime)
-      _            = logger.info(s"Found ${expiredApps.size} applications")
+      _            = logger.info(s"Scheduled job $name found ${expiredApps.size} applications")
       _           <- Future.sequence(expiredApps.map(transitionAppBackToTesting))
     } yield RunningOfJobSuccessful
 

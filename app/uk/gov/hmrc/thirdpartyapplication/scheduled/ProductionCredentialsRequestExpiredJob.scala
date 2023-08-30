@@ -59,7 +59,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
 
     val result: Future[RunningOfJobSuccessful.type] = for {
       deleteApps <- applicationRepository.fetchByStatusDetailsAndEnvironment(state = State.TESTING, updatedBefore = deleteTime, environment = Environment.PRODUCTION)
-      _           = logger.info(s"Found ${deleteApps.size} applications")
+      _           = logger.info(s"Scheduled job $name found ${deleteApps.size} applications")
       _          <- Future.sequence(deleteApps.map(deleteExpiredApplication(_)))
     } yield RunningOfJobSuccessful
 
