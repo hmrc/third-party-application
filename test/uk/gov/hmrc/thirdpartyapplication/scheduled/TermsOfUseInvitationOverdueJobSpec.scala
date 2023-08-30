@@ -26,10 +26,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
@@ -37,13 +34,11 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpe
 
 class TermsOfUseInvitationOverdueJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil with FixedClock {
 
-  trait Setup extends EmailConnectorMockModule with ApplicationRepositoryMockModule with SubmissionsServiceMockModule
-      with TermsOfUseInvitationRepositoryMockModule with ApplicationTestData with SubmissionsTestData {
+  trait Setup extends ApplicationRepositoryMockModule with TermsOfUseInvitationRepositoryMockModule with ApplicationTestData {
 
-    val mockLockKeeper        = mock[TermsOfUseInvitationOverdueJobLockService]
-    val mockTermsOfUseRepo    = TermsOfUseInvitationRepositoryMock.aMock
-    val mockApplicationRepo   = ApplicationRepoMock.aMock
-    val mockSubmissionService = SubmissionsServiceMock.aMock
+    val mockLockKeeper      = mock[TermsOfUseInvitationOverdueJobLockService]
+    val mockTermsOfUseRepo  = TermsOfUseInvitationRepositoryMock.aMock
+    val mockApplicationRepo = ApplicationRepoMock.aMock
 
     val nowInstant = Instant.now(clock).truncatedTo(MILLIS)
 
@@ -69,13 +64,10 @@ class TermsOfUseInvitationOverdueJobSpec extends AsyncHmrcSpec with BeforeAndAft
     val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, EMAIL_SENT)
     val touInvite3 = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, REMINDER_EMAIL_SENT)
 
-    val submission1 = aSubmission.copy(applicationId = applicationId1)
-    val submission2 = aSubmission.copy(applicationId = applicationId2)
-
     val initialDelay = FiniteDuration(6, MINUTES)
     val interval     = FiniteDuration(8, HOURS)
     val jobConfig    = TermsOfUseInvitationOverdueJobConfig(initialDelay, interval, true)
-    val job          = new TermsOfUseInvitationOverdueJob(mockLockKeeper, mockTermsOfUseRepo, mockApplicationRepo, mockSubmissionService, EmailConnectorMock.aMock, clock, jobConfig)
+    val job          = new TermsOfUseInvitationOverdueJob(mockLockKeeper, mockTermsOfUseRepo, mockApplicationRepo, clock, jobConfig)
   }
 
   "TermsOfUseInvitationOverdueJob" should {
@@ -122,7 +114,6 @@ class TermsOfUseInvitationOverdueJobSpec extends AsyncHmrcSpec with BeforeAndAft
 
       TermsOfUseInvitationRepositoryMock.FetchByStatusesBeforeDueBy.thenReturn(List(touInviteDel))
       ApplicationRepoMock.Fetch.thenReturn(deletedApp)
-      SubmissionsServiceMock.FetchLatest.thenReturnNone()
 
       await(job.runJob)
 

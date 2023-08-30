@@ -29,8 +29,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationState}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, TermsOfUseInvitationRepository}
@@ -40,8 +38,6 @@ class TermsOfUseInvitationOverdueJob @Inject() (
     termsOfUseInvitationOverdueLockService: TermsOfUseInvitationOverdueJobLockService,
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     applicationRepository: ApplicationRepository,
-    submissionService: SubmissionsService,
-    emailConnector: EmailConnector,
     clock: Clock,
     jobConfig: TermsOfUseInvitationOverdueJobConfig
   )(implicit val ec: ExecutionContext
@@ -60,7 +56,7 @@ class TermsOfUseInvitationOverdueJob @Inject() (
 
     val result: Future[RunningOfJobSuccessful.type] = for {
       invitations <- termsOfUseInvitationRepository.fetchByStatusesBeforeDueBy(overdueTime, TermsOfUseInvitationState.EMAIL_SENT, TermsOfUseInvitationState.REMINDER_EMAIL_SENT)
-      _            = logger.info(s"Found ${invitations.size} invitations")
+      _            = logger.info(s"Scheduled job $name found ${invitations.size} invitations")
       _           <- Future.sequence(invitations.map(setInvitationOverdue(_)))
     } yield RunningOfJobSuccessful
 
