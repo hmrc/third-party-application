@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 
 class BlockApplicationAutoDeleteCommandHandlerSpec extends CommandHandlerBaseSpec {
 
+  val reasons = "Some reasons"
   trait Setup extends ApplicationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -47,17 +48,18 @@ class BlockApplicationAutoDeleteCommandHandlerSpec extends CommandHandlerBaseSpe
         val event = events.head
 
         inside(event) {
-          case ApplicationEvents.BlockApplicationAutoDelete(_, appId, eventDateTime, anActor) =>
+          case ApplicationEvents.BlockApplicationAutoDelete(_, appId, eventDateTime, anActor, reason) =>
             appId shouldBe applicationId
             anActor shouldBe expectedActor
             eventDateTime shouldBe timestamp
+            reason shouldBe reasons
         }
       }
     }
   }
 
   "BlockApplicationAutoDelete" should {
-    val cmd = BlockApplicationAutoDelete(gatekeeperUser, now)
+    val cmd = BlockApplicationAutoDelete(gatekeeperUser, reasons, now)
 
     "create correct event for a valid request with app" in new Setup {
       ApplicationRepoMock.UpdateAllowAutoDelete.thenReturnWhen(false)(appWithAutoDeleteBlocked)

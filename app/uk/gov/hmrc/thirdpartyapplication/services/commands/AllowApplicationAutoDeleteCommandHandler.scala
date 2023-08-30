@@ -49,6 +49,7 @@ class AllowApplicationAutoDeleteCommandHandler @Inject() (
       ApplicationEvents.AllowApplicationAutoDelete(
         id = EventId.random,
         applicationId = app.id,
+        reasons = cmd.reasons,
         eventDateTime = cmd.timestamp.instant,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser)
       )
