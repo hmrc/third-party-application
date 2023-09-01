@@ -97,6 +97,16 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
     ).toFuture()
   }
 
+  def fetchByStatusesBeforeDueBy(dueByBefore: Instant, states: TermsOfUseInvitationState*): Future[Seq[TermsOfUseInvitation]] = {
+    val bsonStates = states.map(s => Codecs.toBson(s))
+    collection.aggregate(
+      Seq(
+        filter(in("status", bsonStates: _*)),
+        filter(lte("dueBy", dueByBefore))
+      )
+    ).toFuture()
+  }
+
   def updateState(applicationId: ApplicationId, newState: TermsOfUseInvitationState): Future[HasSucceeded] = {
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(
@@ -113,6 +123,18 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
     val update = Updates.combine(
       Updates.set("status", Codecs.toBson(REMINDER_EMAIL_SENT)),
       Updates.set("reminderSent", Instant.now(clock).truncatedTo(MILLIS)),
+      Updates.set("lastUpdated", Instant.now(clock).truncatedTo(MILLIS))
+    )
+    collection.updateOne(filter, update)
+      .toFuture()
+      .map(_ => HasSucceeded)
+  }
+
+  def updateResetBackToEmailSent(applicationId: ApplicationId, newDueBy: Instant): Future[HasSucceeded] = {
+    val filter = equal("applicationId", Codecs.toBson(applicationId))
+    val update = Updates.combine(
+      Updates.set("status", Codecs.toBson(EMAIL_SENT)),
+      Updates.set("dueBy", newDueBy),
       Updates.set("lastUpdated", Instant.now(clock).truncatedTo(MILLIS))
     )
     collection.updateOne(filter, update)

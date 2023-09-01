@@ -239,7 +239,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     "decline the specified ToU application" in new Setup {
 
       SubmissionsServiceMock.Store.thenReturn()
-      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
+      TermsOfUseInvitationRepositoryMock.UpdateResetBackToEmailSent.thenReturn()
 
       val warning = "Here are some warnings"
       val result  = await(underTest.declineForTouUplift(applicationProduction, failSubmission, gatekeeperUserName, warning))

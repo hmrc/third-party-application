@@ -79,7 +79,7 @@ class TermsOfUseInvitationReminderJob @Inject() (
       invitations        <- termsOfUseInvitationRepository.fetchByStatusBeforeDueBy(TermsOfUseInvitationState.EMAIL_SENT, reminderDueTime)
       submissions        <- Future.sequence(invitations.map(invite => getSubmission(invite.applicationId)).toList).map(_.flatten)
       filteredInvitations = filterInvitations(invitations, submissions)
-      _                   = logger.info(s"Found ${filteredInvitations.size} invitations")
+      _                   = logger.info(s"Scheduled job $name found ${filteredInvitations.size} invitations")
       _                  <- Future.sequence(filteredInvitations.map(sendReminderForInvitation(_)))
     } yield RunningOfJobSuccessful
 

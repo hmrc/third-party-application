@@ -51,14 +51,28 @@ trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with Argumen
       def verifyCalledWith(status: TermsOfUseInvitationState, dueBy: Instant) = verify(aMock).fetchByStatusBeforeDueBy(eqTo(status), eqTo(dueBy))
     }
 
+    object FetchByStatusesBeforeDueBy {
+      def thenReturn(invitations: List[TermsOfUseInvitation]) = when(aMock.fetchByStatusesBeforeDueBy(*, *)).thenAnswer(successful(invitations))
+
+      def verifyCalledWith(dueBy: Instant, status1: TermsOfUseInvitationState, status2: TermsOfUseInvitationState) =
+        verify(aMock).fetchByStatusesBeforeDueBy(eqTo(dueBy), eqTo(status1), eqTo(status2))
+    }
+
     object UpdateState {
-      def thenReturn() = when(aMock.updateState(*[ApplicationId], *)).thenAnswer(successful(HasSucceeded))
+      def thenReturn()                                                                      = when(aMock.updateState(*[ApplicationId], *)).thenAnswer(successful(HasSucceeded))
+      def verifyCalledWith(applicationId: ApplicationId, status: TermsOfUseInvitationState) = verify(aMock).updateState(eqTo(applicationId), eqTo(status))
+      def verifyNeverCalled()                                                               = verify(aMock, never).updateState(*[ApplicationId], *)
     }
 
     object UpdateReminderSent {
       def thenReturn()                                   = when(aMock.updateReminderSent(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
       def verifyCalledWith(applicationId: ApplicationId) = verify(aMock).updateReminderSent(eqTo(applicationId))
       def verifyNeverCalled()                            = verify(aMock, never).updateReminderSent(*[ApplicationId])
+    }
+
+    object UpdateResetBackToEmailSent {
+      def thenReturn()                                                   = when(aMock.updateResetBackToEmailSent(*[ApplicationId], *)).thenAnswer(successful(HasSucceeded))
+      def verifyCalledWith(applicationId: ApplicationId, dueBy: Instant) = verify(aMock).updateResetBackToEmailSent(eqTo(applicationId), eqTo(dueBy))
     }
 
     object Delete {

@@ -59,7 +59,7 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
     val result: Future[RunningOfJobSuccessful.type] = for {
       warningApps <-
         applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(state = State.TESTING, updatedBefore = warningTime, environment = Environment.PRODUCTION)
-      _            = logger.info(s"Found ${warningApps.size} applications")
+      _            = logger.info(s"Scheduled job $name found ${warningApps.size} applications")
       _           <- Future.sequence(warningApps.map(sendWarningEmail))
     } yield RunningOfJobSuccessful
 
