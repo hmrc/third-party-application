@@ -41,5 +41,3 @@ case class FailedToSubscribeException(applicationName: String, api: ApiIdentifie
 case class ScopeNotFoundException(scope: String) extends RuntimeException(s"Scope '$scope' not found")
 
 case class InvalidIpAllowlistException(message: String) extends RuntimeException(message)
-
-case class InvalidGrantLengthException(message: String) extends RuntimeException(message)

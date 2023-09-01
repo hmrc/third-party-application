@@ -34,7 +34,7 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, RateLimitTier}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -127,30 +127,12 @@ class ApplicationService @Inject() (
     } yield updatedApp
   }
 
-  def updateRateLimitTier(applicationId: ApplicationId, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
-    logger.info(s"Trying to update the rate limit tier to $rateLimitTier for application ${applicationId.value}")
-
-    for {
-      app                <- fetchApp(applicationId)
-      _                  <- apiGatewayStore.updateApplication(app, rateLimitTier)
-      updatedApplication <- applicationRepository.updateApplicationRateLimit(applicationId, rateLimitTier)
-    } yield updatedApplication
-  }
-
   def updateIpAllowlist(applicationId: ApplicationId, newIpAllowlist: IpAllowlist): Future[ApplicationData] = {
     for {
       _          <- fromTry(Try(newIpAllowlist.allowlist.foreach(new SubnetUtils(_)))) recover {
                       case e: IllegalArgumentException => throw InvalidIpAllowlistException(e.getMessage)
                     }
       updatedApp <- applicationRepository.updateApplicationIpAllowlist(applicationId, newIpAllowlist)
-    } yield updatedApp
-  }
-
-  def updateGrantLength(applicationId: ApplicationId, newGrantLength: Int): Future[ApplicationData] = {
-    logger.info(s"Trying to update the Grant Length  $newGrantLength for application ${applicationId.value}")
-
-    for {
-      updatedApp <- applicationRepository.updateApplicationGrantLength(applicationId, newGrantLength)
     } yield updatedApp
   }
 
