@@ -20,6 +20,7 @@ import java.time.temporal.ChronoUnit._
 import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
 
 import cats.data.OptionT
 import cats.implicits._
@@ -38,19 +39,22 @@ import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationReposito
 class TermsOfUseInvitationService @Inject() (
     termsOfUseRepository: TermsOfUseInvitationRepository,
     emailConnector: EmailConnector,
-    clock: Clock
+    clock: Clock,
+    config: TermsOfUseInvitationConfig
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
+  val daysUntilDueWhenCreated = config.daysUntilDueWhenCreated
+  val daysUntilDueWhenReset   = config.daysUntilDueWhenReset
+
   def createInvitation(application: ApplicationData)(implicit hc: HeaderCarrier): Future[Option[TermsOfUseInvitation]] = {
     logger.info(s"Inviting application(${application.id.value}) to complete the new terms of use")
-    val daysUntilDueWhenCreated = 60
-    val now = Instant.now(clock).truncatedTo(MILLIS)
+    val now    = Instant.now(clock).truncatedTo(MILLIS)
     val invite = TermsOfUseInvitation(
       application.id,
       now,
       now,
-      now.plus(daysUntilDueWhenCreated, DAYS),
+      now.plus(daysUntilDueWhenCreated.toMinutes, MINUTES),
       None,
       EMAIL_SENT
     )
@@ -81,8 +85,9 @@ class TermsOfUseInvitationService @Inject() (
   }
 
   def updateResetBackToEmailSent(applicationId: ApplicationId): Future[HasSucceeded] = {
-    val daysUntilDueWhenReset = 30
-    val newDueByDate = Instant.now(clock).truncatedTo(MILLIS).plus(daysUntilDueWhenReset, DAYS)
+    val newDueByDate = Instant.now(clock).truncatedTo(MILLIS).plus(daysUntilDueWhenReset.toMinutes, MINUTES)
     termsOfUseRepository.updateResetBackToEmailSent(applicationId, newDueByDate)
   }
 }
+
+case class TermsOfUseInvitationConfig(daysUntilDueWhenCreated: FiniteDuration, daysUntilDueWhenReset: FiniteDuration)
