@@ -17,9 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
-import java.time.temporal.ChronoUnit._
-import java.time.{Clock, Instant, LocalDateTime}
+import java.time.{Clock, LocalDateTime}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,9 +39,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData,
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.services.AuditService
+import uk.gov.hmrc.thirdpartyapplication.services.{AuditService, TermsOfUseInvitationService}
 
 object GrantApprovalsService {
   sealed trait Result
@@ -61,7 +59,7 @@ class GrantApprovalsService @Inject() (
     auditService: AuditService,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
-    termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
+    termsOfUseInvitationService: TermsOfUseInvitationService,
     submissionService: SubmissionsService,
     emailConnector: EmailConnector,
     clock: Clock
@@ -181,14 +179,11 @@ class GrantApprovalsService @Inject() (
 
   private def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
     submission.status match {
-      case Granted(_, _, _, _)             => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
-      case GrantedWithWarnings(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2_WITH_WARNINGS)
-      case Warnings(_, _)                  => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
-      case Failed(_, _)                    => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
-      case Answering(_, _)                 => {
-        val newDueByDate = Instant.now().truncatedTo(MILLIS).plus(30, ChronoUnit.DAYS)
-        termsOfUseInvitationRepository.updateResetBackToEmailSent(applicationId, newDueByDate)
-      }
+      case Granted(_, _, _, _)             => termsOfUseInvitationService.updateStatus(applicationId, TERMS_OF_USE_V2)
+      case GrantedWithWarnings(_, _, _, _) => termsOfUseInvitationService.updateStatus(applicationId, TERMS_OF_USE_V2_WITH_WARNINGS)
+      case Warnings(_, _)                  => termsOfUseInvitationService.updateStatus(applicationId, WARNINGS)
+      case Failed(_, _)                    => termsOfUseInvitationService.updateStatus(applicationId, FAILED)
+      case Answering(_, _)                 => termsOfUseInvitationService.updateResetBackToEmailSent(applicationId)
       case _                               => successful(HasSucceeded)
     }
   }

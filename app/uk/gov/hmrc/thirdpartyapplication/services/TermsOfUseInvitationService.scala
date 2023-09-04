@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.temporal.ChronoUnit._
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -27,7 +29,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.TermsOfUseInvitationState
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse}
 import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
@@ -35,16 +37,26 @@ import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationReposito
 @Singleton
 class TermsOfUseInvitationService @Inject() (
     termsOfUseRepository: TermsOfUseInvitationRepository,
-    emailConnector: EmailConnector
+    emailConnector: EmailConnector,
+    clock: Clock
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
   def createInvitation(application: ApplicationData)(implicit hc: HeaderCarrier): Future[Option[TermsOfUseInvitation]] = {
     logger.info(s"Inviting application(${application.id.value}) to complete the new terms of use")
-
+    val daysUntilDueWhenCreated = 60
+    val now = Instant.now(clock).truncatedTo(MILLIS)
+    val invite = TermsOfUseInvitation(
+      application.id,
+      now,
+      now,
+      now.plus(daysUntilDueWhenCreated, DAYS),
+      None,
+      EMAIL_SENT
+    )
     (
       for {
-        newInvite <- OptionT(termsOfUseRepository.create(TermsOfUseInvitation(application.id)))
+        newInvite <- OptionT(termsOfUseRepository.create(invite))
         _         <- OptionT.liftF(emailConnector.sendNewTermsOfUseInvitation(newInvite.dueBy, application.name, application.admins.map(_.emailAddress)))
       } yield newInvite
     ).value
@@ -66,5 +78,11 @@ class TermsOfUseInvitationService @Inject() (
 
   def updateStatus(applicationId: ApplicationId, newState: TermsOfUseInvitationState): Future[HasSucceeded] = {
     termsOfUseRepository.updateState(applicationId, newState)
+  }
+
+  def updateResetBackToEmailSent(applicationId: ApplicationId): Future[HasSucceeded] = {
+    val daysUntilDueWhenReset = 30
+    val newDueByDate = Instant.now(clock).truncatedTo(MILLIS).plus(daysUntilDueWhenReset, DAYS)
+    termsOfUseRepository.updateResetBackToEmailSent(applicationId, newDueByDate)
   }
 }

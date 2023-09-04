@@ -21,16 +21,18 @@ import scala.concurrent.Future.successful
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
 
-trait TermsOfUseServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
+trait TermsOfUseInvitationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
-  protected trait BaseTermsOfUseServiceMock {
+  protected trait BaseTermsOfUseInvitationServiceMock {
     def aMock: TermsOfUseInvitationService
 
-    object CreateInvitations {
+    object CreateInvitation {
       def thenReturnSuccess(invite: TermsOfUseInvitation) = when(aMock.createInvitation(*[ApplicationData])(*)).thenAnswer(successful(Some(invite)))
       def thenFail()                                      = when(aMock.createInvitation(*[ApplicationData])(*)).thenAnswer(successful(None))
     }
@@ -43,9 +45,20 @@ trait TermsOfUseServiceMockModule extends MockitoSugar with ArgumentMatchersSuga
     object FetchInvitations {
       def thenReturn(invitations: List[TermsOfUseInvitationResponse]) = when(aMock.fetchInvitations()).thenAnswer(successful(invitations))
     }
+
+    object UpdateStatus {
+      def thenReturn()                                                                      = when(aMock.updateStatus(*[ApplicationId], *)).thenAnswer(successful(HasSucceeded))
+      def verifyCalledWith(applicationId: ApplicationId, status: TermsOfUseInvitationState) = verify(aMock).updateStatus(eqTo(applicationId), eqTo(status))
+      def verifyNeverCalled()                                                               = verify(aMock, never).updateStatus(*[ApplicationId], *)
+    }
+
+    object UpdateResetBackToEmailSent {
+      def thenReturn()                                   = when(aMock.updateResetBackToEmailSent(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
+      def verifyCalledWith(applicationId: ApplicationId) = verify(aMock).updateResetBackToEmailSent(eqTo(applicationId))
+    }
   }
 
-  object TermsOfUseServiceMock extends BaseTermsOfUseServiceMock {
+  object TermsOfUseInvitationServiceMock extends BaseTermsOfUseInvitationServiceMock {
     val aMock = mock[TermsOfUseInvitationService]
   }
 }

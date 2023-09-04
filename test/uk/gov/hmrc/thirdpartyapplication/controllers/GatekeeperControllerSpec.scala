@@ -43,7 +43,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
@@ -65,12 +65,15 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       extends StrideGatekeeperRoleAuthorisationServiceMockModule
       with LdapGatekeeperRoleAuthorisationServiceMockModule
       with ApplicationServiceMockModule
-      with TermsOfUseServiceMockModule
+      with TermsOfUseInvitationServiceMockModule
       with ApplicationDataServiceMockModule
       with SubmissionsServiceMockModule
       with SubmissionsTestData {
     val mockGatekeeperService = mock[GatekeeperService]
     implicit val headers      = HeaderCarrier()
+
+    val nowInstant = Instant.now(clock).truncatedTo(MILLIS)  
+    val invite = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(60, DAYS), None, EMAIL_SENT)  
 
     lazy val underTest =
       new GatekeeperController(
@@ -78,7 +81,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
         LdapGatekeeperRoleAuthorisationServiceMock.aMock,
         StrideGatekeeperRoleAuthorisationServiceMock.aMock,
         mockGatekeeperService,
-        TermsOfUseServiceMock.aMock,
+        TermsOfUseInvitationServiceMock.aMock,
         ApplicationDataServiceMock.aMock,
         SubmissionsServiceMock.aMock,
         Helpers.stubControllerComponents()
@@ -666,8 +669,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
 
-      TermsOfUseServiceMock.FetchInvitation.thenReturnNone
-      TermsOfUseServiceMock.CreateInvitations.thenReturnSuccess(TermsOfUseInvitation(ApplicationId.random))
+      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturnNone
+      TermsOfUseInvitationServiceMock.CreateInvitation.thenReturnSuccess(invite)
 
       val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
 
@@ -675,7 +678,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "return CONFLICT when a terms of use invitation already exists for the application" in new Setup {
-      val nowInstant     = Instant.now().truncatedTo(MILLIS)
       val dueDateInstant = nowInstant.plus(60, DAYS)
 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
@@ -694,7 +696,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
         EMAIL_SENT
       )
 
-      TermsOfUseServiceMock.FetchInvitation.thenReturn(response)
+      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturn(response)
 
       val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
 
@@ -709,8 +711,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.hasCompletelyAnswered)
 
-      TermsOfUseServiceMock.FetchInvitation.thenReturnNone
-      TermsOfUseServiceMock.CreateInvitations.thenReturnSuccess(TermsOfUseInvitation(ApplicationId.random))
+      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturnNone
+      TermsOfUseInvitationServiceMock.CreateInvitation.thenReturnSuccess(invite)
 
       val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
 
@@ -725,8 +727,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
 
-      TermsOfUseServiceMock.FetchInvitation.thenReturnNone
-      TermsOfUseServiceMock.CreateInvitations.thenFail()
+      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturnNone
+      TermsOfUseInvitationServiceMock.CreateInvitation.thenFail()
 
       val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
 

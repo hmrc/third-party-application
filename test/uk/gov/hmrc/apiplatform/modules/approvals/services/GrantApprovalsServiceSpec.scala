@@ -28,7 +28,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
@@ -38,7 +39,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
   trait Setup extends AuditServiceMockModule
       with ApplicationRepositoryMockModule
       with StateHistoryRepositoryMockModule
-      with TermsOfUseInvitationRepositoryMockModule
+      with TermsOfUseInvitationServiceMockModule
       with SubmissionsServiceMockModule
       with EmailConnectorMockModule
       with ApplicationTestData
@@ -88,7 +89,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
         AuditServiceMock.aMock,
         ApplicationRepoMock.aMock,
         StateHistoryRepoMock.aMock,
-        TermsOfUseInvitationRepositoryMock.aMock,
+        TermsOfUseInvitationServiceMock.aMock,
         SubmissionsServiceMock.aMock,
         EmailConnectorMock.aMock,
         clock
@@ -172,7 +173,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     "grant the specified ToU application with warnings" in new Setup {
 
       SubmissionsServiceMock.Store.thenReturn()
-      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
+      TermsOfUseInvitationServiceMock.UpdateStatus.thenReturn()
 
       val warning = "Here are some warnings"
       val result  = await(underTest.grantWithWarningsForTouUplift(applicationProduction, warningsSubmission, gatekeeperUserName, warning))
@@ -209,7 +210,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       SubmissionsServiceMock.Store.thenReturn()
       ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(applicationProduction)
       EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
-      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
+      TermsOfUseInvitationServiceMock.UpdateStatus.thenReturn()
 
       val result = await(underTest.grantForTouUplift(applicationProduction, grantedWithWarningsSubmission, gatekeeperUserName, reasons, escalatedTo))
 
@@ -239,7 +240,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     "decline the specified ToU application" in new Setup {
 
       SubmissionsServiceMock.Store.thenReturn()
-      TermsOfUseInvitationRepositoryMock.UpdateResetBackToEmailSent.thenReturn()
+      TermsOfUseInvitationServiceMock.UpdateResetBackToEmailSent.thenReturn()
 
       val warning = "Here are some warnings"
       val result  = await(underTest.declineForTouUplift(applicationProduction, failSubmission, gatekeeperUserName, warning))
