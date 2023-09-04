@@ -322,7 +322,7 @@ class TermsOfUseInvitationConfigProvider @Inject() (val configuration: Configura
 
   override def get() = {
     val daysUntilDueWhenCreated: FiniteDuration = configuration.getOptional[FiniteDuration]("termsOfUseDaysUntilDueWhenCreated")
-      .getOrElse(Duration(60, DAYS)) // scalastyle:off magic.number
+      .getOrElse(Duration(21, DAYS)) // scalastyle:off magic.number
     val daysUntilDueWhenReset: FiniteDuration = configuration.getOptional[FiniteDuration]("termsOfUseDaysUntilDueWhenReset")
       .getOrElse(Duration(30, DAYS)) // scalastyle:off magic.number
 

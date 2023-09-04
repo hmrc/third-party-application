@@ -60,11 +60,11 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
     val recipients3  = application3.admins.map(_.emailAddress)
 
     val startDate1 = nowInstant.minus(100, ChronoUnit.DAYS)
-    val dueBy1     = startDate1.plus(60, ChronoUnit.DAYS)
+    val dueBy1     = startDate1.plus(21, ChronoUnit.DAYS)
     val startDate2 = nowInstant.minus(59, ChronoUnit.DAYS)
-    val dueBy2     = startDate2.plus(60, ChronoUnit.DAYS)
+    val dueBy2     = startDate2.plus(21, ChronoUnit.DAYS)
     val startDate3 = nowInstant.minus(32, ChronoUnit.DAYS)
-    val dueBy3     = startDate3.plus(60, ChronoUnit.DAYS)
+    val dueBy3     = startDate3.plus(21, ChronoUnit.DAYS)
 
     val touInvite1 = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
     val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, EMAIL_SENT)

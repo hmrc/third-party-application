@@ -73,7 +73,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     implicit val headers      = HeaderCarrier()
 
     val nowInstant = Instant.now(clock).truncatedTo(MILLIS)
-    val invite     = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(60, DAYS), None, EMAIL_SENT)
+    val invite     = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, EMAIL_SENT)
 
     lazy val underTest =
       new GatekeeperController(

@@ -38,13 +38,13 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
 
     val applicationId = ApplicationId.random
     val nowInstant    = Instant.now(clock).truncatedTo(MILLIS)
-    val invite        = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(60, DAYS), None, EMAIL_SENT)
+    val invite        = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, EMAIL_SENT)
 
     val underTest = new TermsOfUseInvitationService(
       TermsOfUseInvitationRepositoryMock.aMock,
       EmailConnectorMock.aMock,
       clock,
-      TermsOfUseInvitationConfig(FiniteDuration(60, java.util.concurrent.TimeUnit.DAYS), FiniteDuration(30, java.util.concurrent.TimeUnit.DAYS))
+      TermsOfUseInvitationConfig(FiniteDuration(21, java.util.concurrent.TimeUnit.DAYS), FiniteDuration(30, java.util.concurrent.TimeUnit.DAYS))
     )
   }
 

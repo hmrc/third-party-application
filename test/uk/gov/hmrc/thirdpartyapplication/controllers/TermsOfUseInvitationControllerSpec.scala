@@ -40,7 +40,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
   trait Setup extends TermsOfUseInvitationServiceMockModule {
     val applicationId = ApplicationId.random
     val now           = Instant.now().truncatedTo(MILLIS)
-    val dueDate       = now.plus(60, DAYS)
+    val dueDate       = now.plus(21, DAYS)
 
     lazy val underTest = new TermsOfUseInvitationController(
       TermsOfUseInvitationServiceMock.aMock,
