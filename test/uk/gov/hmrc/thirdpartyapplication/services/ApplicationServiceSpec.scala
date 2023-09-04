@@ -823,23 +823,6 @@ class ApplicationServiceSpec
     }
   }
 
-  "update rate limit tier" should {
-
-    "update the application on AWS and in mongo" in new Setup {
-      val originalApplicationData: ApplicationData = anApplicationData(applicationId)
-      val updatedApplicationData: ApplicationData  = originalApplicationData copy (rateLimitTier = Some(RateLimitTier.SILVER))
-      ApplicationRepoMock.Fetch.thenReturn(originalApplicationData)
-      ApiGatewayStoreMock.UpdateApplication.thenReturnHasSucceeded()
-      ApplicationRepoMock.UpdateApplicationRateLimit.thenReturn(applicationId, RateLimitTier.SILVER)(updatedApplicationData)
-
-      await(underTest.updateRateLimitTier(applicationId, RateLimitTier.SILVER))
-
-      ApiGatewayStoreMock.UpdateApplication.verifyCalledWith(originalApplicationData, RateLimitTier.SILVER)
-      ApplicationRepoMock.UpdateApplicationRateLimit.verifyCalledWith(applicationId, RateLimitTier.SILVER)
-    }
-
-  }
-
   "update IP allowlist" should {
     "update the IP allowlist in the application in Mongo" in new Setup {
       val newIpAllowlist: IpAllowlist             = IpAllowlist(required = true, Set("192.168.100.0/22", "192.168.104.1/32"))
@@ -874,19 +857,6 @@ class ApplicationServiceSpec
       }
 
       error.getMessage shouldBe "Could not parse [192.100.0/22]"
-    }
-  }
-
-  "update Grant Length" should {
-    "update the Grant Length in the application in Mongo" in new Setup {
-      val newGrantLengthDays                      = 1000
-      val updatedApplicationData: ApplicationData = anApplicationData(applicationId, grantLength = newGrantLengthDays)
-      ApplicationRepoMock.UpdateGrantLength.thenReturnWhen(applicationId, newGrantLengthDays)(updatedApplicationData)
-
-      val result: ApplicationData = await(underTest.updateGrantLength(applicationId, newGrantLengthDays))
-
-      result shouldBe updatedApplicationData
-      ApplicationRepoMock.UpdateGrantLength.verifyCalledWith(applicationId, newGrantLengthDays)
     }
   }
 

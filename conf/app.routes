@@ -15,7 +15,6 @@ PATCH         /application/:id                                       uk.gov.hmrc
 PATCH         /application/:id/dispatch                              uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController.dispatch(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
 PUT           /application/:id/ipAllowlist                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateIpAllowlist(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
-PUT           /application/:id/grantlength                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateGrantLength(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
 GET           /application/:id/access/scopes                         uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.readScopes(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 PUT           /application/:id/access/scopes                         uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.updateScopes(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
@@ -50,7 +49,6 @@ POST          /application/:id/reject-uplift                         uk.gov.hmrc
 POST          /application/:id/resend-verification                   uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.resendVerification(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 POST          /application/:id/block                                 uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.blockApplication(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 POST          /application/:id/unblock                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.unblockApplication(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
-POST          /application/:id/rate-limit-tier                       uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.updateRateLimitTier(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
 POST          /application/:id/check-information                     uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCheck(id: uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId)
 
