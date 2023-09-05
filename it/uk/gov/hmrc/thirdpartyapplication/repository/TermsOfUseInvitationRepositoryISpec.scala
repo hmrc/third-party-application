@@ -135,11 +135,11 @@ class TermsOfUseInvitationRepositoryISpec
       val applicationId2 = ApplicationId.random
       val applicationId3 = ApplicationId.random
       val startDate1     = Instant.parse("2023-06-01T12:01:02.000Z")
-      val dueBy1         = startDate1.plus(60, ChronoUnit.DAYS)
+      val dueBy1         = startDate1.plus(21, ChronoUnit.DAYS)
       val startDate2     = Instant.parse("2023-06-14T12:02:04.000Z")
-      val dueBy2         = startDate2.plus(60, ChronoUnit.DAYS)
+      val dueBy2         = startDate2.plus(21, ChronoUnit.DAYS)
       val startDate3     = Instant.parse("2023-06-28T12:03:06.000Z")
-      val dueBy3         = startDate3.plus(60, ChronoUnit.DAYS)
+      val dueBy3         = startDate3.plus(21, ChronoUnit.DAYS)
 
       val touInvite1 = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
       val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, EMAIL_SENT)
@@ -148,7 +148,7 @@ class TermsOfUseInvitationRepositoryISpec
       await(termsOfUseInvitationRepository.create(touInvite1))
       await(termsOfUseInvitationRepository.create(touInvite2))
       await(termsOfUseInvitationRepository.create(touInvite3))
-      val findDueBy = Instant.parse("2023-08-03T12:00:00.000Z")
+      val findDueBy = Instant.parse("2023-07-03T12:00:00.000Z")
       val result    = await(termsOfUseInvitationRepository.fetchByStatusBeforeDueBy(EMAIL_SENT, findDueBy))
 
       result.size mustBe 1
@@ -164,11 +164,11 @@ class TermsOfUseInvitationRepositoryISpec
       val applicationId4 = ApplicationId.random
       val applicationId5 = ApplicationId.random
       val startDate1     = Instant.parse("2023-06-01T12:01:02.000Z")
-      val dueBy1         = startDate1.plus(60, ChronoUnit.DAYS)
+      val dueBy1         = startDate1.plus(21, ChronoUnit.DAYS)
       val startDate2     = Instant.parse("2023-06-02T12:02:04.000Z")
-      val dueBy2         = startDate2.plus(60, ChronoUnit.DAYS)
+      val dueBy2         = startDate2.plus(21, ChronoUnit.DAYS)
       val startDate3     = Instant.parse("2023-06-28T12:03:06.000Z")
-      val dueBy3         = startDate3.plus(60, ChronoUnit.DAYS)
+      val dueBy3         = startDate3.plus(21, ChronoUnit.DAYS)
 
       val touInvite1 = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
       val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, REMINDER_EMAIL_SENT)
@@ -181,7 +181,7 @@ class TermsOfUseInvitationRepositoryISpec
       await(termsOfUseInvitationRepository.create(touInvite3))
       await(termsOfUseInvitationRepository.create(touInvite4))
       await(termsOfUseInvitationRepository.create(touInvite5))
-      val findDueBy = Instant.parse("2023-08-03T12:00:00.000Z")
+      val findDueBy = Instant.parse("2023-07-03T12:00:00.000Z")
       val result    = await(termsOfUseInvitationRepository.fetchByStatusesBeforeDueBy(findDueBy, EMAIL_SENT, REMINDER_EMAIL_SENT))
 
       result.size mustBe 2

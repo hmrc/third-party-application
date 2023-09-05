@@ -29,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
@@ -37,13 +37,13 @@ import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 class TermsOfUseInvitationControllerSpec extends ControllerSpec with ApplicationDataServiceMockModule with SubmissionsServiceMockModule with ApplicationTestData
     with SubmissionsTestData {
 
-  trait Setup extends TermsOfUseServiceMockModule {
+  trait Setup extends TermsOfUseInvitationServiceMockModule {
     val applicationId = ApplicationId.random
     val now           = Instant.now().truncatedTo(MILLIS)
-    val dueDate       = now.plus(60, DAYS)
+    val dueDate       = now.plus(21, DAYS)
 
     lazy val underTest = new TermsOfUseInvitationController(
-      TermsOfUseServiceMock.aMock,
+      TermsOfUseInvitationServiceMock.aMock,
       ApplicationDataServiceMock.aMock,
       SubmissionsServiceMock.aMock,
       stubControllerComponents()
@@ -54,7 +54,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
     "return an OK with a terms of use invitation response" in new Setup {
       val response = TermsOfUseInvitationResponse(applicationId, now, now, dueDate, None, EMAIL_SENT)
 
-      TermsOfUseServiceMock.FetchInvitation.thenReturn(response)
+      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturn(response)
 
       val result = underTest.fetchInvitation(applicationId)(FakeRequest.apply())
 
@@ -63,7 +63,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
     }
 
     "return an NOT_FOUND when no terms of use invitation exists for the given application id" in new Setup {
-      TermsOfUseServiceMock.FetchInvitation.thenReturnNone
+      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturnNone
 
       val result = underTest.fetchInvitation(applicationId)(FakeRequest.apply())
 
@@ -84,7 +84,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
         )
       )
 
-      TermsOfUseServiceMock.FetchInvitations.thenReturn(invitations)
+      TermsOfUseInvitationServiceMock.FetchInvitations.thenReturn(invitations)
 
       val result = underTest.fetchInvitations()(FakeRequest.apply())
 

@@ -16,15 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.FiniteDuration
 
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.TermsOfUseInvitationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{EMAIL_SENT, REMINDER_EMAIL_SENT}
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
@@ -33,21 +37,25 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
     implicit val hc = HeaderCarrier()
 
     val applicationId = ApplicationId.random
+    val nowInstant    = Instant.now(clock).truncatedTo(MILLIS)
+    val invite        = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, EMAIL_SENT)
 
     val underTest = new TermsOfUseInvitationService(
       TermsOfUseInvitationRepositoryMock.aMock,
-      EmailConnectorMock.aMock
+      EmailConnectorMock.aMock,
+      clock,
+      TermsOfUseInvitationConfig(FiniteDuration(21, java.util.concurrent.TimeUnit.DAYS), FiniteDuration(30, java.util.concurrent.TimeUnit.DAYS))
     )
   }
 
   "create invitation" should {
     "return success when the terms of use invitiation can be created" in new Setup {
       EmailConnectorMock.SendNewTermsOfUseInvitation.thenReturnSuccess()
-      TermsOfUseInvitationRepositoryMock.Create.thenReturnSuccess(TermsOfUseInvitation(applicationId))
+      TermsOfUseInvitationRepositoryMock.Create.thenReturnSuccess(invite)
 
       val result = await(underTest.createInvitation(anApplicationData(applicationId)))
 
-      result shouldBe 'defined
+      result.isDefined shouldBe true
     }
 
     "return failure when the terms of use invitiation cannot be created" in new Setup {
@@ -61,8 +69,6 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
 
   "fetch invitation" should {
     "return an invitation when one is found in the repository" in new Setup {
-      val invite = TermsOfUseInvitation(applicationId)
-
       TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(invite)
 
       val result = await(underTest.fetchInvitation(applicationId))
@@ -81,9 +87,7 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
 
   "fetch invitations" should {
     "return an list of all invitations when invitations exist in the repository" in new Setup {
-      val invitations = List(
-        TermsOfUseInvitation(applicationId)
-      )
+      val invitations = List(invite)
 
       TermsOfUseInvitationRepositoryMock.FetchAll.thenReturn(invitations)
 
@@ -98,6 +102,29 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
       val result = await(underTest.fetchInvitations())
 
       result.size shouldBe 0
+    }
+  }
+
+  "update status" should {
+    "call update status in the repository" in new Setup {
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
+
+      val result = await(underTest.updateStatus(applicationId, REMINDER_EMAIL_SENT))
+
+      result shouldBe HasSucceeded
+      TermsOfUseInvitationRepositoryMock.UpdateState.verifyCalledWith(applicationId, REMINDER_EMAIL_SENT)
+    }
+  }
+
+  "update status reset back to Email Sent" should {
+    "call update status in the repository" in new Setup {
+      val newDueBy = nowInstant.plus(30, DAYS)
+      TermsOfUseInvitationRepositoryMock.UpdateResetBackToEmailSent.thenReturn()
+
+      val result = await(underTest.updateResetBackToEmailSent(applicationId))
+
+      result shouldBe HasSucceeded
+      TermsOfUseInvitationRepositoryMock.UpdateResetBackToEmailSent.verifyCalledWith(applicationId, newDueBy)
     }
   }
 }

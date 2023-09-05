@@ -32,7 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecretsH
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, CredentialConfig}
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, CredentialConfig, TermsOfUseInvitationConfig}
 
 class ConfigurationModule extends Module {
 
@@ -59,7 +59,8 @@ class ConfigurationModule extends Module {
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ClientSecretsHashingConfig].toProvider[ClientSecretsHashingConfigProvider],
       bind[ApplicationNamingService.ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider],
-      bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider]
+      bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider],
+      bind[TermsOfUseInvitationConfig].toProvider[TermsOfUseInvitationConfigProvider]
     )
   }
 }
@@ -311,6 +312,21 @@ class CredentialConfigProvider @Inject() (val configuration: Configuration)
   override def get() = {
     val clientSecretLimit: Int = ConfigHelper.getConfig("clientSecretLimit", configuration.getOptional[Int])
     CredentialConfig(clientSecretLimit)
+  }
+}
+
+@Singleton
+class TermsOfUseInvitationConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[TermsOfUseInvitationConfig] {
+
+  override def get() = {
+    val daysUntilDueWhenCreated: FiniteDuration = configuration.getOptional[FiniteDuration]("termsOfUseDaysUntilDueWhenCreated")
+      .getOrElse(Duration(21, DAYS)) // scalastyle:off magic.number
+    val daysUntilDueWhenReset: FiniteDuration = configuration.getOptional[FiniteDuration]("termsOfUseDaysUntilDueWhenReset")
+      .getOrElse(Duration(30, DAYS)) // scalastyle:off magic.number
+
+    TermsOfUseInvitationConfig(daysUntilDueWhenCreated, daysUntilDueWhenReset)
   }
 }
 
