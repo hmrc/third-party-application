@@ -753,30 +753,6 @@ class ApplicationControllerSpec
     }
   }
 
-  "update Grant Length" should {
-    "succeed with a 204 (no content) when the Grant Length is successfully updated to the application" in new Setup {
-      val applicationId: ApplicationId        = ApplicationId.random
-      val validUpdateGrantLengthJson: JsValue = Json.parse("""{ "grantLengthInDays": 5470 }""")
-      when(underTest.applicationService.updateGrantLength(eqTo(applicationId), *)).thenReturn(successful(mock[ApplicationData]))
-
-      val result = underTest.updateGrantLength(applicationId)(request.withBody(validUpdateGrantLengthJson))
-
-      status(result) shouldBe NO_CONTENT
-    }
-
-    "fail with a exception when the Grant Length in months with  less than or equal to 0 updated to the application" in new Setup {
-      val applicationId: ApplicationId          = ApplicationId.random
-      val invalidUpdateGrantLengthJson: JsValue = Json.parse("""{ "grantLengthInDays": 0 }""")
-      when(underTest.applicationService.updateGrantLength(eqTo(applicationId), *)).thenReturn(successful(mock[ApplicationData]))
-
-      val error = intercept[InvalidGrantLengthException] {
-        await(underTest.updateGrantLength(applicationId)(request.withBody(invalidUpdateGrantLengthJson)))
-      }
-
-      error.getMessage shouldBe "Grant Length in Days cannot be less than or equal to zero"
-    }
-  }
-
   "Search" should {
     "pass an ApplicationSearch object to applicationService" in new Setup {
       val req: FakeRequest[AnyContentAsEmpty.type] =

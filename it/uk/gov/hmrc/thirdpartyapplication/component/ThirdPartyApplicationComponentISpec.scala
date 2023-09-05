@@ -530,23 +530,6 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       fetchResponse.code shouldBe NOT_FOUND
     }
 
-    Scenario("Change rate limit tier for an application OLD ENDPOINT") {
-      Given("The gatekeeper is logged in")
-      authStub.willValidateLoggedInUserHasGatekeeperRole()
-
-      Given("No applications exist")
-      emptyApplicationRepository()
-
-      And("A third party application with BRONZE rate limit tier exists")
-      val application = createApplication()
-
-      And("AWS API Gateway is updated")
-      awsApiGatewayStub.willCreateOrUpdateApplication(application.name, "", RateLimitTier.SILVER)
-
-      Then("The response is successful")
-      val response = postData(path = s"/application/${application.id.value}/rate-limit-tier", data = """{ "rateLimitTier" : "SILVER" }""")
-      response.code shouldBe NO_CONTENT
-    }
   }
 
   Feature("Subscription") {

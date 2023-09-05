@@ -32,7 +32,7 @@ import play.api.mvc.{AnyContentAsJson, RequestHeader, Result}
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, RateLimitTier}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -544,75 +544,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       status(result) shouldBe OK
       verify(mockGatekeeperService).unblockApplication(applicationId)
-    }
-  }
-
-  "update rate limit tier" should {
-
-    val invalidUpdateRateLimitTierJson = Json.parse("""{ "foo" : "bar" }""")
-    val validUpdateRateLimitTierJson   = Json.parse("""{ "rateLimitTier" : "silver" }""")
-
-    "fail with a 422 (unprocessable entity) when request json is invalid" in new Setup {
-
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(invalidUpdateRateLimitTierJson))
-
-      status(result) shouldBe UNPROCESSABLE_ENTITY
-      verify(underTest.applicationService, never).updateRateLimitTier(eqTo(applicationId), eqTo(RateLimitTier.SILVER))(*)
-    }
-
-    "fail with a 422 (unprocessable entity) when request json is valid but rate limit tier is an invalid value" in new Setup {
-
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(Json.parse("""{ "rateLimitTier" : "multicoloured" }""")))
-      status(result) shouldBe UNPROCESSABLE_ENTITY
-      contentAsJson(result) shouldBe Json.toJson(Json.parse(
-        """
-         {
-         "code": "INVALID_REQUEST_PAYLOAD",
-         "message": "'multicoloured' is an invalid rate limit tier"
-         }"""
-      ))
-    }
-
-    "succeed with a 204 (no content) when rate limit tier is successfully added to application" in new Setup {
-
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(RateLimitTier.SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
-
-      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
-
-      status(result) shouldBe NO_CONTENT
-      verify(underTest.applicationService).updateRateLimitTier(eqTo(applicationId), eqTo(RateLimitTier.SILVER))(*)
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(RateLimitTier.SILVER))(*))
-        .thenReturn(failed(new RuntimeException("Expected test exception")))
-
-      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-
-    "fail with a 401 (Unauthorized) when the request is done without a gatekeeper token" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-
-      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(RateLimitTier.SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
-
-      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
-      status(result) shouldBe UNAUTHORIZED
     }
   }
 

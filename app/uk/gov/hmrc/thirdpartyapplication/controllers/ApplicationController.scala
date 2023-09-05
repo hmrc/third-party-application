@@ -39,7 +39,6 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateGrantLengthRequest.toGrantLength
 import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAuthorisationActions, AuthKeyRefiner}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
@@ -131,15 +130,6 @@ class ApplicationController @Inject() (
   def updateIpAllowlist(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpdateIpAllowlistRequest] { updateIpAllowlistRequest =>
       applicationService.updateIpAllowlist(applicationId, toIpAllowlist(updateIpAllowlistRequest)) map { _ =>
-        NoContent
-      } recover recovery
-    }
-  }
-
-  @deprecated("use new application command ChangeGrantLength", "0.679.0")
-  def updateGrantLength(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[UpdateGrantLengthRequest] { updatedGrantLengthRequest =>
-      applicationService.updateGrantLength(applicationId, toGrantLength(updatedGrantLengthRequest)) map { _ =>
         NoContent
       } recover recovery
     }
