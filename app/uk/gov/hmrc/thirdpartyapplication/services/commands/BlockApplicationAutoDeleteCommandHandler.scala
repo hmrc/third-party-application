@@ -49,6 +49,7 @@ class BlockApplicationAutoDeleteCommandHandler @Inject() (
       ApplicationEvents.BlockApplicationAutoDelete(
         id = EventId.random,
         applicationId = app.id,
+        reasons = cmd.reasons,
         eventDateTime = cmd.timestamp.instant,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser)
       )
