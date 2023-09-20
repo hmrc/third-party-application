@@ -39,7 +39,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.util.UUID
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId

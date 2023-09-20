@@ -31,7 +31,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class NotificationRepositoryISpec

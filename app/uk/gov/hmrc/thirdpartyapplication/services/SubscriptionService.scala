@@ -23,8 +23,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -41,7 +41,7 @@ class SubscriptionService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ActorHelper {
 
-  def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmailMatch: Option[String]): Future[List[String]] = {
+  def searchCollaborators(context: ApiContext, version: ApiVersionNbr, partialEmailMatch: Option[String]): Future[List[String]] = {
     subscriptionRepository.searchCollaborators(context, version, partialEmailMatch)
   }
 

@@ -21,18 +21,15 @@ import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess => _, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
@@ -1070,16 +1067,16 @@ class ApplicationRepositoryISpec
           application1.id,
           application1.name,
           application1.lastAccess,
-          Set(ApiIdentifier(ApiContext(api1), ApiVersion(api1Version)), ApiIdentifier(ApiContext(api2), ApiVersion(api2Version)))
+          Set(ApiIdentifier(ApiContext(api1), ApiVersionNbr(api1Version)), ApiIdentifier(ApiContext(api2), ApiVersionNbr(api2Version)))
         ),
         ApplicationWithSubscriptions(
           application2.id,
           application2.name,
           application2.lastAccess,
           Set(
-            ApiIdentifier(ApiContext(api1), ApiVersion(api1Version)),
-            ApiIdentifier(ApiContext(api2), ApiVersion(api2Version)),
-            ApiIdentifier(ApiContext(api3), ApiVersion(api3Version))
+            ApiIdentifier(ApiContext(api1), ApiVersionNbr(api1Version)),
+            ApiIdentifier(ApiContext(api2), ApiVersionNbr(api2Version)),
+            ApiIdentifier(ApiContext(api3), ApiVersionNbr(api3Version))
           )
         )
       )

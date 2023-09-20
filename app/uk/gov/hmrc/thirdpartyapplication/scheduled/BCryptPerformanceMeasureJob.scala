@@ -28,7 +28,7 @@ import com.google.inject.Singleton
 
 import play.api.LoggerLike
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.apiplatform.modules.common.services.{SimpleTimer, TimedValue}
 import uk.gov.hmrc.apiplatform.modules.scheduling.ExclusiveScheduledJob
 

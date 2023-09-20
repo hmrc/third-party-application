@@ -61,7 +61,7 @@ class UnsubscribeFromApiCommandHandler @Inject() (
         eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
         context = cmd.apiIdentifier.context,
-        version = cmd.apiIdentifier.version
+        version = cmd.apiIdentifier.versionNbr
       )
     )
   }

@@ -30,9 +30,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, ClientSecret, Collaborators}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ClientSecret, Collaborators}
 
 import java.time.ZoneOffset
 import java.util.UUID
@@ -732,7 +731,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
     Json.parse(createdResponse.body).as[ApplicationResponse]
   }
 
-  private def subscriptionExists(applicationId: ApplicationId, apiContext: ApiContext, apiVersion: ApiVersion) = {
+  private def subscriptionExists(applicationId: ApplicationId, apiContext: ApiContext, apiVersion: ApiVersionNbr) = {
     subscriptionRepository.add(applicationId, new ApiIdentifier(apiContext, apiVersion))
   }
 

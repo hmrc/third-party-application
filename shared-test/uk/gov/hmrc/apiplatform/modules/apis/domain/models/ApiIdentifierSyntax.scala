@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+
 trait ApiIdentifierSyntax {
 
   implicit class ApiContextSyntax(value: String) {
@@ -23,17 +25,17 @@ trait ApiIdentifierSyntax {
   }
 
   implicit class ApiVersionSyntax(value: String) {
-    def asVersion: ApiVersion = ApiVersion(value)
+    def asVersion: ApiVersionNbr = ApiVersionNbr(value)
   }
 
   implicit class ApiIdentifierStringSyntax(context: String) {
     def asIdentifier: ApiIdentifier                  = ApiContext(context).asIdentifier
-    def asIdentifier(version: String): ApiIdentifier = ApiIdentifier(ApiContext(context), ApiVersion(version))
+    def asIdentifier(version: String): ApiIdentifier = ApiIdentifier(ApiContext(context), ApiVersionNbr(version))
   }
 
   implicit class ApiIdentifierContextSyntax(context: ApiContext) {
-    def asIdentifier: ApiIdentifier                  = ApiIdentifier(context, ApiVersion("1.0"))
-    def asIdentifier(version: String): ApiIdentifier = ApiIdentifier(context, ApiVersion(version))
+    def asIdentifier: ApiIdentifier                  = ApiIdentifier(context, ApiVersionNbr("1.0"))
+    def asIdentifier(version: String): ApiIdentifier = ApiIdentifier(context, ApiVersionNbr(version))
   }
 }
 

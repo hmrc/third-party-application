@@ -29,10 +29,8 @@ import play.api.mvc._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -218,14 +216,14 @@ class ApplicationController @Inject() (
           .map(addHeaders(_.header.status == OK, CACHE_CONTROL -> s"max-age=$applicationCacheExpiry"))
       case ("environment" :: "userId" :: _, _)   =>
         val rawQueryParameter = request.queryString("userId")
-        val ouserId           = UserId.fromString(rawQueryParameter.head)
+        val ouserId           = UserId.apply(rawQueryParameter.head)
 
         ouserId.fold(
           successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"UserId ${rawQueryParameter.head} is not a valid user Id")))
         )(userId => fetchAllForUserIdAndEnvironment(userId, request.queryString("environment").head))
       case ("subscribesTo" :: "version" :: _, _) =>
         val context = ApiContext(request.queryString("subscribesTo").head)
-        val version = ApiVersion(request.queryString("version").head)
+        val version = ApiVersionNbr(request.queryString("version").head)
         fetchAllBySubscriptionVersion(ApiIdentifier(context, version))
       case ("subscribesTo" :: _, _)              =>
         val context = ApiContext(request.queryString("subscribesTo").head)
@@ -316,7 +314,7 @@ class ApplicationController @Inject() (
       .map(subs => Ok(toJson(subs))) recover recovery
   }
 
-  def isSubscribed(applicationId: ApplicationId, context: ApiContext, version: ApiVersion) = Action.async {
+  def isSubscribed(applicationId: ApplicationId, context: ApiContext, version: ApiVersionNbr) = Action.async {
     val api = ApiIdentifier(context, version)
     subscriptionService.isSubscribed(applicationId, api) map {
       case true  => Ok(toJson(api)).withHeaders(CACHE_CONTROL -> s"max-age=$subscriptionCacheExpiry")

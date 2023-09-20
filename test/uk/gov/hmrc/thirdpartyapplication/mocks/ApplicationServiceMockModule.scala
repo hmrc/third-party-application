@@ -25,7 +25,7 @@ import cats.implicits.catsStdInstancesForFuture
 import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Deleted, TermsOfUseAcceptance}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData

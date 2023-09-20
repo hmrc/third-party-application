@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.metrics
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
 
@@ -35,7 +35,7 @@ class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
 
   "metrics refresh" should {
     def subscriptionDetails(subscription: (String, String, Int)): SubscriptionCountByApi =
-      SubscriptionCountByApi(ApiIdentifier(ApiContext(subscription._1), ApiVersion(subscription._2)), subscription._3)
+      SubscriptionCountByApi(ApiIdentifier(ApiContext(subscription._1), ApiVersionNbr(subscription._2)), subscription._3)
 
     "update subscription counts" in new Setup {
       private val api1v1 = ("apiOne", "1.0", 5)
