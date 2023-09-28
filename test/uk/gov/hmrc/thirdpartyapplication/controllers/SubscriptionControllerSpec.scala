@@ -29,9 +29,7 @@ import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, SubscriptionRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
@@ -53,7 +51,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
   "getSubscribers" should {
     val apiIdentifier = "hello/world".asIdentifier
 
-    def asUrl(apiIdentifier: ApiIdentifier): String = s"/apis/${apiIdentifier.context.value}/versions/${apiIdentifier.version.value}/subscribers"
+    def asUrl(apiIdentifier: ApiIdentifier): String = s"/apis/${apiIdentifier.context.value}/versions/${apiIdentifier.versionNbr.value}/subscribers"
 
     "return the subscribers from the repository" in new Setup {
       implicit val readsSubscribersResponse = Json.reads[SubscribersResponse]

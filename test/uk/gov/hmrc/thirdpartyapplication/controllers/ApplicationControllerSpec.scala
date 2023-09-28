@@ -37,17 +37,15 @@ import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -480,7 +478,7 @@ class ApplicationControllerSpec
     val environment = "PRODUCTION"
 
     "succeed with a 200 when applications are found for the collaborator by userId and environment" in new Setup with ExtendedResponses {
-      val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=${userId.asText}&environment=$environment")
+      val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=${userId.toString()}&environment=$environment")
 
       when(underTest.applicationService.fetchAllForUserIdAndEnvironment(userId, environment))
         .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
@@ -780,7 +778,7 @@ class ApplicationControllerSpec
   }
 
   "notStrideUserDeleteApplication" should {
-    val application             = aNewApplicationResponse(environment = SANDBOX, state = ApplicationState(State.PRODUCTION))
+    val application             = aNewApplicationResponse(environment = Environment.SANDBOX, state = ApplicationState(State.PRODUCTION))
     val applicationId           = application.id
     val gatekeeperUserId        = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com".toLaxEmail
@@ -797,7 +795,7 @@ class ApplicationControllerSpec
     }
 
     "succeed when a principal application is in TESTING state is deleted" in new Setup with ProductionAuthSetup {
-      val inTesting   = aNewApplicationResponse(state = ApplicationState(name = State.TESTING), environment = PRODUCTION)
+      val inTesting   = aNewApplicationResponse(state = ApplicationState(name = State.TESTING), environment = Environment.PRODUCTION)
       val inTestingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inTestingId)(inTesting)
@@ -810,7 +808,7 @@ class ApplicationControllerSpec
     }
 
     "succeed when a principal application is in PENDING_GATEKEEPER_APPROVAL state is deleted" in new Setup with ProductionAuthSetup {
-      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_GATEKEEPER_APPROVAL), environment = PRODUCTION)
+      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_GATEKEEPER_APPROVAL), environment = Environment.PRODUCTION)
       val inPendingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inPendingId)(inPending)
@@ -823,7 +821,7 @@ class ApplicationControllerSpec
     }
 
     "succeed when a principal application is in PENDING_REQUESTER_VERIFICATION state is deleted" in new Setup with ProductionAuthSetup {
-      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_REQUESTER_VERIFICATION), environment = PRODUCTION)
+      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_REQUESTER_VERIFICATION), environment = Environment.PRODUCTION)
       val inPendingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inPendingId)(inPending)
@@ -836,7 +834,7 @@ class ApplicationControllerSpec
     }
 
     "fail when a principal application is in PRODUCTION state is deleted" in new Setup with ProductionAuthSetup {
-      val inProd   = aNewApplicationResponse(state = ApplicationState(name = State.PRODUCTION), environment = PRODUCTION)
+      val inProd   = aNewApplicationResponse(state = ApplicationState(name = State.PRODUCTION), environment = Environment.PRODUCTION)
       val inProdId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inProdId)(inProd)

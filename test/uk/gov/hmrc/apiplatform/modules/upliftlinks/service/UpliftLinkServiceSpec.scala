@@ -18,7 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.upliftlinks.service
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories.UpliftLinksRepositoryMockModule
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories.UpliftLinksRepository

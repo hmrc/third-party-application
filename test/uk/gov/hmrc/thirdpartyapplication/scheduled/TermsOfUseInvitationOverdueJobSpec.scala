@@ -24,7 +24,7 @@ import scala.concurrent.duration.{FiniteDuration, HOURS, MINUTES}
 
 import org.scalatest.BeforeAndAfterAll
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}

@@ -20,7 +20,7 @@ import java.time.LocalDateTime
 
 import cats.data.NonEmptyList
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 
 sealed trait QuestionnaireState

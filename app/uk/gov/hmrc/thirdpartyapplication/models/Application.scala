@@ -18,9 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.time.LocalDateTime
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, ClientSecret, Collaborator, RateLimitTier}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ClientSecret, Collaborator, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationWithSubscriptions}

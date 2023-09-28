@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifier
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifier
 import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPrevention
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys

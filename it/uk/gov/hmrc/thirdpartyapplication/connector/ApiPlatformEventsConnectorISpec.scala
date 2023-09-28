@@ -18,8 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.connector
 
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiContext, ApiVersion}
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
@@ -33,6 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import java.time.format.DateTimeFormatterBuilder
 import java.time.ZoneOffset
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar with ApplicationLogger with FixedClock {
 
@@ -68,7 +67,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
     "sending event to api-platform-events" should {
 
       "send correct json for ApiSubscribed" in new Setup {
-        val apiSubscribed = ApiSubscribedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), ApiContext("contextValue"), ApiVersion("1.0"))
+        val apiSubscribed = ApiSubscribedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), ApiContext("contextValue"), ApiVersionNbr("1.0"))
 
         val expectedApiSubscribedRequestBody =
           s"""
@@ -88,7 +87,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
 
       "send correct json for ApiUnSubscribed" in new Setup {
 
-        val apiUnSubscribed = ApiUnsubscribedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), ApiContext("contextValue"), ApiVersion("1.0"))
+        val apiUnSubscribed = ApiUnsubscribedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), ApiContext("contextValue"), ApiVersionNbr("1.0"))
 
         val expectedApiUnSubscribedRequestBody =
           s"""

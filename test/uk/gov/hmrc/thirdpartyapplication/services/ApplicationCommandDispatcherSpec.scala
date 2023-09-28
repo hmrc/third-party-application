@@ -24,7 +24,7 @@ import cats.data._
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
@@ -32,7 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.models.db._
@@ -574,7 +574,7 @@ class ApplicationCommandDispatcherSpec
 
     "SubscribeToApi is received" should {
       val context       = ApiContext("context")
-      val version       = ApiVersion("version")
+      val version       = ApiVersionNbr("version")
       val apiIdentifier = ApiIdentifier(context, version)
       val cmd           = SubscribeToApi(otherAdminAsActor, apiIdentifier, timestamp)
       val evt           = ApplicationEvents.ApiSubscribedV2(
@@ -607,7 +607,7 @@ class ApplicationCommandDispatcherSpec
 
     "UnsubscribeFromApi is received" should {
       val context       = ApiContext("context")
-      val version       = ApiVersion("version")
+      val version       = ApiVersionNbr("version")
       val apiIdentifier = ApiIdentifier(context, version)
       val cmd           = UnsubscribeFromApi(otherAdminAsActor, apiIdentifier, timestamp)
       val evt           = ApplicationEvents.ApiUnsubscribedV2(

@@ -24,7 +24,7 @@ import org.mongodb.scala.model.Sorts.descending
 
 import uk.gov.hmrc.mongo.play.json.Codecs
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 @Singleton

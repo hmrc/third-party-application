@@ -29,11 +29,12 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Environment, State}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment
 
 @Singleton
 class ProductionCredentialsRequestExpiredJob @Inject() (

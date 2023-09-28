@@ -37,11 +37,9 @@ import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
@@ -311,7 +309,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     collection.find(query).toFuture()
   }
 
-  def fetchByStatusDetailsAndEnvironment(state: State.State, updatedBefore: LocalDateTime, environment: Environment.Environment): Future[Seq[ApplicationData]] = {
+  def fetchByStatusDetailsAndEnvironment(state: State.State, updatedBefore: LocalDateTime, environment: Environment): Future[Seq[ApplicationData]] = {
     collection.aggregate(
       Seq(
         filter(equal("state.name", Codecs.toBson(state))),
@@ -321,7 +319,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     ).toFuture()
   }
 
-  def fetchByStatusDetailsAndEnvironmentNotAleadyNotified(state: State.State, updatedBefore: LocalDateTime, environment: Environment.Environment): Future[Seq[ApplicationData]] = {
+  def fetchByStatusDetailsAndEnvironmentNotAleadyNotified(state: State.State, updatedBefore: LocalDateTime, environment: Environment): Future[Seq[ApplicationData]] = {
     timeFuture(
       "Fetch Applications by Status Details and Environment not Already Notified",
       "application.repository.fetchByStatusDetailsAndEnvironmentNotAleadyNotified"
@@ -478,7 +476,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def fetchProdAppStateHistories(): Future[Seq[ApplicationWithStateHistory]] = {
     timeFuture("Fetch Production Application State Histories", "application.repository.fetchProdAppStateHistories") {
       val pipeline: Seq[Bson] = Seq(
-        matches(equal("environment", Codecs.toBson(Environment.PRODUCTION))),
+        matches(equal("environment", Codecs.toBson(Environment.PRODUCTION.toString()))),
         matches(notEqual("state.name", Codecs.toBson(State.DELETED))),
         addFields(Field("version", cond(Document("$not" -> BsonString("$access.importantSubmissionData")), 1, 2))),
         lookup(from = "stateHistory", localField = "id", foreignField = "applicationId", as = "states"),
@@ -540,7 +538,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
     }
 
-    def specificAPISubscription(apiContext: ApiContext, apiVersion: Option[ApiVersion]) = {
+    def specificAPISubscription(apiContext: ApiContext, apiVersion: Option[ApiVersionNbr]) = {
       apiVersion.fold(
         matches(equal("subscribedApis.apiIdentifier.context", Codecs.toBson(apiContext)))
       )(version =>
@@ -663,7 +661,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       ApplicationSearch(
         filters = List(SpecificAPISubscription),
         apiContext = Some(apiIdentifier.context),
-        apiVersion = Some(apiIdentifier.version)
+        apiVersion = Some(apiIdentifier.versionNbr)
       )
     ).map(_.applications)
 

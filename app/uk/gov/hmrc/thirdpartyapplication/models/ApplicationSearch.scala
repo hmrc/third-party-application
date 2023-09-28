@@ -26,7 +26,7 @@ import org.mongodb.scala.model.Filters._
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 // scalastyle:off number.of.types
 
@@ -36,7 +36,7 @@ case class ApplicationSearch(
     filters: List[ApplicationSearchFilter] = List.empty,
     textToSearch: Option[String] = None,
     apiContext: Option[ApiContext] = None,
-    apiVersion: Option[ApiVersion] = None,
+    apiVersion: Option[ApiVersionNbr] = None,
     sort: ApplicationSort = SubmittedAscending,
     includeDeleted: Boolean = false
   ) {
@@ -70,7 +70,7 @@ object ApplicationSearch {
 
     def searchText     = queryString.getOrElse("search", List.empty).headOption
     def apiContext     = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").headOption.map(ApiContext(_)))
-    def apiVersion     = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").lift(1).map(ApiVersion(_)))
+    def apiVersion     = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").lift(1).map(ApiVersionNbr(_)))
     def sort           = ApplicationSort(queryString.getOrElse("sort", List.empty).headOption)
     def includeDeleted = queryString.getOrElse("includeDeleted", List.empty).headOption.getOrElse("false").toBoolean
 

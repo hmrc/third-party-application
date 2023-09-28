@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._

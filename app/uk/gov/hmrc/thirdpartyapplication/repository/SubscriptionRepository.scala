@@ -33,8 +33,7 @@ import org.mongodb.scala.model.{IndexModel, IndexOptions, UpdateOptions, Updates
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
@@ -73,7 +72,7 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent, val metrics: Metr
     with MetricsTimer
     with ApplicationLogger {
 
-  def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmail: Option[String]): Future[List[String]] = {
+  def searchCollaborators(context: ApiContext, version: ApiVersionNbr, partialEmail: Option[String]): Future[List[String]] = {
     timeFuture("Search Collaborators", "subscription.repository.searchCollaborators") {
       val pipeline = Seq(
         filter(
@@ -113,7 +112,7 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent, val metrics: Metr
     val filter = and(
       equal("applications", Codecs.toBson(applicationId)),
       equal("apiIdentifier.context", Codecs.toBson(apiIdentifier.context)),
-      equal("apiIdentifier.version", Codecs.toBson(apiIdentifier.version))
+      equal("apiIdentifier.version", Codecs.toBson(apiIdentifier.versionNbr))
     )
 
     collection.countDocuments(filter)
@@ -167,7 +166,7 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent, val metrics: Metr
   private def contextAndVersionFilter(apiIdentifier: ApiIdentifier): Bson = {
     and(
       equal("apiIdentifier.context", Codecs.toBson(apiIdentifier.context)),
-      equal("apiIdentifier.version", Codecs.toBson(apiIdentifier.version))
+      equal("apiIdentifier.version", Codecs.toBson(apiIdentifier.versionNbr))
     )
   }
 

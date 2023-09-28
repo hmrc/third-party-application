@@ -23,10 +23,11 @@ import scala.concurrent.Future.successful
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 
 trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

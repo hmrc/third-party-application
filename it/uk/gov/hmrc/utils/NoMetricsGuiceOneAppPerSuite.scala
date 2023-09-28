@@ -30,7 +30,7 @@ trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite with FixedClock {
   self: TestSuite =>
 
   final override def fakeApplication(): Application =
-    builder().build
+    builder().build()
 
   def builder(): GuiceApplicationBuilder = {
     GuiceApplicationBuilder()

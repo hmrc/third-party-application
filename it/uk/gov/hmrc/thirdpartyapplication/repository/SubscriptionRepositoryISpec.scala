@@ -31,13 +31,12 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.time.Clock
 import scala.util.Random.nextString
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 
 class SubscriptionRepositoryISpec
@@ -247,7 +246,7 @@ class SubscriptionRepositoryISpec
       val doNotMatchApi = "some-context-donotmatchapi".asIdentifier("1.0")
       await(subscriptionRepository.add(doNotMatchApp.id, doNotMatchApi))
 
-      val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.version, None))
+      val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.versionNbr, None))
 
       val expectedEmails = (app1.collaborators.map(c => c.emailAddress) ++ app2.collaborators.map(c => c.emailAddress)).map(_.text)
       result.toSet mustBe expectedEmails
@@ -268,7 +267,7 @@ class SubscriptionRepositoryISpec
       val api1 = "some-context-api".asIdentifier("1.0")
       await(subscriptionRepository.add(app1.id, api1))
 
-      val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.version, Some(partialEmailToMatch)))
+      val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.versionNbr, Some(partialEmailToMatch)))
 
       result.toSet mustBe Set(emailToMatch)
     }
@@ -308,8 +307,8 @@ class SubscriptionRepositoryISpec
       )
 
       val expectedResult = List(
-        SubscriptionCountByApi(ApiIdentifier(ApiContext(api1), ApiVersion(api1Version)), 2),
-        SubscriptionCountByApi(ApiIdentifier(ApiContext(api2), ApiVersion(api2Version)), 2)
+        SubscriptionCountByApi(ApiIdentifier(ApiContext(api1), ApiVersionNbr(api1Version)), 2),
+        SubscriptionCountByApi(ApiIdentifier(ApiContext(api2), ApiVersionNbr(api2Version)), 2)
       )
 
       val result = await(subscriptionRepository.getSubscriptionCountByApiCheckingApplicationExists)
@@ -340,7 +339,7 @@ class SubscriptionRepositoryISpec
     await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier)) mustBe false
   }
 
-  def subscriptionData(apiContext: ApiContext, version: ApiVersion, applicationIds: ApplicationId*): SubscriptionData = {
+  def subscriptionData(apiContext: ApiContext, version: ApiVersionNbr, applicationIds: ApplicationId*): SubscriptionData = {
     SubscriptionData(
       ApiIdentifier(apiContext, version),
       Set(applicationIds: _*)
@@ -348,7 +347,7 @@ class SubscriptionRepositoryISpec
   }
 
   def aSubscriptionData(apiContext: String, version: String, applicationIds: ApplicationId*): SubscriptionData = {
-    subscriptionData(ApiContext(apiContext), ApiVersion(version), applicationIds: _*)
+    subscriptionData(ApiContext(apiContext), ApiVersionNbr(version), applicationIds: _*)
   }
 
   def anApplicationData(

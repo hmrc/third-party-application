@@ -24,7 +24,7 @@ import cats.implicits._
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters

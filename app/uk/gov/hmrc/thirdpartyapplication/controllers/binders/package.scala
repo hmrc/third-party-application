@@ -21,9 +21,8 @@ import scala.util.Try
 
 import play.api.mvc.{PathBindable, QueryStringBindable}
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, ClientSecret}
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
 
 package object binders {
 
@@ -80,13 +79,13 @@ package object binders {
       for {
         textOrBindError <- textBinder.bind("developerId", params)
       } yield textOrBindError match {
-        case Right(idText) => UserId.fromString(idText).toRight(s"Cannot accept $idText as a developer identifier")
+        case Right(idText) => UserId.apply(idText).toRight(s"Cannot accept $idText as a developer identifier")
         case _             => Left("Unable to bind a developer identifier")
       }
     }
 
     override def unbind(key: String, developerId: UserId): String = {
-      textBinder.unbind("developerId", developerId.asText)
+      textBinder.unbind("developerId", developerId.toString())
     }
   }
 
@@ -137,31 +136,31 @@ package object binders {
     }
   }
 
-  implicit def apiVersionPathBinder(implicit textBinder: PathBindable[String]): PathBindable[ApiVersion] = new PathBindable[ApiVersion] {
+  implicit def apiVersionPathBinder(implicit textBinder: PathBindable[String]): PathBindable[ApiVersionNbr] = new PathBindable[ApiVersionNbr] {
 
-    override def bind(key: String, value: String): Either[String, ApiVersion] = {
-      textBinder.bind(key, value).map(ApiVersion(_))
+    override def bind(key: String, value: String): Either[String, ApiVersionNbr] = {
+      textBinder.bind(key, value).map(ApiVersionNbr(_))
     }
 
-    override def unbind(key: String, apiVersion: ApiVersion): String = {
+    override def unbind(key: String, apiVersion: ApiVersionNbr): String = {
       apiVersion.value
     }
   }
 
-  implicit def apiVersionQueryStringBindable(implicit textBinder: QueryStringBindable[String]) = new QueryStringBindable[ApiVersion] {
+  implicit def apiVersionQueryStringBindable(implicit textBinder: QueryStringBindable[String]) = new QueryStringBindable[ApiVersionNbr] {
 
-    override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, ApiVersion]] = {
+    override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, ApiVersionNbr]] = {
       for {
         text <- textBinder.bind(key, params)
       } yield {
         text match {
-          case Right(version) => Right(ApiVersion(version))
+          case Right(version) => Right(ApiVersionNbr(version))
           case _              => Left("Unable to bind an api version")
         }
       }
     }
 
-    override def unbind(key: String, version: ApiVersion): String = {
+    override def unbind(key: String, version: ApiVersionNbr): String = {
       textBinder.unbind(key, version.value)
     }
   }

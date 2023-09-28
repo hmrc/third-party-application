@@ -24,9 +24,7 @@ import play.api.libs.json.Json.toJson
 import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.developers.domain.models.UserId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 
 private[controllers] case class SubscribersResponse(subscribers: Set[ApplicationId])
@@ -43,7 +41,7 @@ class SubscriptionController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils {
 
-  def getSubscribers(context: ApiContext, version: ApiVersion): Action[AnyContent] = Action.async { _ =>
+  def getSubscribers(context: ApiContext, version: ApiVersionNbr): Action[AnyContent] = Action.async { _ =>
     subscriptionRepository.getSubscribers(ApiIdentifier(context, version)).map(subscribers => Ok(toJson(SubscribersResponse(subscribers)))) recover recovery
   }
 

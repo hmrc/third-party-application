@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.ControllerComponents
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.{ApprovalsActionBuilders, JsonErrorResponse}
 import uk.gov.hmrc.apiplatform.modules.approvals.services.{GrantApprovalsService, RequestApprovalsService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService

@@ -25,8 +25,8 @@ import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ApplicationId, ClientId, Collaborator, RateLimitTier}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator, RateLimitTier}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -172,7 +172,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
   "searchCollaborators" should {
     "return emails" in new Setup {
       val context           = ApiContext.random
-      val version           = ApiVersion.random
+      val version           = ApiVersionNbr.random
       val emails            = List("user@example.com", "dev@example.com")
       val partialEmailMatch = "partialEmail"
 
