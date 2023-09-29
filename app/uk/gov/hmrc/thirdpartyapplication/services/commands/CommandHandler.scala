@@ -30,6 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
 
 trait CommandHandler {
   implicit def ec: ExecutionContext
@@ -83,6 +84,17 @@ object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[
   private def applicationHasAnAdmin(updated: Set[Collaborator]): Boolean = {
     updated.exists(_.isAdministrator)
   }
+
+  private def isGatekeeperUser(actor: Actor): Boolean = actor match {
+    case GatekeeperUser(user) => true
+    case _: Actor => false
+  }
+
+  def isAdminIfInProductionOrGatekeeperActor(actor: Actor, app: ApplicationData): Validated[Failures, Unit] =
+    cond(
+      (app.environment == Environment.PRODUCTION.toString && isCollaboratorActorAndAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString) || isGatekeeperUser(actor),
+      CommandFailures.GenericFailure("App is in PRODUCTION so User must be an ADMIN or be a Gatekeeper User")
+    )
 
   def isAdminOnApp(userId: UserId, app: ApplicationData): Validated[Failures, Collaborator] =
     mustBeDefined(app.collaborators.find(c => c.isAdministrator && c.userId == userId), "User must be an ADMIN")
