@@ -64,7 +64,8 @@ class ApplicationCommandDispatcher @Inject() (
     unsubscribeFromApiCmdHdlr: UnsubscribeFromApiCommandHandler,
     updateRedirectUrisCmdHdlr: UpdateRedirectUrisCommandHandler,
     allowApplicationAutoDeleteCmdHdlr: AllowApplicationAutoDeleteCommandHandler,
-    blockApplicationAutoDeleteCmdHdlr: BlockApplicationAutoDeleteCommandHandler
+    blockApplicationAutoDeleteCmdHdlr: BlockApplicationAutoDeleteCommandHandler,
+    changeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -116,6 +117,7 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: UpdateRedirectUris                                    => updateRedirectUrisCmdHdlr.process(app, cmd)
       case cmd: AllowApplicationAutoDelete                            => allowApplicationAutoDeleteCmdHdlr.process(app, cmd)
       case cmd: BlockApplicationAutoDelete                            => blockApplicationAutoDeleteCmdHdlr.process(app, cmd)
+      case cmd: ChangeIpAllowlist                                     => changeIpAllowlistCommandHandler.process(app, cmd)
     }
   }
   // scalastyle:on cyclomatic.complexity
