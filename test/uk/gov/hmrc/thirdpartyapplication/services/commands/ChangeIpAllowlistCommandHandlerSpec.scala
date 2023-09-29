@@ -21,7 +21,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -29,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.ChangeIpAllowlistComm
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.CidrBlock
 import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 
 class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
   trait Setup extends ApplicationRepositoryMockModule {
@@ -47,11 +47,11 @@ class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
     )
 
     val timestamp = FixedClock.instant
-    val update    = ApplicationCommands.ChangeIpAllowlist(developerAsActor, now, true, oldIpAllowList, newIpAllowlist)
+    val update    = ApplicationCommands.ChangeIpAllowlist(loggedInAsActor, now, true, oldIpAllowList, newIpAllowlist)
 
     val underTest = new ChangeIpAllowlistCommandHandler(ApplicationRepoMock.aMock)
 
-    def checkSuccessResult(expectedActor: Actors.AppCollaborator)(fn: => CommandHandler.AppCmdResultT) = {
+    def checkSuccessResult(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
       inside(testMe) { case (app, events) =>
@@ -71,13 +71,23 @@ class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
   }
 
   "process" should {
-    "create correct events for a valid request with app" in new Setup {
+    "create correct events for a valid request with app for an admin on the app" in new Setup {
       val ipAllowList = IpAllowlist(true, newIpAllowlist.map(_.ipAddress).toSet)
 
       ApplicationRepoMock.UpdateIpAllowlist.thenReturnWhen(applicationId, ipAllowList)(anApplication)
 
-      checkSuccessResult(developerAsActor) {
+      checkSuccessResult(loggedInAsActor) {
         underTest.process(anApplication, update)
+      }
+    }
+
+    "create correct events for a valid request with app for a gatekeeper user" in new Setup {
+      val ipAllowList = IpAllowlist(true, newIpAllowlist.map(_.ipAddress).toSet)
+
+      ApplicationRepoMock.UpdateIpAllowlist.thenReturnWhen(applicationId, ipAllowList)(anApplication)
+
+      checkSuccessResult(gatekeeperActor) {
+        underTest.process(anApplication, update.copy(actor = gatekeeperActor))
       }
     }
 
@@ -85,9 +95,19 @@ class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
       val badIpAllowList = List(
         CidrBlock("Bad CIDR Block")
       )
-      val badUpdate    = ApplicationCommands.ChangeIpAllowlist(developerAsActor, now, true, oldIpAllowList, badIpAllowList)
+      val badUpdate    = ApplicationCommands.ChangeIpAllowlist(loggedInAsActor, now, true, oldIpAllowList, badIpAllowList)
 
       checkFailsWith("Not all new allowlist IP addresses are valid CIDR blocks") {
+        underTest.process(anApplication, badUpdate)
+      }
+
+      ApplicationRepoMock.verifyZeroInteractions()
+    }
+
+    "fail due to invalid user" in new Setup {
+      val badUpdate    = update.copy(actor = developerAsActor)
+
+      checkFailsWith("App is in PRODUCTION so User must be an ADMIN or be a Gatekeeper User") {
         underTest.process(anApplication, badUpdate)
       }
 
