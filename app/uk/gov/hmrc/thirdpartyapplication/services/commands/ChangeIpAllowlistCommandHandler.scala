@@ -74,6 +74,7 @@ class ChangeIpAllowlistCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp.instant,
         actor = cmd.actor,
+        required = cmd.required,
         oldIpAllowlist = cmd.oldIpAllowlist,
         newIpAllowlist = cmd.newIpAllowlist
       )
