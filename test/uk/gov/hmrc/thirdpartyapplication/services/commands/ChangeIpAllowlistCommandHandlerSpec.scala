@@ -59,10 +59,11 @@ class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
         val event = events.head
 
         inside(event) {
-          case ApplicationEvents.IpAllowlistCidrBlockChanged(_, appId, eventDateTime, anActor, oldIps, newIps) =>
+          case ApplicationEvents.IpAllowlistCidrBlockChanged(_, appId, eventDateTime, anActor, required, oldIps, newIps) =>
             appId shouldBe applicationId
             anActor shouldBe expectedActor
             eventDateTime shouldBe timestamp
+            required shouldBe true
             oldIps shouldBe oldIpAllowList
             newIps shouldBe newIpAllowlist
         }
