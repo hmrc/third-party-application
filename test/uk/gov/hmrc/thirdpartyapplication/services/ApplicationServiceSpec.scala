@@ -822,45 +822,7 @@ class ApplicationServiceSpec
     }
   }
 
-  "update IP allowlist" should {
-    "update the IP allowlist in the application in Mongo" in new Setup {
-      val newIpAllowlist: IpAllowlist             = IpAllowlist(required = true, Set("192.168.100.0/22", "192.168.104.1/32"))
-      val updatedApplicationData: ApplicationData = anApplicationData(applicationId, ipAllowlist = newIpAllowlist)
-      ApplicationRepoMock.UpdateIpAllowlist.thenReturnWhen(applicationId, newIpAllowlist)(updatedApplicationData)
-
-      val result: ApplicationData = await(underTest.updateIpAllowlist(applicationId, newIpAllowlist))
-
-      result shouldBe updatedApplicationData
-      ApplicationRepoMock.UpdateIpAllowlist.verifyCalledWith(applicationId, newIpAllowlist)
-    }
-
-    "fail when the IP address is out of range" in new Setup {
-      val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpAllowlist(ApplicationId.random, IpAllowlist(required = true, Set("392.168.100.0/22"))))
-      }
-
-      error.getMessage shouldBe "Value [392] not in range [0,255]"
-    }
-
-    "fail when the mask is out of range" in new Setup {
-      val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpAllowlist(ApplicationId.random, IpAllowlist(required = true, Set("192.168.100.0/55"))))
-      }
-
-      error.getMessage shouldBe "Value [55] not in range [0,32]"
-    }
-
-    "fail when the format is invalid" in new Setup {
-      val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpAllowlist(ApplicationId.random, IpAllowlist(required = true, Set("192.100.0/22"))))
-      }
-
-      error.getMessage shouldBe "Could not parse [192.100.0/22]"
-    }
-  }
-
   "deleting an application" should {
-
     trait DeleteApplicationSetup extends Setup {
       val deleteRequestedBy = "email@example.com".toLaxEmail
       val gatekeeperUserId  = "big.boss.gatekeeper"
