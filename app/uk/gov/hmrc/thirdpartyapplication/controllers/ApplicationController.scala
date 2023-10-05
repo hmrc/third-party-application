@@ -125,16 +125,6 @@ class ApplicationController @Inject() (
     }
   }
 
-  // APIS-6274 - Moving the update of application IP allowlist to command/event model.
-  // Remove this code one the move is complete and GK and TPDFE have been updated.
-  // def updateIpAllowlist(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-  //   withJsonBody[UpdateIpAllowlistRequest] { updateIpAllowlistRequest =>
-  //     applicationService.updateIpAllowlist(applicationId, toIpAllowlist(updateIpAllowlistRequest)) map { _ =>
-  //       NoContent
-  //     } recover recovery
-  //   }
-  // }
-
   def updateCheck(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
     implicit request =>
       withJsonBody[CheckInformation] { checkInformation =>
