@@ -717,40 +717,6 @@ class ApplicationControllerSpec
     }
   }
 
-  "update IP allowlist" should {
-    "succeed with a 204 (no content) when the IP allowlist is successfully added to the application" in new Setup {
-      val applicationId: ApplicationId        = ApplicationId.random
-      val validUpdateIpAllowlistJson: JsValue = Json.parse("""{ "required": false, "allowlist" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
-      when(underTest.applicationService.updateIpAllowlist(eqTo(applicationId), *)).thenReturn(successful(mock[ApplicationData]))
-
-      val result = underTest.updateIpAllowlist(applicationId)(request.withBody(validUpdateIpAllowlistJson))
-
-      status(result) shouldBe NO_CONTENT
-    }
-
-    "fail when the JSON message is invalid" in new Setup {
-      val applicationId: ApplicationId        = ApplicationId.random
-      val validUpdateIpAllowlistJson: JsValue = Json.parse("""{ "required": false, "foo" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
-      when(underTest.applicationService.updateIpAllowlist(eqTo(applicationId), *)).thenReturn(successful(mock[ApplicationData]))
-
-      val result = underTest.updateIpAllowlist(applicationId)(request.withBody(validUpdateIpAllowlistJson))
-
-      verifyErrorResult(result, UNPROCESSABLE_ENTITY, INVALID_REQUEST_PAYLOAD)
-    }
-
-    "fail when the IP allowlist is invalid" in new Setup {
-      val applicationId: ApplicationId        = ApplicationId.random
-      val validUpdateIpAllowlistJson: JsValue = Json.parse("""{ "required": false, "allowlist" : ["392.168.100.0/22"] }""")
-      val errorMessage                        = "invalid IP allowlist"
-      when(underTest.applicationService.updateIpAllowlist(eqTo(applicationId), *))
-        .thenReturn(Future.failed(InvalidIpAllowlistException(errorMessage)))
-
-      val result = underTest.updateIpAllowlist(applicationId)(request.withBody(validUpdateIpAllowlistJson))
-
-      verifyErrorResult(result, BAD_REQUEST, INVALID_IP_ALLOWLIST)
-    }
-  }
-
   "Search" should {
     "pass an ApplicationSearch object to applicationService" in new Setup {
       val req: FakeRequest[AnyContentAsEmpty.type] =

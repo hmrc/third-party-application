@@ -125,15 +125,6 @@ class ApplicationService @Inject() (
     } yield updatedApp
   }
 
-  def updateIpAllowlist(applicationId: ApplicationId, newIpAllowlist: IpAllowlist): Future[ApplicationData] = {
-    for {
-      _          <- fromTry(Try(newIpAllowlist.allowlist.foreach(new SubnetUtils(_)))) recover {
-                      case e: IllegalArgumentException => throw InvalidIpAllowlistException(e.getMessage)
-                    }
-      updatedApp <- applicationRepository.updateApplicationIpAllowlist(applicationId, newIpAllowlist)
-    } yield updatedApp
-  }
-
   def deleteApplication(
       applicationId: ApplicationId,
       request: Option[DeleteApplicationRequest],
