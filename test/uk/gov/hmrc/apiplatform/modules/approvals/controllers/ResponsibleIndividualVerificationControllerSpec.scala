@@ -23,8 +23,8 @@ import akka.stream.testkit.NoMaterializer
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 

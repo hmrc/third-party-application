@@ -37,8 +37,8 @@ import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
@@ -125,7 +125,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         )
       ),
       replaceIndexes = true,
-      extraCodecs = Seq(Codecs.playFormatCodec(LaxEmailAddress.formatter))
+      extraCodecs = Seq(Codecs.playFormatCodec(LaxEmailAddress.format))
     ) with MetricsTimer
     with ApplicationLogger {
 
