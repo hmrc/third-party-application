@@ -25,12 +25,12 @@ import cats.implicits._
 import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.services.BaseCommandHandler
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, Environment, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
 
 trait CommandHandler {
   implicit def ec: ExecutionContext
@@ -87,7 +87,7 @@ object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[
 
   private def isGatekeeperUser(actor: Actor): Boolean = actor match {
     case GatekeeperUser(user) => true
-    case _: Actor => false
+    case _: Actor             => false
   }
 
   def isAdminIfInProductionOrGatekeeperActor(actor: Actor, app: ApplicationData): Validated[Failures, Unit] =

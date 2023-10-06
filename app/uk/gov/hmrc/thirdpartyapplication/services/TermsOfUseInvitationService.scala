@@ -19,8 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.time.temporal.ChronoUnit._
 import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.OptionT
 import cats.implicits._

@@ -21,8 +21,7 @@ import scala.concurrent.ExecutionContext
 
 import play.api.mvc.ControllerComponents
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._

@@ -20,17 +20,17 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.domain.models.CidrBlock
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ChangeIpAllowlistCommandHandler
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.CidrBlock
-import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 
 class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
+
   trait Setup extends ApplicationRepositoryMockModule {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -96,7 +96,7 @@ class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
       val badIpAllowList = List(
         CidrBlock("Bad CIDR Block")
       )
-      val badUpdate    = ApplicationCommands.ChangeIpAllowlist(loggedInAsActor, now, true, oldIpAllowList, badIpAllowList)
+      val badUpdate      = ApplicationCommands.ChangeIpAllowlist(loggedInAsActor, now, true, oldIpAllowList, badIpAllowList)
 
       checkFailsWith("Not all new allowlist IP addresses are valid CIDR blocks") {
         underTest.process(anApplication, badUpdate)
@@ -106,7 +106,7 @@ class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
     }
 
     "fail due to invalid user" in new Setup {
-      val badUpdate    = update.copy(actor = developerAsActor)
+      val badUpdate = update.copy(actor = developerAsActor)
 
       checkFailsWith("App is in PRODUCTION so User must be an ADMIN or be a Gatekeeper User") {
         underTest.process(anApplication, badUpdate)
