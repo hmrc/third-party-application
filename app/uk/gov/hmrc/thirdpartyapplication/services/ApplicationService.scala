@@ -22,12 +22,11 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{apply => _, _}
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Try}
+import scala.util.Failure
 
 import akka.actor.ActorSystem
 import cats.data.OptionT
 import com.kenshoo.play.metrics.Metrics
-import org.apache.commons.net.util.SubnetUtils
 
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}

@@ -125,7 +125,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         )
       ),
       replaceIndexes = true,
-      extraCodecs = Seq(Codecs.playFormatCodec(LaxEmailAddress.formatter))
+      extraCodecs = Seq(Codecs.playFormatCodec(LaxEmailAddress.format))
     ) with MetricsTimer
     with ApplicationLogger {
 
