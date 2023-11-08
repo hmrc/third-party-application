@@ -30,15 +30,14 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{InvalidStateTransition, State}
 import uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ControllerSpec, ControllerTestData, ErrorCode}
-import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists}
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftRequested
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.InvalidStateTransition
+import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 class UpliftControllerSpec
     extends ControllerSpec

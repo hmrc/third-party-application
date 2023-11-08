@@ -21,9 +21,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 
 abstract class BaseService(stateHistoryRepository: StateHistoryRepository, clock: Clock)(implicit ec: ExecutionContext) {
 

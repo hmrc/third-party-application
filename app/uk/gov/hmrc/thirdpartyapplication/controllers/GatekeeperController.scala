@@ -24,6 +24,7 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.InvalidStateTransition
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -32,7 +33,6 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitatio
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.InvalidStateTransition
 
 @Singleton
 class GatekeeperController @Inject() (

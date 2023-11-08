@@ -18,8 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ClientSecretData, Token}
 
 case class ApplicationTokenResponse(
     clientId: ClientId,

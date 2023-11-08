@@ -21,8 +21,7 @@ import java.time.LocalDateTime
 import play.api.libs.json.Json
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, ApplicationId}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 
 case class StateHistoryResponse(applicationId: ApplicationId, state: State, actor: Actor, notes: Option[String], changedAt: LocalDateTime)
 

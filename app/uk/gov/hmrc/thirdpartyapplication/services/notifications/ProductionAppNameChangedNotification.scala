@@ -21,11 +21,11 @@ import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ProductionAppNameChangedEvent
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 object ProductionAppNameChangedNotification {
 
@@ -41,7 +41,7 @@ object ProductionAppNameChangedNotification {
   private def getResponsibleIndividual(app: ApplicationData): Set[LaxEmailAddress] = {
     app.access match {
       case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress)
-      case _                                                      => Set()
+      case _                                                             => Set()
     }
   }
 }

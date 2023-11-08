@@ -33,7 +33,7 @@ case class CreateApplicationRequestV1(
     super.validate(in)
     in.access match {
       case a: Access.Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
-      case _           =>
+      case _                  =>
     }
   }
 

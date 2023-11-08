@@ -268,7 +268,7 @@ class ApplicationRepositoryISpec
 
       updatedApplication.access match {
         case access: Access.Standard => access.redirectUris mustBe updateRedirectUris
-        case _                => fail("Wrong access - expecting standard")
+        case _                       => fail("Wrong access - expecting standard")
       }
     }
   }
@@ -3062,7 +3062,7 @@ class ApplicationRepositoryISpec
     val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateApplicationPrivacyPolicyLocation(applicationId, newLocation))
     appWithUpdatedPrivacyPolicyLocation.access match {
       case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
-      case _                                                                                            => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+      case _                                                                                                   => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
     }
   }
 
@@ -3077,7 +3077,7 @@ class ApplicationRepositoryISpec
     val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateLegacyApplicationPrivacyPolicyLocation(applicationId, newUrl))
     appWithUpdatedPrivacyPolicyLocation.access match {
       case Access.Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
-      case _                                                  => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+      case _                                                         => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
     }
   }
 
@@ -3101,7 +3101,7 @@ class ApplicationRepositoryISpec
     val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateApplicationTermsAndConditionsLocation(applicationId, newLocation))
     appWithUpdatedTermsConditionsLocation.access match {
       case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation mustBe newLocation
-      case _                                                                                                 => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
+      case _                                                                                                        => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
     }
   }
 
@@ -3116,7 +3116,7 @@ class ApplicationRepositoryISpec
     val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateLegacyApplicationTermsAndConditionsLocation(applicationId, newUrl))
     appWithUpdatedTermsConditionsLocation.access match {
       case Access.Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
-      case _                                                       => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
+      case _                                                              => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
     }
   }
 
@@ -3153,7 +3153,7 @@ class ApplicationRepositoryISpec
     )
     val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = anApplicationData(applicationId).copy(access = access)
-    val appStored = await(applicationRepository.save(app))
+    val appStored               = await(applicationRepository.save(app))
     println(appStored)
 
     val appWithUpdatedRI =
@@ -3170,7 +3170,7 @@ class ApplicationRepositoryISpec
         latestAcceptance.responsibleIndividual.fullName.value mustBe adminName
         latestAcceptance.responsibleIndividual.emailAddress mustBe anAdminEmail
       }
-      case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
+      case _                                                             => fail("unexpected access type: " + appWithUpdatedRI.access)
     }
   }
 
@@ -3218,7 +3218,7 @@ class ApplicationRepositoryISpec
         latestAcceptance.responsibleIndividual.fullName.value mustBe riName
         latestAcceptance.responsibleIndividual.emailAddress mustBe riEmail
       }
-      case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
+      case _                                                             => fail("unexpected access type: " + appWithUpdatedRI.access)
     }
   }
 

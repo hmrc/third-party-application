@@ -28,9 +28,10 @@ import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
@@ -39,8 +40,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ApplicationDeleted, _}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 // scalastyle:off number.of.types
 
@@ -364,7 +363,7 @@ object AuditHelper {
           calcTermsAndConditionsChange(p, u),
           calcPrivacyPolicyChange(p, u)
         )
-      case _                          => Set.empty
+      case _                                        => Set.empty
     }
 
     (standardEvents ++ genericEvents)

@@ -20,14 +20,13 @@ import java.time.{LocalDateTime, ZoneOffset}
 
 import com.typesafe.config.ConfigFactory
 
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
 
 case class ApplicationTokens(production: Token)
 
@@ -55,12 +54,12 @@ case class ApplicationData(
 
   lazy val sellResellOrDistribute = access match {
     case Access.Standard(_, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
-    case _                                               => None
+    case _                                                      => None
   }
 
   lazy val importantSubmissionData: Option[ImportantSubmissionData] = access match {
     case Access.Standard(_, _, _, _, _, Some(submissionData)) => Some(submissionData)
-    case _                                             => None
+    case _                                                    => None
   }
 
   def isInTesting                                                      = state.isInTesting
@@ -86,9 +85,9 @@ object ApplicationData {
     import createApplicationRequest._
 
     val applicationState = (environment, accessType) match {
-      case (Environment.SANDBOX, _) => ApplicationState(State.PRODUCTION, updatedOn = createdOn)
-      case (_, AccessType.PRIVILEGED | AccessType.ROPC)   => ApplicationState(State.PRODUCTION, collaborators.headOption.map(_.emailAddress.text), updatedOn = createdOn)
-      case _                        => ApplicationState(State.TESTING, updatedOn = createdOn)
+      case (Environment.SANDBOX, _)                     => ApplicationState(State.PRODUCTION, updatedOn = createdOn)
+      case (_, AccessType.PRIVILEGED | AccessType.ROPC) => ApplicationState(State.PRODUCTION, collaborators.headOption.map(_.emailAddress.text), updatedOn = createdOn)
+      case _                                            => ApplicationState(State.TESTING, updatedOn = createdOn)
     }
 
     val checkInfo = createApplicationRequest match {

@@ -35,28 +35,18 @@ import org.mongodb.scala.model._
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, Collaborator, RateLimitTier, _}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ClientSecretData, Token}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.PrivacyPolicyLocation
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsAndConditionsLocation
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsOfUseAcceptance
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ResponsibleIndividual
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
 
 object ApplicationRepository {
   case class SubsByUser(apiIdentifiers: List[ApiIdentifier])
@@ -64,15 +54,16 @@ object ApplicationRepository {
   object MongoFormats {
     implicit val subsByUserFormat = Json.format[SubsByUser]
 
-    implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
-    implicit val formatTermsOfUseAcceptance     = Json.format[TermsOfUseAcceptance]
+    implicit val dateFormat                    = MongoJavatimeFormats.localDateTimeFormat
+    implicit val formatTermsOfUseAcceptance    = Json.format[TermsOfUseAcceptance]
     implicit val formatTermsOfUserAgreement    = Json.format[TermsOfUseAgreement]
     implicit val formatImportantSubmissionData = Json.format[ImportantSubmissionData]
     implicit val formatStandard                = Json.format[Access.Standard]
-    implicit val formatPrivileged                = Json.format[Access.Privileged]
+    implicit val formatPrivileged              = Json.format[Access.Privileged]
     implicit val formatRopc                    = Json.format[Access.Ropc]
 
     import uk.gov.hmrc.play.json.Union
+
     implicit val formatAccess = Union.from[Access]("accessType")
       .and[Access.Standard](AccessType.STANDARD.toString)
       .and[Access.Privileged](AccessType.PRIVILEGED.toString)
@@ -85,10 +76,10 @@ object ApplicationRepository {
     implicit val formatClientSecret      = Json.format[ClientSecretData]
     implicit val formatEnvironmentToken  = Json.format[Token]
     implicit val formatApplicationTokens = Json.format[ApplicationTokens]
-    
+
     import play.api.libs.functional.syntax._
     import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
-    
+
     val applicationDataReads: Reads[ApplicationData] = (
       (JsPath \ "id").read[ApplicationId] and
         (JsPath \ "name").read[String] and
@@ -110,9 +101,9 @@ object ApplicationRepository {
         ((JsPath \ "allowAutoDelete").read[Boolean] or Reads.pure(true))
     )(ApplicationData.apply _)
 
-    implicit val formatApplicationData: OFormat[ApplicationData] = OFormat(applicationDataReads, Json.writes[ApplicationData])  
+    implicit val formatApplicationData: OFormat[ApplicationData] = OFormat(applicationDataReads, Json.writes[ApplicationData])
 
-    implicit val reads             = Json.reads[PaginatedApplicationData]
+    implicit val reads = Json.reads[PaginatedApplicationData]
   }
 }
 
@@ -833,7 +824,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   def updateLegacyApplicationTermsAndConditionsLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.termsAndConditionsUrl", url))
-
 
   def updateApplicationChangeResponsibleIndividual(
       applicationId: ApplicationId,

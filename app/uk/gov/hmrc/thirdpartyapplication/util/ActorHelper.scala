@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
 
 trait ActorHelper {
 

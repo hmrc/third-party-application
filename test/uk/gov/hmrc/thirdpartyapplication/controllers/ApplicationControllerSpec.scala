@@ -35,9 +35,13 @@ import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -50,10 +54,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -140,8 +140,9 @@ class ApplicationControllerSpec
 
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
-  val credentialServiceResponseToken: ApplicationTokenResponse = ApplicationTokenResponse(ClientId("111"), "222", clientSecrets = List(ClientSecretResponse(ClientSecret.Id.random, "222", createdOn = now)))
-  
+  val credentialServiceResponseToken: ApplicationTokenResponse =
+    ApplicationTokenResponse(ClientId("111"), "222", clientSecrets = List(ClientSecretResponse(ClientSecret.Id.random, "222", createdOn = now)))
+
   "update approval" should {
     val termsOfUseAgreement = TermsOfUseAgreement(LaxEmailAddress("test@example.com"), now, "1.0".asVersion.value)
     val checkInformation    = CheckInformation(

@@ -26,13 +26,13 @@ import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsOfUseAcceptance
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Deleted
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, CreateApplicationRequest, CreateApplicationResponse}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsOfUseAcceptance
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Deleted
 
 trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
 

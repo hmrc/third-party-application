@@ -45,6 +45,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10

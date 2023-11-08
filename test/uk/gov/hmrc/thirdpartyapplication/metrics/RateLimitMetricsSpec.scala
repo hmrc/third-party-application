@@ -19,10 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.metrics
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 
 class RateLimitMetricsSpec extends AsyncHmrcSpec {
 

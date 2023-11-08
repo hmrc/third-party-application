@@ -82,7 +82,7 @@ abstract class AbstractApplicationNamingService(
     accessType match {
       case AccessType.PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName, Map("applicationName" -> submittedAppName))
       case AccessType.ROPC       => auditService.audit(CreateRopcApplicationRequestDeniedDueToNonUniqueName, Map("applicationName" -> submittedAppName))
-      case _          => auditService.audit(
+      case _                     => auditService.audit(
           ApplicationUpliftRequestDeniedDueToNonUniqueName,
           existingAppId.map(id => AuditHelper.applicationId(id)).getOrElse(Map.empty) ++ Map("applicationName" -> submittedAppName)
         )
@@ -92,7 +92,7 @@ abstract class AbstractApplicationNamingService(
     accessType match {
       case AccessType.PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToDenyListedName, Map("applicationName" -> submittedAppName))
       case AccessType.ROPC       => auditService.audit(CreateRopcApplicationRequestDeniedDueToDenyListedName, Map("applicationName" -> submittedAppName))
-      case _          => auditService.audit(
+      case _                     => auditService.audit(
           ApplicationUpliftRequestDeniedDueToDenyListedName,
           existingAppId.map(id => AuditHelper.applicationId(id)).getOrElse(Map.empty) ++ Map("applicationName" -> submittedAppName)
         )

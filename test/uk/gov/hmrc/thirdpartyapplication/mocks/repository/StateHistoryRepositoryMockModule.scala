@@ -23,10 +23,9 @@ import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 
 trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

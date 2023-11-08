@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import play.api.libs.json.Json
 
-
 case class TotpSecret(production: String)
 
 object TotpSecret {

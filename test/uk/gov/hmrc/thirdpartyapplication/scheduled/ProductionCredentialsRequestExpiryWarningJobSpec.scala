@@ -22,14 +22,14 @@ import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, NotificationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{NotificationStatus, NotificationType}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 
 class ProductionCredentialsRequestExpiryWarningJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 

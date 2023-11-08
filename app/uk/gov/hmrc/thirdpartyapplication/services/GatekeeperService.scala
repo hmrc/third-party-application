@@ -25,18 +25,15 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, ApplicationId, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
-// import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, _}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateChange
-import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 @Singleton
 class GatekeeperService @Inject() (
@@ -108,7 +105,13 @@ class GatekeeperService @Inject() (
     for {
       app    <- fetchApp(applicationId)
       newApp <- applicationRepository.save(approve(app))
-      _      <- insertStateHistory(newApp, State.PENDING_REQUESTER_VERIFICATION, Some(State.PENDING_GATEKEEPER_APPROVAL), Actors.GatekeeperUser(gatekeeperUserId), applicationRepository.save)
+      _      <- insertStateHistory(
+                  newApp,
+                  State.PENDING_REQUESTER_VERIFICATION,
+                  Some(State.PENDING_GATEKEEPER_APPROVAL),
+                  Actors.GatekeeperUser(gatekeeperUserId),
+                  applicationRepository.save
+                )
       _       = logger.info(s"UPLIFT04: Approved uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
                   s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} gatekeeperUserId:$gatekeeperUserId")
       _       = auditService.auditGatekeeperAction(gatekeeperUserId, newApp, ApplicationUpliftApproved)
@@ -129,7 +132,14 @@ class GatekeeperService @Inject() (
     for {
       app    <- fetchApp(applicationId)
       newApp <- applicationRepository.save(reject(app))
-      _      <- insertStateHistory(app, State.TESTING, Some(State.PENDING_GATEKEEPER_APPROVAL), Actors.GatekeeperUser(request.gatekeeperUserId), applicationRepository.save, Some(request.reason))
+      _      <- insertStateHistory(
+                  app,
+                  State.TESTING,
+                  Some(State.PENDING_GATEKEEPER_APPROVAL),
+                  Actors.GatekeeperUser(request.gatekeeperUserId),
+                  applicationRepository.save,
+                  Some(request.reason)
+                )
       _       = logger.info(s"UPLIFT03: Rejected uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
                   s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} reason:${request.reason}" +
                   s" gatekeeperUserId:${request.gatekeeperUserId}")

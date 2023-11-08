@@ -33,12 +33,15 @@ import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFou
 import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress, UserId, _}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, _}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
@@ -53,11 +56,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -107,7 +106,7 @@ class ApplicationServiceSpec
     val mockGatekeeperService                     = mock[GatekeeperService]
     val mockApiPlatformEventService               = mock[ApiPlatformEventService]
 
-    val metrics                                   = mock[Metrics]
+    val metrics = mock[Metrics]
 
     val hcForLoggedInCollaborator = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser.text,
@@ -199,7 +198,7 @@ class ApplicationServiceSpec
               Some("http://new-url.example.com/terms-and-conditions"),
               Some("http://new-url.example.com/privacy-policy")
             )
-          case x           => x
+          case x                  => x
         }
       )
       val updateRedirectUris                  = UpdateRedirectUris(

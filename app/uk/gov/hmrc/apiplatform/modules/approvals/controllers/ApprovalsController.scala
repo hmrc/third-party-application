@@ -22,15 +22,15 @@ import scala.concurrent.ExecutionContext
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.ControllerComponents
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.{ApprovalsActionBuilders, JsonErrorResponse}
 import uk.gov.hmrc.apiplatform.modules.approvals.services.{GrantApprovalsService, RequestApprovalsService}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByName: String, requestedByEmailAddress: String)

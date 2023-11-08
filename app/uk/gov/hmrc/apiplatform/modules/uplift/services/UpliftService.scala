@@ -25,18 +25,14 @@ import scala.util.Failure
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, ApplicationId, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, UpliftRequested, UpliftVerified}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AuditHelper, AuditService}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateChange
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftRequested
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftVerified
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
-import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 @Singleton
 class UpliftService @Inject() (

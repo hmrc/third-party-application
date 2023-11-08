@@ -32,14 +32,18 @@ import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress, _}
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CheckInformation, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsOfUseAcceptance
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, FixCollaboratorRequest}
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, Deleted}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, SubscriptionRepository, TermsOfUseInvitationRepository}
@@ -47,14 +51,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, MetricsTimer}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsOfUseAcceptance
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateChange
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
-import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
-import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Deleted
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 
 @Singleton
 class ApplicationService @Inject() (
@@ -307,7 +303,7 @@ class ApplicationService @Inject() (
     def applyTotpForPrivAppsOnly(totp: Option[Totp], request: CreateApplicationRequest): CreateApplicationRequest = {
       request match {
         case v1 @ CreateApplicationRequestV1(_, priv: Access.Privileged, _, _, _, _) => v1.copy(access = priv.copy(totpIds = extractTotpId(totp)))
-        case _                                                                => request
+        case _                                                                       => request
       }
     }
 
@@ -315,7 +311,7 @@ class ApplicationService @Inject() (
       _              <- createApplicationRequest.accessType match {
                           case AccessType.PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, AccessType.PRIVILEGED)
                           case AccessType.ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, AccessType.ROPC)
-                          case _          => successful(())
+                          case _                     => successful(())
                         }
       totp           <- generateApplicationTotp(createApplicationRequest.accessType)
       modifiedRequest = applyTotpForPrivAppsOnly(totp, req)
@@ -336,7 +332,7 @@ class ApplicationService @Inject() (
   private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[Totp]] = {
     accessType match {
       case AccessType.PRIVILEGED => totpConnector.generateTotp().map(Some(_))
-      case _          => Future(None)
+      case _                     => Future(None)
     }
   }
 
@@ -351,7 +347,7 @@ class ApplicationService @Inject() (
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {
     val actor = appData.access.accessType match {
       case AccessType.PRIVILEGED | AccessType.ROPC => Actors.Unknown
-      case _                 => loggedInActor
+      case _                                       => loggedInActor
     }
     insertStateHistory(appData, appData.state.name, None, actor, (a: ApplicationData) => applicationRepository.hardDelete(a.id))
   }
@@ -372,7 +368,7 @@ class ApplicationService @Inject() (
     def updatedAccess(existing: ApplicationData): Access =
       (applicationRequest.access, existing.access) match {
         case (newAccess: Access.Standard, oldAccess: Access.Standard) => newAccess.copy(overrides = oldAccess.overrides)
-        case _                                          => applicationRequest.access
+        case _                                                        => applicationRequest.access
       }
 
     def updatedApplication(existing: ApplicationData): ApplicationData =

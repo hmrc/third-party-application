@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.time.LocalDateTime
+import java.time.{Clock, LocalDateTime}
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import java.time.Clock
 
 case class ExtendedApplicationResponse(
     id: ApplicationId,

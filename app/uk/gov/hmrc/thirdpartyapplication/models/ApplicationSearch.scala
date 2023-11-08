@@ -145,10 +145,10 @@ case object AccessTypeFilter extends AccessTypeFilter {
 
   def apply(value: String): Option[AccessTypeFilter] = {
     value match {
-      case "AccessType.AccessType.STANDARD"   => Some(StandardAccess)
-      case "ROPC"       => Some(ROPCAccess)
-      case "PRIVILEGED" => Some(PrivilegedAccess)
-      case _            => None
+      case "AccessType.AccessType.STANDARD" => Some(StandardAccess)
+      case "ROPC"                           => Some(ROPCAccess)
+      case "PRIVILEGED"                     => Some(PrivilegedAccess)
+      case _                                => None
     }
   }
 }

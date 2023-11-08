@@ -16,21 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import java.time.{Clock, LocalDateTime}
 import java.util.UUID
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationState
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
-import java.time.LocalDateTime
-import java.time.Clock
-import uk.gov.hmrc.thirdpartyapplication.models.ExtendedApplicationResponse
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, Collaborator, State}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, ExtendedApplicationResponse}
+import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 trait ControllerTestData extends CollaboratorTestData with FixedClock {
 

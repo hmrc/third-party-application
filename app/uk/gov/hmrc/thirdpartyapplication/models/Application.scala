@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.time.LocalDateTime
+import java.time.{Clock, LocalDateTime}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import java.time.Clock
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 case class ApplicationResponse(
     id: ApplicationId,
@@ -58,17 +57,17 @@ object ApplicationResponse {
 
   def redirectUris(data: ApplicationData): List[String] = data.access match {
     case a: Access.Standard => a.redirectUris
-    case _           => List.empty
+    case _                  => List.empty
   }
 
   def termsAndConditionsUrl(data: ApplicationData): Option[String] = data.access match {
     case a: Access.Standard => a.termsAndConditionsUrl
-    case _           => None
+    case _                  => None
   }
 
   def privacyPolicyUrl(data: ApplicationData): Option[String] = data.access match {
     case a: Access.Standard => a.privacyPolicyUrl
-    case _           => None
+    case _                  => None
   }
 
   def apply(data: ApplicationData): ApplicationResponse = {
@@ -97,17 +96,3 @@ object ApplicationResponse {
     )
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
