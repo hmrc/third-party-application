@@ -51,6 +51,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationState
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.InvalidStateTransition
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with ApplicationLogger
     with ControllerTestData with ApplicationTestData {

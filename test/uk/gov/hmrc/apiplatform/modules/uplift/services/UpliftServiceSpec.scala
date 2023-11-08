@@ -37,6 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateChange
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftRequested
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftVerified
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.InvalidStateTransition
 
 class UpliftServiceSpec extends AsyncHmrcSpec {
 

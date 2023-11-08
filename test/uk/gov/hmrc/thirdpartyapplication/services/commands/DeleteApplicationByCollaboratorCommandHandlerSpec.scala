@@ -26,7 +26,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Application
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 

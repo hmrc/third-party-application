@@ -172,7 +172,6 @@ class ApplicationCommandDispatcherSpec
 
     "AddCollaborator is received" should {
       val collaborator                               = "email".developer()
-      val adminsToEmail                              = Set("email1".toLaxEmail, "email2".toLaxEmail)
       val cmd: AddCollaborator                       = AddCollaborator(otherAdminAsActor, collaborator, now)
       val evt: ApplicationEvents.CollaboratorAddedV2 = ApplicationEvents.CollaboratorAddedV2(
         EventId.random,
@@ -201,7 +200,6 @@ class ApplicationCommandDispatcherSpec
     "RemoveCollaborator is received" should {
 
       val collaborator                                 = "email".developer()
-      val adminsToEmail                                = Set("email1".toLaxEmail, "email2".toLaxEmail)
       val cmd: RemoveCollaborator                      = RemoveCollaborator(otherAdminAsActor, collaborator, now)
       val evt: ApplicationEvents.CollaboratorRemovedV2 = ApplicationEvents.CollaboratorRemovedV2(
         EventId.random,

@@ -41,6 +41,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collabora
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.InvalidStateTransition
 
 class GatekeeperServiceSpec
     extends AsyncHmrcSpec

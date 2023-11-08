@@ -20,7 +20,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualUpdateVerification,
@@ -34,8 +33,14 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ResponsibleIndividual
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 
 class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
 
@@ -71,7 +76,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
         appAdminEmail.admin(appAdminUserId)
       ),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
-      state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName)
+      state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName)
     )
 
     val ts      = FixedClock.instant
@@ -191,7 +196,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
       ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
 
-      val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
+      val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
       checkSuccessResultUpdate(Actors.AppCollaborator(appAdminEmail)) {
         underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, now))
@@ -239,7 +244,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
 
     "return an error if the application state is not PendingResponsibleIndividualVerification" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
-      val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail.text, requesterName))
+      val pendingGKApprovalApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName))
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state") {
         underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividualDidNotVerify(code, now))
       }

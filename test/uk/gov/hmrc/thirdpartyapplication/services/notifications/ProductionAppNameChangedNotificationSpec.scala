@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModu
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -42,7 +43,8 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
     val testImportantSubmissionData = ImportantSubmissionData(
       Some("organisationUrl.com"),
       responsibleIndividual,
-      TermsPrivacyPolicyLocations.InDesktopSoftware,
+      Set(ServerLocation.InEEA),
+      TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocations.InDesktopSoftware,
       List.empty
     )

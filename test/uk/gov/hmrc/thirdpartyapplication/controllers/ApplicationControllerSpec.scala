@@ -26,7 +26,6 @@ import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
 import cats.data.OptionT
 import cats.implicits._
-import com.github.t3hnar.bcrypt._
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 import play.api.libs.json.{JsValue, Json}
@@ -141,6 +140,8 @@ class ApplicationControllerSpec
 
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
+  val credentialServiceResponseToken: ApplicationTokenResponse = ApplicationTokenResponse(ClientId("111"), "222", clientSecrets = List(ClientSecretResponse(ClientSecret.Id.random, "222", createdOn = now)))
+  
   "update approval" should {
     val termsOfUseAgreement = TermsOfUseAgreement(LaxEmailAddress("test@example.com"), now, "1.0".asVersion.value)
     val checkInformation    = CheckInformation(

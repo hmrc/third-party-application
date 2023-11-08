@@ -54,6 +54,10 @@ import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -138,7 +142,6 @@ class ApplicationServiceSpec
       actorSystem.get,
       mockLockKeeper,
       ApiGatewayStoreMock.aMock,
-      applicationResponseCreator,
       mockCredentialGenerator,
       ApiSubscriptionFieldsConnectorMock.aMock,
       mockThirdPartyDelegatedAuthorityConnector,
@@ -146,7 +149,7 @@ class ApplicationServiceSpec
       SubmissionsServiceMock.aMock,
       UpliftNamingServiceMock.aMock,
       ApplicationCommandDispatcherMock.aMock,
-      fixedClock
+      clock
     ) with NoOpMetricsTimer
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
@@ -242,7 +245,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -277,7 +280,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -305,7 +308,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -524,7 +527,7 @@ class ApplicationServiceSpec
 
   "confirmSetupComplete" should {
     "update pre-production application state and store state history" in new Setup {
-      val oldApplication     = anApplicationData(applicationId, state = ApplicationState.preProduction("previous@example.com", "Previous"))
+      val oldApplication     = anApplicationData(applicationId, state = ApplicationStateExamples.preProduction("previous@example.com", "Previous"))
       ApplicationRepoMock.Fetch.thenReturn(oldApplication)
       ApplicationRepoMock.Save.thenAnswer()
       StateHistoryRepoMock.Insert.thenAnswer()
@@ -546,7 +549,7 @@ class ApplicationServiceSpec
     }
 
     "not update application in wrong state" in new Setup {
-      val oldApplication = anApplicationData(applicationId, state = ApplicationState.pendingGatekeeperApproval("previous@example.com", "Previous"))
+      val oldApplication = anApplicationData(applicationId, state = ApplicationStateExamples.pendingGatekeeperApproval("previous@example.com", "Previous"))
       ApplicationRepoMock.Fetch.thenReturn(oldApplication)
       ApplicationRepoMock.Save.thenAnswer()
 
@@ -635,7 +638,7 @@ class ApplicationServiceSpec
   }
 
   "update approval" should {
-    val approvalInformation = CheckInformation(Some(ContactDetails("Tester", "test@example.com", "12345677890")))
+    val approvalInformation = CheckInformation(Some(ContactDetails(FullName("Tester"), LaxEmailAddress("test@example.com"), "12345677890")))
 
     "update an existing application if an id is provided" in new Setup {
       val applicationDataWithApproval = applicationData.copy(checkInformation = Some(approvalInformation))

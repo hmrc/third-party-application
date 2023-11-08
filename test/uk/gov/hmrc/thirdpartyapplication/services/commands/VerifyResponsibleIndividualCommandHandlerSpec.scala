@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.VerifyResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
@@ -30,6 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
 
@@ -124,7 +125,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
 
     "return an error if the application is not approved" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val notApprovedApp = app.copy(state = ApplicationState.pendingGatekeeperApproval("someone@example.com", "Someone"))
+      val notApprovedApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
         underTest.process(notApprovedApp, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail))

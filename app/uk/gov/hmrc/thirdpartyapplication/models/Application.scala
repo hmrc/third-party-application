@@ -46,7 +46,7 @@ case class ApplicationResponse(
     blocked: Boolean = false,
     trusted: Boolean = false,
     ipAllowlist: IpAllowlist = IpAllowlist(),
-    moreApplication: MoreApplication = MoreApplication(false)
+    moreApplication: MoreApplication = MoreApplication(true)
   )
 
 object ApplicationResponse {

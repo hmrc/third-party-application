@@ -27,6 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 
 class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -39,7 +40,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     val jobId                                = "DeleteUnusedApplicationsJob"
     val actor                                = Actors.ScheduledJob(jobId)
     val reasons                              = "reasons description text"
-    val app                                  = anApplicationData(appId, environment = Environment.SANDBOX, state = ApplicationState.testing)
+    val app                                  = anApplicationData(appId, environment = Environment.SANDBOX, state = ApplicationStateExamples.testing)
     val ts                                   = FixedClock.instant
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 

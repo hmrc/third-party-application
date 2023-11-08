@@ -31,8 +31,8 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitationActionBuilders
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.InvalidStateTransition
 
 @Singleton
 class GatekeeperController @Inject() (

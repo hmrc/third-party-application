@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, Environment}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock

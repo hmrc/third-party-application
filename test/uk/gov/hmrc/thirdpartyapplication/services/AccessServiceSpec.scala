@@ -31,7 +31,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, Ov
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationState
 
 class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with FixedClock {
 

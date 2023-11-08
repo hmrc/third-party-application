@@ -42,15 +42,9 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ResponsibleIndividual
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ServerLocation
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationState
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Fail
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Warn
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
@@ -68,7 +62,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     Some("organisationUrl.com"),
     responsibleIndividual,
     Set(ServerLocation.InUK),
-    TermsPrivacyPolicyLocations.InDesktopSoftware,
+    TermsAndConditionsLocations.InDesktopSoftware,
     PrivacyPolicyLocations.InDesktopSoftware,
     List.empty
   )
@@ -160,7 +154,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     val reasons        = "Reasons description text"
     val requesterEmail = "bill.badger@rupert.com"
     val requesterName  = "bill badger"
-    val appInTesting   = applicationData.copy(state = ApplicationState.testing)
+    val appInTesting   = applicationData.copy(state = ApplicationStateExamples.testing)
 
     val collaboratorActor          = Actors.AppCollaborator(applicationData.collaborators.head.emailAddress)
     implicit val hc: HeaderCarrier = HeaderCarrier()

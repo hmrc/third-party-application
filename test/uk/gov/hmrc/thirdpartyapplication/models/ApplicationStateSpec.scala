@@ -22,6 +22,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.InvalidStateTransition
 
 class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with BeforeAndAfterEach with FixedClock {
 

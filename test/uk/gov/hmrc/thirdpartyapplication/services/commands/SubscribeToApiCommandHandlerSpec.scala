@@ -26,9 +26,9 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApiIdentifi
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ApiSubscribedV2
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiIdentifierSyntax {
 

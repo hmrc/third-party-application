@@ -23,7 +23,6 @@ import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
 import cats.data.OptionT
 import cats.implicits._
-import com.github.t3hnar.bcrypt._
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 import play.api.libs.json.Json

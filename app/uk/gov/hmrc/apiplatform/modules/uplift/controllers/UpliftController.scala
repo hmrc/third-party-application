@@ -26,8 +26,9 @@ import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsErrorResponse, JsonUtils}
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, InvalidStateTransition}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.InvalidStateTransition
 
 object UpliftController {
   import play.api.libs.json.Json
