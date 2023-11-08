@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByCollaborator
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 
@@ -49,10 +49,10 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
 
   import CommandHandler._
 
-  def canDeleteApplicationsOrNotProductionApp(app: ApplicationData) =
+  def canDeleteApplicationsOrNotProductionApp(app: StoredApplication) =
     cond(authControlConfig.canDeleteApplications || !app.state.isInPreProductionOrProduction, "Cannot delete this applicaton")
 
-  private def validate(app: ApplicationData, cmd: DeleteApplicationByCollaborator): Validated[Failures, Collaborator] = {
+  private def validate(app: StoredApplication, cmd: DeleteApplicationByCollaborator): Validated[Failures, Collaborator] = {
     Apply[Validated[Failures, *]].map3(
       isAdminOnApp(cmd.instigator, app),
       isStandardAccess(app),
@@ -60,7 +60,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     ) { case (admin, _, _) => admin }
   }
 
-  private def asEvents(app: ApplicationData, cmd: DeleteApplicationByCollaborator, instigator: Collaborator, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: DeleteApplicationByCollaborator, instigator: Collaborator, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
     val clientId       = app.tokens.production.clientId
     val requesterEmail = instigator.emailAddress
     NonEmptyList.of(
@@ -77,7 +77,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteApplicationByCollaborator)(implicit hc: HeaderCarrier): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: DeleteApplicationByCollaborator)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       instigator          <- E.fromEither(validate(app, cmd).toEither)
       kindOfRequesterEmail = instigator.emailAddress.text

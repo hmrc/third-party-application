@@ -25,7 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, HmrcSpec, U
 class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with CollaboratorTestData {
   import ApiIdentifierSyntax._
 
-  "ApplicationData" should {
+  "StoredApplication" should {
     "for version 1 requests" should {
       "do not set the check information when app is created without subs" in {
         val token = Token(ClientId.random, "st")
@@ -37,7 +37,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
           subscriptions = None
         )
 
-        ApplicationData.create(request, "bob", token).checkInformation shouldBe None
+        StoredApplication.create(request, "bob", token).checkInformation shouldBe None
       }
 
       "set the check information for subscriptions when app is created with subs" in {
@@ -50,7 +50,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
           subscriptions = Some(Set("context".asIdentifier))
         )
 
-        ApplicationData.create(request, "bob", token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
+        StoredApplication.create(request, "bob", token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
       }
 
       "ensure correct grant length when app is created" in {
@@ -64,7 +64,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
         )
 
         val grantLengthInDays = 547
-        ApplicationData.create(request, "bob", token).grantLength shouldBe grantLengthInDays
+        StoredApplication.create(request, "bob", token).grantLength shouldBe grantLengthInDays
       }
     }
 
@@ -81,11 +81,11 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
       )
 
       "not set the check information at all" in {
-        ApplicationData.create(request, "bob", token).checkInformation shouldBe None
+        StoredApplication.create(request, "bob", token).checkInformation shouldBe None
       }
 
       "ensure correct grant length when app is created" in {
-        ApplicationData.create(request, "bob", token).grantLength shouldBe 547
+        StoredApplication.create(request, "bob", token).grantLength shouldBe 547
       }
     }
   }

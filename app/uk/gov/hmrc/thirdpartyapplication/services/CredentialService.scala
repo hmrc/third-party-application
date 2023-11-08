@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
@@ -51,7 +51,7 @@ class CredentialService @Inject() (
   }
 
   def validateCredentials(validation: ValidationRequest): OptionT[Future, ApplicationResponse] = {
-    def recoverFromFailedUsageDateUpdate(application: ApplicationData): PartialFunction[Throwable, ApplicationData] = {
+    def recoverFromFailedUsageDateUpdate(application: StoredApplication): PartialFunction[Throwable, StoredApplication] = {
       case NonFatal(e) =>
         logger.warn("Unable to update the client secret last access date", e)
         application
@@ -59,13 +59,10 @@ class CredentialService @Inject() (
 
     for {
       application         <- OptionT(applicationRepository.fetchByClientId(validation.clientId))
-      matchedClientSecret <-
-        OptionT(clientSecretService.clientSecretIsValid(application.id, validation.clientSecret, application.tokens.production.clientSecrets))
-      updatedApplication  <-
-        OptionT.liftF(applicationRepository.recordClientSecretUsage(application.id, matchedClientSecret.id)
-          .recover(recoverFromFailedUsageDateUpdate(application)))
+      matchedClientSecret <- OptionT(clientSecretService.clientSecretIsValid(application.id, validation.clientSecret, application.tokens.production.clientSecrets))
+      updatedApplication  <- OptionT.liftF(applicationRepository.recordClientSecretUsage(application.id, matchedClientSecret.id)
+                              .recover(recoverFromFailedUsageDateUpdate(application)))
     } yield ApplicationResponse(data = updatedApplication)
-
   }
 
 }

@@ -27,7 +27,8 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, Override
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
 
@@ -159,7 +160,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
     val scopes1to3 = Set(scope1, scope2, scope3)
     val scopes2to4 = Set(scope2, scope3, scope4)
 
-    def mockApplicationRepositoryFetchAndSave(partialApplication: Set[String] => ApplicationData, fetchScopes: Set[String], saveScopes: Set[String] = Set.empty) = {
+    def mockApplicationRepositoryFetchAndSave(partialApplication: Set[String] => StoredApplication, fetchScopes: Set[String], saveScopes: Set[String] = Set.empty) = {
       ApplicationRepoMock.Fetch.thenReturn(partialApplication(fetchScopes))
       ApplicationRepoMock.Save.thenReturn(partialApplication(saveScopes))
     }
@@ -173,8 +174,8 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
     val overrides = Set[OverrideFlag](override1, override2, override3, override4)
   }
 
-  private def privilegedApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): ApplicationData =
-    ApplicationData(
+  private def privilegedApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): StoredApplication =
+    StoredApplication(
       applicationId,
       "name",
       "normalisedName",
@@ -190,8 +191,8 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       Some(now)
     )
 
-  private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): ApplicationData =
-    ApplicationData(
+  private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): StoredApplication =
+    StoredApplication(
       applicationId,
       "name",
       "normalisedName",
@@ -207,8 +208,8 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       Some(now)
     )
 
-  private def standardApplicationDataWithOverrides(applicationId: ApplicationId, overrides: Set[OverrideFlag]): ApplicationData =
-    ApplicationData(
+  private def standardApplicationDataWithOverrides(applicationId: ApplicationId, overrides: Set[OverrideFlag]): StoredApplication =
+    StoredApplication(
       applicationId,
       "name",
       "normalisedName",

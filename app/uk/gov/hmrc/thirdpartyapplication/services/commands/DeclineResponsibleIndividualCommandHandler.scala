@@ -42,7 +42,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 
 @Singleton
@@ -57,10 +57,10 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) =
+  private def isApplicationIdTheSame(app: StoredApplication, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualToUVerification): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualToUVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
       Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
@@ -129,7 +129,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
     } yield (app, NonEmptyList(riDeclined, List(approvalDeclined, stateEvt)))
   }
 
-  def processTouUplift(app: ApplicationData, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualTouUpliftVerification): AppCmdResultT = {
+  def processTouUplift(app: StoredApplication, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualTouUpliftVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
       Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
@@ -184,7 +184,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
     } yield (app, NonEmptyList.one(riDeclined))
   }
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualUpdateVerification): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualUpdateVerification): AppCmdResultT = {
 
     def validate(): Validated[Failures, Unit] = {
       Apply[Validated[Failures, *]].map4(
@@ -221,7 +221,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
     } yield (app, events)
   }
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividual): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: DeclineResponsibleIndividual): AppCmdResultT = {
     E.fromEitherF(
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap(_ match {
         case Some(riVerificationToU: ResponsibleIndividualToUVerification)             => process(app, cmd, riVerificationToU).value

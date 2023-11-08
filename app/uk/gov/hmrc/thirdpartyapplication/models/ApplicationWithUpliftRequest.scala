@@ -20,11 +20,11 @@ import java.time.LocalDateTime
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 object ApplicationWithUpliftRequest {
 
-  def create(app: ApplicationData, upliftRequest: StateHistory): ApplicationWithUpliftRequest = {
+  def create(app: StoredApplication, upliftRequest: StateHistory): ApplicationWithUpliftRequest = {
     if (upliftRequest.state != State.PENDING_GATEKEEPER_APPROVAL) {
       throw new InconsistentDataState(s"cannot create with invalid state: ${upliftRequest.state}")
     }

@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ClientSecretData, Token}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{StoredClientSecret, Token}
 
 case class ApplicationTokenResponse(
     clientId: ClientId,
@@ -32,6 +32,6 @@ object ApplicationTokenResponse {
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
-      clientSecrets = token.clientSecrets map { csd: ClientSecretData => ClientSecretResponse(csd.id, csd.name, csd.createdOn, csd.lastAccess) }
+      clientSecrets = token.clientSecrets map { csd: StoredClientSecret => ClientSecretResponse(csd.id, csd.name, csd.createdOn, csd.lastAccess) }
     )
 }

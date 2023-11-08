@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.{LocalDateTime, ZoneOffset}
 
@@ -22,7 +22,7 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
 
-case class ClientSecretData(
+case class StoredClientSecret(
     name: String,
     createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     lastAccess: Option[LocalDateTime] = None,
@@ -30,9 +30,9 @@ case class ClientSecretData(
     hashedSecret: String
   )
 
-object ClientSecretData {
+object StoredClientSecret {
   import play.api.libs.json.Json
 
   implicit val dateformat = MongoJavatimeFormats.localDateTimeFormat
-  implicit val format     = Json.format[ClientSecretData]
+  implicit val format     = Json.format[StoredClientSecret]
 }

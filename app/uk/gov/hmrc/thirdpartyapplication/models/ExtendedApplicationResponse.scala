@@ -21,7 +21,7 @@ import java.time.{Clock, LocalDateTime}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 case class ExtendedApplicationResponse(
     id: ApplicationId,
@@ -50,7 +50,7 @@ case class ExtendedApplicationResponse(
 
 object ExtendedApplicationResponse {
 
-  def apply(data: ApplicationData, subscriptions: List[ApiIdentifier]): ExtendedApplicationResponse = {
+  def apply(data: StoredApplication, subscriptions: List[ApiIdentifier]): ExtendedApplicationResponse = {
     ExtendedApplicationResponse(
       data.id,
       data.tokens.production.clientId,

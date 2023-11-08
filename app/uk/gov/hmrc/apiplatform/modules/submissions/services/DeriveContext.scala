@@ -21,7 +21,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPrevention
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 object DeriveContext {
 
@@ -37,7 +37,7 @@ object DeriveContext {
     }
   }
 
-  def deriveFor(application: ApplicationData, subscriptions: List[ApiIdentifier]): Context = {
+  def deriveFor(application: StoredApplication, subscriptions: List[ApiIdentifier]): Context = {
 
     val resell    = application.sellResellOrDistribute.fold("No")(s => s.answer)
     val inHouse   = if (resell == "Yes") "No" else "Yes"

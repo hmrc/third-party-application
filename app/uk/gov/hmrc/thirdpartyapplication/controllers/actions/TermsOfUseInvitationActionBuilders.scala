@@ -28,10 +28,10 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationDataService, TermsOfUseInvitationService}
 
-class ApplicationRequest[A](val application: ApplicationData, val request: Request[A]) extends WrappedRequest[A](request)
+class ApplicationRequest[A](val application: StoredApplication, val request: Request[A]) extends WrappedRequest[A](request)
 
 object TermsOfUseInvitationActionBuilders {
 

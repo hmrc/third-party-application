@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
@@ -61,7 +61,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       List.empty
     )
 
-    val application: ApplicationData = anApplicationData(
+    val application: StoredApplication = anApplicationData(
       applicationId,
       pendingResponsibleIndividualVerificationState("Rick Deckard", "rick@submitter.com"),
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))

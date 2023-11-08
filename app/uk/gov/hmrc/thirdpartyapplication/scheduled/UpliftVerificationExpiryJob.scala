@@ -28,7 +28,7 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 
 @Singleton
@@ -49,7 +49,7 @@ class UpliftVerificationExpiryJob @Inject() (
   override val isEnabled: Boolean                = jobConfig.enabled
   override val lockService: LockService          = upliftVerificationExpiryJobLockService
 
-  private def transitionAppBackToTesting(app: ApplicationData): Future[ApplicationData] = {
+  private def transitionAppBackToTesting(app: StoredApplication): Future[StoredApplication] = {
     logger.info(s"Set status back to testing for app{id=${app.id.value},name=${app.name},state." +
       s"requestedByEmailAddress='${app.state.requestedByEmailAddress.getOrElse("")}',state.updatedOn='${app.state.updatedOn}}'")
     for {

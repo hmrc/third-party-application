@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.BlockApplicationAutoDelete
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 
 @Singleton
@@ -38,13 +38,13 @@ class BlockApplicationAutoDeleteCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData): Validated[Failures, Unit] = {
+  private def validate(app: StoredApplication): Validated[Failures, Unit] = {
     Apply[Validated[Failures, *]].map(
       cond((app.allowAutoDelete), CommandFailures.GenericFailure(s"Auto Delete is already blocked"))
     ) { case _ => () }
   }
 
-  private def asEvents(app: ApplicationData, cmd: BlockApplicationAutoDelete): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: BlockApplicationAutoDelete): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApplicationEvents.BlockApplicationAutoDelete(
         id = EventId.random,
@@ -56,7 +56,7 @@ class BlockApplicationAutoDeleteCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: BlockApplicationAutoDelete): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: BlockApplicationAutoDelete): AppCmdResultT = {
 
     for {
       valid    <- E.fromEither(validate(app).toEither)

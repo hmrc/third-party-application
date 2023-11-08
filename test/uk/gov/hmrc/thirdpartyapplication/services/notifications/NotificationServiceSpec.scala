@@ -58,7 +58,7 @@ class NotificationServiceSpec
       List.empty
     )
 
-    val applicationData: ApplicationData = anApplicationData(
+    val applicationData: StoredApplication = anApplicationData(
       applicationId,
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )

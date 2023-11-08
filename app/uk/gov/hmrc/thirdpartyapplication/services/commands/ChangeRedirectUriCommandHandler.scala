@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
@@ -36,7 +36,7 @@ class ChangeRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
   import CommandHandler._
   import cats.syntax.validated._
 
-  private def validate(app: ApplicationData, cmd: ChangeRedirectUri): Validated[Failures, List[String]] = {
+  private def validate(app: StoredApplication, cmd: ChangeRedirectUri): Validated[Failures, List[String]] = {
     val existingUris = app.access match {
       case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris
       case _                                            => List.empty
@@ -56,7 +56,7 @@ class ChangeRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
     )((_, _, _) => existingUris)
   }
 
-  private def asEvents(app: ApplicationData, cmd: ChangeRedirectUri): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: ChangeRedirectUri): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApplicationEvents.RedirectUriChanged(
         id = EventId.random,
@@ -69,7 +69,7 @@ class ChangeRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeRedirectUri): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: ChangeRedirectUri): AppCmdResultT = {
     for {
       existingUris   <- E.fromEither(validate(app, cmd).toEither)
       urisAfterChange = existingUris.map(uriVal => if (uriVal == cmd.redirectUriToReplace.uri) cmd.redirectUri.uri else uriVal)

@@ -41,6 +41,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
@@ -748,7 +749,7 @@ class ApplicationRepositoryISpec
     val expiryOnTheDayAfter  = dayOfExpiry.plusDays(1)
 
     def verifyApplications(
-        responseApplications: Seq[ApplicationData],
+        responseApplications: Seq[StoredApplication],
         expectedState: State,
         expectedNumber: Int
       ): Unit = {
@@ -863,7 +864,7 @@ class ApplicationRepositoryISpec
     val lastWeek           = currentDate.minusDays(7)
 
     def verifyApplications(
-        responseApplications: Seq[ApplicationData],
+        responseApplications: Seq[StoredApplication],
         expectedState: State,
         expectedNumber: Int
       ): Unit = {
@@ -910,7 +911,7 @@ class ApplicationRepositoryISpec
     val lastWeek           = currentDate.minusDays(7)
 
     def verifyApplications(
-        responseApplications: Seq[ApplicationData],
+        responseApplications: Seq[StoredApplication],
         expectedState: State,
         expectedNumber: Int
       ): Unit = {
@@ -1124,8 +1125,8 @@ class ApplicationRepositoryISpec
 
   "fetch" should {
 
-    // API-3862: The wso2Username and wso2Password fields have been removed from ApplicationData, but will still exist in Mongo for most applications
-    // Test that documents are still correctly deserialised into ApplicationData objects
+    // API-3862: The wso2Username and wso2Password fields have been removed from StoredApplication, but will still exist in Mongo for most applications
+    // Test that documents are still correctly deserialised into StoredApplication objects
     "retrieve an application when wso2Username and wso2Password exist" in {
       val applicationId = ApplicationId.random
       val application   = anApplicationDataForTest(applicationId)
@@ -1392,7 +1393,7 @@ class ApplicationRepositoryISpec
     def applicationWithLastAccessDate(
         applicationId: ApplicationId,
         lastAccessDate: LocalDateTime
-      ): ApplicationData =
+      ): StoredApplication =
       anApplicationDataForTest(
         id = applicationId,
         prodClientId = generateClientId
@@ -2386,7 +2387,7 @@ class ApplicationRepositoryISpec
 
   "processAll" should {
     class TestService {
-      def doSomething(application: ApplicationData): ApplicationData =
+      def doSomething(application: StoredApplication): StoredApplication =
         application
     }
 
@@ -2526,16 +2527,16 @@ class ApplicationRepositoryISpec
 
   "updateClientSecretName" should {
     def clientSecretWithId(
-        application: ApplicationData,
+        application: StoredApplication,
         clientSecretId: ClientSecret.Id
-      ): ClientSecretData =
+      ): StoredClientSecret =
       application.tokens.production.clientSecrets
         .find(_.id == clientSecretId)
         .get
     def otherClientSecrets(
-        application: ApplicationData,
+        application: StoredApplication,
         clientSecretId: ClientSecret.Id
-      ): Seq[ClientSecretData] =
+      ): Seq[StoredClientSecret] =
       application.tokens.production.clientSecrets
         .filterNot(_.id == clientSecretId)
 
@@ -3375,7 +3376,7 @@ class ApplicationRepositoryISpec
   def createAppWithStatusUpdatedOn(
       state: State,
       updatedOn: LocalDateTime
-    ): ApplicationData =
+    ): StoredApplication =
     anApplicationDataForTest(
       id = ApplicationId.random,
       prodClientId = generateClientId,
@@ -3406,8 +3407,8 @@ class ApplicationRepositoryISpec
         "user@example.com".admin()
       ),
       checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[ClientSecretData] = List(aClientSecret(hashedSecret = "hashed-secret"))
-    ): ApplicationData = {
+      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret"))
+    ): StoredApplication = {
 
     aNamedApplicationData(
       id,
@@ -3430,11 +3431,11 @@ class ApplicationRepositoryISpec
       access: Access = Access.Standard(),
       users: Set[Collaborator] = Set("user@example.com".admin()),
       checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[ClientSecretData] = List(aClientSecret(hashedSecret = "hashed-secret")),
+      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
       grantLength: Int = defaultGrantLength
-    ): ApplicationData = {
+    ): StoredApplication = {
 
-    ApplicationData(
+    StoredApplication(
       id,
       name,
       name.toLowerCase,
@@ -3454,7 +3455,7 @@ class ApplicationRepositoryISpec
   }
 
   def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[LocalDateTime] = None, hashedSecret: String = "") =
-    ClientSecretData(
+    StoredClientSecret(
       id = id,
       name = name,
       lastAccess = lastAccess,

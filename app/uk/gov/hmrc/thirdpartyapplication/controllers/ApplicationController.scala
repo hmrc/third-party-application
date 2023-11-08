@@ -42,7 +42,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAuthorisationActions, AuthKeyRefiner}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -314,7 +314,7 @@ class ApplicationController @Inject() (
   }
 
   def deleteApplication(id: ApplicationId): Action[AnyContent] = (Action andThen authKeyRefiner).async { implicit request: MaybeMatchesAuthorisationKeyRequest[AnyContent] =>
-    def audit(app: ApplicationData): Future[AuditResult] = {
+    def audit(app: StoredApplication): Future[AuditResult] = {
       logger.info(s"Delete application ${app.id.value} - ${app.name}")
       successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
     }

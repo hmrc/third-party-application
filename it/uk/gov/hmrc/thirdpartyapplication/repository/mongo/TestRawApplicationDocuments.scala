@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.repository.mongo
 
 import play.api.libs.json.{JsBoolean, JsObject, Json}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 import java.time.{LocalDateTime, ZoneOffset}
 
@@ -27,7 +27,7 @@ trait TestRawApplicationDocuments {
 
   import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.MongoFormats._
 
-  def applicationToMongoJson(application: ApplicationData, allowAutoDelete: Option[Boolean] = None): JsObject = {
+  def applicationToMongoJson(application: StoredApplication, allowAutoDelete: Option[Boolean] = None): JsObject = {
     val applicationJson = Json.obj(
       "id"                  -> application.id,
       "name"                -> application.name,

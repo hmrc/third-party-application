@@ -29,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 trait ApiGatewayStore extends EitherTHelper[String] {
 
@@ -43,7 +43,7 @@ trait ApiGatewayStore extends EitherTHelper[String] {
 
   def deleteApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded]
 
-  def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded]
+  def updateApplication(app: StoredApplication, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded]
 }
 
 @Singleton
@@ -55,7 +55,7 @@ class AwsApiGatewayStore @Inject() (awsApiGatewayConnector: AwsApiGatewayConnect
     } yield HasSucceeded
   }
 
-  override def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
+  override def updateApplication(app: StoredApplication, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
     awsApiGatewayConnector.createOrUpdateApplication(app.wso2ApplicationName, app.tokens.production.accessToken, rateLimitTier)(hc)
 
   override def deleteApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
@@ -77,7 +77,7 @@ class StubApiGatewayStore @Inject() (implicit val ec: ExecutionContext) extends 
     HasSucceeded
   }
 
-  override def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  override def updateApplication(app: StoredApplication, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     Future.successful(HasSucceeded)
   }
 

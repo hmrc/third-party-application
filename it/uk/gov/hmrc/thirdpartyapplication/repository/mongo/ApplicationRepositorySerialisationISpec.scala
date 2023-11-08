@@ -39,6 +39,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 
 class ApplicationRepositorySerialisationISpec
     extends ServerBaseISpec
@@ -81,7 +82,7 @@ class ApplicationRepositorySerialisationISpec
     }
 
     private def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[LocalDateTime] = None, hashedSecret: String = "hashed-secret") =
-      ClientSecretData(
+      StoredClientSecret(
         id = id,
         name = name,
         lastAccess = lastAccess,
@@ -89,7 +90,7 @@ class ApplicationRepositorySerialisationISpec
         createdOn = now
       )
 
-    val applicationData = ApplicationData(
+    val applicationData = StoredApplication(
       applicationId,
       "appName",
       "normalised app name",

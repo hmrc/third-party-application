@@ -26,7 +26,8 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationR
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Token, TotpSecret}
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
-uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
+import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
+
 trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   // NOTE - these override the defaults in order to push dates in non-mongo format
@@ -56,7 +57,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatExtendedApplicationResponse  = Json.format[ExtendedApplicationResponse]
   implicit val formatPaginatedApplicationResponse = Json.format[PaginatedApplicationResponse]
   implicit val formatUpdateIpAllowlistRequest     = Json.format[UpdateIpAllowlistRequest]
-  implicit val formatApplicationWithHistory       = Json.format[ApplicationWithHistory]
+  implicit val formatApplicationWithHistory       = Json.format[ApplicationWithHistoryResponse]
   implicit val formatClientSecretResponse         = Json.format[ClientSecretResponse]
   implicit val formatApplicationTokensResponse    = Json.format[ApplicationTokenResponse]
 

@@ -24,4 +24,4 @@ object PaginationTotal {
   implicit val reads = Json.reads[PaginationTotal]
 }
 
-case class PaginatedApplicationData(applications: List[ApplicationData], totals: List[PaginationTotal], matching: List[PaginationTotal])
+case class PaginatedApplicationData(applications: List[StoredApplication], totals: List[PaginationTotal], matching: List[PaginationTotal])

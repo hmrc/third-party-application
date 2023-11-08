@@ -26,10 +26,11 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 
 trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData with ActorTestData with EmailTestData with FixedClock {
 
-  def aSecret(secret: String): ClientSecretData = ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = now)
+  def aSecret(secret: String): StoredClientSecret = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = now)
 
   val serverToken           = "b3c83934c02df8b111e7f9f8700000"
   val serverTokenLastAccess = now
@@ -49,7 +50,7 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
       ipAllowlist: IpAllowlist = IpAllowlist(),
       grantLength: Int = grantLength
     ) = {
-    ApplicationData(
+    StoredApplication(
       applicationId,
       "MyApp",
       "myapp",

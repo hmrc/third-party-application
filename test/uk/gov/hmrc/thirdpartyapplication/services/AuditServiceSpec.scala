@@ -41,7 +41,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, 
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
@@ -66,7 +67,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     List.empty
   )
 
-  val applicationData: ApplicationData = anApplicationData(
+  val applicationData: StoredApplication = anApplicationData(
     applicationId,
     access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
@@ -478,7 +479,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     val tokens      = ApplicationTokens(
       Token(ClientId("prodId"), "prodToken")
     )
-    val previousApp = ApplicationData(
+    val previousApp = StoredApplication(
       id = id,
       name = "app name",
       normalisedName = "app name",

@@ -22,14 +22,15 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, _}
 
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples with CollaboratorTestData {
 
   "Application with Uplift request" should {
     val app     =
-      ApplicationData(
+      StoredApplication(
         ApplicationId.random,
         "MyApp",
         "myapp",
@@ -61,7 +62,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
 
   "Application from CreateApplicationRequest" should {
     def createRequestV2(access: StandardAccessDataToCopy, environment: Environment) = {
-      ApplicationData.create(
+      StoredApplication.create(
         createApplicationRequest = CreateApplicationRequestV2(
           name = "an application",
           access = access,
@@ -78,7 +79,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
     }
 
     def createRequestV1(access: Access, environment: Environment) = {
-      ApplicationData.create(
+      StoredApplication.create(
         createApplicationRequest = CreateApplicationRequestV1(
           name = "an application",
           access = access,

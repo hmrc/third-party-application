@@ -23,7 +23,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
 
 trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -66,7 +66,7 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
         when(aMock.updateApplication(*, *)(*)).thenReturn(failed(failsWith))
       }
 
-      def verifyCalledWith(applicationData: ApplicationData, tier: RateLimitTier) =
+      def verifyCalledWith(applicationData: StoredApplication, tier: RateLimitTier) =
         verify.updateApplication(eqTo(applicationData), refEq(tier))(*)
 
       def verifyCalled() =
@@ -79,7 +79,7 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
 
     object DeleteApplication {
 
-      def verifyCalledWith(application: ApplicationData) = {
+      def verifyCalledWith(application: StoredApplication) = {
         import application.wso2ApplicationName
         ApiGatewayStoreMock.verify.deleteApplication(eqTo(wso2ApplicationName))(*)
       }

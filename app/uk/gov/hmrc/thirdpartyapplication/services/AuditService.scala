@@ -37,7 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ApplicationDeleted, _}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
@@ -62,7 +62,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
 
   def auditGatekeeperAction(
       gatekeeperId: String,
-      app: ApplicationData,
+      app: StoredApplication,
       action: AuditAction,
       extra: Map[String, String] = Map.empty
     )(implicit hc: HeaderCarrier
@@ -71,7 +71,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
     audit(action, AuditHelper.gatekeeperActionDetails(app) ++ extra, tags)
   }
 
-  def applyEvents(app: ApplicationData, events: NonEmptyList[ApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+  def applyEvents(app: StoredApplication, events: NonEmptyList[ApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(app, e)
       case NonEmptyList(e, tail) => applyEvent(app, e).flatMap(_ => applyEvents(app, NonEmptyList.fromListUnsafe(tail)))
@@ -79,7 +79,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   }
 
   // scalastyle:off cyclomatic.complexity
-  private def applyEvent(app: ApplicationData, event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+  private def applyEvent(app: StoredApplication, event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     event match {
       case evt: ApplicationApprovalRequestDeclined => auditApplicationApprovalRequestDeclined(app, evt)
       case evt: ClientSecretAddedV2                => auditClientSecretAdded(app, evt)
@@ -95,13 +95,13 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   }
   // scalastyle:on cyclomatic.complexity
 
-  private def auditApplicationDeletedByGatekeeper(app: ApplicationData, evt: ApplicationDeletedByGatekeeper)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+  private def auditApplicationDeletedByGatekeeper(app: StoredApplication, evt: ApplicationDeletedByGatekeeper)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     liftF(auditGatekeeperAction(evt.actor.user, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail.text)))
       .toOption
       .value
   }
 
-  private def auditApplicationApprovalRequestDeclined(app: ApplicationData, evt: ApplicationApprovalRequestDeclined)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+  private def auditApplicationApprovalRequestDeclined(app: StoredApplication, evt: ApplicationApprovalRequestDeclined)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     (
       for {
         submission  <- fromOptionF(submissionService.fetchLatest(evt.applicationId), "No submission provided to audit")
@@ -113,19 +113,19 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .value
   }
 
-  private def auditAddCollaborator(app: ApplicationData, evt: CollaboratorAddedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+  private def auditAddCollaborator(app: StoredApplication, evt: CollaboratorAddedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     liftF(audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(evt.collaborator)))
       .toOption
       .value
   }
 
-  private def auditRemoveCollaborator(app: ApplicationData, evt: CollaboratorRemovedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+  private def auditRemoveCollaborator(app: StoredApplication, evt: CollaboratorRemovedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     liftF(audit(CollaboratorRemovedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorRemovedAudit.details(evt.collaborator)))
       .toOption
       .value
   }
 
-  private def auditApiSubscribed(app: ApplicationData, evt: ApiSubscribedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditApiSubscribed(app: StoredApplication, evt: ApiSubscribedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       Subscribed,
       Map("applicationId" -> app.id.value.toString, "apiVersion" -> evt.version.value, "apiContext" -> evt.context.value)
@@ -133,7 +133,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .toOption
       .value
 
-  private def auditApiUnsubscribed(app: ApplicationData, evt: ApiUnsubscribedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditApiUnsubscribed(app: StoredApplication, evt: ApiUnsubscribedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       Unsubscribed,
       Map("applicationId" -> app.id.value.toString, "apiVersion" -> evt.version.value, "apiContext" -> evt.context.value)
@@ -141,7 +141,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .toOption
       .value
 
-  private def auditClientSecretAdded(app: ApplicationData, evt: ClientSecretAddedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditClientSecretAdded(app: StoredApplication, evt: ClientSecretAddedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       ClientSecretAddedAudit,
       Map("applicationId" -> app.id.value.toString, "newClientSecret" -> evt.clientSecretName, "clientSecretType" -> "PRODUCTION")
@@ -149,7 +149,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .toOption
       .value
 
-  private def auditClientSecretRemoved(app: ApplicationData, evt: ClientSecretRemovedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditClientSecretRemoved(app: StoredApplication, evt: ClientSecretRemovedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       ClientSecretRemovedAudit,
       Map("applicationId" -> app.id.value.toString, "removedClientSecret" -> evt.clientSecretId)
@@ -157,7 +157,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .toOption
       .value
 
-  private def auditRedirectUrisUpdated(app: ApplicationData, evt: RedirectUrisUpdatedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditRedirectUrisUpdated(app: StoredApplication, evt: RedirectUrisUpdatedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       AppRedirectUrisChanged,
       Map("applicationId" -> app.id.value.toString, "newRedirectUris" -> evt.newRedirectUris.mkString(","))
@@ -341,11 +341,11 @@ object AuditHelper {
 
   def applicationId(applicationId: ApplicationId) = Map("applicationId" -> applicationId.value.toString)
 
-  def calculateAppNameChange(previous: ApplicationData, updated: ApplicationData) =
+  def calculateAppNameChange(previous: StoredApplication, updated: StoredApplication) =
     if (previous.name != updated.name) Map("newApplicationName" -> updated.name)
     else Map.empty
 
-  def gatekeeperActionDetails(app: ApplicationData) =
+  def gatekeeperActionDetails(app: StoredApplication) =
     Map(
       "applicationId"          -> app.id.value.toString,
       "applicationName"        -> app.name,
@@ -353,7 +353,7 @@ object AuditHelper {
       "applicationAdmins"      -> app.admins.map(_.emailAddress).mkString(", ")
     )
 
-  def calculateAppChanges(previous: ApplicationData, updated: ApplicationData) = {
+  def calculateAppChanges(previous: StoredApplication, updated: StoredApplication) = {
     val common = Map("applicationId" -> updated.id.value.toString)
 
     val genericEvents = Set(calcNameChange(previous, updated))
@@ -374,7 +374,7 @@ object AuditHelper {
   private def when[A](pred: Boolean, ret: => A): Option[A] =
     if (pred) Some(ret) else None
 
-  private def calcNameChange(a: ApplicationData, b: ApplicationData) =
+  private def calcNameChange(a: StoredApplication, b: StoredApplication) =
     when(a.name != b.name, AppNameChanged -> Map("newApplicationName" -> b.name))
 
   private def calcTermsAndConditionsChange(a: Access.Standard, b: Access.Standard) =
@@ -386,7 +386,7 @@ object AuditHelper {
   private def calcPrivacyPolicyChange(a: Access.Standard, b: Access.Standard) =
     when(a.privacyPolicyUrl != b.privacyPolicyUrl, AppPrivacyPolicyUrlChanged -> Map("newPrivacyPolicyUrl" -> b.privacyPolicyUrl.getOrElse("")))
 
-  def createExtraDetailsForApplicationApprovalRequestDeclined(app: ApplicationData, submission: Submission, evt: ApplicationApprovalRequestDeclined): Map[String, String] = {
+  def createExtraDetailsForApplicationApprovalRequestDeclined(app: StoredApplication, submission: Submission, evt: ApplicationApprovalRequestDeclined): Map[String, String] = {
 
     val fmt = DateTimeFormatter.ISO_DATE_TIME
 

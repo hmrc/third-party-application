@@ -38,7 +38,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{AuditService, TermsOfUseInvitationService}
@@ -46,7 +46,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.{AuditService, TermsOfUseInvit
 object GrantApprovalsService {
   sealed trait Result
 
-  case class Actioned(application: ApplicationData) extends Result
+  case class Actioned(application: StoredApplication) extends Result
 
   sealed trait Rejected                              extends Result
   case object RejectedDueToIncorrectApplicationState extends Rejected
@@ -71,7 +71,7 @@ class GrantApprovalsService @Inject() (
   import GrantApprovalsService._
 
   def grant(
-      originalApp: ApplicationData,
+      originalApp: StoredApplication,
       submission: Submission,
       gatekeeperUserName: String,
       warnings: Option[String],
@@ -80,7 +80,7 @@ class GrantApprovalsService @Inject() (
     ): Future[GrantApprovalsService.Result] = {
     import cats.instances.future.catsStdInstancesForFuture
 
-    def logDone(app: ApplicationData, submission: Submission) =
+    def logDone(app: StoredApplication, submission: Submission) =
       logger.info(s"Granted-02: grant appId:${app.id} ${app.state.name} ${submission.status}")
 
     val ET    = EitherTHelper.make[Result]
@@ -115,7 +115,7 @@ class GrantApprovalsService @Inject() (
     )
   }
 
-  private def grantApp(application: ApplicationData): ApplicationData = {
+  private def grantApp(application: StoredApplication): StoredApplication = {
     application.copy(state = application.state.toPendingRequesterVerification(now()))
   }
 
@@ -123,7 +123,7 @@ class GrantApprovalsService @Inject() (
 
   private def auditGrantedApprovalRequest(
       applicationId: ApplicationId,
-      updatedApp: ApplicationData,
+      updatedApp: StoredApplication,
       submission: Submission,
       gatekeeperUserName: String,
       warnings: Option[String],
@@ -159,16 +159,16 @@ class GrantApprovalsService @Inject() (
     auditService.auditGatekeeperAction(gatekeeperUserName, updatedApp, ApplicationApprovalGranted, extraData)
   }
 
-  private def writeStateHistory(snapshotApp: ApplicationData, name: String) =
+  private def writeStateHistory(snapshotApp: StoredApplication, name: String) =
     insertStateHistory(
       snapshotApp,
       State.PENDING_REQUESTER_VERIFICATION,
       Some(State.PENDING_GATEKEEPER_APPROVAL),
       Actors.GatekeeperUser(name),
-      (a: ApplicationData) => applicationRepository.save(a)
+      (a: StoredApplication) => applicationRepository.save(a)
     )
 
-  private def sendEmails(app: ApplicationData)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  private def sendEmails(app: StoredApplication)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found")).toLaxEmail
     val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
     val recipients       = app.admins.map(_.emailAddress).filterNot(email => email.equalsIgnoreCase(requesterEmail))
@@ -190,7 +190,7 @@ class GrantApprovalsService @Inject() (
   }
 
   def grantWithWarningsForTouUplift(
-      originalApp: ApplicationData,
+      originalApp: StoredApplication,
       submission: Submission,
       gatekeeperUserName: String,
       reasons: String
@@ -212,7 +212,7 @@ class GrantApprovalsService @Inject() (
   }
 
   def grantForTouUplift(
-      originalApp: ApplicationData,
+      originalApp: StoredApplication,
       submission: Submission,
       gatekeeperUserName: String,
       comments: String,
@@ -239,14 +239,14 @@ class GrantApprovalsService @Inject() (
       .fold[Result](identity, identity)
   }
 
-  private def getResponsibleIndividual(app: ApplicationData) =
+  private def getResponsibleIndividual(app: StoredApplication) =
     app.access match {
       case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
       case _                                                                                                   => None
     }
 
   def declineForTouUplift(
-      originalApp: ApplicationData,
+      originalApp: StoredApplication,
       submission: Submission,
       gatekeeperUserName: String,
       reasons: String

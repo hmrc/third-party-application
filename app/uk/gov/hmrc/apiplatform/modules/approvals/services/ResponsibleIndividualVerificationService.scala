@@ -32,7 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
@@ -47,7 +47,7 @@ class ResponsibleIndividualVerificationService @Inject() (
   )(implicit ec: ExecutionContext
   ) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
 
-  def createNewToUVerification(applicationData: ApplicationData, submissionId: SubmissionId, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
+  def createNewToUVerification(applicationData: StoredApplication, submissionId: SubmissionId, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
     val verification = ResponsibleIndividualToUVerification(
       applicationId = applicationData.id,
       submissionId = submissionId,
@@ -59,7 +59,7 @@ class ResponsibleIndividualVerificationService @Inject() (
   }
 
   def createNewTouUpliftVerification(
-      applicationData: ApplicationData,
+      applicationData: StoredApplication,
       submissionId: SubmissionId,
       submissionInstance: Int,
       requestedByName: String,

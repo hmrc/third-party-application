@@ -30,15 +30,15 @@ import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock with CollaboratorTestData {
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftRequestSamples {
 
-    def buildApplication(applicationName: String, serverToken: String): ApplicationData = {
-      ApplicationData.create(
+    def buildApplication(applicationName: String, serverToken: String): StoredApplication = {
+      StoredApplication.create(
         CreateApplicationRequestV1(
           name = applicationName,
           environment = Environment.PRODUCTION,
@@ -61,7 +61,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
   "restoreData" should {
     "republish all Applications" in new Setup {
       val serverToken: String          = UUID.randomUUID().toString
-      val application: ApplicationData = buildApplication("foo", serverToken)
+      val application: StoredApplication = buildApplication("foo", serverToken)
 
       ApplicationRepoMock.ProcessAll.thenReturn()
       when(mockApiGatewayConnector.createOrUpdateApplication(application.wso2ApplicationName, serverToken, RateLimitTier.BRONZE)(hc))

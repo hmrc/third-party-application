@@ -28,7 +28,8 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
@@ -360,7 +361,7 @@ class SubscriptionRepositoryISpec
       access: Access = Access.Standard(),
       user: List[String] = List("user@example.com"),
       checkInformation: Option[CheckInformation] = None
-    ): ApplicationData = {
+    ): StoredApplication = {
 
     aNamedApplicationData(id, s"myApp-${id.value}", clientId, state, access, user, checkInformation)
   }
@@ -373,11 +374,11 @@ class SubscriptionRepositoryISpec
       access: Access = Access.Standard(),
       user: List[String] = List("user@example.com"),
       checkInformation: Option[CheckInformation] = None
-    ): ApplicationData = {
+    ): StoredApplication = {
 
     val collaborators: Set[Collaborator] = user.map(email => email.admin()).toSet
 
-    ApplicationData(
+    StoredApplication(
       id,
       name,
       name.toLowerCase,

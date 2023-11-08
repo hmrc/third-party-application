@@ -45,7 +45,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, Deleted}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, SubscriptionRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
@@ -106,13 +106,13 @@ class ApplicationService @Inject() (
     } yield ApplicationResponse(data = savedApp)
   }
 
-  def addTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] = {
+  def addTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[StoredApplication] = {
     for {
       updatedApp <- applicationRepository.addApplicationTermsOfUseAcceptance(applicationId, acceptance)
     } yield updatedApp
   }
 
-  def confirmSetupComplete(applicationId: ApplicationId, requesterEmailAddress: LaxEmailAddress): Future[ApplicationData] = {
+  def confirmSetupComplete(applicationId: ApplicationId, requesterEmailAddress: LaxEmailAddress): Future[StoredApplication] = {
     for {
       app            <- fetchApp(applicationId)
       oldState        = app.state
@@ -127,12 +127,12 @@ class ApplicationService @Inject() (
   def deleteApplication(
       applicationId: ApplicationId,
       request: Option[DeleteApplicationRequest],
-      auditFunction: ApplicationData => Future[AuditResult]
+      auditFunction: StoredApplication => Future[AuditResult]
     )(implicit hc: HeaderCarrier
     ): Future[ApplicationStateChange] = {
     logger.info(s"Deleting application ${applicationId.value}")
 
-    def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
+    def deleteSubscriptions(app: StoredApplication): Future[HasSucceeded] = {
       def deleteSubscription(subscription: ApiIdentifier) = {
         for {
           _ <- subscriptionRepository.remove(app.id, subscription)
@@ -146,7 +146,7 @@ class ApplicationService @Inject() (
       } yield HasSucceeded
     }
 
-    def sendEmailsIfRequestedByEmailAddressPresent(app: ApplicationData): Future[Any] = {
+    def sendEmailsIfRequestedByEmailAddressPresent(app: StoredApplication): Future[Any] = {
       request match {
         case Some(r) => {
           val requesterEmail = r.requestedByEmailAddress
@@ -175,7 +175,7 @@ class ApplicationService @Inject() (
     }
   }
 
-  def fixCollaborator(applicationId: ApplicationId, fixCollaboratorRequest: FixCollaboratorRequest): Future[Option[ApplicationData]] = {
+  def fixCollaborator(applicationId: ApplicationId, fixCollaboratorRequest: FixCollaboratorRequest): Future[Option[StoredApplication]] = {
     applicationRepository.updateCollaboratorId(applicationId, fixCollaboratorRequest.emailAddress, fixCollaboratorRequest.userId)
   }
 
@@ -218,12 +218,12 @@ class ApplicationService @Inject() (
   }
 
   // TODO - introduce me
-  // private def asResponse(apps: List[ApplicationData]): List[ApplicationResponse] = {
+  // private def asResponse(apps: List[StoredApplication]): List[ApplicationResponse] = {
   //   apps.map(ApplicationResponse(data = _))
   // }
 
-  private def asExtendedResponses(apps: List[ApplicationData]): Future[List[ExtendedApplicationResponse]] = {
-    def asExtendedResponse(app: ApplicationData): Future[ExtendedApplicationResponse] = {
+  private def asExtendedResponses(apps: List[StoredApplication]): Future[List[ExtendedApplicationResponse]] = {
+    def asExtendedResponse(app: StoredApplication): Future[ExtendedApplicationResponse] = {
       subscriptionRepository.getSubscriptions(app.id).map(subscriptions => ExtendedApplicationResponse(app, subscriptions))
     }
 
@@ -292,7 +292,7 @@ class ApplicationService @Inject() (
 
     val wso2ApplicationName = credentialGenerator.generate()
 
-    def createInApiGateway(appData: ApplicationData): Future[HasSucceeded] = {
+    def createInApiGateway(appData: StoredApplication): Future[HasSucceeded] = {
       if (appData.isInPreProductionOrProduction) {
         apiGatewayStore.createApplication(appData.wso2ApplicationName, appData.tokens.production.accessToken)
       } else {
@@ -315,7 +315,7 @@ class ApplicationService @Inject() (
                         }
       totp           <- generateApplicationTotp(createApplicationRequest.accessType)
       modifiedRequest = applyTotpForPrivAppsOnly(totp, req)
-      appData         = ApplicationData.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), LocalDateTime.now(clock))
+      appData         = StoredApplication.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), LocalDateTime.now(clock))
       _              <- createInApiGateway(appData)
       _              <- applicationRepository.save(appData)
       _              <- createStateHistory(appData)
@@ -344,15 +344,15 @@ class ApplicationService @Inject() (
     totp.map { t => TotpSecret(t.secret) }
   }
 
-  def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {
+  def createStateHistory(appData: StoredApplication)(implicit hc: HeaderCarrier) = {
     val actor = appData.access.accessType match {
       case AccessType.PRIVILEGED | AccessType.ROPC => Actors.Unknown
       case _                                       => loggedInActor
     }
-    insertStateHistory(appData, appData.state.name, None, actor, (a: ApplicationData) => applicationRepository.hardDelete(a.id))
+    insertStateHistory(appData, appData.state.name, None, actor, (a: StoredApplication) => applicationRepository.hardDelete(a.id))
   }
 
-  private def auditAppCreated(app: ApplicationData)(implicit hc: HeaderCarrier) =
+  private def auditAppCreated(app: StoredApplication)(implicit hc: HeaderCarrier) =
     auditService.audit(
       AppCreated,
       Map(
@@ -362,16 +362,16 @@ class ApplicationService @Inject() (
       )
     )
 
-  private def updateApp(applicationId: ApplicationId)(applicationRequest: UpdateApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
+  private def updateApp(applicationId: ApplicationId)(applicationRequest: UpdateApplicationRequest)(implicit hc: HeaderCarrier): Future[StoredApplication] = {
     logger.info(s"Updating application ${applicationRequest.name}")
 
-    def updatedAccess(existing: ApplicationData): Access =
+    def updatedAccess(existing: StoredApplication): Access =
       (applicationRequest.access, existing.access) match {
         case (newAccess: Access.Standard, oldAccess: Access.Standard) => newAccess.copy(overrides = oldAccess.overrides)
         case _                                                        => applicationRequest.access
       }
 
-    def updatedApplication(existing: ApplicationData): ApplicationData =
+    def updatedApplication(existing: StoredApplication): StoredApplication =
       existing.copy(
         name = applicationRequest.name,
         normalisedName = applicationRequest.name.toLowerCase,
@@ -379,7 +379,7 @@ class ApplicationService @Inject() (
         access = updatedAccess(existing)
       )
 
-    def checkAccessType(existing: ApplicationData): Unit =
+    def checkAccessType(existing: StoredApplication): Unit =
       if (existing.access.accessType != applicationRequest.access.accessType) {
         throw new ForbiddenException("Updating the access type of an application is not allowed")
       }
@@ -401,11 +401,11 @@ class ApplicationService @Inject() (
   }
 
   private def insertStateHistory(
-      snapshotApp: ApplicationData,
+      snapshotApp: StoredApplication,
       newState: State,
       oldState: Option[State],
       actor: Actor,
-      rollback: ApplicationData => Any
+      rollback: StoredApplication => Any
     ) = {
     val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {

@@ -36,7 +36,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens, ApplicationWithStateHistory, ApplicationWithSubscriptions}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, ApplicationWithStateHistory, ApplicationWithSubscriptions}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
 
 class GatekeeperServiceSpec
@@ -50,7 +51,7 @@ class GatekeeperServiceSpec
 
   private val bobTheGKUser = Actors.GatekeeperUser("bob")
 
-  private def aSecret(secret: String) = ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
+  private def aSecret(secret: String) = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
@@ -67,7 +68,7 @@ class GatekeeperServiceSpec
       state: ApplicationState = productionState(requestedByEmail),
       collaborators: Set[Collaborator] = Set(loggedInUser.admin())
     ) = {
-    ApplicationData(
+    StoredApplication(
       applicationId,
       "MyApp",
       "myapp",
@@ -143,7 +144,7 @@ class GatekeeperServiceSpec
 
       val result = await(underTest.fetchAppWithHistory(appId))
 
-      result shouldBe ApplicationWithHistory(ApplicationResponse(data = app1), history.map(StateHistoryResponse.from))
+      result shouldBe ApplicationWithHistoryResponse(ApplicationResponse(data = app1), history.map(StateHistoryResponse.from))
     }
 
     "throw not found exception" in new Setup {
@@ -241,7 +242,7 @@ class GatekeeperServiceSpec
       val application = anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy))
 
       ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
+      ApplicationRepoMock.Save.thenReturn(mock[StoredApplication])
       StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))
 
       intercept[RuntimeException] {
@@ -523,21 +524,21 @@ class GatekeeperServiceSpec
 
       val result = await(underTest.fetchAppStateHistories())
       result shouldBe List(
-        ApplicationStateHistory(
+        ApplicationStateHistoryResponse(
           appId1,
           "app1",
           2,
           List(
-            ApplicationStateHistoryItem(State.TESTING, ts1),
-            ApplicationStateHistoryItem(State.PRODUCTION, ts2)
+            ApplicationStateHistoryResponse.Item(State.TESTING, ts1),
+            ApplicationStateHistoryResponse.Item(State.PRODUCTION, ts2)
           )
         ),
-        ApplicationStateHistory(
+        ApplicationStateHistoryResponse(
           appId2,
           "app2",
           2,
           List(
-            ApplicationStateHistoryItem(State.TESTING, ts3)
+            ApplicationStateHistoryResponse.Item(State.TESTING, ts3)
           )
         )
       )

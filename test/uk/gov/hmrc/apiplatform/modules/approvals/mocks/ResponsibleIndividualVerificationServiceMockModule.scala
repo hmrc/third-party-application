@@ -29,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationId
 }
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with FixedClock {
 
@@ -41,7 +41,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
     object CreateNewVerification {
 
       def thenCreateNewVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
-        when(aMock.createNewToUVerification(*[ApplicationData], *[SubmissionId], *)).thenAnswer((appData: ApplicationData, submissionId: SubmissionId, index: Int) =>
+        when(aMock.createNewToUVerification(*[StoredApplication], *[SubmissionId], *)).thenAnswer((appData: StoredApplication, submissionId: SubmissionId, index: Int) =>
           Future.successful(
             ResponsibleIndividualToUVerification(verificationId, appData.id, submissionId, index, appData.name, now)
           )
@@ -52,8 +52,8 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
     object CreateNewTouUpliftVerification {
 
       def thenCreateNewTouUpliftVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
-        when(aMock.createNewTouUpliftVerification(*[ApplicationData], *[SubmissionId], *, *, *[LaxEmailAddress])).thenAnswer(
-          (appData: ApplicationData, submissionId: SubmissionId, index: Int, requesterName: String, requesterEmail: LaxEmailAddress) =>
+        when(aMock.createNewTouUpliftVerification(*[StoredApplication], *[SubmissionId], *, *, *[LaxEmailAddress])).thenAnswer(
+          (appData: StoredApplication, submissionId: SubmissionId, index: Int, requesterName: String, requesterEmail: LaxEmailAddress) =>
             Future.successful(
               ResponsibleIndividualTouUpliftVerification(verificationId, appData.id, submissionId, index, appData.name, now, requesterName, requesterEmail)
             )

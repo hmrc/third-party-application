@@ -22,7 +22,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.SellRes
 import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPrevention
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util.{HmrcSpec, UpliftRequestSamples}
 
 class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftRequestSamples {
@@ -51,21 +51,21 @@ class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftReq
 
   "deriveFor is called" should {
     "return the appropriate context when one subscription is a fraud prevention candidate" in {
-      val aMock: ApplicationData = mock[ApplicationData]
+      val aMock: StoredApplication = mock[StoredApplication]
       when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("Yes")))
       when(aMock.state).thenReturn(ApplicationStateExamples.testing)
 
       DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "Yes", Keys.IN_HOUSE_SOFTWARE -> "No", Keys.NEW_TERMS_OF_USE_UPLIFT -> "No")
     }
     "return the appropriate context when no subscription is a fraud prevention candidate" in {
-      val aMock: ApplicationData = mock[ApplicationData]
+      val aMock: StoredApplication = mock[StoredApplication]
       when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("No")))
       when(aMock.state).thenReturn(ApplicationStateExamples.testing)
 
       DeriveContext.deriveFor(aMock, nonFpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "No", Keys.IN_HOUSE_SOFTWARE -> "Yes", Keys.NEW_TERMS_OF_USE_UPLIFT -> "No")
     }
     "return the appropriate context when the application is already in production" in {
-      val aMock: ApplicationData = mock[ApplicationData]
+      val aMock: StoredApplication = mock[StoredApplication]
       when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("Yes")))
       when(aMock.state).thenReturn(ApplicationStateExamples.production("requesterEmail", "requesterName"))
 

@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModu
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
@@ -54,7 +54,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       with SubmissionsTestData
       with ApplicationTestData {
 
-    val application: ApplicationData = anApplicationData(applicationId, testingState())
+    val application: StoredApplication = anApplicationData(applicationId, testingState())
 
     val testSubmission                                     = aSubmission
     val testPassAnsweredSubmission                         = testSubmission.hasCompletelyAnsweredWith(sampleAnswersToQuestions)
@@ -334,7 +334,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       "return application in incorrect state an application not in TESTING" in new Setup {
-        val pendingApplication: ApplicationData = anApplicationData(applicationId, pendingGatekeeperApprovalState(requestedByEmail.text))
+        val pendingApplication: StoredApplication = anApplicationData(applicationId, pendingGatekeeperApprovalState(requestedByEmail.text))
 
         val result = await(underTest.requestApproval(pendingApplication, answeringSubmission, requestedByName, requestedByEmail.text))
 

@@ -25,7 +25,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 
@@ -37,7 +37,7 @@ class AccessService @Inject() (applicationRepository: ApplicationRepository, aud
 
   def updateScopes(applicationId: ApplicationId, scopeRequest: ScopeRequest)(implicit headerCarrier: HeaderCarrier): Future[ScopeResponse] = {
 
-    def updateWithScopes(applicationData: ApplicationData, newScopes: Set[String]): ApplicationData = {
+    def updateWithScopes(applicationData: StoredApplication, newScopes: Set[String]): StoredApplication = {
       val updatedAccess = privilegedOrRopc[Access](
         applicationData, {
           getPrivilegedAccess(_).copy(scopes = newScopes)
@@ -63,7 +63,7 @@ class AccessService @Inject() (applicationRepository: ApplicationRepository, aud
 
   def updateOverrides(applicationId: ApplicationId, overridesRequest: OverridesRequest)(implicit headerCarrier: HeaderCarrier): Future[OverridesResponse] = {
 
-    def updateWithOverrides(applicationData: ApplicationData, newOverrides: Set[OverrideFlag]): ApplicationData =
+    def updateWithOverrides(applicationData: StoredApplication, newOverrides: Set[OverrideFlag]): StoredApplication =
       applicationData.copy(access = getStandardAccess(applicationData).copy(overrides = newOverrides))
 
     for {
@@ -76,19 +76,19 @@ class AccessService @Inject() (applicationRepository: ApplicationRepository, aud
     } yield OverridesResponse(getOverrides(persistedApplicationData))
   }
 
-  private def fetchApp(applicationId: ApplicationId): Future[ApplicationData] =
+  private def fetchApp(applicationId: ApplicationId): Future[StoredApplication] =
     applicationRepository.fetch(applicationId).flatMap {
       case Some(applicationData) => successful(applicationData)
       case None                  => failed(new NotFoundException(s"application not found for id: ${applicationId.value}"))
     }
 
-  private def getPrivilegedAccess(applicationData: ApplicationData): Access.Privileged =
+  private def getPrivilegedAccess(applicationData: StoredApplication): Access.Privileged =
     applicationData.access.asInstanceOf[Access.Privileged]
 
-  private def getRopcAccess(applicationData: ApplicationData): Access.Ropc =
+  private def getRopcAccess(applicationData: StoredApplication): Access.Ropc =
     applicationData.access.asInstanceOf[Access.Ropc]
 
-  private def getScopes(applicationData: ApplicationData): Set[String] =
+  private def getScopes(applicationData: StoredApplication): Set[String] =
     privilegedOrRopc[Set[String]](
       applicationData, {
         getPrivilegedAccess(_).scopes
@@ -97,15 +97,15 @@ class AccessService @Inject() (applicationRepository: ApplicationRepository, aud
       }
     )
 
-  private def privilegedOrRopc[T](applicationData: ApplicationData, privilegedFunction: ApplicationData => T, ropcFunction: ApplicationData => T) =
+  private def privilegedOrRopc[T](applicationData: StoredApplication, privilegedFunction: StoredApplication => T, ropcFunction: StoredApplication => T) =
     applicationData.access.accessType match {
       case AccessType.PRIVILEGED => privilegedFunction(applicationData)
       case AccessType.ROPC       => ropcFunction(applicationData)
     }
 
-  private def getStandardAccess(applicationData: ApplicationData): Access.Standard =
+  private def getStandardAccess(applicationData: StoredApplication): Access.Standard =
     applicationData.access.asInstanceOf[Access.Standard]
 
-  private def getOverrides(applicationData: ApplicationData): Set[OverrideFlag] =
+  private def getOverrides(applicationData: StoredApplication): Set[OverrideFlag] =
     getStandardAccess(applicationData).overrides
 }

@@ -25,14 +25,14 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, Environment}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
 object ApplicationNamingService {
-  type ExclusionCondition = (ApplicationData) => Boolean
+  type ExclusionCondition = (StoredApplication) => Boolean
   def noExclusions: ExclusionCondition                           = _ => false
-  def excludeThisAppId(appId: ApplicationId): ExclusionCondition = (x: ApplicationData) => x.id == appId
+  def excludeThisAppId(appId: ApplicationId): ExclusionCondition = (x: StoredApplication) => x.id == appId
 
   case class ApplicationNameValidationConfig(nameDenyList: List[String], validateForDuplicateAppNames: Boolean)
 }

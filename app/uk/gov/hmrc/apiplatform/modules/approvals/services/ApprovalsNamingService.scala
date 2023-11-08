@@ -25,7 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNamingService, AuditService}
 
@@ -39,8 +39,8 @@ class ApprovalsNamingService @Inject() (
 
   import ApplicationNamingService._
 
-  private val excludeInTesting: ExclusionCondition                                 = (x: ApplicationData) => x.isInTesting
-  private def or(a: ExclusionCondition, b: ExclusionCondition): ExclusionCondition = (x: ApplicationData) => a(x) || b(x)
+  private val excludeInTesting: ExclusionCondition                                 = (x: StoredApplication) => x.isInTesting
+  private def or(a: ExclusionCondition, b: ExclusionCondition): ExclusionCondition = (x: StoredApplication) => a(x) || b(x)
 
   private def approvalsFilter(appId: ApplicationId): ExclusionCondition = or(excludeThisAppId(appId), excludeInTesting)
 

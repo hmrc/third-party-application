@@ -174,7 +174,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
     "return app with history for LDAP user" in new Setup {
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-      val expected = ApplicationWithHistory(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
+      val expected = ApplicationWithHistoryResponse(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
 
       when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
 
@@ -188,7 +188,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      val expected = ApplicationWithHistory(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
+      val expected = ApplicationWithHistoryResponse(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
 
       when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
 
@@ -244,17 +244,17 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   "fetchAppStateHistories" should {
     val expectedAppStateHistories = List(
-      ApplicationStateHistory(
+      ApplicationStateHistoryResponse(
         ApplicationId.random,
         "app 1",
         1,
         List(
-          ApplicationStateHistoryItem(State.TESTING, LocalDateTime.parse("2022-07-01T12:00:00")),
-          ApplicationStateHistoryItem(State.PENDING_GATEKEEPER_APPROVAL, LocalDateTime.parse("2022-07-01T13:00:00")),
-          ApplicationStateHistoryItem(State.PRODUCTION, LocalDateTime.parse("2022-07-01T14:00:00"))
+          ApplicationStateHistoryResponse.Item(State.TESTING, LocalDateTime.parse("2022-07-01T12:00:00")),
+          ApplicationStateHistoryResponse.Item(State.PENDING_GATEKEEPER_APPROVAL, LocalDateTime.parse("2022-07-01T13:00:00")),
+          ApplicationStateHistoryResponse.Item(State.PRODUCTION, LocalDateTime.parse("2022-07-01T14:00:00"))
         )
       ),
-      ApplicationStateHistory(ApplicationId.random, "app 2", 2, List())
+      ApplicationStateHistoryResponse(ApplicationId.random, "app 2", 2, List())
     )
 
     "return app histories for Stride GK User" in new Setup {

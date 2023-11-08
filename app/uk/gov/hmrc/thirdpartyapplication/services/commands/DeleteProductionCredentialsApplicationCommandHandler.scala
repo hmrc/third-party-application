@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteProductionCredentialsApplication
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 
@@ -49,12 +49,12 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData): Validated[Failures, ApplicationData] = {
+  private def validate(app: StoredApplication): Validated[Failures, StoredApplication] = {
     Apply[Validated[Failures, *]]
       .map(isInTesting(app)) { case _ => app }
   }
 
-  private def asEvents(app: ApplicationData, cmd: DeleteProductionCredentialsApplication, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: DeleteProductionCredentialsApplication, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
     val clientId = app.tokens.production.clientId
     NonEmptyList.of(
       ApplicationEvents.ProductionCredentialsApplicationDeleted(
@@ -70,7 +70,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteProductionCredentialsApplication)(implicit hc: HeaderCarrier): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: DeleteProductionCredentialsApplication)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       valid       <- E.fromEither(validate(app).toEither)
       savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))

@@ -24,20 +24,20 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 object ApplicationChangedNoValueNotification {
 
-  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, requestingAdminEmail: String, fieldName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendAdviceEmail(emailConnector: EmailConnector, app: StoredApplication, requestingAdminEmail: String, fieldName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
     emailConnector.sendChangeOfApplicationDetailsNoValue(requestingAdminEmail, app.name, fieldName, recipients)
   }
 
-  private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
+  private def getRecipients(app: StoredApplication): Set[LaxEmailAddress] = {
     app.collaborators.map(_.emailAddress)
   }
 
-  private def getResponsibleIndividual(app: ApplicationData): Set[LaxEmailAddress] = {
+  private def getResponsibleIndividual(app: StoredApplication): Set[LaxEmailAddress] = {
     app.access match {
       case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress)
       case _                                                             => Set()

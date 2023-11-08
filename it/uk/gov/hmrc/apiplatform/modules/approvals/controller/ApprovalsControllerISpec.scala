@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.utils.ServerBaseISpec
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.util.UUID
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
@@ -107,7 +107,7 @@ class ApprovalsControllerISpec
         PrivacyPolicyLocations.InDesktopSoftware,
         List.empty
       )
-      val application: ApplicationData = anApplicationData(
+      val application: StoredApplication = anApplicationData(
         appId,
         pendingGatekeeperApprovalState("bob@fastshow.com"),
         access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))

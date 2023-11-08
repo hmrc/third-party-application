@@ -36,7 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDat
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, HasSucceeded, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -45,7 +45,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, AuditHelp
 object RequestApprovalsService {
   sealed trait RequestApprovalResult
 
-  case class ApprovalAccepted(application: ApplicationData) extends RequestApprovalResult
+  case class ApprovalAccepted(application: StoredApplication) extends RequestApprovalResult
 
   sealed trait ApprovalRejectedResult                                                extends RequestApprovalResult
   case object ApprovalRejectedDueToIncorrectApplicationState                         extends ApprovalRejectedResult
@@ -76,7 +76,7 @@ class RequestApprovalsService @Inject() (
   import RequestApprovalsService._
 
   def requestApproval(
-      app: ApplicationData,
+      app: StoredApplication,
       submission: Submission,
       requestedByName: String,
       requestedByEmailAddress: String
@@ -91,7 +91,7 @@ class RequestApprovalsService @Inject() (
   }
 
   private def requestProductionCredentialApproval(
-      originalApp: ApplicationData,
+      originalApp: StoredApplication,
       submission: Submission,
       requestedByName: String,
       requestedByEmailAddress: String
@@ -99,13 +99,13 @@ class RequestApprovalsService @Inject() (
     ): Future[RequestApprovalResult] = {
 
     def deriveNewAppDetails(
-        existing: ApplicationData,
+        existing: StoredApplication,
         isRequesterTheResponsibleIndividual: Boolean,
         applicationName: String,
         requestedByEmailAddress: String,
         requestedByName: String,
         importantSubmissionData: ImportantSubmissionData
-      ): ApplicationData =
+      ): StoredApplication =
       existing.copy(
         name = applicationName,
         normalisedName = applicationName.toLowerCase,
@@ -147,7 +147,7 @@ class RequestApprovalsService @Inject() (
   }
 
   private def requestToUUpliftApproval(
-      originalApp: ApplicationData,
+      originalApp: StoredApplication,
       submission: Submission,
       requestedByName: String,
       requestedByEmailAddress: String
@@ -155,9 +155,9 @@ class RequestApprovalsService @Inject() (
     ): Future[RequestApprovalResult] = {
 
     def deriveNewAppDetails(
-        existing: ApplicationData,
+        existing: StoredApplication,
         importantSubmissionData: ImportantSubmissionData
-      ): ApplicationData =
+      ): StoredApplication =
       existing.copy(
         access = updateStandardData(existing.access, importantSubmissionData)
       )
@@ -227,11 +227,11 @@ class RequestApprovalsService @Inject() (
 
   private def addTouAcceptanceIfNeeded(
       addTouAcceptance: Boolean,
-      appWithoutTouAcceptance: ApplicationData,
+      appWithoutTouAcceptance: StoredApplication,
       submission: Submission,
       requestedByName: String,
       requestedByEmailAddress: String
-    ): Future[ApplicationData] = {
+    ): Future[StoredApplication] = {
     if (addTouAcceptance) {
       val responsibleIndividual = ResponsibleIndividual.build(requestedByName, requestedByEmailAddress)
       val acceptance            = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submission.id, submission.latestInstance.index)
@@ -243,7 +243,7 @@ class RequestApprovalsService @Inject() (
 
   private def sendProdCredsVerificationEmailIfNeeded(
       isRequesterTheResponsibleIndividual: Boolean,
-      application: ApplicationData,
+      application: StoredApplication,
       submission: Submission,
       importantSubmissionData: ImportantSubmissionData,
       requestedByName: String
@@ -266,7 +266,7 @@ class RequestApprovalsService @Inject() (
 
   private def sendTouUpliftVerificationEmailIfNeeded(
       isRequesterTheResponsibleIndividual: Boolean,
-      application: ApplicationData,
+      application: StoredApplication,
       submission: Submission,
       importantSubmissionData: ImportantSubmissionData,
       requestedByName: String,
@@ -302,7 +302,7 @@ class RequestApprovalsService @Inject() (
 
   private def sendConfirmationEmailIfNeeded(
       addTouAcceptance: Boolean,
-      application: ApplicationData
+      application: StoredApplication
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     if (addTouAcceptance) {
@@ -326,18 +326,18 @@ class RequestApprovalsService @Inject() (
       case DuplicateName => Left(ApprovalRejectedDueToDuplicateName(appName))
     })
 
-  private def logCompletedApprovalRequest(app: ApplicationData) =
+  private def logCompletedApprovalRequest(app: StoredApplication) =
     logger.info(s"Approval-02: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name}")
 
-  private def auditCompletedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData)(implicit hc: HeaderCarrier): Future[AuditResult] =
+  private def auditCompletedApprovalRequest(applicationId: ApplicationId, updatedApp: StoredApplication)(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditService.audit(ApplicationUpliftRequested, AuditHelper.applicationId(applicationId) ++ Map("newApplicationName" -> updatedApp.name))
 
-  private def writeStateHistory(snapshotApp: ApplicationData, requestedByEmailAddress: String) =
+  private def writeStateHistory(snapshotApp: StoredApplication, requestedByEmailAddress: String) =
     insertStateHistory(
       snapshotApp,
       snapshotApp.state.name,
       Some(State.TESTING),
       Actors.AppCollaborator(requestedByEmailAddress.toLaxEmail),
-      (a: ApplicationData) => applicationRepository.save(a)
+      (a: StoredApplication) => applicationRepository.save(a)
     )
 }

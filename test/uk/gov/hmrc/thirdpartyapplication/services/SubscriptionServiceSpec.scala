@@ -33,7 +33,8 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
@@ -55,12 +56,12 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
       mockSubscriptionRepository,
       ApplicationCommandDispatcherMock.aMock
     )
-    when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
+    when(mockApplicationRepository.save(*)).thenAnswer((a: StoredApplication) => successful(a))
     when(mockSubscriptionRepository.add(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
     when(mockSubscriptionRepository.remove(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
   }
 
-  private def aSecret(secret: String) = ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
+  private def aSecret(secret: String) = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   "isSubscribed" should {
     val applicationId = ApplicationId.random
@@ -191,7 +192,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
       collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
       rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE)
     ) = {
-    new ApplicationData(
+    new StoredApplication(
       applicationId,
       "MyApp",
       "myapp",

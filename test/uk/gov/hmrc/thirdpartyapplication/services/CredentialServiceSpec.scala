@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StoredClientSecret
 import uk.gov.hmrc.thirdpartyapplication.mocks.ClientSecretServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -65,7 +65,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
     val environmentToken = applicationData.tokens.production
     val firstSecret      = environmentToken.clientSecrets.head
 
-    val prodTokenWith5Secrets       = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecretData(v, hashedSecret = "hashed-secret")))
+    val prodTokenWith5Secrets       = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => StoredClientSecret(v, hashedSecret = "hashed-secret")))
     val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
     val expectedTokenResponse = ApplicationTokenResponse(environmentToken)

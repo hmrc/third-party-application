@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
@@ -35,7 +35,7 @@ class AddRedirectUriCommandHandler @Inject() (applicationRepository: Application
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: AddRedirectUri): Validated[Failures, List[String]] = {
+  private def validate(app: StoredApplication, cmd: AddRedirectUri): Validated[Failures, List[String]] = {
     val existingRedirects = app.access match {
       case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris
       case _                                            => List.empty
@@ -50,7 +50,7 @@ class AddRedirectUriCommandHandler @Inject() (applicationRepository: Application
     )((_, _, _) => existingRedirects)
   }
 
-  private def asEvents(app: ApplicationData, cmd: AddRedirectUri): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: AddRedirectUri): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApplicationEvents.RedirectUriAdded(
         id = EventId.random,
@@ -62,7 +62,7 @@ class AddRedirectUriCommandHandler @Inject() (applicationRepository: Application
     )
   }
 
-  def process(app: ApplicationData, cmd: AddRedirectUri): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: AddRedirectUri): AppCmdResultT = {
     for {
       existingUris   <- E.fromEither(validate(app, cmd).toEither)
       urisAfterChange = existingUris :+ cmd.redirectUriToAdd.uri

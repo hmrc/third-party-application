@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse}
 import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
 
@@ -47,7 +47,7 @@ class TermsOfUseInvitationService @Inject() (
   val daysUntilDueWhenCreated = config.daysUntilDueWhenCreated
   val daysUntilDueWhenReset   = config.daysUntilDueWhenReset
 
-  def createInvitation(application: ApplicationData)(implicit hc: HeaderCarrier): Future[Option[TermsOfUseInvitation]] = {
+  def createInvitation(application: StoredApplication)(implicit hc: HeaderCarrier): Future[Option[TermsOfUseInvitation]] = {
     logger.info(s"Inviting application(${application.id.value}) to complete the new terms of use")
     val now    = Instant.now(clock).truncatedTo(MILLIS)
     val invite = TermsOfUseInvitation(

@@ -24,7 +24,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNamingService, AuditService}
 
@@ -42,7 +42,7 @@ class UpliftNamingService @Inject() (
 
   import ApplicationNamingService._
 
-  val excludeNothing: ExclusionCondition = (x: ApplicationData) => false
+  val excludeNothing: ExclusionCondition = (x: StoredApplication) => false
 
   def upliftFilter(selfApplicationId: Option[ApplicationId]): ExclusionCondition =
     selfApplicationId.fold(excludeNothing)(appId => excludeThisAppId(appId))
@@ -53,7 +53,7 @@ class UpliftNamingService @Inject() (
   def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[ApplicationNameValidationResult] =
     validateApplicationName(applicationName, upliftFilter(selfApplicationId))
 
-  def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)(implicit hc: HeaderCarrier) = {
+  def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[StoredApplication] = None)(implicit hc: HeaderCarrier) = {
 
     for {
       duplicate <- isDuplicateName(submittedAppName, existingApp.map(_.id))

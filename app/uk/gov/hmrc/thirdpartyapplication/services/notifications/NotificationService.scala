@@ -29,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.Applica
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 @Singleton
 class NotificationService @Inject() (emailConnector: EmailConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
@@ -44,7 +44,7 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
 
   // scalastyle:off cyclomatic.complexity method.length
   def sendNotifications(
-      app: ApplicationData,
+      app: StoredApplication,
       events: NonEmptyList[ApplicationEvent],
       verifiedCollaborators: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier

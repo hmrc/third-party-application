@@ -21,7 +21,7 @@ import scala.concurrent.Future
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StoredClientSecret
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
 
 trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -34,10 +34,10 @@ trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSu
 
     object ClientSecretIsValid {
 
-      def thenReturnValidationResult(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecretData])(matchingClientSecret: ClientSecretData) =
+      def thenReturnValidationResult(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[StoredClientSecret])(matchingClientSecret: StoredClientSecret) =
         when(aMock.clientSecretIsValid(eqTo(applicationId), eqTo(secret), eqTo(candidateClientSecrets))).thenReturn(Future.successful(Some(matchingClientSecret)))
 
-      def noMatchingClientSecret(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecretData]) =
+      def noMatchingClientSecret(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[StoredClientSecret]) =
         when(aMock.clientSecretIsValid(eqTo(applicationId), eqTo(secret), eqTo(candidateClientSecrets))).thenReturn(Future.successful(None))
     }
   }

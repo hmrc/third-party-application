@@ -18,15 +18,21 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.time.LocalDateTime
 
-import play.api.libs.json.Json
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 
-case class ApplicationStateHistoryItem(state: State, timestamp: LocalDateTime)
-case class ApplicationStateHistory(applicationId: ApplicationId, appName: String, journeyVersion: Int, stateHistory: List[ApplicationStateHistoryItem])
+case class ApplicationStateHistoryResponse(applicationId: ApplicationId, appName: String, journeyVersion: Int, stateHistory: List[ApplicationStateHistoryResponse.Item])
 
-object ApplicationStateHistory {
-  implicit val formatApplicationStateHistoryItem = Json.format[ApplicationStateHistoryItem]
-  implicit val formatApplicationStateHistory     = Json.format[ApplicationStateHistory]
+object ApplicationStateHistoryResponse {
+  case class Item(state: State, timestamp: LocalDateTime)
+  
+  import play.api.libs.json.Json
+  import play.api.libs.json.OFormat
+
+  object Item {
+    implicit val format: OFormat[Item] = Json.format[Item]
+  }
+
+  implicit val formatApplicationStateHistory: OFormat[ApplicationStateHistoryResponse]     = Json.format[ApplicationStateHistoryResponse]
 }

@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
@@ -35,7 +35,7 @@ class DeleteRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: DeleteRedirectUri): Validated[Failures, List[String]] = {
+  private def validate(app: StoredApplication, cmd: DeleteRedirectUri): Validated[Failures, List[String]] = {
     val existingRedirects = app.access match {
       case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris
       case _                                            => List.empty
@@ -58,7 +58,7 @@ class DeleteRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
     )((_, _, _) => existingRedirects)
   }
 
-  private def asEvents(app: ApplicationData, cmd: DeleteRedirectUri): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: DeleteRedirectUri): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApplicationEvents.RedirectUriDeleted(
         id = EventId.random,
@@ -70,7 +70,7 @@ class DeleteRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteRedirectUri): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: DeleteRedirectUri): AppCmdResultT = {
     for {
       existingUris   <- E.fromEither(validate(app, cmd).toEither)
       urisAfterChange = existingUris.filterNot(_ == cmd.redirectUriToDelete.uri)

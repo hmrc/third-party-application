@@ -32,7 +32,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val underTest = new UpdateRedirectUrisCommandHandler(ApplicationRepoMock.aMock)
 
     val applicationId                    = ApplicationId.random
-    val applicationData: ApplicationData = anApplicationData(applicationId)
+    val applicationData: StoredApplication = anApplicationData(applicationId)
     val subordinateApp                   = applicationData.copy(environment = Environment.SANDBOX.toString())
 
     val nonStandardAccessApp = applicationData.copy(access = Access.Privileged())

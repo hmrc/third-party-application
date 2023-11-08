@@ -21,7 +21,7 @@ import java.time.{Clock, LocalDateTime}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 case class ApplicationResponse(
     id: ApplicationId,
@@ -50,27 +50,27 @@ case class ApplicationResponse(
 
 object ApplicationResponse {
 
-  def allowAutoDelete(data: ApplicationData): MoreApplication = Option(data.allowAutoDelete) match {
+  def allowAutoDelete(data: StoredApplication): MoreApplication = Option(data.allowAutoDelete) match {
     case Some(allowAutoDeleteFlag: Boolean) => MoreApplication(allowAutoDeleteFlag)
     case _                                  => MoreApplication(false)
   }
 
-  def redirectUris(data: ApplicationData): List[String] = data.access match {
+  def redirectUris(data: StoredApplication): List[String] = data.access match {
     case a: Access.Standard => a.redirectUris
     case _                  => List.empty
   }
 
-  def termsAndConditionsUrl(data: ApplicationData): Option[String] = data.access match {
+  def termsAndConditionsUrl(data: StoredApplication): Option[String] = data.access match {
     case a: Access.Standard => a.termsAndConditionsUrl
     case _                  => None
   }
 
-  def privacyPolicyUrl(data: ApplicationData): Option[String] = data.access match {
+  def privacyPolicyUrl(data: StoredApplication): Option[String] = data.access match {
     case a: Access.Standard => a.privacyPolicyUrl
     case _                  => None
   }
 
-  def apply(data: ApplicationData): ApplicationResponse = {
+  def apply(data: StoredApplication): ApplicationResponse = {
     ApplicationResponse(
       data.id,
       data.tokens.production.clientId,

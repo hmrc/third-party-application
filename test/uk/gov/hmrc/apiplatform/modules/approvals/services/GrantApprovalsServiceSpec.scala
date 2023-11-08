@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
@@ -72,7 +72,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       List(acceptance)
     )
 
-    val applicationPendingGKApproval: ApplicationData = anApplicationData(
+    val applicationPendingGKApproval: StoredApplication = anApplicationData(
       applicationId,
       pendingGatekeeperApprovalState("bob@fastshow.com"),
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
@@ -80,7 +80,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     val prodAppId = ApplicationId.random
 
-    val applicationProduction: ApplicationData = anApplicationData(
+    val applicationProduction: StoredApplication = anApplicationData(
       prodAppId,
       productionState("bob@fastshow.com"),
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))

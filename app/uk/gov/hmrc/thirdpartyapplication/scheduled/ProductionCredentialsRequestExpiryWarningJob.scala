@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Environment, LaxEma
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Notification, NotificationStatus, NotificationType}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, Notification, NotificationStatus, NotificationType}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository}
 
 @Singleton
@@ -68,7 +68,7 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
     }
   }
 
-  private def sendWarningEmail(app: ApplicationData) = {
+  private def sendWarningEmail(app: StoredApplication) = {
     logger.info(s"Send production credentials request expiry warning email for app{id=${app.id.value},name=${app.name},state." +
       s"name='${app.state.name}',state.updatedOn='${app.state.updatedOn}}'")
 
@@ -84,7 +84,7 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
     } yield sent
   }
 
-  private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
+  private def getRecipients(app: StoredApplication): Set[LaxEmailAddress] = {
     app.collaborators.map(_.emailAddress)
   }
 }

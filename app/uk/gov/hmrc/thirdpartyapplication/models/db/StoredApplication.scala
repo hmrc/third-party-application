@@ -26,11 +26,11 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLengthConfig
 
-case class ApplicationTokens(production: Token)
 
-case class ApplicationData(
+
+case class StoredApplication(
     id: ApplicationId,
     name: String,
     normalisedName: String,
@@ -72,7 +72,7 @@ case class ApplicationData(
   def isDeleted                                                        = state.isDeleted
 }
 
-object ApplicationData {
+object StoredApplication {
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
@@ -81,7 +81,7 @@ object ApplicationData {
       wso2ApplicationName: String,
       environmentToken: Token,
       createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
-    ): ApplicationData = {
+    ): StoredApplication = {
     import createApplicationRequest._
 
     val applicationState = (environment, accessType) match {
@@ -102,7 +102,7 @@ object ApplicationData {
         Access.Standard().copy(redirectUris = v2.access.redirectUris, overrides = v2.access.overrides, sellResellOrDistribute = Some(v2.upliftRequest.sellResellOrDistribute))
     }
 
-    ApplicationData(
+    StoredApplication(
       ApplicationId.random,
       name,
       name.toLowerCase,

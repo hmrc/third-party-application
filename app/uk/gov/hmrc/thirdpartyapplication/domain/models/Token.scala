@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
 case class Token(
     clientId: ClientId,
     accessToken: String,
-    clientSecrets: List[ClientSecretData] = List(),
+    clientSecrets: List[StoredClientSecret] = List(),
     lastAccessTokenUsage: Option[LocalDateTime] = None
   )
 

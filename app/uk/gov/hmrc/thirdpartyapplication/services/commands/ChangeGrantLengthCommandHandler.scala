@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeGrantLength
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 
 @Singleton
@@ -38,13 +38,13 @@ class ChangeGrantLengthCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: ChangeGrantLength): Validated[Failures, Unit] = {
+  private def validate(app: StoredApplication, cmd: ChangeGrantLength): Validated[Failures, Unit] = {
     Apply[Validated[Failures, *]].map(
       cond((cmd.grantLengthInDays.days != app.grantLength), CommandFailures.GenericFailure(s"Grant length is already ${app.grantLength} days"))
     ) { case _ => () }
   }
 
-  private def asEvents(app: ApplicationData, cmd: ChangeGrantLength): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: ChangeGrantLength): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApplicationEvents.GrantLengthChanged(
         id = EventId.random,
@@ -57,7 +57,7 @@ class ChangeGrantLengthCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeGrantLength): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: ChangeGrantLength): AppCmdResultT = {
 
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)

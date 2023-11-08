@@ -25,7 +25,7 @@ import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddClientSecret
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
 
@@ -40,14 +40,14 @@ class AddClientSecretCommandHandler @Inject() (
 
   private val clientSecretLimit = config.clientSecretLimit
 
-  private def validate(app: ApplicationData, cmd: AddClientSecret): Validated[Failures, Unit] = {
+  private def validate(app: StoredApplication, cmd: AddClientSecret): Validated[Failures, Unit] = {
     Apply[Validated[Failures, *]].map2(
       isAdminIfInProduction(cmd.actor, app),
       appHasLessThanLimitOfSecrets(app, clientSecretLimit)
     ) { case _ => () }
   }
 
-  private def asEvents(app: ApplicationData, cmd: AddClientSecret): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: AddClientSecret): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApplicationEvents.ClientSecretAddedV2(
         id = EventId.random,
@@ -60,11 +60,11 @@ class AddClientSecretCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: AddClientSecret): AppCmdResultT = {
-    import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
+  def process(app: StoredApplication, cmd: AddClientSecret): AppCmdResultT = {
+    import uk.gov.hmrc.thirdpartyapplication.domain.models.StoredClientSecret
 
-    def asClientSecretData(cmd: AddClientSecret): ClientSecretData =
-      ClientSecretData(
+    def asClientSecretData(cmd: AddClientSecret): StoredClientSecret =
+      StoredClientSecret(
         name = cmd.name,
         createdOn = cmd.timestamp,
         lastAccess = None,

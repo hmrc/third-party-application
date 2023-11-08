@@ -23,7 +23,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, DuplicateName, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.ExclusionCondition
 
@@ -45,7 +45,7 @@ trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSu
       }
 
       def thenFailsWithApplicationAlreadyExists() = {
-        when(aMock.assertAppHasUniqueNameAndAudit(*, *, *)(*)).thenAnswer((appName: String, _: AccessType, _: Option[ApplicationData]) => failed(ApplicationAlreadyExists(appName)))
+        when(aMock.assertAppHasUniqueNameAndAudit(*, *, *)(*)).thenAnswer((appName: String, _: AccessType, _: Option[StoredApplication]) => failed(ApplicationAlreadyExists(appName)))
       }
     }
 

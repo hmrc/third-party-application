@@ -37,7 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Comma
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 
 @Singleton
@@ -52,10 +52,10 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
   import CommandHandler._
   import CommandFailures._
 
-  private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) =
+  private def isApplicationIdTheSame(app: StoredApplication, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualUpdateVerification): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualUpdateVerification): AppCmdResultT = {
 
     def validate(): Validated[Failures, Unit] = {
       Apply[Validated[Failures, *]].map4(
@@ -93,7 +93,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
     } yield (app, events)
   }
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualToUVerification): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualToUVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
       Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
@@ -154,7 +154,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
     } yield (app, NonEmptyList(riEvt, List(declinedEvt, stateEvt)))
   }
 
-  def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: DeclineResponsibleIndividualDidNotVerify): AppCmdResultT = {
     E.fromEitherF(
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap(_ match {
         case Some(riVerificationToU: ResponsibleIndividualToUVerification)       => process(app, cmd, riVerificationToU).value

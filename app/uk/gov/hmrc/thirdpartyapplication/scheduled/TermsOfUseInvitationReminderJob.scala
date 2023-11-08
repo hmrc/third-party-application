@@ -34,7 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Eithe
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationState}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, TermsOfUseInvitationRepository}
 
@@ -106,7 +106,7 @@ class TermsOfUseInvitationReminderJob @Inject() (
     ).value
   }
 
-  private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
+  private def getRecipients(app: StoredApplication): Set[LaxEmailAddress] = {
     app.admins.map(_.emailAddress)
   }
 }

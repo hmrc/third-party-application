@@ -33,7 +33,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, NoMetricsGuiceOneAppPerSuite}
 
@@ -76,14 +77,14 @@ class UpliftVerificationExpiryJobSpec
   "uplift verification expiry job execution" should {
 
     "expire all application uplifts having expiry date before the expiry time" in new Setup {
-      val app1: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
-      val app2: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app1: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app2: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"))
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), any[LocalDateTime]))
         .thenReturn(successful(List(app1, app2)))
 
-      when(mockApplicationRepository.save(*[ApplicationData]))
-        .thenAnswer((a: ApplicationData) => successful(a))
+      when(mockApplicationRepository.save(*[StoredApplication]))
+        .thenAnswer((a: StoredApplication) => successful(a))
 
       await(underTest.execute)
       verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, now.minusDays(expiryTimeInDays))
@@ -123,12 +124,12 @@ class UpliftVerificationExpiryJobSpec
     }
 
     "handle error on subsequent database call to update an application" in new Setup {
-      val app1: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
-      val app2: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app1: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app2: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"))
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), *))
         .thenReturn(Future.successful(List(app1, app2)))
-      when(mockApplicationRepository.save(any[ApplicationData])).thenReturn(
+      when(mockApplicationRepository.save(any[StoredApplication])).thenReturn(
         Future.failed(new RuntimeException("A failure on executing save db query"))
       )
 
@@ -141,8 +142,8 @@ class UpliftVerificationExpiryJobSpec
     }
   }
 
-  def anApplicationData(id: ApplicationId, prodClientId: ClientId, state: ApplicationState = testingState()): ApplicationData = {
-    ApplicationData(
+  def anApplicationData(id: ApplicationId, prodClientId: ClientId, state: ApplicationState = testingState()): StoredApplication = {
+    StoredApplication(
       id,
       s"myApp-${id.value}",
       s"myapp-${id.value}",

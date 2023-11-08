@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
@@ -28,9 +28,9 @@ class RateLimitMetricsSpec extends AsyncHmrcSpec {
 
   trait Setup {
 
-    def applicationsWithRateLimit(rateLimit: Option[RateLimitTier], numberOfApplications: Int): List[ApplicationData] = {
-      def mockedApplication: ApplicationData = {
-        val application: ApplicationData = mock[ApplicationData]
+    def applicationsWithRateLimit(rateLimit: Option[RateLimitTier], numberOfApplications: Int): List[StoredApplication] = {
+      def mockedApplication: StoredApplication = {
+        val application: StoredApplication = mock[StoredApplication]
         when(application.rateLimitTier).thenReturn(rateLimit)
 
         application
@@ -51,7 +51,7 @@ class RateLimitMetricsSpec extends AsyncHmrcSpec {
       private val numberOfGold    = 2
       private val numberOfUnknown = 1
 
-      private val applicationsToReturn: List[ApplicationData] =
+      private val applicationsToReturn: List[StoredApplication] =
         applicationsWithRateLimit(Some(RateLimitTier.BRONZE), numberOfBronze) ++
           applicationsWithRateLimit(Some(RateLimitTier.SILVER), numberOfSilver) ++
           applicationsWithRateLimit(Some(RateLimitTier.GOLD), numberOfGold) ++

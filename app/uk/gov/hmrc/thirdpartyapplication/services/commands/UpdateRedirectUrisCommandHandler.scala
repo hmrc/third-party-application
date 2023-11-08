@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
@@ -35,7 +35,7 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: UpdateRedirectUris): Validated[Failures, Unit] = {
+  private def validate(app: StoredApplication, cmd: UpdateRedirectUris): Validated[Failures, Unit] = {
     val hasFiveOrFewerURIs = cond(cmd.newRedirectUris.size <= 5, CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
     Apply[Validated[Failures, *]].map3(
       isStandardAccess(app),
@@ -44,7 +44,7 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
     )((_, _, _) => ())
   }
 
-  private def asEvents(app: ApplicationData, cmd: UpdateRedirectUris): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: UpdateRedirectUris): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       RedirectUrisUpdatedV2(
         id = EventId.random,
@@ -57,7 +57,7 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
     )
   }
 
-  def process(app: ApplicationData, cmd: UpdateRedirectUris): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: UpdateRedirectUris): AppCmdResultT = {
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.updateRedirectUris(app.id, cmd.newRedirectUris))
