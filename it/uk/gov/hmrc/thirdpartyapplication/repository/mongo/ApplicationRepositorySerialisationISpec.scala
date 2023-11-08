@@ -22,7 +22,6 @@ import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.JsObject
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.mongo.test.MongoSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -38,6 +37,8 @@ import java.time.{Clock, LocalDateTime}
 import scala.util.Random.nextString
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class ApplicationRepositorySerialisationISpec
     extends ServerBaseISpec
@@ -101,7 +102,7 @@ class ApplicationRepositorySerialisationISpec
         Token(ClientId("aaa"), generateAccessToken, List(aClientSecret()))
       ),
       testingState(),
-      Standard(),
+      Access.Standard(),
       now,
       Some(now),
       grantLength = grantLength,

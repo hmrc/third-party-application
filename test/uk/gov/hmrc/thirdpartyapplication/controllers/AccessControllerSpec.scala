@@ -31,11 +31,12 @@ import play.api.test.FakeRequest
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule {
   import play.api.test.Helpers._
@@ -43,7 +44,7 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-  private val overrides        = Set[OverrideFlag](PersistLogin, GrantWithoutConsent(Set("scope1", "scope2")))
+  private val overrides        = Set[OverrideFlag](OverrideFlag.PersistLogin, OverrideFlag.GrantWithoutConsent(Set("scope1", "scope2")))
   private val scopes           = Set("scope")
   private val scopeRequest     = ScopeRequest(scopes)
   private val overridesRequest = OverridesRequest(overrides)
@@ -200,7 +201,7 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
         now,
         Some(now),
         grantLengthInDays,
-        access = Standard()
+        access = Access.Standard()
       )
     ))
   }
@@ -213,9 +214,9 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
         ApplicationResponse(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, now, Some(now), grantLengthInDays)
       when(mockApplicationService.fetch(applicationId)).thenReturn(
         OptionT.pure[Future](
-          applicationResponse.copy(clientId = ClientId("privilegedClientId"), name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))
+          applicationResponse.copy(clientId = ClientId("privilegedClientId"), name = "privilegedName", access = Access.Privileged(scopes = Set("scope:privilegedScopeKey")))
         ),
-        OptionT.pure[Future](applicationResponse.copy(clientId = ClientId("ropcClientId"), name = "ropcName", access = Ropc(Set("scope:ropcScopeKey"))))
+        OptionT.pure[Future](applicationResponse.copy(clientId = ClientId("ropcClientId"), name = "ropcName", access = Access.Ropc(Set("scope:ropcScopeKey"))))
       )
       testBlock
       testBlock

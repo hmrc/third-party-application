@@ -29,7 +29,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{NoAnswer, SingleChoiceAnswer, Submission, TextAnswer}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, State}
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, AuditServiceMockModule}
@@ -38,6 +37,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseI
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -110,7 +111,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         val savedAppData          = ApplicationRepoMock.Save.verifyCalled()
         savedStateHistory.previousState shouldBe Some(State.TESTING)
         savedAppData.state.name shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
-        val responsibleIndividual = savedAppData.access.asInstanceOf[Standard].importantSubmissionData.get.responsibleIndividual
+        val responsibleIndividual = savedAppData.access.asInstanceOf[Access.Standard].importantSubmissionData.get.responsibleIndividual
         responsibleIndividual.fullName.value shouldBe questionsRiName
         responsibleIndividual.emailAddress shouldBe questionsRiEmail.toLaxEmail
 
@@ -144,7 +145,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         AuditServiceMock.Audit.verifyCalled()
         val savedAppData          = ApplicationRepoMock.Save.verifyCalled()
         savedAppData.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
-        val responsibleIndividual = savedAppData.access.asInstanceOf[Standard].importantSubmissionData.get.responsibleIndividual
+        val responsibleIndividual = savedAppData.access.asInstanceOf[Access.Standard].importantSubmissionData.get.responsibleIndividual
         responsibleIndividual.fullName.value shouldBe requestedByName
         responsibleIndividual.emailAddress shouldBe requestedByEmail
 

@@ -29,6 +29,9 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationState
 
 class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with FixedClock {
 
@@ -38,14 +41,14 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       mockApplicationRepositoryFetchAndSave(privilegedApplicationDataWithScopes(applicationId), Set.empty, scopes1to4)
       AuditServiceMock.Audit.thenReturnSuccess()
       await(accessService.updateScopes(applicationId, ScopeRequest(scopes1to4))(hc))
-      ApplicationRepoMock.Save.verifyCalled().access.asInstanceOf[Privileged].scopes shouldBe scopes1to4
+      ApplicationRepoMock.Save.verifyCalled().access.asInstanceOf[Access.Privileged].scopes shouldBe scopes1to4
     }
 
     "invoke repository save function with updated ropc application data access scopes" in new ScopeFixture {
       mockApplicationRepositoryFetchAndSave(ropcApplicationDataWithScopes(applicationId), Set.empty, scopes1to4)
       AuditServiceMock.Audit.thenReturnSuccess()
       await(accessService.updateScopes(applicationId, ScopeRequest(scopes1to4))(hc))
-      ApplicationRepoMock.Save.verifyCalled().access.asInstanceOf[Ropc].scopes shouldBe scopes1to4
+      ApplicationRepoMock.Save.verifyCalled().access.asInstanceOf[Access.Ropc].scopes shouldBe scopes1to4
     }
 
     "invoke audit service for privileged scopes" in new ScopeFixture {
@@ -102,13 +105,13 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       await(accessService.updateOverrides(applicationId, OverridesRequest(newOverrides))(hc))
 
       val capturedApplicationData = ApplicationRepoMock.Save.verifyCalled()
-      capturedApplicationData.access.asInstanceOf[Standard].overrides shouldBe newOverrides
+      capturedApplicationData.access.asInstanceOf[Access.Standard].overrides shouldBe newOverrides
     }
 
     "overwrite the existing overrides with the new ones" in new OverridesFixture {
       AuditServiceMock.Audit.thenReturnSuccess()
-      val grantWithoutConsent1 = GrantWithoutConsent(Set("scope1"))
-      val grantWithoutConsent2 = GrantWithoutConsent(Set("scope2"))
+      val grantWithoutConsent1 = OverrideFlag.GrantWithoutConsent(Set("scope1"))
+      val grantWithoutConsent2 = OverrideFlag.GrantWithoutConsent(Set("scope2"))
 
       val oldOverrides                 = Set[OverrideFlag](grantWithoutConsent1)
       val applicationDataWithOverrides = standardApplicationDataWithOverrides(applicationId, oldOverrides)
@@ -120,7 +123,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       await(accessService.updateOverrides(applicationId, OverridesRequest(newOverrides))(hc))
 
       val capturedApplicationData = ApplicationRepoMock.Save.verifyCalled()
-      capturedApplicationData.access.asInstanceOf[Standard].overrides shouldBe Set(grantWithoutConsent2)
+      capturedApplicationData.access.asInstanceOf[Access.Standard].overrides shouldBe Set(grantWithoutConsent2)
     }
 
     "invoke audit service" in new OverridesFixture {
@@ -165,10 +168,10 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
   }
 
   trait OverridesFixture extends Fixture {
-    val override1 = GrantWithoutConsent(Set("scope1", "scope2"))
-    val override2 = PersistLogin
-    val override3 = SuppressIvForAgents(Set("scope1", "scope2"))
-    val override4 = SuppressIvForOrganisations(Set("scope1", "scope2"))
+    val override1 = OverrideFlag.GrantWithoutConsent(Set("scope1", "scope2"))
+    val override2 = OverrideFlag.PersistLogin
+    val override3 = OverrideFlag.SuppressIvForAgents(Set("scope1", "scope2"))
+    val override4 = OverrideFlag.SuppressIvForOrganisations(Set("scope1", "scope2"))
     val overrides = Set[OverrideFlag](override1, override2, override3, override4)
   }
 
@@ -183,8 +186,8 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       ApplicationTokens(
         Token(ClientId("a"), "c")
       ),
-      ApplicationState(),
-      Privileged(None, scopes),
+      ApplicationStateExamples.testing,
+      Access.Privileged(None, scopes),
       now,
       Some(now)
     )
@@ -200,8 +203,8 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       ApplicationTokens(
         Token(ClientId("a"), "c")
       ),
-      ApplicationState(),
-      Ropc(scopes),
+      ApplicationStateExamples.testing,
+      Access.Ropc(scopes),
       now,
       Some(now)
     )
@@ -217,8 +220,8 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       ApplicationTokens(
         Token(ClientId("a"), "c")
       ),
-      ApplicationState(),
-      Standard(redirectUris = List.empty, overrides = overrides),
+      ApplicationStateExamples.testing,
+      Access.Standard(redirectUris = List.empty, overrides = overrides),
       now,
       Some(now)
     )

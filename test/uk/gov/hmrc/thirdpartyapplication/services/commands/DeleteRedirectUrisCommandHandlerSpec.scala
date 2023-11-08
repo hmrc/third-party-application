@@ -37,10 +37,10 @@ class DeleteRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val toRemainRedirectUri           = RedirectUri.unsafeApply("https://new-url.example.com/other-redirect")
     val originalUris                  = List(toBeDeletedRedirectUri.uri, toRemainRedirectUri.uri)
     val nonExistantUri                = RedirectUri.unsafeApply("https://otherurl.com/not-there")
-    val principalApp: ApplicationData = anApplicationData(applicationId, access = Standard(originalUris), collaborators = devAndAdminCollaborators)
+    val principalApp: ApplicationData = anApplicationData(applicationId, access = Access.Standard(originalUris), collaborators = devAndAdminCollaborators)
     val subordinateApp                = principalApp.copy(environment = Environment.SANDBOX.toString())
 
-    val nonStandardAccessApp = principalApp.copy(access = Privileged())
+    val nonStandardAccessApp = principalApp.copy(access = Access.Privileged())
     val developerActor       = Actors.AppCollaborator(developerCollaborator.emailAddress)
 
     val timestamp  = FixedClock.instant

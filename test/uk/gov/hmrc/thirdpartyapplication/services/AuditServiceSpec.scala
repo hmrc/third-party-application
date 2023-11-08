@@ -30,12 +30,10 @@ import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvents, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, SubmissionId, Warn}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -44,6 +42,16 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ResponsibleIndividual
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ServerLocation
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationState
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Fail
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Warn
+
 
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
@@ -60,14 +68,14 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     Some("organisationUrl.com"),
     responsibleIndividual,
     Set(ServerLocation.InUK),
-    TermsAndConditionsLocations.InDesktopSoftware,
+    TermsPrivacyPolicyLocations.InDesktopSoftware,
     PrivacyPolicyLocations.InDesktopSoftware,
     List.empty
   )
 
   val applicationData: ApplicationData = anApplicationData(
     applicationId,
-    access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+    access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
   val instigator                       = applicationData.collaborators.head.userId
 
@@ -491,7 +499,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
 
     val updatedApp = previousApp.copy(
       name = "new name",
-      access = Standard(
+      access = Access.Standard(
         List("http://new-url.example.com", "http://new-url.example.com/other-redirect"),
         Some("http://new-url.example.com/terms-and-conditions"),
         Some("http://new-url.example.com/privacy-policy")

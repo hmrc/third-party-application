@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.models
 
-import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
-
-object AccessType extends Enumeration {
-  type AccessType = Value
-  val STANDARD, PRIVILEGED, ROPC = Value
-
-  implicit val formatAccessType = EnumJson.enumFormat(AccessType)
-}
+case class ApplicationWithHistory(application: ApplicationResponse, history: List[StateHistoryResponse])

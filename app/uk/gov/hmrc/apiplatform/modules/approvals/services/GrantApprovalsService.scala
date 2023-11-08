@@ -33,14 +33,17 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submissi
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, TermsOfUseAcceptance}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{AuditService, TermsOfUseInvitationService}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsOfUseAcceptance
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 object GrantApprovalsService {
   sealed trait Result
@@ -61,10 +64,11 @@ class GrantApprovalsService @Inject() (
     termsOfUseInvitationService: TermsOfUseInvitationService,
     submissionService: SubmissionsService,
     emailConnector: EmailConnector,
-    clock: Clock
+    val clock: Clock
   )(implicit ec: ExecutionContext
   ) extends BaseService(stateHistoryRepository, clock)
-    with ApplicationLogger {
+    with ApplicationLogger
+    with ClockNow {
 
   import GrantApprovalsService._
 
@@ -114,7 +118,7 @@ class GrantApprovalsService @Inject() (
   }
 
   private def grantApp(application: ApplicationData): ApplicationData = {
-    application.copy(state = application.state.toPendingRequesterVerification(clock))
+    application.copy(state = application.state.toPendingRequesterVerification(now()))
   }
 
   private val fmt = DateTimeFormatter.ISO_DATE_TIME
@@ -160,8 +164,8 @@ class GrantApprovalsService @Inject() (
   private def writeStateHistory(snapshotApp: ApplicationData, name: String) =
     insertStateHistory(
       snapshotApp,
-      PENDING_REQUESTER_VERIFICATION,
-      Some(PENDING_GATEKEEPER_APPROVAL),
+      State.PENDING_REQUESTER_VERIFICATION,
+      Some(State.PENDING_GATEKEEPER_APPROVAL),
       Actors.GatekeeperUser(name),
       (a: ApplicationData) => applicationRepository.save(a)
     )
@@ -239,7 +243,7 @@ class GrantApprovalsService @Inject() (
 
   private def getResponsibleIndividual(app: ApplicationData) =
     app.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
+      case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
       case _                                                                                            => None
     }
 

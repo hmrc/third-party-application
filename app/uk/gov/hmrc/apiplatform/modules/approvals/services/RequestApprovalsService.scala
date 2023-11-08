@@ -32,15 +32,16 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Stat
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, HasSucceeded, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, AuditHelper, AuditService}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 object RequestApprovalsService {
   sealed trait RequestApprovalResult
@@ -67,10 +68,11 @@ class RequestApprovalsService @Inject() (
     emailConnector: EmailConnector,
     responsibleIndividualVerificationService: ResponsibleIndividualVerificationService,
     applicationService: ApplicationService,
-    clock: Clock
+    val clock: Clock
   )(implicit ec: ExecutionContext
   ) extends BaseService(stateHistoryRepository, clock)
-    with ApplicationLogger {
+    with ApplicationLogger
+    with ClockNow {
 
   import RequestApprovalsService._
 
@@ -110,9 +112,9 @@ class RequestApprovalsService @Inject() (
         normalisedName = applicationName.toLowerCase,
         access = updateStandardData(existing.access, importantSubmissionData),
         state = if (isRequesterTheResponsibleIndividual) {
-          existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, requestedByName, clock)
+          existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, requestedByName, now())
         } else {
-          existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress, requestedByName, clock)
+          existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress, requestedByName, now())
         }
       )
 
@@ -313,7 +315,7 @@ class RequestApprovalsService @Inject() (
 
   private def updateStandardData(existingAccess: Access, importantSubmissionData: ImportantSubmissionData): Access = {
     existingAccess match {
-      case s: Standard => s.copy(importantSubmissionData = Some(importantSubmissionData))
+      case s: Access.Standard => s.copy(importantSubmissionData = Some(importantSubmissionData))
       case _           => existingAccess
     }
   }
@@ -335,7 +337,7 @@ class RequestApprovalsService @Inject() (
     insertStateHistory(
       snapshotApp,
       snapshotApp.state.name,
-      Some(TESTING),
+      Some(State.TESTING),
       Actors.AppCollaborator(requestedByEmailAddress.toLaxEmail),
       (a: ApplicationData) => applicationRepository.save(a)
     )

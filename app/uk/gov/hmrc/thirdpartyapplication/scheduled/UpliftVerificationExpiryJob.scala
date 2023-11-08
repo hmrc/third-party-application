@@ -27,19 +27,21 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 
 @Singleton
 class UpliftVerificationExpiryJob @Inject() (
     upliftVerificationExpiryJobLockService: UpliftVerificationExpiryJobLockService,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
-    clock: Clock,
+    val clock: Clock,
     jobConfig: UpliftVerificationExpiryJobConfig
   )(implicit val ec: ExecutionContext
-  ) extends ScheduledMongoJob with ApplicationLogger {
+  ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   val upliftVerificationValidity: FiniteDuration = jobConfig.validity
   val sixty                                      = 60
@@ -53,7 +55,7 @@ class UpliftVerificationExpiryJob @Inject() (
     logger.info(s"Set status back to testing for app{id=${app.id.value},name=${app.name},state." +
       s"requestedByEmailAddress='${app.state.requestedByEmailAddress.getOrElse("")}',state.updatedOn='${app.state.updatedOn}}'")
     for {
-      updatedApp <- applicationRepository.save(app.copy(state = app.state.toTesting(clock)))
+      updatedApp <- applicationRepository.save(app.copy(state = app.state.toTesting(now())))
       _          <- stateHistoryRepository.insert(StateHistory(
                       app.id,
                       State.TESTING,

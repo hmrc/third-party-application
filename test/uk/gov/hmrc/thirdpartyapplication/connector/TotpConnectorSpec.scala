@@ -23,8 +23,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Totp
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Totp
 
 class TotpConnectorSpec extends ConnectorSpec {
 

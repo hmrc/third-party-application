@@ -31,7 +31,6 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{ClientSecret, Collaborators}
 
 import java.time.ZoneOffset
 import java.util.UUID
@@ -44,8 +43,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, ApplicationCommands}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.GrantLength
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
@@ -89,13 +88,13 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
   val context                      = "myapi".asContext
   val version                      = "1.0".asVersion
 
-  val standardAccess   = Standard(
+  val standardAccess   = Access.Standard(
     redirectUris = List("http://example.com/redirect"),
     termsAndConditionsUrl = Some("http://example.com/terms"),
     privacyPolicyUrl = Some("http://example.com/privacy"),
     overrides = Set.empty
   )
-  val privilegedAccess = Privileged(totpIds = None, scopes = Set("ogdScope"))
+  val privilegedAccess = Access.Privileged(totpIds = None, scopes = Set("ogdScope"))
 
   lazy val subscriptionRepository = app.injector.instanceOf[SubscriptionRepository]
   lazy val applicationRepository  = app.injector.instanceOf[ApplicationRepository]
@@ -195,7 +194,6 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       // We have to compare contents individually
       val returnedClientSecret = returnedResponse.clientSecrets.head
       returnedClientSecret.name should be(expectedClientSecrets.head.name)
-      returnedClientSecret.secret.isDefined should be(false)
       returnedClientSecret.createdOn.toInstant(ZoneOffset.UTC).toEpochMilli should be(expectedClientSecrets.head.createdOn.toInstant(ZoneOffset.UTC).toEpochMilli)
     }
   }
@@ -274,9 +272,9 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
     }
   }
 
-  Feature("Privileged Applications") {
+  Feature("Access.Privileged Applications") {
 
-    val privilegedApplicationsScenario = "Create Privileged application"
+    val privilegedApplicationsScenario = "Create Access.Privileged application"
     Scenario(privilegedApplicationsScenario) {
       Given("No applications exist")
       emptyApplicationRepository()
@@ -416,11 +414,11 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       Given("A third party application")
       val originalOverrides: Set[OverrideFlag] = Set(
-        PersistLogin,
-        GrantWithoutConsent(Set("scope")),
-        SuppressIvForAgents(Set("scope")),
-        SuppressIvForOrganisations(Set("scope")),
-        SuppressIvForIndividuals(Set("Scope"))
+        OverrideFlag.PersistLogin,
+        OverrideFlag.GrantWithoutConsent(Set("scope")),
+        OverrideFlag.SuppressIvForAgents(Set("scope")),
+        OverrideFlag.SuppressIvForOrganisations(Set("scope")),
+        OverrideFlag.SuppressIvForIndividuals(Set("Scope"))
       )
       val application                          = createApplication(access = standardAccess.copy(overrides = originalOverrides))
 
@@ -429,7 +427,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val updatedRedirectUris          = List("http://example.com/redirect2", "http://example.com/redirect3")
       val updatedTermsAndConditionsUrl = Some("http://example.com/terms2")
       val updatedPrivacyPolicyUrl      = Some("http://example.com/privacy2")
-      val updatedAccess                = Standard(
+      val updatedAccess                = Access.Standard(
         redirectUris = updatedRedirectUris,
         termsAndConditionsUrl = updatedTermsAndConditionsUrl,
         privacyPolicyUrl = updatedPrivacyPolicyUrl,
@@ -444,7 +442,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       fetchedApplication.redirectUris shouldBe updatedRedirectUris
       fetchedApplication.termsAndConditionsUrl shouldBe updatedTermsAndConditionsUrl
       fetchedApplication.privacyPolicyUrl shouldBe updatedPrivacyPolicyUrl
-      val fetchedAccess      = fetchedApplication.access.asInstanceOf[Standard]
+      val fetchedAccess      = fetchedApplication.access.asInstanceOf[Access.Standard]
       fetchedAccess.redirectUris shouldBe updatedRedirectUris
       fetchedAccess.termsAndConditionsUrl shouldBe updatedTermsAndConditionsUrl
       fetchedAccess.privacyPolicyUrl shouldBe updatedPrivacyPolicyUrl

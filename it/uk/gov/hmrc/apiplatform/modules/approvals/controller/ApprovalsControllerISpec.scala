@@ -32,12 +32,11 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.utils.ServerBaseISpec
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.util.UUID
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class ApprovalsControllerISpec
     extends ServerBaseISpec
@@ -111,7 +110,7 @@ class ApprovalsControllerISpec
       val application: ApplicationData = anApplicationData(
         appId,
         pendingGatekeeperApprovalState("bob@fastshow.com"),
-        access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+        access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
       )
 
       await(applicationRepo.save(application))

@@ -25,8 +25,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories.UpliftLinksRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -34,6 +32,11 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateChange
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftRequested
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftVerified
 
 class UpliftServiceSpec extends AsyncHmrcSpec {
 
@@ -71,9 +74,9 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
 
       val expectedStateHistory = StateHistory(
         applicationId = expectedApplication.id,
-        state = PENDING_GATEKEEPER_APPROVAL,
+        state = State.PENDING_GATEKEEPER_APPROVAL,
         actor = Actors.AppCollaborator(upliftRequestedByEmail),
-        previousState = Some(TESTING),
+        previousState = Some(State.TESTING),
         changedAt = now
       )
 
@@ -177,15 +180,15 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
 
       val expectedStateHistory =
-        StateHistory(applicationId, State.PRE_PRODUCTION, Actors.AppCollaborator(upliftRequestedBy), Some(PENDING_REQUESTER_VERIFICATION), changedAt = now)
-      val upliftRequest        = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator(upliftRequestedBy), Some(TESTING), changedAt = now)
+        StateHistory(applicationId, State.PRE_PRODUCTION, Actors.AppCollaborator(upliftRequestedBy), Some(State.PENDING_REQUESTER_VERIFICATION), changedAt = now)
+      val upliftRequest        = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator(upliftRequestedBy), Some(State.TESTING), changedAt = now)
 
       val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy.text))
 
       val expectedApplication: ApplicationData = application.copy(state = preProductionState(upliftRequestedBy.text))
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
-      StateHistoryRepoMock.FetchLatestByStateForApplication.thenReturnWhen(applicationId, PENDING_GATEKEEPER_APPROVAL)(upliftRequest)
+      StateHistoryRepoMock.FetchLatestByStateForApplication.thenReturnWhen(applicationId, State.PENDING_GATEKEEPER_APPROVAL)(upliftRequest)
       StateHistoryRepoMock.Insert.thenAnswer()
 
       val result: ApplicationStateChange = await(underTest.verifyUplift(generatedVerificationCode))

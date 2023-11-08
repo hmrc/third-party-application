@@ -29,7 +29,6 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
@@ -40,12 +39,14 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockMo
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, UpliftRequestSamples}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
+import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
 
 class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks
@@ -66,9 +67,9 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "dev@example.com".developer()
   )
 
-  private val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
-  private val privilegedAccess = Privileged(scopes = Set("scope1"))
-  private val ropcAccess       = Ropc()
+  private val standardAccess   = Access.Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
+  private val privilegedAccess = Access.Privileged(scopes = Set("scope1"))
+  private val ropcAccess       = Access.Ropc()
 
   trait Setup
       extends SubmissionsServiceMockModule
@@ -115,7 +116,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(privilegedAccess), Some(totp))
     val ropcApplicationResponse       = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
-    "succeed with a 201 (Created) for a valid Standard application request when service responds successfully" in new Setup {
+    "succeed with a 201 (Created) for a valid Access.Standard application request when service responds successfully" in new Setup {
       ApplicationServiceMock.Create.onRequestReturn(standardApplicationRequest)(standardApplicationResponse)
       when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
@@ -127,7 +128,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       verify(underTest.applicationService).create(eqTo(standardApplicationRequest))(*)
     }
 
-    "succeed with a 201 (Created) for a valid Standard application request when service responds successfully to legacy uplift" in new Setup {
+    "succeed with a 201 (Created) for a valid Access.Standard application request when service responds successfully to legacy uplift" in new Setup {
       ApplicationServiceMock.Create.onRequestReturn(standardApplicationRequestV1)(standardApplicationResponse)
       when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
 
@@ -137,7 +138,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       verify(underTest.applicationService).create(eqTo(standardApplicationRequestV1))(*)
     }
 
-    "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
+    "succeed with a 201 (Created) for a valid Access.Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
       ApplicationServiceMock.Create.onRequestReturn(privilegedApplicationRequest)(privilegedApplicationResponse)
       when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
@@ -164,7 +165,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       verify(underTest.applicationService).create(eqTo(ropcApplicationRequest))(*)
     }
 
-    "succeed with a 201 (Created) for a valid Standard application request with one subscription when service responds successfully" in new Setup {
+    "succeed with a 201 (Created) for a valid Access.Standard application request with one subscription when service responds successfully" in new Setup {
       val testApi                               = ApiIdentifier.random
       val apis                                  = Set(testApi)
       val applicationRequestWithOneSubscription = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
@@ -188,7 +189,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       )(*)
     }
 
-    "succeed with a 201 (Created) for a valid Standard application request with multiple subscriptions when service responds successfully" in new Setup {
+    "succeed with a 201 (Created) for a valid Access.Standard application request with multiple subscriptions when service responds successfully" in new Setup {
       val testApi                                = ApiIdentifier.random
       val anotherTestApi                         = ApiIdentifier.random
       val apis                                   = Set(testApi, anotherTestApi)
@@ -214,7 +215,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       )(*)
     }
 
-    "fail with a 401 (Unauthorized) for a valid Privileged application request when gatekeeper is not logged in" in new Setup {
+    "fail with a 401 (Unauthorized) for a valid Access.Privileged application request when gatekeeper is not logged in" in new Setup {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
       val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))

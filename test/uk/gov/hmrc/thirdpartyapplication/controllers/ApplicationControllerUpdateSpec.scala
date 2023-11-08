@@ -32,7 +32,6 @@ import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -42,13 +41,14 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockMo
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks with CollaboratorTestData {
@@ -120,24 +120,21 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
 
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
-  val credentialServiceResponseToken: ApplicationTokenResponse =
-    ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecretData("3333", hashedSecret = "3333".bcrypt(4)))))
-
   val collaborators: Set[Collaborator] = Set(
     "admin@example.com".admin(),
     "dev@example.com".admin()
   )
 
-  private val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
-  private val privilegedAccess = Privileged(scopes = Set("scope1"))
-  private val ropcAccess       = Ropc()
+  private val standardAccess   = Access.Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
+  private val privilegedAccess = Access.Privileged(scopes = Set("scope1"))
+  private val ropcAccess       = Access.Ropc()
 
   "Update" should {
     val standardApplicationRequest   = anUpdateApplicationRequest(standardAccess)
     val privilegedApplicationRequest = anUpdateApplicationRequest(privilegedAccess)
     val id                           = ApplicationId.random
 
-    "fail with a 404 (not found) when a valid Privileged application and gatekeeper is not logged in" in new Setup {
+    "fail with a 404 (not found) when a valid Access.Privileged application and gatekeeper is not logged in" in new Setup {
 
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.none)
 

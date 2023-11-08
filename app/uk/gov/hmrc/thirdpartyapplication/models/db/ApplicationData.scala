@@ -20,23 +20,16 @@ import java.time.{LocalDateTime, ZoneOffset}
 
 import com.typesafe.config.ConfigFactory
 
-import play.api.libs.json.{Format, Json, OFormat}
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator, RateLimitTier}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, TESTING}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
 
 case class ApplicationTokens(production: Token)
-
-object ApplicationTokens {
-  implicit val dateFormat: Format[LocalDateTime]  = MongoJavatimeFormats.localDateTimeFormat
-  implicit val format: OFormat[ApplicationTokens] = Json.format[ApplicationTokens]
-}
 
 case class ApplicationData(
     id: ApplicationId,
@@ -47,7 +40,7 @@ case class ApplicationData(
     wso2ApplicationName: String,
     tokens: ApplicationTokens,
     state: ApplicationState,
-    access: Access = Standard(),
+    access: Access = Access.Standard(),
     createdOn: LocalDateTime,
     lastAccess: Option[LocalDateTime],
     grantLength: Int = grantLengthConfig,
@@ -61,12 +54,12 @@ case class ApplicationData(
   lazy val admins = collaborators.filter(_.isAdministrator)
 
   lazy val sellResellOrDistribute = access match {
-    case Standard(_, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
+    case Access.Standard(_, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
     case _                                               => None
   }
 
   lazy val importantSubmissionData: Option[ImportantSubmissionData] = access match {
-    case Standard(_, _, _, _, _, Some(submissionData)) => Some(submissionData)
+    case Access.Standard(_, _, _, _, _, Some(submissionData)) => Some(submissionData)
     case _                                             => None
   }
 
@@ -93,9 +86,9 @@ object ApplicationData {
     import createApplicationRequest._
 
     val applicationState = (environment, accessType) match {
-      case (Environment.SANDBOX, _) => ApplicationState(PRODUCTION, updatedOn = createdOn)
-      case (_, PRIVILEGED | ROPC)   => ApplicationState(PRODUCTION, collaborators.headOption.map(_.emailAddress.text), updatedOn = createdOn)
-      case _                        => ApplicationState(TESTING, updatedOn = createdOn)
+      case (Environment.SANDBOX, _) => ApplicationState(State.PRODUCTION, updatedOn = createdOn)
+      case (_, AccessType.PRIVILEGED | AccessType.ROPC)   => ApplicationState(State.PRODUCTION, collaborators.headOption.map(_.emailAddress.text), updatedOn = createdOn)
+      case _                        => ApplicationState(State.TESTING, updatedOn = createdOn)
     }
 
     val checkInfo = createApplicationRequest match {
@@ -107,7 +100,7 @@ object ApplicationData {
     val applicationAccess = createApplicationRequest match {
       case v1: CreateApplicationRequestV1 => v1.access
       case v2: CreateApplicationRequestV2 =>
-        Standard().copy(redirectUris = v2.access.redirectUris, overrides = v2.access.overrides, sellResellOrDistribute = Some(v2.upliftRequest.sellResellOrDistribute))
+        Access.Standard().copy(redirectUris = v2.access.redirectUris, overrides = v2.access.overrides, sellResellOrDistribute = Some(v2.upliftRequest.sellResellOrDistribute))
     }
 
     ApplicationData(
@@ -126,32 +119,4 @@ object ApplicationData {
       checkInformation = checkInfo
     )
   }
-
-  import play.api.libs.functional.syntax._
-  import play.api.libs.json._
-  implicit val dateFormat: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
-
-  val applicationDataReads: Reads[ApplicationData] = (
-    (JsPath \ "id").read[ApplicationId] and
-      (JsPath \ "name").read[String] and
-      (JsPath \ "normalisedName").read[String] and
-      (JsPath \ "collaborators").read[Set[Collaborator]] and
-      (JsPath \ "description").readNullable[String] and
-      (JsPath \ "wso2ApplicationName").read[String] and
-      (JsPath \ "tokens").read[ApplicationTokens] and
-      (JsPath \ "state").read[ApplicationState] and
-      (JsPath \ "access").read[Access] and
-      (JsPath \ "createdOn").read[LocalDateTime] and
-      (JsPath \ "lastAccess").readNullable[LocalDateTime] and
-      ((JsPath \ "grantLength").read[Int] or Reads.pure(grantLengthConfig)) and
-      (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
-      (JsPath \ "environment").read[String] and
-      (JsPath \ "checkInformation").readNullable[CheckInformation] and
-      ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
-      ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
-      ((JsPath \ "allowAutoDelete").read[Boolean] or Reads.pure(true))
-  )(ApplicationData.apply _)
-
-  implicit val format: Format[ApplicationData] = Format(applicationDataReads, Json.writes[ApplicationData])
-
 }

@@ -34,16 +34,15 @@ import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator, RateLimitTier}
+
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress, UserId, _}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
@@ -54,13 +53,15 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
     with BeforeAndAfterAll
     with ApplicationStateUtil
     with ApplicationTestData
-    with UpliftRequestSamples {
+    with UpliftRequestSamples
+    with FixedClock {
 
   var actorSystem: Option[ActorSystem] = None
 
@@ -101,7 +102,7 @@ class ApplicationServiceSpec
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val mockGatekeeperService                     = mock[GatekeeperService]
     val mockApiPlatformEventService               = mock[ApiPlatformEventService]
-    val applicationResponseCreator                = new ApplicationResponseCreator()
+
     val metrics                                   = mock[Metrics]
 
     val hcForLoggedInCollaborator = HeaderCarrier().withExtraHeaders(
@@ -145,7 +146,7 @@ class ApplicationServiceSpec
       SubmissionsServiceMock.aMock,
       UpliftNamingServiceMock.aMock,
       ApplicationCommandDispatcherMock.aMock,
-      clock
+      fixedClock
     ) with NoOpMetricsTimer
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
@@ -190,7 +191,7 @@ class ApplicationServiceSpec
         name = "new name",
         normalisedName = "new name",
         access = access match {
-          case _: Standard => Standard(
+          case _: Access.Standard => Access.Standard(
               newRedirectUris,
               Some("http://new-url.example.com/terms-and-conditions"),
               Some("http://new-url.example.com/privacy-policy")
@@ -231,7 +232,7 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequestWithCollaboratorWithUserId(access = Standard(), environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequestWithCollaboratorWithUserId(access = Access.Standard(), environment = Environment.PRODUCTION)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -269,7 +270,7 @@ class ApplicationServiceSpec
         state = testingState(),
         collaborators = Set(loggedInUserAdminCollaborator),
         environment = Environment.PRODUCTION,
-        access = Standard().copy(sellResellOrDistribute = Some(sellResellOrDistribute))
+        access = Access.Standard().copy(sellResellOrDistribute = Some(sellResellOrDistribute))
       )
         .copy(description = None)
 
@@ -292,7 +293,7 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Standard(), environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Standard(), environment = Environment.PRODUCTION)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -320,7 +321,7 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Standard(), environment = Environment.SANDBOX)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Standard(), environment = Environment.SANDBOX)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -353,11 +354,11 @@ class ApplicationServiceSpec
       )
     }
 
-    "create a new Privileged application in Mongo and the API gateway with a Production state" in new Setup {
+    "create a new Access.Privileged application in Mongo and the API gateway with a Production state" in new Setup {
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Privileged())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Privileged())
 
       ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name)
 
@@ -371,7 +372,7 @@ class ApplicationServiceSpec
         createdApp.application.id,
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = now),
         collaborators = Set(loggedInUserAdminCollaborator),
-        access = Privileged(totpIds = Some(TotpId("prodTotpId")))
+        access = Access.Privileged(totpIds = Some(TotpId("prodTotpId")))
       )
         .copy(description = None)
 
@@ -395,7 +396,7 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Ropc())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Ropc())
 
       ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name)
 
@@ -405,7 +406,7 @@ class ApplicationServiceSpec
         createdApp.application.id,
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = now),
         collaborators = Set(loggedInUserAdminCollaborator),
-        access = Ropc()
+        access = Access.Ropc()
       )
         .copy(description = None)
 
@@ -424,7 +425,7 @@ class ApplicationServiceSpec
     }
 
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Privileged())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Access.Privileged())
 
       ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
@@ -436,7 +437,7 @@ class ApplicationServiceSpec
     }
 
     "fail with ApplicationAlreadyExists for ropc application when the name already exists for another application not in testing mode" in new Setup {
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Ropc())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Access.Ropc())
 
       ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
@@ -593,7 +594,7 @@ class ApplicationServiceSpec
     "send an audit event for each type of change" in new SetupForAuditTests {
       override implicit val hc = hcForLoggedInGatekeeperUser
 
-      val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
+      val (updatedApplication, updateRedirectUris) = setupAuditTests(Access.Standard())
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccessOn(updateRedirectUris)(updatedApplication)
 
       val updateAppReq = UpdateApplicationRequest(updatedApplication.name, updatedApplication.access)
@@ -606,9 +607,9 @@ class ApplicationServiceSpec
     }
 
     "not audit TermsAndConditionsUrl or PrivacyPolicyUrl for a privileged app" in new SetupForAuditTests {
-      val (updatedApplication, _) = setupAuditTests(Privileged())
+      val (updatedApplication, _) = setupAuditTests(Access.Privileged())
 
-      await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name, access = Privileged())))
+      await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name, access = Access.Privileged())))
 
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
       ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
@@ -624,7 +625,7 @@ class ApplicationServiceSpec
 
     "throw a ForbiddenException when trying to change the access type of an application" in new Setup {
 
-      val privilegedApplicationUpdateRequest: UpdateApplicationRequest = applicationUpdateRequest.copy(access = Privileged())
+      val privilegedApplicationUpdateRequest: UpdateApplicationRequest = applicationUpdateRequest.copy(access = Access.Privileged())
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
       intercept[ForbiddenException](await(underTest.update(applicationId, privilegedApplicationUpdateRequest)))
@@ -746,9 +747,9 @@ class ApplicationServiceSpec
     "fetch all applications for a given collaborator user id" in new Setup {
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)("api1".asIdentifier, "api2".asIdentifier)
       val userId                                     = UserId.random
-      val standardApplicationData: ApplicationData   = anApplicationData(applicationId, access = Standard())
-      val privilegedApplicationData: ApplicationData = anApplicationData(applicationId, access = Privileged())
-      val ropcApplicationData: ApplicationData       = anApplicationData(applicationId, access = Ropc())
+      val standardApplicationData: ApplicationData   = anApplicationData(applicationId, access = Access.Standard())
+      val privilegedApplicationData: ApplicationData = anApplicationData(applicationId, access = Access.Privileged())
+      val ropcApplicationData: ApplicationData       = anApplicationData(applicationId, access = Access.Ropc())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
@@ -966,9 +967,9 @@ class ApplicationServiceSpec
 
   "Search" should {
     "return results based on provided ApplicationSearch" in new Setup {
-      val standardApplicationData: ApplicationData   = anApplicationData(ApplicationId.random, access = Standard())
-      val privilegedApplicationData: ApplicationData = anApplicationData(ApplicationId.random, access = Privileged())
-      val ropcApplicationData: ApplicationData       = anApplicationData(ApplicationId.random, access = Ropc())
+      val standardApplicationData: ApplicationData   = anApplicationData(ApplicationId.random, access = Access.Standard())
+      val privilegedApplicationData: ApplicationData = anApplicationData(ApplicationId.random, access = Access.Privileged())
+      val ropcApplicationData: ApplicationData       = anApplicationData(ApplicationId.random, access = Access.Ropc())
 
       val search = ApplicationSearch(
         pageNumber = 2,
@@ -1014,7 +1015,7 @@ class ApplicationServiceSpec
       applicationId: ApplicationId,
       state: ApplicationState,
       collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
-      access: Access = Standard(),
+      access: Access = Access.Standard(),
       rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
       environment: Environment
     ) = {
@@ -1036,7 +1037,7 @@ class ApplicationServiceSpec
     )
   }
 
-  private def aNewV1ApplicationRequest(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
+  private def aNewV1ApplicationRequest(access: Access = Access.Standard(), environment: Environment = Environment.PRODUCTION) = {
     CreateApplicationRequestV1("MyApp", access, Some("description"), environment, Set(loggedInUser.admin()), None)
   }
 
@@ -1056,7 +1057,7 @@ class ApplicationServiceSpec
   private def anUpdateRequest() = {
     UpdateApplicationRequest(
       name = "My Application",
-      access = Standard().copy(redirectUris = List("http://example.com/redirect")),
+      access = Access.Standard().copy(redirectUris = List("http://example.com/redirect")),
       description = Some("Description")
     )
   }

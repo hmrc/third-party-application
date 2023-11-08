@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 trait ApplicationTypeAuthorisationActions {
@@ -45,10 +45,10 @@ trait ApplicationTypeAuthorisationActions {
     Action andThen PayloadBasedApplicationTypeFilter(accessTypes.toList)
 
   def requiresAuthenticationForStandardApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
-    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(STANDARD), true)
+    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(AccessType.STANDARD), true)
 
   def requiresAuthenticationForPrivilegedOrRopcApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
-    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(PRIVILEGED, ROPC), false)
+    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(AccessType.PRIVILEGED, AccessType.ROPC), false)
 
   private abstract class ApplicationTypeFilter(toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)(implicit ec: ExecutionContext)
       extends ActionFilter[Request] {

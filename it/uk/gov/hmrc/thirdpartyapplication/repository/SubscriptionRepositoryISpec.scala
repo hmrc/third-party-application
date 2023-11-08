@@ -37,7 +37,10 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.time.Clock
 import scala.util.Random.nextString
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationState
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
 
 class SubscriptionRepositoryISpec
     extends ServerBaseISpec
@@ -354,7 +357,7 @@ class SubscriptionRepositoryISpec
       id: ApplicationId,
       clientId: ClientId = ClientId("aaa"),
       state: ApplicationState = testingState(),
-      access: Access = Standard(),
+      access: Access = Access.Standard(),
       user: List[String] = List("user@example.com"),
       checkInformation: Option[CheckInformation] = None
     ): ApplicationData = {
@@ -367,7 +370,7 @@ class SubscriptionRepositoryISpec
       name: String,
       clientId: ClientId = ClientId("aaa"),
       state: ApplicationState = testingState(),
-      access: Access = Standard(),
+      access: Access = Access.Standard(),
       user: List[String] = List("user@example.com"),
       checkInformation: Option[CheckInformation] = None
     ): ApplicationData = {

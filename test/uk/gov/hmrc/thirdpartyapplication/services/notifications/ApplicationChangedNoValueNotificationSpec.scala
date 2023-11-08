@@ -55,7 +55,7 @@ class ApplicationChangedNoValueNotificationSpec extends AsyncHmrcSpec with Appli
         anAdminEmail.admin()
       ),
       name = oldName,
-      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+      access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
     val timestamp      = now
     val gatekeeperUser = "gkuser"

@@ -26,9 +26,9 @@ import cats.implicits._
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 @Singleton
 class ChangeRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
@@ -38,7 +38,7 @@ class ChangeRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
 
   private def validate(app: ApplicationData, cmd: ChangeRedirectUri): Validated[Failures, List[String]] = {
     val existingUris = app.access match {
-      case Standard(redirectUris, _, _, _, _, _) => redirectUris
+      case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris
       case _                                     => List.empty
     }
 

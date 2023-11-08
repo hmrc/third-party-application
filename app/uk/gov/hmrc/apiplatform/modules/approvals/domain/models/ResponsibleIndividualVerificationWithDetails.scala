@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ResponsibleIndividual
 
 case class ResponsibleIndividualVerificationWithDetails(
     verification: ResponsibleIndividualVerification,

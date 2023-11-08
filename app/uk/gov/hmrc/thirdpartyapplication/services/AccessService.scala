@@ -24,11 +24,12 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 @Singleton
 class AccessService @Inject() (applicationRepository: ApplicationRepository, auditService: AuditService)(implicit val ec: ExecutionContext) {
@@ -83,11 +84,11 @@ class AccessService @Inject() (applicationRepository: ApplicationRepository, aud
       case None                  => failed(new NotFoundException(s"application not found for id: ${applicationId.value}"))
     }
 
-  private def getPrivilegedAccess(applicationData: ApplicationData): Privileged =
-    applicationData.access.asInstanceOf[Privileged]
+  private def getPrivilegedAccess(applicationData: ApplicationData): Access.Privileged =
+    applicationData.access.asInstanceOf[Access.Privileged]
 
-  private def getRopcAccess(applicationData: ApplicationData): Ropc =
-    applicationData.access.asInstanceOf[Ropc]
+  private def getRopcAccess(applicationData: ApplicationData): Access.Ropc =
+    applicationData.access.asInstanceOf[Access.Ropc]
 
   private def getScopes(applicationData: ApplicationData): Set[String] =
     privilegedOrRopc[Set[String]](
@@ -99,13 +100,13 @@ class AccessService @Inject() (applicationRepository: ApplicationRepository, aud
     )
 
   private def privilegedOrRopc[T](applicationData: ApplicationData, privilegedFunction: ApplicationData => T, ropcFunction: ApplicationData => T) =
-    AccessType.withName(applicationData.access.accessType.toString) match {
-      case PRIVILEGED => privilegedFunction(applicationData)
-      case ROPC       => ropcFunction(applicationData)
+    applicationData.access.accessType match {
+      case AccessType.PRIVILEGED => privilegedFunction(applicationData)
+      case AccessType.ROPC       => ropcFunction(applicationData)
     }
 
-  private def getStandardAccess(applicationData: ApplicationData): Standard =
-    applicationData.access.asInstanceOf[Standard]
+  private def getStandardAccess(applicationData: ApplicationData): Access.Standard =
+    applicationData.access.asInstanceOf[Access.Standard]
 
   private def getOverrides(applicationData: ApplicationData): Set[OverrideFlag] =
     getStandardAccess(applicationData).overrides

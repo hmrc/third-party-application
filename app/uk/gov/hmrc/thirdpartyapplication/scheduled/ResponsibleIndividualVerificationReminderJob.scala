@@ -34,9 +34,10 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, Standard}
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, HasSucceeded}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ResponsibleIndividual
 
 @Singleton
 class ResponsibleIndividualVerificationReminderJob @Inject() (
@@ -92,7 +93,7 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
 
   private def getResponsibleIndividual(app: ApplicationResponse): Option[ResponsibleIndividual] = {
     app.access match {
-      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Some(importantSubmissionData.responsibleIndividual)
+      case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => Some(importantSubmissionData.responsibleIndividual)
       case _                                                      => None
     }
   }

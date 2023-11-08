@@ -22,10 +22,10 @@ import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, DuplicateName, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.ExclusionCondition
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 
 trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

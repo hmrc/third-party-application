@@ -28,8 +28,8 @@ import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, OK}
 import play.api.libs.json._
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HttpClient, UpstreamErrorResponse}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 
 class AwsApiGatewayConnectorSpec extends ConnectorSpec {
   import AwsApiGatewayConnector.{RequestId, UpdateApplicationUsagePlanRequest}

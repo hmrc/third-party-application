@@ -20,7 +20,7 @@ import java.time.{LocalDateTime, ZoneOffset}
 
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
 
 case class ClientSecretData(
     name: String,

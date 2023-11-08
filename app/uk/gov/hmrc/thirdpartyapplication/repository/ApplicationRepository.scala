@@ -37,21 +37,83 @@ import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.PrivacyPolicyLocation
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsAndConditionsLocation
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsOfUseAcceptance
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ResponsibleIndividual
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
 
 object ApplicationRepository {
   case class SubsByUser(apiIdentifiers: List[ApiIdentifier])
 
-  implicit val subsByUserFormat = Json.format[SubsByUser]
+  object MongoFormats {
+    implicit val subsByUserFormat = Json.format[SubsByUser]
+
+    implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
+    implicit val formatTermsOfUseAcceptance     = Json.format[TermsOfUseAcceptance]
+    implicit val formatTermsOfUserAgreement    = Json.format[TermsOfUseAgreement]
+    implicit val formatImportantSubmissionData = Json.format[ImportantSubmissionData]
+    implicit val formatStandard                = Json.format[Access.Standard]
+    implicit val formatPrivileged                = Json.format[Access.Privileged]
+    implicit val formatRopc                    = Json.format[Access.Ropc]
+
+    import uk.gov.hmrc.play.json.Union
+    implicit val formatAccess = Union.from[Access]("accessType")
+      .and[Access.Standard](AccessType.STANDARD.toString)
+      .and[Access.Privileged](AccessType.PRIVILEGED.toString)
+      .and[Access.Ropc](AccessType.ROPC.toString)
+      .format
+
+    implicit val formatCheckInformation = Json.format[CheckInformation]
+
+    implicit val formatApplicationState  = Json.format[ApplicationState]
+    implicit val formatClientSecret      = Json.format[ClientSecretData]
+    implicit val formatEnvironmentToken  = Json.format[Token]
+    implicit val formatApplicationTokens = Json.format[ApplicationTokens]
+    
+    import play.api.libs.functional.syntax._
+    import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
+    
+    val applicationDataReads: Reads[ApplicationData] = (
+      (JsPath \ "id").read[ApplicationId] and
+        (JsPath \ "name").read[String] and
+        (JsPath \ "normalisedName").read[String] and
+        (JsPath \ "collaborators").read[Set[Collaborator]] and
+        (JsPath \ "description").readNullable[String] and
+        (JsPath \ "wso2ApplicationName").read[String] and
+        (JsPath \ "tokens").read[ApplicationTokens] and
+        (JsPath \ "state").read[ApplicationState] and
+        (JsPath \ "access").read[Access] and
+        (JsPath \ "createdOn").read[LocalDateTime] and
+        (JsPath \ "lastAccess").readNullable[LocalDateTime] and
+        ((JsPath \ "grantLength").read[Int] or Reads.pure(grantLengthConfig)) and
+        (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
+        (JsPath \ "environment").read[String] and
+        (JsPath \ "checkInformation").readNullable[CheckInformation] and
+        ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
+        ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
+        ((JsPath \ "allowAutoDelete").read[Boolean] or Reads.pure(true))
+    )(ApplicationData.apply _)
+
+    implicit val formatApplicationData: OFormat[ApplicationData] = OFormat(applicationDataReads, Json.writes[ApplicationData])  
+
+    implicit val reads             = Json.reads[PaginatedApplicationData]
+  }
 }
 
 @Singleton
@@ -59,7 +121,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     extends PlayMongoRepository[ApplicationData](
       collectionName = "application",
       mongoComponent = mongo,
-      domainFormat = ApplicationData.format,
+      domainFormat = ApplicationRepository.MongoFormats.formatApplicationData,
       indexes = Seq(
         IndexModel(
           ascending("state.verificationCode"),
@@ -129,7 +191,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     ) with MetricsTimer
     with ApplicationLogger {
 
-  import MongoJsonFormatterOverrides._
+  import ApplicationRepository.MongoFormats._
 
   def save(application: ApplicationData): Future[ApplicationData] = {
     val query = equal("id", Codecs.toBson(application.id))
@@ -163,7 +225,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Find and Record Application Usage", "application.repository.findAndRecordApplicationUsage") {
       val query = and(
         equal("tokens.production.clientId", Codecs.toBson(clientId)),
-        notEqual("state.name", Codecs.toBson(State.DELETED))
+        notEqual("state.name", State.DELETED.toString())
       )
       collection.findOneAndUpdate(
         filter = query,
@@ -177,7 +239,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Find and Record Application Server Token Usage", "application.repository.findAndRecordServerTokenUsage") {
       val query = and(
         equal("tokens.production.accessToken", serverToken),
-        notEqual("state.name", Codecs.toBson(State.DELETED))
+        notEqual("state.name", State.DELETED.toString())
       )
       collection.findOneAndUpdate(
         filter = query,
@@ -270,9 +332,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   def fetchStandardNonTestingApps(): Future[Seq[ApplicationData]] = {
     val query = and(
-      equal("access.accessType", Codecs.toBson(AccessType.STANDARD)),
-      notEqual("state.name", Codecs.toBson(State.TESTING)),
-      notEqual("state.name", Codecs.toBson(State.DELETED))
+      equal("access.accessType", AccessType.STANDARD.toString()),
+      notEqual("state.name", State.TESTING.toString()),
+      notEqual("state.name", State.DELETED.toString())
     )
 
     collection.find(query).toFuture()
@@ -285,7 +347,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def fetchApplicationsByName(name: String): Future[Seq[ApplicationData]] = {
     val query = and(
       equal("normalisedName", name.toLowerCase),
-      notEqual("state.name", Codecs.toBson(State.DELETED))
+      notEqual("state.name", State.DELETED.toString())
     )
 
     collection.find(query).toFuture()
@@ -294,39 +356,39 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def fetchVerifiableUpliftBy(verificationCode: String): Future[Option[ApplicationData]] = {
     val query = and(
       equal("state.verificationCode", verificationCode),
-      notEqual("state.name", Codecs.toBson(State.DELETED))
+      notEqual("state.name", State.DELETED.toString())
     )
 
     collection.find(query).headOption()
   }
 
-  def fetchAllByStatusDetails(state: State.State, updatedBefore: LocalDateTime): Future[Seq[ApplicationData]] = {
+  def fetchAllByStatusDetails(state: State, updatedBefore: LocalDateTime): Future[Seq[ApplicationData]] = {
     val query = and(
-      equal("state.name", Codecs.toBson(state)),
+      equal("state.name", state.toString()),
       lte("state.updatedOn", updatedBefore)
     )
 
     collection.find(query).toFuture()
   }
 
-  def fetchByStatusDetailsAndEnvironment(state: State.State, updatedBefore: LocalDateTime, environment: Environment): Future[Seq[ApplicationData]] = {
+  def fetchByStatusDetailsAndEnvironment(state: State, updatedBefore: LocalDateTime, environment: Environment): Future[Seq[ApplicationData]] = {
     collection.aggregate(
       Seq(
-        filter(equal("state.name", Codecs.toBson(state))),
+        filter(equal("state.name", state.toString())),
         filter(equal("environment", Codecs.toBson(environment))),
         filter(lte("state.updatedOn", updatedBefore))
       )
     ).toFuture()
   }
 
-  def fetchByStatusDetailsAndEnvironmentNotAleadyNotified(state: State.State, updatedBefore: LocalDateTime, environment: Environment): Future[Seq[ApplicationData]] = {
+  def fetchByStatusDetailsAndEnvironmentNotAleadyNotified(state: State, updatedBefore: LocalDateTime, environment: Environment): Future[Seq[ApplicationData]] = {
     timeFuture(
       "Fetch Applications by Status Details and Environment not Already Notified",
       "application.repository.fetchByStatusDetailsAndEnvironmentNotAleadyNotified"
     ) {
       collection.aggregate(
         Seq(
-          filter(equal("state.name", Codecs.toBson(state))),
+          filter(equal("state.name", state.toString())),
           filter(equal("environment", Codecs.toBson(environment))),
           filter(lte("state.updatedOn", updatedBefore)),
           lookup(from = "notifications", localField = "id", foreignField = "applicationId", as = "matched"),
@@ -340,7 +402,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Fetch Application by ClientId", "application.repository.fetchByClientId") {
       val query = and(
         equal("tokens.production.clientId", Codecs.toBson(clientId)),
-        notEqual("state.name", Codecs.toBson(State.DELETED))
+        notEqual("state.name", State.DELETED.toString())
       )
 
       collection.find(query).headOption()
@@ -351,7 +413,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Fetch Application by Server Token", "application.repository.fetchByServerToken") {
       val query = and(
         equal("tokens.production.accessToken", serverToken),
-        notEqual("state.name", Codecs.toBson(State.DELETED))
+        notEqual("state.name", State.DELETED.toString())
       )
 
       collection.find(query).headOption()
@@ -366,7 +428,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         } else {
           and(
             equal("collaborators.userId", Codecs.toBson(userId)),
-            notEqual("state.name", Codecs.toBson(State.DELETED))
+            notEqual("state.name", State.DELETED.toString())
           )
         }
       }
@@ -380,7 +442,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val query = and(
         equal("collaborators.userId", Codecs.toBson(userId)),
         equal("environment", environment),
-        notEqual("state.name", Codecs.toBson(State.DELETED))
+        notEqual("state.name", State.DELETED.toString())
       )
 
       collection.find(query).toFuture()
@@ -457,7 +519,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def fetchAllForEmailAddress(emailAddress: String): Future[Seq[ApplicationData]] = {
     val query = and(
       equal("collaborators.emailAddress", emailAddress),
-      notEqual("state.name", Codecs.toBson(State.DELETED))
+      notEqual("state.name", State.DELETED.toString())
     )
 
     collection.find(query).toFuture()
@@ -467,7 +529,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     val query = and(
       equal("collaborators.emailAddress", emailAddress),
       equal("environment", environment),
-      notEqual("state.name", Codecs.toBson(State.DELETED))
+      notEqual("state.name", State.DELETED.toString())
     )
 
     collection.find(query).toFuture()
@@ -477,7 +539,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Fetch Production Application State Histories", "application.repository.fetchProdAppStateHistories") {
       val pipeline: Seq[Bson] = Seq(
         matches(equal("environment", Codecs.toBson(Environment.PRODUCTION.toString()))),
-        matches(notEqual("state.name", Codecs.toBson(State.DELETED))),
+        matches(notEqual("state.name", State.DELETED.toString())),
         addFields(Field("version", cond(Document("$not" -> BsonString("$access.importantSubmissionData")), 1, 2))),
         lookup(from = "stateHistory", localField = "id", foreignField = "applicationId", as = "states"),
         sort(ascending("createdOn", "states.changedAt"))
@@ -511,7 +573,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   private def deletedFilter(applicationSearch: ApplicationSearch): List[Bson] = {
     // Filter out Deleted applications, unless specifically asked for
     if (!applicationSearch.includeDeleted) {
-      List(matches(notEqual("state.name", Codecs.toBson(State.DELETED))))
+      List(matches(notEqual("state.name", State.DELETED.toString())))
     } else {
       List()
     }
@@ -526,7 +588,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
     def applicationStatusMatch(states: State*): Bson = in("state.name", states.map(_.toString))
 
-    def applicationStatusNotEqual(state: State): Bson = matches(notEqual("state.name", Codecs.toBson(State.DELETED)))
+    def applicationStatusNotEqual(state: State): Bson = matches(notEqual("state.name", State.DELETED.toString()))
 
     def accessTypeMatch(accessType: AccessType): Bson = matches(equal("access.accessType", Codecs.toBson(accessType)))
 
@@ -677,7 +739,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
     timeFuture("Process All Applications", "application.repository.processAll") {
 
-      collection.find(notEqual("state.name", Codecs.toBson(State.DELETED)))
+      collection.find(notEqual("state.name", State.DELETED.toString()))
         .map(function)
         .toFuture()
         .map(_ => ())
@@ -694,7 +756,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     updateApplication(
       id,
       Updates.combine(
-        Updates.set("state.name", Codecs.toBson(State.DELETED)),
+        Updates.set("state.name", State.DELETED.toString()),
         Updates.set("state.updatedOn", updatedOn)
       )
     )
@@ -716,7 +778,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Applications with Subscription Count", "application.repository.getApplicationWithSubscriptionCount") {
 
       val pipeline = Seq(
-        matches(notEqual("state.name", Codecs.toBson(State.DELETED))),
+        matches(notEqual("state.name", State.DELETED.toString())),
         lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis"),
         unwind("$subscribedApis"),
         group(Document("id" -> "$id", "name" -> "$name"), Accumulators.sum("count", 1))
@@ -772,6 +834,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def updateLegacyApplicationTermsAndConditionsLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.termsAndConditionsUrl", url))
 
+
   def updateApplicationChangeResponsibleIndividual(
       applicationId: ApplicationId,
       newResponsibleIndividualName: String,
@@ -779,7 +842,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       eventDateTime: LocalDateTime,
       submissionId: SubmissionId,
       submissionIndex: Int
-    ): Future[ApplicationData] =
+    ): Future[ApplicationData] = {
+
     updateApplication(
       applicationId,
       Updates.combine(
@@ -796,6 +860,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         )
       )
     )
+  }
 
   def updateApplicationChangeResponsibleIndividualToSelf(
       applicationId: ApplicationId,

@@ -20,10 +20,13 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
+import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
 
 trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
@@ -31,19 +34,21 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatTermsOfUserAgreement    = Json.format[TermsOfUseAgreement]
   implicit val formatTermsOfUseAcceptance    = Json.format[TermsOfUseAcceptance]
   implicit val formatImportantSubmissionData = Json.format[ImportantSubmissionData]
-  implicit val formatStandard                = Json.format[Standard]
+  implicit val formatStandard                = Json.format[Access.Standard]
+  implicit val formatPrivileged                = Json.format[Access.Privileged]
+  implicit val formatRopc                = Json.format[Access.Ropc]
   import uk.gov.hmrc.play.json.Union
 
   implicit val formatAccess = Union.from[Access]("accessType")
-    .and[Standard](STANDARD.toString)
-    .and[Privileged](PRIVILEGED.toString)
-    .and[Ropc](ROPC.toString)
+    .and[Access.Standard](AccessType.STANDARD.toString)
+    .and[Access.Privileged](AccessType.PRIVILEGED.toString)
+    .and[Access.Ropc](AccessType.ROPC.toString)
     .format
 
   implicit val formatCheckInformation = Json.format[CheckInformation]
 
   implicit val formatApplicationState  = Json.format[ApplicationState]
-  implicit val formatClientSecret      = Json.format[ClientSecretData]
+  // implicit val formatClientSecret      = Json.format[ClientSecretData]
   implicit val formatEnvironmentToken  = Json.format[Token]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 

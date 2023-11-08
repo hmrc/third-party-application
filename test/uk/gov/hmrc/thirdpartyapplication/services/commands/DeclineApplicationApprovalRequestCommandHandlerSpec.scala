@@ -62,7 +62,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
       collaborators = Set(
         appAdminEmail.admin(appAdminUserId)
       ),
-      access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
+      access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationState.pendingGatekeeperApproval(requesterEmail.text, requesterName)
     )
     val ts              = FixedClock.instant
@@ -140,7 +140,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      val nonStandardApp = applicationData.copy(access = Ropc(Set.empty))
+      val nonStandardApp = applicationData.copy(access = Access.Ropc(Set.empty))
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(nonStandardApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, now))
       }
@@ -148,7 +148,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      val oldJourneyApp = applicationData.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = applicationData.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(oldJourneyApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, now))
       }

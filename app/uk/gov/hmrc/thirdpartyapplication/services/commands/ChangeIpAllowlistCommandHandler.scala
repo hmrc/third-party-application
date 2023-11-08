@@ -25,13 +25,13 @@ import cats.data._
 import cats.implicits._
 import org.apache.commons.net.util.SubnetUtils
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.CidrBlock
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeIpAllowlist
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CidrBlock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.IpAllowlist
 
 @Singleton
 class ChangeIpAllowlistCommandHandler @Inject() (

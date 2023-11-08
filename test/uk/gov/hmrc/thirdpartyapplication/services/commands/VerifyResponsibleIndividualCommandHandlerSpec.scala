@@ -59,7 +59,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
         appAdminEmail.admin(appAdminUserId),
         oldRiEmail.admin(oldRiUserId)
       ),
-      access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+      access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
 
     val ts      = FixedClock.instant
@@ -106,7 +106,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
 
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val nonStandardApp = app.copy(access = Ropc(Set.empty))
+      val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
 
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(nonStandardApp, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail))
@@ -115,7 +115,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(oldJourneyApp, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail))

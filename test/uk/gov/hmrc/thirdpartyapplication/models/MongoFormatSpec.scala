@@ -20,8 +20,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 import play.api.libs.json.Json
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.CheckInformation
 
 class MongoFormatSpec extends AnyWordSpec with Matchers {
 

@@ -18,17 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import play.api.libs.json.Json
 
-case class Totp(secret: String, id: String)
-
-object Totp {
-  implicit val format = Json.format[Totp]
-}
-
-case class TotpId(production: String)
-
-object TotpId {
-  implicit val format = Json.format[TotpId]
-}
 
 case class TotpSecret(production: String)
 

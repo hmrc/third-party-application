@@ -22,8 +22,9 @@ import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, _}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{IpAllowlist, _}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.IpAllowlist
 
 case class ValidationRequest(clientId: ClientId, clientSecret: String)
 

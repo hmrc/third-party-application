@@ -18,13 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.util
 
 import com.github.t3hnar.bcrypt._
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator, RateLimitTier}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData with ActorTestData with EmailTestData with FixedClock {
 
@@ -42,7 +43,7 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
       applicationId: ApplicationId,
       state: ApplicationState = productionState(requestedByEmail.text),
       collaborators: Set[Collaborator] = Set(loggedInUserAdminCollaborator, otherAdminCollaborator, developerCollaborator),
-      access: Access = Standard(),
+      access: Access = Access.Standard(),
       rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
       environment: Environment = Environment.PRODUCTION,
       ipAllowlist: IpAllowlist = IpAllowlist(),

@@ -22,15 +22,19 @@ import scala.concurrent.ExecutionContext
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.services.BaseCommandHandler
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, Environment, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 
 trait CommandHandler {
   implicit def ec: ExecutionContext
@@ -161,7 +165,7 @@ object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[
   def isStandardNewJourneyApp(app: ApplicationData) =
     cond(
       app.access match {
-        case Standard(_, _, _, _, _, Some(_)) => true
+        case Access.Standard(_, _, _, _, _, Some(_)) => true
         case _                                => false
       },
       GenericFailure("Must be a standard new journey application")
@@ -173,7 +177,7 @@ object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[
 
   def getResponsibleIndividual(app: ApplicationData) =
     app.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
+      case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
       case _                                                                                            => None
     }
 

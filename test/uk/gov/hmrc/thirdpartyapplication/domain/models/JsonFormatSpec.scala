@@ -20,6 +20,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 import play.api.libs.json.{Json, Reads}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
 
 class JsonFormatSpec extends AnyWordSpec with Matchers {
 

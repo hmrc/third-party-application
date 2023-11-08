@@ -25,6 +25,8 @@ trait TestRawApplicationDocuments {
 
   private def dateToJsonObj(date: LocalDateTime) = Json.obj(f"$$date" -> date.toInstant(ZoneOffset.UTC).toEpochMilli)
 
+  import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.MongoFormats._
+
   def applicationToMongoJson(application: ApplicationData, allowAutoDelete: Option[Boolean] = None): JsObject = {
     val applicationJson = Json.obj(
       "id"                  -> application.id,

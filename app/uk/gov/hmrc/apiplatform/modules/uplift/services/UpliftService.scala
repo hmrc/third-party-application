@@ -27,12 +27,16 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AuditHelper, AuditService}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateChange
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftRequested
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftVerified
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 @Singleton
 class UpliftService @Inject() (
@@ -41,16 +45,16 @@ class UpliftService @Inject() (
     stateHistoryRepository: StateHistoryRepository,
     applicationNamingService: UpliftNamingService,
     apiGatewayStore: ApiGatewayStore,
-    clock: Clock
+    val clock: Clock
   )(implicit ec: ExecutionContext
-  ) extends ApplicationLogger {
+  ) extends ApplicationLogger with ClockNow {
 
   def requestUplift(applicationId: ApplicationId, applicationName: String, requestedByEmailAddress: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
 
     def uplift(existing: ApplicationData) = existing.copy(
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
-      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress.text, requestedByEmailAddress.text, clock)
+      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress.text, requestedByEmailAddress.text, now())
     )
 
     for {
@@ -60,8 +64,8 @@ class UpliftService @Inject() (
       updatedApp <- applicationRepository.save(upliftedApp)
       _          <- insertStateHistory(
                       app,
-                      PENDING_GATEKEEPER_APPROVAL,
-                      Some(TESTING),
+                      State.PENDING_GATEKEEPER_APPROVAL,
+                      Some(State.TESTING),
                       Actors.AppCollaborator(requestedByEmailAddress),
                       (a: ApplicationData) => applicationRepository.save(a)
                     )
@@ -96,11 +100,11 @@ class UpliftService @Inject() (
 
     def verifyPending(app: ApplicationData) = for {
       _ <- apiGatewayStore.createApplication(app.wso2ApplicationName, app.tokens.production.accessToken)
-      _ <- applicationRepository.save(app.copy(state = app.state.toPreProduction(clock)))
+      _ <- applicationRepository.save(app.copy(state = app.state.toPreProduction(now())))
       _ <- insertStateHistory(
              app,
              State.PRE_PRODUCTION,
-             Some(PENDING_REQUESTER_VERIFICATION),
+             Some(State.PENDING_REQUESTER_VERIFICATION),
              Actors.AppCollaborator(LaxEmailAddress(app.state.requestedByEmailAddress.get)),
              (a: ApplicationData) => applicationRepository.save(a)
            )

@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
@@ -36,10 +36,11 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{OverrideFlag, Standard}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ApplicationDeleted, _}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 // scalastyle:off number.of.types
 
@@ -311,14 +312,14 @@ object AuditAction {
     val name      = "Override added to an application"
     val auditType = "OverrideAddedToApplication"
 
-    def details(anOverride: OverrideFlag) = Map("newOverride" -> anOverride.overrideType.toString)
+    def details(anOverride: OverrideFlag) = Map("newOverride" -> OverrideFlag.asOverrideType(anOverride).toString)
   }
 
   case object OverrideRemoved extends AuditAction {
     val name      = "Override removed from an application"
     val auditType = "OverrideRemovedFromApplication"
 
-    def details(anOverride: OverrideFlag) = Map("removedOverride" -> anOverride.overrideType.toString)
+    def details(anOverride: OverrideFlag) = Map("removedOverride" -> OverrideFlag.asOverrideType(anOverride).toString)
   }
 
   case object ApplicationDeleted extends AuditAction {
@@ -359,7 +360,7 @@ object AuditHelper {
     val genericEvents = Set(calcNameChange(previous, updated))
 
     val standardEvents = (previous.access, updated.access) match {
-      case (p: Standard, u: Standard) => Set(
+      case (p: Access.Standard, u: Access.Standard) => Set(
           calcTermsAndConditionsChange(p, u),
           calcPrivacyPolicyChange(p, u)
         )
@@ -377,13 +378,13 @@ object AuditHelper {
   private def calcNameChange(a: ApplicationData, b: ApplicationData) =
     when(a.name != b.name, AppNameChanged -> Map("newApplicationName" -> b.name))
 
-  private def calcTermsAndConditionsChange(a: Standard, b: Standard) =
+  private def calcTermsAndConditionsChange(a: Access.Standard, b: Access.Standard) =
     when(
       a.termsAndConditionsUrl != b.termsAndConditionsUrl,
       AppTermsAndConditionsUrlChanged -> Map("newTermsAndConditionsUrl" -> b.termsAndConditionsUrl.getOrElse(""))
     )
 
-  private def calcPrivacyPolicyChange(a: Standard, b: Standard) =
+  private def calcPrivacyPolicyChange(a: Access.Standard, b: Access.Standard) =
     when(a.privacyPolicyUrl != b.privacyPolicyUrl, AppPrivacyPolicyUrlChanged -> Map("newPrivacyPolicyUrl" -> b.privacyPolicyUrl.getOrElse("")))
 
   def createExtraDetailsForApplicationApprovalRequestDeclined(app: ApplicationData, submission: Submission, evt: ApplicationApprovalRequestDeclined): Map[String, String] = {

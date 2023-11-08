@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, NoMetricsGuiceOneAppPerSuite}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class ResetLastAccessDateJobSpec
     extends AsyncHmrcSpec
@@ -144,7 +145,7 @@ class ResetLastAccessDateJobSpec
         Token(ClientId.random, "ccc")
       ),
       testingState(),
-      Standard(),
+      Access.Standard(),
       localDateTime,
       lastAccess = Some(localDateTime)
     )

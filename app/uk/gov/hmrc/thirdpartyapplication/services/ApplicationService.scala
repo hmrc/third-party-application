@@ -39,9 +39,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, FixCollaboratorRequest}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, SubscriptionRepository, TermsOfUseInvitationRepository}
@@ -49,6 +47,14 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, MetricsTimer}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsOfUseAcceptance
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateChange
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
+import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Deleted
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 
 @Singleton
 class ApplicationService @Inject() (
@@ -66,7 +72,6 @@ class ApplicationService @Inject() (
     system: ActorSystem,
     lockService: ApplicationLockService,
     apiGatewayStore: ApiGatewayStore,
-    applicationResponseCreator: ApplicationResponseCreator,
     credentialGenerator: CredentialGenerator,
     apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
     thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
@@ -74,9 +79,9 @@ class ApplicationService @Inject() (
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
     applicationCommandDispatcher: ApplicationCommandDispatcher,
-    clock: Clock
+    val clock: Clock
   )(implicit val ec: ExecutionContext
-  ) extends MetricsTimer with ApplicationLogger with ActorHelper {
+  ) extends MetricsTimer with ApplicationLogger with ActorHelper with ClockNow {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
@@ -115,7 +120,7 @@ class ApplicationService @Inject() (
     for {
       app            <- fetchApp(applicationId)
       oldState        = app.state
-      newState        = app.state.toProduction(clock)
+      newState        = app.state.toProduction(now())
       appWithNewState = app.copy(state = newState)
       updatedApp     <- applicationRepository.save(appWithNewState)
       stateHistory    = StateHistory(applicationId, newState.name, Actors.AppCollaborator(requesterEmailAddress), Some(oldState.name), None, app.state.updatedOn)
@@ -301,15 +306,15 @@ class ApplicationService @Inject() (
 
     def applyTotpForPrivAppsOnly(totp: Option[Totp], request: CreateApplicationRequest): CreateApplicationRequest = {
       request match {
-        case v1 @ CreateApplicationRequestV1(_, priv: Privileged, _, _, _, _) => v1.copy(access = priv.copy(totpIds = extractTotpId(totp)))
+        case v1 @ CreateApplicationRequestV1(_, priv: Access.Privileged, _, _, _, _) => v1.copy(access = priv.copy(totpIds = extractTotpId(totp)))
         case _                                                                => request
       }
     }
 
     val f = for {
       _              <- createApplicationRequest.accessType match {
-                          case PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, PRIVILEGED)
-                          case ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, ROPC)
+                          case AccessType.PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, AccessType.PRIVILEGED)
+                          case AccessType.ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, AccessType.ROPC)
                           case _          => successful(())
                         }
       totp           <- generateApplicationTotp(createApplicationRequest.accessType)
@@ -319,7 +324,7 @@ class ApplicationService @Inject() (
       _              <- applicationRepository.save(appData)
       _              <- createStateHistory(appData)
       _               = auditAppCreated(appData)
-    } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecret(totp))
+    } yield CreateApplicationResponse(ApplicationResponse(appData), extractTotpSecret(totp))
 
     f andThen {
       case Failure(_) =>
@@ -330,7 +335,7 @@ class ApplicationService @Inject() (
 
   private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[Totp]] = {
     accessType match {
-      case PRIVILEGED => totpConnector.generateTotp().map(Some(_))
+      case AccessType.PRIVILEGED => totpConnector.generateTotp().map(Some(_))
       case _          => Future(None)
     }
   }
@@ -345,7 +350,7 @@ class ApplicationService @Inject() (
 
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {
     val actor = appData.access.accessType match {
-      case PRIVILEGED | ROPC => Actors.Unknown
+      case AccessType.PRIVILEGED | AccessType.ROPC => Actors.Unknown
       case _                 => loggedInActor
     }
     insertStateHistory(appData, appData.state.name, None, actor, (a: ApplicationData) => applicationRepository.hardDelete(a.id))
@@ -366,7 +371,7 @@ class ApplicationService @Inject() (
 
     def updatedAccess(existing: ApplicationData): Access =
       (applicationRequest.access, existing.access) match {
-        case (newAccess: Standard, oldAccess: Standard) => newAccess.copy(overrides = oldAccess.overrides)
+        case (newAccess: Access.Standard, oldAccess: Access.Standard) => newAccess.copy(overrides = oldAccess.overrides)
         case _                                          => applicationRequest.access
       }
 

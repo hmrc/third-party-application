@@ -39,7 +39,7 @@ Request                                                    | Description
 `/applications?status=CREATED`                             | All Applications in testing
 `/applications?search=foo`                                 | All Applications containing the text `foo` in either their name or id
 `/applications?apiSubscription=test-service&apiVersion=v1` | All Applications subscribing to `v1` of `test-service` API
-`/applications?accessType=STANDARD&page=1&pageSize=25`     | First 25 Applications using `Standard` access type
+`/applications?accessType=STANDARD&page=1&pageSize=25`     | First 25 Applications using `Access.Standard` access type
 
 Hashing of Secrets
 ------------------

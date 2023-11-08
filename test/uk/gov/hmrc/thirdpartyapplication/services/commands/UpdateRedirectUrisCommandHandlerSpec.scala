@@ -25,6 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.Applica
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -35,7 +36,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val applicationData: ApplicationData = anApplicationData(applicationId)
     val subordinateApp                   = applicationData.copy(environment = Environment.SANDBOX.toString())
 
-    val nonStandardAccessApp = applicationData.copy(access = Privileged())
+    val nonStandardAccessApp = applicationData.copy(access = Access.PAccess.Privileged())
     val developer            = applicationData.collaborators.head
     val developerActor       = Actors.AppCollaborator(developer.emailAddress)
 

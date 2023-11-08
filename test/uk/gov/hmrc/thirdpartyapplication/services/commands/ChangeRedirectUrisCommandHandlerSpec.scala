@@ -18,14 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RedirectUri
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeRedirectUri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, _}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -38,10 +38,10 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val replacementUri                = RedirectUri.unsafeApply("https://new-url.example.com/other-redirect")
     val originalUris                  = List(toBeReplacedRedirectUri.uri, untouchedUri.uri)
     val nonExistantUri                = RedirectUri.unsafeApply("https://otherurl.com/not-there")
-    val principalApp: ApplicationData = anApplicationData(applicationId, access = Standard(originalUris), collaborators = devAndAdminCollaborators)
+    val principalApp: ApplicationData = anApplicationData(applicationId, access = Access.Standard(originalUris), collaborators = devAndAdminCollaborators)
     val subordinateApp                = principalApp.copy(environment = Environment.SANDBOX.toString())
 
-    val nonStandardAccessApp = principalApp.copy(access = Privileged())
+    val nonStandardAccessApp = principalApp.copy(access = Access.Privileged())
     val developerActor       = Actors.AppCollaborator(developerCollaborator.emailAddress)
 
     val timestamp  = FixedClock.instant

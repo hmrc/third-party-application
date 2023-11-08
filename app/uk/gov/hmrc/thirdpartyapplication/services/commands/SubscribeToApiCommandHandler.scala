@@ -29,9 +29,9 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 
 @Singleton
 class SubscribeToApiCommandHandler @Inject() (
@@ -66,7 +66,7 @@ class SubscribeToApiCommandHandler @Inject() (
   }
 
   private def performRoleCheckAsRequired(app: ApplicationData)(implicit hc: HeaderCarrier) = {
-    if (List(PRIVILEGED, ROPC).contains(app.access.accessType))
+    if (List(AccessType.PRIVILEGED, AccessType.ROPC).contains(app.access.accessType))
       strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole().map(_.isEmpty)
     else
       Future.successful(true)
