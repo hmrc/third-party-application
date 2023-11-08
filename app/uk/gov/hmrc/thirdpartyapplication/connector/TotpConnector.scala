@@ -23,7 +23,7 @@ import scala.util.control.NonFatal
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Totp
+import uk.gov.hmrc.thirdpartyapplication.models.Totp
 
 object TotpConnector {
   case class Config(baseUrl: String)
