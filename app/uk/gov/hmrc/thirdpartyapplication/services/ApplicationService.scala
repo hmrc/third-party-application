@@ -43,7 +43,6 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, FixCollaboratorRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, Deleted}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, SubscriptionRepository, TermsOfUseInvitationRepository}
@@ -340,8 +339,8 @@ class ApplicationService @Inject() (
     totp.map { t => TotpId(t.id) }
   }
 
-  private def extractTotpSecret(totp: Option[Totp]): Option[TotpSecret] = {
-    totp.map { t => TotpSecret(t.secret) }
+  private def extractTotpSecret(totp: Option[Totp]): Option[CreateApplicationResponse.TotpSecret] = {
+    totp.map { t => CreateApplicationResponse.TotpSecret(t.secret) }
   }
 
   def createStateHistory(appData: StoredApplication)(implicit hc: HeaderCarrier) = {

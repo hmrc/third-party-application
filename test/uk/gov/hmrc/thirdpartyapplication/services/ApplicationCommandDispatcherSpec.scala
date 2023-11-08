@@ -282,10 +282,12 @@ class ApplicationCommandDispatcherSpec
       "call ChangeProductionApplicationPrivacyPolicyLocation Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler.process(*[StoredApplication], *[ChangeProductionApplicationPrivacyPolicyLocation])).thenReturn(E.pure((
-          applicationData,
-          NonEmptyList.one(evt)
-        )))
+        when(mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler.process(*[StoredApplication], *[ChangeProductionApplicationPrivacyPolicyLocation])).thenReturn(
+          E.pure((
+            applicationData,
+            NonEmptyList.one(evt)
+          ))
+        )
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)

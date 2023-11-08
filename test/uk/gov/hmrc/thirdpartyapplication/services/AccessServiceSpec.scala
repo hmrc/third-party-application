@@ -27,8 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, Override
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
 
@@ -183,7 +182,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       None,
       "wso2ApplicationName",
       ApplicationTokens(
-        Token(ClientId("a"), "c")
+        StoredToken(ClientId("a"), "c")
       ),
       ApplicationStateExamples.testing,
       Access.Privileged(None, scopes),
@@ -200,7 +199,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       None,
       "wso2ApplicationName",
       ApplicationTokens(
-        Token(ClientId("a"), "c")
+        StoredToken(ClientId("a"), "c")
       ),
       ApplicationStateExamples.testing,
       Access.Ropc(scopes),
@@ -217,7 +216,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       None,
       "wso2ApplicationName",
       ApplicationTokens(
-        Token(ClientId("a"), "c")
+        StoredToken(ClientId("a"), "c")
       ),
       ApplicationStateExamples.testing,
       Access.Standard(redirectUris = List.empty, overrides = overrides),

@@ -34,7 +34,7 @@ import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress, UserId, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
@@ -46,7 +46,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateExamples, Deleted}
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
@@ -56,8 +56,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -94,7 +92,7 @@ class ApplicationServiceSpec
       with TermsOfUseInvitationRepositoryMockModule
       with ApplicationCommandDispatcherMockModule {
 
-    val applicationId: ApplicationId     = ApplicationId.random
+    val applicationId: ApplicationId       = ApplicationId.random
     val applicationData: StoredApplication = anApplicationData(applicationId)
 
     lazy val locked                               = false
@@ -174,10 +172,10 @@ class ApplicationServiceSpec
     def setupAuditTests(access: Access): (StoredApplication, UpdateRedirectUris) = {
       val admin  = otherAdminCollaborator
       val tokens = ApplicationTokens(
-        Token(ClientId("prodId"), "prodToken")
+        StoredToken(ClientId("prodId"), "prodToken")
       )
 
-      val existingApplication                 = StoredApplication(
+      val existingApplication                   = StoredApplication(
         id = applicationId,
         name = "app name",
         normalisedName = "app name",
@@ -189,7 +187,7 @@ class ApplicationServiceSpec
         createdOn = now,
         lastAccess = Some(now)
       )
-      val newRedirectUris                     = List("http://new-url.example.com")
+      val newRedirectUris                       = List("http://new-url.example.com")
       val updatedApplication: StoredApplication = existingApplication.copy(
         name = "new name",
         normalisedName = "new name",
@@ -202,7 +200,7 @@ class ApplicationServiceSpec
           case x                  => x
         }
       )
-      val updateRedirectUris                  = UpdateRedirectUris(
+      val updateRedirectUris                    = UpdateRedirectUris(
         actor = gatekeeperActor,
         oldRedirectUris = List.empty,
         newRedirectUris = newRedirectUris,
@@ -379,7 +377,7 @@ class ApplicationServiceSpec
       )
         .copy(description = None)
 
-      createdApp.totp shouldBe Some(TotpSecret(prodTOTP.secret))
+      createdApp.totp shouldBe Some(CreateApplicationResponse.TotpSecret(prodTOTP.secret))
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
@@ -749,7 +747,7 @@ class ApplicationServiceSpec
   "fetchAllForCollaborator" should {
     "fetch all applications for a given collaborator user id" in new Setup {
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)("api1".asIdentifier, "api2".asIdentifier)
-      val userId                                     = UserId.random
+      val userId                                       = UserId.random
       val standardApplicationData: StoredApplication   = anApplicationData(applicationId, access = Access.Standard())
       val privilegedApplicationData: StoredApplication = anApplicationData(applicationId, access = Access.Privileged())
       val ropcApplicationData: StoredApplication       = anApplicationData(applicationId, access = Access.Ropc())

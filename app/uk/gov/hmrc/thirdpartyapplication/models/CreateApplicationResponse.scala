@@ -16,6 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
+case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[CreateApplicationResponse.TotpSecret] = None)
 
-case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecret] = None)
+object CreateApplicationResponse {
+  case class TotpSecret(production: String)
+
+  object TotpSecret {
+    import play.api.libs.json.Json
+    implicit val format = Json.format[TotpSecret]
+  }
+}

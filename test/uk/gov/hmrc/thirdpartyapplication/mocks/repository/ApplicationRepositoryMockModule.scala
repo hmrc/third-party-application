@@ -29,11 +29,9 @@ import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, Collaborator, IpAllowlist, RateLimitTier, State}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocation, SubmissionId, TermsAndConditionsLocation, TermsOfUseAcceptance}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredToken, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -358,7 +356,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         val updatedApplication =
           application
             .copy(tokens =
-              ApplicationTokens(Token(application.tokens.production.clientId, application.tokens.production.accessToken, otherClientSecrets))
+              ApplicationTokens(StoredToken(application.tokens.production.clientId, application.tokens.production.accessToken, otherClientSecrets))
             )
 
         when(aMock.deleteClientSecret(eqTo(application.id), eqTo(clientSecretId))).thenReturn(successful(updatedApplication))

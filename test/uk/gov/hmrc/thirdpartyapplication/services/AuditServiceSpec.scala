@@ -41,8 +41,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, 
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
@@ -71,7 +70,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     applicationId,
     access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
-  val instigator                       = applicationData.collaborators.head.userId
+  val instigator                         = applicationData.collaborators.head.userId
 
   def isSameDataEvent(expected: DataEvent) =
     new ArgumentMatcher[DataEvent] {
@@ -477,7 +476,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     val id          = ApplicationId.random
     val admin       = "test@example.com".admin()
     val tokens      = ApplicationTokens(
-      Token(ClientId("prodId"), "prodToken")
+      StoredToken(ClientId("prodId"), "prodToken")
     )
     val previousApp = StoredApplication(
       id = id,

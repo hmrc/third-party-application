@@ -21,9 +21,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
-import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, _}
 
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples with CollaboratorTestData {
@@ -37,7 +35,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         Set.empty,
         None,
         "a",
-        ApplicationTokens(Token(ClientId("cid"), "at")),
+        ApplicationTokens(StoredToken(ClientId("cid"), "at")),
         productionState("user1"),
         Access.Standard(),
         now,
@@ -73,7 +71,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
           sandboxApplicationId = ApplicationId.random
         ),
         wso2ApplicationName = "wso2ApplicationName",
-        environmentToken = Token(ClientId("clientId"), "accessToken"),
+        environmentToken = StoredToken(ClientId("clientId"), "accessToken"),
         createdOn = now
       )
     }
@@ -88,7 +86,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
           subscriptions = None
         ),
         wso2ApplicationName = "wso2ApplicationName",
-        environmentToken = Token(ClientId("clientId"), "accessToken"),
+        environmentToken = StoredToken(ClientId("clientId"), "accessToken"),
         createdOn = now
       )
     }

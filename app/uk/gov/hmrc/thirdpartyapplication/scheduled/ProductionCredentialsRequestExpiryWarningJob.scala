@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Environment, LaxEma
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, Notification, NotificationStatus, NotificationType}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{Notification, NotificationStatus, NotificationType, StoredApplication}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository}
 
 @Singleton

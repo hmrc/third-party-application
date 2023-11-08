@@ -43,11 +43,9 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, Collaborator, RateLimitTier, _}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{StoredClientSecret, Token}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 
 object ApplicationRepository {
   case class SubsByUser(apiIdentifiers: List[ApiIdentifier])
@@ -75,7 +73,7 @@ object ApplicationRepository {
 
     implicit val formatApplicationState  = Json.format[ApplicationState]
     implicit val formatClientSecret      = Json.format[StoredClientSecret]
-    implicit val formatEnvironmentToken  = Json.format[Token]
+    implicit val formatEnvironmentToken  = Json.format[StoredToken]
     implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
     import play.api.libs.functional.syntax._

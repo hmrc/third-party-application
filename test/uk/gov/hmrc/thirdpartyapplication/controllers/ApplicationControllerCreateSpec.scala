@@ -41,7 +41,6 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockMo
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
@@ -112,7 +111,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     val ropcApplicationRequest       = aCreateApplicationRequestV1(ropcAccess)
 
     val standardApplicationResponse   = CreateApplicationResponse(aNewApplicationResponse())
-    val totp                          = TotpSecret("pTOTP")
+    val totp                          = CreateApplicationResponse.TotpSecret("pTOTP")
     val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(privilegedAccess), Some(totp))
     val ropcApplicationResponse       = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
@@ -147,7 +146,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
       val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
-      (contentAsJson(result) \ "totp").as[TotpSecret] shouldBe totp
+      (contentAsJson(result) \ "totp").as[CreateApplicationResponse.TotpSecret] shouldBe totp
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(privilegedApplicationRequest))(*)
     }

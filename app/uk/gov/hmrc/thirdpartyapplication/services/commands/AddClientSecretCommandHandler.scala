@@ -61,9 +61,9 @@ class AddClientSecretCommandHandler @Inject() (
   }
 
   def process(app: StoredApplication, cmd: AddClientSecret): AppCmdResultT = {
-    import uk.gov.hmrc.thirdpartyapplication.domain.models.StoredClientSecret
+    import uk.gov.hmrc.thirdpartyapplication.models.db.StoredClientSecret
 
-    def asClientSecretData(cmd: AddClientSecret): StoredClientSecret =
+    def asStoredClientSecret(cmd: AddClientSecret): StoredClientSecret =
       StoredClientSecret(
         name = cmd.name,
         createdOn = cmd.timestamp,
@@ -73,7 +73,7 @@ class AddClientSecretCommandHandler @Inject() (
       )
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
-      savedApp <- E.liftF(applicationRepository.addClientSecret(app.id, asClientSecretData(cmd)))
+      savedApp <- E.liftF(applicationRepository.addClientSecret(app.id, asStoredClientSecret(cmd)))
       events    = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }

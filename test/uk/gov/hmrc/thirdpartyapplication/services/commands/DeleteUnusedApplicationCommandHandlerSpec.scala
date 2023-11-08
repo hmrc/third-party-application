@@ -40,7 +40,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
     val appId: ApplicationId                 = ApplicationId.random
     val appAdminEmail                        = loggedInUser
     val actor: Actors.ScheduledJob           = Actors.ScheduledJob("DeleteUnusedApplicationsJob")
-    val app: StoredApplication                 = anApplicationData(appId, environment = Environment.SANDBOX)
+    val app: StoredApplication               = anApplicationData(appId, environment = Environment.SANDBOX)
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
     val underTest = new DeleteUnusedApplicationCommandHandler(

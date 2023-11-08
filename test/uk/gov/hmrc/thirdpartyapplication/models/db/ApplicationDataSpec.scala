@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, HmrcSpec, UpliftRequestSamples}
 
@@ -28,7 +27,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
   "StoredApplication" should {
     "for version 1 requests" should {
       "do not set the check information when app is created without subs" in {
-        val token = Token(ClientId.random, "st")
+        val token = StoredToken(ClientId.random, "st")
 
         val request = CreateApplicationRequestV1(
           name = "bob",
@@ -41,7 +40,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
       }
 
       "set the check information for subscriptions when app is created with subs" in {
-        val token = Token(ClientId.random, "st")
+        val token = StoredToken(ClientId.random, "st")
 
         val request = CreateApplicationRequestV1(
           name = "bob",
@@ -54,7 +53,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
       }
 
       "ensure correct grant length when app is created" in {
-        val token = Token(ClientId.random, "st")
+        val token = StoredToken(ClientId.random, "st")
 
         val request = CreateApplicationRequestV1(
           name = "bob",
@@ -69,7 +68,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
     }
 
     "for version 2 requests" should {
-      val token = Token(ClientId.random, "st")
+      val token = StoredToken(ClientId.random, "st")
 
       val request = CreateApplicationRequestV2(
         name = "bob",

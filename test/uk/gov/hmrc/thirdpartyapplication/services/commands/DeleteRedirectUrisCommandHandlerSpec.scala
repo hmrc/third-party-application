@@ -32,13 +32,13 @@ class DeleteRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new DeleteRedirectUriCommandHandler(ApplicationRepoMock.aMock)
 
-    val applicationId                 = ApplicationId.random
-    val toBeDeletedRedirectUri        = RedirectUri.unsafeApply("https://new-url.example.com")
-    val toRemainRedirectUri           = RedirectUri.unsafeApply("https://new-url.example.com/other-redirect")
-    val originalUris                  = List(toBeDeletedRedirectUri.uri, toRemainRedirectUri.uri)
-    val nonExistantUri                = RedirectUri.unsafeApply("https://otherurl.com/not-there")
+    val applicationId                   = ApplicationId.random
+    val toBeDeletedRedirectUri          = RedirectUri.unsafeApply("https://new-url.example.com")
+    val toRemainRedirectUri             = RedirectUri.unsafeApply("https://new-url.example.com/other-redirect")
+    val originalUris                    = List(toBeDeletedRedirectUri.uri, toRemainRedirectUri.uri)
+    val nonExistantUri                  = RedirectUri.unsafeApply("https://otherurl.com/not-there")
     val principalApp: StoredApplication = anApplicationData(applicationId, access = Access.Standard(originalUris), collaborators = devAndAdminCollaborators)
-    val subordinateApp                = principalApp.copy(environment = Environment.SANDBOX.toString())
+    val subordinateApp                  = principalApp.copy(environment = Environment.SANDBOX.toString())
 
     val nonStandardAccessApp = principalApp.copy(access = Access.Privileged())
     val developerActor       = Actors.AppCollaborator(developerCollaborator.emailAddress)

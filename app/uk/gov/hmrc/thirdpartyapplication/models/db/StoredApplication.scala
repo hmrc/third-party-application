@@ -24,11 +24,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLengthConfig
-
-
 
 case class StoredApplication(
     id: ApplicationId,
@@ -79,7 +76,7 @@ object StoredApplication {
   def create(
       createApplicationRequest: CreateApplicationRequest,
       wso2ApplicationName: String,
-      environmentToken: Token,
+      environmentToken: StoredToken,
       createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
     ): StoredApplication = {
     import createApplicationRequest._

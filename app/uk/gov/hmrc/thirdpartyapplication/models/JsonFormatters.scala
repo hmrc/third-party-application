@@ -23,10 +23,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Token, TotpSecret}
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
-import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
 
 trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
@@ -49,7 +47,6 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   implicit val formatApplicationState  = Json.format[ApplicationState]
   // implicit val formatClientSecret      = Json.format[ClientSecretData]
-  implicit val formatEnvironmentToken  = Json.format[Token]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
   implicit val formatUpdateApplicationRequest     = Json.format[UpdateApplicationRequest]
@@ -77,7 +74,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatFixCollaboratorRequest           = Json.format[FixCollaboratorRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
-    JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecret]]
+    JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[CreateApplicationResponse.TotpSecret]]
   )(unlift(CreateApplicationResponse.unapply))
 }
 

@@ -98,8 +98,8 @@ class ApprovalsControllerISpec
   "ApprovalsController" should {
 
     def primeData(appId: ApplicationId): Unit = {
-      val responsibleIndividual        = ResponsibleIndividual.build("bob example", "bob@example.com")
-      val testImportantSubmissionData  = ImportantSubmissionData(
+      val responsibleIndividual          = ResponsibleIndividual.build("bob example", "bob@example.com")
+      val testImportantSubmissionData    = ImportantSubmissionData(
         Some("organisationUrl.com"),
         responsibleIndividual,
         Set(ServerLocation.InUK),

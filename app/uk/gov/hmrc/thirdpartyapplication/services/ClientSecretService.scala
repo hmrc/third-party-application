@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, SimpleTimer, TimedValue}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecretsHashingConfig
 import uk.gov.hmrc.apiplatform.modules.crypto.services.SecretsHashingService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StoredClientSecret
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredClientSecret
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton

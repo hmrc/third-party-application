@@ -200,7 +200,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
     "fail if the application save fails" in new Setup {
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       val application: StoredApplication = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy.text))
-      val saveException                = new RuntimeException("application failed to save")
+      val saveException                  = new RuntimeException("application failed to save")
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
       ApplicationRepoMock.Save.thenFail(saveException)

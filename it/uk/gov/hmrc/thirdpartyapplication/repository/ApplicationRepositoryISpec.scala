@@ -41,7 +41,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
@@ -377,7 +376,7 @@ class ApplicationRepositoryISpec
     "update an existing lastAccess property for a client secret" in {
       val applicationId     = ApplicationId.random
       val applicationTokens = ApplicationTokens(
-        Token(
+        StoredToken(
           ClientId("aaa"),
           generateAccessToken,
           List(
@@ -427,7 +426,7 @@ class ApplicationRepositoryISpec
         )
       val applicationTokens =
         ApplicationTokens(
-          Token(
+          StoredToken(
             ClientId("aaa"),
             generateAccessToken,
             List(
@@ -3241,7 +3240,7 @@ class ApplicationRepositoryISpec
         }),
         createdOn = now.plus(timeOffset),
         environment = environment.toString,
-        tokens = ApplicationTokens(Token(ClientId.random, "access token"))
+        tokens = ApplicationTokens(StoredToken(ClientId.random, "access token"))
       )
       await(applicationRepository.save(app))
       app
@@ -3443,7 +3442,7 @@ class ApplicationRepositoryISpec
       Some("description"),
       "myapplication",
       ApplicationTokens(
-        Token(prodClientId, generateAccessToken, clientSecrets)
+        StoredToken(prodClientId, generateAccessToken, clientSecrets)
       ),
       state,
       access,

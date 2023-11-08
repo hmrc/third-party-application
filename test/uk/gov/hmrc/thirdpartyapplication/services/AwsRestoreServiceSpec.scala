@@ -27,10 +27,9 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, Environme
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock with CollaboratorTestData {
@@ -46,7 +45,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
           subscriptions = None
         ),
         applicationName,
-        Token(ClientId(""), serverToken, List.empty),
+        StoredToken(ClientId(""), serverToken, List.empty),
         createdOn = now
       )
     }
@@ -60,7 +59,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
 
   "restoreData" should {
     "republish all Applications" in new Setup {
-      val serverToken: String          = UUID.randomUUID().toString
+      val serverToken: String            = UUID.randomUUID().toString
       val application: StoredApplication = buildApplication("foo", serverToken)
 
       ApplicationRepoMock.ProcessAll.thenReturn()

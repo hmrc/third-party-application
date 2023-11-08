@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{StoredClientSecret, Token}
+import uk.gov.hmrc.thirdpartyapplication.models.db._
 
 case class ApplicationTokenResponse(
     clientId: ClientId,
@@ -28,7 +28,7 @@ case class ApplicationTokenResponse(
 
 object ApplicationTokenResponse {
 
-  def apply(token: Token): ApplicationTokenResponse =
+  def apply(token: StoredToken): ApplicationTokenResponse =
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,

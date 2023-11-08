@@ -45,7 +45,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.TotpSecret
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
@@ -295,11 +294,11 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       Then("The application is returned with the Totp Ids and the Totp Secrets")
       val totpIds     = (Json.parse(createdResponse.body) \ "access" \ "totpIds").as[TotpId]
-      val totpSecrets = (Json.parse(createdResponse.body) \ "totp").as[TotpSecret]
+      val totpSecrets = (Json.parse(createdResponse.body) \ "totp").as[CreateApplicationResponse.TotpSecret]
 
       totpIds match {
-        case TotpId("prod-id")    => totpSecrets shouldBe TotpSecret("prod-secret")
-        case TotpId("sandbox-id") => totpSecrets shouldBe TotpSecret("sandbox-secret")
+        case TotpId("prod-id")    => totpSecrets shouldBe CreateApplicationResponse.TotpSecret("prod-secret")
+        case TotpId("sandbox-id") => totpSecrets shouldBe CreateApplicationResponse.TotpSecret("sandbox-secret")
         case _                    => throw new IllegalStateException(s"Unexpected result - totpIds: $totpIds, totpSecrets: $totpSecrets")
       }
     }

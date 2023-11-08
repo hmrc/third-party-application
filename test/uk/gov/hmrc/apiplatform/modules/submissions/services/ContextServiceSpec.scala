@@ -37,7 +37,7 @@ class ContextServiceSpec
 
   trait Setup extends ApplicationRepositoryMockModule with SubscriptionRepositoryMockModule {
 
-    val applicationId: ApplicationId     = ApplicationId.random
+    val applicationId: ApplicationId       = ApplicationId.random
     val applicationData: StoredApplication = anApplicationData(applicationId)
 
     val underTest = new ContextService(ApplicationRepoMock.aMock, SubscriptionRepoMock.aMock)

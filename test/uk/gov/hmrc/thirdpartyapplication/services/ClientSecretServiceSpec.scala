@@ -24,9 +24,8 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecretsHashingConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StoredClientSecret
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
