@@ -36,6 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxE
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CheckInformation, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsOfUseAcceptance
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -94,15 +95,15 @@ class ApplicationService @Inject() (
     }
   }
 
-  def update(applicationId: ApplicationId, application: UpdateApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationResponse] = {
-    updateApp(applicationId)(application) map (app => ApplicationResponse(data = app))
+  def update(applicationId: ApplicationId, application: UpdateApplicationRequest)(implicit hc: HeaderCarrier): Future[Application] = {
+    updateApp(applicationId)(application) map (app => Application(data = app))
   }
 
-  def updateCheck(applicationId: ApplicationId, checkInformation: CheckInformation): Future[ApplicationResponse] = {
+  def updateCheck(applicationId: ApplicationId, checkInformation: CheckInformation): Future[Application] = {
     for {
       existing <- fetchApp(applicationId)
       savedApp <- applicationRepository.save(existing.copy(checkInformation = Some(checkInformation)))
-    } yield ApplicationResponse(data = savedApp)
+    } yield Application(data = savedApp)
   }
 
   def addTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[StoredApplication] = {
@@ -178,9 +179,9 @@ class ApplicationService @Inject() (
     applicationRepository.updateCollaboratorId(applicationId, fixCollaboratorRequest.emailAddress, fixCollaboratorRequest.userId)
   }
 
-  def fetchByClientId(clientId: ClientId): Future[Option[ApplicationResponse]] = {
+  def fetchByClientId(clientId: ClientId): Future[Option[Application]] = {
     applicationRepository.fetchByClientId(clientId) map {
-      _.map(application => ApplicationResponse(data = application))
+      _.map(application => Application(data = application))
     }
   }
 
@@ -196,10 +197,10 @@ class ApplicationService @Inject() (
     }
   }
 
-  def fetchByServerToken(serverToken: String): Future[Option[ApplicationResponse]] = {
+  def fetchByServerToken(serverToken: String): Future[Option[Application]] = {
     applicationRepository.fetchByServerToken(serverToken) map {
       _.map(application =>
-        ApplicationResponse(data = application)
+        Application(data = application)
       )
     }
   }
@@ -217,8 +218,8 @@ class ApplicationService @Inject() (
   }
 
   // TODO - introduce me
-  // private def asResponse(apps: List[StoredApplication]): List[ApplicationResponse] = {
-  //   apps.map(ApplicationResponse(data = _))
+  // private def asResponse(apps: List[StoredApplication]): List[Application] = {
+  //   apps.map(Application(data = _))
   // }
 
   private def asExtendedResponses(apps: List[StoredApplication]): Future[List[ExtendedApplicationResponse]] = {
@@ -238,36 +239,36 @@ class ApplicationService @Inject() (
       .flatMap(x => asExtendedResponses(x.toList))
   }
 
-  def fetchAll(): Future[List[ApplicationResponse]] = {
+  def fetchAll(): Future[List[Application]] = {
     applicationRepository.fetchAll().map {
-      _.map(application => ApplicationResponse(data = application))
+      _.map(application => Application(data = application))
     }
   }
 
-  def fetchAllBySubscription(apiContext: ApiContext): Future[List[ApplicationResponse]] = {
+  def fetchAllBySubscription(apiContext: ApiContext): Future[List[Application]] = {
     applicationRepository.fetchAllForContext(apiContext) map {
-      _.map(application => ApplicationResponse(data = application))
+      _.map(application => Application(data = application))
     }
   }
 
-  def fetchAllBySubscription(apiIdentifier: ApiIdentifier): Future[List[ApplicationResponse]] = {
+  def fetchAllBySubscription(apiIdentifier: ApiIdentifier): Future[List[Application]] = {
     applicationRepository.fetchAllForApiIdentifier(apiIdentifier) map {
-      _.map(application => ApplicationResponse(data = application))
+      _.map(application => Application(data = application))
     }
   }
 
-  def fetchAllWithNoSubscriptions(): Future[List[ApplicationResponse]] = {
+  def fetchAllWithNoSubscriptions(): Future[List[Application]] = {
     applicationRepository.fetchAllWithNoSubscriptions() map {
-      _.map(application => ApplicationResponse(data = application))
+      _.map(application => Application(data = application))
     }
   }
 
   import cats.data.OptionT
   import cats.implicits._
 
-  def fetch(applicationId: ApplicationId): OptionT[Future, ApplicationResponse] =
+  def fetch(applicationId: ApplicationId): OptionT[Future, Application] =
     OptionT(applicationRepository.fetch(applicationId))
-      .map(application => ApplicationResponse(data = application))
+      .map(application => Application(data = application))
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationResponse] = {
     applicationRepository.searchApplications("applicationSearch")(applicationSearch).map { data =>
@@ -276,16 +277,16 @@ class ApplicationService @Inject() (
         pageSize = applicationSearch.pageSize,
         total = data.totals.foldLeft(0)(_ + _.total),
         matching = data.matching.foldLeft(0)(_ + _.total),
-        applications = data.applications.map(application => ApplicationResponse(data = application))
+        applications = data.applications.map(application => Application(data = application))
       )
     }
   }
 
-  private def createApp(req: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
-    val createApplicationRequest: CreateApplicationRequest = req match {
-      case v1: CreateApplicationRequestV1 => v1.normaliseCollaborators
-      case v2: CreateApplicationRequestV2 => v2.normaliseCollaborators
-    }
+  private def createApp(createApplicationRequest: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
+    // val createApplicationRequest: CreateApplicationRequest = req match {
+    //   case v1: CreateApplicationRequestV1 => v1.normaliseCollaborators
+    //   case v2: CreateApplicationRequestV2 => v2.normaliseCollaborators
+    // }
 
     logger.info(s"Creating application ${createApplicationRequest.name}")
 
@@ -313,13 +314,13 @@ class ApplicationService @Inject() (
                           case _                     => successful(())
                         }
       totp           <- generateApplicationTotp(createApplicationRequest.accessType)
-      modifiedRequest = applyTotpForPrivAppsOnly(totp, req)
+      modifiedRequest = applyTotpForPrivAppsOnly(totp, createApplicationRequest)
       appData         = StoredApplication.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), LocalDateTime.now(clock))
       _              <- createInApiGateway(appData)
       _              <- applicationRepository.save(appData)
       _              <- createStateHistory(appData)
       _               = auditAppCreated(appData)
-    } yield CreateApplicationResponse(ApplicationResponse(appData), extractTotpSecret(totp))
+    } yield CreateApplicationResponse(Application(appData), extractTotpSecret(totp))
 
     f andThen {
       case Failure(_) =>

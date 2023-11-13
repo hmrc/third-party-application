@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.{ApprovalsA
 import uk.gov.hmrc.apiplatform.modules.approvals.services.{GrantApprovalsService, RequestApprovalsService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.Application
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 
@@ -70,7 +70,7 @@ class ApprovalsController @Inject() (
     withJsonBodyFromAnyContent[RequestApprovalRequest] { requestApprovalRequest =>
       requestApprovalsService.requestApproval(request.application, request.submission, requestApprovalRequest.requestedByName, requestApprovalRequest.requestedByEmailAddress).map(
         _ match {
-          case ApprovalAccepted(application)                        => Ok(Json.toJson(ApplicationResponse(application)))
+          case ApprovalAccepted(application)                        => Ok(Json.toJson(Application(application)))
           case ApprovalRejectedDueToIncorrectSubmissionState(state) =>
             PreconditionFailed(asJsonError("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId is in an incorrect state of #'$state'"))
           case ApprovalRejectedDueToDuplicateName(name)             => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name '$name' "))
@@ -89,7 +89,7 @@ class ApprovalsController @Inject() (
     withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest =>
       grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.warnings, grantedRequest.escalatedTo)
         .map(_ match {
-          case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
+          case Actioned(application)                  => Ok(Json.toJson(Application(application)))
           case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
           case RejectedDueToIncorrectApplicationState =>
             PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'"))
@@ -105,7 +105,7 @@ class ApprovalsController @Inject() (
     withJsonBodyFromAnyContent[TouUpliftRequest] { upliftRequest =>
       grantApprovalService.grantWithWarningsForTouUplift(request.application, request.submission, upliftRequest.gatekeeperUserName, upliftRequest.reasons)
         .map(_ match {
-          case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
+          case Actioned(application)                  => Ok(Json.toJson(Application(application)))
           case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_WARNINGS_STATE", s"Submission for $applicationId was not in a warnings state"))
           case RejectedDueToIncorrectApplicationState =>
             PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
@@ -121,7 +121,7 @@ class ApprovalsController @Inject() (
     withJsonBodyFromAnyContent[TouGrantedRequest] { grantedRequest =>
       grantApprovalService.grantForTouUplift(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.reasons, grantedRequest.escalatedTo)
         .map(_ match {
-          case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
+          case Actioned(application)                  => Ok(Json.toJson(Application(application)))
           case RejectedDueToIncorrectSubmissionState  =>
             PreconditionFailed(asJsonError("NOT_IN_GRANTED_WITH_WARNINGS_STATE", s"Submission for $applicationId was not in a granted with warnings state"))
           case RejectedDueToIncorrectApplicationState =>
@@ -138,7 +138,7 @@ class ApprovalsController @Inject() (
     withJsonBodyFromAnyContent[TouUpliftRequest] { upliftRequest =>
       grantApprovalService.declineForTouUplift(request.application, request.submission, upliftRequest.gatekeeperUserName, upliftRequest.reasons)
         .map(_ match {
-          case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
+          case Actioned(application)                  => Ok(Json.toJson(Application(application)))
           case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_WARNINGS_STATE", s"Submission for $applicationId was not in a warnings state"))
           case RejectedDueToIncorrectApplicationState =>
             PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))

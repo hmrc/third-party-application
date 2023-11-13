@@ -50,7 +50,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
   implicit val formatUpdateApplicationRequest     = Json.format[UpdateApplicationRequest]
-  implicit val formatApplicationResponse          = Json.format[ApplicationResponse]
+  implicit val formatApplicationResponse          = Json.format[Application]
   implicit val formatExtendedApplicationResponse  = Json.format[ExtendedApplicationResponse]
   implicit val formatPaginatedApplicationResponse = Json.format[PaginatedApplicationResponse]
   implicit val formatUpdateIpAllowlistRequest     = Json.format[UpdateIpAllowlistRequest]
@@ -74,7 +74,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatFixCollaboratorRequest           = Json.format[FixCollaboratorRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
-    JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[CreateApplicationResponse.TotpSecret]]
+    JsPath.write[Application] and (JsPath \ "totp").write[Option[CreateApplicationResponse.TotpSecret]]
   )(unlift(CreateApplicationResponse.unapply))
 }
 

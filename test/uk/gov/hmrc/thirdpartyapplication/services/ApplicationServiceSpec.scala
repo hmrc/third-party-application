@@ -40,6 +40,12 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
+  CreateApplicationRequest,
+  CreateApplicationRequestV1,
+  CreateApplicationRequestV2,
+  StandardAccessDataToCopy
+}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, _}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -187,15 +193,15 @@ class ApplicationServiceSpec
         createdOn = now,
         lastAccess = Some(now)
       )
-      val newRedirectUris                       = List("http://new-url.example.com")
+      val newRedirectUris                       = List(RedirectUri.unsafeApply("https://new-url.example.com"))
       val updatedApplication: StoredApplication = existingApplication.copy(
         name = "new name",
         normalisedName = "new name",
         access = access match {
           case _: Access.Standard => Access.Standard(
               newRedirectUris,
-              Some("http://new-url.example.com/terms-and-conditions"),
-              Some("http://new-url.example.com/privacy-policy")
+              Some("https://new-url.example.com/terms-and-conditions"),
+              Some("https://new-url.example.com/privacy-policy")
             )
           case x                  => x
         }
@@ -674,7 +680,7 @@ class ApplicationServiceSpec
 
       val result = await(underTest.fetch(applicationId).value)
 
-      result shouldBe Some(ApplicationResponse(
+      result shouldBe Some(Application(
         id = applicationId,
         clientId = productionToken.clientId,
         gatewayId = data.wso2ApplicationName,
@@ -702,7 +708,7 @@ class ApplicationServiceSpec
       val clientId = ClientId("some-client-id")
       ApplicationRepoMock.FetchByClientId.thenReturnNone()
 
-      val result: Option[ApplicationResponse] = await(underTest.fetchByClientId(clientId))
+      val result: Option[Application] = await(underTest.fetchByClientId(clientId))
 
       result shouldBe None
     }
@@ -710,7 +716,7 @@ class ApplicationServiceSpec
     "return an application when it exists in the repository for the given client id" in new Setup {
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(applicationData.tokens.production.clientId)(applicationData)
 
-      val result: Option[ApplicationResponse] = await(underTest.fetchByClientId(applicationData.tokens.production.clientId))
+      val result: Option[Application] = await(underTest.fetchByClientId(applicationData.tokens.production.clientId))
 
       result.get.id shouldBe applicationId
       result.get.deployedTo shouldBe "PRODUCTION"
@@ -725,7 +731,7 @@ class ApplicationServiceSpec
     "return none when no application exists in the repository for the given server token" in new Setup {
       ApplicationRepoMock.FetchByServerToken.thenReturnNoneWhen(serverToken)
 
-      val result: Option[ApplicationResponse] = await(underTest.fetchByServerToken(serverToken))
+      val result: Option[Application] = await(underTest.fetchByServerToken(serverToken))
 
       result shouldBe None
     }
@@ -736,7 +742,7 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.FetchByServerToken.thenReturnWhen(serverToken)(applicationData)
 
-      val result: Option[ApplicationResponse] = await(underTest.fetchByServerToken(serverToken))
+      val result: Option[Application] = await(underTest.fetchByServerToken(serverToken))
 
       result.get.id shouldBe applicationId
       result.get.collaborators shouldBe applicationData.collaborators
@@ -766,17 +772,17 @@ class ApplicationServiceSpec
       val apiContext = "some-context".asContext
 
       ApplicationRepoMock.FetchAllForContent.thenReturnWhen(apiContext)(applicationData)
-      val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
+      val result: List[Application] = await(underTest.fetchAllBySubscription(apiContext))
 
       result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => ApplicationResponse(data = app))
+      result shouldBe List(applicationData).map(app => Application(data = app))
     }
 
     "return no matching applications for a given subscription to an API context" in new Setup {
       val apiContext = "some-context".asContext
 
       ApplicationRepoMock.FetchAllForContent.thenReturnEmptyWhen(apiContext)
-      val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
+      val result: List[Application] = await(underTest.fetchAllBySubscription(apiContext))
 
       result.size shouldBe 0
     }
@@ -785,10 +791,10 @@ class ApplicationServiceSpec
       val apiIdentifier = "some-context".asIdentifier("some-version")
 
       ApplicationRepoMock.FetchAllForApiIdentifier.thenReturnWhen(apiIdentifier)(applicationData)
-      val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiIdentifier))
+      val result: List[Application] = await(underTest.fetchAllBySubscription(apiIdentifier))
 
       result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => ApplicationResponse(data = app))
+      result shouldBe List(applicationData).map(app => Application(data = app))
     }
 
     "return no matching applications for a given subscription to an API identifier" in new Setup {
@@ -796,7 +802,7 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.FetchAllForApiIdentifier.thenReturnEmptyWhen(apiIdentifier)
 
-      val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiIdentifier))
+      val result: List[Application] = await(underTest.fetchAllBySubscription(apiIdentifier))
 
       result.size shouldBe 0
     }
@@ -807,7 +813,7 @@ class ApplicationServiceSpec
     "return no matching applications if application has a subscription" in new Setup {
       ApplicationRepoMock.FetchAllWithNoSubscriptions.thenReturnNone()
 
-      val result: List[ApplicationResponse] = await(underTest.fetchAllWithNoSubscriptions())
+      val result: List[Application] = await(underTest.fetchAllWithNoSubscriptions())
 
       result.size shouldBe 0
     }
@@ -815,10 +821,10 @@ class ApplicationServiceSpec
     "return applications when there are no matching subscriptions" in new Setup {
       ApplicationRepoMock.FetchAllWithNoSubscriptions.thenReturn(applicationData)
 
-      val result: List[ApplicationResponse] = await(underTest.fetchAllWithNoSubscriptions())
+      val result: List[Application] = await(underTest.fetchAllWithNoSubscriptions())
 
       result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => ApplicationResponse(data = app))
+      result shouldBe List(applicationData).map(app => Application(data = app))
     }
   }
 
@@ -1058,7 +1064,7 @@ class ApplicationServiceSpec
   private def anUpdateRequest() = {
     UpdateApplicationRequest(
       name = "My Application",
-      access = Access.Standard().copy(redirectUris = List("http://example.com/redirect")),
+      access = Access.Standard().copy(redirectUris = List(RedirectUri.unsafeApply("https://example.com/redirect"))),
       description = Some("Description")
     )
   }

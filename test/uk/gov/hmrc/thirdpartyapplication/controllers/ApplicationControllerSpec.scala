@@ -352,7 +352,7 @@ class ApplicationControllerSpec
       val lastAccessTime: LocalDateTime        = updatedLastAccessTime.minusDays(10) // scalastyle:ignore magic.number
       val applicationId: ApplicationId         = ApplicationId.random
 
-      val applicationResponse: ApplicationResponse                = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
+      val applicationResponse: Application                        = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
       val updatedApplicationResponse: ExtendedApplicationResponse =
         extendedApplicationResponseFromApplicationResponse(applicationResponse).copy(lastAccess = Some(updatedLastAccessTime))
     }
@@ -532,10 +532,10 @@ class ApplicationControllerSpec
       val queryRequest = FakeRequest("GET", s"?subscribesTo=$subscribesTo")
 
       "succeed with a 200 (ok) when applications are found" in new Setup {
-        val standardApplicationResponse: ApplicationResponse   = aNewApplicationResponse(access = Access.Standard())
-        val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Access.Privileged())
-        val ropcApplicationResponse: ApplicationResponse       = aNewApplicationResponse(access = Access.Ropc())
-        val response: List[ApplicationResponse]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
+        val standardApplicationResponse: Application   = aNewApplicationResponse(access = Access.Standard())
+        val privilegedApplicationResponse: Application = aNewApplicationResponse(access = Access.Privileged())
+        val ropcApplicationResponse: Application       = aNewApplicationResponse(access = Access.Ropc())
+        val response: List[Application]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
 
         when(underTest.applicationService.fetchAllBySubscription(subscribesTo.asContext)).thenReturn(successful(response))
 
@@ -571,10 +571,10 @@ class ApplicationControllerSpec
       val apiIdentifier = subscribesTo.asIdentifier(version)
 
       "succeed with a 200 (ok) when applications are found" in new Setup {
-        val standardApplicationResponse: ApplicationResponse   = aNewApplicationResponse(access = Access.Standard())
-        val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Access.Privileged())
-        val ropcApplicationResponse: ApplicationResponse       = aNewApplicationResponse(access = Access.Ropc())
-        val response: List[ApplicationResponse]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
+        val standardApplicationResponse: Application   = aNewApplicationResponse(access = Access.Standard())
+        val privilegedApplicationResponse: Application = aNewApplicationResponse(access = Access.Privileged())
+        val ropcApplicationResponse: Application       = aNewApplicationResponse(access = Access.Ropc())
+        val response: List[Application]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
 
         when(underTest.applicationService.fetchAllBySubscription(apiIdentifier)).thenReturn(successful(response))
 

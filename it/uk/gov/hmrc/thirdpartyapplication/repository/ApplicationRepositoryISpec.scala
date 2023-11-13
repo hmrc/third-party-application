@@ -258,7 +258,7 @@ class ApplicationRepositoryISpec
       val applicationId = ApplicationId.random
       await(applicationRepository.save(anApplicationDataForTest(applicationId)))
 
-      val updateRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
+      val updateRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_))
       val updatedApplication = await(
         applicationRepository.updateRedirectUris(
           applicationId,

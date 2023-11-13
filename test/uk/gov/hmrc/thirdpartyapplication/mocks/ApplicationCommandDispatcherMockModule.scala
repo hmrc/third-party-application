@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -68,7 +69,7 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
             FixedClock.instant,
             Actors.AppCollaborator("someuser".toLaxEmail),
             List.empty,
-            List("new URI")
+            List(new RedirectUri("new URI"))
           ))
         val success: CommandHandler.Success = (applicationData, dummyEvents)
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(E.pure(success))

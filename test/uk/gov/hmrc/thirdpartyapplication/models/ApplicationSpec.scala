@@ -20,6 +20,12 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
+  CreateApplicationRequest,
+  CreateApplicationRequestV1,
+  CreateApplicationRequestV2,
+  StandardAccessDataToCopy
+}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, _}
@@ -58,33 +64,41 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
     }
   }
 
+  def createRequestV1(access: Access, environment: Environment) = {
+    val request: CreateApplicationRequest =
+      CreateApplicationRequestV1.create(
+        name = "an application",
+        access = access,
+        description = None,
+        environment = environment,
+        collaborators = Set("jim@example.com".admin()),
+        subscriptions = None
+      )
+
+    StoredApplication.create(
+      createApplicationRequest = request,
+      wso2ApplicationName = "wso2ApplicationName",
+      environmentToken = StoredToken(ClientId("clientId"), "accessToken"),
+      createdOn = now
+    )
+  }
+
   "Application from CreateApplicationRequest" should {
     def createRequestV2(access: StandardAccessDataToCopy, environment: Environment) = {
-      StoredApplication.create(
-        createApplicationRequest = CreateApplicationRequestV2(
+      val request: CreateApplicationRequest =
+        CreateApplicationRequestV2.create(
           name = "an application",
           access = access,
+          description = None,
           environment = environment,
           collaborators = Set("jim@example.com".admin()),
           upliftRequest = makeUpliftRequest(ApiIdentifier.random),
           requestedBy = "user@example.com",
           sandboxApplicationId = ApplicationId.random
-        ),
-        wso2ApplicationName = "wso2ApplicationName",
-        environmentToken = StoredToken(ClientId("clientId"), "accessToken"),
-        createdOn = now
-      )
-    }
+        )
 
-    def createRequestV1(access: Access, environment: Environment) = {
       StoredApplication.create(
-        createApplicationRequest = CreateApplicationRequestV1(
-          name = "an application",
-          access = access,
-          environment = environment,
-          collaborators = Set("jim@example.com".admin()),
-          subscriptions = None
-        ),
+        createApplicationRequest = request,
         wso2ApplicationName = "wso2ApplicationName",
         environmentToken = StoredToken(ClientId("clientId"), "accessToken"),
         createdOn = now

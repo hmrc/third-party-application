@@ -189,7 +189,7 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
   trait StandardFixture extends Fixture {
     val grantLengthInDays = 547
     when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](
-      ApplicationResponse(
+      Application(
         applicationId,
         ClientId("clientId"),
         "gatewayId",
@@ -210,7 +210,7 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
 
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
-        ApplicationResponse(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, now, Some(now), grantLengthInDays)
+        Application(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, now, Some(now), grantLengthInDays)
       when(mockApplicationService.fetch(applicationId)).thenReturn(
         OptionT.pure[Future](
           applicationResponse.copy(clientId = ClientId("privilegedClientId"), name = "privilegedName", access = Access.Privileged(scopes = Set("scope:privilegedScopeKey")))

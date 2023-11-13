@@ -23,8 +23,8 @@ import com.typesafe.config.ConfigFactory
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLengthConfig
 
 case class StoredApplication(
@@ -90,7 +90,7 @@ object StoredApplication {
     val checkInfo = createApplicationRequest match {
       case v1: CreateApplicationRequestV1 if (v1.anySubscriptions.nonEmpty) => Some(CheckInformation(apiSubscriptionsConfirmed = true))
       case v2: CreateApplicationRequestV2                                   => None
-      case _                                                                => None
+      case x: CreateApplicationRequestV1                                    => None
     }
 
     val applicationAccess = createApplicationRequest match {
@@ -98,6 +98,8 @@ object StoredApplication {
       case v2: CreateApplicationRequestV2 =>
         Access.Standard().copy(redirectUris = v2.access.redirectUris, overrides = v2.access.overrides, sellResellOrDistribute = Some(v2.upliftRequest.sellResellOrDistribute))
     }
+
+    println(checkInfo)
 
     StoredApplication(
       ApplicationId.random,

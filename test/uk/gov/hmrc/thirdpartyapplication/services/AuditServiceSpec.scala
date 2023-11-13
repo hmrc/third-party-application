@@ -33,6 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvents, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -412,7 +413,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
         instant,
         collaboratorActor,
         oldRedirectUris = List.empty,
-        newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
+        newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_))
       )
 
       val expectedDataEvent = DataEvent(
@@ -493,7 +494,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     val updatedApp = previousApp.copy(
       name = "new name",
       access = Access.Standard(
-        List("http://new-url.example.com", "http://new-url.example.com/other-redirect"),
+        List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_)),
         Some("http://new-url.example.com/terms-and-conditions"),
         Some("http://new-url.example.com/privacy-policy")
       )

@@ -40,7 +40,7 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, Collaborator, RateLimitTier, _}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -57,9 +57,27 @@ object ApplicationRepository {
     implicit val formatTermsOfUseAcceptance    = Json.format[TermsOfUseAcceptance]
     implicit val formatTermsOfUserAgreement    = Json.format[TermsOfUseAgreement]
     implicit val formatImportantSubmissionData = Json.format[ImportantSubmissionData]
-    implicit val formatStandard                = Json.format[Access.Standard]
-    implicit val formatPrivileged              = Json.format[Access.Privileged]
-    implicit val formatRopc                    = Json.format[Access.Ropc]
+
+    implicit val writesStandard = Json.writes[Access.Standard]
+
+    // Because the data in the db might be old and not a valid redirect URI we need this
+    // to use new to avoid the filter on RedirectUri.apply()
+    val convertToRedirectUri: List[String] => List[RedirectUri] = items =>
+      items.map(new RedirectUri(_))
+
+    import play.api.libs.functional.syntax._
+
+    implicit val readsStandard: Reads[Access.Standard] = (
+      ((JsPath \ "redirectUris").read[List[String]].map[List[RedirectUri]](convertToRedirectUri)) and
+        (JsPath \ "termsAndConditionsUrl").readNullable[String] and
+        (JsPath \ "privacyPolicyUrl").readNullable[String] and
+        (JsPath \ "overrides").read[Set[OverrideFlag]] and
+        (JsPath \ "sellResellOrDistribute").readNullable[SellResellOrDistribute] and
+        (JsPath \ "importantSubmissionData").readNullable[ImportantSubmissionData]
+    )(Access.Standard.apply _)
+
+    implicit val formatPrivileged = Json.format[Access.Privileged]
+    implicit val formatRopc       = Json.format[Access.Ropc]
 
     import uk.gov.hmrc.play.json.Union
 
@@ -76,7 +94,6 @@ object ApplicationRepository {
     implicit val formatEnvironmentToken  = Json.format[StoredToken]
     implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
-    import play.api.libs.functional.syntax._
     import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLengthConfig
 
     val applicationDataReads: Reads[StoredApplication] = (
@@ -800,7 +817,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
-  def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[String]) =
+  def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[RedirectUri]) =
     updateApplication(applicationId, Updates.set("access.redirectUris", Codecs.toBson(redirectUris)))
 
   def updateApplicationName(applicationId: ApplicationId, name: String): Future[StoredApplication] =

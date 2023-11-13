@@ -15,7 +15,7 @@ object AppDependencies {
     "com.github.t3hnar" %% "scala-bcrypt"                      % "4.1",
     "commons-validator"  % "commons-validator"                 % "1.7",
     "uk.gov.hmrc"       %% "internal-auth-client-play-28"      % "1.4.0",
-    "uk.gov.hmrc"       %% "api-platform-application-events"   % "0.33.0"
+    "uk.gov.hmrc"       %% "api-platform-application-events"   % "0.33.0-SNAPSHOT"
   )
 
   private lazy val testDeps = Seq(

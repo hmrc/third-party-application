@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.{QuestionnaireDAO, SubmissionsRepository}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.Application
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
@@ -145,7 +145,7 @@ class ApprovalsControllerISpec
       )
 
       result.status mustBe OK
-      val response = Json.parse(result.body).validate[ApplicationResponse].asOpt
+      val response = Json.parse(result.body).validate[Application].asOpt
       response must not be None
 
     }
@@ -163,7 +163,7 @@ class ApprovalsControllerISpec
         headers = List(CONTENT_TYPE -> "application/json")
       )
       result.status mustBe OK
-      val response = Json.parse(result.body).validate[ApplicationResponse].asOpt
+      val response = Json.parse(result.body).validate[Application].asOpt
       response must not be None
     }
 
@@ -174,7 +174,7 @@ class ApprovalsControllerISpec
       val requestBody          = """{"gatekeeperUserName":"Bob Hope"}"""
       val result               = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
       result.status mustBe OK
-      val response             = Json.parse(result.body).validate[ApplicationResponse].asOpt
+      val response             = Json.parse(result.body).validate[Application].asOpt
       response must not be None
 
     }

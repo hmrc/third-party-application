@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, GrantLength, RateLimitTier}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, GrantLength, RateLimitTier, RedirectUri}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocations, SubmissionId, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
@@ -637,8 +637,8 @@ class ApplicationCommandDispatcherSpec
     }
 
     "UpdateRedirectUris is received" should {
-      val oldUris = List("uri1", "uri2")
-      val newUris = List("uri3", "uri4")
+      val oldUris = List("https://uri1/a", "https://uri2/a").map(RedirectUri.unsafeApply(_))
+      val newUris = List("https://uri3/a", "https://uri4/a").map(RedirectUri.unsafeApply(_))
       val cmd     = UpdateRedirectUris(otherAdminAsActor, oldUris, newUris, timestamp)
       val evt     = ApplicationEvents.RedirectUrisUpdatedV2(
         EventId.random,

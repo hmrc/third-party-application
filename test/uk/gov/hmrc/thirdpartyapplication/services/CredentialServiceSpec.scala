@@ -119,7 +119,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
     "return application details when credentials match" in new Setup {
 
       val updatedApplicationData      = applicationData.copy(lastAccess = Some(now))
-      val expectedApplicationResponse = ApplicationResponse(data = updatedApplicationData)
+      val expectedApplicationResponse = Application(data = updatedApplicationData)
       val clientId                    = applicationData.tokens.production.clientId
       val secret                      = UUID.randomUUID().toString
       val matchingClientSecret        = applicationData.tokens.production.clientSecrets.head
@@ -136,7 +136,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
     "return application details and write log if updating usage date fails" in new Setup {
 
-      val expectedApplicationResponse = ApplicationResponse(data = applicationData)
+      val expectedApplicationResponse = Application(data = applicationData)
       val clientId                    = applicationData.tokens.production.clientId
       val secret                      = UUID.randomUUID().toString
       val matchingClientSecret        = applicationData.tokens.production.clientSecrets.head

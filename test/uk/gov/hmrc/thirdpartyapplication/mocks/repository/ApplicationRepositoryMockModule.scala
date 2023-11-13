@@ -27,7 +27,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.http.NotFoundException
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId, _}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, Collaborator, IpAllowlist, RateLimitTier, State}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocation, SubmissionId, TermsAndConditionsLocation, TermsOfUseAcceptance}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredToken, _}
@@ -341,11 +341,11 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object UpdateRedirectUris {
 
-      def thenReturn(redirectUris: List[String])(updatedApplication: StoredApplication) = {
+      def thenReturn(redirectUris: List[RedirectUri])(updatedApplication: StoredApplication) = {
         when(aMock.updateRedirectUris(eqTo(updatedApplication.id), eqTo(redirectUris))).thenReturn(successful(updatedApplication))
       }
 
-      def verifyCalledWith(applicationId: ApplicationId, redirectUris: List[String]) =
+      def verifyCalledWith(applicationId: ApplicationId, redirectUris: List[RedirectUri]) =
         ApplicationRepoMock.verify.updateRedirectUris(eqTo(applicationId), eqTo(redirectUris))
     }
 

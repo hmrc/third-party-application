@@ -24,6 +24,7 @@ import cats.data._
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -36,16 +37,16 @@ class ChangeRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
   import CommandHandler._
   import cats.syntax.validated._
 
-  private def validate(app: StoredApplication, cmd: ChangeRedirectUri): Validated[Failures, List[String]] = {
+  private def validate(app: StoredApplication, cmd: ChangeRedirectUri): Validated[Failures, List[RedirectUri]] = {
     val existingUris = app.access match {
-      case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris
+      case Access.Standard(redirectUris, _, _, _, _, _) => println(redirectUris); redirectUris
       case _                                            => List.empty
     }
 
     val standardAccess = isStandardAccess(app)
     val uriExists      =
       if (standardAccess.isValid)
-        cond(existingUris.contains(cmd.redirectUriToReplace.uri), CommandFailures.GenericFailure(s"RedirectUri ${cmd.redirectUriToReplace.uri} does not exist"))
+        cond(existingUris.contains(cmd.redirectUriToReplace), CommandFailures.GenericFailure(s"RedirectUri ${cmd.redirectUriToReplace} does not exist"))
       else
         ().validNel
 
@@ -72,8 +73,11 @@ class ChangeRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
   def process(app: StoredApplication, cmd: ChangeRedirectUri): AppCmdResultT = {
     for {
       existingUris   <- E.fromEither(validate(app, cmd).toEither)
-      urisAfterChange = existingUris.map(uriVal => if (uriVal == cmd.redirectUriToReplace.uri) cmd.redirectUri.uri else uriVal)
+      _               = println("here")
+      urisAfterChange = existingUris.map(uriVal => if (uriVal == cmd.redirectUriToReplace) cmd.redirectUri else uriVal)
+      _               = println("here2")
       savedApp       <- E.liftF(applicationRepository.updateRedirectUris(app.id, urisAfterChange))
+      _               = println("here3")
       events          = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }

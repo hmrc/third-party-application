@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxE
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.Application
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -42,7 +42,7 @@ object ApplicationCommandController {
     implicit val readsEitherAsDispatchRequest: Reads[DispatchRequest] = readsDispatchRequest orElse readsCommandAsDispatchRequest
   }
 
-  case class DispatchResult(applicationResponse: ApplicationResponse, events: List[ApplicationEvent])
+  case class DispatchResult(applicationResponse: Application, events: List[ApplicationEvent])
 
   object DispatchResult {
     import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
@@ -74,7 +74,7 @@ class ApplicationCommandController @Inject() (
 
   def update(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     def passes(result: CommandHandler.Success) = {
-      Ok(Json.toJson(ApplicationResponse(data = result._1)))
+      Ok(Json.toJson(Application(data = result._1)))
     }
 
     withJsonBody[ApplicationCommand] { command =>
@@ -85,7 +85,7 @@ class ApplicationCommandController @Inject() (
 
   def dispatch(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     def passes(result: CommandHandler.Success) = {
-      val output = DispatchResult(ApplicationResponse(data = result._1), result._2.toList)
+      val output = DispatchResult(Application(data = result._1), result._2.toList)
       Ok(Json.toJson(output))
     }
 

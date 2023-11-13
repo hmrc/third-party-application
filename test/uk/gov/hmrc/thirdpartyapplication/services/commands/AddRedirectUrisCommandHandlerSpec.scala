@@ -35,7 +35,7 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val applicationId    = ApplicationId.random
     val untouchedUri     = RedirectUri.unsafeApply("https://leavemebe.example.com")
     val toAddRedirectUri = RedirectUri.unsafeApply("https://new-url.example.com")
-    val originalUris     = List(untouchedUri.uri)
+    val originalUris     = List(RedirectUri.unsafeApply(untouchedUri.uri))
     val nonExistantUri   = RedirectUri.unsafeApply("https://otherurl.com/not-there")
 
     val principalApp: StoredApplication = anApplicationData(applicationId, access = Access.Standard(originalUris), collaborators = devAndAdminCollaborators)
@@ -67,10 +67,10 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
   "AddRedirectUrisCommandHandler" when {
     "given a principal application" should {
       "succeed when application is standardAccess" in new Setup {
-        val fourUris        = (1 to 4).map(i => s"https:/example$i.com").toList
+        val fourUris        = (1 to 4).map(i => RedirectUri.unsafeApply(s"https:/example$i.com")).toList
         val appWithFourUris = anApplicationData(applicationId, access = Access.Standard(fourUris), collaborators = devAndAdminCollaborators)
 
-        val expectedUrisAfterChange = fourUris :+ toAddRedirectUri.uri
+        val expectedUrisAfterChange = fourUris :+ toAddRedirectUri
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(appWithFourUris) // Dont need to test the repo here so just return any app
 
         val result = await(underTest.process(appWithFourUris, cmdAsAdmin).value).value
@@ -85,7 +85,7 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
       }
 
       "fail when we try to add a sixth URI" in new Setup {
-        val fiveUris        = (1 to 5).map(i => s"https:/example$i.com").toList
+        val fiveUris        = (1 to 5).map(i => RedirectUri.unsafeApply(s"https:/example$i.com")).toList
         val appWithFiveUris = anApplicationData(applicationId, access = Access.Standard(fiveUris), collaborators = devAndAdminCollaborators)
         checkFailsWith("Can have at most 5 redirect URIs") {
           val brokenCmd = cmdAsAdmin
@@ -104,7 +104,7 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     "given a subordinate application" should {
       "succeed for a developer" in new Setup {
-        val expectedUrisAfterChange = List(untouchedUri.uri, toAddRedirectUri.uri)
+        val expectedUrisAfterChange = List(untouchedUri, toAddRedirectUri)
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(subordinateApp) // Dont need to test the repo here so just return any app
 
         val result = await(underTest.process(subordinateApp, cmdAsDev).value).value

@@ -24,6 +24,7 @@ import cats.data._
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -35,7 +36,7 @@ class DeleteRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
 
   import CommandHandler._
 
-  private def validate(app: StoredApplication, cmd: DeleteRedirectUri): Validated[Failures, List[String]] = {
+  private def validate(app: StoredApplication, cmd: DeleteRedirectUri): Validated[Failures, List[RedirectUri]] = {
     val existingRedirects = app.access match {
       case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris
       case _                                            => List.empty
@@ -45,8 +46,8 @@ class DeleteRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
     val hasRequestedUri =
       if (standardAccess.isValid)
         cond(
-          (existingRedirects.contains(cmd.redirectUriToDelete.uri)),
-          CommandFailures.GenericFailure(s"RedirectUri ${cmd.redirectUriToDelete.uri} does not exist")
+          (existingRedirects.contains(cmd.redirectUriToDelete)),
+          CommandFailures.GenericFailure(s"RedirectUri ${cmd.redirectUriToDelete} does not exist")
         )
       else
         ().validNel
@@ -73,7 +74,7 @@ class DeleteRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
   def process(app: StoredApplication, cmd: DeleteRedirectUri): AppCmdResultT = {
     for {
       existingUris   <- E.fromEither(validate(app, cmd).toEither)
-      urisAfterChange = existingUris.filterNot(_ == cmd.redirectUriToDelete.uri)
+      urisAfterChange = existingUris.filterNot(_ == cmd.redirectUriToDelete)
       savedApp       <- E.liftF(applicationRepository.updateRedirectUris(app.id, urisAfterChange))
       events          = asEvents(savedApp, cmd)
     } yield (savedApp, events)

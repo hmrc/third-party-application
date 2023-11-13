@@ -38,6 +38,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
 
 class ApplicationRepositorySerialisationISpec
     extends ServerBaseISpec
@@ -161,6 +162,26 @@ class ApplicationRepositorySerialisationISpec
       case Some(application) => {
         application.id mustBe applicationId
         application.allowAutoDelete mustBe true
+      }
+      case None              => fail()
+    }
+  }
+
+  "create application with invalid redirect UR in db and test we can read it back " in new Setup {
+    val invalidUri        = new RedirectUri("bobbins") // Using new to avoid validation of the apply method
+    val data              = applicationData.copy(access = Access.Standard().copy(redirectUris = List(invalidUri)))
+    val rawJson: JsObject = applicationToMongoJson(data, Some(true))
+    saveApplicationAsMongoJson(rawJson)
+    val result            = await(applicationRepository.fetch(applicationId))
+
+    result match {
+      case Some(application) => {
+        application.id mustBe applicationId
+        application.allowAutoDelete mustBe true
+        application.access match {
+          case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris.head mustBe invalidUri
+          case _                                            => fail()
+        }
       }
       case None              => fail()
     }

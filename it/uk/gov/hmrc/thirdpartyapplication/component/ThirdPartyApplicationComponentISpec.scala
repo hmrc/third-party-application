@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.component
 
-import play.api.Application
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
 import play.api.inject.bind
@@ -27,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models._
+
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
@@ -45,6 +44,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models._
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
@@ -63,7 +63,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
     "mongodb.uri"                                                -> "mongodb://localhost:27017/third-party-application-test"
   )
 
-  override def fakeApplication(): Application = {
+  override def fakeApplication(): play.api.Application = {
     GuiceApplicationBuilder()
       .configure(configOverrides + ("metrics.jvm" -> false))
       .overrides(bind[CredentialGenerator].to[DummyCredentialGenerator])
@@ -89,7 +89,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
   val version                      = "1.0".asVersion
 
   val standardAccess   = Access.Standard(
-    redirectUris = List("http://example.com/redirect"),
+    redirectUris = List(RedirectUri.unsafeApply("https://example.com/redirect")),
     termsAndConditionsUrl = Some("http://example.com/terms"),
     privacyPolicyUrl = Some("http://example.com/privacy"),
     overrides = Set.empty
@@ -116,12 +116,12 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       emptyApplicationRepository()
 
       Given("A third party application")
-      val application1: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
+      val application1: Application = createApplication(awsApiGatewayApplicationName)
 
       When("We fetch all applications")
       val fetchResponse = Http(s"$serviceUrl/application").asString
       fetchResponse.code shouldBe OK
-      val result        = Json.parse(fetchResponse.body).as[Seq[ApplicationResponse]]
+      val result        = Json.parse(fetchResponse.body).as[Seq[Application]]
 
       Then("The application is returned in the result")
       result.exists(r => r.id == application1.id) shouldBe true
@@ -135,12 +135,12 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       emptyApplicationRepository()
 
       Given("A third party application")
-      val application: ApplicationResponse = createApplication()
+      val application: Application = createApplication()
 
       When("We fetch the application by its ID")
       val fetchResponse = Http(s"$serviceUrl/application/${application.id.value}").asString
       fetchResponse.code shouldBe OK
-      val result        = Json.parse(fetchResponse.body).as[ApplicationResponse]
+      val result        = Json.parse(fetchResponse.body).as[Application]
 
       Then("The application is returned")
       result shouldBe application
@@ -151,13 +151,13 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       emptyApplicationRepository()
 
       Given("A collaborator has access to two third party applications")
-      val application1: ApplicationResponse = createApplication(applicationName1)
-      val application2: ApplicationResponse = createApplication(applicationName2)
+      val application1: Application = createApplication(applicationName1)
+      val application2: Application = createApplication(applicationName2)
 
       When("We fetch the application by the collaborator email address")
       val fetchResponse = Http(s"$serviceUrl/application?emailAddress=$emailAddress").asString
       fetchResponse.code shouldBe OK
-      val result        = Json.parse(fetchResponse.body).as[Seq[ApplicationResponse]]
+      val result        = Json.parse(fetchResponse.body).as[Seq[Application]]
 
       Then("The applications are returned")
       result should contain theSameElementsAs Seq(application1, application2)
@@ -171,8 +171,8 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val appName = "appName"
 
       Given("A third party application")
-      val application: ApplicationResponse = createApplication(appName)
-      val cmd                              =
+      val application: Application = createApplication(appName)
+      val cmd                      =
         ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, FixedClock.now)
 
       sendApplicationCommand(cmd, application)
@@ -212,7 +212,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       emptyApplicationRepository()
 
       Given("A third party application")
-      val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
+      val application: Application = createApplication(awsApiGatewayApplicationName)
 
       emailStub.willPostEmailNotification()
 
@@ -235,7 +235,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       validationResponse.code shouldBe OK
 
       And("The application is returned")
-      val returnedApplication = Json.parse(validationResponse.body).as[ApplicationResponse]
+      val returnedApplication = Json.parse(validationResponse.body).as[Application]
       returnedApplication shouldBe application.copy(lastAccess = returnedApplication.lastAccess)
     }
 
@@ -259,9 +259,9 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       emptyApplicationRepository()
 
       Given("A third party application")
-      val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
-      val createdApplication               = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
-      val credentials                      = createdApplication.tokens.production
+      val application: Application = createApplication(awsApiGatewayApplicationName)
+      val createdApplication       = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
+      val credentials              = createdApplication.tokens.production
 
       When("We attempt to validate the credentials")
       val requestBody        = validationRequest(credentials.clientId, "bar")
@@ -424,7 +424,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       When("I request to update the application")
       val newApplicationName           = "My Renamed Application"
-      val updatedRedirectUris          = List("http://example.com/redirect2", "http://example.com/redirect3")
+      val updatedRedirectUris          = List("https://example.com/redirect2", "https://example.com/redirect3").map(RedirectUri.unsafeApply(_))
       val updatedTermsAndConditionsUrl = Some("http://example.com/terms2")
       val updatedPrivacyPolicyUrl      = Some("http://example.com/privacy2")
       val updatedAccess                = Access.Standard(
@@ -654,7 +654,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       emptyApplicationRepository()
 
       Given("A third party application")
-      val application: ApplicationResponse = createApplication()
+      val application: Application = createApplication()
       application.rateLimitTier shouldBe RateLimitTier.BRONZE
 
       Given("I have updated the rate limit to GOLD")
@@ -712,21 +712,21 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
     }
   }
 
-  private def fetchApplication(id: ApplicationId): ApplicationResponse = {
+  private def fetchApplication(id: ApplicationId): Application = {
     val fetchedResponse = Http(s"$serviceUrl/application/${id.value.toString}").asString
     fetchedResponse.code shouldBe OK
-    Json.parse(fetchedResponse.body).as[ApplicationResponse]
+    Json.parse(fetchedResponse.body).as[Application]
   }
 
   private def emptyApplicationRepository() = {
     ready(applicationRepository.collection.drop().toFuture(), timeout)
   }
 
-  private def createApplication(appName: String = applicationName1, access: Access = standardAccess): ApplicationResponse = {
+  private def createApplication(appName: String = applicationName1, access: Access = standardAccess): Application = {
     awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
     val createdResponse = postData("/application", applicationRequest(appName, access))
     createdResponse.code shouldBe CREATED
-    Json.parse(createdResponse.body).as[ApplicationResponse]
+    Json.parse(createdResponse.body).as[Application]
   }
 
   private def subscriptionExists(applicationId: ApplicationId, apiContext: ApiContext, apiVersion: ApiVersionNbr) = {
@@ -743,7 +743,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       .asString
   }
 
-  def sendApplicationCommand(cmd: ApplicationCommand, application: ApplicationResponse): HttpResponse[String] = {
+  def sendApplicationCommand(cmd: ApplicationCommand, application: Application): HttpResponse[String] = {
     val request         = DispatchRequest(cmd, Set.empty)
     implicit val writer = Json.writes[DispatchRequest]
     postData(s"/application/${application.id.value}/dispatch", Json.toJson(request).toString(), "PATCH")

@@ -25,12 +25,16 @@ package object binders {
 
   implicit def submissionIdPathBinder(implicit textBinder: PathBindable[String]): PathBindable[SubmissionId] = new PathBindable[SubmissionId] {
 
+    private def submissionIdFromString(text: String): Either[String, SubmissionId] = {
+      SubmissionId.apply(text).toRight(s"Cannot accept $text as SubmissionId")
+    }
+
     override def bind(key: String, value: String): Either[String, SubmissionId] = {
-      textBinder.bind(key, value).map(SubmissionId(_))
+      textBinder.bind(key, value).flatMap(submissionIdFromString(_))
     }
 
     override def unbind(key: String, submissionId: SubmissionId): String = {
-      submissionId.value
+      submissionId.value.toString()
     }
   }
 

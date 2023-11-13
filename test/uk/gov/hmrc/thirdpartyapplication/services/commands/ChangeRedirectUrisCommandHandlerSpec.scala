@@ -36,7 +36,7 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val untouchedUri                    = RedirectUri.unsafeApply("https://leavemebe.example.com")
     val toBeReplacedRedirectUri         = RedirectUri.unsafeApply("https://new-url.example.com")
     val replacementUri                  = RedirectUri.unsafeApply("https://new-url.example.com/other-redirect")
-    val originalUris                    = List(toBeReplacedRedirectUri.uri, untouchedUri.uri)
+    val originalUris                    = List(toBeReplacedRedirectUri, untouchedUri)
     val nonExistantUri                  = RedirectUri.unsafeApply("https://otherurl.com/not-there")
     val principalApp: StoredApplication = anApplicationData(applicationId, access = Access.Standard(originalUris), collaborators = devAndAdminCollaborators)
     val subordinateApp                  = principalApp.copy(environment = Environment.SANDBOX.toString())
@@ -68,7 +68,7 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
   "ChangeRedirectUrisCommandHandler" when {
     "given a principal application" should {
       "succeed when application is standardAccess" in new Setup {
-        val expectedUrisAfterChange = List(replacementUri.uri, untouchedUri.uri)
+        val expectedUrisAfterChange = List(replacementUri, untouchedUri)
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(principalApp) // Dont need to test the repo here so just return any app
 
         val result = await(underTest.process(principalApp, cmdAsAdmin).value).value
@@ -83,7 +83,7 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
       }
 
       "fail when we try to change non existant URI" in new Setup {
-        checkFailsWith(s"RedirectUri ${nonExistantUri.uri} does not exist") {
+        checkFailsWith(s"RedirectUri ${nonExistantUri} does not exist") {
           val brokenCmd = cmdAsAdmin.copy(redirectUriToReplace = nonExistantUri)
           underTest.process(principalApp, brokenCmd)
         }
@@ -100,7 +100,7 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     "given a subordinate application" should {
       "succeed for a developer" in new Setup {
-        val expectedUrisAfterChange = List(replacementUri.uri, untouchedUri.uri)
+        val expectedUrisAfterChange = List(replacementUri, untouchedUri)
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(subordinateApp) // Dont need to test the repo here so just return any app
 
         val result = await(underTest.process(subordinateApp, cmdAsDev).value).value

@@ -24,6 +24,7 @@ import cats.data._
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -35,7 +36,7 @@ class AddRedirectUriCommandHandler @Inject() (applicationRepository: Application
 
   import CommandHandler._
 
-  private def validate(app: StoredApplication, cmd: AddRedirectUri): Validated[Failures, List[String]] = {
+  private def validate(app: StoredApplication, cmd: AddRedirectUri): Validated[Failures, List[RedirectUri]] = {
     val existingRedirects = app.access match {
       case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris
       case _                                            => List.empty
@@ -65,7 +66,7 @@ class AddRedirectUriCommandHandler @Inject() (applicationRepository: Application
   def process(app: StoredApplication, cmd: AddRedirectUri): AppCmdResultT = {
     for {
       existingUris   <- E.fromEither(validate(app, cmd).toEither)
-      urisAfterChange = existingUris :+ cmd.redirectUriToAdd.uri
+      urisAfterChange = existingUris :+ cmd.redirectUriToAdd
       savedApp       <- E.liftF(applicationRepository.updateRedirectUris(app.id, urisAfterChange))
       events          = asEvents(savedApp, cmd)
     } yield (savedApp, events)

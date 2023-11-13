@@ -676,6 +676,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   private def anAppResponse(appId: ApplicationId) = {
     val grantLengthInDays = 547
-    new ApplicationResponse(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, now, Some(now), grantLengthInDays)
+    new Application(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, now, Some(now), grantLengthInDays)
   }
 }

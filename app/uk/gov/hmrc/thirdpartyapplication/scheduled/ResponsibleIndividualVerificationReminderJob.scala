@@ -36,7 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.Re
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, HasSucceeded}
+import uk.gov.hmrc.thirdpartyapplication.models.{Application, HasSucceeded}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 @Singleton
@@ -91,18 +91,18 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
     } yield HasSucceeded).value
   }
 
-  private def getResponsibleIndividual(app: ApplicationResponse): Option[ResponsibleIndividual] = {
+  private def getResponsibleIndividual(app: Application): Option[ResponsibleIndividual] = {
     app.access match {
       case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => Some(importantSubmissionData.responsibleIndividual)
       case _                                                             => None
     }
   }
 
-  private def getRequesterName(app: ApplicationResponse): Option[String] = {
+  private def getRequesterName(app: Application): Option[String] = {
     app.state.requestedByName
   }
 
-  private def getRequesterEmail(app: ApplicationResponse): Option[LaxEmailAddress] = {
+  private def getRequesterEmail(app: Application): Option[LaxEmailAddress] = {
     app.state.requestedByEmailAddress.map(LaxEmailAddress(_)) // This should be an email address for these operations but this is not provable
   }
 }

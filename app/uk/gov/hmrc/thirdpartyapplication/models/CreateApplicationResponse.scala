@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[CreateApplicationResponse.TotpSecret] = None)
+case class CreateApplicationResponse(application: Application, totp: Option[CreateApplicationResponse.TotpSecret] = None)
 
 object CreateApplicationResponse {
   case class TotpSecret(production: String)

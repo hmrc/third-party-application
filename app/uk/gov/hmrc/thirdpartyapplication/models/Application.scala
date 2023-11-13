@@ -23,7 +23,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
-case class ApplicationResponse(
+case class Application(
     id: ApplicationId,
     clientId: ClientId,
     gatewayId: String,
@@ -35,7 +35,7 @@ case class ApplicationResponse(
     lastAccess: Option[LocalDateTime],
     grantLength: Int,
     lastAccessTokenUsage: Option[LocalDateTime] = None, // API-4376: Temporary inclusion whilst Server Token functionality is retired
-    redirectUris: List[String] = List.empty,
+    redirectUris: List[RedirectUri] = List.empty,
     termsAndConditionsUrl: Option[String] = None,
     privacyPolicyUrl: Option[String] = None,
     access: Access = Access.Standard(),
@@ -48,14 +48,14 @@ case class ApplicationResponse(
     moreApplication: MoreApplication = MoreApplication(true)
   )
 
-object ApplicationResponse {
+object Application {
 
   def allowAutoDelete(data: StoredApplication): MoreApplication = Option(data.allowAutoDelete) match {
     case Some(allowAutoDeleteFlag: Boolean) => MoreApplication(allowAutoDeleteFlag)
     case _                                  => MoreApplication(false)
   }
 
-  def redirectUris(data: StoredApplication): List[String] = data.access match {
+  def redirectUris(data: StoredApplication): List[RedirectUri] = data.access match {
     case a: Access.Standard => a.redirectUris
     case _                  => List.empty
   }
@@ -70,8 +70,8 @@ object ApplicationResponse {
     case _                  => None
   }
 
-  def apply(data: StoredApplication): ApplicationResponse = {
-    ApplicationResponse(
+  def apply(data: StoredApplication): Application = {
+    Application(
       data.id,
       data.tokens.production.clientId,
       data.wso2ApplicationName,

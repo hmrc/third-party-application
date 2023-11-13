@@ -143,7 +143,7 @@ class GatekeeperServiceSpec
 
       val result = await(underTest.fetchAppWithHistory(appId))
 
-      result shouldBe ApplicationWithHistoryResponse(ApplicationResponse(data = app1), history.map(StateHistoryResponse.from))
+      result shouldBe ApplicationWithHistoryResponse(Application(data = app1), history.map(StateHistoryResponse.from))
     }
 
     "throw not found exception" in new Setup {

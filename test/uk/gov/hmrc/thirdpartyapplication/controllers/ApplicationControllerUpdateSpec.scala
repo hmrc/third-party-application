@@ -33,7 +33,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, RedirectUri}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -44,7 +44,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, _}
+import uk.gov.hmrc.thirdpartyapplication.models.{Application, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -124,7 +124,8 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
     "dev@example.com".admin()
   )
 
-  private val standardAccess   = Access.Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
+  private val standardAccess   =
+    Access.Standard(List("https://example.com/redirect").map(RedirectUri.unsafeApply(_)), Some("https://example.com/terms"), Some("https://example.com/privacy"))
   private val privilegedAccess = Access.Privileged(scopes = Set("scope1"))
   private val ropcAccess       = Access.Ropc()
 
@@ -178,7 +179,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
 
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
     val grantLengthInDays = 547
-    new ApplicationResponse(
+    new Application(
       ApplicationId.random,
       ClientId("clientId"),
       "gatewayId",
