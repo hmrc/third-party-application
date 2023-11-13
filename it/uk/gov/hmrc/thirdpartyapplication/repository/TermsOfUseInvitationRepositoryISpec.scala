@@ -25,6 +25,7 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.thirdpartyapplication.models.{EmailSent, TermsOfUseSearch}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
@@ -35,6 +36,7 @@ import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.ReminderEmailSent
 
 class TermsOfUseInvitationRepositoryISpec
     extends ServerBaseISpec
@@ -258,5 +260,67 @@ class TermsOfUseInvitationRepositoryISpec
 
       await(termsOfUseInvitationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 0
     }
+  }
+
+  "search" should {
+
+    val applicationId1 = ApplicationId.random
+    val applicationId2 = ApplicationId.random
+    val applicationId3 = ApplicationId.random
+    val applicationId4 = ApplicationId.random
+    val applicationId5 = ApplicationId.random
+    val startDate      = Instant.parse("2023-06-01T12:01:02.000Z")
+    val dueBy          = startDate.plus(21, ChronoUnit.DAYS)
+
+    val touInvite1 = TermsOfUseInvitation(applicationId1, startDate, startDate, dueBy, None, EMAIL_SENT)
+    val touInvite2 = TermsOfUseInvitation(applicationId2, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT)
+    val touInvite3 = TermsOfUseInvitation(applicationId3, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT)
+    val touInvite4 = TermsOfUseInvitation(applicationId4, startDate, startDate, dueBy, None, FAILED)
+    val touInvite5 = TermsOfUseInvitation(applicationId5, startDate, startDate, dueBy, None, TERMS_OF_USE_V2)
+
+    "return expected result of 1 for email sent status search" in {
+      await(termsOfUseInvitationRepository.create(touInvite1))
+      await(termsOfUseInvitationRepository.create(touInvite2))
+      await(termsOfUseInvitationRepository.create(touInvite3))
+      await(termsOfUseInvitationRepository.create(touInvite4))
+      await(termsOfUseInvitationRepository.create(touInvite5))
+
+      val filters = List(EmailSent)
+      val searchCriteria = TermsOfUseSearch(filters)
+      val result    = await(termsOfUseInvitationRepository.searchTermsOfUseInvitations(searchCriteria))
+
+      result.size mustBe 1
+      result mustBe List(touInvite1)
+    }
+
+    "return expected result of 3 for email sent & reminder email sent status search" in {
+      await(termsOfUseInvitationRepository.create(touInvite1))
+      await(termsOfUseInvitationRepository.create(touInvite2))
+      await(termsOfUseInvitationRepository.create(touInvite3))
+      await(termsOfUseInvitationRepository.create(touInvite4))
+      await(termsOfUseInvitationRepository.create(touInvite5))
+
+      val filters = List(EmailSent, ReminderEmailSent)
+      val searchCriteria = TermsOfUseSearch(filters)
+      val result    = await(termsOfUseInvitationRepository.searchTermsOfUseInvitations(searchCriteria))
+
+      result.size mustBe 3
+      result mustBe List(touInvite1, touInvite2, touInvite3)
+    }
+
+    "return expected result of 5 for all status search" in {
+      await(termsOfUseInvitationRepository.create(touInvite1))
+      await(termsOfUseInvitationRepository.create(touInvite2))
+      await(termsOfUseInvitationRepository.create(touInvite3))
+      await(termsOfUseInvitationRepository.create(touInvite4))
+      await(termsOfUseInvitationRepository.create(touInvite5))
+
+      val filters = List.empty
+      val searchCriteria = TermsOfUseSearch(filters)
+      val result    = await(termsOfUseInvitationRepository.searchTermsOfUseInvitations(searchCriteria))
+
+      result.size mustBe 5
+      result mustBe List(touInvite1, touInvite2, touInvite3, touInvite4, touInvite5)
+    }    
   }
 }

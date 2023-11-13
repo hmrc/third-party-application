@@ -22,6 +22,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
+import org.mongodb.scala.bson.Document
+import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
@@ -32,7 +34,8 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseSearch, TermsOfUseSearchFilter, TermsOfUseStatusFilter}
+import uk.gov.hmrc.thirdpartyapplication.models.{EmailSent, ReminderEmailSent, Overdue, Warnings, Failed, TermsOfUseV2WithWarnings, TermsOfUseV2}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{TermsOfUseInvitationState, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 
@@ -148,5 +151,38 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
     )
       .toFuture()
       .map(_ => HasSucceeded)
+  }
+
+  def searchTermsOfUseInvitations(searchCriteria: TermsOfUseSearch): Future[Seq[TermsOfUseInvitation]] = {
+    val statusFilters = convertFilterToStatusQueryClause(searchCriteria.filters)
+    collection.aggregate(Seq(filter(statusFilters))).toFuture()
+  }
+
+  private def convertFilterToStatusQueryClause(filters: List[TermsOfUseSearchFilter]): Bson = {
+
+    def statusMatch(states: TermsOfUseInvitationState*): Bson = {
+      val bsonStates = states.map(s => Codecs.toBson(s))
+      in("status", bsonStates: _*)
+    }
+
+    def getFilterState(filter: TermsOfUseStatusFilter): TermsOfUseInvitationState = {
+      filter match {
+        case EmailSent                => EMAIL_SENT
+        case ReminderEmailSent        => REMINDER_EMAIL_SENT
+        case Overdue                  => OVERDUE
+        case Warnings                 => WARNINGS
+        case Failed                   => FAILED
+        case TermsOfUseV2WithWarnings => TERMS_OF_USE_V2_WITH_WARNINGS
+        case TermsOfUseV2             => TERMS_OF_USE_V2
+      }
+    }
+
+    val statusFilters = filters.collect { case sf: TermsOfUseStatusFilter => sf }
+    if (statusFilters.size == 0) {
+      // If no filters then 
+      Document()
+    } else {
+      statusMatch(statusFilters.map(sf => getFilterState(sf)): _*)
+    }
   }
 }
