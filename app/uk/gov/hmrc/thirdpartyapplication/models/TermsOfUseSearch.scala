@@ -24,6 +24,30 @@ final case class TermsOfUseSearch(
     sort: TermsOfUseSort = TermsOfUseNoSorting
 )
 
+object TermsOfUseSearch {
+
+  def fromQueryString(queryString: Map[String, Seq[String]]): TermsOfUseSearch = {
+
+    def filters = queryString
+      .map {
+        case (key, values) =>
+          key match {
+            case "search"                         => TermsOfUseTextSearchFilter(values.head)
+            case "status"                         => TermsOfUseStatusFilter(values)
+            case _                                => None // ignore anything that isn't a search filter
+          }
+      }
+      .flatten
+      .filter(searchFilter => searchFilter.isDefined)
+      .flatten
+      .toList
+
+    def searchText     = queryString.getOrElse("search", List.empty).headOption
+    new TermsOfUseSearch(filters, searchText)
+  }
+}
+
+
 sealed trait TermsOfUseSearchFilter
 
 sealed trait TermsOfUseStatusFilter   extends TermsOfUseSearchFilter
@@ -32,24 +56,37 @@ case object ReminderEmailSent         extends TermsOfUseStatusFilter
 case object Overdue                   extends TermsOfUseStatusFilter
 case object Warnings                  extends TermsOfUseStatusFilter
 case object Failed                    extends TermsOfUseStatusFilter
-case object TermsOfUseV2              extends TermsOfUseStatusFilter
 case object TermsOfUseV2WithWarnings  extends TermsOfUseStatusFilter
+case object TermsOfUseV2              extends TermsOfUseStatusFilter
+
+case object TermsOfUseStatusFilter extends TermsOfUseStatusFilter {
+
+  def apply(values: Seq[String]): Seq[Option[TermsOfUseStatusFilter]] = {
+    values.map(value => value match {
+      case "EMAIL_SENT"                    => Some(EmailSent)
+      case "REMINDER_EMAIL_SENT"           => Some(ReminderEmailSent)
+      case "OVERDUE"                       => Some(Overdue)
+      case "WARNINGS"                      => Some(Warnings)
+      case "FAILED"                        => Some(Failed)
+      case "TERMS_OF_USE_V2_WITH_WARNINGS" => Some(TermsOfUseV2WithWarnings)
+      case "TERMS_OF_USE_V2"               => Some(TermsOfUseV2)
+      case _                               => None
+    } )
+  }
+}
 
 sealed trait TermsOfUseTextSearchFilter     extends TermsOfUseSearchFilter
 case object TermsOfUseTextSearch extends TermsOfUseTextSearchFilter
 
 case object TermsOfUseTextSearchFilter extends TermsOfUseTextSearchFilter {
 
-  def apply(value: String): Option[TermsOfUseTextSearchFilter] = {
+  def apply(value: String): Seq[Option[TermsOfUseTextSearchFilter]] = {
     value match {
-      case _ if value.nonEmpty => Some(TermsOfUseTextSearch)
-      case _                   => None
+      case _ if value.nonEmpty => Seq(Some(TermsOfUseTextSearch))
+      case _                   => Seq(None)
     }
   }
 }
-
-// sealed trait TermsOfUseTextSearchFilter extends TermsOfUseSearchFilter
-// case object TermsOfUseTextSearch        extends TermsOfUseTextSearchFilter
 
 sealed trait TermsOfUseSort
 case object AppNameAscending          extends TermsOfUseSort

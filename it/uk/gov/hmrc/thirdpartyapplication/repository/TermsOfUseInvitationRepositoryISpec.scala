@@ -287,7 +287,7 @@ class TermsOfUseInvitationRepositoryISpec
 
       val filters = List(EmailSent)
       val searchCriteria = TermsOfUseSearch(filters)
-      val result    = await(termsOfUseInvitationRepository.searchTermsOfUseInvitations(searchCriteria))
+      val result    = await(termsOfUseInvitationRepository.search(searchCriteria))
 
       result.size mustBe 1
       result mustBe List(touInvite1)
@@ -302,7 +302,7 @@ class TermsOfUseInvitationRepositoryISpec
 
       val filters = List(EmailSent, ReminderEmailSent)
       val searchCriteria = TermsOfUseSearch(filters)
-      val result    = await(termsOfUseInvitationRepository.searchTermsOfUseInvitations(searchCriteria))
+      val result    = await(termsOfUseInvitationRepository.search(searchCriteria))
 
       result.size mustBe 3
       result mustBe List(touInvite1, touInvite2, touInvite3)
@@ -317,7 +317,7 @@ class TermsOfUseInvitationRepositoryISpec
 
       val filters = List.empty
       val searchCriteria = TermsOfUseSearch(filters)
-      val result    = await(termsOfUseInvitationRepository.searchTermsOfUseInvitations(searchCriteria))
+      val result    = await(termsOfUseInvitationRepository.search(searchCriteria))
 
       result.size mustBe 5
       result mustBe List(touInvite1, touInvite2, touInvite3, touInvite4, touInvite5)

@@ -95,4 +95,29 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
       responses.head.applicationId shouldBe applicationId
     }
   }
+
+  "search invitations" should {
+    "return terms of use invitations" in new Setup {
+      val invitations = List(
+        TermsOfUseInvitationResponse(
+          applicationId,
+          now,
+          now,
+          dueDate,
+          None,
+          EMAIL_SENT
+        )
+      )
+
+      TermsOfUseInvitationServiceMock.Search.thenReturn(invitations)
+
+      val result = underTest.searchInvitations()(FakeRequest("GET", "/terms-of-use/search?status=EMAIL_SENT&status=REMINDER_EMAIL_SENT"))
+
+      status(result) shouldBe OK
+
+      val responses = Json.fromJson[List[TermsOfUseInvitationResponse]](contentAsJson(result)).get
+      responses.size shouldBe 1
+      responses.head.applicationId shouldBe applicationId
+    }
+  }
 }

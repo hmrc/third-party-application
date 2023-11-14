@@ -55,6 +55,10 @@ trait TermsOfUseInvitationServiceMockModule extends MockitoSugar with ArgumentMa
       def thenReturn()                                   = when(aMock.updateResetBackToEmailSent(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
       def verifyCalledWith(applicationId: ApplicationId) = verify(aMock).updateResetBackToEmailSent(eqTo(applicationId))
     }
+
+    object Search {
+      def thenReturn(invitations: List[TermsOfUseInvitationResponse]) = when(aMock.search(*)).thenAnswer(successful(invitations))
+    }
   }
 
   object TermsOfUseInvitationServiceMock extends BaseTermsOfUseInvitationServiceMock {

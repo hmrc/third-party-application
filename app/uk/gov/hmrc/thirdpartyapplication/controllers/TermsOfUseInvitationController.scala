@@ -17,7 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.successful
 import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success, Try}
 
 import play.api.libs.json.Json.toJson
 import play.api.mvc.ControllerComponents
@@ -25,6 +27,8 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseSearch
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationDataService, TermsOfUseInvitationService}
 
 @Singleton
@@ -45,5 +49,12 @@ class TermsOfUseInvitationController @Inject() (
 
   def fetchInvitations() = Action.async { _ =>
     termsOfUseInvitationService.fetchInvitations().map(res => Ok(toJson(res)))
+  }
+
+  def searchInvitations() = Action.async { request =>
+    Try(TermsOfUseSearch.fromQueryString(request.queryString)) match {
+      case Success(search) => termsOfUseInvitationService.search(search).map(apps => Ok(toJson(apps))) recover recovery
+      case Failure(e)      => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, e.getMessage)))
+    }
   }
 }

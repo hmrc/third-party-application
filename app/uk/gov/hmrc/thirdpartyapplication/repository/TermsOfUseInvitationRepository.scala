@@ -153,7 +153,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
       .map(_ => HasSucceeded)
   }
 
-  def searchTermsOfUseInvitations(searchCriteria: TermsOfUseSearch): Future[Seq[TermsOfUseInvitation]] = {
+  def search(searchCriteria: TermsOfUseSearch): Future[Seq[TermsOfUseInvitation]] = {
     val statusFilters = convertFilterToStatusQueryClause(searchCriteria.filters)
     collection.aggregate(Seq(filter(statusFilters))).toFuture()
   }

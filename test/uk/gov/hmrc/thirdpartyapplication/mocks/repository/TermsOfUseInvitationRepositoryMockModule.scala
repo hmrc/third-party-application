@@ -78,6 +78,10 @@ trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with Argumen
     object Delete {
       def thenReturn() = when(aMock.delete(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
     }
+
+    object Search {
+      def thenReturn(invitations: List[TermsOfUseInvitation]) = when(aMock.search(*)).thenAnswer(successful(invitations))
+    }
   }
 
   object TermsOfUseInvitationRepositoryMock extends BaseTermsOfUseInvitationRepositoryMock {

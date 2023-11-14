@@ -30,6 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{EMAIL
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseSearch
 
 class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
 
@@ -127,4 +128,25 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
       TermsOfUseInvitationRepositoryMock.UpdateResetBackToEmailSent.verifyCalledWith(applicationId, newDueBy)
     }
   }
+
+  "search invitations" should {
+    "return an list of all invitations when invitations exist in the repository" in new Setup {
+      val invitations = List(invite)
+
+      TermsOfUseInvitationRepositoryMock.Search.thenReturn(invitations)
+
+      val result = await(underTest.search(TermsOfUseSearch()))
+
+      result.size shouldBe 1
+    }
+
+    "return empty list when no invitations are found in the repository" in new Setup {
+      TermsOfUseInvitationRepositoryMock.Search.thenReturn(List.empty)
+
+      val result = await(underTest.search(TermsOfUseSearch()))
+
+      result.size shouldBe 0
+    }
+  }
+
 }
