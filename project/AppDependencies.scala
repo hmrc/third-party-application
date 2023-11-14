@@ -23,8 +23,8 @@ object AppDependencies {
     "uk.gov.hmrc.mongo"     %% "hmrc-mongo-test-play-28"  % hmrcMongoVersion,
     "org.scalaj"            %% "scalaj-http"              % "2.4.2",
     "com.github.tomakehurst" % "wiremock-jre8-standalone" % "2.33.2",
-    "org.mockito"           %% "mockito-scala-scalatest"  % "1.17.4",
-    "org.scalatest"         %% "scalatest"                % "3.2.16",
+    "org.mockito"           %% "mockito-scala-scalatest"  % "1.17.29",
+    "org.scalatest"         %% "scalatest"                % "3.2.17",
     "com.vladsch.flexmark"   % "flexmark-all"             % "0.62.2"
   ).map(_ % "test, it")
 }
