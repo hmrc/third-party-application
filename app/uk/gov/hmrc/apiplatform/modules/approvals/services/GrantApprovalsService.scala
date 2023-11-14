@@ -79,7 +79,7 @@ class GrantApprovalsService @Inject() (
     import cats.instances.future.catsStdInstancesForFuture
 
     def logDone(app: ApplicationData, submission: Submission) =
-      logger.info(s"Granted-02: grant appId:${app.id} ${app.state.name} ${submission.status}")
+      logger.info(s"Granted-02: grant appId:${app.id} ${app.state.name} ${submission.status.getClass.getSimpleName}")
 
     val ET    = EitherTHelper.make[Result]
     val appId = originalApp.id
