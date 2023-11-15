@@ -31,8 +31,10 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse, TermsOfUseSearch}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData}
+import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseSearch}
+import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationResponse, TermsOfUseInvitationWithApplicationResponse}
 import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
 
 @Singleton
@@ -89,10 +91,10 @@ class TermsOfUseInvitationService @Inject() (
     termsOfUseRepository.updateResetBackToEmailSent(applicationId, newDueByDate)
   }
 
-  def search(searchCriteria: TermsOfUseSearch): Future[Seq[TermsOfUseInvitationResponse]] = {
+  def search(searchCriteria: TermsOfUseSearch): Future[Seq[TermsOfUseInvitationWithApplicationResponse]] = {
     for {
       invitesF   <- termsOfUseRepository.search(searchCriteria)
-      responsesF  = invitesF.map(invite => TermsOfUseInvitationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent, invite.status))
+      responsesF  = invitesF.map(invite => TermsOfUseInvitationWithApplicationResponse(invite.applicationId, invite.createdOn, invite.lastUpdated, invite.dueBy, invite.reminderSent, invite.status, invite.getApplicationName()))
     } yield responsesF
   }
 }

@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationResponse, TermsOfUseInvitationWithApplicationResponse}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
@@ -99,13 +99,14 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
   "search invitations" should {
     "return terms of use invitations" in new Setup {
       val invitations = List(
-        TermsOfUseInvitationResponse(
+        TermsOfUseInvitationWithApplicationResponse(
           applicationId,
           now,
           now,
           dueDate,
           None,
-          EMAIL_SENT
+          EMAIL_SENT,
+          "Petes App"
         )
       )
 

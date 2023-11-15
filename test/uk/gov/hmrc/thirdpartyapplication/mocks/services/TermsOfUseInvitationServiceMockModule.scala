@@ -22,8 +22,10 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData}
+import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded}
+import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationResponse, TermsOfUseInvitationWithApplicationResponse}
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
 
 trait TermsOfUseInvitationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -57,7 +59,7 @@ trait TermsOfUseInvitationServiceMockModule extends MockitoSugar with ArgumentMa
     }
 
     object Search {
-      def thenReturn(invitations: List[TermsOfUseInvitationResponse]) = when(aMock.search(*)).thenAnswer(successful(invitations))
+      def thenReturn(invitations: List[TermsOfUseInvitationWithApplicationResponse]) = when(aMock.search(*)).thenAnswer(successful(invitations))
     }
   }
 

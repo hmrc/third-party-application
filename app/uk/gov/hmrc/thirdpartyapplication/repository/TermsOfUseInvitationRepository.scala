@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import com.kenshoo.play.metrics.Metrics
 import java.time.temporal.ChronoUnit.MILLIS
 import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
+import org.bson.BsonValue
 import org.mongodb.scala.bson.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
@@ -37,10 +39,11 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseSearch, TermsOfUseSearchFilter, TermsOfUseStatusFilter}
 import uk.gov.hmrc.thirdpartyapplication.models.{EmailSent, ReminderEmailSent, Overdue, Warnings, Failed, TermsOfUseV2WithWarnings, TermsOfUseV2}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{TermsOfUseInvitationState, _}
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 @Singleton
-class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Clock)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](
+class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Clock, val metrics: Metrics)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](
       collectionName = "termsOfUseInvitation",
       mongoComponent = mongo,
       domainFormat = TermsOfUseInvitation.format,
@@ -66,7 +69,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
         )
       ),
       replaceIndexes = true
-    ) with ApplicationLogger {
+    ) with ApplicationLogger with MetricsTimer {
 
   def create(termsOfUseInvitation: TermsOfUseInvitation): Future[Option[TermsOfUseInvitation]] = {
     collection.find(equal("applicationId", Codecs.toBson(termsOfUseInvitation.applicationId))).headOption().flatMap {
@@ -153,9 +156,10 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
       .map(_ => HasSucceeded)
   }
 
-  def search(searchCriteria: TermsOfUseSearch): Future[Seq[TermsOfUseInvitation]] = {
+  def search(searchCriteria: TermsOfUseSearch): Future[Seq[TermsOfUseInvitationWithApplication]] = {
     val statusFilters = convertFilterToStatusQueryClause(searchCriteria.filters)
-    collection.aggregate(Seq(filter(statusFilters))).toFuture()
+    //collection.aggregate(Seq(filter(statusFilters))).toFuture()
+    runAggregationQuery(statusFilters)
   }
 
   private def convertFilterToStatusQueryClause(filters: List[TermsOfUseSearchFilter]): Bson = {
@@ -184,4 +188,41 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
     val statusFilters = filters.collect { case sf: TermsOfUseStatusFilter => sf }
     statusMatch(statusFilters.map(sf => getFilterState(sf)): _*)
   }
+
+  private def runAggregationQuery(filters: Bson) = {
+    timeFuture("Run Terms Of Use Aggregation Query", "termsofuse.repository.runAggregationQuery") {
+
+//      lazy val applicationsLookup: Bson  = lookup(from = "application", localField = "applicationId", foreignField = "id", as = "application")
+      // lazy val unwindSubscribedApis: Bson = unwind("$subscribedApis")
+
+//      val totalCount                                    = Aggregates.count("total")
+//      val applicationsLookupFilter                     = Seq(applicationsLookup)
+//      val subscriptionsLookupExtendedFilter             = if (hasSpecificApiSubscription) subscriptionsLookupFilter :+ unwindSubscribedApis else subscriptionsLookupFilter
+//      val filteredPipeline                             = applicationsLookupFilter ++ filters // :+ totalCount
+//      val paginatedFilteredAndSortedPipeline: Seq[Bson] = subscriptionsLookupExtendedFilter ++ filters ++ sort ++ pagination :+ applicationProjection
+
+//      val facets: Seq[Bson] = Seq(
+//        facet(
+//          model.Facet("totals", totalCount),
+//          model.Facet("matching", filteredPipelineCount: _*),
+//          model.Facet("applications", paginatedFilteredAndSortedPipeline: _*)
+//        )
+//      )
+
+//      collection.aggregate(filteredPipeline).toFuture()
+//        .head()
+//        .map(Codecs.fromBson[PaginatedApplicationData])
+//        .map(d => PaginatedApplicationData(d.applications, d.totals, d.matching))
+
+
+      collection.aggregate[BsonValue](
+        Seq(
+          filter(filters),
+          lookup(from = "application", localField = "applicationId", foreignField = "id", as = "applications"),
+        )
+      ).map(Codecs.fromBson[TermsOfUseInvitationWithApplication])
+       .toFuture()
+
+    }
+  }  
 }
