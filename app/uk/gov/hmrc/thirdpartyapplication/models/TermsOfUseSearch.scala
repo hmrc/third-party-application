@@ -59,7 +59,7 @@ case object Failed                    extends TermsOfUseStatusFilter
 case object TermsOfUseV2WithWarnings  extends TermsOfUseStatusFilter
 case object TermsOfUseV2              extends TermsOfUseStatusFilter
 
-case object TermsOfUseStatusFilter extends TermsOfUseStatusFilter {
+case object TermsOfUseStatusFilter {
 
   def apply(values: Seq[String]): Seq[Option[TermsOfUseStatusFilter]] = {
     values.map(value => value match {
@@ -75,10 +75,10 @@ case object TermsOfUseStatusFilter extends TermsOfUseStatusFilter {
   }
 }
 
-sealed trait TermsOfUseTextSearchFilter     extends TermsOfUseSearchFilter
-case object TermsOfUseTextSearch extends TermsOfUseTextSearchFilter
+sealed trait TermsOfUseTextSearchFilter extends TermsOfUseSearchFilter
+case object TermsOfUseTextSearch        extends TermsOfUseTextSearchFilter
 
-case object TermsOfUseTextSearchFilter extends TermsOfUseTextSearchFilter {
+case object TermsOfUseTextSearchFilter {
 
   def apply(value: String): Seq[Option[TermsOfUseTextSearchFilter]] = {
     value match {

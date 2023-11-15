@@ -161,8 +161,12 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
   private def convertFilterToStatusQueryClause(filters: List[TermsOfUseSearchFilter]): Bson = {
 
     def statusMatch(states: TermsOfUseInvitationState*): Bson = {
-      val bsonStates = states.map(s => Codecs.toBson(s))
-      in("status", bsonStates: _*)
+      if (states.size == 0) {
+        Document()
+      } else {
+        val bsonStates = states.map(s => Codecs.toBson(s))
+        in("status", bsonStates: _*)
+      }
     }
 
     def getFilterState(filter: TermsOfUseStatusFilter): TermsOfUseInvitationState = {
@@ -178,11 +182,6 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
     }
 
     val statusFilters = filters.collect { case sf: TermsOfUseStatusFilter => sf }
-    if (statusFilters.size == 0) {
-      // If no filters then 
-      Document()
-    } else {
-      statusMatch(statusFilters.map(sf => getFilterState(sf)): _*)
-    }
+    statusMatch(statusFilters.map(sf => getFilterState(sf)): _*)
   }
 }
