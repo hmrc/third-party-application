@@ -20,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
 import com.github.t3hnar.bcrypt._
+import org.mockito.Strictness
 
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
@@ -44,9 +45,9 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
   trait SetupWithoutHc extends AuditServiceMockModule with ApplicationCommandDispatcherMockModule {
 
     lazy val locked                    = false
-    val mockApplicationRepository      = mock[ApplicationRepository](withSettings.lenient())
-    val mockSubscriptionRepository     = mock[SubscriptionRepository](withSettings.lenient())
-    val mockApplicationCommandDispatch = mock[ApplicationCommandDispatcher](withSettings.lenient())
+    val mockApplicationRepository      = mock[ApplicationRepository](withSettings.strictness(Strictness.Lenient))
+    val mockSubscriptionRepository     = mock[SubscriptionRepository](withSettings.strictness(Strictness.Lenient))
+    val mockApplicationCommandDispatch = mock[ApplicationCommandDispatcher](withSettings.strictness(Strictness.Lenient))
     val response                       = mock[WSResponse]
 
     val underTest = new SubscriptionService(

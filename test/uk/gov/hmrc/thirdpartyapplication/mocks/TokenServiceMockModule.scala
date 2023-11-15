@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
 import org.mockito.verification.VerificationMode
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredToken
 import uk.gov.hmrc.thirdpartyapplication.services.TokenService
@@ -46,6 +46,6 @@ trait TokenServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
   }
 
   object TokenServiceMock extends BaseTokenServiceMock {
-    val aMock = mock[TokenService](withSettings.lenient())
+    val aMock = mock[TokenService](withSettings.strictness(Strictness.Lenient))
   }
 }

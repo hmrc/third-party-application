@@ -31,8 +31,7 @@ lazy val microservice = Project(appName, file("."))
     routesGenerator := InjectedRoutesGenerator,
     majorVersion    := 0,
     routesImport ++= Seq(
-      "uk.gov.hmrc.apiplatform.modules.submissions.controllers._",
-      "uk.gov.hmrc.apiplatform.modules.submissions.controllers.binders._",
+      "uk.gov.hmrc.apiplatform.modules.common.domain.models._",
       "uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._",
       "uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._",
       "uk.gov.hmrc.apiplatform.modules.submissions.domain.models._"

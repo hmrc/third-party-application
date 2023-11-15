@@ -20,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
 import com.github.t3hnar.bcrypt._
+import org.mockito.Strictness
 import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
@@ -88,7 +89,7 @@ class GatekeeperServiceSpec
       with StateHistoryRepositoryMockModule {
 
     lazy val locked            = false
-    val mockEmailConnector     = mock[EmailConnector](withSettings.lenient())
+    val mockEmailConnector     = mock[EmailConnector](withSettings.strictness(Strictness.Lenient))
     val response               = mock[HttpResponse]
     val mockApplicationService = mock[ApplicationService]
 

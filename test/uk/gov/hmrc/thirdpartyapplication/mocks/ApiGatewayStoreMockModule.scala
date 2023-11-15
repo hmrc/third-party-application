@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.mocks
 import scala.concurrent.Future.{failed, successful}
 
 import org.mockito.verification.VerificationMode
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
@@ -100,6 +100,6 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
   }
 
   object ApiGatewayStoreMock extends BaseApiGatewayStoreMock {
-    val aMock = mock[ApiGatewayStore](withSettings.lenient())
+    val aMock = mock[ApiGatewayStore](withSettings.strictness(Strictness.Lenient))
   }
 }

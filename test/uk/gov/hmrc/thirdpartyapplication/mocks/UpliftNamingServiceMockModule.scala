@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.mocks
 import scala.concurrent.Future.{failed, successful}
 
 import org.mockito.verification.VerificationMode
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -57,6 +57,6 @@ trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSu
   }
 
   object UpliftNamingServiceMock extends BaseUpliftNamingServiceMock {
-    val aMock = mock[UpliftNamingService](withSettings.lenient())
+    val aMock = mock[UpliftNamingService](withSettings.strictness(Strictness.Lenient))
   }
 }

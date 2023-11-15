@@ -22,7 +22,7 @@ import scala.concurrent.Future.{failed, successful}
 
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
 import uk.gov.hmrc.http.NotFoundException
 
@@ -490,6 +490,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
   }
 
   object LenientApplicationRepoMock extends BaseApplicationRepoMock {
-    val aMock = mock[ApplicationRepository](withSettings.lenient())
+    val aMock = mock[ApplicationRepository](withSettings.strictness(Strictness.Lenient))
   }
 }
