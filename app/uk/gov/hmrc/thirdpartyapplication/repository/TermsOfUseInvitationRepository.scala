@@ -36,7 +36,7 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseSearch, TermsOfUseSearchFilter, TermsOfUseStatusFilter}
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseSearch, TermsOfUseSearchFilter, TermsOfUseStatusFilter, TermsOfUseTextSearchFilter}
 import uk.gov.hmrc.thirdpartyapplication.models.{EmailSent, ReminderEmailSent, Overdue, Warnings, Failed, TermsOfUseV2WithWarnings, TermsOfUseV2}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{TermsOfUseInvitationState, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
@@ -158,8 +158,8 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
 
   def search(searchCriteria: TermsOfUseSearch): Future[Seq[TermsOfUseInvitationWithApplication]] = {
     val statusFilters = convertFilterToStatusQueryClause(searchCriteria.filters)
-    //collection.aggregate(Seq(filter(statusFilters))).toFuture()
-    runAggregationQuery(statusFilters)
+    val textFilter = convertFilterToTextQueryClause(searchCriteria.filters, searchCriteria)
+    runAggregationQuery(statusFilters, textFilter)
   }
 
   private def convertFilterToStatusQueryClause(filters: List[TermsOfUseSearchFilter]): Bson = {
@@ -189,36 +189,28 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
     statusMatch(statusFilters.map(sf => getFilterState(sf)): _*)
   }
 
-  private def runAggregationQuery(filters: Bson) = {
+  private def convertFilterToTextQueryClause(filters: List[TermsOfUseSearchFilter], searchCriteria: TermsOfUseSearch): Bson = {
+  
+    def regexTextSearch(textFilters: List[TermsOfUseTextSearchFilter], searchText: String): Bson = {
+      if (textFilters.size == 0) {
+        Document()
+      } else {
+        regex("applications.name", searchText, "i")
+      }
+    }
+
+    val textFilters = filters.collect { case sf: TermsOfUseTextSearchFilter => sf }
+    regexTextSearch(textFilters, searchCriteria.textToSearch.getOrElse(""))
+  }
+
+  private def runAggregationQuery(statusFilters: Bson, textFilter: Bson) = {
     timeFuture("Run Terms Of Use Aggregation Query", "termsofuse.repository.runAggregationQuery") {
-
-//      lazy val applicationsLookup: Bson  = lookup(from = "application", localField = "applicationId", foreignField = "id", as = "application")
-      // lazy val unwindSubscribedApis: Bson = unwind("$subscribedApis")
-
-//      val totalCount                                    = Aggregates.count("total")
-//      val applicationsLookupFilter                     = Seq(applicationsLookup)
-//      val subscriptionsLookupExtendedFilter             = if (hasSpecificApiSubscription) subscriptionsLookupFilter :+ unwindSubscribedApis else subscriptionsLookupFilter
-//      val filteredPipeline                             = applicationsLookupFilter ++ filters // :+ totalCount
-//      val paginatedFilteredAndSortedPipeline: Seq[Bson] = subscriptionsLookupExtendedFilter ++ filters ++ sort ++ pagination :+ applicationProjection
-
-//      val facets: Seq[Bson] = Seq(
-//        facet(
-//          model.Facet("totals", totalCount),
-//          model.Facet("matching", filteredPipelineCount: _*),
-//          model.Facet("applications", paginatedFilteredAndSortedPipeline: _*)
-//        )
-//      )
-
-//      collection.aggregate(filteredPipeline).toFuture()
-//        .head()
-//        .map(Codecs.fromBson[PaginatedApplicationData])
-//        .map(d => PaginatedApplicationData(d.applications, d.totals, d.matching))
-
 
       collection.aggregate[BsonValue](
         Seq(
-          filter(filters),
+          filter(statusFilters),
           lookup(from = "application", localField = "applicationId", foreignField = "id", as = "applications"),
+          filter(textFilter)
         )
       ).map(Codecs.fromBson[TermsOfUseInvitationWithApplication])
        .toFuture()

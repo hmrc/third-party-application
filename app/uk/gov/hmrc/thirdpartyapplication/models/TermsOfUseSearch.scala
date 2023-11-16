@@ -19,8 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.models
 final case class TermsOfUseSearch(
     filters: List[TermsOfUseSearchFilter] = List.empty,
     textToSearch: Option[String] = None,
-    pageNumber: Int = 1,
-    pageSize: Int = Int.MaxValue,
     sort: TermsOfUseSort = TermsOfUseNoSorting
 )
 
