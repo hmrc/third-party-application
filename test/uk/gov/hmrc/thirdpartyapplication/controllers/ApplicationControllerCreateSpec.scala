@@ -305,7 +305,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       val result          = underTest.create()(requestWithBody)
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
-      println(contentAsString(result))
       (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: maximum number of redirect URIs exceeded"
     }
 

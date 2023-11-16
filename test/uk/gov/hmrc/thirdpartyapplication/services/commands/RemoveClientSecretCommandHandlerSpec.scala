@@ -107,7 +107,6 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
     "succeed for a non admin" in new Setup {
       ApplicationRepoMock.DeleteClientSecret.succeeds(subordinateApp, clientSecret.id)
 
-      println(subordinateApp.tokens.production.clientSecrets)
       val result = await(underTest.process(subordinateApp, removeClientSecretByDev).value).value
 
       checkSuccessResult(developerActor)(result)

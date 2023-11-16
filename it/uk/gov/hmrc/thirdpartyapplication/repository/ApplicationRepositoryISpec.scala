@@ -3154,12 +3154,9 @@ class ApplicationRepositoryISpec
     val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = anApplicationData(applicationId).copy(access = access)
     val appStored               = await(applicationRepository.save(app))
-    println(appStored)
 
     val appWithUpdatedRI =
       await(applicationRepository.updateApplicationChangeResponsibleIndividualToSelf(applicationId, adminName, anAdminEmail, now, submissionId, submissionIndex))
-
-    println(appWithUpdatedRI)
 
     appWithUpdatedRI.access match {
       case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => {

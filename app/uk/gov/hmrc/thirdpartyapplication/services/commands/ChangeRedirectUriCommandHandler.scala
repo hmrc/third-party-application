@@ -73,11 +73,8 @@ class ChangeRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
   def process(app: StoredApplication, cmd: ChangeRedirectUri): AppCmdResultT = {
     for {
       existingUris   <- E.fromEither(validate(app, cmd).toEither)
-      _               = println("here")
       urisAfterChange = existingUris.map(uriVal => if (uriVal == cmd.redirectUriToReplace) cmd.redirectUri else uriVal)
-      _               = println("here2")
       savedApp       <- E.liftF(applicationRepository.updateRedirectUris(app.id, urisAfterChange))
-      _               = println("here3")
       events          = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }

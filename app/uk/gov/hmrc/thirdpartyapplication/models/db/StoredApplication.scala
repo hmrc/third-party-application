@@ -99,8 +99,6 @@ object StoredApplication {
         Access.Standard().copy(redirectUris = v2.access.redirectUris, overrides = v2.access.overrides, sellResellOrDistribute = Some(v2.upliftRequest.sellResellOrDistribute))
     }
 
-    println(checkInfo)
-
     StoredApplication(
       ApplicationId.random,
       name,
