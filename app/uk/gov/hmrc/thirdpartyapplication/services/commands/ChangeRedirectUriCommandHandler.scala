@@ -39,7 +39,7 @@ class ChangeRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
 
   private def validate(app: StoredApplication, cmd: ChangeRedirectUri): Validated[Failures, List[RedirectUri]] = {
     val existingUris = app.access match {
-      case Access.Standard(redirectUris, _, _, _, _, _) => println(redirectUris); redirectUris
+      case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris
       case _                                            => List.empty
     }
 
