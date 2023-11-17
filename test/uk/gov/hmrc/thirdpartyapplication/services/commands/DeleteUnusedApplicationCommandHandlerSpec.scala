@@ -23,13 +23,13 @@ import org.apache.commons.codec.binary.Base64.encodeBase64String
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteUnusedApplication
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, Environment}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteUnusedApplication
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -40,7 +40,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
     val appId: ApplicationId                 = ApplicationId.random
     val appAdminEmail                        = loggedInUser
     val actor: Actors.ScheduledJob           = Actors.ScheduledJob("DeleteUnusedApplicationsJob")
-    val app: ApplicationData                 = anApplicationData(appId, environment = Environment.SANDBOX)
+    val app: StoredApplication               = anApplicationData(appId, environment = Environment.SANDBOX)
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
     val underTest = new DeleteUnusedApplicationCommandHandler(

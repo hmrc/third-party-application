@@ -20,18 +20,19 @@ import java.time.format.DateTimeFormatter
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{ActualAnswersAsText, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
@@ -71,18 +72,18 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       List(acceptance)
     )
 
-    val applicationPendingGKApproval: ApplicationData = anApplicationData(
+    val applicationPendingGKApproval: StoredApplication = anApplicationData(
       applicationId,
       pendingGatekeeperApprovalState("bob@fastshow.com"),
-      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+      access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
     val prodAppId = ApplicationId.random
 
-    val applicationProduction: ApplicationData = anApplicationData(
+    val applicationProduction: StoredApplication = anApplicationData(
       prodAppId,
       productionState("bob@fastshow.com"),
-      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+      access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
     val underTest =
@@ -99,7 +100,6 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
   "GrantApprovalsService.grant" should {
     "grant the specified application" in new Setup {
-      import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 
       ApplicationRepoMock.Save.thenAnswer()
       StateHistoryRepoMock.Insert.thenAnswer()
@@ -110,9 +110,9 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, None, None))
 
       result should matchPattern {
-        case GrantApprovalsService.Actioned(app) if (app.state.name == PENDING_REQUESTER_VERIFICATION) =>
+        case GrantApprovalsService.Actioned(app) if (app.state.name == State.PENDING_REQUESTER_VERIFICATION) =>
       }
-      ApplicationRepoMock.Save.verifyCalled().state.name shouldBe PENDING_REQUESTER_VERIFICATION
+      ApplicationRepoMock.Save.verifyCalled().state.name shouldBe State.PENDING_REQUESTER_VERIFICATION
       SubmissionsServiceMock.Store.verifyCalledWith().status.isGranted shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
         case Submission.Status.Granted(_, gatekeeperUserName, _, _) =>
@@ -128,8 +128,6 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "grant the specified application with warnings" in new Setup {
-      import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-
       ApplicationRepoMock.Save.thenAnswer()
       StateHistoryRepoMock.Insert.thenAnswer()
       SubmissionsServiceMock.Store.thenReturn()
@@ -141,9 +139,9 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       val result      = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, warning, escalatedTo))
 
       result should matchPattern {
-        case GrantApprovalsService.Actioned(app) if (app.state.name == PENDING_REQUESTER_VERIFICATION) =>
+        case GrantApprovalsService.Actioned(app) if (app.state.name == State.PENDING_REQUESTER_VERIFICATION) =>
       }
-      ApplicationRepoMock.Save.verifyCalled().state.name shouldBe PENDING_REQUESTER_VERIFICATION
+      ApplicationRepoMock.Save.verifyCalled().state.name shouldBe State.PENDING_REQUESTER_VERIFICATION
       SubmissionsServiceMock.Store.verifyCalledWith().status.isGrantedWithWarnings shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
         case Submission.Status.GrantedWithWarnings(_, gatekeeperUserName, warning, escalatedTo) =>

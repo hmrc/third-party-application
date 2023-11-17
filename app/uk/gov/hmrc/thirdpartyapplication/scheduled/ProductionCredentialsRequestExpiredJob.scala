@@ -27,12 +27,12 @@ import com.google.inject.Singleton
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 
@@ -69,7 +69,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
     }
   }
 
-  private def deleteExpiredApplication(app: ApplicationData) = {
+  private def deleteExpiredApplication(app: StoredApplication) = {
     logger.info(s"Delete expired production credentials request for app{id=${app.id.value},name=${app.name},state." +
       s"name='${app.state.name}',state.updatedOn='${app.state.updatedOn}}'")
 

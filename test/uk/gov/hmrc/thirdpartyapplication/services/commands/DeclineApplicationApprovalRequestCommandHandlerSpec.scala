@@ -20,15 +20,17 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineApplicationApprovalRequest
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineApplicationApprovalRequest
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 
 class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
@@ -62,8 +64,8 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
       collaborators = Set(
         appAdminEmail.admin(appAdminUserId)
       ),
-      access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
-      state = ApplicationState.pendingGatekeeperApproval(requesterEmail.text, requesterName)
+      access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
+      state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName)
     )
     val ts              = FixedClock.instant
     val underTest       = new DeclineApplicationApprovalRequestCommandHandler(ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
@@ -140,7 +142,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      val nonStandardApp = applicationData.copy(access = Ropc(Set.empty))
+      val nonStandardApp = applicationData.copy(access = Access.Ropc(Set.empty))
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(nonStandardApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, now))
       }
@@ -148,7 +150,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      val oldJourneyApp = applicationData.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = applicationData.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(oldJourneyApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, now))
       }
@@ -156,7 +158,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
     "return an error if the application state is not PendingResponsibleIndividualVerification or PendingGatekeeperApproval" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      val pendingGKApprovalApp = applicationData.copy(state = ApplicationState.pendingRequesterVerification(requesterEmail.text, requesterName, "12345678"))
+      val pendingGKApprovalApp = applicationData.copy(state = ApplicationStateExamples.pendingRequesterVerification(requesterEmail.text, requesterName, "12345678"))
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state") {
         underTest.process(pendingGKApprovalApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, now))
       }

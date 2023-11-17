@@ -18,10 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, Environment}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ClientSecretRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
@@ -107,7 +107,6 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
     "succeed for a non admin" in new Setup {
       ApplicationRepoMock.DeleteClientSecret.succeeds(subordinateApp, clientSecret.id)
 
-      println(subordinateApp.tokens.production.clientSecrets)
       val result = await(underTest.process(subordinateApp, removeClientSecretByDev).value).value
 
       checkSuccessResult(developerActor)(result)

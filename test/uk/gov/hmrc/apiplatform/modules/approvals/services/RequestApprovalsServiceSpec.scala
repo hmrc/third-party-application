@@ -22,19 +22,20 @@ import scala.concurrent.Future.successful
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{NoAnswer, SingleChoiceAnswer, Submission, TextAnswer}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, State}
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, TermsOfUseInvitation}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
@@ -53,7 +54,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       with SubmissionsTestData
       with ApplicationTestData {
 
-    val application: ApplicationData = anApplicationData(applicationId, testingState())
+    val application: StoredApplication = anApplicationData(applicationId, testingState())
 
     val testSubmission                                     = aSubmission
     val testPassAnsweredSubmission                         = testSubmission.hasCompletelyAnsweredWith(sampleAnswersToQuestions)
@@ -110,7 +111,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         val savedAppData          = ApplicationRepoMock.Save.verifyCalled()
         savedStateHistory.previousState shouldBe Some(State.TESTING)
         savedAppData.state.name shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
-        val responsibleIndividual = savedAppData.access.asInstanceOf[Standard].importantSubmissionData.get.responsibleIndividual
+        val responsibleIndividual = savedAppData.access.asInstanceOf[Access.Standard].importantSubmissionData.get.responsibleIndividual
         responsibleIndividual.fullName.value shouldBe questionsRiName
         responsibleIndividual.emailAddress shouldBe questionsRiEmail.toLaxEmail
 
@@ -144,7 +145,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         AuditServiceMock.Audit.verifyCalled()
         val savedAppData          = ApplicationRepoMock.Save.verifyCalled()
         savedAppData.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
-        val responsibleIndividual = savedAppData.access.asInstanceOf[Standard].importantSubmissionData.get.responsibleIndividual
+        val responsibleIndividual = savedAppData.access.asInstanceOf[Access.Standard].importantSubmissionData.get.responsibleIndividual
         responsibleIndividual.fullName.value shouldBe requestedByName
         responsibleIndividual.emailAddress shouldBe requestedByEmail
 
@@ -333,7 +334,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       "return application in incorrect state an application not in TESTING" in new Setup {
-        val pendingApplication: ApplicationData = anApplicationData(applicationId, pendingGatekeeperApprovalState(requestedByEmail.text))
+        val pendingApplication: StoredApplication = anApplicationData(applicationId, pendingGatekeeperApprovalState(requestedByEmail.text))
 
         val result = await(underTest.requestApproval(pendingApplication, answeringSubmission, requestedByName, requestedByEmail.text))
 

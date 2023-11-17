@@ -23,14 +23,15 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.validated._
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineApplicationApprovalRequest
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Submission, SubmissionId}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, StateHistory}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 
 @Singleton
@@ -44,7 +45,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
   import CommandHandler._
   import CommandFailures._
 
-  private def validate(app: ApplicationData): Future[Validated[Failures, (LaxEmailAddress, String, Submission)]] = {
+  private def validate(app: StoredApplication): Future[Validated[Failures, (LaxEmailAddress, String, Submission)]] = {
 
     def checkSubmission(maybeSubmission: Option[Submission]): Validated[Failures, Submission] = {
       val fails: CommandFailure = GenericFailure(s"No submission found for application ${app.id.value}")
@@ -63,7 +64,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
   }
 
   private def asEvents(
-      app: ApplicationData,
+      app: StoredApplication,
       cmd: DeclineApplicationApprovalRequest,
       submission: Submission,
       requesterEmail: LaxEmailAddress,
@@ -89,7 +90,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: DeclineApplicationApprovalRequest): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: DeclineApplicationApprovalRequest): AppCmdResultT = {
 
     val stateHistory = StateHistory(
       applicationId = app.id,

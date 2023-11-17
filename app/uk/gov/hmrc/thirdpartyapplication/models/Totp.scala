@@ -14,24 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.models
 
-import play.api.libs.json.Json
+import play.api.libs.json._
 
 case class Totp(secret: String, id: String)
 
 object Totp {
-  implicit val format = Json.format[Totp]
-}
-
-case class TotpId(production: String)
-
-object TotpId {
-  implicit val format = Json.format[TotpId]
-}
-
-case class TotpSecret(production: String)
-
-object TotpSecret {
-  implicit val format = Json.format[TotpSecret]
+  implicit val format: OFormat[Totp] = Json.format[Totp]
 }

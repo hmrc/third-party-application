@@ -35,11 +35,12 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, InvalidStateTransition, State}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationServiceMockModule, StrideGatekeeperRoleAuthorisationServiceMockModule}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule}
@@ -173,7 +174,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
     "return app with history for LDAP user" in new Setup {
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-      val expected = ApplicationWithHistory(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
+      val expected = ApplicationWithHistoryResponse(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
 
       when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
 
@@ -187,7 +188,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      val expected = ApplicationWithHistory(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
+      val expected = ApplicationWithHistoryResponse(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
 
       when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
 
@@ -243,17 +244,17 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   "fetchAppStateHistories" should {
     val expectedAppStateHistories = List(
-      ApplicationStateHistory(
+      ApplicationStateHistoryResponse(
         ApplicationId.random,
         "app 1",
         1,
         List(
-          ApplicationStateHistoryItem(State.TESTING, LocalDateTime.parse("2022-07-01T12:00:00")),
-          ApplicationStateHistoryItem(State.PENDING_GATEKEEPER_APPROVAL, LocalDateTime.parse("2022-07-01T13:00:00")),
-          ApplicationStateHistoryItem(State.PRODUCTION, LocalDateTime.parse("2022-07-01T14:00:00"))
+          ApplicationStateHistoryResponse.Item(State.TESTING, LocalDateTime.parse("2022-07-01T12:00:00")),
+          ApplicationStateHistoryResponse.Item(State.PENDING_GATEKEEPER_APPROVAL, LocalDateTime.parse("2022-07-01T13:00:00")),
+          ApplicationStateHistoryResponse.Item(State.PRODUCTION, LocalDateTime.parse("2022-07-01T14:00:00"))
         )
       ),
-      ApplicationStateHistory(ApplicationId.random, "app 2", 2, List())
+      ApplicationStateHistoryResponse(ApplicationId.random, "app 2", 2, List())
     )
 
     "return app histories for Stride GK User" in new Setup {
@@ -310,7 +311,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
   "fetchAllForCollaborator" should {
     val userId                                                   = UserId.random
-    val standardApplicationResponse: ExtendedApplicationResponse = aNewExtendedApplicationResponse(access = Standard())
+    val standardApplicationResponse: ExtendedApplicationResponse = aNewExtendedApplicationResponse(access = Access.Standard())
 
     "succeed with a 200 when applications are found for the collaborator by user id" in new Setup {
       when(underTest.applicationService.fetchAllForCollaborator(userId, true))
@@ -594,7 +595,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationState.production("", "")))
+      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationStateExamples.production("", "")))
 
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
 
@@ -612,7 +613,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationState.production("", "")))
+      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationStateExamples.production("", "")))
 
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
 
@@ -636,7 +637,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationState.production("", "")))
+      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationStateExamples.production("", "")))
 
       SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.hasCompletelyAnswered)
 
@@ -652,7 +653,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationState.production("", "")))
+      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationStateExamples.production("", "")))
 
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
 
@@ -675,6 +676,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   private def anAppResponse(appId: ApplicationId) = {
     val grantLengthInDays = 547
-    new ApplicationResponse(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, now, Some(now), grantLengthInDays)
+    new Application(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, now, Some(now), grantLengthInDays)
   }
 }

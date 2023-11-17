@@ -1,8 +1,8 @@
-POST        /application/:aid                         uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.createSubmissionFor(aid: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId)
-GET         /application/:aid                         uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.fetchLatest(aid: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId)
-GET         /application/:aid/extended                uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.fetchLatestExtended(aid: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId)
-GET         /latestiscompleted/:aid                   uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.latestSubmissionIsCompleted(aid: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId)
-GET         /marked/application/:aid                  uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.fetchLatestMarkedSubmission(aid: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId)
+POST        /application/:aid                         uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.createSubmissionFor(aid: ApplicationId)
+GET         /application/:aid                         uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.fetchLatest(aid: ApplicationId)
+GET         /application/:aid/extended                uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.fetchLatestExtended(aid: ApplicationId)
+GET         /latestiscompleted/:aid                   uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.latestSubmissionIsCompleted(aid: ApplicationId)
+GET         /marked/application/:aid                  uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.fetchLatestMarkedSubmission(aid: ApplicationId)
 
 GET         /:sid                                     uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.fetchSubmission(sid: SubmissionId)
 POST        /:sid/question/:qid                       uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.recordAnswers(sid: SubmissionId, qid: Question.Id)

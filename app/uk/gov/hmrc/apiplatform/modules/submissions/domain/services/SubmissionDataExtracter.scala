@@ -18,11 +18,11 @@ package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import cats.Apply
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocation, PrivacyPolicyLocations, TermsAndConditionsLocation, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, ResponsibleIndividual, ServerLocation}
 
 object SubmissionDataExtracter extends ApplicationLogger {
 
@@ -65,10 +65,10 @@ object SubmissionDataExtracter extends ApplicationLogger {
 
   def isRequesterTheResponsibleIndividual(submission: Submission) = getAnswerForYesOrNoResponsibleIndividualIsRequester(submission).contains("Yes")
 
-  def getResponsibleIndividualName(submission: Submission, requestedByName: String): Option[ResponsibleIndividual.Name] = {
+  def getResponsibleIndividualName(submission: Submission, requestedByName: String): Option[FullName] = {
     getAnswerForYesOrNoResponsibleIndividualIsRequester(submission).flatMap(_ match {
-      case "Yes" => Some(ResponsibleIndividual.Name(requestedByName))
-      case "No"  => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualNameId).map(ResponsibleIndividual.Name)
+      case "Yes" => Some(FullName(requestedByName))
+      case "No"  => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualNameId).map(FullName(_))
     })
   }
 

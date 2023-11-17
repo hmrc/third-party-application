@@ -17,16 +17,12 @@
 package uk.gov.hmrc.thirdpartyapplication.models
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 
 class UserAlreadyExists extends RuntimeException
 
 class ApplicationNeedsAdmin extends RuntimeException
 
 class ClientSecretsLimitExceeded extends RuntimeException
-
-class InvalidStateTransition(invalidFrom: State, to: State, expectedFrom: State)
-    extends RuntimeException(s"Transition to '$to' state requires the application to be in '$expectedFrom' state, but it was in '$invalidFrom'")
 
 class InconsistentDataState(message: String) extends RuntimeException(message)
 

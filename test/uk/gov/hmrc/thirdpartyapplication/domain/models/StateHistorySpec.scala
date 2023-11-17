@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorTestData, HmrcSpec}
 
 class StateHistorySpec extends HmrcSpec with ActorTestData with FixedClock {

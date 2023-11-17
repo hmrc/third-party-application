@@ -16,14 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import java.time.{Clock, LocalDateTime}
 import java.util.UUID
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, Collaborator, RedirectUri, State}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.{Application, ExtendedApplicationResponse}
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 trait ControllerTestData extends CollaboratorTestData with FixedClock {
@@ -33,9 +35,9 @@ trait ControllerTestData extends CollaboratorTestData with FixedClock {
     "dev@example.com".developer()
   )
 
-  val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
-  val privilegedAccess = Privileged(scopes = Set("scope1"))
-  val ropcAccess       = Ropc()
+  val standardAccess   = Access.Standard(List("https://example.com/redirect").map(RedirectUri.unsafeApply(_)), Some("http://example.com/terms"), Some("http://example.com/privacy"))
+  val privilegedAccess = Access.Privileged(scopes = Set("scope1"))
+  val ropcAccess       = Access.Ropc()
 
   def anAPI() = {
     "some-context".asIdentifier("1.0")
@@ -53,10 +55,10 @@ trait ControllerTestData extends CollaboratorTestData with FixedClock {
       access: Access = standardAccess,
       environment: Environment = Environment.PRODUCTION,
       appId: ApplicationId = ApplicationId.random,
-      state: ApplicationState = ApplicationState(State.TESTING)
+      state: ApplicationState = ApplicationState(State.TESTING, updatedOn = LocalDateTime.now(Clock.systemUTC()))
     ) = {
     val grantLengthInDays = 547
-    new ApplicationResponse(
+    new Application(
       appId,
       ClientId("clientId"),
       "gatewayId",
@@ -79,7 +81,7 @@ trait ControllerTestData extends CollaboratorTestData with FixedClock {
   def aNewExtendedApplicationResponse(access: Access, environment: Environment = Environment.PRODUCTION, subscriptions: List[ApiIdentifier] = List.empty) =
     extendedApplicationResponseFromApplicationResponse(aNewApplicationResponse(access, environment)).copy(subscriptions = subscriptions)
 
-  def extendedApplicationResponseFromApplicationResponse(app: ApplicationResponse) = {
+  def extendedApplicationResponseFromApplicationResponse(app: Application) = {
     new ExtendedApplicationResponse(
       app.id,
       app.clientId,

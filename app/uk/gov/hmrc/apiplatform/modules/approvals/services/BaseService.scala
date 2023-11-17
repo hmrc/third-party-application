@@ -21,19 +21,18 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 
 abstract class BaseService(stateHistoryRepository: StateHistoryRepository, clock: Clock)(implicit ec: ExecutionContext) {
 
   def insertStateHistory(
-      snapshotApp: ApplicationData,
+      snapshotApp: StoredApplication,
       newState: State,
       oldState: Option[State],
       actor: Actor,
-      rollback: ApplicationData => Any
+      rollback: StoredApplication => Any
     ): Future[StateHistory] = {
     val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory)

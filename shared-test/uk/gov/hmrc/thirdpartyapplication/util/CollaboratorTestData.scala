@@ -18,8 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.util
 
 import scala.collection.mutable
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborators
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators
 
 trait CollaboratorTestData extends EmailTestData {
 

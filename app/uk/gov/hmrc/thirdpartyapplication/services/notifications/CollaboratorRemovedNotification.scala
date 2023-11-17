@@ -24,13 +24,13 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAdd
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.CollaboratorRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 object CollaboratorRemovedNotification extends NotificationHelpers {
 
   def sendCollaboratorRemovedNotification(
       emailConnector: EmailConnector,
-      app: ApplicationData,
+      app: StoredApplication,
       event: CollaboratorRemovedV2,
       verifiedCollaborators: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier,

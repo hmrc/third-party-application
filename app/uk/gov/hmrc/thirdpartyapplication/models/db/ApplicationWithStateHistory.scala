@@ -20,7 +20,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
 
 case class ApplicationWithStateHistory private (id: ApplicationId, name: String, version: Int, states: List[StateHistory])
 

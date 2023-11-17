@@ -18,12 +18,12 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RedirectUri
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddRedirectUri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddRedirectUri
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 
@@ -35,12 +35,12 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val applicationId    = ApplicationId.random
     val untouchedUri     = RedirectUri.unsafeApply("https://leavemebe.example.com")
     val toAddRedirectUri = RedirectUri.unsafeApply("https://new-url.example.com")
-    val originalUris     = List(untouchedUri.uri)
+    val originalUris     = List(RedirectUri.unsafeApply(untouchedUri.uri))
     val nonExistantUri   = RedirectUri.unsafeApply("https://otherurl.com/not-there")
 
-    val principalApp: ApplicationData = anApplicationData(applicationId, access = Standard(originalUris), collaborators = devAndAdminCollaborators)
-    val subordinateApp                = principalApp.copy(environment = Environment.SANDBOX.toString())
-    val nonStandardAccessApp          = principalApp.copy(access = Privileged())
+    val principalApp: StoredApplication = anApplicationData(applicationId, access = Access.Standard(originalUris), collaborators = devAndAdminCollaborators)
+    val subordinateApp                  = principalApp.copy(environment = Environment.SANDBOX.toString())
+    val nonStandardAccessApp            = principalApp.copy(access = Access.Privileged())
 
     val developerActor = Actors.AppCollaborator(developerCollaborator.emailAddress)
 
@@ -67,10 +67,10 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
   "AddRedirectUrisCommandHandler" when {
     "given a principal application" should {
       "succeed when application is standardAccess" in new Setup {
-        val fourUris        = (1 to 4).map(i => s"https:/example$i.com").toList
-        val appWithFourUris = anApplicationData(applicationId, access = Standard(fourUris), collaborators = devAndAdminCollaborators)
+        val fourUris        = (1 to 4).map(i => RedirectUri.unsafeApply(s"https:/example$i.com")).toList
+        val appWithFourUris = anApplicationData(applicationId, access = Access.Standard(fourUris), collaborators = devAndAdminCollaborators)
 
-        val expectedUrisAfterChange = fourUris :+ toAddRedirectUri.uri
+        val expectedUrisAfterChange = fourUris :+ toAddRedirectUri
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(appWithFourUris) // Dont need to test the repo here so just return any app
 
         val result = await(underTest.process(appWithFourUris, cmdAsAdmin).value).value
@@ -85,8 +85,8 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
       }
 
       "fail when we try to add a sixth URI" in new Setup {
-        val fiveUris        = (1 to 5).map(i => s"https:/example$i.com").toList
-        val appWithFiveUris = anApplicationData(applicationId, access = Standard(fiveUris), collaborators = devAndAdminCollaborators)
+        val fiveUris        = (1 to 5).map(i => RedirectUri.unsafeApply(s"https:/example$i.com")).toList
+        val appWithFiveUris = anApplicationData(applicationId, access = Access.Standard(fiveUris), collaborators = devAndAdminCollaborators)
         checkFailsWith("Can have at most 5 redirect URIs") {
           val brokenCmd = cmdAsAdmin
           underTest.process(appWithFiveUris, brokenCmd)
@@ -104,7 +104,7 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     "given a subordinate application" should {
       "succeed for a developer" in new Setup {
-        val expectedUrisAfterChange = List(untouchedUri.uri, toAddRedirectUri.uri)
+        val expectedUrisAfterChange = List(untouchedUri, toAddRedirectUri)
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(subordinateApp) // Dont need to test the repo here so just return any app
 
         val result = await(underTest.process(subordinateApp, cmdAsDev).value).value

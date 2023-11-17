@@ -23,10 +23,10 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddCollaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddCollaborator
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
@@ -37,7 +37,7 @@ class AddCollaboratorCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: AddCollaborator): Validated[Failures, Unit] = {
+  private def validate(app: StoredApplication, cmd: AddCollaborator): Validated[Failures, Unit] = {
     cmd.actor match {
       case actor: Actors.AppCollaborator => Apply[Validated[Failures, *]].map2(
           isAppActorACollaboratorOnApp(actor, app),
@@ -48,7 +48,7 @@ class AddCollaboratorCommandHandler @Inject() (
     }
   }
 
-  private def asEvents(app: ApplicationData, cmd: AddCollaborator): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: AddCollaborator): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApplicationEvents.CollaboratorAddedV2(
         id = EventId.random,
@@ -60,7 +60,7 @@ class AddCollaboratorCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: AddCollaborator): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: AddCollaborator): AppCmdResultT = {
     for {
       _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.addCollaborator(app.id, cmd.collaborator))

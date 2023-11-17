@@ -20,15 +20,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApiIdentifier, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ApiSubscribedV2
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiIdentifierSyntax {
 
@@ -67,19 +67,19 @@ class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiId
 
   trait PrivilegedAndRopcSetup extends Setup {
 
-    def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: ApplicationData => Unit): Unit = {
+    def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: StoredApplication => Unit): Unit = {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
       testWithPrivilegedAndRopc(applicationId, testBlock)
     }
 
-    def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: ApplicationId, testBlock: ApplicationData => Unit): Unit = {
+    def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: ApplicationId, testBlock: StoredApplication => Unit): Unit = {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       testWithPrivilegedAndRopc(applicationId, testBlock)
     }
 
-    private def testWithPrivilegedAndRopc(applicationId: ApplicationId, testBlock: ApplicationData => Unit): Unit = {
-      testBlock(anApplicationData(applicationId, access = Privileged(scopes = Set("scope1"))))
-      testBlock(anApplicationData(applicationId, access = Ropc()))
+    private def testWithPrivilegedAndRopc(applicationId: ApplicationId, testBlock: StoredApplication => Unit): Unit = {
+      testBlock(anApplicationData(applicationId, access = Access.Privileged(scopes = Set("scope1"))))
+      testBlock(anApplicationData(applicationId, access = Access.Ropc()))
     }
   }
 

@@ -49,7 +49,7 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
           case Right(answer) =>
             ValidateAnswers.validate(question, answers) shouldBe Right(answer)
           case Left(())      =>
-            ValidateAnswers.validate(question, answers) shouldBe 'Left
+            ValidateAnswers.validate(question, answers).left.value
         }
       }
     }
@@ -78,7 +78,7 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
           case Right(answer) =>
             ValidateAnswers.validate(question, answers) shouldBe Right(answer)
           case Left(())      =>
-            ValidateAnswers.validate(question, answers) shouldBe 'Left
+            ValidateAnswers.validate(question, answers).left.value
         }
       }
     }
@@ -115,7 +115,7 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
           case Right(answer) =>
             ValidateAnswers.validate(question, answers) shouldBe Right(answer)
           case Left(())      =>
-            ValidateAnswers.validate(question, answers) shouldBe 'Left
+            ValidateAnswers.validate(question, answers).left.value
         }
       }
     }
@@ -142,7 +142,7 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
           case Right(answer) =>
             ValidateAnswers.validate(question, answers) shouldBe Right(answer)
           case Left(())      =>
-            ValidateAnswers.validate(question, answers) shouldBe 'Left
+            ValidateAnswers.validate(question, answers).left.value
         }
       }
     }
@@ -170,7 +170,7 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
           case Right(answer) =>
             ValidateAnswers.validate(question, answers) shouldBe Right(answer)
           case Left(())      =>
-            ValidateAnswers.validate(question, answers) shouldBe 'Left
+            ValidateAnswers.validate(question, answers).left.value
         }
       }
     }

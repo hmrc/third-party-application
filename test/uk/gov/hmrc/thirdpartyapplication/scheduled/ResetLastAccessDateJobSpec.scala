@@ -30,9 +30,9 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, NoMetricsGuiceOneAppPerSuite}
 
@@ -93,7 +93,7 @@ class ResetLastAccessDateJobSpec
 
       await(underTest.runJob)
 
-      val retrievedApplications: List[ApplicationData] = await(applicationRepository.fetchAll())
+      val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
 
       retrievedApplications.size should be(3)
       retrievedApplications.foreach(app => {
@@ -103,12 +103,12 @@ class ResetLastAccessDateJobSpec
     }
 
     "update lastAccess field on application when it does not have a lastAccessDate" in new ModifyDatesSetup {
-      val applicationData: ApplicationData = anApplicationData(localDateTime = dateToSet.minusDays(1).atStartOfDay()).copy(lastAccess = None)
+      val applicationData: StoredApplication = anApplicationData(localDateTime = dateToSet.minusDays(1).atStartOfDay()).copy(lastAccess = None)
 
       await(applicationRepository.save(applicationData))
       await(underTest.runJob)
 
-      val retrievedApplications: List[ApplicationData] = await(applicationRepository.fetchAll())
+      val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
 
       retrievedApplications.size shouldBe 1
       retrievedApplications.head.lastAccess should not be None
@@ -116,15 +116,15 @@ class ResetLastAccessDateJobSpec
     }
 
     "not update the database if dryRun option is specified" in new DryRunSetup {
-      val application1: ApplicationData = anApplicationData(localDateTime = dateToSet.minusDays(1).atStartOfDay())
-      val application2: ApplicationData = anApplicationData(localDateTime = dateToSet.minusDays(2).atStartOfDay())
-      val application3: ApplicationData = anApplicationData(localDateTime = dateToSet.plusDays(3).atStartOfDay())
+      val application1: StoredApplication = anApplicationData(localDateTime = dateToSet.minusDays(1).atStartOfDay())
+      val application2: StoredApplication = anApplicationData(localDateTime = dateToSet.minusDays(2).atStartOfDay())
+      val application3: StoredApplication = anApplicationData(localDateTime = dateToSet.plusDays(3).atStartOfDay())
 
       await(Future.sequence(List(application1, application2, application3).map(applicationRepository.save)))
 
       await(underTest.runJob)
 
-      val retrievedApplications: List[ApplicationData] = await(applicationRepository.fetchAll())
+      val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
       retrievedApplications.size should be(3)
       retrievedApplications.find(_.id == application1.id).get.lastAccess.get.isEqual(application1.lastAccess.get) should be(true)
       retrievedApplications.find(_.id == application2.id).get.lastAccess.get.isEqual(application2.lastAccess.get) should be(true)
@@ -132,8 +132,8 @@ class ResetLastAccessDateJobSpec
     }
   }
 
-  def anApplicationData(id: ApplicationId = ApplicationId.random, localDateTime: LocalDateTime): ApplicationData = {
-    ApplicationData(
+  def anApplicationData(id: ApplicationId = ApplicationId.random, localDateTime: LocalDateTime): StoredApplication = {
+    StoredApplication(
       id,
       s"myApp-${id.value}",
       s"myapp-${id.value}",
@@ -141,10 +141,10 @@ class ResetLastAccessDateJobSpec
       Some("description"),
       "myapplication",
       ApplicationTokens(
-        Token(ClientId.random, "ccc")
+        StoredToken(ClientId.random, "ccc")
       ),
       testingState(),
-      Standard(),
+      Access.Standard(),
       localDateTime,
       lastAccess = Some(localDateTime)
     )

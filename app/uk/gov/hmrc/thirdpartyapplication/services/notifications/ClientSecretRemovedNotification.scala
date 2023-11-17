@@ -23,13 +23,13 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ClientSecretRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 object ClientSecretRemovedNotification {
 
   def sendClientSecretRemovedNotification(
       emailConnector: EmailConnector,
-      app: ApplicationData,
+      app: StoredApplication,
       event: ClientSecretRemovedV2
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {

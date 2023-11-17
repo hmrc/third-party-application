@@ -28,7 +28,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 class SubmissionsDAOISpec

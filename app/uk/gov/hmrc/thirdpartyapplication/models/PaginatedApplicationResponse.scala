@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.models
 
-final case class SellResellOrDistribute(answer: String) extends AnyVal
-
-object SellResellOrDistribute {
-  import play.api.libs.json.{Format, Json}
-
-  implicit val format: Format[SellResellOrDistribute] = Json.valueFormat[SellResellOrDistribute]
-}
+case class PaginatedApplicationResponse(applications: List[Application], page: Int, pageSize: Int, total: Int, matching: Int)

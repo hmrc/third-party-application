@@ -20,11 +20,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.VerifyResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.VerifyResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ResponsibleIndividualVerificationStarted
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -59,7 +60,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
         appAdminEmail.admin(appAdminUserId),
         oldRiEmail.admin(oldRiUserId)
       ),
-      access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+      access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
 
     val ts      = FixedClock.instant
@@ -106,7 +107,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
 
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val nonStandardApp = app.copy(access = Ropc(Set.empty))
+      val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
 
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(nonStandardApp, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail))
@@ -115,7 +116,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(oldJourneyApp, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail))
@@ -124,7 +125,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
 
     "return an error if the application is not approved" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val notApprovedApp = app.copy(state = ApplicationState.pendingGatekeeperApproval("someone@example.com", "Someone"))
+      val notApprovedApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
         underTest.process(notApprovedApp, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail))

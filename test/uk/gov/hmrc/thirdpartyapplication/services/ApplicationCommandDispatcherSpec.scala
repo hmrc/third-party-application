@@ -24,15 +24,15 @@ import cats.data._
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, GrantLength, RateLimitTier, RedirectUri}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocations, SubmissionId, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, _}
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
@@ -43,7 +43,7 @@ class ApplicationCommandDispatcherSpec
     with FixedClock {
 
   trait Setup extends CommonSetup {
-    val applicationData: ApplicationData = anApplicationData(applicationId)
+    val applicationData: StoredApplication = anApplicationData(applicationId)
 
     def primeCommonServiceSuccess() = {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
@@ -133,7 +133,7 @@ class ApplicationCommandDispatcherSpec
       "call AddClientSecretCommand Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockAddClientSecretCommandHandler.process(*[ApplicationData], *[AddClientSecret])).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
+        when(mockAddClientSecretCommandHandler.process(*[StoredApplication], *[AddClientSecret])).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
@@ -153,7 +153,7 @@ class ApplicationCommandDispatcherSpec
       "call RemoveClientSecretCommand Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockRemoveClientSecretCommandHandler.process(*[ApplicationData], *[RemoveClientSecret])).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
+        when(mockRemoveClientSecretCommandHandler.process(*[StoredApplication], *[RemoveClientSecret])).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
@@ -168,7 +168,6 @@ class ApplicationCommandDispatcherSpec
 
     "AddCollaborator is received" should {
       val collaborator                               = "email".developer()
-      val adminsToEmail                              = Set("email1".toLaxEmail, "email2".toLaxEmail)
       val cmd: AddCollaborator                       = AddCollaborator(otherAdminAsActor, collaborator, now)
       val evt: ApplicationEvents.CollaboratorAddedV2 = ApplicationEvents.CollaboratorAddedV2(
         EventId.random,
@@ -181,7 +180,7 @@ class ApplicationCommandDispatcherSpec
       "call AddCollaboratorCommand Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockAddCollaboratorCommandHandler.process(*[ApplicationData], *[AddCollaborator])).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
+        when(mockAddCollaboratorCommandHandler.process(*[StoredApplication], *[AddCollaborator])).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
@@ -197,7 +196,6 @@ class ApplicationCommandDispatcherSpec
     "RemoveCollaborator is received" should {
 
       val collaborator                                 = "email".developer()
-      val adminsToEmail                                = Set("email1".toLaxEmail, "email2".toLaxEmail)
       val cmd: RemoveCollaborator                      = RemoveCollaborator(otherAdminAsActor, collaborator, now)
       val evt: ApplicationEvents.CollaboratorRemovedV2 = ApplicationEvents.CollaboratorRemovedV2(
         EventId.random,
@@ -210,7 +208,7 @@ class ApplicationCommandDispatcherSpec
       "call RemoveCollaboratorCommand Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockRemoveCollaboratorCommandHandler.process(*[ApplicationData], *[RemoveCollaborator])).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
+        when(mockRemoveCollaboratorCommandHandler.process(*[StoredApplication], *[RemoveCollaborator])).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
@@ -247,7 +245,7 @@ class ApplicationCommandDispatcherSpec
       "call ChangeProductionApplicationName Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(E.pure((
+        when(mockChangeProductionApplicationNameCommandHandler.process(*[StoredApplication], *[ChangeProductionApplicationName])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -284,10 +282,12 @@ class ApplicationCommandDispatcherSpec
       "call ChangeProductionApplicationPrivacyPolicyLocation Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationPrivacyPolicyLocation])).thenReturn(E.pure((
-          applicationData,
-          NonEmptyList.one(evt)
-        )))
+        when(mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler.process(*[StoredApplication], *[ChangeProductionApplicationPrivacyPolicyLocation])).thenReturn(
+          E.pure((
+            applicationData,
+            NonEmptyList.one(evt)
+          ))
+        )
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
@@ -322,7 +322,7 @@ class ApplicationCommandDispatcherSpec
         primeCommonServiceSuccess()
 
         when(
-          mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationTermsAndConditionsLocation])
+          mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler.process(*[StoredApplication], *[ChangeProductionApplicationTermsAndConditionsLocation])
         ).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
@@ -355,7 +355,7 @@ class ApplicationCommandDispatcherSpec
         primeCommonServiceSuccess()
 
         when(
-          mockChangeResponsibleIndividualToSelfCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToSelf])
+          mockChangeResponsibleIndividualToSelfCommandHandler.process(*[StoredApplication], *[ChangeResponsibleIndividualToSelf])
         ).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
@@ -391,7 +391,7 @@ class ApplicationCommandDispatcherSpec
         primeCommonServiceSuccess()
 
         when(
-          mockChangeResponsibleIndividualToOtherCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToOther])
+          mockChangeResponsibleIndividualToOtherCommandHandler.process(*[StoredApplication], *[ChangeResponsibleIndividualToOther])
         ).thenReturn(E.pure((applicationData, NonEmptyList.one(evt))))
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
@@ -426,7 +426,7 @@ class ApplicationCommandDispatcherSpec
       "call DeclineApplicationApprovalRequest Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeclineApplicationApprovalRequestCommandHandler.process(*[ApplicationData], *[DeclineApplicationApprovalRequest])).thenReturn(E.pure((
+        when(mockDeclineApplicationApprovalRequestCommandHandler.process(*[StoredApplication], *[DeclineApplicationApprovalRequest])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -458,7 +458,7 @@ class ApplicationCommandDispatcherSpec
       "call DeleteApplicationByCollaborator Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeleteApplicationByCollaboratorCommandHandler.process(*[ApplicationData], *[DeleteApplicationByCollaborator])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockDeleteApplicationByCollaboratorCommandHandler.process(*[StoredApplication], *[DeleteApplicationByCollaborator])(*[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -491,7 +491,7 @@ class ApplicationCommandDispatcherSpec
       "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeleteApplicationByGatekeeperCommandHandler.process(*[ApplicationData], *[DeleteApplicationByGatekeeper])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockDeleteApplicationByGatekeeperCommandHandler.process(*[StoredApplication], *[DeleteApplicationByGatekeeper])(*[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -523,7 +523,7 @@ class ApplicationCommandDispatcherSpec
       "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeleteUnusedApplicationCommandHandler.process(*[ApplicationData], *[DeleteUnusedApplication])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockDeleteUnusedApplicationCommandHandler.process(*[StoredApplication], *[DeleteUnusedApplication])(*[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -554,7 +554,7 @@ class ApplicationCommandDispatcherSpec
       "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeleteProductionCredentialsApplicationCommandHandler.process(*[ApplicationData], *[DeleteProductionCredentialsApplication])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockDeleteProductionCredentialsApplicationCommandHandler.process(*[StoredApplication], *[DeleteProductionCredentialsApplication])(*[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -587,7 +587,7 @@ class ApplicationCommandDispatcherSpec
       "call SubscribeToApi Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockSubscribeToApiCommandHandler.process(*[ApplicationData], *[SubscribeToApi])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockSubscribeToApiCommandHandler.process(*[StoredApplication], *[SubscribeToApi])(*[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -620,7 +620,7 @@ class ApplicationCommandDispatcherSpec
       "call UnsubscribeFromApi Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockUnsubscribeFromApiCommandHandler.process(*[ApplicationData], *[UnsubscribeFromApi])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockUnsubscribeFromApiCommandHandler.process(*[StoredApplication], *[UnsubscribeFromApi])(*[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -637,8 +637,8 @@ class ApplicationCommandDispatcherSpec
     }
 
     "UpdateRedirectUris is received" should {
-      val oldUris = List("uri1", "uri2")
-      val newUris = List("uri3", "uri4")
+      val oldUris = List("https://uri1/a", "https://uri2/a").map(RedirectUri.unsafeApply(_))
+      val newUris = List("https://uri3/a", "https://uri4/a").map(RedirectUri.unsafeApply(_))
       val cmd     = UpdateRedirectUris(otherAdminAsActor, oldUris, newUris, timestamp)
       val evt     = ApplicationEvents.RedirectUrisUpdatedV2(
         EventId.random,
@@ -652,7 +652,7 @@ class ApplicationCommandDispatcherSpec
       "call UpdateRedirectUris Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockUpdateRedirectUrisCommandHandler.process(*[ApplicationData], *[UpdateRedirectUris])).thenReturn(E.pure((
+        when(mockUpdateRedirectUrisCommandHandler.process(*[StoredApplication], *[UpdateRedirectUris])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -683,7 +683,7 @@ class ApplicationCommandDispatcherSpec
       "call ChangeGrantLength Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockChangeGrantLengthCommandHandler.process(*[ApplicationData], *[ChangeGrantLength])).thenReturn(E.pure((
+        when(mockChangeGrantLengthCommandHandler.process(*[StoredApplication], *[ChangeGrantLength])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -710,7 +710,7 @@ class ApplicationCommandDispatcherSpec
       "call ChangeRateLimitTier Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockChangeRateLimitTierCommandHandler.process(*[ApplicationData], *[ChangeRateLimitTier])(*)).thenReturn(E.pure((
+        when(mockChangeRateLimitTierCommandHandler.process(*[StoredApplication], *[ChangeRateLimitTier])(*)).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))

@@ -22,13 +22,14 @@ import cats.data.{EitherT, NonEmptyList}
 import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
@@ -45,22 +46,22 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
 
     object Dispatch {
 
-      def succeedsWith(applicationData: ApplicationData) = {
+      def succeedsWith(applicationData: StoredApplication) = {
         val success: CommandHandler.Success = (applicationData, mockEvents)
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(E.pure(success))
       }
 
-      def thenReturnSuccessOn(cmd: ApplicationCommand)(applicationData: ApplicationData) = {
+      def thenReturnSuccessOn(cmd: ApplicationCommand)(applicationData: StoredApplication) = {
         val success: CommandHandler.Success = (applicationData, mockEvents)
         when(aMock.dispatch(*[ApplicationId], eqTo(cmd), *)(*)).thenReturn(E.pure(success))
       }
 
-      def thenReturnSuccess(applicationData: ApplicationData) = {
+      def thenReturnSuccess(applicationData: StoredApplication) = {
         val success: CommandHandler.Success = (applicationData, mockEvents)
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(E.pure(success))
       }
 
-      def thenReturnCommandSuccess(applicationData: ApplicationData) = {
+      def thenReturnCommandSuccess(applicationData: StoredApplication) = {
         val dummyEvents                     =
           NonEmptyList.one(ApplicationEvents.RedirectUrisUpdatedV2(
             EventId.random,
@@ -68,13 +69,13 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
             FixedClock.instant,
             Actors.AppCollaborator("someuser".toLaxEmail),
             List.empty,
-            List("new URI")
+            List(new RedirectUri("new URI"))
           ))
         val success: CommandHandler.Success = (applicationData, dummyEvents)
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(E.pure(success))
       }
 
-      def thenReturnSuccess(applicationData: ApplicationData, event: ApplicationEvent, moreEvents: ApplicationEvent*) = {
+      def thenReturnSuccess(applicationData: StoredApplication, event: ApplicationEvent, moreEvents: ApplicationEvent*) = {
         val success: CommandHandler.Success = (applicationData, NonEmptyList.of(event, moreEvents: _*))
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(E.pure(success))
       }
