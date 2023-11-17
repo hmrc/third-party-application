@@ -17,11 +17,11 @@
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 trait NotificationHelpers {
 
-  protected def onlyAdmins(app: ApplicationData): LaxEmailAddress => Boolean = {
+  protected def onlyAdmins(app: StoredApplication): LaxEmailAddress => Boolean = {
     val admins = app.collaborators.filter(_.isAdministrator).map(_.emailAddress)
     admins.contains _
   }

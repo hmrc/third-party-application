@@ -17,13 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.util
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.SellResellOrDistribute
-import uk.gov.hmrc.thirdpartyapplication.models.UpliftRequest
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.SellResellOrDistribute
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.UpliftRequest
 
 trait UpliftRequestSamples {
   val sellResellOrDistribute      = SellResellOrDistribute("Yes")
   val doNotSellResellOrDistribute = SellResellOrDistribute("No")
 
-  def makeUpliftRequest(subscriptions: Set[ApiIdentifier]): UpliftRequest = UpliftRequest(sellResellOrDistribute, subscriptions)
+  def makeUpliftRequest(subscriptions: Set[ApiIdentifier]): UpliftRequest = UpliftRequest(sellResellOrDistribute, subscriptions, "bob")
   def makeUpliftRequest(subscriptions: ApiIdentifier*): UpliftRequest     = makeUpliftRequest(subscriptions.toSet)
 }

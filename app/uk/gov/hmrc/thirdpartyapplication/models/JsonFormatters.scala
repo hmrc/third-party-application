@@ -19,9 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 
@@ -31,28 +32,29 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatTermsOfUserAgreement    = Json.format[TermsOfUseAgreement]
   implicit val formatTermsOfUseAcceptance    = Json.format[TermsOfUseAcceptance]
   implicit val formatImportantSubmissionData = Json.format[ImportantSubmissionData]
-  implicit val formatStandard                = Json.format[Standard]
+  implicit val formatStandard                = Json.format[Access.Standard]
+  implicit val formatPrivileged              = Json.format[Access.Privileged]
+  implicit val formatRopc                    = Json.format[Access.Ropc]
   import uk.gov.hmrc.play.json.Union
 
   implicit val formatAccess = Union.from[Access]("accessType")
-    .and[Standard](STANDARD.toString)
-    .and[Privileged](PRIVILEGED.toString)
-    .and[Ropc](ROPC.toString)
+    .and[Access.Standard](AccessType.STANDARD.toString)
+    .and[Access.Privileged](AccessType.PRIVILEGED.toString)
+    .and[Access.Ropc](AccessType.ROPC.toString)
     .format
 
   implicit val formatCheckInformation = Json.format[CheckInformation]
 
   implicit val formatApplicationState  = Json.format[ApplicationState]
-  implicit val formatClientSecret      = Json.format[ClientSecretData]
-  implicit val formatEnvironmentToken  = Json.format[Token]
+  // implicit val formatClientSecret      = Json.format[ClientSecretData]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
   implicit val formatUpdateApplicationRequest     = Json.format[UpdateApplicationRequest]
-  implicit val formatApplicationResponse          = Json.format[ApplicationResponse]
+  implicit val formatApplicationResponse          = Json.format[Application]
   implicit val formatExtendedApplicationResponse  = Json.format[ExtendedApplicationResponse]
   implicit val formatPaginatedApplicationResponse = Json.format[PaginatedApplicationResponse]
   implicit val formatUpdateIpAllowlistRequest     = Json.format[UpdateIpAllowlistRequest]
-  implicit val formatApplicationWithHistory       = Json.format[ApplicationWithHistory]
+  implicit val formatApplicationWithHistory       = Json.format[ApplicationWithHistoryResponse]
   implicit val formatClientSecretResponse         = Json.format[ClientSecretResponse]
   implicit val formatApplicationTokensResponse    = Json.format[ApplicationTokenResponse]
 
@@ -72,7 +74,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatFixCollaboratorRequest           = Json.format[FixCollaboratorRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
-    JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecret]]
+    JsPath.write[Application] and (JsPath \ "totp").write[Option[CreateApplicationResponse.TotpSecret]]
   )(unlift(CreateApplicationResponse.unapply))
 }
 

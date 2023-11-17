@@ -21,27 +21,27 @@ import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ProductionAppNameChangedEvent
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 object ProductionAppNameChangedNotification {
 
-  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, event: ProductionAppNameChangedEvent)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendAdviceEmail(emailConnector: EmailConnector, app: StoredApplication, event: ProductionAppNameChangedEvent)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
     emailConnector.sendChangeOfApplicationName(event.requestingAdminEmail.text, event.oldAppName, event.newAppName, recipients)
   }
 
-  private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
+  private def getRecipients(app: StoredApplication): Set[LaxEmailAddress] = {
     app.collaborators.map(_.emailAddress) // TODO - utilise verified collaborators to ensure we send to only verified people
   }
 
-  private def getResponsibleIndividual(app: ApplicationData): Set[LaxEmailAddress] = {
+  private def getResponsibleIndividual(app: StoredApplication): Set[LaxEmailAddress] = {
     app.access match {
-      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress)
-      case _                                                      => Set()
+      case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress)
+      case _                                                             => Set()
     }
   }
 }

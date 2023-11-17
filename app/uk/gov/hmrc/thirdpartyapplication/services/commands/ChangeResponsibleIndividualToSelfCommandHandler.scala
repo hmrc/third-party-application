@@ -23,14 +23,15 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.validated._
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeResponsibleIndividualToSelf
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Submission, SubmissionId}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
@@ -43,17 +44,17 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
   import CommandHandler._
   import CommandFailures._
 
-  private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
+  private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: StoredApplication) =
     cond(
       app.access match {
-        case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
+        case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
           !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.equalsIgnoreCase(email)
-        case _                                                                                            => true
+        case _                                                                                                   => true
       },
       "The specified individual is already the RI for this application"
     )
 
-  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): Future[Validated[Failures, Submission]] = {
+  private def validate(app: StoredApplication, cmd: ChangeResponsibleIndividualToSelf): Future[Validated[Failures, Submission]] = {
 
     def checkSubmission(maybeSubmission: Option[Submission]): Validated[Failures, Submission] = {
       lazy val fails: CommandFailure = GenericFailure(s"No submission found for application ${app.id.value}")
@@ -74,7 +75,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
   }
 
   private def asEvents(
-      app: ApplicationData,
+      app: StoredApplication,
       cmd: ChangeResponsibleIndividualToSelf,
       submission: Submission,
       requesterEmail: LaxEmailAddress,
@@ -98,7 +99,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: ChangeResponsibleIndividualToSelf): AppCmdResultT = {
 
     val requesterName = cmd.name
     for {

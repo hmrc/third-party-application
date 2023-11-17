@@ -23,7 +23,7 @@ import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 
@@ -67,13 +67,13 @@ trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatcher
 
     object FetchLatestByStateForApplication {
 
-      def thenReturnWhen(id: ApplicationId, state: State.State)(value: StateHistory) =
+      def thenReturnWhen(id: ApplicationId, state: State)(value: StateHistory) =
         when(aMock.fetchLatestByStateForApplication(eqTo(id), eqTo(state))).thenReturn(successful(Some(value)))
     }
 
     object FetchLatestByState {
 
-      def thenReturnWhen(state: State.State)(values: StateHistory*) =
+      def thenReturnWhen(state: State)(values: StateHistory*) =
         when(aMock.fetchByState(eqTo(state))).thenReturn(successful(values.toList))
     }
 

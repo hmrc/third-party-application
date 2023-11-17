@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 
@@ -43,6 +43,6 @@ trait ApplicationNameValidationConfigMockModule extends MockitoSugar with Argume
   }
 
   object ApplicationNameValidationConfigMock extends BaseApplicationNameValidationConfigMock {
-    val aMock = mock[ApplicationNamingService.ApplicationNameValidationConfig](withSettings.lenient())
+    val aMock = mock[ApplicationNamingService.ApplicationNameValidationConfig](withSettings.strictness(Strictness.Lenient))
   }
 }

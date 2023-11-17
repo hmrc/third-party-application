@@ -23,12 +23,11 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecret
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
@@ -39,8 +38,8 @@ class RemoveClientSecretCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: RemoveClientSecret): Validated[CommandHandler.Failures, ApplicationData] = {
-    def clientSecretExists(clientSecretId: ClientSecret.Id, app: ApplicationData) =
+  private def validate(app: StoredApplication, cmd: RemoveClientSecret): Validated[CommandHandler.Failures, StoredApplication] = {
+    def clientSecretExists(clientSecretId: ClientSecret.Id, app: StoredApplication) =
       cond(
         app.tokens.production.clientSecrets.exists(_.id == clientSecretId),
         CommandFailures.GenericFailure(s"Client Secret Id ${clientSecretId.value} not found in Application ${app.id.value}")
@@ -52,8 +51,8 @@ class RemoveClientSecretCommandHandler @Inject() (
     ) { case _ => app }
   }
 
-  private def asEvents(app: ApplicationData, cmd: RemoveClientSecret): NonEmptyList[ApplicationEvent] = {
-    val clientSecret: Option[ClientSecretData] = app.tokens.production.clientSecrets.find(_.id == cmd.clientSecretId)
+  private def asEvents(app: StoredApplication, cmd: RemoveClientSecret): NonEmptyList[ApplicationEvent] = {
+    val clientSecret: Option[StoredClientSecret] = app.tokens.production.clientSecrets.find(_.id == cmd.clientSecretId)
     NonEmptyList.of(
       ApplicationEvents.ClientSecretRemovedV2(
         id = EventId.random,
@@ -66,7 +65,7 @@ class RemoveClientSecretCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: RemoveClientSecret): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: RemoveClientSecret): AppCmdResultT = {
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.deleteClientSecret(app.id, cmd.clientSecretId))

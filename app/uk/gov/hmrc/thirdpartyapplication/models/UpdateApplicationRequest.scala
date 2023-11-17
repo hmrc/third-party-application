@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.models
 
-import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 
-object AccessType extends Enumeration {
-  type AccessType = Value
-  val STANDARD, PRIVILEGED, ROPC = Value
-
-  implicit val formatAccessType = EnumJson.enumFormat(AccessType)
+case class UpdateApplicationRequest(name: String, access: Access = Access.Standard(), description: Option[String] = None) {
+  require(name.nonEmpty, "name is required")
+  access match {
+    case a: Access.Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
+    case _                  =>
+  }
 }

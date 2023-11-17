@@ -23,14 +23,12 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess => _, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -39,6 +37,10 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.time.{Clock, Duration, LocalDateTime, ZoneOffset}
 import scala.util.Random.nextString
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
@@ -256,7 +258,7 @@ class ApplicationRepositoryISpec
       val applicationId = ApplicationId.random
       await(applicationRepository.save(anApplicationDataForTest(applicationId)))
 
-      val updateRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
+      val updateRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_))
       val updatedApplication = await(
         applicationRepository.updateRedirectUris(
           applicationId,
@@ -265,8 +267,8 @@ class ApplicationRepositoryISpec
       )
 
       updatedApplication.access match {
-        case access: Standard => access.redirectUris mustBe updateRedirectUris
-        case _                => fail("Wrong access - expecting standard")
+        case access: Access.Standard => access.redirectUris mustBe updateRedirectUris
+        case _                       => fail("Wrong access - expecting standard")
       }
     }
   }
@@ -374,7 +376,7 @@ class ApplicationRepositoryISpec
     "update an existing lastAccess property for a client secret" in {
       val applicationId     = ApplicationId.random
       val applicationTokens = ApplicationTokens(
-        Token(
+        StoredToken(
           ClientId("aaa"),
           generateAccessToken,
           List(
@@ -424,7 +426,7 @@ class ApplicationRepositoryISpec
         )
       val applicationTokens =
         ApplicationTokens(
-          Token(
+          StoredToken(
             ClientId("aaa"),
             generateAccessToken,
             List(
@@ -499,14 +501,14 @@ class ApplicationRepositoryISpec
         ApplicationId.random,
         ClientId("aaa"),
         productionState("requestorEmail@example.com"),
-        access = Standard(),
+        access = Access.Standard(),
         grantLength1
       )
       val application2 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("zzz"),
         productionState("requestorEmail@example.com"),
-        access = Standard(),
+        access = Access.Standard(),
         grantLength2
       )
 
@@ -661,11 +663,11 @@ class ApplicationRepositoryISpec
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
     }
 
-    "not return Privileged applications" in {
+    "not return Access.Privileged applications" in {
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         state = productionState("gatekeeper"),
-        access = Privileged()
+        access = Access.Privileged()
       )
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
@@ -675,7 +677,7 @@ class ApplicationRepositoryISpec
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         state = productionState("gatekeeper"),
-        access = Ropc()
+        access = Access.Ropc()
       )
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
@@ -746,8 +748,8 @@ class ApplicationRepositoryISpec
     val expiryOnTheDayAfter  = dayOfExpiry.plusDays(1)
 
     def verifyApplications(
-        responseApplications: Seq[ApplicationData],
-        expectedState: State.State,
+        responseApplications: Seq[StoredApplication],
+        expectedState: State,
         expectedNumber: Int
       ): Unit = {
       responseApplications.foreach(app => app.state.name mustBe expectedState)
@@ -861,8 +863,8 @@ class ApplicationRepositoryISpec
     val lastWeek           = currentDate.minusDays(7)
 
     def verifyApplications(
-        responseApplications: Seq[ApplicationData],
-        expectedState: State.State,
+        responseApplications: Seq[StoredApplication],
+        expectedState: State,
         expectedNumber: Int
       ): Unit = {
       responseApplications.foreach(app => app.state.name mustBe expectedState)
@@ -908,8 +910,8 @@ class ApplicationRepositoryISpec
     val lastWeek           = currentDate.minusDays(7)
 
     def verifyApplications(
-        responseApplications: Seq[ApplicationData],
-        expectedState: State.State,
+        responseApplications: Seq[StoredApplication],
+        expectedState: State,
         expectedNumber: Int
       ): Unit = {
       responseApplications.foreach(app => app.state.name mustBe expectedState)
@@ -1122,8 +1124,8 @@ class ApplicationRepositoryISpec
 
   "fetch" should {
 
-    // API-3862: The wso2Username and wso2Password fields have been removed from ApplicationData, but will still exist in Mongo for most applications
-    // Test that documents are still correctly deserialised into ApplicationData objects
+    // API-3862: The wso2Username and wso2Password fields have been removed from StoredApplication, but will still exist in Mongo for most applications
+    // Test that documents are still correctly deserialised into StoredApplication objects
     "retrieve an application when wso2Username and wso2Password exist" in {
       val applicationId = ApplicationId.random
       val application   = anApplicationDataForTest(applicationId)
@@ -1390,7 +1392,7 @@ class ApplicationRepositoryISpec
     def applicationWithLastAccessDate(
         applicationId: ApplicationId,
         lastAccessDate: LocalDateTime
-      ): ApplicationData =
+      ): StoredApplication =
       anApplicationDataForTest(
         id = applicationId,
         prodClientId = generateClientId
@@ -1563,7 +1565,7 @@ class ApplicationRepositoryISpec
       val ropcApplication     = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId,
-        access = Ropc()
+        access = Access.Ropc()
       )
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
@@ -1815,7 +1817,7 @@ class ApplicationRepositoryISpec
           id = ApplicationId.random,
           applicationName,
           prodClientId = generateClientId,
-          access = Ropc()
+          access = Access.Ropc()
         )
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
@@ -2384,7 +2386,7 @@ class ApplicationRepositoryISpec
 
   "processAll" should {
     class TestService {
-      def doSomething(application: ApplicationData): ApplicationData =
+      def doSomething(application: StoredApplication): StoredApplication =
         application
     }
 
@@ -2524,16 +2526,16 @@ class ApplicationRepositoryISpec
 
   "updateClientSecretName" should {
     def clientSecretWithId(
-        application: ApplicationData,
+        application: StoredApplication,
         clientSecretId: ClientSecret.Id
-      ): ClientSecretData =
+      ): StoredClientSecret =
       application.tokens.production.clientSecrets
         .find(_.id == clientSecretId)
         .get
     def otherClientSecrets(
-        application: ApplicationData,
+        application: StoredApplication,
         clientSecretId: ClientSecret.Id
-      ): Seq[ClientSecretData] =
+      ): Seq[StoredClientSecret] =
       application.tokens.production.clientSecrets
         .filterNot(_.id == clientSecretId)
 
@@ -2662,7 +2664,7 @@ class ApplicationRepositoryISpec
   "addApplicationTermsOfUseAcceptance" should {
     "update the application correctly" in {
       val responsibleIndividual   = ResponsibleIndividual(
-        ResponsibleIndividual.Name("bob"),
+        FullName("bob"),
         LaxEmailAddress("bob@example.com")
       )
       val acceptanceDate          = now
@@ -2683,7 +2685,7 @@ class ApplicationRepositoryISpec
         termsOfUseAcceptances = List()
       )
       val application             = anApplicationDataForTest(applicationId).copy(access =
-        Standard(importantSubmissionData = Some(importantSubmissionData))
+        Access.Standard(importantSubmissionData = Some(importantSubmissionData))
       )
       await(applicationRepository.save(application))
       val updatedApplication      = await(
@@ -2694,7 +2696,7 @@ class ApplicationRepositoryISpec
       )
 
       val termsOfUseAcceptances = updatedApplication.access
-        .asInstanceOf[Standard]
+        .asInstanceOf[Access.Standard]
         .importantSubmissionData
         .get
         .termsOfUseAcceptances
@@ -2928,7 +2930,7 @@ class ApplicationRepositoryISpec
       val userId         = UserId.random
       val productionEnv  = Environment.PRODUCTION.toString
 
-      val collaborator = "user@example.com".admin(userId)
+      val collaborator: Collaborator = "user@example.com".admin(userId)
 
       val prodApplication1   = anApplicationDataForTest(applicationId1)
         .copy(environment = productionEnv, collaborators = Set(collaborator))
@@ -3037,7 +3039,7 @@ class ApplicationRepositoryISpec
     val applicationId = ApplicationId.random
     val oldLocation   = PrivacyPolicyLocations.InDesktopSoftware
     val newLocation   = PrivacyPolicyLocations.Url("http://example.com")
-    val access        = Standard(
+    val access        = Access.Standard(
       List.empty,
       None,
       None,
@@ -3059,8 +3061,8 @@ class ApplicationRepositoryISpec
 
     val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateApplicationPrivacyPolicyLocation(applicationId, newLocation))
     appWithUpdatedPrivacyPolicyLocation.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
-      case _                                                                                            => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+      case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
+      case _                                                                                                   => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
     }
   }
 
@@ -3068,14 +3070,14 @@ class ApplicationRepositoryISpec
     val applicationId = ApplicationId.random
     val oldUrl        = "http://example.com/old"
     val newUrl        = "http://example.com/new"
-    val access        = Standard(List.empty, None, Some(oldUrl), Set.empty, None, None)
+    val access        = Access.Standard(List.empty, None, Some(oldUrl), Set.empty, None, None)
     val app           = anApplicationData(applicationId).copy(access = access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateLegacyApplicationPrivacyPolicyLocation(applicationId, newUrl))
     appWithUpdatedPrivacyPolicyLocation.access match {
-      case Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
-      case _                                                  => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+      case Access.Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
+      case _                                                         => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
     }
   }
 
@@ -3083,7 +3085,7 @@ class ApplicationRepositoryISpec
     val applicationId = ApplicationId.random
     val oldLocation   = TermsAndConditionsLocations.InDesktopSoftware
     val newLocation   = TermsAndConditionsLocations.Url("http://example.com")
-    val access        = Standard(
+    val access        = Access.Standard(
       List.empty,
       None,
       None,
@@ -3098,8 +3100,8 @@ class ApplicationRepositoryISpec
 
     val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateApplicationTermsAndConditionsLocation(applicationId, newLocation))
     appWithUpdatedTermsConditionsLocation.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation mustBe newLocation
-      case _                                                                                                 => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
+      case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation mustBe newLocation
+      case _                                                                                                        => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
     }
   }
 
@@ -3107,14 +3109,14 @@ class ApplicationRepositoryISpec
     val applicationId = ApplicationId.random
     val oldUrl        = "http://example.com/old"
     val newUrl        = "http://example.com/new"
-    val access        = Standard(List.empty, Some(oldUrl), None, Set.empty, None, None)
+    val access        = Access.Standard(List.empty, Some(oldUrl), None, Set.empty, None, None)
     val app           = anApplicationData(applicationId).copy(access = access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateLegacyApplicationTermsAndConditionsLocation(applicationId, newUrl))
     appWithUpdatedTermsConditionsLocation.access match {
-      case Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
-      case _                                                       => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
+      case Access.Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
+      case _                                                              => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
     }
   }
 
@@ -3123,7 +3125,7 @@ class ApplicationRepositoryISpec
     val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
     val importantSubmissionData =
       ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocations.InDesktopSoftware, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
-    val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+    val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = anApplicationData(applicationId).copy(access = access)
 
     await(applicationRepository.save(app))
@@ -3149,15 +3151,15 @@ class ApplicationRepositoryISpec
       PrivacyPolicyLocations.InDesktopSoftware,
       List(TermsOfUseAcceptance(oldRi, now, submissionId, submissionIndex))
     )
-    val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+    val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = anApplicationData(applicationId).copy(access = access)
-    await(applicationRepository.save(app))
+    val appStored               = await(applicationRepository.save(app))
 
     val appWithUpdatedRI =
       await(applicationRepository.updateApplicationChangeResponsibleIndividualToSelf(applicationId, adminName, anAdminEmail, now, submissionId, submissionIndex))
 
     appWithUpdatedRI.access match {
-      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
+      case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         importantSubmissionData.responsibleIndividual.fullName.value mustBe adminName
         importantSubmissionData.responsibleIndividual.emailAddress mustBe anAdminEmail
         importantSubmissionData.termsOfUseAcceptances.size mustBe 2
@@ -3165,7 +3167,7 @@ class ApplicationRepositoryISpec
         latestAcceptance.responsibleIndividual.fullName.value mustBe adminName
         latestAcceptance.responsibleIndividual.emailAddress mustBe anAdminEmail
       }
-      case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
+      case _                                                             => fail("unexpected access type: " + appWithUpdatedRI.access)
     }
   }
 
@@ -3199,13 +3201,13 @@ class ApplicationRepositoryISpec
       PrivacyPolicyLocations.InDesktopSoftware,
       List(TermsOfUseAcceptance(oldRi, now, submissionId, submissionIndex))
     )
-    val access                  = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+    val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = anApplicationData(applicationId).copy(access = access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedRI = await(applicationRepository.updateApplicationChangeResponsibleIndividual(applicationId, riName, riEmail, now, submissionId, submissionIndex))
     appWithUpdatedRI.access match {
-      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
+      case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         importantSubmissionData.responsibleIndividual.fullName.value mustBe riName
         importantSubmissionData.responsibleIndividual.emailAddress mustBe riEmail
         importantSubmissionData.termsOfUseAcceptances.size mustBe 2
@@ -3213,7 +3215,7 @@ class ApplicationRepositoryISpec
         latestAcceptance.responsibleIndividual.fullName.value mustBe riName
         latestAcceptance.responsibleIndividual.emailAddress mustBe riEmail
       }
-      case _                                                      => fail("unexpected access type: " + appWithUpdatedRI.access)
+      case _                                                             => fail("unexpected access type: " + appWithUpdatedRI.access)
     }
   }
 
@@ -3222,7 +3224,7 @@ class ApplicationRepositoryISpec
       val appId = ApplicationId.random
       val app   = anApplicationData(appId).copy(
         state = ApplicationState(name = state, updatedOn = now),
-        access = Standard(importantSubmissionData = isNewJourney match {
+        access = Access.Standard(importantSubmissionData = isNewJourney match {
           case true  => Some(ImportantSubmissionData(
               None,
               ResponsibleIndividual.build("ri name", "ri@example.com"),
@@ -3235,7 +3237,7 @@ class ApplicationRepositoryISpec
         }),
         createdOn = now.plus(timeOffset),
         environment = environment.toString,
-        tokens = ApplicationTokens(Token(ClientId.random, "access token"))
+        tokens = ApplicationTokens(StoredToken(ClientId.random, "access token"))
       )
       await(applicationRepository.save(app))
       app
@@ -3368,9 +3370,9 @@ class ApplicationRepositoryISpec
   }
 
   def createAppWithStatusUpdatedOn(
-      state: State.State,
+      state: State,
       updatedOn: LocalDateTime
-    ): ApplicationData =
+    ): StoredApplication =
     anApplicationDataForTest(
       id = ApplicationId.random,
       prodClientId = generateClientId,
@@ -3395,14 +3397,14 @@ class ApplicationRepositoryISpec
       id: ApplicationId,
       prodClientId: ClientId = ClientId("aaa"),
       state: ApplicationState = testingState(),
-      access: Access = Standard(),
+      access: Access = Access.Standard(),
       grantLength: Int = defaultGrantLength,
       users: Set[Collaborator] = Set(
         "user@example.com".admin()
       ),
       checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[ClientSecretData] = List(aClientSecret(hashedSecret = "hashed-secret"))
-    ): ApplicationData = {
+      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret"))
+    ): StoredApplication = {
 
     aNamedApplicationData(
       id,
@@ -3422,14 +3424,14 @@ class ApplicationRepositoryISpec
       name: String,
       prodClientId: ClientId = ClientId("aaa"),
       state: ApplicationState = testingState(),
-      access: Access = Standard(),
+      access: Access = Access.Standard(),
       users: Set[Collaborator] = Set("user@example.com".admin()),
       checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[ClientSecretData] = List(aClientSecret(hashedSecret = "hashed-secret")),
+      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
       grantLength: Int = defaultGrantLength
-    ): ApplicationData = {
+    ): StoredApplication = {
 
-    ApplicationData(
+    StoredApplication(
       id,
       name,
       name.toLowerCase,
@@ -3437,7 +3439,7 @@ class ApplicationRepositoryISpec
       Some("description"),
       "myapplication",
       ApplicationTokens(
-        Token(prodClientId, generateAccessToken, clientSecrets)
+        StoredToken(prodClientId, generateAccessToken, clientSecrets)
       ),
       state,
       access,
@@ -3449,7 +3451,7 @@ class ApplicationRepositoryISpec
   }
 
   def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[LocalDateTime] = None, hashedSecret: String = "") =
-    ClientSecretData(
+    StoredClientSecret(
       id = id,
       name = name,
       lastAccess = lastAccess,

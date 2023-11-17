@@ -14,15 +14,25 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.models.db
 
-case class IpAllowlist(
-    required: Boolean = false,
-    allowlist: Set[String] = Set.empty
+import java.time.{LocalDateTime, ZoneOffset}
+
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
+
+case class StoredClientSecret(
+    name: String,
+    createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    lastAccess: Option[LocalDateTime] = None,
+    id: ClientSecret.Id = ClientSecret.Id.random,
+    hashedSecret: String
   )
 
-object IpAllowlist {
+object StoredClientSecret {
   import play.api.libs.json.Json
 
-  implicit val formatIpAllowlist = Json.format[IpAllowlist]
+  implicit val dateformat = MongoJavatimeFormats.localDateTimeFormat
+  implicit val format     = Json.format[StoredClientSecret]
 }

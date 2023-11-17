@@ -20,23 +20,24 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
 import com.github.t3hnar.bcrypt._
+import org.mockito.Strictness
 import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, Collaborator, InvalidStateTransition, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.RejectUpliftRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens, ApplicationWithStateHistory, ApplicationWithSubscriptions}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredToken, _}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
 
 class GatekeeperServiceSpec
@@ -50,15 +51,15 @@ class GatekeeperServiceSpec
 
   private val bobTheGKUser = Actors.GatekeeperUser("bob")
 
-  private def aSecret(secret: String) = ClientSecretData(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
+  private def aSecret(secret: String) = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
-  private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
+  private val productionToken = StoredToken(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
-  private def aHistory(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
-    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(TESTING), changedAt = now)
+  private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL): StateHistory = {
+    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(State.TESTING), changedAt = now)
   }
 
-  private def aStateHistoryResponse(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL) = {
+  private def aStateHistoryResponse(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
     StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, now)
   }
 
@@ -67,7 +68,7 @@ class GatekeeperServiceSpec
       state: ApplicationState = productionState(requestedByEmail),
       collaborators: Set[Collaborator] = Set(loggedInUser.admin())
     ) = {
-    ApplicationData(
+    StoredApplication(
       applicationId,
       "MyApp",
       "myapp",
@@ -76,7 +77,7 @@ class GatekeeperServiceSpec
       "aaaaaaaaaa",
       ApplicationTokens(productionToken),
       state,
-      Standard(),
+      Access.Standard(),
       now,
       Some(now)
     )
@@ -88,11 +89,11 @@ class GatekeeperServiceSpec
       with StateHistoryRepositoryMockModule {
 
     lazy val locked            = false
-    val mockEmailConnector     = mock[EmailConnector](withSettings.lenient())
+    val mockEmailConnector     = mock[EmailConnector](withSettings.strictness(Strictness.Lenient))
     val response               = mock[HttpResponse]
     val mockApplicationService = mock[ApplicationService]
 
-    val applicationResponseCreator = new ApplicationResponseCreator()
+    // val applicationResponseCreator = new ApplicationResponseCreator()
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -143,7 +144,7 @@ class GatekeeperServiceSpec
 
       val result = await(underTest.fetchAppWithHistory(appId))
 
-      result shouldBe ApplicationWithHistory(ApplicationResponse(data = app1), history.map(StateHistoryResponse.from))
+      result shouldBe ApplicationWithHistoryResponse(Application(data = app1), history.map(StateHistoryResponse.from))
     }
 
     "throw not found exception" in new Setup {
@@ -218,9 +219,9 @@ class GatekeeperServiceSpec
       val expectedApplication  = application.copy(state = pendingRequesterVerificationState(upliftRequestedBy))
       val expectedStateHistory = StateHistory(
         applicationId = expectedApplication.id,
-        state = PENDING_REQUESTER_VERIFICATION,
+        state = State.PENDING_REQUESTER_VERIFICATION,
         actor = Actors.GatekeeperUser(gatekeeperUserId),
-        previousState = Some(PENDING_GATEKEEPER_APPROVAL),
+        previousState = Some(State.PENDING_GATEKEEPER_APPROVAL),
         changedAt = now
       )
 
@@ -241,7 +242,7 @@ class GatekeeperServiceSpec
       val application = anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy))
 
       ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
+      ApplicationRepoMock.Save.thenReturn(mock[StoredApplication])
       StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))
 
       intercept[RuntimeException] {
@@ -339,9 +340,9 @@ class GatekeeperServiceSpec
       val expectedApplication  = application.copy(state = testingState())
       val expectedStateHistory = StateHistory(
         applicationId = application.id,
-        state = TESTING,
+        state = State.TESTING,
         actor = Actors.GatekeeperUser(gatekeeperUserId),
-        previousState = Some(PENDING_GATEKEEPER_APPROVAL),
+        previousState = Some(State.PENDING_GATEKEEPER_APPROVAL),
         notes = Some(rejectReason),
         changedAt = now
       )
@@ -523,21 +524,21 @@ class GatekeeperServiceSpec
 
       val result = await(underTest.fetchAppStateHistories())
       result shouldBe List(
-        ApplicationStateHistory(
+        ApplicationStateHistoryResponse(
           appId1,
           "app1",
           2,
           List(
-            ApplicationStateHistoryItem(State.TESTING, ts1),
-            ApplicationStateHistoryItem(State.PRODUCTION, ts2)
+            ApplicationStateHistoryResponse.Item(State.TESTING, ts1),
+            ApplicationStateHistoryResponse.Item(State.PRODUCTION, ts2)
           )
         ),
-        ApplicationStateHistory(
+        ApplicationStateHistoryResponse(
           appId2,
           "app2",
           2,
           List(
-            ApplicationStateHistoryItem(State.TESTING, ts3)
+            ApplicationStateHistoryResponse.Item(State.TESTING, ts3)
           )
         )
       )

@@ -22,12 +22,10 @@ import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.JsObject
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.mongo.test.MongoSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSearch, AutoDeleteAllowed, StandardAccess => _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -38,6 +36,9 @@ import java.time.{Clock, LocalDateTime}
 import scala.util.Random.nextString
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
 
 class ApplicationRepositorySerialisationISpec
     extends ServerBaseISpec
@@ -80,7 +81,7 @@ class ApplicationRepositorySerialisationISpec
     }
 
     private def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[LocalDateTime] = None, hashedSecret: String = "hashed-secret") =
-      ClientSecretData(
+      StoredClientSecret(
         id = id,
         name = name,
         lastAccess = lastAccess,
@@ -88,7 +89,7 @@ class ApplicationRepositorySerialisationISpec
         createdOn = now
       )
 
-    val applicationData = ApplicationData(
+    val applicationData = StoredApplication(
       applicationId,
       "appName",
       "normalised app name",
@@ -98,10 +99,10 @@ class ApplicationRepositorySerialisationISpec
       Some("description"),
       "myapplication",
       ApplicationTokens(
-        Token(ClientId("aaa"), generateAccessToken, List(aClientSecret()))
+        StoredToken(ClientId("aaa"), generateAccessToken, List(aClientSecret()))
       ),
       testingState(),
-      Standard(),
+      Access.Standard(),
       now,
       Some(now),
       grantLength = grantLength,
@@ -161,6 +162,26 @@ class ApplicationRepositorySerialisationISpec
       case Some(application) => {
         application.id mustBe applicationId
         application.allowAutoDelete mustBe true
+      }
+      case None              => fail()
+    }
+  }
+
+  "create application with invalid redirect UR in db and test we can read it back " in new Setup {
+    val invalidUri        = new RedirectUri("bobbins") // Using new to avoid validation of the apply method
+    val data              = applicationData.copy(access = Access.Standard().copy(redirectUris = List(invalidUri)))
+    val rawJson: JsObject = applicationToMongoJson(data, Some(true))
+    saveApplicationAsMongoJson(rawJson)
+    val result            = await(applicationRepository.fetch(applicationId))
+
+    result match {
+      case Some(application) => {
+        application.id mustBe applicationId
+        application.allowAutoDelete mustBe true
+        application.access match {
+          case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris.head mustBe invalidUri
+          case _                                            => fail()
+        }
       }
       case None              => fail()
     }

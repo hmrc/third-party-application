@@ -22,15 +22,16 @@ import scala.concurrent.ExecutionContext
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.services.BaseCommandHandler
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, Environment, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.services.BaseCommandHandler
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 trait CommandHandler {
   implicit def ec: ExecutionContext
@@ -38,7 +39,7 @@ trait CommandHandler {
   val E = EitherTHelper.make[CommandHandler.Failures]
 }
 
-object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[ApplicationEvent])] {
+object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyList[ApplicationEvent])] {
   import scala.language.implicitConversions
 
   import CommandFailures._
@@ -61,10 +62,10 @@ object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[
 
   implicit def toCommandFailure(in: String): CommandFailure = CommandFailures.GenericFailure(in)
 
-  def isAppActorACollaboratorOnApp(actor: Actors.AppCollaborator, app: ApplicationData): Validated[Failures, Unit] =
+  def isAppActorACollaboratorOnApp(actor: Actors.AppCollaborator, app: StoredApplication): Validated[Failures, Unit] =
     cond(app.collaborators.exists(c => c.emailAddress == actor.email), ActorIsNotACollaboratorOnApp)
 
-  def isCollaboratorOnApp(collaborator: Collaborator, app: ApplicationData): Validated[Failures, Unit] = {
+  def isCollaboratorOnApp(collaborator: Collaborator, app: StoredApplication): Validated[Failures, Unit] = {
     val matchesId: Collaborator => Boolean    = (appCollaborator) => { appCollaborator.userId == collaborator.userId }
     val matchesEmail: Collaborator => Boolean = (appCollaborator) => { appCollaborator.emailAddress equalsIgnoreCase collaborator.emailAddress }
 
@@ -75,7 +76,7 @@ object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[
     }
   }
 
-  private def isCollaboratorActorAndAdmin(actor: Actor, app: ApplicationData): Boolean =
+  private def isCollaboratorActorAndAdmin(actor: Actor, app: StoredApplication): Boolean =
     actor match {
       case Actors.AppCollaborator(emailAddress) => app.collaborators.exists(c => c.isAdministrator && c.emailAddress == emailAddress)
       case _                                    => false
@@ -90,108 +91,108 @@ object CommandHandler extends BaseCommandHandler[(ApplicationData, NonEmptyList[
     case _: Actor             => false
   }
 
-  def isAdminIfInProductionOrGatekeeperActor(actor: Actor, app: ApplicationData): Validated[Failures, Unit] =
+  def isAdminIfInProductionOrGatekeeperActor(actor: Actor, app: StoredApplication): Validated[Failures, Unit] =
     cond(
       (app.environment == Environment.PRODUCTION.toString && isCollaboratorActorAndAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString) || isGatekeeperUser(actor),
       CommandFailures.GenericFailure("App is in PRODUCTION so User must be an ADMIN or be a Gatekeeper User")
     )
 
-  def isAdminOnApp(userId: UserId, app: ApplicationData): Validated[Failures, Collaborator] =
+  def isAdminOnApp(userId: UserId, app: StoredApplication): Validated[Failures, Collaborator] =
     mustBeDefined(app.collaborators.find(c => c.isAdministrator && c.userId == userId), "User must be an ADMIN")
 
-  def isAdminIfInProduction(actor: Actor, app: ApplicationData): Validated[Failures, Unit] =
+  def isAdminIfInProduction(actor: Actor, app: StoredApplication): Validated[Failures, Unit] =
     cond(
       (app.environment == Environment.PRODUCTION.toString && isCollaboratorActorAndAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString),
       GenericFailure("App is in PRODUCTION so User must be an ADMIN")
     )
 
-  def isNotInProcessOfBeingApproved(app: ApplicationData): Validated[Failures, Unit] =
+  def isNotInProcessOfBeingApproved(app: StoredApplication): Validated[Failures, Unit] =
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION || app.state.name == State.TESTING,
       GenericFailure("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION")
     )
 
-  def isApproved(app: ApplicationData): Validated[Failures, Unit] =
+  def isApproved(app: StoredApplication): Validated[Failures, Unit] =
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION,
       GenericFailure("App is not in PRE_PRODUCTION or in PRODUCTION state")
     )
 
-  def collaboratorAlreadyOnApp(email: LaxEmailAddress, app: ApplicationData) = {
+  def collaboratorAlreadyOnApp(email: LaxEmailAddress, app: StoredApplication) = {
     cond(
       !app.collaborators.exists(_.emailAddress.equalsIgnoreCase(email)),
       CollaboratorAlreadyExistsOnApp
     )
   }
 
-  def applicationWillStillHaveAnAdmin(email: LaxEmailAddress, app: ApplicationData) = {
+  def applicationWillStillHaveAnAdmin(email: LaxEmailAddress, app: StoredApplication) = {
     cond(
       applicationHasAnAdmin(app.collaborators.filterNot(_.emailAddress equalsIgnoreCase email)),
       CannotRemoveLastAdmin
     )
   }
 
-  def isPendingResponsibleIndividualVerification(app: ApplicationData) =
+  def isPendingResponsibleIndividualVerification(app: StoredApplication) =
     cond(
       app.isPendingResponsibleIndividualVerification,
       GenericFailure("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state")
     )
 
-  def isInTesting(app: ApplicationData) =
+  def isInTesting(app: StoredApplication) =
     cond(
       app.isInTesting,
       GenericFailure("App is not in TESTING state")
     )
 
-  def isInProduction(app: ApplicationData) =
+  def isInProduction(app: StoredApplication) =
     cond(
       app.isInProduction,
       GenericFailure("App is not in PRODUCTION state")
     )
 
-  def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app: ApplicationData) =
+  def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app: StoredApplication) =
     cond(
       app.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification,
       GenericFailure("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state")
     )
 
-  def isStandardAccess(app: ApplicationData) =
+  def isStandardAccess(app: StoredApplication) =
     cond(app.access.accessType == AccessType.STANDARD, GenericFailure("App must have a STANDARD access type"))
 
-  def isStandardNewJourneyApp(app: ApplicationData) =
+  def isStandardNewJourneyApp(app: StoredApplication) =
     cond(
       app.access match {
-        case Standard(_, _, _, _, _, Some(_)) => true
-        case _                                => false
+        case Access.Standard(_, _, _, _, _, Some(_)) => true
+        case _                                       => false
       },
       GenericFailure("Must be a standard new journey application")
     )
 
-  def getRequester(app: ApplicationData, instigator: UserId): LaxEmailAddress = {
+  def getRequester(app: StoredApplication, instigator: UserId): LaxEmailAddress = {
     app.collaborators.find(_.userId == instigator).map(_.emailAddress).getOrElse(throw new RuntimeException(s"no collaborator found with instigator's userid: ${instigator}"))
   }
 
-  def getResponsibleIndividual(app: ApplicationData) =
+  def getResponsibleIndividual(app: StoredApplication) =
     app.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
-      case _                                                                                            => None
+      case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
+      case _                                                                                                   => None
     }
 
-  def ensureResponsibleIndividualDefined(app: ApplicationData) =
+  def ensureResponsibleIndividualDefined(app: StoredApplication) =
     mustBeDefined(getResponsibleIndividual(app), "The responsible individual has not been set for this application")
 
-  def getRequesterEmail(app: ApplicationData): Option[LaxEmailAddress] =
+  def getRequesterEmail(app: StoredApplication): Option[LaxEmailAddress] =
     app.state.requestedByEmailAddress.map(LaxEmailAddress(_))
 
-  def ensureRequesterEmailDefined(app: ApplicationData) =
+  def ensureRequesterEmailDefined(app: StoredApplication) =
     mustBeDefined(getRequesterEmail(app), "The requestedByEmailAddress has not been set for this application")
 
-  def getRequesterName(app: ApplicationData): Option[String] =
+  def getRequesterName(app: StoredApplication): Option[String] =
     app.state.requestedByName.orElse(getRequesterEmail(app).map(_.text))
 
-  def ensureRequesterNameDefined(app: ApplicationData) =
+  def ensureRequesterNameDefined(app: StoredApplication) =
     mustBeDefined(getRequesterName(app), "The requestedByName has not been set for this application")
 
-  def appHasLessThanLimitOfSecrets(app: ApplicationData, clientSecretLimit: Int): Validated[Failures, Unit] =
+  def appHasLessThanLimitOfSecrets(app: StoredApplication, clientSecretLimit: Int): Validated[Failures, Unit] =
     cond(app.tokens.production.clientSecrets.size < clientSecretLimit, GenericFailure("Client secret limit has been exceeded"))
 }

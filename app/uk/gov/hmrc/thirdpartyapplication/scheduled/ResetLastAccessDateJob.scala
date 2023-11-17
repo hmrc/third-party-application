@@ -29,7 +29,7 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 class ResetLastAccessDateJob @Inject() (
@@ -52,7 +52,7 @@ class ResetLastAccessDateJob @Inject() (
       .map(_ => RunningOfJobSuccessful)
   }
 
-  def updateLastAccessDate(earliestLastAccessDate: LocalDate, dryRun: Boolean): ApplicationData => Unit = {
+  def updateLastAccessDate(earliestLastAccessDate: LocalDate, dryRun: Boolean): StoredApplication => Unit = {
 
     def updateApplicationRecord(applicationId: ApplicationId, applicationName: String) = {
       if (dryRun) {

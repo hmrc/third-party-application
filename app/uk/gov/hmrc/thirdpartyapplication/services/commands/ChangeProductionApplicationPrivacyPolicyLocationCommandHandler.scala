@@ -22,12 +22,12 @@ import scala.concurrent.ExecutionContext
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocation, PrivacyPolicyLocations}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationPrivacyPolicyLocation
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocation, PrivacyPolicyLocations}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationPrivacyPolicyLocation
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
@@ -38,7 +38,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
 
   import CommandHandler._
 
-  def processLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
+  def processLegacyApp(oldUrl: String, app: StoredApplication, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
     def validate: Validated[Failures, String] = {
       val newUrl     = cmd.newLocation match {
         case PrivacyPolicyLocations.Url(value) => Some(value)
@@ -79,8 +79,8 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
     } yield (savedApp, events)
   }
 
-  def processApp(oldLocation: PrivacyPolicyLocation, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
-    def validate: Validated[Failures, ApplicationData] = {
+  def processApp(oldLocation: PrivacyPolicyLocation, app: StoredApplication, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
+    def validate: Validated[Failures, StoredApplication] = {
       Apply[Validated[Failures, *]].map3(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
@@ -108,11 +108,11 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
     } yield (savedApp, events)
   }
 
-  def process(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
     app.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => processApp(privacyPolicyLocation, app, cmd)
-      case Standard(_, _, maybePrivacyPolicyUrl, _, _, None)                                            => processLegacyApp(maybePrivacyPolicyUrl.getOrElse(""), app, cmd)
-      case _                                                                                            => processApp(PrivacyPolicyLocations.InDesktopSoftware, app, cmd) // This will not valdate
+      case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => processApp(privacyPolicyLocation, app, cmd)
+      case Access.Standard(_, _, maybePrivacyPolicyUrl, _, _, None)                                            => processLegacyApp(maybePrivacyPolicyUrl.getOrElse(""), app, cmd)
+      case _                                                                                                   => processApp(PrivacyPolicyLocations.InDesktopSoftware, app, cmd) // This will not valdate
     }
   }
 }

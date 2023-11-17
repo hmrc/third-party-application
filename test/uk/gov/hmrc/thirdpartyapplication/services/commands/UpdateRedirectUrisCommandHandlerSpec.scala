@@ -18,11 +18,12 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, Environment}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.RedirectUrisUpdatedV2
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 
@@ -31,16 +32,16 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new UpdateRedirectUrisCommandHandler(ApplicationRepoMock.aMock)
 
-    val applicationId                    = ApplicationId.random
-    val applicationData: ApplicationData = anApplicationData(applicationId)
-    val subordinateApp                   = applicationData.copy(environment = Environment.SANDBOX.toString())
+    val applicationId                      = ApplicationId.random
+    val applicationData: StoredApplication = anApplicationData(applicationId)
+    val subordinateApp                     = applicationData.copy(environment = Environment.SANDBOX.toString())
 
-    val nonStandardAccessApp = applicationData.copy(access = Privileged())
+    val nonStandardAccessApp = applicationData.copy(access = Access.Privileged())
     val developer            = applicationData.collaborators.head
     val developerActor       = Actors.AppCollaborator(developer.emailAddress)
 
     val oldRedirectUris = List.empty
-    val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
+    val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_))
 
     val timestamp  = FixedClock.instant
     val cmdAsAdmin = UpdateRedirectUris(adminActor, oldRedirectUris, newRedirectUris, now)
@@ -82,7 +83,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
       "fail when we try to add too many redirect URIs" in new Setup {
         checkFailsWith("Can have at most 5 redirect URIs") {
-          val brokenCmd = cmdAsAdmin.copy(newRedirectUris = (1 to 6).toList.map(id => s"http://somewhere.com/endpoint$id"))
+          val brokenCmd = cmdAsAdmin.copy(newRedirectUris = (1 to 6).toList.map(id => RedirectUri.unsafeApply(s"https://somewhere.com/endpoint$id")))
           underTest.process(applicationData, brokenCmd)
         }
         ApplicationRepoMock.verifyZeroInteractions()

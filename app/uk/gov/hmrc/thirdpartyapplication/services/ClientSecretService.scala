@@ -20,13 +20,12 @@ import java.time.{Clock, Instant, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future, blocking}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecretsHashingConfig
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, SimpleTimer, TimedValue}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecretsHashingConfig
 import uk.gov.hmrc.apiplatform.modules.crypto.services.SecretsHashingService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredClientSecret
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-// API-7200 // mport java.util.concurrent.Executors
 
 @Singleton
 class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applicationRepository: ApplicationRepository, val clock: Clock)(implicit ec: ExecutionContext)
@@ -35,7 +34,7 @@ class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applica
   // API-7200 // implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
   override val workFactor = config.workFactor
 
-  def clientSecretIsValid(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecretData]): Future[Option[ClientSecretData]] = {
+  def clientSecretIsValid(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[StoredClientSecret]): Future[Option[StoredClientSecret]] = {
     /*
      * *** WARNING ***
      * This function is called every time an OAuth2 token is issued, and is therefore crucially important to the overall performance of the API Platform.
@@ -74,7 +73,7 @@ class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applica
     timedValue.value
   }
 
-  def lastUsedOrdering: (ClientSecretData, ClientSecretData) => Boolean = {
+  def lastUsedOrdering: (StoredClientSecret, StoredClientSecret) => Boolean = {
     val oldEpochDateTime = Instant.ofEpochMilli(0).atOffset(ZoneOffset.UTC).toLocalDateTime
     (first, second) => first.lastAccess.getOrElse(oldEpochDateTime).isAfter(second.lastAccess.getOrElse(oldEpochDateTime))
   }

@@ -18,26 +18,32 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
+  CreateApplicationRequest,
+  CreateApplicationRequestV1,
+  CreateApplicationRequestV2,
+  StandardAccessDataToCopy
+}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, _}
 
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples with CollaboratorTestData {
 
   "Application with Uplift request" should {
     val app     =
-      ApplicationData(
+      StoredApplication(
         ApplicationId.random,
         "MyApp",
         "myapp",
         Set.empty,
         None,
         "a",
-        ApplicationTokens(Token(ClientId("cid"), "at")),
+        ApplicationTokens(StoredToken(ClientId("cid"), "at")),
         productionState("user1"),
-        Standard(),
+        Access.Standard(),
         now,
         Some(now)
       )
@@ -58,61 +64,69 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
     }
   }
 
+  def createRequestV1(access: Access, environment: Environment) = {
+    val request: CreateApplicationRequest =
+      CreateApplicationRequestV1.create(
+        name = "an application",
+        access = access,
+        description = None,
+        environment = environment,
+        collaborators = Set("jim@example.com".admin()),
+        subscriptions = None
+      )
+
+    StoredApplication.create(
+      createApplicationRequest = request,
+      wso2ApplicationName = "wso2ApplicationName",
+      environmentToken = StoredToken(ClientId("clientId"), "accessToken"),
+      createdOn = now
+    )
+  }
+
   "Application from CreateApplicationRequest" should {
     def createRequestV2(access: StandardAccessDataToCopy, environment: Environment) = {
-      ApplicationData.create(
-        createApplicationRequest = CreateApplicationRequestV2(
+      val request: CreateApplicationRequest =
+        CreateApplicationRequestV2.create(
           name = "an application",
           access = access,
+          description = None,
           environment = environment,
           collaborators = Set("jim@example.com".admin()),
           upliftRequest = makeUpliftRequest(ApiIdentifier.random),
           requestedBy = "user@example.com",
           sandboxApplicationId = ApplicationId.random
-        ),
-        wso2ApplicationName = "wso2ApplicationName",
-        environmentToken = Token(ClientId("clientId"), "accessToken"),
-        createdOn = now
-      )
-    }
+        )
 
-    def createRequestV1(access: Access, environment: Environment) = {
-      ApplicationData.create(
-        createApplicationRequest = CreateApplicationRequestV1(
-          name = "an application",
-          access = access,
-          environment = environment,
-          collaborators = Set("jim@example.com".admin()),
-          subscriptions = None
-        ),
+      StoredApplication.create(
+        createApplicationRequest = request,
         wso2ApplicationName = "wso2ApplicationName",
-        environmentToken = Token(ClientId("clientId"), "accessToken"),
+        environmentToken = StoredToken(ClientId("clientId"), "accessToken"),
         createdOn = now
       )
     }
 
     "be automatically uplifted to PRODUCTION state when the app is for the sandbox environment" in {
-      val actual = createRequestV1(Standard(), Environment.SANDBOX)
-      actual.state.name shouldBe PRODUCTION
+      val actual = createRequestV1(Access.Standard(), Environment.SANDBOX)
+      actual.state.name shouldBe State.PRODUCTION
     }
 
     "defer to STANDARD accessType to determine application state when the app is for the production environment" in {
       val actual = createRequestV2(StandardAccessDataToCopy(), Environment.PRODUCTION)
-      actual.state.name shouldBe TESTING
+      actual.state.name shouldBe State.TESTING
     }
 
     "defer to PRIVILEGED accessType to determine application state when the app is for the production environment" in {
-      val actual = createRequestV1(Privileged(), Environment.PRODUCTION)
-      actual.state.name shouldBe PRODUCTION
+      val actual = createRequestV1(Access.Privileged(), Environment.PRODUCTION)
+      actual.state.name shouldBe State.PRODUCTION
     }
 
     "defer to ROPC accessType to determine application state when the app is for the production environment" in {
-      val actual = createRequestV1(Ropc(), Environment.PRODUCTION)
-      actual.state.name shouldBe PRODUCTION
+      val actual = createRequestV1(Access.Ropc(), Environment.PRODUCTION)
+      actual.state.name shouldBe State.PRODUCTION
     }
 
     "use the same value for createdOn and lastAccess fields" in {
-      val actual = createRequestV1(Standard(), Environment.PRODUCTION)
+      val actual = createRequestV1(Access.Standard(), Environment.PRODUCTION)
       actual.createdOn shouldBe actual.lastAccess.get
     }
   }

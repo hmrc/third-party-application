@@ -16,76 +16,93 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
+  CreateApplicationRequest,
+  CreateApplicationRequestV1,
+  CreateApplicationRequestV2,
+  StandardAccessDataToCopy
+}
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, HmrcSpec, UpliftRequestSamples}
 
 class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with CollaboratorTestData {
   import ApiIdentifierSyntax._
 
-  "ApplicationData" should {
+  "StoredApplication" should {
     "for version 1 requests" should {
       "do not set the check information when app is created without subs" in {
-        val token = Token(ClientId.random, "st")
+        val token = StoredToken(ClientId.random, "st")
 
-        val request = CreateApplicationRequestV1(
-          name = "bob",
-          environment = Environment.PRODUCTION,
-          collaborators = Set("jim@example.com".admin()),
-          subscriptions = None
-        )
+        val request: CreateApplicationRequest =
+          CreateApplicationRequestV1.create(
+            name = "bob",
+            access = Access.Standard(),
+            description = None,
+            environment = Environment.PRODUCTION,
+            collaborators = Set("jim@example.com".admin()),
+            subscriptions = None
+          )
 
-        ApplicationData.create(request, "bob", token).checkInformation shouldBe None
+        StoredApplication.create(request, "bob", token).checkInformation shouldBe None
       }
 
       "set the check information for subscriptions when app is created with subs" in {
-        val token = Token(ClientId.random, "st")
+        val token = StoredToken(ClientId.random, "st")
 
-        val request = CreateApplicationRequestV1(
-          name = "bob",
-          environment = Environment.PRODUCTION,
-          collaborators = Set("jim@example.com".admin()),
-          subscriptions = Some(Set("context".asIdentifier))
-        )
+        val request: CreateApplicationRequest =
+          CreateApplicationRequestV1.create(
+            name = "bob",
+            access = Access.Standard(),
+            description = None,
+            environment = Environment.PRODUCTION,
+            collaborators = Set("jim@example.com".admin()),
+            subscriptions = Some(Set("context".asIdentifier))
+          )
 
-        ApplicationData.create(request, "bob", token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
+        StoredApplication.create(request, "bob", token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
       }
 
       "ensure correct grant length when app is created" in {
-        val token = Token(ClientId.random, "st")
+        val token = StoredToken(ClientId.random, "st")
 
-        val request = CreateApplicationRequestV1(
-          name = "bob",
-          environment = Environment.PRODUCTION,
-          collaborators = Set("jim@example.com".admin()),
-          subscriptions = None
-        )
+        val request: CreateApplicationRequest =
+          CreateApplicationRequestV1.create(
+            name = "bob",
+            access = Access.Standard(),
+            description = None,
+            environment = Environment.PRODUCTION,
+            collaborators = Set("jim@example.com".admin()),
+            subscriptions = Some(Set("context".asIdentifier))
+          )
 
         val grantLengthInDays = 547
-        ApplicationData.create(request, "bob", token).grantLength shouldBe grantLengthInDays
+        StoredApplication.create(request, "bob", token).grantLength shouldBe grantLengthInDays
       }
     }
 
     "for version 2 requests" should {
-      val token = Token(ClientId.random, "st")
+      val token = StoredToken(ClientId.random, "st")
 
-      val request = CreateApplicationRequestV2(
-        name = "bob",
-        environment = Environment.PRODUCTION,
-        collaborators = Set("jim@example.com".admin()),
-        upliftRequest = makeUpliftRequest(ApiIdentifier.random),
-        requestedBy = "user@example.com",
-        sandboxApplicationId = ApplicationId.random
-      )
+      val request: CreateApplicationRequest =
+        CreateApplicationRequestV2.create(
+          name = "bob",
+          access = StandardAccessDataToCopy(),
+          description = None,
+          environment = Environment.PRODUCTION,
+          collaborators = Set("jim@example.com".admin()),
+          upliftRequest = makeUpliftRequest(ApiIdentifier.random),
+          requestedBy = "user@example.com",
+          sandboxApplicationId = ApplicationId.random
+        )
 
       "not set the check information at all" in {
-        ApplicationData.create(request, "bob", token).checkInformation shouldBe None
+        StoredApplication.create(request, "bob", token).checkInformation shouldBe None
       }
 
       "ensure correct grant length when app is created" in {
-        ApplicationData.create(request, "bob", token).grantLength shouldBe 547
+        StoredApplication.create(request, "bob", token).grantLength shouldBe 547
       }
     }
   }

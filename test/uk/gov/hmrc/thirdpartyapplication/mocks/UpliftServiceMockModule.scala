@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.mocks
 import scala.concurrent.Future.{failed, successful}
 
 import org.mockito.verification.VerificationMode
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
@@ -63,6 +63,6 @@ trait UpliftServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
   }
 
   object UpliftServiceMock extends BaseUpliftServiceMock {
-    val aMock = mock[UpliftService](withSettings.lenient())
+    val aMock = mock[UpliftService](withSettings.strictness(Strictness.Lenient))
   }
 }

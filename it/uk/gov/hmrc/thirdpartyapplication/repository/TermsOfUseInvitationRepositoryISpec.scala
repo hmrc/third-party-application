@@ -24,9 +24,8 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{IpAllowlist, Standard, Token}
-import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseInvitation, TermsOfUseApplication, TermsOfUseInvitationWithApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, ApplicationTokens, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.models.{EmailSent, Failed, TermsOfUseSearch, TermsOfUseTextSearch}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
@@ -39,7 +38,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId, Environment, LaxEmailAddress, UserId}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.ReminderEmailSent
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator, RateLimitTier}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, RateLimitTier, IpAllowlist}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
 
 class TermsOfUseInvitationRepositoryISpec
     extends ServerBaseISpec
@@ -290,11 +290,11 @@ class TermsOfUseInvitationRepositoryISpec
     val touInvite4 = TermsOfUseInvitation(applicationId4, startDate, startDate, dueBy, None, FAILED)
     val touInvite5 = TermsOfUseInvitation(applicationId5, startDate, startDate, dueBy, None, TERMS_OF_USE_V2)
 
-    val touInviteWithApp1 = TermsOfUseInvitationWithApplication(applicationId1, startDate, startDate, dueBy, None, EMAIL_SENT, Set(application1))
-    val touInviteWithApp2 = TermsOfUseInvitationWithApplication(applicationId2, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT, Set(application2))
-    val touInviteWithApp3 = TermsOfUseInvitationWithApplication(applicationId3, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT, Set(application3))
-    val touInviteWithApp4 = TermsOfUseInvitationWithApplication(applicationId4, startDate, startDate, dueBy, None, FAILED, Set(application4))
-    val touInviteWithApp5 = TermsOfUseInvitationWithApplication(applicationId5, startDate, startDate, dueBy, None, TERMS_OF_USE_V2, Set(application5))
+    val touInviteWithApp1 = TermsOfUseInvitationWithApplication(applicationId1, startDate, startDate, dueBy, None, EMAIL_SENT, Set(TermsOfUseApplication(application1.id, application1.name)))
+    val touInviteWithApp2 = TermsOfUseInvitationWithApplication(applicationId2, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT, Set(TermsOfUseApplication(application2.id, application2.name)))
+    val touInviteWithApp3 = TermsOfUseInvitationWithApplication(applicationId3, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT, Set(TermsOfUseApplication(application3.id, application3.name)))
+    val touInviteWithApp4 = TermsOfUseInvitationWithApplication(applicationId4, startDate, startDate, dueBy, None, FAILED, Set(TermsOfUseApplication(application4.id, application4.name)))
+    val touInviteWithApp5 = TermsOfUseInvitationWithApplication(applicationId5, startDate, startDate, dueBy, None, TERMS_OF_USE_V2, Set(TermsOfUseApplication(application5.id, application5.name)))
 
     "return expected result of 1 for email sent status search" in {
       await(applicationRepository.save(application1))
@@ -425,8 +425,8 @@ class TermsOfUseInvitationRepositoryISpec
 
   
   
-  private def anApplicationData(id: ApplicationId, name: String): ApplicationData = {
-    ApplicationData(
+  private def anApplicationData(id: ApplicationId, name: String): StoredApplication = {
+    StoredApplication(
       id,
       name,
       name.toLowerCase(),
@@ -434,7 +434,7 @@ class TermsOfUseInvitationRepositoryISpec
       Some("description"),
       "myapplication",
       ApplicationTokens(
-        Token(ClientId.random, "ccc")
+        StoredToken(ClientId.random, "ccc")
       ),
       productionState("ted@example.com"),
       Standard(),

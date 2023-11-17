@@ -1,4 +1,4 @@
 GET       /                       uk.gov.hmrc.thirdpartyapplication.controllers.TermsOfUseInvitationController.fetchInvitations()
 GET       /search                 uk.gov.hmrc.thirdpartyapplication.controllers.TermsOfUseInvitationController.searchInvitations()
-GET       /application/:id        uk.gov.hmrc.thirdpartyapplication.controllers.TermsOfUseInvitationController.fetchInvitation(id: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId)
-POST      /application/:id        uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.createInvitation(id: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId)
+GET       /application/:id        uk.gov.hmrc.thirdpartyapplication.controllers.TermsOfUseInvitationController.fetchInvitation(id: ApplicationId)
+POST      /application/:id        uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.createInvitation(id: ApplicationId)

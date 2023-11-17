@@ -18,10 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.data.{NonEmptyList, Validated}
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, HmrcSpec}
 
 class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClock {
@@ -33,7 +33,7 @@ class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClo
   val timestamp     = now
 
   // Application with two client secrets
-  val applicationData: ApplicationData = anApplicationData(applicationId)
+  val applicationData: StoredApplication = anApplicationData(applicationId)
 
   def checkSuccess[T](expected: T)(fn: => Validated[CommandHandler.Failures, T]) = {
     fn shouldBe Validated.Valid(expected)

@@ -14,24 +14,6 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.time.LocalDateTime
-
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
-
-case class Token(
-    clientId: ClientId,
-    accessToken: String,
-    clientSecrets: List[ClientSecretData] = List(),
-    lastAccessTokenUsage: Option[LocalDateTime] = None
-  )
-
-object Token {
-  import play.api.libs.json.Json
-
-  implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
-  implicit val format     = Json.format[Token]
-}
+case class ApplicationWithHistoryResponse(application: Application, history: List[StateHistoryResponse])

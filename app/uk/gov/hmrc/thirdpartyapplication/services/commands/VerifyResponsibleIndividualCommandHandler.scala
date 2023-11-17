@@ -22,18 +22,19 @@ import scala.concurrent.ExecutionContext
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.VerifyResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ResponsibleIndividualVerificationStarted
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 @Singleton
 class VerifyResponsibleIndividualCommandHandler @Inject() (
@@ -45,17 +46,17 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
   import CommandHandler._
   import CommandFailures._
 
-  private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
+  private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: StoredApplication) =
     cond(
       app.access match {
-        case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
+        case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
           !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.equalsIgnoreCase(email)
-        case _                                                                                            => true
+        case _                                                                                                   => true
       },
       s"The specified individual is already the RI for this application"
     )
 
-  private def validate(app: ApplicationData, cmd: VerifyResponsibleIndividual): Validated[Failures, Collaborator] = {
+  private def validate(app: StoredApplication, cmd: VerifyResponsibleIndividual): Validated[Failures, Collaborator] = {
     Apply[Validated[Failures, *]].map5(
       isStandardNewJourneyApp(app),
       isApproved(app),
@@ -65,7 +66,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
     ) { case (_, _, instigator, _, _) => instigator }
   }
 
-  private def asEvents(app: ApplicationData, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: LaxEmailAddress): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: LaxEmailAddress): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ResponsibleIndividualVerificationStarted(
         id = EventId.random,
@@ -84,7 +85,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: VerifyResponsibleIndividual): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: VerifyResponsibleIndividual): AppCmdResultT = {
     lazy val noSubmission = NonEmptyList.one(GenericFailure(s"No submission found for application ${app.id}"))
 
     for {

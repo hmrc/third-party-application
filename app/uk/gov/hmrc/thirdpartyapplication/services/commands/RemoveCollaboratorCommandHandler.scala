@@ -23,12 +23,12 @@ import scala.concurrent.ExecutionContext
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveCollaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveCollaborator
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
@@ -36,7 +36,7 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: RemoveCollaborator) = {
+  private def validate(app: StoredApplication, cmd: RemoveCollaborator) = {
 
     cmd.actor match {
       case actor: Actors.AppCollaborator => Apply[Validated[Failures, *]]
@@ -54,11 +54,11 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
 
   }
 
-  private def asEvents(app: ApplicationData, cmd: RemoveCollaborator): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: RemoveCollaborator): NonEmptyList[ApplicationEvent] = {
     asEvents(app, cmd.actor, cmd.timestamp, cmd.collaborator)
   }
 
-  private def asEvents(app: ApplicationData, actor: Actor, eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, actor: Actor, eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       CollaboratorRemovedV2(
         id = EventId.random,
@@ -70,7 +70,7 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
     )
   }
 
-  def process(app: ApplicationData, cmd: RemoveCollaborator): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: RemoveCollaborator): AppCmdResultT = {
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.removeCollaborator(app.id, cmd.collaborator.userId))

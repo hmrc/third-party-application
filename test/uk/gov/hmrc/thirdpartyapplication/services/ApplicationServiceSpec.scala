@@ -33,18 +33,26 @@ import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFou
 import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{Collaborator, RateLimitTier}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress, UserId, _}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
+  CreateApplicationRequest,
+  CreateApplicationRequestV1,
+  CreateApplicationRequestV2,
+  StandardAccessDataToCopy
+}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, _}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateExamples, Deleted}
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
@@ -60,7 +68,8 @@ class ApplicationServiceSpec
     with BeforeAndAfterAll
     with ApplicationStateUtil
     with ApplicationTestData
-    with UpliftRequestSamples {
+    with UpliftRequestSamples
+    with FixedClock {
 
   var actorSystem: Option[ActorSystem] = None
 
@@ -89,8 +98,8 @@ class ApplicationServiceSpec
       with TermsOfUseInvitationRepositoryMockModule
       with ApplicationCommandDispatcherMockModule {
 
-    val applicationId: ApplicationId     = ApplicationId.random
-    val applicationData: ApplicationData = anApplicationData(applicationId)
+    val applicationId: ApplicationId       = ApplicationId.random
+    val applicationData: StoredApplication = anApplicationData(applicationId)
 
     lazy val locked                               = false
     protected val mockitoTimeout                  = 1000
@@ -101,8 +110,8 @@ class ApplicationServiceSpec
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val mockGatekeeperService                     = mock[GatekeeperService]
     val mockApiPlatformEventService               = mock[ApiPlatformEventService]
-    val applicationResponseCreator                = new ApplicationResponseCreator()
-    val metrics                                   = mock[Metrics]
+
+    val metrics = mock[Metrics]
 
     val hcForLoggedInCollaborator = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser.text,
@@ -137,7 +146,6 @@ class ApplicationServiceSpec
       actorSystem.get,
       mockLockKeeper,
       ApiGatewayStoreMock.aMock,
-      applicationResponseCreator,
       mockCredentialGenerator,
       ApiSubscriptionFieldsConnectorMock.aMock,
       mockThirdPartyDelegatedAuthorityConnector,
@@ -167,13 +175,13 @@ class ApplicationServiceSpec
 
   trait SetupForAuditTests extends Setup {
 
-    def setupAuditTests(access: Access): (ApplicationData, UpdateRedirectUris) = {
+    def setupAuditTests(access: Access): (StoredApplication, UpdateRedirectUris) = {
       val admin  = otherAdminCollaborator
       val tokens = ApplicationTokens(
-        Token(ClientId("prodId"), "prodToken")
+        StoredToken(ClientId("prodId"), "prodToken")
       )
 
-      val existingApplication                 = ApplicationData(
+      val existingApplication                   = StoredApplication(
         id = applicationId,
         name = "app name",
         normalisedName = "app name",
@@ -185,20 +193,20 @@ class ApplicationServiceSpec
         createdOn = now,
         lastAccess = Some(now)
       )
-      val newRedirectUris                     = List("http://new-url.example.com")
-      val updatedApplication: ApplicationData = existingApplication.copy(
+      val newRedirectUris                       = List(RedirectUri.unsafeApply("https://new-url.example.com"))
+      val updatedApplication: StoredApplication = existingApplication.copy(
         name = "new name",
         normalisedName = "new name",
         access = access match {
-          case _: Standard => Standard(
+          case _: Access.Standard => Access.Standard(
               newRedirectUris,
-              Some("http://new-url.example.com/terms-and-conditions"),
-              Some("http://new-url.example.com/privacy-policy")
+              Some("https://new-url.example.com/terms-and-conditions"),
+              Some("https://new-url.example.com/privacy-policy")
             )
-          case x           => x
+          case x                  => x
         }
       )
-      val updateRedirectUris                  = UpdateRedirectUris(
+      val updateRedirectUris                    = UpdateRedirectUris(
         actor = gatekeeperActor,
         oldRedirectUris = List.empty,
         newRedirectUris = newRedirectUris,
@@ -231,17 +239,17 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequestWithCollaboratorWithUserId(access = Standard(), environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequestWithCollaboratorWithUserId(access = Access.Standard(), environment = Environment.PRODUCTION)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData =
+      val expectedApplicationData: StoredApplication =
         anApplicationDataWithCollaboratorWithUserId(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION).copy(description = None)
 
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -264,19 +272,19 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData = anApplicationData(
+      val expectedApplicationData: StoredApplication = anApplicationData(
         createdApp.application.id,
         state = testingState(),
         collaborators = Set(loggedInUserAdminCollaborator),
         environment = Environment.PRODUCTION,
-        access = Standard().copy(sellResellOrDistribute = Some(sellResellOrDistribute))
+        access = Access.Standard().copy(sellResellOrDistribute = Some(sellResellOrDistribute))
       )
         .copy(description = None)
 
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -292,11 +300,11 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Standard(), environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Standard(), environment = Environment.PRODUCTION)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData =
+      val expectedApplicationData: StoredApplication =
         anApplicationData(createdApp.application.id, state = testingState(), collaborators = Set(loggedInUserAdminCollaborator), environment = Environment.PRODUCTION).copy(
           description = None
         )
@@ -304,7 +312,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -320,11 +328,11 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Standard(), environment = Environment.SANDBOX)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Standard(), environment = Environment.SANDBOX)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData =
+      val expectedApplicationData: StoredApplication =
         anApplicationData(
           createdApp.application.id,
           collaborators = Set(loggedInUserAdminCollaborator),
@@ -353,11 +361,11 @@ class ApplicationServiceSpec
       )
     }
 
-    "create a new Privileged application in Mongo and the API gateway with a Production state" in new Setup {
+    "create a new Access.Privileged application in Mongo and the API gateway with a Production state" in new Setup {
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Privileged())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Privileged())
 
       ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name)
 
@@ -367,15 +375,15 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData = anApplicationData(
+      val expectedApplicationData: StoredApplication = anApplicationData(
         createdApp.application.id,
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = now),
         collaborators = Set(loggedInUserAdminCollaborator),
-        access = Privileged(totpIds = Some(TotpId("prodTotpId")))
+        access = Access.Privileged(totpIds = Some(TotpId("prodTotpId")))
       )
         .copy(description = None)
 
-      createdApp.totp shouldBe Some(TotpSecret(prodTOTP.secret))
+      createdApp.totp shouldBe Some(CreateApplicationResponse.TotpSecret(prodTOTP.secret))
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
@@ -395,17 +403,17 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Ropc())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Ropc())
 
       ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData = anApplicationData(
+      val expectedApplicationData: StoredApplication = anApplicationData(
         createdApp.application.id,
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = now),
         collaborators = Set(loggedInUserAdminCollaborator),
-        access = Ropc()
+        access = Access.Ropc()
       )
         .copy(description = None)
 
@@ -424,7 +432,7 @@ class ApplicationServiceSpec
     }
 
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Privileged())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Access.Privileged())
 
       ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
@@ -436,7 +444,7 @@ class ApplicationServiceSpec
     }
 
     "fail with ApplicationAlreadyExists for ropc application when the name already exists for another application not in testing mode" in new Setup {
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Ropc())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Access.Ropc())
 
       ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
@@ -523,7 +531,7 @@ class ApplicationServiceSpec
 
   "confirmSetupComplete" should {
     "update pre-production application state and store state history" in new Setup {
-      val oldApplication     = anApplicationData(applicationId, state = ApplicationState.preProduction("previous@example.com", "Previous"))
+      val oldApplication     = anApplicationData(applicationId, state = ApplicationStateExamples.preProduction("previous@example.com", "Previous"))
       ApplicationRepoMock.Fetch.thenReturn(oldApplication)
       ApplicationRepoMock.Save.thenAnswer()
       StateHistoryRepoMock.Insert.thenAnswer()
@@ -545,7 +553,7 @@ class ApplicationServiceSpec
     }
 
     "not update application in wrong state" in new Setup {
-      val oldApplication = anApplicationData(applicationId, state = ApplicationState.pendingGatekeeperApproval("previous@example.com", "Previous"))
+      val oldApplication = anApplicationData(applicationId, state = ApplicationStateExamples.pendingGatekeeperApproval("previous@example.com", "Previous"))
       ApplicationRepoMock.Fetch.thenReturn(oldApplication)
       ApplicationRepoMock.Save.thenAnswer()
 
@@ -593,7 +601,7 @@ class ApplicationServiceSpec
     "send an audit event for each type of change" in new SetupForAuditTests {
       override implicit val hc = hcForLoggedInGatekeeperUser
 
-      val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
+      val (updatedApplication, updateRedirectUris) = setupAuditTests(Access.Standard())
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccessOn(updateRedirectUris)(updatedApplication)
 
       val updateAppReq = UpdateApplicationRequest(updatedApplication.name, updatedApplication.access)
@@ -606,9 +614,9 @@ class ApplicationServiceSpec
     }
 
     "not audit TermsAndConditionsUrl or PrivacyPolicyUrl for a privileged app" in new SetupForAuditTests {
-      val (updatedApplication, _) = setupAuditTests(Privileged())
+      val (updatedApplication, _) = setupAuditTests(Access.Privileged())
 
-      await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name, access = Privileged())))
+      await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name, access = Access.Privileged())))
 
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
       ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
@@ -624,7 +632,7 @@ class ApplicationServiceSpec
 
     "throw a ForbiddenException when trying to change the access type of an application" in new Setup {
 
-      val privilegedApplicationUpdateRequest: UpdateApplicationRequest = applicationUpdateRequest.copy(access = Privileged())
+      val privilegedApplicationUpdateRequest: UpdateApplicationRequest = applicationUpdateRequest.copy(access = Access.Privileged())
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
       intercept[ForbiddenException](await(underTest.update(applicationId, privilegedApplicationUpdateRequest)))
@@ -634,7 +642,7 @@ class ApplicationServiceSpec
   }
 
   "update approval" should {
-    val approvalInformation = CheckInformation(Some(ContactDetails("Tester", "test@example.com", "12345677890")))
+    val approvalInformation = CheckInformation(Some(ContactDetails(FullName("Tester"), LaxEmailAddress("test@example.com"), "12345677890")))
 
     "update an existing application if an id is provided" in new Setup {
       val applicationDataWithApproval = applicationData.copy(checkInformation = Some(approvalInformation))
@@ -666,13 +674,13 @@ class ApplicationServiceSpec
     }
 
     "return an application when it exists in the repository for the given application id" in new Setup {
-      val data: ApplicationData = anApplicationData(applicationId, rateLimitTier = Some(RateLimitTier.SILVER))
+      val data: StoredApplication = anApplicationData(applicationId, rateLimitTier = Some(RateLimitTier.SILVER))
 
       ApplicationRepoMock.Fetch.thenReturn(data)
 
       val result = await(underTest.fetch(applicationId).value)
 
-      result shouldBe Some(ApplicationResponse(
+      result shouldBe Some(Application(
         id = applicationId,
         clientId = productionToken.clientId,
         gatewayId = data.wso2ApplicationName,
@@ -700,7 +708,7 @@ class ApplicationServiceSpec
       val clientId = ClientId("some-client-id")
       ApplicationRepoMock.FetchByClientId.thenReturnNone()
 
-      val result: Option[ApplicationResponse] = await(underTest.fetchByClientId(clientId))
+      val result: Option[Application] = await(underTest.fetchByClientId(clientId))
 
       result shouldBe None
     }
@@ -708,7 +716,7 @@ class ApplicationServiceSpec
     "return an application when it exists in the repository for the given client id" in new Setup {
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(applicationData.tokens.production.clientId)(applicationData)
 
-      val result: Option[ApplicationResponse] = await(underTest.fetchByClientId(applicationData.tokens.production.clientId))
+      val result: Option[Application] = await(underTest.fetchByClientId(applicationData.tokens.production.clientId))
 
       result.get.id shouldBe applicationId
       result.get.deployedTo shouldBe "PRODUCTION"
@@ -723,18 +731,18 @@ class ApplicationServiceSpec
     "return none when no application exists in the repository for the given server token" in new Setup {
       ApplicationRepoMock.FetchByServerToken.thenReturnNoneWhen(serverToken)
 
-      val result: Option[ApplicationResponse] = await(underTest.fetchByServerToken(serverToken))
+      val result: Option[Application] = await(underTest.fetchByServerToken(serverToken))
 
       result shouldBe None
     }
 
     "return an application when it exists in the repository for the given server token" in new Setup {
 
-      override val applicationData: ApplicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionToken))
+      override val applicationData: StoredApplication = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionToken))
 
       ApplicationRepoMock.FetchByServerToken.thenReturnWhen(serverToken)(applicationData)
 
-      val result: Option[ApplicationResponse] = await(underTest.fetchByServerToken(serverToken))
+      val result: Option[Application] = await(underTest.fetchByServerToken(serverToken))
 
       result.get.id shouldBe applicationId
       result.get.collaborators shouldBe applicationData.collaborators
@@ -745,10 +753,10 @@ class ApplicationServiceSpec
   "fetchAllForCollaborator" should {
     "fetch all applications for a given collaborator user id" in new Setup {
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)("api1".asIdentifier, "api2".asIdentifier)
-      val userId                                     = UserId.random
-      val standardApplicationData: ApplicationData   = anApplicationData(applicationId, access = Standard())
-      val privilegedApplicationData: ApplicationData = anApplicationData(applicationId, access = Privileged())
-      val ropcApplicationData: ApplicationData       = anApplicationData(applicationId, access = Ropc())
+      val userId                                       = UserId.random
+      val standardApplicationData: StoredApplication   = anApplicationData(applicationId, access = Access.Standard())
+      val privilegedApplicationData: StoredApplication = anApplicationData(applicationId, access = Access.Privileged())
+      val ropcApplicationData: StoredApplication       = anApplicationData(applicationId, access = Access.Ropc())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
@@ -764,17 +772,17 @@ class ApplicationServiceSpec
       val apiContext = "some-context".asContext
 
       ApplicationRepoMock.FetchAllForContent.thenReturnWhen(apiContext)(applicationData)
-      val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
+      val result: List[Application] = await(underTest.fetchAllBySubscription(apiContext))
 
       result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => ApplicationResponse(data = app))
+      result shouldBe List(applicationData).map(app => Application(data = app))
     }
 
     "return no matching applications for a given subscription to an API context" in new Setup {
       val apiContext = "some-context".asContext
 
       ApplicationRepoMock.FetchAllForContent.thenReturnEmptyWhen(apiContext)
-      val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
+      val result: List[Application] = await(underTest.fetchAllBySubscription(apiContext))
 
       result.size shouldBe 0
     }
@@ -783,10 +791,10 @@ class ApplicationServiceSpec
       val apiIdentifier = "some-context".asIdentifier("some-version")
 
       ApplicationRepoMock.FetchAllForApiIdentifier.thenReturnWhen(apiIdentifier)(applicationData)
-      val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiIdentifier))
+      val result: List[Application] = await(underTest.fetchAllBySubscription(apiIdentifier))
 
       result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => ApplicationResponse(data = app))
+      result shouldBe List(applicationData).map(app => Application(data = app))
     }
 
     "return no matching applications for a given subscription to an API identifier" in new Setup {
@@ -794,7 +802,7 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.FetchAllForApiIdentifier.thenReturnEmptyWhen(apiIdentifier)
 
-      val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiIdentifier))
+      val result: List[Application] = await(underTest.fetchAllBySubscription(apiIdentifier))
 
       result.size shouldBe 0
     }
@@ -805,7 +813,7 @@ class ApplicationServiceSpec
     "return no matching applications if application has a subscription" in new Setup {
       ApplicationRepoMock.FetchAllWithNoSubscriptions.thenReturnNone()
 
-      val result: List[ApplicationResponse] = await(underTest.fetchAllWithNoSubscriptions())
+      val result: List[Application] = await(underTest.fetchAllWithNoSubscriptions())
 
       result.size shouldBe 0
     }
@@ -813,10 +821,10 @@ class ApplicationServiceSpec
     "return applications when there are no matching subscriptions" in new Setup {
       ApplicationRepoMock.FetchAllWithNoSubscriptions.thenReturn(applicationData)
 
-      val result: List[ApplicationResponse] = await(underTest.fetchAllWithNoSubscriptions())
+      val result: List[Application] = await(underTest.fetchAllWithNoSubscriptions())
 
       result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => ApplicationResponse(data = app))
+      result shouldBe List(applicationData).map(app => Application(data = app))
     }
   }
 
@@ -828,7 +836,7 @@ class ApplicationServiceSpec
       val api1              = "hello".asIdentifier
       val api2              = "goodbye".asIdentifier
 
-      type T = ApplicationData => Future[AuditResult]
+      type T = StoredApplication => Future[AuditResult]
       val mockAuditResult  = mock[Future[AuditResult]]
       val auditFunction: T = mock[T]
 
@@ -912,7 +920,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
       ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
-      when(auditFunction.apply(any[ApplicationData])).thenReturn(Future.successful(mock[AuditResult]))
+      when(auditFunction.apply(any[StoredApplication])).thenReturn(Future.successful(mock[AuditResult]))
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
@@ -924,7 +932,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
       ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
-      when(auditFunction.apply(any[ApplicationData])).thenReturn(Future.failed(new RuntimeException))
+      when(auditFunction.apply(any[StoredApplication])).thenReturn(Future.failed(new RuntimeException))
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
@@ -966,9 +974,9 @@ class ApplicationServiceSpec
 
   "Search" should {
     "return results based on provided ApplicationSearch" in new Setup {
-      val standardApplicationData: ApplicationData   = anApplicationData(ApplicationId.random, access = Standard())
-      val privilegedApplicationData: ApplicationData = anApplicationData(ApplicationId.random, access = Privileged())
-      val ropcApplicationData: ApplicationData       = anApplicationData(ApplicationId.random, access = Ropc())
+      val standardApplicationData: StoredApplication   = anApplicationData(ApplicationId.random, access = Access.Standard())
+      val privilegedApplicationData: StoredApplication = anApplicationData(ApplicationId.random, access = Access.Privileged())
+      val ropcApplicationData: StoredApplication       = anApplicationData(ApplicationId.random, access = Access.Ropc())
 
       val search = ApplicationSearch(
         pageNumber = 2,
@@ -1014,12 +1022,12 @@ class ApplicationServiceSpec
       applicationId: ApplicationId,
       state: ApplicationState,
       collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
-      access: Access = Standard(),
+      access: Access = Access.Standard(),
       rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
       environment: Environment
     ) = {
 
-    ApplicationData(
+    StoredApplication(
       applicationId,
       "MyApp",
       "myapp",
@@ -1036,7 +1044,7 @@ class ApplicationServiceSpec
     )
   }
 
-  private def aNewV1ApplicationRequest(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
+  private def aNewV1ApplicationRequest(access: Access = Access.Standard(), environment: Environment = Environment.PRODUCTION) = {
     CreateApplicationRequestV1("MyApp", access, Some("description"), environment, Set(loggedInUser.admin()), None)
   }
 
@@ -1056,7 +1064,7 @@ class ApplicationServiceSpec
   private def anUpdateRequest() = {
     UpdateApplicationRequest(
       name = "My Application",
-      access = Standard().copy(redirectUris = List("http://example.com/redirect")),
+      access = Access.Standard().copy(redirectUris = List(RedirectUri.unsafeApply("https://example.com/redirect"))),
       description = Some("Description")
     )
   }

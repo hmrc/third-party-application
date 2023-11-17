@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.models
 
-case class ContactDetails(
-    fullname: String,
-    email: String,
-    telephoneNumber: String
-  )
+case class CreateApplicationResponse(application: Application, totp: Option[CreateApplicationResponse.TotpSecret] = None)
 
-object ContactDetails {
-  import play.api.libs.json.Json
+object CreateApplicationResponse {
+  case class TotpSecret(production: String)
 
-  implicit val format = Json.format[ContactDetails]
+  object TotpSecret {
+    import play.api.libs.json.Json
+    implicit val format = Json.format[TotpSecret]
+  }
 }

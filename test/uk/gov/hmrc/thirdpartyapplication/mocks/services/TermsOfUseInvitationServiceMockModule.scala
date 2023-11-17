@@ -22,10 +22,8 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData}
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded}
-import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationResponse, TermsOfUseInvitationWithApplicationResponse}
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse, TermsOfUseInvitationWithApplicationResponse}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
 
 trait TermsOfUseInvitationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -34,8 +32,8 @@ trait TermsOfUseInvitationServiceMockModule extends MockitoSugar with ArgumentMa
     def aMock: TermsOfUseInvitationService
 
     object CreateInvitation {
-      def thenReturnSuccess(invite: TermsOfUseInvitation) = when(aMock.createInvitation(*[ApplicationData])(*)).thenAnswer(successful(Some(invite)))
-      def thenFail()                                      = when(aMock.createInvitation(*[ApplicationData])(*)).thenAnswer(successful(None))
+      def thenReturnSuccess(invite: TermsOfUseInvitation) = when(aMock.createInvitation(*[StoredApplication])(*)).thenAnswer(successful(Some(invite)))
+      def thenFail()                                      = when(aMock.createInvitation(*[StoredApplication])(*)).thenAnswer(successful(None))
     }
 
     object FetchInvitation {
