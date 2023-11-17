@@ -25,13 +25,13 @@ import cats.implicits._
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UnsubscribeFromApi
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 
 @Singleton
@@ -43,7 +43,7 @@ class UnsubscribeFromApiCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: UnsubscribeFromApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[Failures, Unit] = {
+  private def validate(app: StoredApplication, cmd: UnsubscribeFromApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[Failures, Unit] = {
     def isGatekeeperUser    = cond(rolePassed, CommandFailures.InsufficientPrivileges(s"Unauthorized to unsubscribe any API from app ${app.name}"))
     def alreadySubscribedTo = cond(alreadySubcribed, CommandFailures.NotSubscribedToApi)
 
@@ -53,7 +53,7 @@ class UnsubscribeFromApiCommandHandler @Inject() (
     ) { case _ => () }
   }
 
-  private def asEvents(app: ApplicationData, cmd: UnsubscribeFromApi): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: UnsubscribeFromApi): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApiUnsubscribedV2(
         id = EventId.random,
@@ -66,14 +66,14 @@ class UnsubscribeFromApiCommandHandler @Inject() (
     )
   }
 
-  private def performRoleCheckAsRequired(app: ApplicationData)(implicit hc: HeaderCarrier) = {
-    if (List(PRIVILEGED, ROPC).contains(app.access.accessType))
+  private def performRoleCheckAsRequired(app: StoredApplication)(implicit hc: HeaderCarrier) = {
+    if (List(AccessType.PRIVILEGED, AccessType.ROPC).contains(app.access.accessType))
       strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole().map(_.isEmpty)
     else
       Future.successful(true)
   }
 
-  def process(app: ApplicationData, cmd: UnsubscribeFromApi)(implicit hc: HeaderCarrier): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: UnsubscribeFromApi)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       rolePassed       <- E.liftF(performRoleCheckAsRequired(app))
       alreadySubcribed <- E.liftF(subscriptionRepository.isSubscribed(app.id, cmd.apiIdentifier))

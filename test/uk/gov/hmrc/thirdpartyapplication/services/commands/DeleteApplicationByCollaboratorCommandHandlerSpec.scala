@@ -20,13 +20,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByCollaborator
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, Environment, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByCollaborator
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -114,7 +115,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
     }
 
     "return an error when app is NOT in testing state" in new Setup {
-      val nonStandardApp = app.copy(access = Ropc(Set.empty))
+      val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
       val cmd            = DeleteApplicationByCollaborator(appAdminUserId, reasons, now)
 
       checkFailsWith("App must have a STANDARD access type") {

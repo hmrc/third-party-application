@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import play.api.libs.json.{Format, Json}
-
-case class MoreApplication(allowAutoDelete: Boolean = true)
-
-object MoreApplication {
-  implicit val format: Format[MoreApplication] = Json.format[MoreApplication]
-}
+case class ApplicationTokens(production: StoredToken)

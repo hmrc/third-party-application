@@ -21,12 +21,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.github.t3hnar.bcrypt._
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.ClientSecretsHashingConfig
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecretsHashingConfig
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
@@ -41,9 +40,9 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   "clientSecretIsValid" should {
     val applicationId = ApplicationId.random
-    val fooSecret     = ClientSecretData(name = "secret-1", createdOn = now, hashedSecret = "foo".bcrypt(myWorkFactor))
-    val barSecret     = ClientSecretData(name = "secret-2", createdOn = now, hashedSecret = "bar".bcrypt(myWorkFactor))
-    val bazSecret     = ClientSecretData(name = "secret-3", createdOn = now, hashedSecret = "baz".bcrypt(myWorkFactor))
+    val fooSecret     = StoredClientSecret(name = "secret-1", createdOn = now, hashedSecret = "foo".bcrypt(myWorkFactor))
+    val barSecret     = StoredClientSecret(name = "secret-2", createdOn = now, hashedSecret = "bar".bcrypt(myWorkFactor))
+    val bazSecret     = StoredClientSecret(name = "secret-3", createdOn = now, hashedSecret = "baz".bcrypt(myWorkFactor))
 
     "return the ClientSecret that matches the provided secret value" in new Setup {
       val matchingSecret = await(underTest.clientSecretIsValid(applicationId, "bar", Seq(fooSecret, barSecret, bazSecret)))
@@ -53,9 +52,9 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "return the ClientSecret that matches the provided secret value and rehash it if the work factor has changed" in new Setup {
-      val secretWithDifferentWorkFactor = ClientSecretData(name = "secret-4", createdOn = now, hashedSecret = "different-work-factor".bcrypt(myWorkFactor - 1))
+      val secretWithDifferentWorkFactor = StoredClientSecret(name = "secret-4", createdOn = now, hashedSecret = "different-work-factor".bcrypt(myWorkFactor - 1))
 
-      ApplicationRepoMock.UpdateClientSecretHash.thenReturn(applicationId, secretWithDifferentWorkFactor.id)(mock[ApplicationData])
+      ApplicationRepoMock.UpdateClientSecretHash.thenReturn(applicationId, secretWithDifferentWorkFactor.id)(mock[StoredApplication])
 
       val matchingSecret =
         await(underTest.clientSecretIsValid(applicationId, "different-work-factor", Seq(fooSecret, barSecret, bazSecret, secretWithDifferentWorkFactor)))
@@ -73,9 +72,9 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
   }
 
   "lastUsedOrdering" should {
-    val mostRecent = ClientSecretData(name = "secret-1", hashedSecret = "foo", lastAccess = Some(now))
-    val middle     = ClientSecretData(name = "secret-2", hashedSecret = "bar", lastAccess = Some(now.minusDays(1)))
-    val agesAgo    = ClientSecretData(name = "secret-3", hashedSecret = "baz", lastAccess = Some(now.minusDays(10)))
+    val mostRecent = StoredClientSecret(name = "secret-1", hashedSecret = "foo", lastAccess = Some(now))
+    val middle     = StoredClientSecret(name = "secret-2", hashedSecret = "bar", lastAccess = Some(now.minusDays(1)))
+    val agesAgo    = StoredClientSecret(name = "secret-3", hashedSecret = "baz", lastAccess = Some(now.minusDays(10)))
 
     "sort client secrets by most recently used" in new Setup {
       val sortedList = List(middle, agesAgo, mostRecent).sortWith(underTest.lastUsedOrdering)
@@ -86,7 +85,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "sort client secrets with no last used date to the end" in new Setup {
-      val noLastUsedDate = ClientSecretData(name = "secret-1", createdOn = now, hashedSecret = "foo", lastAccess = None)
+      val noLastUsedDate = StoredClientSecret(name = "secret-1", createdOn = now, hashedSecret = "foo", lastAccess = None)
 
       val sortedList = List(noLastUsedDate, middle, agesAgo, mostRecent).sortWith(underTest.lastUsedOrdering)
 

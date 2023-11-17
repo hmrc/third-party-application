@@ -25,12 +25,11 @@ import cats.data._
 import cats.implicits._
 import org.apache.commons.net.util.SubnetUtils
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.CidrBlock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CidrBlock, IpAllowlist}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeIpAllowlist
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 
 @Singleton
@@ -56,7 +55,7 @@ class ChangeIpAllowlistCommandHandler @Inject() (
     cmd.newIpAllowlist.forall(isValidIpCidrBlock(_))
   }
 
-  private def validate(app: ApplicationData, cmd: ChangeIpAllowlist): Validated[Failures, Unit] = {
+  private def validate(app: StoredApplication, cmd: ChangeIpAllowlist): Validated[Failures, Unit] = {
     Apply[Validated[Failures, *]].map2(
       isAdminIfInProductionOrGatekeeperActor(cmd.actor, app),
       cond(validateAllNewIps(cmd), CommandFailures.GenericFailure("Not all new allowlist IP addresses are valid CIDR blocks"))
@@ -67,7 +66,7 @@ class ChangeIpAllowlistCommandHandler @Inject() (
     IpAllowlist(cmd.required, cmd.newIpAllowlist.map(_.ipAddress).toSet)
   }
 
-  private def asEvents(app: ApplicationData, cmd: ChangeIpAllowlist): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: ChangeIpAllowlist): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApplicationEvents.IpAllowlistCidrBlockChanged(
         id = EventId.random,
@@ -81,7 +80,7 @@ class ChangeIpAllowlistCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeIpAllowlist): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: ChangeIpAllowlist): AppCmdResultT = {
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.updateApplicationIpAllowlist(app.id, buildIpAllowlist(cmd)))

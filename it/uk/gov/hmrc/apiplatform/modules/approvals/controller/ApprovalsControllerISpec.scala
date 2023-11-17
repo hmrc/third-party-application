@@ -27,17 +27,16 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.{QuestionnaireDAO, SubmissionsRepository}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.Application
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.utils.ServerBaseISpec
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.util.UUID
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 class ApprovalsControllerISpec
     extends ServerBaseISpec
@@ -99,8 +98,8 @@ class ApprovalsControllerISpec
   "ApprovalsController" should {
 
     def primeData(appId: ApplicationId): Unit = {
-      val responsibleIndividual        = ResponsibleIndividual.build("bob example", "bob@example.com")
-      val testImportantSubmissionData  = ImportantSubmissionData(
+      val responsibleIndividual          = ResponsibleIndividual.build("bob example", "bob@example.com")
+      val testImportantSubmissionData    = ImportantSubmissionData(
         Some("organisationUrl.com"),
         responsibleIndividual,
         Set(ServerLocation.InUK),
@@ -108,10 +107,10 @@ class ApprovalsControllerISpec
         PrivacyPolicyLocations.InDesktopSoftware,
         List.empty
       )
-      val application: ApplicationData = anApplicationData(
+      val application: StoredApplication = anApplicationData(
         appId,
         pendingGatekeeperApprovalState("bob@fastshow.com"),
-        access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+        access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
       )
 
       await(applicationRepo.save(application))
@@ -146,7 +145,7 @@ class ApprovalsControllerISpec
       )
 
       result.status mustBe OK
-      val response = Json.parse(result.body).validate[ApplicationResponse].asOpt
+      val response = Json.parse(result.body).validate[Application].asOpt
       response must not be None
 
     }
@@ -164,7 +163,7 @@ class ApprovalsControllerISpec
         headers = List(CONTENT_TYPE -> "application/json")
       )
       result.status mustBe OK
-      val response = Json.parse(result.body).validate[ApplicationResponse].asOpt
+      val response = Json.parse(result.body).validate[Application].asOpt
       response must not be None
     }
 
@@ -175,7 +174,7 @@ class ApprovalsControllerISpec
       val requestBody          = """{"gatekeeperUserName":"Bob Hope"}"""
       val result               = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
       result.status mustBe OK
-      val response             = Json.parse(result.body).validate[ApplicationResponse].asOpt
+      val response             = Json.parse(result.body).validate[Application].asOpt
       response must not be None
 
     }

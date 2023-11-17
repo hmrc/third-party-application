@@ -23,6 +23,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualTouUpliftVerification,
@@ -33,16 +37,14 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeResponsibleIndividualToOther
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Submission, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 
 @Singleton
@@ -58,20 +60,20 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: ApplicationData) =
+  private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: StoredApplication) =
     cond(
       app.access match {
-        case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
+        case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
           !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.equalsIgnoreCase(email)
-        case _                                                                                            => true
+        case _                                                                                                   => true
       },
       s"The specified individual is already the RI for this application"
     )
 
-  private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) =
+  private def isApplicationIdTheSame(app: StoredApplication, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
-  def processTou(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualToUVerification): AppCmdResultT = {
+  def processTou(app: StoredApplication, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualToUVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
       Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
@@ -135,7 +137,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     } yield (savedApp, NonEmptyList(riEvt, List(stateEvt)))
   }
 
-  def processTouUplift(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualTouUpliftVerification): AppCmdResultT = {
+  def processTouUplift(app: StoredApplication, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualTouUpliftVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
       Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
@@ -202,11 +204,11 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
 
     def addTouAcceptanceIfNeeded(
         addTouAcceptance: Boolean,
-        appWithoutTouAcceptance: ApplicationData,
+        appWithoutTouAcceptance: StoredApplication,
         submissionId: SubmissionId,
         submissionInstance: Int,
         responsibleIndividual: ResponsibleIndividual
-      ): Future[ApplicationData] = {
+      ): Future[StoredApplication] = {
       if (addTouAcceptance) {
         val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submissionId, submissionInstance)
         applicationRepository.addApplicationTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
@@ -236,7 +238,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     } yield (app, evts)
   }
 
-  def processUpdate(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualUpdateVerification): AppCmdResultT = {
+  def processUpdate(app: StoredApplication, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualUpdateVerification): AppCmdResultT = {
     val newResponsibleIndividual = riVerification.responsibleIndividual
 
     def validateUpdate(): Validated[Failures, ResponsibleIndividual] = {
@@ -282,7 +284,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     } yield (app, NonEmptyList.one(evt))
   }
 
-  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: ChangeResponsibleIndividualToOther): AppCmdResultT = {
     E.fromEitherF(
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap {
         case Some(riVerificationToU: ResponsibleIndividualToUVerification)             => processTou(app, cmd, riVerificationToU).value

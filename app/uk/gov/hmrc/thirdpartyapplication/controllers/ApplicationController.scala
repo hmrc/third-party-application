@@ -31,6 +31,9 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{CreateApplicationRequest, CreateApplicationRequestV1, CreateApplicationRequestV2}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -38,11 +41,9 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAuthorisationActions, AuthKeyRefiner}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -75,7 +76,7 @@ class ApplicationController @Inject() (
 
   private val E = EitherTHelper.make[String]
 
-  def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(parse.json) { implicit request =>
+  def create = requiresAuthenticationFor(AccessType.PRIVILEGED, AccessType.ROPC).async(parse.json) { implicit request =>
     def onV2(createApplicationRequest: CreateApplicationRequest, fn: CreateApplicationRequestV2 => Future[HasSucceeded]): Future[HasSucceeded] =
       createApplicationRequest match {
         case _: CreateApplicationRequestV1 => successful(HasSucceeded)
@@ -314,7 +315,7 @@ class ApplicationController @Inject() (
   }
 
   def deleteApplication(id: ApplicationId): Action[AnyContent] = (Action andThen authKeyRefiner).async { implicit request: MaybeMatchesAuthorisationKeyRequest[AnyContent] =>
-    def audit(app: ApplicationData): Future[AuditResult] = {
+    def audit(app: StoredApplication): Future[AuditResult] = {
       logger.info(s"Delete application ${app.id.value} - ${app.name}")
       successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
     }

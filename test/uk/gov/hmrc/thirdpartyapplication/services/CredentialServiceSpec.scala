@@ -28,11 +28,10 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecretData
 import uk.gov.hmrc.thirdpartyapplication.mocks.ClientSecretServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
+import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with ApplicationTestData {
@@ -65,7 +64,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
     val environmentToken = applicationData.tokens.production
     val firstSecret      = environmentToken.clientSecrets.head
 
-    val prodTokenWith5Secrets       = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecretData(v, hashedSecret = "hashed-secret")))
+    val prodTokenWith5Secrets       = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => StoredClientSecret(v, hashedSecret = "hashed-secret")))
     val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
     val expectedTokenResponse = ApplicationTokenResponse(environmentToken)
@@ -120,7 +119,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
     "return application details when credentials match" in new Setup {
 
       val updatedApplicationData      = applicationData.copy(lastAccess = Some(now))
-      val expectedApplicationResponse = ApplicationResponse(data = updatedApplicationData)
+      val expectedApplicationResponse = Application(data = updatedApplicationData)
       val clientId                    = applicationData.tokens.production.clientId
       val secret                      = UUID.randomUUID().toString
       val matchingClientSecret        = applicationData.tokens.production.clientSecrets.head
@@ -137,7 +136,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
     "return application details and write log if updating usage date fails" in new Setup {
 
-      val expectedApplicationResponse = ApplicationResponse(data = applicationData)
+      val expectedApplicationResponse = Application(data = applicationData)
       val clientId                    = applicationData.tokens.production.clientId
       val secret                      = UUID.randomUUID().toString
       val matchingClientSecret        = applicationData.tokens.production.clientSecrets.head

@@ -29,18 +29,20 @@ import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvents, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, SubmissionId, Warn}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
@@ -65,11 +67,11 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     List.empty
   )
 
-  val applicationData: ApplicationData = anApplicationData(
+  val applicationData: StoredApplication = anApplicationData(
     applicationId,
-    access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+    access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
-  val instigator                       = applicationData.collaborators.head.userId
+  val instigator                         = applicationData.collaborators.head.userId
 
   def isSameDataEvent(expected: DataEvent) =
     new ArgumentMatcher[DataEvent] {
@@ -152,7 +154,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     val reasons        = "Reasons description text"
     val requesterEmail = "bill.badger@rupert.com"
     val requesterName  = "bill badger"
-    val appInTesting   = applicationData.copy(state = ApplicationState.testing)
+    val appInTesting   = applicationData.copy(state = ApplicationStateExamples.testing)
 
     val collaboratorActor          = Actors.AppCollaborator(applicationData.collaborators.head.emailAddress)
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -411,7 +413,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
         instant,
         collaboratorActor,
         oldRedirectUris = List.empty,
-        newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
+        newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_))
       )
 
       val expectedDataEvent = DataEvent(
@@ -475,9 +477,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     val id          = ApplicationId.random
     val admin       = "test@example.com".admin()
     val tokens      = ApplicationTokens(
-      Token(ClientId("prodId"), "prodToken")
+      StoredToken(ClientId("prodId"), "prodToken")
     )
-    val previousApp = ApplicationData(
+    val previousApp = StoredApplication(
       id = id,
       name = "app name",
       normalisedName = "app name",
@@ -491,8 +493,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
 
     val updatedApp = previousApp.copy(
       name = "new name",
-      access = Standard(
-        List("http://new-url.example.com", "http://new-url.example.com/other-redirect"),
+      access = Access.Standard(
+        List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_)),
         Some("http://new-url.example.com/terms-and-conditions"),
         Some("http://new-url.example.com/privacy-policy")
       )

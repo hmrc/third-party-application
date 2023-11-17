@@ -26,10 +26,12 @@ import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.CreateApplicationRequest
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsOfUseAcceptance
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Deleted, TermsOfUseAcceptance}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, CreateApplicationRequest, CreateApplicationResponse}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Deleted
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.{Application, CreateApplicationResponse}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
@@ -41,16 +43,16 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
 
     object Fetch {
 
-      def thenReturn(applicationData: ApplicationData) = {
-        val r: OptionT[Future, ApplicationResponse] = OptionT.pure[Future](ApplicationResponse(data = applicationData))
+      def thenReturn(applicationData: StoredApplication) = {
+        val r: OptionT[Future, Application] = OptionT.pure[Future](Application(data = applicationData))
         when(aMock.fetch(*[ApplicationId])).thenReturn(r)
       }
 
-      def thenReturn(response: ApplicationResponse) = {
+      def thenReturn(response: Application) = {
         when(aMock.fetch(*[ApplicationId])).thenReturn(OptionT.pure[Future](response))
       }
 
-      def thenReturnFor(id: ApplicationId)(response: ApplicationResponse) = {
+      def thenReturnFor(id: ApplicationId)(response: Application) = {
         when(aMock.fetch(eqTo(id))).thenReturn(OptionT.pure[Future](response))
       }
 
@@ -80,7 +82,7 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
 
     object AddTermsOfUseAcceptance {
 
-      def thenReturn(applicationData: ApplicationData) =
+      def thenReturn(applicationData: StoredApplication) =
         when(aMock.addTermsOfUseAcceptance(*[ApplicationId], *[TermsOfUseAcceptance])).thenReturn(successful(applicationData))
 
       def verifyCalledWith(applicationId: ApplicationId) = {

@@ -26,7 +26,6 @@ import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
 import cats.data.OptionT
 import cats.implicits._
-import com.github.t3hnar.bcrypt._
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 import play.api.libs.json.{JsValue, Json}
@@ -36,19 +35,22 @@ import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -58,7 +60,8 @@ class ApplicationControllerSpec
     with ApplicationStateUtil
     with ControllerTestData
     with TableDrivenPropertyChecks
-    with ApplicationTestData {
+    with ApplicationTestData
+    with FixedClock {
 
   import play.api.test.Helpers._
 
@@ -130,20 +133,20 @@ class ApplicationControllerSpec
 
     val apiIdentifier1                                             = "api1".asIdentifier
     val apiIdentifier2                                             = "api2".asIdentifier
-    val standardApplicationResponse: ExtendedApplicationResponse   = aNewExtendedApplicationResponse(access = Standard(), subscriptions = List(apiIdentifier1, apiIdentifier2))
-    val privilegedApplicationResponse: ExtendedApplicationResponse = aNewExtendedApplicationResponse(access = Privileged())
-    val ropcApplicationResponse: ExtendedApplicationResponse       = aNewExtendedApplicationResponse(access = Ropc())
+    val standardApplicationResponse: ExtendedApplicationResponse   = aNewExtendedApplicationResponse(access = Access.Standard(), subscriptions = List(apiIdentifier1, apiIdentifier2))
+    val privilegedApplicationResponse: ExtendedApplicationResponse = aNewExtendedApplicationResponse(access = Access.Privileged())
+    val ropcApplicationResponse: ExtendedApplicationResponse       = aNewExtendedApplicationResponse(access = Access.Ropc())
   }
 
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
   val credentialServiceResponseToken: ApplicationTokenResponse =
-    ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecretData("3333", hashedSecret = "3333".bcrypt(4)))))
+    ApplicationTokenResponse(ClientId("111"), "222", clientSecrets = List(ClientSecretResponse(ClientSecret.Id.random, "222", createdOn = now)))
 
   "update approval" should {
-    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", now, "1.0".asVersion.value)
+    val termsOfUseAgreement = TermsOfUseAgreement(LaxEmailAddress("test@example.com"), now, "1.0".asVersion.value)
     val checkInformation    = CheckInformation(
-      contactDetails = Some(ContactDetails("Tester", "test@example.com", "12345677890")),
+      contactDetails = Some(ContactDetails(FullName("Tester"), LaxEmailAddress("test@example.com"), "12345677890")),
       termsOfUseAgreements = List(termsOfUseAgreement)
     )
     val id                  = ApplicationId.random
@@ -233,7 +236,7 @@ class ApplicationControllerSpec
       val emailAddress                = "bob@example.com".toLaxEmail
       val confirmSetupCompleteRequest = ConfirmSetupCompleteRequest(emailAddress)
 
-      when(underTest.applicationService.confirmSetupComplete(eqTo(applicationId), eqTo(emailAddress))).thenReturn(successful(mock[ApplicationData]))
+      when(underTest.applicationService.confirmSetupComplete(eqTo(applicationId), eqTo(emailAddress))).thenReturn(successful(mock[StoredApplication]))
 
       val result = underTest.confirmSetupComplete(applicationId)(request.withBody(Json.toJson(confirmSetupCompleteRequest)))
 
@@ -349,7 +352,7 @@ class ApplicationControllerSpec
       val lastAccessTime: LocalDateTime        = updatedLastAccessTime.minusDays(10) // scalastyle:ignore magic.number
       val applicationId: ApplicationId         = ApplicationId.random
 
-      val applicationResponse: ApplicationResponse                = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
+      val applicationResponse: Application                        = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
       val updatedApplicationResponse: ExtendedApplicationResponse =
         extendedApplicationResponseFromApplicationResponse(applicationResponse).copy(lastAccess = Some(updatedLastAccessTime))
     }
@@ -529,10 +532,10 @@ class ApplicationControllerSpec
       val queryRequest = FakeRequest("GET", s"?subscribesTo=$subscribesTo")
 
       "succeed with a 200 (ok) when applications are found" in new Setup {
-        val standardApplicationResponse: ApplicationResponse   = aNewApplicationResponse(access = Standard())
-        val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
-        val ropcApplicationResponse: ApplicationResponse       = aNewApplicationResponse(access = Ropc())
-        val response: List[ApplicationResponse]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
+        val standardApplicationResponse: Application   = aNewApplicationResponse(access = Access.Standard())
+        val privilegedApplicationResponse: Application = aNewApplicationResponse(access = Access.Privileged())
+        val ropcApplicationResponse: Application       = aNewApplicationResponse(access = Access.Ropc())
+        val response: List[Application]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
 
         when(underTest.applicationService.fetchAllBySubscription(subscribesTo.asContext)).thenReturn(successful(response))
 
@@ -568,10 +571,10 @@ class ApplicationControllerSpec
       val apiIdentifier = subscribesTo.asIdentifier(version)
 
       "succeed with a 200 (ok) when applications are found" in new Setup {
-        val standardApplicationResponse: ApplicationResponse   = aNewApplicationResponse(access = Standard())
-        val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
-        val ropcApplicationResponse: ApplicationResponse       = aNewApplicationResponse(access = Ropc())
-        val response: List[ApplicationResponse]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
+        val standardApplicationResponse: Application   = aNewApplicationResponse(access = Access.Standard())
+        val privilegedApplicationResponse: Application = aNewApplicationResponse(access = Access.Privileged())
+        val ropcApplicationResponse: Application       = aNewApplicationResponse(access = Access.Ropc())
+        val response: List[Application]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
 
         when(underTest.applicationService.fetchAllBySubscription(apiIdentifier)).thenReturn(successful(response))
 
@@ -742,7 +745,7 @@ class ApplicationControllerSpec
   }
 
   "notStrideUserDeleteApplication" should {
-    val application             = aNewApplicationResponse(environment = Environment.SANDBOX, state = ApplicationState(State.PRODUCTION))
+    val application             = aNewApplicationResponse(environment = Environment.SANDBOX, state = ApplicationState(State.PRODUCTION, updatedOn = now))
     val applicationId           = application.id
     val gatekeeperUserId        = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com".toLaxEmail
@@ -759,7 +762,7 @@ class ApplicationControllerSpec
     }
 
     "succeed when a principal application is in TESTING state is deleted" in new Setup with ProductionAuthSetup {
-      val inTesting   = aNewApplicationResponse(state = ApplicationState(name = State.TESTING), environment = Environment.PRODUCTION)
+      val inTesting   = aNewApplicationResponse(state = ApplicationState(name = State.TESTING, updatedOn = now), environment = Environment.PRODUCTION)
       val inTestingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inTestingId)(inTesting)
@@ -772,7 +775,7 @@ class ApplicationControllerSpec
     }
 
     "succeed when a principal application is in PENDING_GATEKEEPER_APPROVAL state is deleted" in new Setup with ProductionAuthSetup {
-      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_GATEKEEPER_APPROVAL), environment = Environment.PRODUCTION)
+      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_GATEKEEPER_APPROVAL, updatedOn = now), environment = Environment.PRODUCTION)
       val inPendingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inPendingId)(inPending)
@@ -785,7 +788,7 @@ class ApplicationControllerSpec
     }
 
     "succeed when a principal application is in PENDING_REQUESTER_VERIFICATION state is deleted" in new Setup with ProductionAuthSetup {
-      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_REQUESTER_VERIFICATION), environment = Environment.PRODUCTION)
+      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_REQUESTER_VERIFICATION, updatedOn = now), environment = Environment.PRODUCTION)
       val inPendingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inPendingId)(inPending)
@@ -798,7 +801,7 @@ class ApplicationControllerSpec
     }
 
     "fail when a principal application is in PRODUCTION state is deleted" in new Setup with ProductionAuthSetup {
-      val inProd   = aNewApplicationResponse(state = ApplicationState(name = State.PRODUCTION), environment = Environment.PRODUCTION)
+      val inProd   = aNewApplicationResponse(state = ApplicationState(name = State.PRODUCTION, updatedOn = now), environment = Environment.PRODUCTION)
       val inProdId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inProdId)(inProd)

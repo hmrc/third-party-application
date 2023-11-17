@@ -21,6 +21,8 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import play.api.libs.json.{Json, Reads}
 
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
+
 class JsonFormatSpec extends AnyWordSpec with Matchers {
 
   implicit val jsonFormat: Reads[CheckInformation] = CheckInformation.format

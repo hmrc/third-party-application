@@ -28,7 +28,8 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
@@ -37,7 +38,11 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import java.time.Clock
 import scala.util.Random.nextString
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationState
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredToken
 
 class SubscriptionRepositoryISpec
     extends ServerBaseISpec
@@ -354,10 +359,10 @@ class SubscriptionRepositoryISpec
       id: ApplicationId,
       clientId: ClientId = ClientId("aaa"),
       state: ApplicationState = testingState(),
-      access: Access = Standard(),
+      access: Access = Access.Standard(),
       user: List[String] = List("user@example.com"),
       checkInformation: Option[CheckInformation] = None
-    ): ApplicationData = {
+    ): StoredApplication = {
 
     aNamedApplicationData(id, s"myApp-${id.value}", clientId, state, access, user, checkInformation)
   }
@@ -367,21 +372,21 @@ class SubscriptionRepositoryISpec
       name: String,
       clientId: ClientId = ClientId("aaa"),
       state: ApplicationState = testingState(),
-      access: Access = Standard(),
+      access: Access = Access.Standard(),
       user: List[String] = List("user@example.com"),
       checkInformation: Option[CheckInformation] = None
-    ): ApplicationData = {
+    ): StoredApplication = {
 
     val collaborators: Set[Collaborator] = user.map(email => email.admin()).toSet
 
-    ApplicationData(
+    StoredApplication(
       id,
       name,
       name.toLowerCase,
       collaborators,
       Some("description"),
       "myapplication",
-      ApplicationTokens(Token(clientId, generateAccessToken)),
+      ApplicationTokens(StoredToken(clientId, generateAccessToken)),
       state,
       access,
       now,

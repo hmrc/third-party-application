@@ -20,7 +20,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocations, ResponsibleIndividual, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualTouUpliftVerification,
@@ -29,9 +34,6 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationState
 }
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineResponsibleIndividual
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -77,8 +79,8 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       collaborators = Set(
         appAdminEmail.admin(appAdminUserId)
       ),
-      access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
-      state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName)
+      access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
+      state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName)
     )
     val ts   = FixedClock.instant
     val code = "3242342387452384623549234"
@@ -209,7 +211,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
       ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
 
-      val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
+      val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
       checkSuccessResultUpdate() {
         underTest.process(prodApp, DeclineResponsibleIndividual(code, now))
@@ -222,7 +224,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       SubmissionsServiceMock.DeclineSubmission.thenReturn(declinedSubmission)
       TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
-      val prodApp = app.copy(state = ApplicationState.production(requesterEmail.text, requesterName))
+      val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
       checkSuccessResultUpdate() {
         underTest.process(prodApp, DeclineResponsibleIndividual(code, now))
@@ -239,7 +241,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
 
     "return an error if the application is non-standard" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
-      val nonStandardApp = app.copy(access = Ropc(Set.empty))
+      val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
 
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
         underTest.process(nonStandardApp, DeclineResponsibleIndividual(code, now))
@@ -248,7 +250,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
 
     "return an error if the application is old journey" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
-      val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
         underTest.process(oldJourneyApp, DeclineResponsibleIndividual(code, now))
@@ -274,7 +276,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
 
     "return an error if the application state is not PendingResponsibleIndividualVerification" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
-      val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail.text, requesterName))
+      val pendingGKApprovalApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName))
 
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state") {
         underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividual(code, now))

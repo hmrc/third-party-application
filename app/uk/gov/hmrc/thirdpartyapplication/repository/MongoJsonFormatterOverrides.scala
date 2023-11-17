@@ -21,7 +21,8 @@ import play.api.libs.json._
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{IpAllowlist, TermsOfUseAcceptance}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.IpAllowlist
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsOfUseAcceptance
 
 object MongoJsonFormatterOverrides {
   implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat

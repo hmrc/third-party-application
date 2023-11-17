@@ -24,13 +24,13 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.TermsOfUsePassed
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 object TermsOfUsePassedNotification {
 
   def sendAdviceEmail(
       emailConnector: EmailConnector,
-      app: ApplicationData,
+      app: StoredApplication,
       event: TermsOfUsePassed
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
@@ -41,7 +41,7 @@ object TermsOfUsePassedNotification {
     )
   }
 
-  private def getRecipients(app: ApplicationData): Set[LaxEmailAddress] = {
+  private def getRecipients(app: StoredApplication): Set[LaxEmailAddress] = {
     app.admins.map(_.emailAddress)
   }
 }

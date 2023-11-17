@@ -27,7 +27,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.{AuditAction, AuditService}
 
 trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -105,7 +105,7 @@ trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
         when(aMock.applyEvents(*, *)(*)).thenReturn(successful(None))
       }
 
-      def verifyCalledWith(app: ApplicationData, events: NonEmptyList[ApplicationEvent]) = {
+      def verifyCalledWith(app: StoredApplication, events: NonEmptyList[ApplicationEvent]) = {
         verify.applyEvents(eqTo(app), eqTo(events))(*)
       }
     }

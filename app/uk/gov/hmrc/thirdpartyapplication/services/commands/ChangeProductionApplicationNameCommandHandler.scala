@@ -23,11 +23,11 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationName
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationName
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
@@ -42,10 +42,10 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
   import CommandHandler._
 
   private def validate(
-      app: ApplicationData,
+      app: StoredApplication,
       cmd: ChangeProductionApplicationName,
       nameValidationResult: ApplicationNameValidationResult
-    ): Validated[Failures, ApplicationData] = {
+    ): Validated[Failures, StoredApplication] = {
     Apply[Validated[Failures, *]].map5(
       isAdminOnApp(cmd.instigator, app),
       isNotInProcessOfBeingApproved(app),
@@ -55,7 +55,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
     ) { case _ => app }
   }
 
-  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationName): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: ChangeProductionApplicationName): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApplicationEvents.ProductionAppNameChangedEvent(
         id = EventId.random,
@@ -69,7 +69,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeProductionApplicationName): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: ChangeProductionApplicationName): AppCmdResultT = {
     for {
       nameValidationResult <- E.liftF(namingService.validateApplicationName(cmd.newName, noExclusions))
       valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)

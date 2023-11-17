@@ -20,12 +20,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.TermsAndConditionsLocations
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationTermsAndConditionsLocation
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsAndConditionsLocations
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationTermsAndConditionsLocation
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec extends CommandHandlerBaseSpec {
@@ -43,7 +44,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
         developerCollaborator,
         otherAdminCollaborator
       ),
-      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+      access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
     val oldJourneyApp = anApplicationData(applicationId).copy(
@@ -51,7 +52,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
         developerCollaborator,
         otherAdminCollaborator
       ),
-      access = Standard(termsAndConditionsUrl = Some(oldUrl))
+      access = Access.Standard(termsAndConditionsUrl = Some(oldUrl))
     )
 
     val userId    = idOf(anAdminEmail)
@@ -121,13 +122,13 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
     "return an error if application is still in the process of being approved" in new Setup {
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
-        underTest.process(newJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update)
+        underTest.process(newJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = now)), update)
       }
     }
 
     "return an error if application is non-standard" in new Setup {
       checkFailsWith("App must have a STANDARD access type") {
-        underTest.process(newJourneyApp.copy(access = Privileged()), update)
+        underTest.process(newJourneyApp.copy(access = Access.Privileged()), update)
       }
     }
   }
@@ -153,13 +154,13 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
     "return an error if application is still in the process of being approved" in new Setup {
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
-        underTest.process(oldJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update)
+        underTest.process(oldJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = now)), update)
       }
     }
 
     "return an error if application is non-standard" in new Setup {
       checkFailsWith("App must have a STANDARD access type") {
-        underTest.process(oldJourneyApp.copy(access = Privileged()), update)
+        underTest.process(oldJourneyApp.copy(access = Access.Privileged()), update)
       }
     }
   }

@@ -24,13 +24,13 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.CollaboratorAddedV2
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 object CollaboratorAddedNotification extends NotificationHelpers {
 
   def sendCollaboratorAddedNotification(
       emailConnector: EmailConnector,
-      app: ApplicationData,
+      app: StoredApplication,
       event: CollaboratorAddedV2,
       verifiedCollaborators: Set[LaxEmailAddress]
     )(implicit hc: HeaderCarrier,

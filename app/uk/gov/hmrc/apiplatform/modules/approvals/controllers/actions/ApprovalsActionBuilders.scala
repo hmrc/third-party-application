@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Questionnaire, QuestionnaireProgress, Submission}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 
 trait JsonErrorResponse {
@@ -52,7 +52,7 @@ trait JsonErrorResponse {
 }
 
 class ApplicationRequest[A](
-    val application: ApplicationData,
+    val application: StoredApplication,
     val request: Request[A]
   ) extends WrappedRequest[A](request)
 

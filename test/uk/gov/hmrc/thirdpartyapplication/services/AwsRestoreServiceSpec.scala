@@ -23,30 +23,33 @@ import org.mockito.ArgumentMatchersSugar
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.RateLimitTier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, Environment}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.CreateApplicationRequestV1
 import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock with CollaboratorTestData {
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftRequestSamples {
 
-    def buildApplication(applicationName: String, serverToken: String): ApplicationData = {
-      ApplicationData.create(
-        CreateApplicationRequestV1(
+    def buildApplication(applicationName: String, serverToken: String): StoredApplication = {
+      StoredApplication.create(
+        CreateApplicationRequestV1.create(
           name = applicationName,
+          access = Access.Standard(),
           environment = Environment.PRODUCTION,
           collaborators = Set("foo@bar.com".admin()),
+          description = None,
           subscriptions = None
         ),
         applicationName,
-        Token(ClientId(""), serverToken, List.empty),
+        StoredToken(ClientId(""), serverToken, List.empty),
         createdOn = now
       )
     }
@@ -60,8 +63,8 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
 
   "restoreData" should {
     "republish all Applications" in new Setup {
-      val serverToken: String          = UUID.randomUUID().toString
-      val application: ApplicationData = buildApplication("foo", serverToken)
+      val serverToken: String            = UUID.randomUUID().toString
+      val application: StoredApplication = buildApplication("foo", serverToken)
 
       ApplicationRepoMock.ProcessAll.thenReturn()
       when(mockApiGatewayConnector.createOrUpdateApplication(application.wso2ApplicationName, serverToken, RateLimitTier.BRONZE)(hc))

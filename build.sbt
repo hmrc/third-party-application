@@ -31,11 +31,9 @@ lazy val microservice = Project(appName, file("."))
     routesGenerator := InjectedRoutesGenerator,
     majorVersion    := 0,
     routesImport ++= Seq(
- 
-      "uk.gov.hmrc.apiplatform.modules.submissions.controllers._",
-      "uk.gov.hmrc.apiplatform.modules.submissions.controllers.binders._",
-      "uk.gov.hmrc.thirdpartyapplication.domain.models._",
-      "uk.gov.hmrc.apiplatform.modules.applications.domain.models._",
+      "uk.gov.hmrc.apiplatform.modules.common.domain.models._",
+      "uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._",
+      "uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._",
       "uk.gov.hmrc.apiplatform.modules.submissions.domain.models._"
     )
   )
@@ -67,9 +65,14 @@ lazy val microservice = Project(appName, file("."))
     )
   )
 
-  commands += Command.command("testAll") { state =>
-      "test" :: "it:test" :: state
-  }
+commands ++= Seq(
+  Command.command("run-all-tests") { state => "test" :: "it:test" :: state },
+
+  Command.command("clean-and-test") { state => "clean" :: "compile" :: "run-all-tests" :: state },
+
+  // Coverage does not need compile !
+  Command.command("pre-commit") { state => "clean" :: "scalafmtAll" :: "scalafixAll" :: "coverage" :: "run-all-tests" :: "coverageReport" :: "coverageOff" :: state }
+)
 
 def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
   tests map { test =>

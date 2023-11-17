@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 case class PaginationTotal(total: Int)
 
@@ -25,9 +24,4 @@ object PaginationTotal {
   implicit val reads = Json.reads[PaginationTotal]
 }
 
-case class PaginatedApplicationData(applications: List[ApplicationData], totals: List[PaginationTotal], matching: List[PaginationTotal])
-
-object PaginatedApplicationData {
-  implicit val dateTimeFormatter = MongoJavatimeFormats.localDateTimeReads
-  implicit val reads             = Json.reads[PaginatedApplicationData]
-}
+case class PaginatedApplicationData(applications: List[StoredApplication], totals: List[PaginationTotal], matching: List[PaginationTotal])

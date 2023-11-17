@@ -22,11 +22,12 @@ import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
 import org.scalatest.BeforeAndAfterAll
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocations, ResponsibleIndividual, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.REMINDERS_SENT
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineResponsibleIndividualDidNotVerify
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -59,8 +60,8 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
 
     val app             = anApplicationData(
       ApplicationId.random,
-      access = Standard(importantSubmissionData = Some(importantSubmissionData)),
-      state = ApplicationState().toPendingResponsibleIndividualVerification(requesterEmail, requesterName, clock)
+      access = Access.Standard(importantSubmissionData = Some(importantSubmissionData)),
+      state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail, requesterName)
     ).copy(name = appName)
     val initialDelay    = FiniteDuration(1, MINUTES)
     val interval        = FiniteDuration(1, HOURS)

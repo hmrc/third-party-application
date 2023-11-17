@@ -18,21 +18,20 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.applications.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, _}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualVerificationId,
   ResponsibleIndividualVerificationWithDetails
 }
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
@@ -62,10 +61,10 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       List.empty
     )
 
-    val application: ApplicationData = anApplicationData(
+    val application: StoredApplication = anApplicationData(
       applicationId,
       pendingResponsibleIndividualVerificationState("Rick Deckard", "rick@submitter.com"),
-      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+      access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     ).copy(name = appName)
 
     val underTest = new ResponsibleIndividualVerificationService(

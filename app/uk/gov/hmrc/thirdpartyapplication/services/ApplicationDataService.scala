@@ -21,12 +21,12 @@ import scala.concurrent.Future
 import com.google.inject.{Inject, Singleton}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
 class ApplicationDataService @Inject() (appRepo: ApplicationRepository) {
 
-  def fetchApp(applicationId: ApplicationId): Future[Option[ApplicationData]] =
+  def fetchApp(applicationId: ApplicationId): Future[Option[StoredApplication]] =
     appRepo.fetch(applicationId)
 }
