@@ -87,7 +87,20 @@ object ApplicationRepository {
       .and[Access.Ropc](AccessType.ROPC.toString)
       .format
 
-    implicit val formatCheckInformation = Json.format[CheckInformation]
+      
+  private val readsCheckInformation: Reads[CheckInformation] = (
+    (JsPath \ "contactDetails").readNullable[ContactDetails] and
+      (JsPath \ "confirmedName").read[Boolean] and
+      ((JsPath \ "apiSubscriptionsConfirmed").read[Boolean] or Reads.pure(false)) and
+      ((JsPath \ "apiSubscriptionConfigurationsConfirmed").read[Boolean] or Reads.pure(false)) and
+      (JsPath \ "providedPrivacyPolicyURL").read[Boolean] and
+      (JsPath \ "providedTermsAndConditionsURL").read[Boolean] and
+      (JsPath \ "applicationDetails").readNullable[String] and
+      ((JsPath \ "teamConfirmed").read[Boolean] or Reads.pure(false)) and
+      ((JsPath \ "termsOfUseAgreements").read[List[TermsOfUseAgreement]] or Reads.pure(List.empty[TermsOfUseAgreement]))
+  )(CheckInformation.apply _)
+
+    implicit val formatCheckInformation: Format[CheckInformation] = Format(readsCheckInformation, Json.writes[CheckInformation])
 
     implicit val formatApplicationState  = Json.format[ApplicationState]
     implicit val formatClientSecret      = Json.format[StoredClientSecret]
@@ -194,7 +207,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         )
       ),
       replaceIndexes = true,
-      extraCodecs = Seq(Codecs.playFormatCodec(LaxEmailAddress.format))
+    extraCodecs = Seq(
+        Codecs.playFormatCodec(LaxEmailAddress.format)
+      )
     ) with MetricsTimer
     with ApplicationLogger {
 
