@@ -18,8 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.Instant
 
-import play.api.libs.json.{Format, Json}
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import play.api.libs.json._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{EMAIL_SENT, TermsOfUseInvitationState}
@@ -33,6 +32,21 @@ final case class TermsOfUseInvitation(
     status: TermsOfUseInvitationState = EMAIL_SENT
   )
 
-object TermsOfUseInvitation extends MongoJavatimeFormats.Implicits {
-  implicit val format: Format[TermsOfUseInvitation] = Json.format[TermsOfUseInvitation]
+object TermsOfUseInvitation {
+  implicit def formatTermsOfUseAcceptance(implicit dateFormat: Format[Instant]): OFormat[TermsOfUseInvitation] = Json.format[TermsOfUseInvitation]
+}
+
+object Hmm {
+
+  object MongoFormats {
+    import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+    implicit val fmt               = MongoJavatimeFormats.instantFormat
+    val formatTermsOfUseAcceptance = TermsOfUseInvitation.formatTermsOfUseAcceptance
+  }
+
+  object HumanFormats {
+    val fmt                        = implicitly[Format[Instant]]
+    val formatTermsOfUseAcceptance = TermsOfUseInvitation.formatTermsOfUseAcceptance
+  }
+
 }

@@ -18,9 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.LocalDateTime
 
-import play.api.libs.json.{Format, Json, OFormat}
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
@@ -42,8 +39,3 @@ import NotificationStatus._
 import NotificationType._
 
 case class Notification(applicationId: ApplicationId, lastUpdated: LocalDateTime, notificationType: NotificationType, status: NotificationStatus)
-
-object Notification {
-  implicit val dateFormat: Format[LocalDateTime]         = MongoJavatimeFormats.localDateTimeFormat
-  implicit val formatNotification: OFormat[Notification] = Json.format[Notification]
-}

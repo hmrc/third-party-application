@@ -35,6 +35,21 @@ import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
+import play.api.libs.json._
+
+object TermsOfUseInvitationRepositoryISpecExample extends FixedClock {
+  val appId                = ApplicationId.random
+  val termsOfUseInvitation = TermsOfUseInvitation(appId, instant, instant, instant.plus(1, ChronoUnit.DAYS), None, TermsOfUseInvitationState.TERMS_OF_USE_V2)
+
+  val json = Json.obj(
+    "applicationId" -> JsString(appId.toString()),
+    "createdOn"     -> MongoJavatimeHelper.asJsValue(instant),
+    "lastUpdated"   -> MongoJavatimeHelper.asJsValue(instant),
+    "dueBy"         -> MongoJavatimeHelper.asJsValue(instant.plus(1, ChronoUnit.DAYS)),
+    "status"        -> "TERMS_OF_USE_V2"
+  )
+}
 
 class TermsOfUseInvitationRepositoryISpec
     extends ServerBaseISpec
@@ -47,6 +62,8 @@ class TermsOfUseInvitationRepositoryISpec
     with Eventually
     with TableDrivenPropertyChecks
     with FixedClock {
+
+  import TermsOfUseInvitationRepositoryISpecExample._
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -65,6 +82,33 @@ class TermsOfUseInvitationRepositoryISpec
     await(termsOfUseInvitationRepository.collection.drop().toFuture())
 
     await(termsOfUseInvitationRepository.ensureIndexes)
+  }
+
+  "mongo formats" should {
+    import TermsOfUseInvitationRepository.MongoFormats.formatTermsOfUseInvitation
+
+    "write to json" in {
+      Json.toJson(termsOfUseInvitation) mustBe json
+    }
+
+    "read from json" in {
+      Json.fromJson[TermsOfUseInvitation](json).get mustBe termsOfUseInvitation
+    }
+  }
+
+  "mongo formatting in scope for repository" should {
+    import org.mongodb.scala.Document
+    import org.mongodb.scala.result.InsertOneResult
+
+    def saveMongoJson(rawJson: JsObject): InsertOneResult = {
+      await(mongoDatabase.getCollection("termsOfUseInvitation").insertOne(Document(rawJson.toString())).toFuture())
+    }
+
+    "read existing document from mongo" in {
+      saveMongoJson(json)
+      val result = await(termsOfUseInvitationRepository.fetch(appId))
+      result.get mustBe termsOfUseInvitation
+    }
   }
 
   "create" should {

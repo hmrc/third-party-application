@@ -24,7 +24,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 
 trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
@@ -45,9 +44,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   implicit val formatCheckInformation = Json.format[CheckInformation]
 
-  implicit val formatApplicationState  = Json.format[ApplicationState]
-  // implicit val formatClientSecret      = Json.format[ClientSecretData]
-  implicit val formatApplicationTokens = Json.format[ApplicationTokens]
+  implicit val formatApplicationState = Json.format[ApplicationState]
 
   implicit val formatUpdateApplicationRequest     = Json.format[UpdateApplicationRequest]
   implicit val formatApplicationResponse          = Json.format[Application]

@@ -48,24 +48,27 @@ import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object ApplicationRepository {
-  case class SubsByUser(apiIdentifiers: List[ApiIdentifier])
 
   object MongoFormats {
-    implicit val subsByUserFormat = Json.format[SubsByUser]
+    import uk.gov.hmrc.play.json.Union
+    import play.api.libs.functional.syntax._
 
-    implicit val dateFormat                    = MongoJavatimeFormats.localDateTimeFormat
-    implicit val formatTermsOfUseAcceptance    = Json.format[TermsOfUseAcceptance]
-    implicit val formatTermsOfUserAgreement    = Json.format[TermsOfUseAgreement]
-    implicit val formatImportantSubmissionData = Json.format[ImportantSubmissionData]
+    implicit val formatLocalDateTime: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
 
-    implicit val writesStandard = Json.writes[Access.Standard]
+    implicit val formatTermsOfUseAcceptance: OFormat[TermsOfUseAcceptance]       = Json.format[TermsOfUseAcceptance]
+    implicit val formatTermsOfUserAgreement: OFormat[TermsOfUseAgreement]        = Json.format[TermsOfUseAgreement]
+    implicit val formatImportantSubmissionData: OFormat[ImportantSubmissionData] = Json.format[ImportantSubmissionData]
+    implicit val formatStateHistory: OFormat[StateHistory]                       = Json.format[StateHistory]
+
+    implicit val formatStoredClientSecret = Json.format[StoredClientSecret]
+    implicit val formatStoredToken        = Json.format[StoredToken]
+
+    implicit val writesStandard: OWrites[Access.Standard] = Json.writes[Access.Standard]
 
     // Because the data in the db might be old and not a valid redirect URI we need this
     // to use new to avoid the filter on RedirectUri.apply()
-    val convertToRedirectUri: List[String] => List[RedirectUri] = items =>
+    private val convertToRedirectUri: List[String] => List[RedirectUri] = items =>
       items.map(new RedirectUri(_))
-
-    import play.api.libs.functional.syntax._
 
     implicit val readsStandard: Reads[Access.Standard] = (
       ((JsPath \ "redirectUris").read[List[String]].map[List[RedirectUri]](convertToRedirectUri)) and
@@ -76,40 +79,43 @@ object ApplicationRepository {
         (JsPath \ "importantSubmissionData").readNullable[ImportantSubmissionData]
     )(Access.Standard.apply _)
 
-    implicit val formatPrivileged = Json.format[Access.Privileged]
-    implicit val formatRopc       = Json.format[Access.Ropc]
+    implicit val formatPrivileged: OFormat[Access.Privileged] = Json.format[Access.Privileged]
+    implicit val formatRopc: OFormat[Access.Ropc]             = Json.format[Access.Ropc]
 
-    import uk.gov.hmrc.play.json.Union
-
-    implicit val formatAccess = Union.from[Access]("accessType")
+    implicit val formatAccess: OFormat[Access] = Union.from[Access]("accessType")
       .and[Access.Standard](AccessType.STANDARD.toString)
       .and[Access.Privileged](AccessType.PRIVILEGED.toString)
       .and[Access.Ropc](AccessType.ROPC.toString)
       .format
 
-      
-  private val readsCheckInformation: Reads[CheckInformation] = (
-    (JsPath \ "contactDetails").readNullable[ContactDetails] and
-      (JsPath \ "confirmedName").read[Boolean] and
-      ((JsPath \ "apiSubscriptionsConfirmed").read[Boolean] or Reads.pure(false)) and
-      ((JsPath \ "apiSubscriptionConfigurationsConfirmed").read[Boolean] or Reads.pure(false)) and
-      (JsPath \ "providedPrivacyPolicyURL").read[Boolean] and
-      (JsPath \ "providedTermsAndConditionsURL").read[Boolean] and
-      (JsPath \ "applicationDetails").readNullable[String] and
-      ((JsPath \ "teamConfirmed").read[Boolean] or Reads.pure(false)) and
-      ((JsPath \ "termsOfUseAgreements").read[List[TermsOfUseAgreement]] or Reads.pure(List.empty[TermsOfUseAgreement]))
-  )(CheckInformation.apply _)
+    private val readsCheckInformation: Reads[CheckInformation] = (
+      (JsPath \ "contactDetails").readNullable[ContactDetails] and
+        (JsPath \ "confirmedName").read[Boolean] and
+        ((JsPath \ "apiSubscriptionsConfirmed").read[Boolean] or Reads.pure(false)) and
+        ((JsPath \ "apiSubscriptionConfigurationsConfirmed").read[Boolean] or Reads.pure(false)) and
+        (JsPath \ "providedPrivacyPolicyURL").read[Boolean] and
+        (JsPath \ "providedTermsAndConditionsURL").read[Boolean] and
+        (JsPath \ "applicationDetails").readNullable[String] and
+        ((JsPath \ "teamConfirmed").read[Boolean] or Reads.pure(false)) and
+        ((JsPath \ "termsOfUseAgreements").read[List[TermsOfUseAgreement]] or Reads.pure(List.empty[TermsOfUseAgreement]))
+    )(CheckInformation.apply _)
 
     implicit val formatCheckInformation: Format[CheckInformation] = Format(readsCheckInformation, Json.writes[CheckInformation])
 
     implicit val formatApplicationState  = Json.format[ApplicationState]
-    implicit val formatClientSecret      = Json.format[StoredClientSecret]
-    implicit val formatEnvironmentToken  = Json.format[StoredToken]
     implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
     import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLengthConfig
 
-    val applicationDataReads: Reads[StoredApplication] = (
+    // Non-standard format compared to companion object
+    val ipAllowlistReads: Reads[IpAllowlist] = (
+      ((JsPath \ "required").read[Boolean] or Reads.pure(false)) and
+        ((JsPath \ "allowlist").read[Set[String]] or Reads.pure(Set.empty[String]))
+    )(IpAllowlist.apply _)
+    implicit val formatIpAllowlist           = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
+
+    // Non-standard format compared to companion object
+    val readStoredApplication: Reads[StoredApplication] = (
       (JsPath \ "id").read[ApplicationId] and
         (JsPath \ "name").read[String] and
         (JsPath \ "normalisedName").read[String] and
@@ -130,9 +136,13 @@ object ApplicationRepository {
         ((JsPath \ "allowAutoDelete").read[Boolean] or Reads.pure(true))
     )(StoredApplication.apply _)
 
-    implicit val formatApplicationData: OFormat[StoredApplication] = OFormat(applicationDataReads, Json.writes[StoredApplication])
+    implicit val formatStoredApplication: OFormat[StoredApplication] = OFormat(readStoredApplication, Json.writes[StoredApplication])
 
-    implicit val reads = Json.reads[PaginatedApplicationData]
+    implicit val formatApplicationWithStateHistory                                      = Json.format[ApplicationWithStateHistory]
+    implicit val readsApplicationWithSubscriptions: Reads[ApplicationWithSubscriptions] = Json.reads[ApplicationWithSubscriptions]
+    implicit val readsApplicationWithSubscriptionCount                                  = Json.reads[ApplicationWithSubscriptionCount]
+
+    implicit val readsPaginatedApplicationData = Json.reads[PaginatedApplicationData]
   }
 }
 
@@ -141,7 +151,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     extends PlayMongoRepository[StoredApplication](
       collectionName = "application",
       mongoComponent = mongo,
-      domainFormat = ApplicationRepository.MongoFormats.formatApplicationData,
+      domainFormat = ApplicationRepository.MongoFormats.formatStoredApplication,
       indexes = Seq(
         IndexModel(
           ascending("state.verificationCode"),
@@ -207,7 +217,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         )
       ),
       replaceIndexes = true,
-    extraCodecs = Seq(
+      extraCodecs = Seq(
         Codecs.playFormatCodec(LaxEmailAddress.format)
       )
     ) with MetricsTimer

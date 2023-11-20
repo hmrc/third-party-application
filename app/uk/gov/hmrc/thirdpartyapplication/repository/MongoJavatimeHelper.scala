@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models.db
+package uk.gov.hmrc.thirdpartyapplication.repository
 
-import play.api.libs.json.Json
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 
-case class ApplicationLabel(id: String, name: String)
+import play.api.libs.json._
 
-object ApplicationLabel {
-  implicit val reads = Json.reads[ApplicationLabel]
+object MongoJavatimeHelper {
+  def asJsValue(ldt: LocalDateTime): JsValue = Json.obj("$date" -> Json.obj("$numberLong" -> JsString(ldt.toInstant(ZoneOffset.UTC).toEpochMilli().toString())))
+  def asJsValue(instant: Instant): JsValue   = Json.obj("$date" -> Json.obj("$numberLong" -> JsString(instant.toEpochMilli().toString())))
 }
-
-case class ApplicationWithSubscriptionCount(_id: ApplicationLabel, count: Int)

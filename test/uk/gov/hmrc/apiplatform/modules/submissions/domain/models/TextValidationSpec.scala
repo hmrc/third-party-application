@@ -16,11 +16,24 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.models
 
+import java.time.Instant
+
+import play.api.libs.json.Json
+
+import uk.gov.hmrc.thirdpartyapplication.models.db.Hmm
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
 class TextValidationSpec extends HmrcSpec {
 
   "TextValidation" should {
+    "do" in {
+
+      val dt = Instant.now()
+
+      println(Json.toJson(dt)(Hmm.MongoFormats.fmt))
+      println(Json.toJson(dt)(Hmm.HumanFormats.fmt))
+    }
+
     "find a good email valid" in {
       TextValidation.Email.isValid("bob@exmaple.com") shouldBe true
     }

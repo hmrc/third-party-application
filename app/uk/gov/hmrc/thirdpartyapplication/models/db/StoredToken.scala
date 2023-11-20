@@ -18,8 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.LocalDateTime
 
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredClientSecret
 
@@ -29,10 +27,3 @@ case class StoredToken(
     clientSecrets: List[StoredClientSecret] = List(),
     lastAccessTokenUsage: Option[LocalDateTime] = None
   )
-
-object StoredToken {
-  import play.api.libs.json.Json
-
-  implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
-  implicit val format     = Json.format[StoredToken]
-}

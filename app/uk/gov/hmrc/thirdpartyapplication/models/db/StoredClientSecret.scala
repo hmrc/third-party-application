@@ -18,8 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.{LocalDateTime, ZoneOffset}
 
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
 
 case class StoredClientSecret(
@@ -29,10 +27,3 @@ case class StoredClientSecret(
     id: ClientSecret.Id = ClientSecret.Id.random,
     hashedSecret: String
   )
-
-object StoredClientSecret {
-  import play.api.libs.json.Json
-
-  implicit val dateformat = MongoJavatimeFormats.localDateTimeFormat
-  implicit val format     = Json.format[StoredClientSecret]
-}
