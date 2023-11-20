@@ -18,9 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.Instant
 
-import play.api.libs.json.{Format, Json}
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{EMAIL_SENT, TermsOfUseInvitationState}
 
@@ -32,7 +29,3 @@ final case class TermsOfUseInvitation(
     reminderSent: Option[Instant] = None,
     status: TermsOfUseInvitationState = EMAIL_SENT
   )
-
-object TermsOfUseInvitation extends MongoJavatimeFormats.Implicits {
-  implicit val format: Format[TermsOfUseInvitation] = Json.format[TermsOfUseInvitation]
-}

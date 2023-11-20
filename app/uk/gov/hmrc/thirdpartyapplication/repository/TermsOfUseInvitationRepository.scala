@@ -32,6 +32,7 @@ import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Updates}
 
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
@@ -42,11 +43,20 @@ import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{Terms
 import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
+object TermsOfUseInvitationRepository {
+
+  object MongoFormats extends MongoJavatimeFormats.Implicits {
+    import play.api.libs.json.{Format, Json}
+    implicit val formatInstant: Format[Instant]                           = MongoJavatimeFormats.instantFormat
+    implicit val formatTermsOfUseInvitation: Format[TermsOfUseInvitation] = Json.format[TermsOfUseInvitation]
+  }
+}
+
 @Singleton
 class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Clock, val metrics: Metrics)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](
       collectionName = "termsOfUseInvitation",
       mongoComponent = mongo,
-      domainFormat = TermsOfUseInvitation.format,
+      domainFormat = TermsOfUseInvitationRepository.MongoFormats.formatTermsOfUseInvitation,
       indexes = Seq(
         IndexModel(
           ascending("applicationId"),

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 import com.google.inject.{Inject, Singleton}
@@ -24,18 +25,28 @@ import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.Notification
 
+object NotificationRepository {
+
+  object MongoFormats {
+    import play.api.libs.json.{Format, Json, OFormat}
+    implicit val dateFormat: Format[LocalDateTime]         = MongoJavatimeFormats.localDateTimeFormat
+    implicit val formatNotification: OFormat[Notification] = Json.format[Notification]
+  }
+}
+
 @Singleton
 class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
     extends PlayMongoRepository[Notification](
       collectionName = "notifications",
       mongoComponent = mongo,
-      domainFormat = Notification.formatNotification,
+      domainFormat = NotificationRepository.MongoFormats.formatNotification,
       indexes = Seq(
         IndexModel(
           ascending("applicationId"),
@@ -62,4 +73,8 @@ class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
       .toFuture()
       .map(_ => HasSucceeded)
   }
+
+  // Currently records are typically read by a lookup so we need a fetch to test json/bson formatters
+  def find(applicationId: ApplicationId): Future[List[Notification]] =
+    collection.find(equal("applicationId", Codecs.toBson(applicationId))).toFuture().map(_.toList)
 }

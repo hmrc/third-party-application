@@ -16,9 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import play.api.libs.json.Json
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
 
@@ -26,7 +23,4 @@ case class ApplicationWithStateHistory private (id: ApplicationId, name: String,
 
 object ApplicationWithStateHistory {
   def apply(id: ApplicationId, name: String, version: Int, states: List[StateHistory]) = new ApplicationWithStateHistory(id, name, version, states.sorted)
-
-  implicit val dateTimeFormatter                 = MongoJavatimeFormats.localDateTimeReads
-  implicit val formatApplicationWithStateHistory = Json.format[ApplicationWithStateHistory]
 }
