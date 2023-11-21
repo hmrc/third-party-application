@@ -73,4 +73,8 @@ class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
       .toFuture()
       .map(_ => HasSucceeded)
   }
+
+  // Currently records are typically read by a lookup so we need a fetch to test json/bson formatters
+  def find(applicationId: ApplicationId): Future[List[Notification]] =
+    collection.find(equal("applicationId", Codecs.toBson(applicationId))).toFuture().map(_.toList)
 }

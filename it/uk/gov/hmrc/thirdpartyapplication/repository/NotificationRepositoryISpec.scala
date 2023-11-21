@@ -34,6 +34,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import play.api.libs.json._
+import org.scalatest.OptionValues
 
 object NotificationRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random
@@ -57,6 +58,7 @@ class NotificationRepositoryISpec
     with ApplicationStateUtil
     with Eventually
     with TableDrivenPropertyChecks
+    with OptionValues
     with FixedClock {
 
   import NotificationRepositoryISpecExample._
@@ -74,18 +76,18 @@ class NotificationRepositoryISpec
   }
 
   "mongo formatting in scope for repository" should {
-    // import com.mongodb.client.result.InsertOneResult
-    // import org.mongodb.scala.Document
+    import com.mongodb.client.result.InsertOneResult
+    import org.mongodb.scala.Document
 
-    // def saveMongoJson(rawJson: JsObject): InsertOneResult = {
-    //   await(mongoDatabase.getCollection("notifications").insertOne(Document(rawJson.toString())).toFuture())
-    // }
+    def saveMongoJson(rawJson: JsObject): InsertOneResult = {
+      await(mongoDatabase.getCollection("notifications").insertOne(Document(rawJson.toString())).toFuture())
+    }
 
-    // "read existing document from mongo" in {
-    //    saveMongoJson(json)
-    //    val result = await(notificationRepository.fetchByApplicationId(appId))
-    //    result shouldBe List(stateHistory)
-    // }
+    "read existing document from mongo" in {
+      saveMongoJson(json)
+      val result = await(notificationRepository.find(appId))
+      result.head mustBe notification
+    }
   }
 
   protected override def appBuilder: GuiceApplicationBuilder = {
