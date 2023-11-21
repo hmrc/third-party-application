@@ -63,22 +63,23 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
   implicit def toCommandFailure(in: String): CommandFailure = CommandFailures.GenericFailure(in)
 
   def isAppActorACollaboratorOnApp(actor: Actors.AppCollaborator, app: StoredApplication): Validated[Failures, Unit] =
-    cond(app.collaborators.exists(c => c.emailAddress == actor.email), ActorIsNotACollaboratorOnApp)
+    cond(app.collaborators.exists(c => (c.emailAddress equalsIgnoreCase actor.email)), ActorIsNotACollaboratorOnApp)
 
   def isCollaboratorOnApp(collaborator: Collaborator, app: StoredApplication): Validated[Failures, Unit] = {
+    val normalisedCollaborator = collaborator.normalise
     val matchesId: Collaborator => Boolean    = (appCollaborator) => { appCollaborator.userId == collaborator.userId }
     val matchesEmail: Collaborator => Boolean = (appCollaborator) => { appCollaborator.emailAddress equalsIgnoreCase collaborator.emailAddress }
 
     app.collaborators.find(c => matchesId(c) || matchesEmail(c)) match {
-      case Some(c) if (c == collaborator) => ().validNel[CommandFailure]
+      case Some(c) if (c.normalise == normalisedCollaborator) => ().validNel[CommandFailure]
       case Some(_)                        => CollaboratorHasMismatchOnApp.invalidNel[Unit]
       case _                              => CollaboratorDoesNotExistOnApp.invalidNel[Unit]
     }
   }
 
-  private def isCollaboratorActorAndAdmin(actor: Actor, app: StoredApplication): Boolean =
+  def isActorACollaboratorAndAnAdmin(actor: Actor, app: StoredApplication): Boolean =
     actor match {
-      case Actors.AppCollaborator(emailAddress) => app.collaborators.exists(c => c.isAdministrator && c.emailAddress == emailAddress)
+      case Actors.AppCollaborator(emailAddress) => app.collaborators.exists(c => c.isAdministrator && (c.emailAddress equalsIgnoreCase emailAddress))
       case _                                    => false
     }
 
@@ -93,7 +94,7 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def isAdminIfInProductionOrGatekeeperActor(actor: Actor, app: StoredApplication): Validated[Failures, Unit] =
     cond(
-      (app.environment == Environment.PRODUCTION.toString && isCollaboratorActorAndAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString) || isGatekeeperUser(actor),
+      (app.environment == Environment.PRODUCTION.toString && isActorACollaboratorAndAnAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString) || isGatekeeperUser(actor),
       CommandFailures.GenericFailure("App is in PRODUCTION so User must be an ADMIN or be a Gatekeeper User")
     )
 
@@ -102,7 +103,7 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def isAdminIfInProduction(actor: Actor, app: StoredApplication): Validated[Failures, Unit] =
     cond(
-      (app.environment == Environment.PRODUCTION.toString && isCollaboratorActorAndAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString),
+      (app.environment == Environment.PRODUCTION.toString && isActorACollaboratorAndAnAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString),
       GenericFailure("App is in PRODUCTION so User must be an ADMIN")
     )
 
@@ -120,7 +121,7 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def collaboratorAlreadyOnApp(email: LaxEmailAddress, app: StoredApplication) = {
     cond(
-      !app.collaborators.exists(_.emailAddress.equalsIgnoreCase(email)),
+      !app.collaborators.exists(_.emailAddress equalsIgnoreCase email),
       CollaboratorAlreadyExistsOnApp
     )
   }

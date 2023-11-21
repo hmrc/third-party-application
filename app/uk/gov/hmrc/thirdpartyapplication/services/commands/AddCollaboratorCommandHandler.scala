@@ -61,10 +61,11 @@ class AddCollaboratorCommandHandler @Inject() (
   }
 
   def process(app: StoredApplication, cmd: AddCollaborator): AppCmdResultT = {
+    val normalisedCmd = cmd.copy(collaborator = cmd.collaborator.normalise)
     for {
-      _        <- E.fromEither(validate(app, cmd).toEither)
-      savedApp <- E.liftF(applicationRepository.addCollaborator(app.id, cmd.collaborator))
-      events    = asEvents(savedApp, cmd)
+      _        <- E.fromEither(validate(app, normalisedCmd).toEither)
+      savedApp <- E.liftF(applicationRepository.addCollaborator(app.id, normalisedCmd.collaborator))
+      events    = asEvents(savedApp, normalisedCmd)
     } yield (savedApp, events)
   }
 }

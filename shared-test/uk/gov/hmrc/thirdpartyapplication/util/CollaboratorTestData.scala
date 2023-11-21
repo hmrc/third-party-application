@@ -30,8 +30,8 @@ trait CollaboratorTestData extends EmailTestData {
   lazy val developerCollaborator         = devEmail.developer()
 
   def idOf(email: Any): UserId = email match {
-    case s: String             => idsByEmail.getOrElseUpdate(s, UserId.random)
-    case LaxEmailAddress(text) => idsByEmail.getOrElseUpdate(text, UserId.random)
+    case s: String             => idsByEmail.getOrElseUpdate(s.toLowerCase(), UserId.random)
+    case LaxEmailAddress(text) => idsByEmail.getOrElseUpdate(text.toLowerCase(), UserId.random)
   }
 
   import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax

@@ -18,11 +18,12 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.data.{NonEmptyList, Validated}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, HmrcSpec}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClock {
 
@@ -69,6 +70,25 @@ class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClo
       }
     }
 
+    "pass when collaborator exists but has mixed case email" in {
+      val mixedCaseEmail = "IamMiX@EmaIl.Com".toLaxEmail
+      val collaboratorWithMixedEmail = developerCollaborator.copy(emailAddress = mixedCaseEmail)
+      val collaboratorWithLowerCaseEmail = developerCollaborator.copy(emailAddress = mixedCaseEmail.normalise())
+
+      val app = applicationData.copy(collaborators = Set(collaboratorWithMixedEmail))
+
+      checkSuccess(()) {
+        isCollaboratorOnApp(collaboratorWithLowerCaseEmail, app)
+      }
+      
+      val app2 = applicationData.copy(collaborators = Set(collaboratorWithLowerCaseEmail))
+
+      checkSuccess(()) {
+        isCollaboratorOnApp(collaboratorWithMixedEmail, app2)
+      }
+      
+    }
+
     "fail with CollaboratorDoesNotExistOnApp when collaborator is not on app" in {
       val theCollaborator = developerCollaborator
 
@@ -96,5 +116,18 @@ class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClo
 
       isCollaboratorOnApp(theCollaborator, app) shouldBe Validated.Invalid(NonEmptyList.one(CommandFailures.CollaboratorHasMismatchOnApp))
     }
+
+    "isActorACollaboratorAndAnAdmin" in {
+        val adminActor = Actors.AppCollaborator(anAdminEmail)
+        val devActor = Actors.AppCollaborator(devEmail)
+   
+        isActorACollaboratorAndAnAdmin(adminActor, applicationData) shouldBe true
+        isActorACollaboratorAndAnAdmin(devActor, applicationData) shouldBe false
+
+         isActorACollaboratorAndAnAdmin(adminActor, applicationData) shouldBe true
+        isActorACollaboratorAndAnAdmin(devActor.copy(email = devActor.email.text.toUpperCase().toLaxEmail), applicationData) shouldBe false
+    }
   }
+
+
 }
