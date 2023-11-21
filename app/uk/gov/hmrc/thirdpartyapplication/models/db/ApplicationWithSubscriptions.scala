@@ -18,9 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.LocalDateTime
 
-import play.api.libs.json.{Format, Json, Reads}
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiIdentifier, ApplicationId}
 
 case class ApplicationWithSubscriptions(
@@ -29,8 +26,3 @@ case class ApplicationWithSubscriptions(
     lastAccess: Option[LocalDateTime],
     apiIdentifiers: Set[ApiIdentifier]
   )
-
-object ApplicationWithSubscriptions {
-  implicit val dateFormat: Format[LocalDateTime]          = MongoJavatimeFormats.localDateTimeFormat
-  implicit val reads: Reads[ApplicationWithSubscriptions] = Json.reads[ApplicationWithSubscriptions]
-}

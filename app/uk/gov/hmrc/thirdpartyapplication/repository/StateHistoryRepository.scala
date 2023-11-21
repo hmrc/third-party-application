@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,18 +25,28 @@ import org.mongodb.scala.model.Indexes.{ascending, descending}
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
+object StateHistoryRepository {
+
+  object MongoFormats {
+    import play.api.libs.json.{Format, Json, OFormat}
+    implicit val formatLocalDateTime: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+    implicit val formatStateHistory: OFormat[StateHistory]  = Json.format[StateHistory]
+  }
+}
+
 @Singleton
 class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
     extends PlayMongoRepository[StateHistory](
       collectionName = "stateHistory",
       mongoComponent = mongo,
-      domainFormat = StateHistory.format,
+      domainFormat = StateHistoryRepository.MongoFormats.formatStateHistory,
       indexes = Seq(
         IndexModel(
           ascending("applicationId"),

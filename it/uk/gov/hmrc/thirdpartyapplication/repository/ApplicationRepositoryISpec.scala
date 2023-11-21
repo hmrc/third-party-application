@@ -41,9 +41,102 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import play.api.libs.json._
+import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
+
+object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock {
+  val clientId       = ClientId.random
+  val clientSecretId = ClientSecret.Id.random
+  val appId          = ApplicationId.random
+  val userId         = UserId.random
+
+  val application = StoredApplication(
+    appId,
+    "AppName",
+    "appname",
+    Set(Collaborators.Administrator(userId, LaxEmailAddress("bob@example.com"))),
+    None,
+    "wso2",
+    ApplicationTokens(StoredToken(clientId, "accessABC", List(StoredClientSecret("a", now, None, clientSecretId, "hashme")))),
+    ApplicationState(State.TESTING, None, None, None, now),
+    Access.Standard(),
+    now,
+    None,
+    123,
+    Some(RateLimitTier.BRONZE),
+    "PRODUCTION",
+    Some(CheckInformation(
+      Some(ContactDetails(FullName("Contact"), LaxEmailAddress("contact@example.com"), "123456789")),
+      termsOfUseAgreements = List(
+        TermsOfUseAgreement(LaxEmailAddress("bob@example.com"), now, "1.0")
+      )
+    )),
+    false,
+    IpAllowlist()
+  )
+
+  val json = Json.obj(
+    "id"                  -> JsString(appId.toString()),
+    "name"                -> JsString("AppName"),
+    "normalisedName"      -> JsString("appname"),
+    "collaborators"       -> JsArray(Seq(Json.obj(
+      "userId"       -> JsString(userId.toString()),
+      "emailAddress" -> "bob@example.com",
+      "role"         -> "ADMINISTRATOR"
+    ))),
+    "wso2ApplicationName" -> JsString("wso2"),
+    "tokens"              -> Json.obj(
+      "production" -> Json.obj(
+        "clientId"      -> JsString(clientId.toString()),
+        "accessToken"   -> JsString("accessABC"),
+        "clientSecrets" -> JsArray(Seq(Json.obj(
+          "name"         -> JsString("a"),
+          "createdOn"    -> MongoJavatimeHelper.asJsValue(now),
+          "id"           -> JsString(clientSecretId.toString()),
+          "hashedSecret" -> JsString("hashme")
+        )))
+      )
+    ),
+    "state"               -> Json.obj(
+      "name"      -> JsString("TESTING"),
+      "updatedOn" -> MongoJavatimeHelper.asJsValue(now)
+    ),
+    "access"              -> Json.obj(
+      "redirectUris" -> JsArray(Seq()),
+      "overrides"    -> JsArray(Seq()),
+      "accessType"   -> JsString("STANDARD")
+    ),
+    "createdOn"           -> MongoJavatimeHelper.asJsValue(now),
+    "grantLength"         -> JsNumber(123),
+    "rateLimitTier"       -> JsString("BRONZE"),
+    "environment"         -> JsString("PRODUCTION"),
+    "checkInformation"    -> Json.obj(
+      "contactDetails"                         -> Json.obj(
+        "fullname"        -> JsString("Contact"),
+        "email"           -> JsString("contact@example.com"),
+        "telephoneNumber" -> JsString("123456789")
+      ),
+      "confirmedName"                          -> JsFalse,
+      "apiSubscriptionsConfirmed"              -> JsFalse,
+      "apiSubscriptionConfigurationsConfirmed" -> JsFalse,
+      "providedPrivacyPolicyURL"               -> JsFalse,
+      "providedTermsAndConditionsURL"          -> JsFalse,
+      "teamConfirmed"                          -> JsFalse,
+      "termsOfUseAgreements"                   -> JsArray(Seq(Json.obj(
+        "emailAddress" -> JsString("bob@example.com"),
+        "timeStamp"    -> MongoJavatimeHelper.asJsValue(now),
+        "version"      -> JsString("1.0")
+      )))
+    ),
+    "blocked"             -> JsFalse,
+    "ipAllowlist"         -> Json.obj("required" -> JsFalse, "allowlist" -> JsArray.empty),
+    "allowAutoDelete"     -> JsTrue
+  )
+}
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
+    with CleanMongoCollectionSupport
     with SubmissionsTestData
     with ApplicationTestData
     with JavaDateTimeTestUtils
@@ -53,6 +146,8 @@ class ApplicationRepositoryISpec
     with FixedClock {
 
   val adminName = "Admin Example"
+
+  import ApplicationRepositoryISpecExample._
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -95,6 +190,33 @@ class ApplicationRepositoryISpec
   private def generateAccessToken = {
     val lengthOfRandomToken = 5
     nextString(lengthOfRandomToken)
+  }
+
+  "mongo formats" should {
+    import ApplicationRepository.MongoFormats.formatStoredApplication
+
+    "write to json" in {
+      Json.toJson(application) mustBe json
+    }
+
+    "read from json" in {
+      Json.fromJson[StoredApplication](json).get mustBe application
+    }
+  }
+
+  "mongo formatting in scope for repository" should {
+    import org.mongodb.scala.Document
+    import org.mongodb.scala.result.InsertOneResult
+
+    def saveMongoJson(rawJson: JsObject): InsertOneResult = {
+      await(mongoDatabase.getCollection("application").insertOne(Document(rawJson.toString())).toFuture())
+    }
+
+    "read existing document from mongo" in {
+      saveMongoJson(json)
+      val result = await(applicationRepository.fetch(appId))
+      result.get mustBe application
+    }
   }
 
   "save" should {

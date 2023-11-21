@@ -29,12 +29,63 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import play.api.libs.json._
 
-class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport
-    with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
+object StateHistoryRepositoryISpecExample extends FixedClock {
+  val appId        = ApplicationId.random
+  val actor: Actor = Actors.AppCollaborator("admin@example.com".toLaxEmail)
+  val stateHistory = StateHistory(appId, State.TESTING, actor, changedAt = now)
+
+  val json = Json.obj(
+    "applicationId" -> JsString(appId.toString()),
+    "state"         -> "TESTING",
+    "actor"         -> Json.obj(
+      "email"     -> "admin@example.com",
+      "actorType" -> "COLLABORATOR"
+    ),
+    "changedAt"     -> MongoJavatimeHelper.asJsValue(now)
+  )
+}
+
+class StateHistoryRepositoryISpec
+    extends AsyncHmrcSpec
+    with MongoSupport
+    with CleanMongoCollectionSupport
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with Eventually
+    with FixedClock {
+
+  import StateHistoryRepositoryISpecExample._
 
   private val repository = new StateHistoryRepository(mongoComponent)
-  val actor: Actor       = Actors.AppCollaborator("admin@example.com".toLaxEmail)
+
+  "mongo formats" should {
+    import StateHistoryRepository.MongoFormats.formatStateHistory
+
+    "write to json" in {
+      Json.toJson(stateHistory) shouldBe json
+    }
+
+    "read from json" in {
+      Json.fromJson[StateHistory](json).get shouldBe stateHistory
+    }
+  }
+
+  "mongo formatting in scope for repository" should {
+    import org.mongodb.scala.Document
+    import org.mongodb.scala.result.InsertOneResult
+
+    def saveMongoJson(rawJson: JsObject): InsertOneResult = {
+      await(mongoDatabase.getCollection("stateHistory").insertOne(Document(rawJson.toString())).toFuture())
+    }
+
+    "read existing document from mongo" in {
+      saveMongoJson(json)
+      val result = await(repository.fetchByApplicationId(appId))
+      result shouldBe List(stateHistory)
+    }
+  }
 
   "insert" should {
 
