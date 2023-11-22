@@ -55,7 +55,7 @@ object ApplicationRepository {
 
     implicit val formatLocalDateTime: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
 
-    implicit val formatTermsOfUseAcceptance: OFormat[TermsOfUseAcceptance]       = Json.format[TermsOfUseAcceptance]
+    implicit val formatTermsOfUseAcceptance: OFormat[TermsOfUseAcceptance]       = Json.using[Json.WithDefaultValues].format[TermsOfUseAcceptance]
     implicit val formatTermsOfUserAgreement: OFormat[TermsOfUseAgreement]        = Json.format[TermsOfUseAgreement]
     implicit val formatImportantSubmissionData: OFormat[ImportantSubmissionData] = Json.format[ImportantSubmissionData]
     implicit val formatStateHistory: OFormat[StateHistory]                       = Json.format[StateHistory]

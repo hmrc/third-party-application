@@ -49,7 +49,9 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
   val clientSecretId = ClientSecret.Id.random
   val appId          = ApplicationId.random
   val userId         = UserId.random
+  val submissionId   = SubmissionId.random
 
+  val aResponsibleIndividual = ResponsibleIndividual(FullName("bob"), LaxEmailAddress("bob@example.com"))
   val application = StoredApplication(
     appId,
     "AppName",
@@ -59,7 +61,16 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     "wso2",
     ApplicationTokens(StoredToken(clientId, "accessABC", List(StoredClientSecret("a", now, None, clientSecretId, "hashme")))),
     ApplicationState(State.TESTING, None, None, None, now),
-    Access.Standard(),
+    Access.Standard(
+      importantSubmissionData = Some(ImportantSubmissionData(
+        organisationUrl = None,
+        responsibleIndividual = aResponsibleIndividual,
+        serverLocations = Set(ServerLocation.InUK),
+        termsAndConditionsLocation = TermsAndConditionsLocations.InDesktopSoftware,
+        privacyPolicyLocation = PrivacyPolicyLocations.NoneProvided,
+        termsOfUseAcceptances = List(TermsOfUseAcceptance(aResponsibleIndividual, now, submissionId))
+      ))
+    ),
     now,
     None,
     123,
@@ -75,7 +86,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     IpAllowlist()
   )
 
-  val json = Json.obj(
+  def json(withInstance: Boolean) = Json.obj(
     "id"                  -> JsString(appId.toString()),
     "name"                -> JsString("AppName"),
     "normalisedName"      -> JsString("appname"),
@@ -104,6 +115,37 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     "access"              -> Json.obj(
       "redirectUris" -> JsArray(Seq()),
       "overrides"    -> JsArray(Seq()),
+      "importantSubmissionData" -> Json.obj(
+        "responsibleIndividual" -> Json.obj(
+          "fullName" -> "bob",
+          "emailAddress" -> "bob@example.com"
+        ),
+        "serverLocations" -> JsArray(Seq(Json.obj("serverLocation" -> "inUK"))),
+        "termsAndConditionsLocation" -> Json.obj("termsAndConditionsType" -> "inDesktop"),
+        "privacyPolicyLocation" -> Json.obj("privacyPolicyType" ->"noneProvided"),
+        "termsOfUseAcceptances" -> JsArray(Seq(
+          if(withInstance) {
+            Json.obj(
+              "responsibleIndividual" -> Json.obj(
+                "fullName" -> "bob",
+                "emailAddress" -> "bob@example.com"
+              ),
+              "dateTime" -> MongoJavatimeHelper.asJsValue(now),
+              "submissionId" -> JsString(submissionId.toString()),
+              "submissionInstance" -> JsNumber(0)
+            )
+          } else {
+            Json.obj(
+              "responsibleIndividual" -> Json.obj(
+                "fullName" -> "bob",
+                "emailAddress" -> "bob@example.com"
+              ),
+              "dateTime" -> MongoJavatimeHelper.asJsValue(now),
+              "submissionId" -> JsString(submissionId.toString())
+            )
+          }
+        ))
+      ),
       "accessType"   -> JsString("STANDARD")
     ),
     "createdOn"           -> MongoJavatimeHelper.asJsValue(now),
@@ -196,11 +238,11 @@ class ApplicationRepositoryISpec
     import ApplicationRepository.MongoFormats.formatStoredApplication
 
     "write to json" in {
-      Json.toJson(application) mustBe json
+      Json.toJson(application) mustBe json(true)
     }
 
     "read from json" in {
-      Json.fromJson[StoredApplication](json).get mustBe application
+      Json.fromJson[StoredApplication](json(false)) mustBe JsSuccess(application)
     }
   }
 
@@ -213,7 +255,7 @@ class ApplicationRepositoryISpec
     }
 
     "read existing document from mongo" in {
-      saveMongoJson(json)
+      saveMongoJson(json(true))
       val result = await(applicationRepository.fetch(appId))
       result.get mustBe application
     }
