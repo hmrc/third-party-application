@@ -20,7 +20,7 @@ final case class TermsOfUseSearch(
     filters: List[TermsOfUseSearchFilter] = List.empty,
     textToSearch: Option[String] = None,
     sort: TermsOfUseSort = TermsOfUseNoSorting
-)
+  )
 
 object TermsOfUseSearch {
 
@@ -30,9 +30,9 @@ object TermsOfUseSearch {
       .map {
         case (key, values) =>
           key match {
-            case "search"                         => TermsOfUseTextSearchFilter(values.head)
-            case "status"                         => TermsOfUseStatusFilter(values)
-            case _                                => None // ignore anything that isn't a search filter
+            case "search" => TermsOfUseTextSearchFilter(values.head)
+            case "status" => TermsOfUseStatusFilter(values)
+            case _        => None // ignore anything that isn't a search filter
           }
       }
       .flatten
@@ -40,36 +40,37 @@ object TermsOfUseSearch {
       .flatten
       .toList
 
-    def searchText     = queryString.getOrElse("search", List.empty).headOption
+    def searchText = queryString.getOrElse("search", List.empty).headOption
     new TermsOfUseSearch(filters, searchText)
   }
 }
 
-
 sealed trait TermsOfUseSearchFilter
 
-sealed trait TermsOfUseStatusFilter   extends TermsOfUseSearchFilter
-case object EmailSent                 extends TermsOfUseStatusFilter
-case object ReminderEmailSent         extends TermsOfUseStatusFilter
-case object Overdue                   extends TermsOfUseStatusFilter
-case object Warnings                  extends TermsOfUseStatusFilter
-case object Failed                    extends TermsOfUseStatusFilter
-case object TermsOfUseV2WithWarnings  extends TermsOfUseStatusFilter
-case object TermsOfUseV2              extends TermsOfUseStatusFilter
+sealed trait TermsOfUseStatusFilter  extends TermsOfUseSearchFilter
+case object EmailSent                extends TermsOfUseStatusFilter
+case object ReminderEmailSent        extends TermsOfUseStatusFilter
+case object Overdue                  extends TermsOfUseStatusFilter
+case object Warnings                 extends TermsOfUseStatusFilter
+case object Failed                   extends TermsOfUseStatusFilter
+case object TermsOfUseV2WithWarnings extends TermsOfUseStatusFilter
+case object TermsOfUseV2             extends TermsOfUseStatusFilter
 
 case object TermsOfUseStatusFilter {
 
   def apply(values: Seq[String]): Seq[Option[TermsOfUseStatusFilter]] = {
-    values.map(value => value match {
-      case "EMAIL_SENT"                    => Some(EmailSent)
-      case "REMINDER_EMAIL_SENT"           => Some(ReminderEmailSent)
-      case "OVERDUE"                       => Some(Overdue)
-      case "WARNINGS"                      => Some(Warnings)
-      case "FAILED"                        => Some(Failed)
-      case "TERMS_OF_USE_V2_WITH_WARNINGS" => Some(TermsOfUseV2WithWarnings)
-      case "TERMS_OF_USE_V2"               => Some(TermsOfUseV2)
-      case _                               => None
-    } )
+    values.map(value =>
+      value match {
+        case "EMAIL_SENT"                    => Some(EmailSent)
+        case "REMINDER_EMAIL_SENT"           => Some(ReminderEmailSent)
+        case "OVERDUE"                       => Some(Overdue)
+        case "WARNINGS"                      => Some(Warnings)
+        case "FAILED"                        => Some(Failed)
+        case "TERMS_OF_USE_V2_WITH_WARNINGS" => Some(TermsOfUseV2WithWarnings)
+        case "TERMS_OF_USE_V2"               => Some(TermsOfUseV2)
+        case _                               => None
+      }
+    )
   }
 }
 

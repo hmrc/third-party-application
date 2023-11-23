@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import com.kenshoo.play.metrics.Metrics
 import java.time.temporal.ChronoUnit.MILLIS
 import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
+import com.kenshoo.play.metrics.Metrics
 import org.bson.BsonValue
 import org.mongodb.scala.bson.Document
 import org.mongodb.scala.bson.conversions.Bson
@@ -37,9 +37,8 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseSearch, TermsOfUseSearchFilter, TermsOfUseStatusFilter, TermsOfUseTextSearchFilter}
-import uk.gov.hmrc.thirdpartyapplication.models.{EmailSent, ReminderEmailSent, Overdue, Warnings, Failed, TermsOfUseV2WithWarnings, TermsOfUseV2}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{TermsOfUseInvitationState, _}
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
@@ -53,7 +52,8 @@ object TermsOfUseInvitationRepository {
 }
 
 @Singleton
-class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Clock, val metrics: Metrics)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](
+class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Clock, val metrics: Metrics)(implicit val ec: ExecutionContext)
+    extends PlayMongoRepository[TermsOfUseInvitation](
       collectionName = "termsOfUseInvitation",
       mongoComponent = mongo,
       domainFormat = TermsOfUseInvitationRepository.MongoFormats.formatTermsOfUseInvitation,
@@ -168,7 +168,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
 
   def search(searchCriteria: TermsOfUseSearch): Future[Seq[TermsOfUseInvitationWithApplication]] = {
     val statusFilters = convertFilterToStatusQueryClause(searchCriteria.filters)
-    val textFilter = convertFilterToTextQueryClause(searchCriteria.filters, searchCriteria)
+    val textFilter    = convertFilterToTextQueryClause(searchCriteria.filters, searchCriteria)
     runAggregationQuery(statusFilters, textFilter)
   }
 
@@ -200,7 +200,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
   }
 
   private def convertFilterToTextQueryClause(filters: List[TermsOfUseSearchFilter], searchCriteria: TermsOfUseSearch): Bson = {
-  
+
     def regexTextSearch(textFilters: List[TermsOfUseTextSearchFilter], searchText: String): Bson = {
       if (textFilters.size == 0) {
         Document()
@@ -223,8 +223,8 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
           filter(textFilter)
         )
       ).map(Codecs.fromBson[TermsOfUseInvitationWithApplication])
-       .toFuture()
+        .toFuture()
 
     }
-  }  
+  }
 }

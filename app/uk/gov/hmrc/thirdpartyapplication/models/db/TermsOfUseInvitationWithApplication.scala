@@ -34,17 +34,17 @@ final case class TermsOfUseInvitationWithApplication(
     applications: Set[TermsOfUseApplication]
   ) {
 
-    def getApplicationName(): String = {
-      applications.head.name
-    }
+  def getApplicationName(): String = {
+    applications.head.name
+  }
 }
 
 final case class TermsOfUseApplication(
     id: ApplicationId,
     name: String
-)
+  )
 
 object TermsOfUseInvitationWithApplication extends MongoJavatimeFormats.Implicits {
-  implicit val formatTermsOfUseApplication: Format[TermsOfUseApplication] = Json.format[TermsOfUseApplication]
+  implicit val formatTermsOfUseApplication: Format[TermsOfUseApplication]                             = Json.format[TermsOfUseApplication]
   implicit val formatTermsOfUseInvitationWithApplication: Format[TermsOfUseInvitationWithApplication] = Json.format[TermsOfUseInvitationWithApplication]
 }

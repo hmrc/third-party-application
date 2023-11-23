@@ -17,8 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future.successful
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future.successful
 import scala.util.{Failure, Success, Try}
 
 import play.api.libs.json.Json.toJson
