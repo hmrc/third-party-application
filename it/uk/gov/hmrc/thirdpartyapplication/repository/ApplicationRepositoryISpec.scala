@@ -52,6 +52,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
   val submissionId   = SubmissionId.random
 
   val aResponsibleIndividual = ResponsibleIndividual(FullName("bob"), LaxEmailAddress("bob@example.com"))
+
   val application = StoredApplication(
     appId,
     "AppName",
@@ -113,40 +114,40 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
       "updatedOn" -> MongoJavatimeHelper.asJsValue(now)
     ),
     "access"              -> Json.obj(
-      "redirectUris" -> JsArray(Seq()),
-      "overrides"    -> JsArray(Seq()),
+      "redirectUris"            -> JsArray(Seq()),
+      "overrides"               -> JsArray(Seq()),
       "importantSubmissionData" -> Json.obj(
-        "responsibleIndividual" -> Json.obj(
-          "fullName" -> "bob",
+        "responsibleIndividual"      -> Json.obj(
+          "fullName"     -> "bob",
           "emailAddress" -> "bob@example.com"
         ),
-        "serverLocations" -> JsArray(Seq(Json.obj("serverLocation" -> "inUK"))),
+        "serverLocations"            -> JsArray(Seq(Json.obj("serverLocation" -> "inUK"))),
         "termsAndConditionsLocation" -> Json.obj("termsAndConditionsType" -> "inDesktop"),
-        "privacyPolicyLocation" -> Json.obj("privacyPolicyType" ->"noneProvided"),
-        "termsOfUseAcceptances" -> JsArray(Seq(
-          if(withInstance) {
+        "privacyPolicyLocation"      -> Json.obj("privacyPolicyType" -> "noneProvided"),
+        "termsOfUseAcceptances"      -> JsArray(Seq(
+          if (withInstance) {
             Json.obj(
               "responsibleIndividual" -> Json.obj(
-                "fullName" -> "bob",
+                "fullName"     -> "bob",
                 "emailAddress" -> "bob@example.com"
               ),
-              "dateTime" -> MongoJavatimeHelper.asJsValue(now),
-              "submissionId" -> JsString(submissionId.toString()),
-              "submissionInstance" -> JsNumber(0)
+              "dateTime"              -> MongoJavatimeHelper.asJsValue(now),
+              "submissionId"          -> JsString(submissionId.toString()),
+              "submissionInstance"    -> JsNumber(0)
             )
           } else {
             Json.obj(
               "responsibleIndividual" -> Json.obj(
-                "fullName" -> "bob",
+                "fullName"     -> "bob",
                 "emailAddress" -> "bob@example.com"
               ),
-              "dateTime" -> MongoJavatimeHelper.asJsValue(now),
-              "submissionId" -> JsString(submissionId.toString())
+              "dateTime"              -> MongoJavatimeHelper.asJsValue(now),
+              "submissionId"          -> JsString(submissionId.toString())
             )
           }
         ))
       ),
-      "accessType"   -> JsString("STANDARD")
+      "accessType"              -> JsString("STANDARD")
     ),
     "createdOn"           -> MongoJavatimeHelper.asJsValue(now),
     "grantLength"         -> JsNumber(123),

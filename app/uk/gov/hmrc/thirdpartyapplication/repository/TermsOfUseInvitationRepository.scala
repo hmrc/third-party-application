@@ -22,6 +22,10 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
+import com.kenshoo.play.metrics.Metrics
+import org.bson.BsonValue
+import org.mongodb.scala.bson.Document
+import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
@@ -33,9 +37,10 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{TermsOfUseInvitationState, _}
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object TermsOfUseInvitationRepository {
 
@@ -47,7 +52,8 @@ object TermsOfUseInvitationRepository {
 }
 
 @Singleton
-class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Clock)(implicit val ec: ExecutionContext) extends PlayMongoRepository[TermsOfUseInvitation](
+class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Clock, val metrics: Metrics)(implicit val ec: ExecutionContext)
+    extends PlayMongoRepository[TermsOfUseInvitation](
       collectionName = "termsOfUseInvitation",
       mongoComponent = mongo,
       domainFormat = TermsOfUseInvitationRepository.MongoFormats.formatTermsOfUseInvitation,
@@ -73,7 +79,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
         )
       ),
       replaceIndexes = true
-    ) with ApplicationLogger {
+    ) with ApplicationLogger with MetricsTimer {
 
   def create(termsOfUseInvitation: TermsOfUseInvitation): Future[Option[TermsOfUseInvitation]] = {
     collection.find(equal("applicationId", Codecs.toBson(termsOfUseInvitation.applicationId))).headOption().flatMap {
@@ -158,5 +164,67 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
     )
       .toFuture()
       .map(_ => HasSucceeded)
+  }
+
+  def search(searchCriteria: TermsOfUseSearch): Future[Seq[TermsOfUseInvitationWithApplication]] = {
+    val statusFilters = convertFilterToStatusQueryClause(searchCriteria.filters)
+    val textFilter    = convertFilterToTextQueryClause(searchCriteria.filters, searchCriteria)
+    runAggregationQuery(statusFilters, textFilter)
+  }
+
+  private def convertFilterToStatusQueryClause(filters: List[TermsOfUseSearchFilter]): Bson = {
+
+    def statusMatch(states: TermsOfUseInvitationState*): Bson = {
+      if (states.size == 0) {
+        Document()
+      } else {
+        val bsonStates = states.map(s => Codecs.toBson(s))
+        in("status", bsonStates: _*)
+      }
+    }
+
+    def getFilterState(filter: TermsOfUseStatusFilter): TermsOfUseInvitationState = {
+      filter match {
+        case EmailSent                => EMAIL_SENT
+        case ReminderEmailSent        => REMINDER_EMAIL_SENT
+        case Overdue                  => OVERDUE
+        case Warnings                 => WARNINGS
+        case Failed                   => FAILED
+        case TermsOfUseV2WithWarnings => TERMS_OF_USE_V2_WITH_WARNINGS
+        case TermsOfUseV2             => TERMS_OF_USE_V2
+      }
+    }
+
+    val statusFilters = filters.collect { case sf: TermsOfUseStatusFilter => sf }
+    statusMatch(statusFilters.map(sf => getFilterState(sf)): _*)
+  }
+
+  private def convertFilterToTextQueryClause(filters: List[TermsOfUseSearchFilter], searchCriteria: TermsOfUseSearch): Bson = {
+
+    def regexTextSearch(textFilters: List[TermsOfUseTextSearchFilter], searchText: String): Bson = {
+      if (textFilters.size == 0) {
+        Document()
+      } else {
+        regex("applications.name", searchText, "i")
+      }
+    }
+
+    val textFilters = filters.collect { case sf: TermsOfUseTextSearchFilter => sf }
+    regexTextSearch(textFilters, searchCriteria.textToSearch.getOrElse(""))
+  }
+
+  private def runAggregationQuery(statusFilters: Bson, textFilter: Bson) = {
+    timeFuture("Run Terms Of Use Aggregation Query", "termsofuse.repository.runAggregationQuery") {
+
+      collection.aggregate[BsonValue](
+        Seq(
+          filter(statusFilters),
+          lookup(from = "application", localField = "applicationId", foreignField = "id", as = "applications"),
+          filter(textFilter)
+        )
+      ).map(Codecs.fromBson[TermsOfUseInvitationWithApplication])
+        .toFuture()
+
+    }
   }
 }

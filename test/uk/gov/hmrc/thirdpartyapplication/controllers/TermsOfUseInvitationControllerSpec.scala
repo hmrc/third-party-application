@@ -30,8 +30,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
+import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationResponse, TermsOfUseInvitationWithApplicationResponse}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 class TermsOfUseInvitationControllerSpec extends ControllerSpec with ApplicationDataServiceMockModule with SubmissionsServiceMockModule with ApplicationTestData
@@ -87,6 +87,32 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
       TermsOfUseInvitationServiceMock.FetchInvitations.thenReturn(invitations)
 
       val result = underTest.fetchInvitations()(FakeRequest.apply())
+
+      status(result) shouldBe OK
+
+      val responses = Json.fromJson[List[TermsOfUseInvitationResponse]](contentAsJson(result)).get
+      responses.size shouldBe 1
+      responses.head.applicationId shouldBe applicationId
+    }
+  }
+
+  "search invitations" should {
+    "return terms of use invitations" in new Setup {
+      val invitations = List(
+        TermsOfUseInvitationWithApplicationResponse(
+          applicationId,
+          now,
+          now,
+          dueDate,
+          None,
+          EMAIL_SENT,
+          "Petes App"
+        )
+      )
+
+      TermsOfUseInvitationServiceMock.Search.thenReturn(invitations)
+
+      val result = underTest.searchInvitations()(FakeRequest("GET", "/terms-of-use/search?status=EMAIL_SENT&status=REMINDER_EMAIL_SENT"))
 
       status(result) shouldBe OK
 

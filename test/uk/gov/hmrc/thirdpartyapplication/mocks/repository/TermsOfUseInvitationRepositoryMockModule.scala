@@ -24,7 +24,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.TermsOfUseInvitationState
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
 import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
 
 trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -77,6 +77,10 @@ trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with Argumen
 
     object Delete {
       def thenReturn() = when(aMock.delete(*[ApplicationId])).thenAnswer(successful(HasSucceeded))
+    }
+
+    object Search {
+      def thenReturn(invitations: List[TermsOfUseInvitationWithApplication]) = when(aMock.search(*)).thenAnswer(successful(invitations))
     }
   }
 

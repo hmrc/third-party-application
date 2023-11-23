@@ -24,7 +24,9 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseApplication, TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
+import uk.gov.hmrc.thirdpartyapplication.models.{EmailSent, Failed, TermsOfUseSearch, TermsOfUseTextSearch}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
@@ -33,8 +35,11 @@ import java.time.Clock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId, Environment, LaxEmailAddress, UserId}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.ReminderEmailSent
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, IpAllowlist, RateLimitTier}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import play.api.libs.json._
 
@@ -76,12 +81,15 @@ class TermsOfUseInvitationRepositoryISpec
   }
 
   private val termsOfUseInvitationRepository: TermsOfUseInvitationRepository = app.injector.instanceOf[TermsOfUseInvitationRepository]
+  private val applicationRepository: ApplicationRepository                   = app.injector.instanceOf[ApplicationRepository]
 
   protected override def beforeEach(): Unit = {
     super.beforeEach()
     await(termsOfUseInvitationRepository.collection.drop().toFuture())
+    await(applicationRepository.collection.drop().toFuture())
 
     await(termsOfUseInvitationRepository.ensureIndexes)
+    await(applicationRepository.ensureIndexes)
   }
 
   "mongo formats" should {
@@ -302,5 +310,190 @@ class TermsOfUseInvitationRepositoryISpec
 
       await(termsOfUseInvitationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 0
     }
+  }
+
+  "search" should {
+
+    val applicationId1 = ApplicationId.random
+    val applicationId2 = ApplicationId.random
+    val applicationId3 = ApplicationId.random
+    val applicationId4 = ApplicationId.random
+    val applicationId5 = ApplicationId.random
+    val startDate      = Instant.parse("2023-06-01T12:01:02.000Z")
+    val dueBy          = startDate.plus(21, ChronoUnit.DAYS)
+
+    val application1 = anApplicationData(applicationId1, "Pete app name 1")
+    val application2 = anApplicationData(applicationId2, "Pete app name 2")
+    val application3 = anApplicationData(applicationId3, "Bob app name")
+    val application4 = anApplicationData(applicationId4, "Nicola app name")
+    val application5 = anApplicationData(applicationId5, "Nicholas app name")
+
+    val touInvite1 = TermsOfUseInvitation(applicationId1, startDate, startDate, dueBy, None, EMAIL_SENT)
+    val touInvite2 = TermsOfUseInvitation(applicationId2, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT)
+    val touInvite3 = TermsOfUseInvitation(applicationId3, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT)
+    val touInvite4 = TermsOfUseInvitation(applicationId4, startDate, startDate, dueBy, None, FAILED)
+    val touInvite5 = TermsOfUseInvitation(applicationId5, startDate, startDate, dueBy, None, TERMS_OF_USE_V2)
+
+    val touInviteWithApp1 =
+      TermsOfUseInvitationWithApplication(applicationId1, startDate, startDate, dueBy, None, EMAIL_SENT, Set(TermsOfUseApplication(application1.id, application1.name)))
+    val touInviteWithApp2 =
+      TermsOfUseInvitationWithApplication(applicationId2, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT, Set(TermsOfUseApplication(application2.id, application2.name)))
+    val touInviteWithApp3 =
+      TermsOfUseInvitationWithApplication(applicationId3, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT, Set(TermsOfUseApplication(application3.id, application3.name)))
+    val touInviteWithApp4 =
+      TermsOfUseInvitationWithApplication(applicationId4, startDate, startDate, dueBy, None, FAILED, Set(TermsOfUseApplication(application4.id, application4.name)))
+    val touInviteWithApp5 =
+      TermsOfUseInvitationWithApplication(applicationId5, startDate, startDate, dueBy, None, TERMS_OF_USE_V2, Set(TermsOfUseApplication(application5.id, application5.name)))
+
+    "return expected result of 1 for email sent status search" in {
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+      await(applicationRepository.save(application4))
+      await(applicationRepository.save(application5))
+
+      await(termsOfUseInvitationRepository.create(touInvite1))
+      await(termsOfUseInvitationRepository.create(touInvite2))
+      await(termsOfUseInvitationRepository.create(touInvite3))
+      await(termsOfUseInvitationRepository.create(touInvite4))
+      await(termsOfUseInvitationRepository.create(touInvite5))
+
+      val filters        = List(EmailSent)
+      val searchCriteria = TermsOfUseSearch(filters)
+      val result         = await(termsOfUseInvitationRepository.search(searchCriteria))
+
+      result.size mustBe 1
+      result mustBe List(touInviteWithApp1)
+    }
+
+    "return expected result of 3 for email sent & reminder email sent status search" in {
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+      await(applicationRepository.save(application4))
+      await(applicationRepository.save(application5))
+
+      await(termsOfUseInvitationRepository.create(touInvite1))
+      await(termsOfUseInvitationRepository.create(touInvite2))
+      await(termsOfUseInvitationRepository.create(touInvite3))
+      await(termsOfUseInvitationRepository.create(touInvite4))
+      await(termsOfUseInvitationRepository.create(touInvite5))
+
+      val filters        = List(EmailSent, ReminderEmailSent)
+      val searchCriteria = TermsOfUseSearch(filters)
+      val result         = await(termsOfUseInvitationRepository.search(searchCriteria))
+
+      result.size mustBe 3
+      result mustBe List(touInviteWithApp1, touInviteWithApp2, touInviteWithApp3)
+    }
+
+    "return expected result of 5 for all status search" in {
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+      await(applicationRepository.save(application4))
+      await(applicationRepository.save(application5))
+
+      await(termsOfUseInvitationRepository.create(touInvite1))
+      await(termsOfUseInvitationRepository.create(touInvite2))
+      await(termsOfUseInvitationRepository.create(touInvite3))
+      await(termsOfUseInvitationRepository.create(touInvite4))
+      await(termsOfUseInvitationRepository.create(touInvite5))
+
+      val filters        = List.empty
+      val searchCriteria = TermsOfUseSearch(filters)
+      val result         = await(termsOfUseInvitationRepository.search(searchCriteria))
+
+      result.size mustBe 5
+      result mustBe List(touInviteWithApp1, touInviteWithApp2, touInviteWithApp3, touInviteWithApp4, touInviteWithApp5)
+    }
+
+    "return expected result of 1 for exact name text search" in {
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+      await(applicationRepository.save(application4))
+      await(applicationRepository.save(application5))
+
+      await(termsOfUseInvitationRepository.create(touInvite1))
+      await(termsOfUseInvitationRepository.create(touInvite2))
+      await(termsOfUseInvitationRepository.create(touInvite3))
+      await(termsOfUseInvitationRepository.create(touInvite4))
+      await(termsOfUseInvitationRepository.create(touInvite5))
+
+      val filters        = List(TermsOfUseTextSearch)
+      val searchCriteria = TermsOfUseSearch(filters, Some("Pete app name 1"))
+      val result         = await(termsOfUseInvitationRepository.search(searchCriteria))
+
+      result.size mustBe 1
+      result mustBe List(touInviteWithApp1)
+    }
+
+    "return expected result of 2 for partial name text search" in {
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+      await(applicationRepository.save(application4))
+      await(applicationRepository.save(application5))
+
+      await(termsOfUseInvitationRepository.create(touInvite1))
+      await(termsOfUseInvitationRepository.create(touInvite2))
+      await(termsOfUseInvitationRepository.create(touInvite3))
+      await(termsOfUseInvitationRepository.create(touInvite4))
+      await(termsOfUseInvitationRepository.create(touInvite5))
+
+      val filters        = List(TermsOfUseTextSearch)
+      val searchCriteria = TermsOfUseSearch(filters, Some("Pete app name"))
+      val result         = await(termsOfUseInvitationRepository.search(searchCriteria))
+
+      result.size mustBe 2
+      result mustBe List(touInviteWithApp1, touInviteWithApp2)
+    }
+
+    "return expected result of 1 for partial name text AND status search" in {
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+      await(applicationRepository.save(application4))
+      await(applicationRepository.save(application5))
+
+      await(termsOfUseInvitationRepository.create(touInvite1))
+      await(termsOfUseInvitationRepository.create(touInvite2))
+      await(termsOfUseInvitationRepository.create(touInvite3))
+      await(termsOfUseInvitationRepository.create(touInvite4))
+      await(termsOfUseInvitationRepository.create(touInvite5))
+
+      val filters        = List(TermsOfUseTextSearch, Failed)
+      val searchCriteria = TermsOfUseSearch(filters, Some("Nic"))
+      val result         = await(termsOfUseInvitationRepository.search(searchCriteria))
+
+      result.size mustBe 1
+      result mustBe List(touInviteWithApp4)
+    }
+  }
+
+  private def anApplicationData(id: ApplicationId, name: String): StoredApplication = {
+    StoredApplication(
+      id,
+      name,
+      name.toLowerCase(),
+      Set(Collaborator(LaxEmailAddress("user@example.com"), Collaborator.Roles.ADMINISTRATOR, UserId.random)),
+      Some("description"),
+      "myapplication",
+      ApplicationTokens(
+        StoredToken(ClientId.random, "ccc")
+      ),
+      productionState("ted@example.com"),
+      Standard(),
+      now,
+      Some(now),
+      547,
+      Some(RateLimitTier.BRONZE),
+      Environment.PRODUCTION.toString(),
+      None,
+      false,
+      IpAllowlist(),
+      true
+    )
   }
 }

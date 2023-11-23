@@ -27,8 +27,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.TermsOfUseInvitationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{EMAIL_SENT, REMINDER_EMAIL_SENT}
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseApplication, TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse, TermsOfUseSearch}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
@@ -37,8 +37,10 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
     implicit val hc = HeaderCarrier()
 
     val applicationId = ApplicationId.random
+    val application   = TermsOfUseApplication(applicationId, "app name")
     val nowInstant    = Instant.now(clock).truncatedTo(MILLIS)
     val invite        = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, EMAIL_SENT)
+    val inviteWithApp = TermsOfUseInvitationWithApplication(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, EMAIL_SENT, Set(application))
 
     val underTest = new TermsOfUseInvitationService(
       TermsOfUseInvitationRepositoryMock.aMock,
@@ -127,4 +129,25 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
       TermsOfUseInvitationRepositoryMock.UpdateResetBackToEmailSent.verifyCalledWith(applicationId, newDueBy)
     }
   }
+
+  "search invitations" should {
+    "return an list of all invitations when invitations exist in the repository" in new Setup {
+      val invitations = List(inviteWithApp)
+
+      TermsOfUseInvitationRepositoryMock.Search.thenReturn(invitations)
+
+      val result = await(underTest.search(TermsOfUseSearch()))
+
+      result.size shouldBe 1
+    }
+
+    "return empty list when no invitations are found in the repository" in new Setup {
+      TermsOfUseInvitationRepositoryMock.Search.thenReturn(List.empty)
+
+      val result = await(underTest.search(TermsOfUseSearch()))
+
+      result.size shouldBe 0
+    }
+  }
+
 }
