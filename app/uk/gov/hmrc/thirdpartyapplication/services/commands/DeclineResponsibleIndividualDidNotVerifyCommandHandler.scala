@@ -17,16 +17,17 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ResponsibleIndividual, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
+  ResponsibleIndividualTouUpliftVerification,
   ResponsibleIndividualUpdateVerification,
   ResponsibleIndividualVerification,
   ResponsibleIndividualVerificationId
@@ -36,7 +37,11 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 
@@ -45,6 +50,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     stateHistoryRepository: StateHistoryRepository,
+    termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     submissionService: SubmissionsService
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
@@ -154,12 +160,68 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
     } yield (app, NonEmptyList(riEvt, List(declinedEvt, stateEvt)))
   }
 
+  def process(app: StoredApplication, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualTouUpliftVerification): AppCmdResultT = {
+    def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
+      Apply[Validated[Failures, *]].map6(
+        isStandardNewJourneyApp(app),
+        isInProduction(app),
+        isApplicationIdTheSame(app, riVerification),
+        ensureResponsibleIndividualDefined(app),
+        ensureRequesterEmailDefined(app),
+        ensureRequesterNameDefined(app)
+      ) { case (_, _, _, responsibleIndividual, requesterEmail, requesterName) => (responsibleIndividual, requesterEmail, requesterName) }
+    }
+
+    def asEvents(
+        responsibleIndividual: ResponsibleIndividual,
+        requesterEmail: LaxEmailAddress,
+        requesterName: String
+      ): (ResponsibleIndividualDeclinedOrDidNotVerify) = {
+      (
+        ResponsibleIndividualDeclinedOrDidNotVerify(
+          id = EventId.random,
+          applicationId = app.id,
+          eventDateTime = cmd.timestamp.instant,
+          actor = Actors.AppCollaborator(requesterEmail),
+          responsibleIndividualName = responsibleIndividual.fullName.value,
+          responsibleIndividualEmail = responsibleIndividual.emailAddress,
+          submissionId = SubmissionId(riVerification.submissionId.value),
+          submissionIndex = riVerification.submissionInstance,
+          code = cmd.code,
+          requestingAdminName = requesterName,
+          requestingAdminEmail = requesterEmail
+        )
+      )
+    }
+
+    def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
+      submission.status match {
+        case Answering(_, _) => termsOfUseInvitationRepository.updateState(applicationId, EMAIL_SENT)
+        case _               => Future.successful(HasSucceeded)
+      }
+    }
+
+    for {
+      valid                                                             <- E.fromValidated(validate())
+      (responsibleIndividual, requestingAdminEmail, requestingAdminName) = valid
+      reasons                                                            = "Responsible individual did not accept the terms of use."
+      submission                                                        <- E.fromOptionF(
+                                                                             submissionService.declineSubmission(app.id, responsibleIndividual.emailAddress.text, reasons),
+                                                                             NonEmptyList.one(CommandFailures.GenericFailure("Submission not found"))
+                                                                           )
+      _                                                                 <- E.liftF(setTermsOfUseInvitationStatus(app.id, submission))
+      _                                                                 <- E.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(riVerification.submissionId, riVerification.submissionInstance))
+      riDeclined                                                         = asEvents(responsibleIndividual, requestingAdminEmail, requestingAdminName)
+    } yield (app, NonEmptyList.one(riDeclined))
+  }
+
   def process(app: StoredApplication, cmd: DeclineResponsibleIndividualDidNotVerify): AppCmdResultT = {
     E.fromEitherF(
       responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).flatMap(_ match {
-        case Some(riVerificationToU: ResponsibleIndividualToUVerification)       => process(app, cmd, riVerificationToU).value
-        case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification) => process(app, cmd, riVerificationUpdate).value
-        case _                                                                   => E.leftT(NonEmptyList.one(GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
+        case Some(riVerificationToU: ResponsibleIndividualToUVerification)             => process(app, cmd, riVerificationToU).value
+        case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification)       => process(app, cmd, riVerificationUpdate).value
+        case Some(riVerificationToUUplift: ResponsibleIndividualTouUpliftVerification) => process(app, cmd, riVerificationToUUplift).value
+        case _                                                                         => E.leftT(NonEmptyList.one(GenericFailure(s"No responsibleIndividualVerification found for code ${cmd.code}"))).value
       })
     )
   }

@@ -172,6 +172,27 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       }
     }
 
+    def checkSuccessResultTouUplift()(fn: => CommandHandler.AppCmdResultT) = {
+      val testMe = await(fn.value).value
+
+      inside(testMe) { case (app, events) =>
+        events should have size 1
+
+        events.collect {
+          case riDeclined: ApplicationEvents.ResponsibleIndividualDeclinedOrDidNotVerify =>
+            riDeclined.applicationId shouldBe applicationId
+            riDeclined.eventDateTime shouldBe ts
+            riDeclined.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+            riDeclined.responsibleIndividualName shouldBe riName
+            riDeclined.responsibleIndividualEmail shouldBe riEmail
+            riDeclined.submissionIndex shouldBe submission.latestInstance.index
+            riDeclined.submissionId.value shouldBe submission.id.value
+            riDeclined.requestingAdminEmail shouldBe appAdminEmail
+            riDeclined.code shouldBe code
+        }
+      }
+    }
+
     def checkSuccessResultUpdate()(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
@@ -226,7 +247,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
 
       val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
-      checkSuccessResultUpdate() {
+      checkSuccessResultTouUplift() {
         underTest.process(prodApp, DeclineResponsibleIndividual(code, now))
       }
     }

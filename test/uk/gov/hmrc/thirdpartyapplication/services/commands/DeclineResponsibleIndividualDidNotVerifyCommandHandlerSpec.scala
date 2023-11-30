@@ -28,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocations, ResponsibleIndividual, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
+  ResponsibleIndividualTouUpliftVerification,
   ResponsibleIndividualUpdateVerification,
   ResponsibleIndividualVerificationId,
   ResponsibleIndividualVerificationState
@@ -37,13 +38,19 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{
+  ApplicationRepositoryMockModule,
+  ResponsibleIndividualVerificationRepositoryMockModule,
+  StateHistoryRepositoryMockModule,
+  TermsOfUseInvitationRepositoryMockModule
+}
 
 class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
 
   trait Setup
       extends ResponsibleIndividualVerificationRepositoryMockModule
       with StateHistoryRepositoryMockModule
+      with TermsOfUseInvitationRepositoryMockModule
       with SubmissionsServiceMockModule
       with ApplicationRepositoryMockModule {
 
@@ -90,6 +97,18 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       ResponsibleIndividualVerificationState.INITIAL
     )
 
+    val riVerificationTouUplift = ResponsibleIndividualTouUpliftVerification(
+      ResponsibleIndividualVerificationId(code),
+      applicationId,
+      submission.id,
+      submission.latestInstance.index,
+      "App Name",
+      now,
+      requesterName,
+      requesterEmail,
+      ResponsibleIndividualVerificationState.INITIAL
+    )
+
     val riVerificationUpdate = ResponsibleIndividualUpdateVerification(
       ResponsibleIndividualVerificationId(code),
       applicationId,
@@ -107,6 +126,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       ApplicationRepoMock.aMock,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       StateHistoryRepoMock.aMock,
+      TermsOfUseInvitationRepositoryMock.aMock,
       SubmissionsServiceMock.aMock
     )
 
@@ -174,6 +194,27 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
         }
       }
     }
+
+    def checkSuccessResultTouUplift(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
+      val testMe = await(fn.value).value
+
+      inside(testMe) { case (app, events) =>
+        events should have size 1
+
+        events.collect {
+          case riDeclined: ApplicationEvents.ResponsibleIndividualDeclinedOrDidNotVerify =>
+            riDeclined.applicationId shouldBe applicationId
+            riDeclined.eventDateTime shouldBe ts
+            riDeclined.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+            riDeclined.responsibleIndividualName shouldBe riName
+            riDeclined.responsibleIndividualEmail shouldBe riEmail
+            riDeclined.submissionIndex shouldBe submission.latestInstance.index
+            riDeclined.submissionId.value shouldBe submission.id.value
+            riDeclined.requestingAdminEmail shouldBe appAdminEmail
+            riDeclined.code shouldBe code
+        }
+      }
+    }
   }
 
   "process" should {
@@ -196,6 +237,20 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
       checkSuccessResultUpdate(Actors.AppCollaborator(appAdminEmail)) {
+        underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, now))
+      }
+    }
+
+    "create correct event for a valid request with a ToU uplift responsibleIndividualVerification and a standard app" in new Setup {
+      ApplicationRepoMock.UpdateApplicationState.succeeds()
+      ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationTouUplift)
+      ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
+      SubmissionsServiceMock.DeclineSubmission.thenReturn(declinedSubmission)
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
+
+      val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
+
+      checkSuccessResultTouUplift(Actors.AppCollaborator(appAdminEmail)) {
         underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, now))
       }
     }

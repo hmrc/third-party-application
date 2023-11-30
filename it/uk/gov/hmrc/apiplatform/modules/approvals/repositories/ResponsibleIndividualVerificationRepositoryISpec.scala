@@ -265,6 +265,15 @@ class ResponsibleIndividualVerificationRepositoryISpec
     await(repository.save(buildToUDoc(state, createdOn, submissionId, submissionIndex)))
   }
 
+  def buildAndSaveTouUpliftDoc(
+      state: ResponsibleIndividualVerificationState,
+      createdOn: LocalDateTime = now,
+      submissionId: SubmissionId = SubmissionId.random,
+      submissionIndex: Int = 0
+    ) = {
+    await(repository.save(buildTouUpliftDoc(state, createdOn, submissionId, submissionIndex)))
+  }
+
   val MANY_DAYS_AGO    = 10
   val UPDATE_THRESHOLD = 5
   val FEW_DAYS_AGO     = 1
@@ -331,6 +340,24 @@ class ResponsibleIndividualVerificationRepositoryISpec
       buildAndSaveDoc(REMINDERS_SENT, now.minusDays(FEW_DAYS_AGO))
 
       val results = await(repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, INITIAL, now.minusDays(UPDATE_THRESHOLD)))
+
+      results mustBe List(initialWithOldDate)
+    }
+  }
+
+  "fetchByStateAgeAndTypes" should {
+    "retrieve correct documents" in {
+      val initialWithOldDate = buildAndSaveTouUpliftDoc(INITIAL, now.minusDays(MANY_DAYS_AGO))
+      buildAndSaveTouUpliftDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
+      buildAndSaveDoc(INITIAL, now.minusDays(MANY_DAYS_AGO))
+      buildAndSaveTouUpliftDoc(REMINDERS_SENT, now.minusDays(FEW_DAYS_AGO))
+
+      val results = await(repository.fetchByStateAgeAndTypes(
+        INITIAL,
+        now.minusDays(UPDATE_THRESHOLD),
+        ResponsibleIndividualVerification.VerificationTypeUpdate,
+        ResponsibleIndividualVerification.VerificationTypeTouUplift
+      ))
 
       results mustBe List(initialWithOldDate)
     }
