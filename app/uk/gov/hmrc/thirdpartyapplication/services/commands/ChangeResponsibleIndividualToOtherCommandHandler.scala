@@ -64,7 +64,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     cond(
       app.access match {
         case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
-          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.equalsIgnoreCase(email)
+          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || responsibleIndividual.emailAddress != email
         case _                                                                                                   => true
       },
       s"The specified individual is already the RI for this application"

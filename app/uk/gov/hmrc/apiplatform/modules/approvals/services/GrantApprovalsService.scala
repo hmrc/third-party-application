@@ -171,7 +171,7 @@ class GrantApprovalsService @Inject() (
   private def sendEmails(app: StoredApplication)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found")).toLaxEmail
     val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
-    val recipients       = app.admins.map(_.emailAddress).filterNot(email => email.equalsIgnoreCase(requesterEmail))
+    val recipients       = app.admins.map(_.emailAddress).filterNot(email => email == requesterEmail)
 
     if (recipients.nonEmpty) emailConnector.sendApplicationApprovedNotification(app.name, recipients)
 

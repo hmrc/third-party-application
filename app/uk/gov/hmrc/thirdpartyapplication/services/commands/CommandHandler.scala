@@ -67,12 +67,12 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def isCollaboratorOnApp(collaborator: Collaborator, app: StoredApplication): Validated[Failures, Unit] = {
     val matchesId: Collaborator => Boolean    = (appCollaborator) => { appCollaborator.userId == collaborator.userId }
-    val matchesEmail: Collaborator => Boolean = (appCollaborator) => { appCollaborator.emailAddress equalsIgnoreCase collaborator.emailAddress }
+    val matchesEmail: Collaborator => Boolean = (appCollaborator) => { appCollaborator.emailAddress == collaborator.emailAddress }
 
     app.collaborators.find(c => matchesId(c) || matchesEmail(c)) match {
-      case Some(c) if (c == collaborator) => ().validNel[CommandFailure]
-      case Some(_)                        => CollaboratorHasMismatchOnApp.invalidNel[Unit]
-      case _                              => CollaboratorDoesNotExistOnApp.invalidNel[Unit]
+      case Some(c) if c == collaborator => ().validNel[CommandFailure]
+      case Some(_)                      => CollaboratorHasMismatchOnApp.invalidNel[Unit]
+      case _                            => CollaboratorDoesNotExistOnApp.invalidNel[Unit]
     }
   }
 
@@ -120,14 +120,14 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def collaboratorAlreadyOnApp(email: LaxEmailAddress, app: StoredApplication) = {
     cond(
-      !app.collaborators.exists(_.emailAddress.equalsIgnoreCase(email)),
+      !app.collaborators.exists(_.emailAddress == email),
       CollaboratorAlreadyExistsOnApp
     )
   }
 
   def applicationWillStillHaveAnAdmin(email: LaxEmailAddress, app: StoredApplication) = {
     cond(
-      applicationHasAnAdmin(app.collaborators.filterNot(_.emailAddress equalsIgnoreCase email)),
+      applicationHasAnAdmin(app.collaborators.filterNot(_.emailAddress == email)),
       CannotRemoveLastAdmin
     )
   }
