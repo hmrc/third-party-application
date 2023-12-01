@@ -273,7 +273,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
            |},
            |"collaborators": [
            |{"emailAddress": "admin@example.com","role": "ADMINISTRATOR", "userId": "${id.value}"},
-           |{"emailAddress": "ADMIN@example.com","role": "ADMINISTRATOR", "userId": "${id.value}"}
+           |{"emailAddress": "admin@example.com","role": "ADMINISTRATOR", "userId": "${UserId.random}"}
            |]
            |}""".stripMargin.replaceAll("\n", "")
 
