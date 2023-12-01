@@ -31,7 +31,7 @@ trait ActorHelper {
 
   private def deriveActor(emailOrGKUser: String, collaborators: Set[Collaborator]): Actor = {
     val possiblyEmail = LaxEmailAddress(emailOrGKUser)
-    collaborators.find(_.emailAddress.equalsIgnoreCase(possiblyEmail)) match {
+    collaborators.find(_.emailAddress == possiblyEmail) match {
       case None                  => Actors.GatekeeperUser(emailOrGKUser)
       case Some(_: Collaborator) => Actors.AppCollaborator(possiblyEmail)
     }

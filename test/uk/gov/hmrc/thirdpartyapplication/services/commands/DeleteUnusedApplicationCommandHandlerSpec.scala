@@ -80,7 +80,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
               eventDateTime shouldBe ts
               oldAppState shouldBe app.state.name.toString()
               newAppState shouldBe State.DELETED.toString()
-              requestingAdminEmail.text shouldBe actor.jobId
+              requestingAdminEmail.text shouldBe actor.jobId.toLowerCase
               requestingAdminName shouldBe actor.jobId
           }
         )
