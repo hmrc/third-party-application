@@ -93,14 +93,15 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
         "Mr Admin",
         "admin@example.com".toLaxEmail
       )
-      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
+      ResponsibleIndividualVerificationRepositoryMock.FetchByStateAgeAndTypes.thenReturn(verification)
 
       await(job.runJob)
 
-      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
-        ResponsibleIndividualVerification.VerificationTypeUpdate,
+      ResponsibleIndividualVerificationRepositoryMock.FetchByStateAgeAndTypes.verifyCalledWith(
         INITIAL,
-        now.minus(removalInterval.toSeconds, SECONDS)
+        now.minus(removalInterval.toSeconds, SECONDS),
+        ResponsibleIndividualVerification.VerificationTypeUpdate,
+        ResponsibleIndividualVerification.VerificationTypeTouUplift
       )
       val command                                  = ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(app.id)
       val declineResponsibleIndividualDidNotVerify = command.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]

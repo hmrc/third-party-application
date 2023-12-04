@@ -44,6 +44,15 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
         verify(aMock).fetchByTypeStateAndAge(verificationType, state, dateTime)
     }
 
+    object FetchByStateAgeAndTypes {
+
+      def thenReturn(verifications: ResponsibleIndividualVerification*) =
+        when(aMock.fetchByStateAgeAndTypes(*[ResponsibleIndividualVerificationState], *[LocalDateTime], *)).thenReturn(Future.successful(List(verifications: _*)))
+
+      def verifyCalledWith(state: ResponsibleIndividualVerificationState, dateTime: LocalDateTime, verificationType1: String, verificationType2: String) =
+        verify(aMock).fetchByStateAgeAndTypes(state, dateTime, verificationType1, verificationType2)
+    }
+
     object DeleteById {
       def thenReturnSuccess()                                            = when(aMock.delete(*[ResponsibleIndividualVerificationId])).thenReturn(successful(HasSucceeded))
       def verifyCalledWith(id: ResponsibleIndividualVerificationId)      = verify(aMock).delete(id)

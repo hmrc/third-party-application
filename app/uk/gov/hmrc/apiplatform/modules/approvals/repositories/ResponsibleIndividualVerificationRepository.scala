@@ -21,7 +21,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.NonEmptyList
 import com.google.inject.{Inject, Singleton}
-import org.mongodb.scala.model.Filters.{and, equal, exists, lte}
+import org.mongodb.scala.model.Aggregates.filter
+import org.mongodb.scala.model.Filters.{and, equal, exists, in, lte}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Updates}
 
@@ -94,6 +95,21 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       equal("state", Codecs.toBson(state)),
       lte("createdOn", minimumCreatedOn)
     )).toFuture()
+      .map(_.toList)
+  }
+
+  def fetchByStateAgeAndTypes(
+      state: ResponsibleIndividualVerificationState,
+      minimumCreatedOn: LocalDateTime,
+      verificationTypes: String*
+    ): Future[List[ResponsibleIndividualVerification]] = {
+    collection.aggregate(
+      Seq(
+        filter(equal("state", Codecs.toBson(state))),
+        filter(in("verificationType", verificationTypes: _*)),
+        filter(lte("createdOn", minimumCreatedOn))
+      )
+    ).toFuture()
       .map(_.toList)
   }
 

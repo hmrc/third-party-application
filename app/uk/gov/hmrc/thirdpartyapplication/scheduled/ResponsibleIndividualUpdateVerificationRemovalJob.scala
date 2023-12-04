@@ -56,7 +56,12 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
     val removeIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
       removalsDue <-
-        repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeUpdate, ResponsibleIndividualVerificationState.INITIAL, removeIfCreatedBeforeNow)
+        repository.fetchByStateAgeAndTypes(
+          ResponsibleIndividualVerificationState.INITIAL,
+          removeIfCreatedBeforeNow,
+          ResponsibleIndividualVerification.VerificationTypeUpdate,
+          ResponsibleIndividualVerification.VerificationTypeTouUplift
+        )
       _            = logger.info(s"Scheduled job $name found ${removalsDue.size} records")
       _           <- Future.sequence(removalsDue.map(sendRemovalEmailAndRemoveRecord(_)))
     } yield RunningOfJobSuccessful
