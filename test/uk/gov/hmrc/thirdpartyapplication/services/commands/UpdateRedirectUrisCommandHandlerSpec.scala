@@ -44,8 +44,9 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_))
 
     val timestamp  = FixedClock.instant
-    val cmdAsAdmin = UpdateRedirectUris(adminActor, oldRedirectUris, newRedirectUris, now)
-    val cmdAsDev   = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, now)
+    val cmdAsGK    = UpdateRedirectUris(gatekeeperActor, oldRedirectUris, newRedirectUris, now)
+    val cmdAsAdmin = cmdAsGK.copy(actor = adminActor)
+    val cmdAsDev   = cmdAsGK.copy(actor = developerActor)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
@@ -75,8 +76,27 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
       }
 
+      "succeed when user is gatekeeper" in new Setup {
+        ApplicationRepoMock.UpdateRedirectUris.thenReturn(newRedirectUris)(applicationData) // Dont need to test the repo here so just return any app
+
+        val result = await(underTest.process(applicationData, cmdAsGK).value).value
+        inside(result) { case (_, events) =>
+          events should have size 1
+          val event = events.head
+
+          inside(event) {
+            case RedirectUrisUpdatedV2(_, appId, eventDateTime, actor, oldUris, newUris) =>
+              appId shouldBe applicationId
+              actor shouldBe gatekeeperActor
+              eventDateTime shouldBe timestamp
+              oldUris shouldBe oldRedirectUris
+              newUris shouldBe newRedirectUris
+          }
+        }
+      }
+
       "return an error for a non-admin developer" in new Setup {
-        checkFailsWith("App is in PRODUCTION so User must be an ADMIN") {
+        checkFailsWith("App is in PRODUCTION so User must be an ADMIN or be a Gatekeeper User") {
           underTest.process(principalApp, cmdAsDev)
         }
       }
