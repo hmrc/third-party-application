@@ -39,7 +39,7 @@ class UpdateRedirectUrisCommandHandler @Inject() (applicationRepository: Applica
     val hasFiveOrFewerURIs = cond(cmd.newRedirectUris.size <= 5, CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
     Apply[Validated[Failures, *]].map3(
       isStandardAccess(app),
-      isAdminIfInProduction(cmd.actor, app),
+      isAdminIfInProductionOrGatekeeperActor(cmd.actor, app),
       hasFiveOrFewerURIs
     )((_, _, _) => ())
   }
