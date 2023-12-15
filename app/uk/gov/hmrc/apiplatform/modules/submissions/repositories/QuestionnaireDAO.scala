@@ -604,7 +604,7 @@ object QuestionnaireDAO {
         statement = Statement(
           CompoundFragment(
             StatementText("Use either penetration test tools or an independent third party supplier. For penetration testing methodologies read the "),
-            StatementLink("Open Web Application Security Project (OWASP) guide (opens in new tab)", "https://wiki.owasp.org/index.php/Penetration_testing_methodologies"),
+            StatementLink("National Cyber Security Centre Penetration Guide (opens in new tab)", "https://www.ncsc.gov.uk/guidance/penetration-testing"),
             StatementText(".")
           )
         ).some,
