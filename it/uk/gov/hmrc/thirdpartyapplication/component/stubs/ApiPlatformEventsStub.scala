@@ -37,6 +37,10 @@ object ApiPlatformEventsStub extends Stub {
     )
   }
 
+  def verifyEventWasSent(eventType: String): Unit = {
+    verifyStubCalledForEvent(applicationEventsURL, eventType)
+  }
+
   def verifyClientSecretAddedEventSent(): Unit = {
     verifyStubCalledForEvent(applicationEventsURL, "CLIENT_SECRET_ADDED_V2")
   }
