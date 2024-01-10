@@ -24,7 +24,7 @@ import cats.implicits._
 
 import play.api.libs.json.Json
 import play.api.mvc._
-import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
@@ -61,7 +61,7 @@ trait ApplicationTypeAuthorisationActions {
     }
 
     def filter[A](request: Request[A]): Future[Option[Result]] = {
-      implicit val hc = HeaderCarrierConverter.fromRequest(request)
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
       deriveAccessType(request) flatMap {
         case Some(accessType) if toMatchAccessTypes.contains(accessType) => strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
         case Some(_) if failOnAccessTypeMismatch                         => FAILED_ACCESS_TYPE

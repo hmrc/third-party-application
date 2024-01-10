@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.time.LocalDateTime
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
@@ -30,5 +30,5 @@ object StateHistoryResponse {
 
   import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters._
 
-  implicit val format = Json.format[StateHistoryResponse]
+  implicit val format: OFormat[StateHistoryResponse] = Json.format[StateHistoryResponse]
 }

@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
+import play.api.libs.json.Format
+
 import java.time.LocalDateTime
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
@@ -25,14 +27,14 @@ object NotificationStatus extends Enumeration {
   type NotificationStatus = Value
   val SENT, FAILED = Value
 
-  implicit val formatNotificationStatus = EnumJson.enumFormat(NotificationStatus)
+  implicit val formatNotificationStatus: Format[NotificationStatus] = EnumJson.enumFormat(NotificationStatus)
 }
 
 object NotificationType extends Enumeration {
   type NotificationType = Value
   val PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING = Value
 
-  implicit val formatNotificationType = EnumJson.enumFormat(NotificationType)
+  implicit val formatNotificationType: Format[NotificationType] = EnumJson.enumFormat(NotificationType)
 }
 
 import NotificationStatus._

@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apiplatform.modules.uplift.controllers
 
+import play.api.libs.json.OFormat
+
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -33,7 +35,7 @@ object UpliftController {
   import play.api.libs.json.Json
 
   case class UpliftApplicationRequest(applicationName: String, requestedByEmailAddress: LaxEmailAddress)
-  implicit val formatUpliftApplicationRequest = Json.format[UpliftApplicationRequest]
+  implicit val formatUpliftApplicationRequest: OFormat[UpliftApplicationRequest] = Json.format[UpliftApplicationRequest]
 }
 
 @Singleton

@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.connector
 
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
@@ -56,7 +57,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
     val userName = "bobby fingers"
 
     def testJson(updateApplicationEvent: ApplicationEvent, expectedRequestBody: String) = {
-      implicit val request = FakeRequest()
+      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
       ApiPlatformEventsStub.verifyApplicationEventPostBody(expectedRequestBody)
       await(inTest.sendApplicationEvent(updateApplicationEvent)) mustBe true

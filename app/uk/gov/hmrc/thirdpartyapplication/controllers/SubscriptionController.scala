@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OWrites}
 import play.api.libs.json.Json.toJson
 import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Subs
 private[controllers] case class SubscribersResponse(subscribers: Set[ApplicationId])
 
 private[controllers] object SubscribersResponse {
-  implicit val writer = Json.writes[SubscribersResponse]
+  implicit val writer: OWrites[SubscribersResponse] = Json.writes[SubscribersResponse]
 }
 
 @Singleton

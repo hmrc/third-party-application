@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.{Json, OFormat, Reads}
 import play.api.mvc._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
@@ -47,7 +47,7 @@ object ApplicationCommandController {
   object DispatchResult {
     import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
 
-    implicit val format = Json.format[DispatchResult]
+    implicit val format: OFormat[DispatchResult] = Json.format[DispatchResult]
   }
 }
 

@@ -28,7 +28,7 @@ import cats.data.OptionT
 import cats.implicits._
 
 import play.api.libs.json.Json
-import play.api.mvc.{AnyContentAsJson, RequestHeader, Result}
+import play.api.mvc.{AnyContentAsEmpty, AnyContentAsJson, RequestHeader, Result}
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
@@ -58,7 +58,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   val authTokenHeader                          = "authorization" -> "authorizationToken"
   implicit lazy val materializer: Materializer = NoMaterializer
-  implicit lazy val request                    = FakeRequest()
+  implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
   trait Setup
       extends StrideGatekeeperRoleAuthorisationServiceMockModule
@@ -69,7 +69,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       with SubmissionsServiceMockModule
       with SubmissionsTestData {
     val mockGatekeeperService = mock[GatekeeperService]
-    implicit val headers      = HeaderCarrier()
+    implicit val headers: HeaderCarrier = HeaderCarrier()
 
     val nowInstant = Instant.now(clock).truncatedTo(MILLIS)
     val invite     = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, EMAIL_SENT)

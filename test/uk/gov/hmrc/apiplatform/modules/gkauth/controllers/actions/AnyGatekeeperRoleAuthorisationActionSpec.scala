@@ -40,7 +40,7 @@ class AnyGatekeeperRoleAuthoriseActionSpec extends AsyncHmrcSpec {
       with AnyGatekeeperRoleAuthorisationAction {
     def applicationService: ApplicationService
     def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
-    implicit val ec = executionContext
+    implicit val ec: ExecutionContext = executionContext
 
     def testMethod = anyAuthenticatedUserAction { _ =>
       successful(Ok("Authenticated"))

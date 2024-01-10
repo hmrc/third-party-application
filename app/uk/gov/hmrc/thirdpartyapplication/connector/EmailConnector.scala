@@ -22,7 +22,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 import play.mvc.Http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
@@ -44,7 +44,7 @@ object EmailConnector {
     )
 
   private[connector] object SendEmailRequest {
-    implicit val sendEmailRequestFmt = Json.format[SendEmailRequest]
+    implicit val sendEmailRequestFmt: OFormat[SendEmailRequest] = Json.format[SendEmailRequest]
   }
 }
 

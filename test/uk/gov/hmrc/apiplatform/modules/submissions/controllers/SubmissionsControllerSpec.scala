@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.controllers
 
+import akka.stream.Materializer
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import akka.stream.testkit.NoMaterializer
 
-import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.libs.json.{JsError, JsSuccess, Json, OWrites, Reads}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 
@@ -31,16 +33,16 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters._
-  implicit val mat = NoMaterializer
+  implicit val mat: Materializer = NoMaterializer
 
-  implicit val readsExtendedSubmission = Json.reads[Submission]
+  implicit val readsExtendedSubmission: Reads[Submission] = Json.reads[Submission]
 
   trait Setup extends SubmissionsServiceMockModule with SubmissionsTestData {
     val underTest = new SubmissionsController(SubmissionsServiceMock.aMock, Helpers.stubControllerComponents())
   }
 
   "create new submission" should {
-    implicit val writer = Json.writes[SubmissionsController.CreateSubmissionRequest]
+    implicit val writer: OWrites[SubmissionsController.CreateSubmissionRequest] = Json.writes[SubmissionsController.CreateSubmissionRequest]
     val fakeRequest     = FakeRequest(POST, "/").withBody(Json.toJson(SubmissionsController.CreateSubmissionRequest("bob@example.com")))
 
     "return an ok response" in new Setup {
@@ -159,7 +161,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
   "recordAnswers" should {
     "return an OK response" in new Setup {
-      implicit val writes = Json.writes[SubmissionsController.RecordAnswersRequest]
+      implicit val writes: OWrites[SubmissionsController.RecordAnswersRequest] = Json.writes[SubmissionsController.RecordAnswersRequest]
 
       SubmissionsServiceMock.RecordAnswers.thenReturn(ExtendedSubmission(answeringSubmission, answeringSubmission.withIncompleteProgress().questionnaireProgress))
 
@@ -171,7 +173,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     }
 
     "return an bad request response when something goes wrong" in new Setup {
-      implicit val writes = Json.writes[SubmissionsController.RecordAnswersRequest]
+      implicit val writes: OWrites[SubmissionsController.RecordAnswersRequest] = Json.writes[SubmissionsController.RecordAnswersRequest]
 
       SubmissionsServiceMock.RecordAnswers.thenFails("bang")
 

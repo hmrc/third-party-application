@@ -26,6 +26,7 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.gkauth.services._
+import uk.gov.hmrc.http.HeaderCarrier
 
 trait AnyGatekeeperRoleAuthorisationAction extends ApplicationLogger {
   self: BackendController =>
@@ -36,7 +37,7 @@ trait AnyGatekeeperRoleAuthorisationAction extends ApplicationLogger {
 
   def anyAuthenticatedUserAction(block: Request[_] => Future[Result]): Action[AnyContent] = {
     Action.async { implicit request =>
-      implicit val hc = HeaderCarrierConverter.fromRequest(request)
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
       ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
         .recoverWith { case NonFatal(_) =>
           logger.warn("LDAP Authenticate errored trying to find user, trying stride")

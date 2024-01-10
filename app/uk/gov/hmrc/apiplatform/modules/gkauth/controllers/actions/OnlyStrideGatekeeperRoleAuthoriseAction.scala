@@ -22,6 +22,7 @@ import play.api.mvc.{BaseController, _}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import uk.gov.hmrc.apiplatform.modules.gkauth.services._
+import uk.gov.hmrc.http.HeaderCarrier
 
 trait OnlyStrideGatekeeperRoleAuthoriseAction {
   self: BaseController =>
@@ -34,7 +35,7 @@ trait OnlyStrideGatekeeperRoleAuthoriseAction {
     protected def executionContext: ExecutionContext = ec
 
     def filter[A](input: Request[A]): Future[Option[Result]] = {
-      implicit val hc = HeaderCarrierConverter.fromRequest(input)
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(input)
       strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
     }
   }

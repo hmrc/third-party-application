@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, Reads}
 import play.api.libs.json.Json.toJson
 import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 private[controllers] case class SearchCollaboratorsRequest(apiContext: ApiContext, apiVersion: ApiVersionNbr, partialEmailMatch: Option[String])
 
 private[controllers] object SearchCollaboratorsRequest {
-  implicit val readsSearchCollaboratorsRequest = Json.reads[SearchCollaboratorsRequest]
+  implicit val readsSearchCollaboratorsRequest: Reads[SearchCollaboratorsRequest] = Json.reads[SearchCollaboratorsRequest]
 }
 
 @Singleton

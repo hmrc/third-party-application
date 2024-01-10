@@ -36,7 +36,7 @@ class OnlyStrideGatekeeperRoleAuthoriseActionSpec extends AsyncHmrcSpec with Str
       with OnlyStrideGatekeeperRoleAuthoriseAction {
     def applicationService: ApplicationService
     def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
-    implicit val ec = executionContext
+    implicit val ec: ExecutionContext = executionContext
 
     def testMethod = requiresAuthentication() { _ =>
       Ok("Authenticated")

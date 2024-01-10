@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import play.api.libs.json.OFormat
+
 case class CreateApplicationResponse(application: Application, totp: Option[CreateApplicationResponse.TotpSecret] = None)
 
 object CreateApplicationResponse {
@@ -23,6 +25,6 @@ object CreateApplicationResponse {
 
   object TotpSecret {
     import play.api.libs.json.Json
-    implicit val format = Json.format[TotpSecret]
+    implicit val format: OFormat[TotpSecret] = Json.format[TotpSecret]
   }
 }

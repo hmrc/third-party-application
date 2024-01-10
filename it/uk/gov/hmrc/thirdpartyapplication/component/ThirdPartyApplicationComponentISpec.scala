@@ -20,7 +20,7 @@ import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OWrites}
 import scalaj.http.{Http, HttpResponse}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
@@ -745,7 +745,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
   def sendApplicationCommand(cmd: ApplicationCommand, application: Application): HttpResponse[String] = {
     val request         = DispatchRequest(cmd, Set.empty)
-    implicit val writer = Json.writes[DispatchRequest]
+    implicit val writer: OWrites[DispatchRequest] = Json.writes[DispatchRequest]
     postData(s"/application/${application.id.value}/dispatch", Json.toJson(request).toString(), "PATCH")
   }
 

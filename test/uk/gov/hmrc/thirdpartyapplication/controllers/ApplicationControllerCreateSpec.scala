@@ -23,7 +23,7 @@ import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
 import org.scalatest.prop.TableDrivenPropertyChecks
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OWrites}
 import play.api.mvc._
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.Enrolment
@@ -62,8 +62,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   import play.api.test.Helpers
   import play.api.test.Helpers._
 
-  implicit val v1writes = Json.writes[CreateApplicationRequestV1]
-  implicit val v2writes = Json.writes[CreateApplicationRequestV2]
+  implicit val v1writes: OWrites[CreateApplicationRequestV1] = Json.writes[CreateApplicationRequestV1]
+  implicit val v2writes: OWrites[CreateApplicationRequestV2] = Json.writes[CreateApplicationRequestV2]
 
   implicit lazy val materializer: Materializer = NoMaterializer
 

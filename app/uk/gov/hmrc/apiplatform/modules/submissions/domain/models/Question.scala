@@ -18,7 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.submissions.domain.models
 
 import scala.collection.immutable.{ListMap, ListSet}
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json, OFormat}
 
 sealed trait Question {
   def id: Question.Id
@@ -47,7 +47,7 @@ object ErrorInfo {
   def apply(summary: String): ErrorInfo                  = new ErrorInfo(summary, None)
   def apply(summary: String, message: String): ErrorInfo = if (summary == message) apply(summary) else new ErrorInfo(summary, Some(message))
 
-  implicit val format = Json.format[ErrorInfo]
+  implicit val format: OFormat[ErrorInfo] = Json.format[ErrorInfo]
 }
 
 trait ErrorMessaging {
@@ -58,7 +58,7 @@ trait ErrorMessaging {
 case class Wording(value: String) extends AnyVal
 
 object Wording {
-  implicit val format = Json.valueFormat[Wording]
+  implicit val format: Format[Wording] = Json.valueFormat[Wording]
 }
 
 object Question {
@@ -67,13 +67,13 @@ object Question {
   object Id {
     def random = Id(java.util.UUID.randomUUID.toString)
 
-    implicit val format = Json.valueFormat[Id]
+    implicit val format: Format[Id] = Json.valueFormat[Id]
   }
 
   case class Label(value: String) extends AnyVal
 
   object Label {
-    implicit val format = Json.valueFormat[Label]
+    implicit val format: Format[Label] = Json.valueFormat[Label]
   }
 }
 

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.component
 
+import akka.stream.Materializer
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
@@ -57,8 +58,8 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec with GivenWhenThen with Ma
     Seq(apiSubscriptionFieldsStub, authStub, totpStub, thirdPartyDelegatedAuthorityStub, awsApiGatewayStub, emailStub, apiPlatformEventsStub)
   }
 
-  implicit lazy val mat = app.materializer
-  implicit lazy val ec  = app.injector.instanceOf[ExecutionContext]
+  implicit lazy val mat: Materializer = app.materializer
+  implicit lazy val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
 
   override protected def beforeAll(): Unit = {
     mocks.foreach(m => if (!m.stub.server.isRunning) m.stub.server.start())

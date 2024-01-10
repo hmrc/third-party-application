@@ -123,7 +123,7 @@ class ApplicationServiceSpec
       LOGGED_IN_USER_NAME_HEADER  -> "Bob Bentley"
     )
 
-    implicit val hc = hcForLoggedInCollaborator
+    implicit val hc: HeaderCarrier = hcForLoggedInCollaborator
 
     val mockCredentialGenerator: CredentialGenerator = mock[CredentialGenerator]
     val mockNameValidationConfig                     = mock[ApplicationNamingService.ApplicationNameValidationConfig]
@@ -599,7 +599,7 @@ class ApplicationServiceSpec
     }
 
     "send an audit event for each type of change" in new SetupForAuditTests {
-      override implicit val hc = hcForLoggedInGatekeeperUser
+      override implicit val hc: HeaderCarrier = hcForLoggedInGatekeeperUser
 
       val (updatedApplication, updateRedirectUris) = setupAuditTests(Access.Standard())
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccessOn(updateRedirectUris)(updatedApplication)

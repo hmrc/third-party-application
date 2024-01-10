@@ -23,6 +23,7 @@ import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status.UNAUTHORIZED
 import play.api.mvc.ControllerComponents
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client.Retrieval
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
@@ -65,13 +66,13 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
   trait AuthHeaderPresent {
     self: Setup =>
     val request     = fakeRequest.withHeaders((AUTHORIZATION, "xxx")) // .withSession("authToken" -> "Token some-token")
-    implicit val hc = HeaderCarrierConverter.fromRequest(request)
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
   }
 
   trait NoAuthHeaderPresent {
     self: Setup =>
     val request     = fakeRequest
-    implicit val hc = HeaderCarrierConverter.fromRequest(request)
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
   }
 
   trait Authorised {

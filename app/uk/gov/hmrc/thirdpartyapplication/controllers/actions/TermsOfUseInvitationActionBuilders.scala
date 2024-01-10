@@ -28,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationDataService, TermsOfUseInvitationService}
 
@@ -72,7 +73,7 @@ trait TermsOfUseInvitationActionBuilders {
       def executionContext: ExecutionContext = ec
 
       override def refine[A](request: Request[A]): Future[Either[Result, Request[A]]] = {
-        implicit val hc = HeaderCarrierConverter.fromRequest(request)
+        implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
         ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
           .recoverWith { case NonFatal(_) => ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE }

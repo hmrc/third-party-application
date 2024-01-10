@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.services
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 
 trait UpliftLinkJsonFormatter {
-  implicit val jsonFormatUpliftLink = Json.format[UpliftLink]
+  implicit val jsonFormatUpliftLink: OFormat[UpliftLink] = Json.format[UpliftLink]
 }
 
 object UpliftLinkJsonFormatter extends UpliftLinkJsonFormatter

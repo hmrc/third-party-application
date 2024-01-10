@@ -34,7 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpe
 class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
 
   trait Setup extends TermsOfUseInvitationRepositoryMockModule with EmailConnectorMockModule with ApplicationTestData {
-    implicit val hc = HeaderCarrier()
+    implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val applicationId = ApplicationId.random
     val application   = TermsOfUseApplication(applicationId, "app name")

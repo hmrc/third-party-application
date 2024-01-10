@@ -23,8 +23,10 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 import uk.gov.hmrc.apiplatform.modules.submissions.services.ContextService
 
+import scala.concurrent.ExecutionContext
+
 trait ContextServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with EitherTHelper[String] {
-  implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
+  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   protected trait BaseContextServiceMock {
     def aMock: ContextService

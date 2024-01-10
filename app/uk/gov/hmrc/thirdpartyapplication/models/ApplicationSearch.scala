@@ -23,6 +23,7 @@ import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates
 import org.mongodb.scala.model.Filters._
 
+import play.api.libs.json.Format
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
@@ -173,7 +174,7 @@ case object AllowAutoDeleteFilter extends AllowAutoDeleteFilter {
 sealed trait LastUseDateFilter extends ApplicationSearchFilter
 
 case class LastUseBeforeDate(lastUseDate: LocalDateTime) extends LastUseDateFilter {
-  implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
+  implicit val dateFormat: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
 
   def toMongoMatch: Bson = {
     Aggregates.filter(
@@ -189,7 +190,7 @@ case class LastUseBeforeDate(lastUseDate: LocalDateTime) extends LastUseDateFilt
 }
 
 case class LastUseAfterDate(lastUseDate: LocalDateTime) extends LastUseDateFilter {
-  implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
+  implicit val dateFormat: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
 
   def toMongoMatch: Bson = {
     Aggregates.filter(
