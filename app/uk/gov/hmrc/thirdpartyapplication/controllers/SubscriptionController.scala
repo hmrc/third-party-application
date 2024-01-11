@@ -19,8 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import play.api.libs.json.{Json, OWrites}
 import play.api.libs.json.Json.toJson
+import play.api.libs.json.{Json, OWrites}
 import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 

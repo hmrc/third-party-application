@@ -16,10 +16,9 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 
-import akka.stream.Materializer
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
 
 import play.api.libs.json.{Json, OWrites}
@@ -37,9 +36,9 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpe
 
 class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
   implicit val mat: Materializer = NoMaterializer
-  val name         = "bob example"
-  val emailAddress = "test@example.com"
-  val appId        = ApplicationId.random
+  val name                       = "bob example"
+  val emailAddress               = "test@example.com"
+  val appId                      = ApplicationId.random
 
   trait Setup
       extends RequestApprovalsServiceMockModule
@@ -65,8 +64,8 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
 
   "requestApproval" should {
     implicit val writes: OWrites[ApprovalsController.RequestApprovalRequest] = Json.writes[ApprovalsController.RequestApprovalRequest]
-    val jsonBody        = Json.toJson(ApprovalsController.RequestApprovalRequest(name, emailAddress))
-    val request         = FakeRequest().withJsonBody(jsonBody)
+    val jsonBody                                                             = Json.toJson(ApprovalsController.RequestApprovalRequest(name, emailAddress))
+    val request                                                              = FakeRequest().withJsonBody(jsonBody)
 
     "return 'not found' error response if application is missing" in new Setup {
       hasNoApp
@@ -136,9 +135,9 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
 
   "grant" should {
     implicit val writes: OWrites[ApprovalsController.GrantedRequest] = Json.writes[ApprovalsController.GrantedRequest]
-    val jsonBody        = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", None, None))
-    val request         = FakeRequest().withJsonBody(jsonBody)
-    val application     = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+    val jsonBody                                                     = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", None, None))
+    val request                                                      = FakeRequest().withJsonBody(jsonBody)
+    val application                                                  = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
 
     "return 'no content' success response if request is declined" in new Setup {
       hasApp
@@ -152,9 +151,9 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
 
   "grant with warnings" should {
     implicit val writes: OWrites[ApprovalsController.GrantedRequest] = Json.writes[ApprovalsController.GrantedRequest]
-    val jsonBody        = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", Some("This is a warning"), Some("Marty McFly")))
-    val request         = FakeRequest().withJsonBody(jsonBody)
-    val application     = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+    val jsonBody                                                     = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", Some("This is a warning"), Some("Marty McFly")))
+    val request                                                      = FakeRequest().withJsonBody(jsonBody)
+    val application                                                  = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
 
     "return 'no content' success response if request is granted with warnings" in new Setup {
       hasApp

@@ -16,10 +16,9 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.controllers
 
-import akka.stream.Materializer
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
 
 import play.api.libs.json.{JsError, JsSuccess, Json, OWrites, Reads}
@@ -43,7 +42,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
   "create new submission" should {
     implicit val writer: OWrites[SubmissionsController.CreateSubmissionRequest] = Json.writes[SubmissionsController.CreateSubmissionRequest]
-    val fakeRequest     = FakeRequest(POST, "/").withBody(Json.toJson(SubmissionsController.CreateSubmissionRequest("bob@example.com")))
+    val fakeRequest                                                             = FakeRequest(POST, "/").withBody(Json.toJson(SubmissionsController.CreateSubmissionRequest("bob@example.com")))
 
     "return an ok response" in new Setup {
       SubmissionsServiceMock.Create.thenReturn(aSubmission)

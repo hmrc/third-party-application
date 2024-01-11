@@ -17,10 +17,12 @@
 package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
+
 import play.api.http.Status.OK
 import play.api.libs.json.Json
 import uk.gov.hmrc.auth.core.Enrolment
+
+import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
 
 object AuthStub extends Stub {
   override val stub = MockHost(18500)

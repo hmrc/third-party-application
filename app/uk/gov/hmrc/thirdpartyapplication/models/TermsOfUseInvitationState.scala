@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.models
 
 import play.api.libs.json.Format
+
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
 object TermsOfUseInvitationState extends Enumeration {

@@ -55,11 +55,11 @@ class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUti
   "searchCollaborators" should {
 
     "succeed with a 200 (ok) when collaborators are found for an Api context and version" in new Setup {
-      private val context       = "api1".asContext
-      private val version       = "1.0".asVersion
-      private val partialemail  = "partialemail"
+      private val context                                      = "api1".asContext
+      private val version                                      = "1.0".asVersion
+      private val partialemail                                 = "partialemail"
       implicit val writes: OWrites[SearchCollaboratorsRequest] = Json.writes[SearchCollaboratorsRequest]
-      implicit lazy val request: FakeRequest[JsValue] = FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
+      implicit lazy val request: FakeRequest[JsValue]          = FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
         .withBody(Json.toJson(SearchCollaboratorsRequest(context, version, Some(partialemail))))
 
       when(mockSubscriptionService.searchCollaborators(context, version, Some(partialemail))).thenReturn(Future.successful(List("user@example.com")))

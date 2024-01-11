@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.apiplatform.modules.uplift.controllers
 
-import play.api.libs.json.OFormat
-
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
+import play.api.libs.json.OFormat
 import play.api.mvc.ControllerComponents
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}

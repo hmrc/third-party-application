@@ -16,10 +16,9 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions
 
-import akka.stream.Materializer
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
 
 import play.api.libs.json.{JsError, JsSuccess}

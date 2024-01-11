@@ -56,8 +56,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   import play.api.test.Helpers._
 
-  val authTokenHeader                          = "authorization" -> "authorizationToken"
-  implicit lazy val materializer: Materializer = NoMaterializer
+  val authTokenHeader                                            = "authorization" -> "authorizationToken"
+  implicit lazy val materializer: Materializer                   = NoMaterializer
   implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
   trait Setup
@@ -68,7 +68,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       with ApplicationDataServiceMockModule
       with SubmissionsServiceMockModule
       with SubmissionsTestData {
-    val mockGatekeeperService = mock[GatekeeperService]
+    val mockGatekeeperService           = mock[GatekeeperService]
     implicit val headers: HeaderCarrier = HeaderCarrier()
 
     val nowInstant = Instant.now(clock).truncatedTo(MILLIS)

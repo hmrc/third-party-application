@@ -61,7 +61,7 @@ object ApplicationRepository {
     implicit val formatStateHistory: OFormat[StateHistory]                       = Json.format[StateHistory]
 
     implicit val formatStoredClientSecret: OFormat[StoredClientSecret] = Json.format[StoredClientSecret]
-    implicit val formatStoredToken: OFormat[StoredToken] = Json.format[StoredToken]
+    implicit val formatStoredToken: OFormat[StoredToken]               = Json.format[StoredToken]
 
     implicit val writesStandard: OWrites[Access.Standard] = Json.writes[Access.Standard]
 
@@ -102,13 +102,13 @@ object ApplicationRepository {
 
     implicit val formatCheckInformation: Format[CheckInformation] = Format(readsCheckInformation, Json.writes[CheckInformation])
 
-    implicit val formatApplicationState: OFormat[ApplicationState] = Json.format[ApplicationState]
+    implicit val formatApplicationState: OFormat[ApplicationState]   = Json.format[ApplicationState]
     implicit val formatApplicationTokens: OFormat[ApplicationTokens] = Json.format[ApplicationTokens]
 
     import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLengthConfig
 
     // Non-standard format compared to companion object
-    val ipAllowlistReads: Reads[IpAllowlist] = (
+    val ipAllowlistReads: Reads[IpAllowlist]             = (
       ((JsPath \ "required").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "allowlist").read[Set[String]] or Reads.pure(Set.empty[String]))
     )(IpAllowlist.apply _)
@@ -138,8 +138,8 @@ object ApplicationRepository {
 
     implicit val formatStoredApplication: OFormat[StoredApplication] = OFormat(readStoredApplication, Json.writes[StoredApplication])
 
-    implicit val formatApplicationWithStateHistory: OFormat[ApplicationWithStateHistory] = Json.format[ApplicationWithStateHistory]
-    implicit val readsApplicationWithSubscriptions: Reads[ApplicationWithSubscriptions] = Json.reads[ApplicationWithSubscriptions]
+    implicit val formatApplicationWithStateHistory: OFormat[ApplicationWithStateHistory]        = Json.format[ApplicationWithStateHistory]
+    implicit val readsApplicationWithSubscriptions: Reads[ApplicationWithSubscriptions]         = Json.reads[ApplicationWithSubscriptions]
     implicit val readsApplicationWithSubscriptionCount: Reads[ApplicationWithSubscriptionCount] = Json.reads[ApplicationWithSubscriptionCount]
 
     implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]

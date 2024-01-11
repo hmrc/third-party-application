@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import play.api.libs.json.Format
-
 import java.time.LocalDateTime
+
+import play.api.libs.json.Format
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson

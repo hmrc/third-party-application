@@ -19,10 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.mvc.{BaseController, _}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import uk.gov.hmrc.apiplatform.modules.gkauth.services._
-import uk.gov.hmrc.http.HeaderCarrier
 
 trait OnlyStrideGatekeeperRoleAuthoriseAction {
   self: BaseController =>

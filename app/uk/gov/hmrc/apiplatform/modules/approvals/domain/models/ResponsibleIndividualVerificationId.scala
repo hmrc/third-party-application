@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 
-import play.api.libs.json.Format
-
 import java.{util => ju}
+
+import play.api.libs.json.Format
 
 case class ResponsibleIndividualVerificationId(value: String) extends AnyVal
 

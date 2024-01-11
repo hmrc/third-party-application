@@ -16,20 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHistory
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import play.api.libs.json._
+import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, ApplicationId}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 object StateHistoryRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random

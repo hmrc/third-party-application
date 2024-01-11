@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import play.api.libs.json.OFormat
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, _}
 
 case class SubscriptionData(apiIdentifier: ApiIdentifier, applications: Set[ApplicationId])

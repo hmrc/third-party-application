@@ -65,13 +65,13 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
 
   trait AuthHeaderPresent {
     self: Setup =>
-    val request     = fakeRequest.withHeaders((AUTHORIZATION, "xxx")) // .withSession("authToken" -> "Token some-token")
+    val request                    = fakeRequest.withHeaders((AUTHORIZATION, "xxx")) // .withSession("authToken" -> "Token some-token")
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
   }
 
   trait NoAuthHeaderPresent {
     self: Setup =>
-    val request     = fakeRequest
+    val request                    = fakeRequest
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
   }
 
