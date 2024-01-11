@@ -44,6 +44,8 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     val ts                                   = FixedClock.instant
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
+    val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, now)
+
     val underTest = new DeleteProductionCredentialsApplicationCommandHandler(
       authControlConfig,
       ApplicationRepoMock.aMock,
@@ -89,11 +91,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     }
   }
 
-  val reasons           = "reasons description text"
-  val ts: LocalDateTime = now
-
   "DeleteProductionCredentialsApplication" should {
-    val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, ts)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()
