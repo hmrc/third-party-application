@@ -73,17 +73,9 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
     val administrator     = adminEmail1.admin()
 
     "not attempt to do anything if there are no recipients" in new Setup {
-      val expectedTemplateId                      = "apiAddedDeveloperAsCollaboratorConfirmation"
-      val expectedToEmails                        = Set.empty[LaxEmailAddress]
-      val expectedParameters: Map[String, String] = Map(
-        "article"           -> "an",
-        "role"              -> "admin",
-        "applicationName"   -> applicationName,
-        "developerHubTitle" -> hubTestTitle
-      )
       // No stubbing so we cannot call POST
 
-      await(connector.sendCollaboratorAddedConfirmation(administrator, applicationName, expectedToEmails)) shouldBe HasSucceeded
+      await(connector.sendCollaboratorAddedConfirmation(administrator, applicationName, recipients = Set.empty)) shouldBe HasSucceeded
     }
 
     "send added collaborator confirmation email" in new Setup {

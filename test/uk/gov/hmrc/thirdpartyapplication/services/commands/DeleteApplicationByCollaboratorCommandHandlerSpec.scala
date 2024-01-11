@@ -37,6 +37,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
 
     val appId = ApplicationId.random
 
+    val appAdminUserId = UserId.random
     val appAdminEmail = "admin@example.com".toLaxEmail
     val reasons       = "reasons description text"
     val actor         = Actors.AppCollaborator(appAdminEmail)
@@ -48,6 +49,8 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
     )
     val ts                = FixedClock.instant
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
+
+    val cmd = DeleteApplicationByCollaborator(appAdminUserId, reasons, now)
 
     val underTest = new DeleteApplicationByCollaboratorCommandHandler(
       authControlConfig,
@@ -94,12 +97,8 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
     }
   }
 
-  val appAdminUserId = UserId.random
-  val reasons        = "reasons description text"
-  val ts             = FixedClock.instant
-
   "DeleteApplicationByCollaborator" should {
-    val cmd = DeleteApplicationByCollaborator(appAdminUserId, reasons, now)
+
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()
@@ -116,7 +115,6 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
 
     "return an error when app is NOT in testing state" in new Setup {
       val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
-      val cmd            = DeleteApplicationByCollaborator(appAdminUserId, reasons, now)
 
       checkFailsWith("App must have a STANDARD access type") {
         underTest.process(nonStandardApp, cmd)

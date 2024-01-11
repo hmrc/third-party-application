@@ -79,8 +79,8 @@ class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventual
         }
       }
       hasBeenScheduled.await(10, TimeUnit.SECONDS)
-      Captured should have('initialDelay(testScheduledJob.initialDelay))
-      Captured should have('interval(testScheduledJob.interval))
+      Captured.initialDelay shouldBe testScheduledJob.initialDelay
+      Captured.interval shouldBe testScheduledJob.interval
 
       await(testApp.stop())
     }
@@ -138,9 +138,9 @@ class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventual
       }
       runner.cancellables = Seq(new StubCancellable, new StubCancellable)
 
-      every(runner.cancellables) should not be 'cancelled
+      every(runner.cancellables) should not be Symbol("cancelled")
       await(testApp.stop())
-      every(runner.cancellables) should be('cancelled)
+      every(runner.cancellables) should be(Symbol("cancelled"))
     }
 
     "block while a scheduled jobs are still running" in new TestCase {
@@ -163,10 +163,10 @@ class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventual
       }
 
       val stopFuture: Future[_] = testApp.stop()
-      stopFuture should not be 'completed
+      stopFuture should not be Symbol("completed")
 
       stoppableJob.isRunning = Future.successful(false)
-      eventually(timeout(Span(1, Minute))) { stopFuture should be('completed) }
+      eventually(timeout(Span(1, Minute))) { stopFuture should be(Symbol("completed")) }
     }
   }
 
