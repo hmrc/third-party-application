@@ -25,6 +25,7 @@ import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
@@ -42,7 +43,7 @@ class CollaboratorController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils {
 
-  override implicit def hc(implicit request: RequestHeader) = {
+  override implicit def hc(implicit request: RequestHeader): HeaderCarrier = {
     def header(key: String) = request.headers.get(key) map (key -> _)
 
     val extraHeaders = List(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER)).flatten

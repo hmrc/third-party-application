@@ -28,6 +28,7 @@ lazy val microservice = Project(appName, file("."))
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator,
     majorVersion    := 0,
+    scalacOptions   += "-Wconf:src=routes/.*:s",
     routesImport ++= Seq(
       "uk.gov.hmrc.apiplatform.modules.common.domain.models._",
       "uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._",
