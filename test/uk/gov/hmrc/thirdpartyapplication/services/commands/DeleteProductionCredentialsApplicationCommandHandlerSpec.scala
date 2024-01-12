@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
@@ -107,8 +106,6 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     }
 
     "return an error when app is NOT in testing state" in new Setup {
-      val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, now)
-
       checkFailsWith("App is not in TESTING state") {
         underTest.process(app.copy(state = app.state.copy(name = State.PRE_PRODUCTION)), cmd)
       }

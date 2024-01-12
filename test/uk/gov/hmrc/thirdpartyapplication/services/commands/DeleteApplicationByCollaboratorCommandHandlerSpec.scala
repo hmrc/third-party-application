@@ -38,9 +38,9 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
     val appId = ApplicationId.random
 
     val appAdminUserId = UserId.random
-    val appAdminEmail = "admin@example.com".toLaxEmail
-    val reasons       = "reasons description text"
-    val actor         = Actors.AppCollaborator(appAdminEmail)
+    val appAdminEmail  = "admin@example.com".toLaxEmail
+    val reasons        = "reasons description text"
+    val actor          = Actors.AppCollaborator(appAdminEmail)
 
     val app               = anApplicationData(appId, environment = Environment.SANDBOX).copy(collaborators =
       Set(
