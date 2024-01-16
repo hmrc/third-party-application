@@ -51,7 +51,7 @@ package object binders {
     }
   }
 
-  implicit def applicationIdQueryStringBindable(implicit textBinder: QueryStringBindable[String]) = new QueryStringBindable[ApplicationId] {
+  implicit def applicationIdQueryStringBindable(implicit textBinder: QueryStringBindable[String]): QueryStringBindable[ApplicationId] = new QueryStringBindable[ApplicationId] {
 
     override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, ApplicationId]] = {
       textBinder.bind(key, params).map(_.flatMap(applicationIdFromString))
@@ -73,7 +73,7 @@ package object binders {
     }
   }
 
-  implicit def queryStringBindable(implicit textBinder: QueryStringBindable[String]) = new QueryStringBindable[UserId] {
+  implicit def queryStringBindable(implicit textBinder: QueryStringBindable[String]): QueryStringBindable[UserId] = new QueryStringBindable[UserId] {
 
     override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, UserId]] = {
       for {
@@ -118,7 +118,7 @@ package object binders {
     }
   }
 
-  implicit def apiContextQueryStringBindable(implicit textBinder: QueryStringBindable[String]) = new QueryStringBindable[ApiContext] {
+  implicit def apiContextQueryStringBindable(implicit textBinder: QueryStringBindable[String]): QueryStringBindable[ApiContext] = new QueryStringBindable[ApiContext] {
 
     override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, ApiContext]] = {
       for {
@@ -147,7 +147,7 @@ package object binders {
     }
   }
 
-  implicit def apiVersionQueryStringBindable(implicit textBinder: QueryStringBindable[String]) = new QueryStringBindable[ApiVersionNbr] {
+  implicit def apiVersionQueryStringBindable(implicit textBinder: QueryStringBindable[String]): QueryStringBindable[ApiVersionNbr] = new QueryStringBindable[ApiVersionNbr] {
 
     override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, ApiVersionNbr]] = {
       for {
@@ -176,7 +176,7 @@ package object binders {
     }
   }
 
-  implicit def clientIdQueryStringBindable(implicit textBinder: QueryStringBindable[String]) = new QueryStringBindable[ClientId] {
+  implicit def clientIdQueryStringBindable(implicit textBinder: QueryStringBindable[String]): QueryStringBindable[ClientId] = new QueryStringBindable[ClientId] {
 
     override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, ClientId]] = {
       for {

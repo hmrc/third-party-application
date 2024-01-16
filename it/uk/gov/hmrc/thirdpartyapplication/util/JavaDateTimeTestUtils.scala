@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import org.scalatest.matchers.should.Matchers._
-
-import java.time.{Clock, LocalDateTime}
 import java.time.temporal.ChronoField
-import java.time.ZoneOffset
+import java.time.{Clock, LocalDateTime, ZoneOffset}
+
+import org.scalatest.matchers.should.Matchers._
 
 trait JavaDateTimeTestUtils {
 

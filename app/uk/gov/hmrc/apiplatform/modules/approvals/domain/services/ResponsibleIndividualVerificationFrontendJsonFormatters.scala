@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.services
 
+import java.time.LocalDateTime
+
 import play.api.libs.json._
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
@@ -30,19 +32,19 @@ trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
 
   import uk.gov.hmrc.play.json.Union
 
-  implicit val utcReads = DefaultLocalDateTimeReads
+  implicit val utcReads: Reads[LocalDateTime] = DefaultLocalDateTimeReads
 
-  implicit val responsibleIndividualVerificationFormat          = Json.format[ResponsibleIndividualToUVerification]
-  implicit val responsibleIndividualTouUpliftVerificationFormat = Json.format[ResponsibleIndividualTouUpliftVerification]
-  implicit val responsibleIndividualUpdateVerificationFormat    = Json.format[ResponsibleIndividualUpdateVerification]
+  implicit val responsibleIndividualVerificationFormat: OFormat[ResponsibleIndividualToUVerification]                = Json.format[ResponsibleIndividualToUVerification]
+  implicit val responsibleIndividualTouUpliftVerificationFormat: OFormat[ResponsibleIndividualTouUpliftVerification] = Json.format[ResponsibleIndividualTouUpliftVerification]
+  implicit val responsibleIndividualUpdateVerificationFormat: OFormat[ResponsibleIndividualUpdateVerification]       = Json.format[ResponsibleIndividualUpdateVerification]
 
-  implicit val jsonFormatResponsibleIndividualVerification = Union.from[ResponsibleIndividualVerification]("verificationType")
+  implicit val jsonFormatResponsibleIndividualVerification: OFormat[ResponsibleIndividualVerification] = Union.from[ResponsibleIndividualVerification]("verificationType")
     .and[ResponsibleIndividualToUVerification]("termsOfUse")
     .and[ResponsibleIndividualTouUpliftVerification]("termsOfUseUplift")
     .and[ResponsibleIndividualUpdateVerification]("adminUpdate")
     .format
 
-  implicit val responsibleIndividualVerificationWithDetailsFormat = Json.format[ResponsibleIndividualVerificationWithDetails]
+  implicit val responsibleIndividualVerificationWithDetailsFormat: OFormat[ResponsibleIndividualVerificationWithDetails] = Json.format[ResponsibleIndividualVerificationWithDetails]
 }
 
 object ResponsibleIndividualVerificationFrontendJsonFormatters extends ResponsibleIndividualVerificationFrontendJsonFormatters

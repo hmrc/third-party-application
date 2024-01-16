@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
@@ -43,6 +42,8 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     val app                                  = anApplicationData(appId, environment = Environment.SANDBOX, state = ApplicationStateExamples.testing)
     val ts                                   = FixedClock.instant
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
+
+    val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, now)
 
     val underTest = new DeleteProductionCredentialsApplicationCommandHandler(
       authControlConfig,
@@ -89,11 +90,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     }
   }
 
-  val reasons           = "reasons description text"
-  val ts: LocalDateTime = now
-
   "DeleteProductionCredentialsApplication" should {
-    val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, ts)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()
@@ -109,8 +106,6 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     }
 
     "return an error when app is NOT in testing state" in new Setup {
-      val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, now)
-
       checkFailsWith("App is not in TESTING state") {
         underTest.process(app.copy(state = app.state.copy(name = State.PRE_PRODUCTION)), cmd)
       }

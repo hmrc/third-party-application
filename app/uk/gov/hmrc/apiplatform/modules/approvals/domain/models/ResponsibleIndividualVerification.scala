@@ -46,7 +46,7 @@ object ResponsibleIndividualVerification {
   val VerificationTypeTouUplift: String = "termsOfUseUplift"
   val VerificationTypeUpdate: String    = "adminUpdate"
 
-  implicit val jsonFormatResponsibleIndividualVerification = Union.from[ResponsibleIndividualVerification]("verificationType")
+  implicit val jsonFormatResponsibleIndividualVerification: OFormat[ResponsibleIndividualVerification] = Union.from[ResponsibleIndividualVerification]("verificationType")
     .and[ResponsibleIndividualToUVerification](VerificationTypeToU)
     .and[ResponsibleIndividualTouUpliftVerification](VerificationTypeTouUplift)
     .and[ResponsibleIndividualUpdateVerification](VerificationTypeUpdate)

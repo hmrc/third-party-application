@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.service
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 import cats.data.OptionT
 
@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories.UpliftLinksRepository
 
 @Singleton
-class UpliftLinkService @Inject() (upliftLinksRepository: UpliftLinksRepository)(implicit ec: ExecutionContext) {
+class UpliftLinkService @Inject() (upliftLinksRepository: UpliftLinksRepository) {
 
   def createUpliftLink(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId): Future[UpliftLink] =
     upliftLinksRepository.insert(UpliftLink(sandboxApplicationId, productionApplicationId))

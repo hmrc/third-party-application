@@ -16,9 +16,20 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
+import java.time.{Clock, LocalDateTime, ZoneOffset}
+import java.util.UUID
+
 import cats.data.NonEmptyList
 import org.scalatest.BeforeAndAfterEach
+
 import play.api.inject
+import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.utils.ServerBaseISpec
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ResponsibleIndividual, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
@@ -27,23 +38,12 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerification,
   ResponsibleIndividualVerificationId
 }
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ResponsibleIndividual
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.utils.ServerBaseISpec
-import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-
-import java.time.{Clock, LocalDateTime, ZoneOffset}
-import java.util.UUID
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
 
 object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
   val appName = "my app"

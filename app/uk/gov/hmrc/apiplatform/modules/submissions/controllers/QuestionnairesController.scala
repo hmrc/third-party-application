@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.submissions.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OWrites}
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 
 object QuestionnairesController {
   case class ErrorMessage(message: String)
-  implicit val writesErrorMessage = Json.writes[ErrorMessage]
+  implicit val writesErrorMessage: OWrites[ErrorMessage] = Json.writes[ErrorMessage]
 }
 
 @Singleton

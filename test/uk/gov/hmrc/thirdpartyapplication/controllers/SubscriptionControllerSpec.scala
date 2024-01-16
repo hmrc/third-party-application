@@ -24,7 +24,7 @@ import akka.stream.testkit.NoMaterializer
 import play.api.http.Writeable
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, Reads}
 import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
 
@@ -54,7 +54,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
     def asUrl(apiIdentifier: ApiIdentifier): String = s"/apis/${apiIdentifier.context.value}/versions/${apiIdentifier.versionNbr.value}/subscribers"
 
     "return the subscribers from the repository" in new Setup {
-      implicit val readsSubscribersResponse = Json.reads[SubscribersResponse]
+      implicit val readsSubscribersResponse: Reads[SubscribersResponse] = Json.reads[SubscribersResponse]
 
       private val subscribers = Set(ApplicationId.random, ApplicationId.random)
       SubscriptionRepoMock.GetSubscribers.thenReturn(apiIdentifier)(subscribers)
@@ -67,7 +67,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
     }
 
     "return the subscribers from the repository for a multi-segment API" in new Setup {
-      implicit val readsSubscribersResponse = Json.reads[SubscribersResponse]
+      implicit val readsSubscribersResponse: Reads[SubscribersResponse] = Json.reads[SubscribersResponse]
 
       private val subscribers = Set(ApplicationId.random, ApplicationId.random)
       SubscriptionRepoMock.GetSubscribers.thenReturn(apiIdentifier)(subscribers)

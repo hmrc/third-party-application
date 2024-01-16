@@ -18,6 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.submissions
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
 
 import play.api.libs.json.{JsError, JsSuccess}
@@ -31,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class QuestionnairesControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.GroupOfQuestionnairesJsonFormatters._
-  implicit val mat = NoMaterializer
+  implicit val mat: Materializer = NoMaterializer
 
   trait Setup extends QuestionnaireDAOMockModule with SubmissionsTestData {
     val underTest = new QuestionnairesController(QuestionnaireDAOMock.aMock, Helpers.stubControllerComponents())

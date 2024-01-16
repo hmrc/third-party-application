@@ -21,6 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 import play.api.mvc._
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
@@ -72,7 +73,7 @@ trait TermsOfUseInvitationActionBuilders {
       def executionContext: ExecutionContext = ec
 
       override def refine[A](request: Request[A]): Future[Either[Result, Request[A]]] = {
-        implicit val hc = HeaderCarrierConverter.fromRequest(request)
+        implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
         ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
           .recoverWith { case NonFatal(_) => ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE }

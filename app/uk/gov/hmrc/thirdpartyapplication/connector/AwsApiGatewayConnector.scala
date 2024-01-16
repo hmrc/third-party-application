@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
-import play.api.libs.json.{JsPath, Reads}
+import play.api.libs.json.{JsPath, OWrites, Reads}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
@@ -35,7 +35,7 @@ object AwsApiGatewayConnector extends ApplicationLogger {
   private[connector] case class UpdateApplicationUsagePlanRequest(apiKeyName: String, apiKeyValue: String)
 
   private[connector] object UpdateApplicationUsagePlanRequest {
-    implicit val writes = play.api.libs.json.Json.writes[UpdateApplicationUsagePlanRequest]
+    implicit val writes: OWrites[UpdateApplicationUsagePlanRequest] = play.api.libs.json.Json.writes[UpdateApplicationUsagePlanRequest]
   }
 
   private[connector] case class RequestId(value: String) extends AnyVal

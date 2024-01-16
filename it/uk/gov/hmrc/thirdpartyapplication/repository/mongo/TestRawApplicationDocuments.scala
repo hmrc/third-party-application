@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository.mongo
 
-import play.api.libs.json.{JsBoolean, JsObject, Json}
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-
 import java.time.{LocalDateTime, ZoneOffset}
+
+import play.api.libs.json.{JsBoolean, JsObject, Json}
+
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 trait TestRawApplicationDocuments {
 

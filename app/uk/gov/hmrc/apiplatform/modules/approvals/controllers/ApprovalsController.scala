@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsValue, Json, Reads}
 import play.api.mvc.ControllerComponents
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
@@ -34,19 +34,19 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByName: String, requestedByEmailAddress: String)
-  implicit val readsRequestApprovalRequest = Json.reads[RequestApprovalRequest]
+  implicit val readsRequestApprovalRequest: Reads[RequestApprovalRequest] = Json.reads[RequestApprovalRequest]
 
   case class DeclinedRequest(gatekeeperUserName: String, reasons: String)
-  implicit val readsDeclinedRequest = Json.reads[DeclinedRequest]
+  implicit val readsDeclinedRequest: Reads[DeclinedRequest] = Json.reads[DeclinedRequest]
 
   case class GrantedRequest(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])
-  implicit val readsGrantedRequest = Json.reads[GrantedRequest]
+  implicit val readsGrantedRequest: Reads[GrantedRequest] = Json.reads[GrantedRequest]
 
   case class TouUpliftRequest(gatekeeperUserName: String, reasons: String)
-  implicit val readsTouUpliftRequest = Json.reads[TouUpliftRequest]
+  implicit val readsTouUpliftRequest: Reads[TouUpliftRequest] = Json.reads[TouUpliftRequest]
 
   case class TouGrantedRequest(gatekeeperUserName: String, reasons: String, escalatedTo: Option[String])
-  implicit val readsTouGrantedRequest = Json.reads[TouGrantedRequest]
+  implicit val readsTouGrantedRequest: Reads[TouGrantedRequest] = Json.reads[TouGrantedRequest]
 }
 
 @Singleton

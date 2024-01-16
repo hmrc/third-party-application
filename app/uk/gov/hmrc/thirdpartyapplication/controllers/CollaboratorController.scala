@@ -19,9 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import play.api.libs.json.Json
 import play.api.libs.json.Json.toJson
+import play.api.libs.json.{Json, Reads}
 import play.api.mvc._
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
@@ -31,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 private[controllers] case class SearchCollaboratorsRequest(apiContext: ApiContext, apiVersion: ApiVersionNbr, partialEmailMatch: Option[String])
 
 private[controllers] object SearchCollaboratorsRequest {
-  implicit val readsSearchCollaboratorsRequest = Json.reads[SearchCollaboratorsRequest]
+  implicit val readsSearchCollaboratorsRequest: Reads[SearchCollaboratorsRequest] = Json.reads[SearchCollaboratorsRequest]
 }
 
 @Singleton
@@ -42,7 +43,7 @@ class CollaboratorController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils {
 
-  override implicit def hc(implicit request: RequestHeader) = {
+  override implicit def hc(implicit request: RequestHeader): HeaderCarrier = {
     def header(key: String) = request.headers.get(key) map (key -> _)
 
     val extraHeaders = List(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER)).flatten

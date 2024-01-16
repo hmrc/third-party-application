@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OWrites, Reads}
 import play.api.mvc.{ControllerComponents, Results}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -31,10 +31,10 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
 
 object ResponsibleIndividualVerificationController {
   case class ResponsibleIndividualVerificationRequest(code: String)
-  implicit val readsResponsibleIndividualVerificationRequest = Json.reads[ResponsibleIndividualVerificationRequest]
+  implicit val readsResponsibleIndividualVerificationRequest: Reads[ResponsibleIndividualVerificationRequest] = Json.reads[ResponsibleIndividualVerificationRequest]
 
   case class ErrorMessage(message: String)
-  implicit val writesErrorMessage = Json.writes[ErrorMessage]
+  implicit val writesErrorMessage: OWrites[ErrorMessage] = Json.writes[ErrorMessage]
 }
 
 @Singleton

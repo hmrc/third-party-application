@@ -16,15 +16,17 @@
 
 package uk.gov.hmrc.utils
 
+import java.time.Clock
+
 import org.scalatest.TestSuite
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
-import java.time.Clock
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 
 trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite with FixedClock {
   self: TestSuite =>

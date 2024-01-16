@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OWrites}
 import play.api.mvc._
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -67,7 +67,7 @@ class ApplicationCommandControllerSpec
   val cmd: ApplicationCommand = AddCollaborator(actor, Collaborators.Administrator(UserId.random, "bob@smith.com".toLaxEmail), LocalDateTime.now)
   val dispatch                = ApplicationCommandController.DispatchRequest(cmd, Set("fred".toLaxEmail))
 
-  implicit val tempWriter = Json.writes[ApplicationCommandController.DispatchRequest]
+  implicit val tempWriter: OWrites[ApplicationCommandController.DispatchRequest] = Json.writes[ApplicationCommandController.DispatchRequest]
 
   val instigatorUserId = UUID.randomUUID().toString
 

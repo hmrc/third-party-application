@@ -215,7 +215,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
         val result = await(underTest.recordAnswers(submissionId, Question.Id.random, List("Yes")))
 
-        result shouldBe 'left
+        result.left.value shouldBe "Not valid for this submission"
       }
 
       "fail when given a optional answer to non optional question" in new Setup {
@@ -225,7 +225,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
         val result = await(underTest.recordAnswers(submissionId, questionId, List.empty))
 
-        result shouldBe 'left
+        result.left.value shouldBe "Question requires an answer"
       }
     }
 

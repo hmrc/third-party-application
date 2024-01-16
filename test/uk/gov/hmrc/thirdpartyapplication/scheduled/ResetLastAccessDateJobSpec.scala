@@ -47,7 +47,7 @@ class ResetLastAccessDateJobSpec
   implicit val m: Materializer                           = app.materializer
   implicit val dateTimeFormatters: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
   implicit val dateFormatters: Format[LocalDate]         = MongoJavatimeFormats.localDateFormat
-  implicit val metrics                                   = app.injector.instanceOf[Metrics]
+  implicit val metrics: Metrics                          = app.injector.instanceOf[Metrics]
 
   val applicationRepository = new ApplicationRepository(mongoComponent, metrics)
 

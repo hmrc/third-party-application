@@ -18,6 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
 
 import play.api.test.Helpers._
@@ -29,11 +30,11 @@ import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVeri
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class ResponsibleIndividualVerificationControllerSpec extends AsyncHmrcSpec with FixedClock {
-  implicit val mat = NoMaterializer
-  val code         = "12345678"
-  val name         = "bob example"
-  val emailAddress = "test@example.com"
-  val appId        = ApplicationId.random
+  implicit val mat: Materializer = NoMaterializer
+  val code                       = "12345678"
+  val name                       = "bob example"
+  val emailAddress               = "test@example.com"
+  val appId                      = ApplicationId.random
 
   trait Setup
       extends ResponsibleIndividualVerificationServiceMockModule {

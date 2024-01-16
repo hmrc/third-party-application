@@ -16,22 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.FakeRequest
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatterBuilder
 
-import uk.gov.hmrc.thirdpartyapplication.component.stubs.ApiPlatformEventsStub
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.mvc.AnyContentAsEmpty
+import play.api.test.FakeRequest
 import uk.gov.hmrc.utils.ServerBaseISpec
 
-import uk.gov.hmrc.thirdpartyapplication.util.WiremockSugar
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import java.time.format.DateTimeFormatterBuilder
-import java.time.ZoneOffset
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.component.stubs.ApiPlatformEventsStub
+import uk.gov.hmrc.thirdpartyapplication.util.WiremockSugar
 
 class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar with ApplicationLogger with FixedClock {
 
@@ -56,7 +56,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
     val userName = "bobby fingers"
 
     def testJson(updateApplicationEvent: ApplicationEvent, expectedRequestBody: String) = {
-      implicit val request = FakeRequest()
+      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
       ApiPlatformEventsStub.verifyApplicationEventPostBody(expectedRequestBody)
       await(inTest.sendApplicationEvent(updateApplicationEvent)) mustBe true

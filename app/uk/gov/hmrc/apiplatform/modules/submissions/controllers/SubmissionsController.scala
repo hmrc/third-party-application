@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.submissions.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OWrites, Reads}
 import play.api.mvc.{ControllerComponents, Results}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -32,13 +32,13 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 object SubmissionsController {
 
   case class ErrorMessage(message: String)
-  implicit val writesErrorMessage = Json.writes[ErrorMessage]
+  implicit val writesErrorMessage: OWrites[ErrorMessage] = Json.writes[ErrorMessage]
 
   case class RecordAnswersRequest(answers: List[String])
-  implicit val readsRecordAnswersRequest = Json.reads[RecordAnswersRequest]
+  implicit val readsRecordAnswersRequest: Reads[RecordAnswersRequest] = Json.reads[RecordAnswersRequest]
 
   case class CreateSubmissionRequest(requestedBy: String)
-  implicit val readsCreateSubmissionRequest = Json.reads[CreateSubmissionRequest]
+  implicit val readsCreateSubmissionRequest: Reads[CreateSubmissionRequest] = Json.reads[CreateSubmissionRequest]
 }
 
 @Singleton

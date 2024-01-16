@@ -18,9 +18,10 @@ package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OWrites}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 
@@ -34,10 +35,10 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
-  implicit val mat = NoMaterializer
-  val name         = "bob example"
-  val emailAddress = "test@example.com"
-  val appId        = ApplicationId.random
+  implicit val mat: Materializer = NoMaterializer
+  val name                       = "bob example"
+  val emailAddress               = "test@example.com"
+  val appId                      = ApplicationId.random
 
   trait Setup
       extends RequestApprovalsServiceMockModule
@@ -62,9 +63,9 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
   }
 
   "requestApproval" should {
-    implicit val writes = Json.writes[ApprovalsController.RequestApprovalRequest]
-    val jsonBody        = Json.toJson(ApprovalsController.RequestApprovalRequest(name, emailAddress))
-    val request         = FakeRequest().withJsonBody(jsonBody)
+    implicit val writes: OWrites[ApprovalsController.RequestApprovalRequest] = Json.writes[ApprovalsController.RequestApprovalRequest]
+    val jsonBody                                                             = Json.toJson(ApprovalsController.RequestApprovalRequest(name, emailAddress))
+    val request                                                              = FakeRequest().withJsonBody(jsonBody)
 
     "return 'not found' error response if application is missing" in new Setup {
       hasNoApp
@@ -133,10 +134,10 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
   }
 
   "grant" should {
-    implicit val writes = Json.writes[ApprovalsController.GrantedRequest]
-    val jsonBody        = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", None, None))
-    val request         = FakeRequest().withJsonBody(jsonBody)
-    val application     = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+    implicit val writes: OWrites[ApprovalsController.GrantedRequest] = Json.writes[ApprovalsController.GrantedRequest]
+    val jsonBody                                                     = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", None, None))
+    val request                                                      = FakeRequest().withJsonBody(jsonBody)
+    val application                                                  = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
 
     "return 'no content' success response if request is declined" in new Setup {
       hasApp
@@ -149,10 +150,10 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
   }
 
   "grant with warnings" should {
-    implicit val writes = Json.writes[ApprovalsController.GrantedRequest]
-    val jsonBody        = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", Some("This is a warning"), Some("Marty McFly")))
-    val request         = FakeRequest().withJsonBody(jsonBody)
-    val application     = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+    implicit val writes: OWrites[ApprovalsController.GrantedRequest] = Json.writes[ApprovalsController.GrantedRequest]
+    val jsonBody                                                     = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", Some("This is a warning"), Some("Marty McFly")))
+    val request                                                      = FakeRequest().withJsonBody(jsonBody)
+    val application                                                  = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
 
     "return 'no content' success response if request is granted with warnings" in new Setup {
       hasApp

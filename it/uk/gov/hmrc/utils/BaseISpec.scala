@@ -19,6 +19,7 @@ package uk.gov.hmrc.utils
 import akka.stream.Materializer
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.play.PlaySpec
+
 import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder

@@ -19,9 +19,11 @@ package uk.gov.hmrc.thirdpartyapplication.component.stubs
 import java.util.UUID
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
+
 import play.api.http.Status.OK
+
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
 
 object AwsApiGatewayStub extends Stub {
   override val stub: MockHost = MockHost(19607)

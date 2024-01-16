@@ -23,8 +23,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector.SendEmailRequest
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
@@ -73,17 +73,9 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
     val administrator     = adminEmail1.admin()
 
     "not attempt to do anything if there are no recipients" in new Setup {
-      val expectedTemplateId                      = "apiAddedDeveloperAsCollaboratorConfirmation"
-      val expectedToEmails                        = Set.empty[LaxEmailAddress]
-      val expectedParameters: Map[String, String] = Map(
-        "article"           -> "an",
-        "role"              -> "admin",
-        "applicationName"   -> applicationName,
-        "developerHubTitle" -> hubTestTitle
-      )
       // No stubbing so we cannot call POST
 
-      await(connector.sendCollaboratorAddedConfirmation(administrator, applicationName, expectedToEmails)) shouldBe HasSucceeded
+      await(connector.sendCollaboratorAddedConfirmation(administrator, applicationName, recipients = Set.empty)) shouldBe HasSucceeded
     }
 
     "send added collaborator confirmation email" in new Setup {

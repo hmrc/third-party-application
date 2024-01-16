@@ -133,9 +133,9 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     }
 
     "return successfully using a GatekeeperUserCollaborator if there are no developers in the header carrier" in new SetupWithoutHc {
-      implicit val hc     = HeaderCarrier()
-      val applicationData = anApplicationData(applicationId)
-      val actor           = Actors.GatekeeperUser("Gatekeeper Admin")
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+      val applicationData            = anApplicationData(applicationId)
+      val actor                      = Actors.GatekeeperUser("Gatekeeper Admin")
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
 
