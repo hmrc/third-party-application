@@ -53,7 +53,7 @@ class AddCollaboratorCommandHandler @Inject() (
       ApplicationEvents.CollaboratorAddedV2(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = cmd.actor,
         collaborator = cmd.collaborator
       )

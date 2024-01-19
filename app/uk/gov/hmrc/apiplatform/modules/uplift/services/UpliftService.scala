@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.uplift.services
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
@@ -50,7 +50,7 @@ class UpliftService @Inject() (
     def uplift(existing: StoredApplication) = existing.copy(
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
-      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress.text, requestedByEmailAddress.text, now())
+      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress.text, requestedByEmailAddress.text, instant())
     )
 
     for {
@@ -96,7 +96,7 @@ class UpliftService @Inject() (
 
     def verifyPending(app: StoredApplication) = for {
       _ <- apiGatewayStore.createApplication(app.wso2ApplicationName, app.tokens.production.accessToken)
-      _ <- applicationRepository.save(app.copy(state = app.state.toPreProduction(now())))
+      _ <- applicationRepository.save(app.copy(state = app.state.toPreProduction(instant())))
       _ <- insertStateHistory(
              app,
              State.PRE_PRODUCTION,
@@ -127,7 +127,7 @@ class UpliftService @Inject() (
       actor: Actor,
       rollback: StoredApplication => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = Instant.now(clock))
 
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant, Period}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,19 +53,19 @@ class UpliftVerificationExpiryJob @Inject() (
     logger.info(s"Set status back to testing for app{id=${app.id.value},name=${app.name},state." +
       s"requestedByEmailAddress='${app.state.requestedByEmailAddress.getOrElse("")}',state.updatedOn='${app.state.updatedOn}}'")
     for {
-      updatedApp <- applicationRepository.save(app.copy(state = app.state.toTesting(now())))
+      updatedApp <- applicationRepository.save(app.copy(state = app.state.toTesting(instant())))
       _          <- stateHistoryRepository.insert(StateHistory(
                       app.id,
                       State.TESTING,
                       Actors.ScheduledJob("UpliftVerificationExpiryJob"),
                       Some(State.PENDING_REQUESTER_VERIFICATION),
-                      changedAt = LocalDateTime.now(clock)
+                      changedAt = instant()
                     ))
     } yield updatedApp
   }
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val expiredTime: LocalDateTime = LocalDateTime.now(clock).minusDays(upliftVerificationValidity.toDays.toInt)
+    val expiredTime: Instant = instant().minus(Period.ofDays(upliftVerificationValidity.toDays.toInt))
     logger.info(s"Move back applications to TESTING having status 'PENDING_REQUESTER_VERIFICATION' with timestamp earlier than $expiredTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {

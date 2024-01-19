@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import java.util.UUID
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
@@ -55,7 +55,7 @@ trait ControllerTestData extends CollaboratorTestData with FixedClock {
       access: Access = standardAccess,
       environment: Environment = Environment.PRODUCTION,
       appId: ApplicationId = ApplicationId.random,
-      state: ApplicationState = ApplicationState(State.TESTING, updatedOn = LocalDateTime.now(Clock.systemUTC()))
+      state: ApplicationState = ApplicationState(State.TESTING, updatedOn = Instant.now(Clock.systemUTC()))
     ) = {
     val grantLengthInDays = 547
     new Application(

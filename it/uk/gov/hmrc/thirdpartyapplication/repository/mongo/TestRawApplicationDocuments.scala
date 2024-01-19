@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository.mongo
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.{Instant, ZoneOffset}
 
 import play.api.libs.json.{JsBoolean, JsObject, Json}
 
@@ -24,7 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 trait TestRawApplicationDocuments {
 
-  private def dateToJsonObj(date: LocalDateTime) = Json.obj(f"$$date" -> date.toInstant(ZoneOffset.UTC).toEpochMilli)
+  private def dateToJsonObj(date: Instant) = Json.obj(f"$$date" -> date.toInstant(ZoneOffset.UTC).toEpochMilli)
 
   import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.MongoFormats._
 

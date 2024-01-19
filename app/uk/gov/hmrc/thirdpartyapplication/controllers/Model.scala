@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
@@ -59,7 +59,7 @@ case class DeleteSubordinateApplicationRequest(applicationId: String)
 
 case class FixCollaboratorRequest(emailAddress: String, userId: UserId)
 
-case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: LocalDateTime, submissionId: SubmissionId)
+case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: Instant, submissionId: SubmissionId)
 
 case class ConfirmSetupCompleteRequest(requesterEmailAddress: LaxEmailAddress)
 

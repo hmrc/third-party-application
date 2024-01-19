@@ -75,7 +75,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
     "correctly parse lastUseBefore into LastUseBeforeDate filter" in {
       val dateAsISOString  = "2020-02-22T16:35:00Z"
-      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toLocalDateTime
+      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toInstant
 
       val request = FakeRequest("GET", s"/applications?lastUseBefore=$dateAsISOString")
 
@@ -88,7 +88,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
     "correctly parse date only into LastUseBeforeDate filter" in {
       val dateAsISOString  = "2020-02-22"
-      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 0, 0, 0, 0, ZoneOffset.UTC).toLocalDateTime
+      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 0, 0, 0, 0, ZoneOffset.UTC).toInstant
 
       val request = FakeRequest("GET", s"/applications?lastUseBefore=$dateAsISOString")
 
@@ -101,7 +101,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
     "correctly parse lastUseAfter into LastUseAfterDate filter" in {
       val dateAsISOString  = "2020-02-22T16:35:00Z"
-      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toLocalDateTime
+      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toInstant
 
       val request = FakeRequest("GET", s"/applications?lastUseAfter=$dateAsISOString")
 
@@ -115,7 +115,7 @@ class ApplicationSearchSpec extends HmrcSpec {
     "correctly parse date only into LastUseAfterDate filter" in {
       val dateAsISOString = "2020-02-22"
 
-      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 0, 0, 0, 0, ZoneOffset.UTC).toLocalDateTime
+      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 0, 0, 0, 0, ZoneOffset.UTC).toInstant
 
       val request = FakeRequest("GET", s"/applications?lastUseAfter=$dateAsISOString")
 

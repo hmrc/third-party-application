@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.concurrent.TimeUnit.{DAYS, HOURS, SECONDS}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
@@ -78,14 +78,14 @@ class UpliftVerificationExpiryJobSpec
       val app1: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"))
       val app2: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"))
 
-      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), any[LocalDateTime]))
+      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), any[Instant]))
         .thenReturn(successful(List(app1, app2)))
 
       when(mockApplicationRepository.save(*[StoredApplication]))
         .thenAnswer((a: StoredApplication) => successful(a))
 
       await(underTest.execute)
-      verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, now.minusDays(expiryTimeInDays))
+      verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, instant.minus(Duration.ofDays(expiryTimeInDays)))
       verify(mockApplicationRepository).save(app1.copy(state = testingState()))
       verify(mockApplicationRepository).save(app2.copy(state = testingState()))
       verify(mockStateHistoryRepository).insert(StateHistory(
@@ -111,7 +111,7 @@ class UpliftVerificationExpiryJobSpec
     }
 
     "handle error on first database call to fetch all applications" in new Setup {
-      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), any[LocalDateTime])).thenReturn(
+      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), any[Instant])).thenReturn(
         Future.failed(new RuntimeException("A failure on executing fetchAllByStatusDetails db query"))
       )
       val result: underTest.Result = await(underTest.execute)
@@ -133,7 +133,7 @@ class UpliftVerificationExpiryJobSpec
 
       val result: underTest.Result = await(underTest.execute)
 
-      verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, now.minusDays(expiryTimeInDays))
+      verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, instant.minus(Duration.ofDays(expiryTimeInDays)))
       result.message shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing save db query'." +
         " The next execution of the job will do retry."

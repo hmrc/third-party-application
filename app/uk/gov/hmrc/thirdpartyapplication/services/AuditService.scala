@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.time.format.DateTimeFormatter
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -395,17 +395,17 @@ object AuditHelper {
 
     val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
 
-    val declinedData                                                 = Map("status" -> "declined", "reasons" -> evt.reasons)
-    val submittedOn: LocalDateTime                                   = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
-    val declinedOn: LocalDateTime                                    = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
-    val responsibleIndividualVerificationDate: Option[LocalDateTime] = importantSubmissionData.termsOfUseAcceptances.find(t =>
+    val declinedData                                           = Map("status" -> "declined", "reasons" -> evt.reasons)
+    val submittedOn: Instant                                   = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+    val declinedOn: Instant                                    = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
+    val responsibleIndividualVerificationDate: Option[Instant] = importantSubmissionData.termsOfUseAcceptances.find(t =>
       (t.submissionId == submission.id && t.submissionInstance == submissionPreviousInstance.index)
     ).map(_.dateTime)
-    val dates                                                        = Map(
-      "submission.started.date"   -> submission.startedOn.format(fmt),
-      "submission.submitted.date" -> submittedOn.format(fmt),
-      "submission.declined.date"  -> declinedOn.format(fmt)
-    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> rivd.format(fmt)))
+    val dates                                                  = Map(
+      "submission.started.date"   -> fmt.format(submission.startedOn),
+      "submission.submitted.date" -> fmt.format(submittedOn),
+      "submission.declined.date"  -> fmt.format(declinedOn)
+    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> fmt.format(rivd)))
 
     val markedAnswers = MarkAnswer.markSubmission(submission)
     val nbrOfFails    = markedAnswers.filter(_._2 == Fail).size

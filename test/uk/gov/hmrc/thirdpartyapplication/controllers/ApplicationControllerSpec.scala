@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.time.temporal.ChronoUnit
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.{Instant, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
@@ -348,9 +348,9 @@ class ApplicationControllerSpec
     val clientId = ClientId("A123XC")
 
     trait LastAccessedSetup extends Setup {
-      val updatedLastAccessTime: LocalDateTime = now.truncatedTo(ChronoUnit.MILLIS)
-      val lastAccessTime: LocalDateTime        = updatedLastAccessTime.minusDays(10) // scalastyle:ignore magic.number
-      val applicationId: ApplicationId         = ApplicationId.random
+      val updatedLastAccessTime: Instant = now.truncatedTo(ChronoUnit.MILLIS)
+      val lastAccessTime: Instant        = updatedLastAccessTime.minusDays(10) // scalastyle:ignore magic.number
+      val applicationId: ApplicationId   = ApplicationId.random
 
       val applicationResponse: Application                        = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
       val updatedApplicationResponse: ExtendedApplicationResponse =

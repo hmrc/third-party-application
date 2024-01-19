@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredClientSecret
@@ -25,5 +25,5 @@ case class StoredToken(
     clientId: ClientId,
     accessToken: String,
     clientSecrets: List[StoredClientSecret] = List(),
-    lastAccessTokenUsage: Option[LocalDateTime] = None
+    lastAccessTokenUsage: Option[Instant] = None
   )

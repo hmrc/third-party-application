@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions
 
-import java.time.LocalDateTime
+import java.time.Instant
 import scala.util.Random
 
 import cats.data.NonEmptyList
@@ -320,7 +320,7 @@ trait MarkedSubmissionsTestData extends SubmissionsTestData with AnsweringQuesti
 
   val markedSubmission = MarkedSubmission(submittedSubmission, markedAnswers)
 
-  def markAsPass(now: LocalDateTime = now, requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
+  def markAsPass(now: Instant = now, requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
     val answers = answersForGroups(Pass)(submission.groups)
     val marks   = answers.map { case (q, a) => q -> Pass }
 

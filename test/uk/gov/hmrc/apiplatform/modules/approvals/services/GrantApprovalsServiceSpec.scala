@@ -54,7 +54,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     val fmt = DateTimeFormatter.ISO_DATE_TIME
 
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val acceptanceDate        = now
+    val acceptanceDate        = instant
 
     val acceptance = TermsOfUseAcceptance(
       responsibleIndividual,

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -53,7 +53,7 @@ class ResponsibleIndividualVerificationService @Inject() (
       submissionId = submissionId,
       submissionInstance = submissionInstance,
       applicationName = applicationData.name,
-      createdOn = LocalDateTime.now(clock)
+      createdOn = Instant.now(clock)
     )
     responsibleIndividualVerificationRepository.save(verification)
   }
@@ -70,7 +70,7 @@ class ResponsibleIndividualVerificationService @Inject() (
       submissionId = submissionId,
       submissionInstance = submissionInstance,
       applicationName = applicationData.name,
-      createdOn = LocalDateTime.now(clock),
+      createdOn = Instant.now(clock),
       requestingAdminName = requestedByName,
       requestingAdminEmail = requestedByEmailAddress
     )

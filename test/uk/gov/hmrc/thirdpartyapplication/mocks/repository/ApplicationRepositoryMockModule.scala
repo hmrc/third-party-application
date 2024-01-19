@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
-import java.time.LocalDateTime
+import java.time.Instant
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
@@ -400,7 +400,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object UpdateApplicationChangeResponsibleIndividualToSelf {
 
       def thenReturn(applicationData: StoredApplication) =
-        when(aMock.updateApplicationChangeResponsibleIndividualToSelf(*[ApplicationId], *[String], *[LaxEmailAddress], *[LocalDateTime], *[SubmissionId], *[Int])).thenReturn(
+        when(aMock.updateApplicationChangeResponsibleIndividualToSelf(*[ApplicationId], *[String], *[LaxEmailAddress], *[Instant], *[SubmissionId], *[Int])).thenReturn(
           successful(
             applicationData
           )
@@ -410,7 +410,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object UpdateApplicationSetResponsibleIndividual {
 
       def thenReturn(applicationData: StoredApplication) =
-        when(aMock.updateApplicationSetResponsibleIndividual(*[ApplicationId], *[String], *[LaxEmailAddress], *[LocalDateTime], *[SubmissionId], *[Int])).thenReturn(successful(
+        when(aMock.updateApplicationSetResponsibleIndividual(*[ApplicationId], *[String], *[LaxEmailAddress], *[Instant], *[SubmissionId], *[Int])).thenReturn(successful(
           applicationData
         ))
     }
@@ -418,7 +418,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object UpdateApplicationChangeResponsibleIndividual {
 
       def thenReturn(applicationData: StoredApplication) =
-        when(aMock.updateApplicationChangeResponsibleIndividual(*[ApplicationId], *[String], *[LaxEmailAddress], *[LocalDateTime], *[SubmissionId], *[Int])).thenReturn(successful(
+        when(aMock.updateApplicationChangeResponsibleIndividual(*[ApplicationId], *[String], *[LaxEmailAddress], *[Instant], *[SubmissionId], *[Int])).thenReturn(successful(
           applicationData
         ))
     }

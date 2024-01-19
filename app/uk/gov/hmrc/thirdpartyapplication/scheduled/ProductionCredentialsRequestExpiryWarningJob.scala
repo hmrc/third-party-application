@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant, Period}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,7 +27,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Environment, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.{Notification, NotificationStatus, NotificationType, StoredApplication}
@@ -39,10 +39,10 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
     applicationRepository: ApplicationRepository,
     notificationRepository: NotificationRepository,
     emailConnector: EmailConnector,
-    clock: Clock,
+    val clock: Clock,
     jobConfig: ProductionCredentialsRequestExpiryWarningJobConfig
   )(implicit val ec: ExecutionContext
-  ) extends ScheduledMongoJob with ApplicationLogger {
+  ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   val productionCredentialsRequestExpiryWarningInterval: FiniteDuration = jobConfig.warningInterval
   override def name: String                                             = "ProductionCredentialsRequestExpiryWarningJob"
@@ -53,7 +53,7 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
   implicit val hc: HeaderCarrier                                        = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val warningTime: LocalDateTime = LocalDateTime.now(clock).minusDays(productionCredentialsRequestExpiryWarningInterval.toDays.toInt)
+    val warningTime: Instant = instant.minus(Period.ofDays(productionCredentialsRequestExpiryWarningInterval.toDays.toInt))
     logger.info(s"Send production credentials request expiry warning email for production applications having status of TESTING with updatedOn earlier than $warningTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
@@ -77,7 +77,7 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
       sent <- emailConnector.sendProductionCredentialsRequestExpiryWarning(app.name, recipients)
       _    <- notificationRepository.createEntity(Notification(
                 app.id,
-                LocalDateTime.now(clock),
+                Instant.now(clock),
                 NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING,
                 NotificationStatus.SENT
               ))

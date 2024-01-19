@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
@@ -65,7 +65,7 @@ class SubscriptionService @Inject() (
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     val actor          = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators).getOrElse(Actors.Unknown)
-    val subscribeToApi = ApplicationCommands.SubscribeToApi(actor, api, LocalDateTime.now())
+    val subscribeToApi = ApplicationCommands.SubscribeToApi(actor, api, Instant.now())
     applicationCommandDispatcher.dispatch(applicationId, subscribeToApi, Set.empty).value.map {
       case Left(e)  =>
         logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")

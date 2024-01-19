@@ -49,7 +49,7 @@ class ChangeGrantLengthCommandHandler @Inject() (
       ApplicationEvents.GrantLengthChanged(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         oldGrantLengthInDays = app.grantLength,
         newGrantLengthInDays = cmd.grantLengthInDays.days

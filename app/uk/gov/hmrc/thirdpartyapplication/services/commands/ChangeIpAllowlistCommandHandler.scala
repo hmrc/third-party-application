@@ -71,7 +71,7 @@ class ChangeIpAllowlistCommandHandler @Inject() (
       ApplicationEvents.IpAllowlistCidrBlockChanged(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = cmd.actor,
         required = cmd.required,
         oldIpAllowlist = cmd.oldIpAllowlist,

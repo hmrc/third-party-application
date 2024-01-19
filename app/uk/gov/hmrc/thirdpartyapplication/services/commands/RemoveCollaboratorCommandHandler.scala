@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -58,12 +58,12 @@ class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: Applica
     asEvents(app, cmd.actor, cmd.timestamp, cmd.collaborator)
   }
 
-  private def asEvents(app: StoredApplication, actor: Actor, eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, actor: Actor, eventTime: Instant, collaborator: Collaborator): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       CollaboratorRemovedV2(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = eventTime.instant,
+        eventDateTime = eventTime,
         actor = actor,
         collaborator
       )

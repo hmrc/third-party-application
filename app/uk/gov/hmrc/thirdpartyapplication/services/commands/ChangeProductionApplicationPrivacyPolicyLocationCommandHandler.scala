@@ -59,7 +59,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
         ApplicationEvents.ProductionLegacyAppPrivacyPolicyLocationChanged(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(getRequester(app, cmd.instigator)),
           oldUrl = oldUrl,
           newUrl = newUrl
@@ -93,7 +93,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
         ApplicationEvents.ProductionAppPrivacyPolicyLocationChanged(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(getRequester(app, cmd.instigator)),
           oldLocation = oldLocation,
           newLocation = cmd.newLocation

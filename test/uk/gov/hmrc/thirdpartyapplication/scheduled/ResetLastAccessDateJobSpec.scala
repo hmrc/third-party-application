@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{Instant, LocalDate}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
@@ -44,10 +44,10 @@ class ResetLastAccessDateJobSpec
     with NoMetricsGuiceOneAppPerSuite
     with CollaboratorTestData {
 
-  implicit val m: Materializer                           = app.materializer
-  implicit val dateTimeFormatters: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
-  implicit val dateFormatters: Format[LocalDate]         = MongoJavatimeFormats.localDateFormat
-  implicit val metrics: Metrics                          = app.injector.instanceOf[Metrics]
+  implicit val m: Materializer                     = app.materializer
+  implicit val dateTimeFormatters: Format[Instant] = MongoJavatimeFormats.localDateTimeFormat
+  implicit val dateFormatters: Format[LocalDate]   = MongoJavatimeFormats.localDateFormat
+  implicit val metrics: Metrics                    = app.injector.instanceOf[Metrics]
 
   val applicationRepository = new ApplicationRepository(mongoComponent, metrics)
 
@@ -69,13 +69,13 @@ class ResetLastAccessDateJobSpec
   }
 
   trait DryRunSetup extends Setup {
-    val dateToSet: LocalDate                    = LocalDateTime.of(2019, 6, 1, 0, 0).toLocalDate
+    val dateToSet: LocalDate                    = Instant.of(2019, 6, 1, 0, 0).toLocalDate
     val jobConfig: ResetLastAccessDateJobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = true)
     val underTest                               = new ResetLastAccessDateJob(mockResetLastAccessDateJobLockService, applicationRepository, jobConfig)
   }
 
   trait ModifyDatesSetup extends Setup {
-    val dateToSet: LocalDate = LocalDateTime.of(2019, 7, 10, 0, 0).toLocalDate
+    val dateToSet: LocalDate = Instant.of(2019, 7, 10, 0, 0).toLocalDate
 
     val jobConfig: ResetLastAccessDateJobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = false)
     val underTest                               = new ResetLastAccessDateJob(mockResetLastAccessDateJobLockService, applicationRepository, jobConfig)
@@ -132,7 +132,7 @@ class ResetLastAccessDateJobSpec
     }
   }
 
-  def anApplicationData(id: ApplicationId = ApplicationId.random, localDateTime: LocalDateTime): StoredApplication = {
+  def anApplicationData(id: ApplicationId = ApplicationId.random, localDateTime: Instant): StoredApplication = {
     StoredApplication(
       id,
       s"myApp-${id.value}",

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.Instant
 
 import com.typesafe.config.ConfigFactory
 
@@ -37,8 +37,8 @@ case class StoredApplication(
     tokens: ApplicationTokens,
     state: ApplicationState,
     access: Access = Access.Standard(),
-    createdOn: LocalDateTime,
-    lastAccess: Option[LocalDateTime],
+    createdOn: Instant,
+    lastAccess: Option[Instant],
     grantLength: Int = grantLengthConfig,
     rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
     environment: String = Environment.PRODUCTION.toString,
@@ -77,7 +77,7 @@ object StoredApplication {
       createApplicationRequest: CreateApplicationRequest,
       wso2ApplicationName: String,
       environmentToken: StoredToken,
-      createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
+      createdOn: Instant = Instant.now()
     ): StoredApplication = {
     import createApplicationRequest._
 

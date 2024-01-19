@@ -52,7 +52,7 @@ class AddClientSecretCommandHandler @Inject() (
       ApplicationEvents.ClientSecretAddedV2(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = cmd.actor,
         clientSecretId = cmd.id.value.toString,
         clientSecretName = cmd.name

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 case class ApplicationStateHistoryResponse(applicationId: ApplicationId, appName: String, journeyVersion: Int, stateHistory: List[ApplicationStateHistoryResponse.Item])
 
 object ApplicationStateHistoryResponse {
-  case class Item(state: State, timestamp: LocalDateTime)
+  case class Item(state: State, timestamp: Instant)
 
   import play.api.libs.json.Json
   import play.api.libs.json.OFormat

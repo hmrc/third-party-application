@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
@@ -90,7 +90,7 @@ class GatekeeperService @Inject() (
   }
 
   def approveUplift(applicationId: ApplicationId, gatekeeperUserId: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-    def approve(existing: StoredApplication) = existing.copy(state = existing.state.toPendingRequesterVerification(now()))
+    def approve(existing: StoredApplication) = existing.copy(state = existing.state.toPendingRequesterVerification(instant()))
 
     def sendEmails(app: StoredApplication) = {
       val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
@@ -123,7 +123,7 @@ class GatekeeperService @Inject() (
   def rejectUplift(applicationId: ApplicationId, request: RejectUpliftRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def reject(existing: StoredApplication) = {
       existing.state.requireState(State.PENDING_GATEKEEPER_APPROVAL, State.TESTING)
-      existing.copy(state = existing.state.toTesting(now()))
+      existing.copy(state = existing.state.toTesting(instant()))
     }
 
     def sendEmails(app: StoredApplication, reason: String) =
@@ -223,7 +223,7 @@ class GatekeeperService @Inject() (
       rollback: StoredApplication => Any,
       notes: Option[String] = None
     ): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, notes, LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, notes, Instant.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)

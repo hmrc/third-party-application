@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import java.time.format.DateTimeFormatter
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -109,14 +109,14 @@ class GrantApprovalsService @Inject() (
 
   private def grantSubmission(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])(submission: Submission) = {
     warnings.fold(
-      Submission.grant(LocalDateTime.now(clock), gatekeeperUserName, None, None)(submission)
+      Submission.grant(Instant.now(clock), gatekeeperUserName, None, None)(submission)
     )(value =>
-      Submission.grantWithWarnings(LocalDateTime.now(clock), gatekeeperUserName, value, escalatedTo)(submission)
+      Submission.grantWithWarnings(Instant.now(clock), gatekeeperUserName, value, escalatedTo)(submission)
     )
   }
 
   private def grantApp(application: StoredApplication): StoredApplication = {
-    application.copy(state = application.state.toPendingRequesterVerification(now()))
+    application.copy(state = application.state.toPendingRequesterVerification(instant()))
   }
 
   private val fmt = DateTimeFormatter.ISO_DATE_TIME
@@ -132,19 +132,19 @@ class GrantApprovalsService @Inject() (
     )(implicit hc: HeaderCarrier
     ): Future[AuditResult] = {
 
-    val questionsWithAnswers                                         = QuestionsAndAnswersToMap(submission)
-    val grantedData                                                  = Map("status" -> "granted")
-    val warningsData                                                 = warnings.fold(Map.empty[String, String])(warning => Map("warnings" -> warning))
-    val escalatedData                                                = escalatedTo.fold(Map.empty[String, String])(escalatedTo => Map("escalatedTo" -> escalatedTo))
-    val submittedOn: LocalDateTime                                   = submission.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
-    val grantedOn: LocalDateTime                                     = submission.latestInstance.statusHistory.find(s => s.isGrantedWithOrWithoutWarnings).map(_.timestamp).get
-    val responsibleIndividualVerificationDate: Option[LocalDateTime] =
+    val questionsWithAnswers                                   = QuestionsAndAnswersToMap(submission)
+    val grantedData                                            = Map("status" -> "granted")
+    val warningsData                                           = warnings.fold(Map.empty[String, String])(warning => Map("warnings" -> warning))
+    val escalatedData                                          = escalatedTo.fold(Map.empty[String, String])(escalatedTo => Map("escalatedTo" -> escalatedTo))
+    val submittedOn: Instant                                   = submission.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+    val grantedOn: Instant                                     = submission.latestInstance.statusHistory.find(s => s.isGrantedWithOrWithoutWarnings).map(_.timestamp).get
+    val responsibleIndividualVerificationDate: Option[Instant] =
       importantSubmissionData.termsOfUseAcceptances.find(t => (t.submissionId == submission.id && t.submissionInstance == submission.latestInstance.index)).map(_.dateTime)
-    val dates                                                        = Map(
-      "submission.started.date"   -> submission.startedOn.format(fmt),
-      "submission.submitted.date" -> submittedOn.format(fmt),
-      "submission.granted.date"   -> grantedOn.format(fmt)
-    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> rivd.format(fmt)))
+    val dates                                                  = Map(
+      "submission.started.date"   -> fmt.format(submission.startedOn),
+      "submission.submitted.date" -> fmt.format(submittedOn),
+      "submission.granted.date"   -> fmt.format(grantedOn)
+    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> fmt.format(rivd)))
 
     val markedAnswers = MarkAnswer.markSubmission(submission)
     val nbrOfFails    = markedAnswers.filter(_._2 == Fail).size
@@ -203,7 +203,7 @@ class GrantApprovalsService @Inject() (
         _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
         _ <- ET.cond(submission.status.isWarnings, (), RejectedDueToIncorrectSubmissionState)
 
-        updatedSubmission = Submission.grantWithWarnings(LocalDateTime.now(clock), gatekeeperUserName, reasons, None)(submission)
+        updatedSubmission = Submission.grantWithWarnings(Instant.now(clock), gatekeeperUserName, reasons, None)(submission)
         savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
         _                <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
       } yield Actioned(originalApp)
@@ -227,11 +227,11 @@ class GrantApprovalsService @Inject() (
         _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
         _ <- ET.cond((submission.status.isGrantedWithWarnings || submission.status.isFailed), (), RejectedDueToIncorrectSubmissionState)
 
-        updatedSubmission      = Submission.grant(LocalDateTime.now(clock), gatekeeperUserName, Some(comments), escalatedTo)(submission)
+        updatedSubmission      = Submission.grant(Instant.now(clock), gatekeeperUserName, Some(comments), escalatedTo)(submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
         _                     <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
         responsibleIndividual <- ET.fromOption(getResponsibleIndividual(originalApp), RejectedDueToIncorrectApplicationData)
-        acceptance             = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submission.id, submission.latestInstance.index)
+        acceptance             = TermsOfUseAcceptance(responsibleIndividual, Instant.now(clock), submission.id, submission.latestInstance.index)
         _                     <- ET.liftF(applicationRepository.addApplicationTermsOfUseAcceptance(originalApp.id, acceptance))
         _                     <- ET.liftF(emailConnector.sendNewTermsOfUseConfirmation(originalApp.name, originalApp.admins.map(_.emailAddress)))
       } yield Actioned(originalApp)
@@ -259,7 +259,7 @@ class GrantApprovalsService @Inject() (
         _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
         _ <- ET.cond(submission.status.isFailed, (), RejectedDueToIncorrectSubmissionState)
 
-        updatedSubmission = Submission.decline(LocalDateTime.now(clock), gatekeeperUserName, reasons)(submission)
+        updatedSubmission = Submission.decline(Instant.now(clock), gatekeeperUserName, reasons)(submission)
         savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
         _                <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
       } yield Actioned(originalApp)

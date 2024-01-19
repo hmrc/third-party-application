@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import java.time.temporal.ChronoUnit.SECONDS
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,7 +53,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
   override val lockService: LockService     = responsibleIndividualUpdateVerificationRemovalJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val removeIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
+    val removeIfCreatedBeforeNow                    = Instant.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
       removalsDue <-
         repository.fetchByStateAgeAndTypes(
@@ -74,7 +74,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
   }
 
   def sendRemovalEmailAndRemoveRecord(verificationDueForRemoval: ResponsibleIndividualVerification) = {
-    val request = DeclineResponsibleIndividualDidNotVerify(verificationDueForRemoval.id.value, LocalDateTime.now(clock))
+    val request = DeclineResponsibleIndividualDidNotVerify(verificationDueForRemoval.id.value, Instant.now(clock))
 
     logger.info(s"Responsible individual update verification timed out for application ${verificationDueForRemoval.applicationName} (started at ${verificationDueForRemoval.createdOn})")
     (for {

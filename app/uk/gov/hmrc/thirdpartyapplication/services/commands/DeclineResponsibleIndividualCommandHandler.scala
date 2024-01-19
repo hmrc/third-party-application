@@ -81,7 +81,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
         ResponsibleIndividualDeclined(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress,
@@ -94,7 +94,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
         ApplicationApprovalRequestDeclined(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
           decliningUserName = responsibleIndividual.fullName.value,
           decliningUserEmail = responsibleIndividual.emailAddress,
@@ -107,7 +107,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
         ApplicationStateChanged(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
           app.state.name.toString,
           State.TESTING.toString,
@@ -150,7 +150,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
         ResponsibleIndividualDeclinedOrDidNotVerify(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress,
@@ -201,7 +201,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
         ResponsibleIndividualDeclinedUpdate(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(riVerification.requestingAdminEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress,

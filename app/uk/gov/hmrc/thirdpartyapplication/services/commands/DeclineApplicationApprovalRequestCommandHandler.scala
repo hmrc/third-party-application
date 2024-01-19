@@ -76,7 +76,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
       ApplicationEvents.ApplicationApprovalRequestDeclined(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         decliningUserName = cmd.gatekeeperUser,
         decliningUserEmail = LaxEmailAddress(cmd.gatekeeperUser), // Not nice but we have nothing better

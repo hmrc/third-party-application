@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
-import java.time.{Clock, LocalDateTime, ZoneOffset}
+import java.time.{Clock, Instant, ZoneOffset}
 import java.util.UUID
 
 import cats.data.NonEmptyList
@@ -44,6 +44,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import java.time.Duration
 
 object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
   val appName = "my app"
@@ -154,7 +155,7 @@ object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
       submissionId,
       submissionIndex,
       appName,
-      now,
+      instant,
       INITIAL
     )
 
@@ -168,7 +169,7 @@ object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
       submissionId,
       submissionIndex,
       appName,
-      now,
+      instant,
       ResponsibleIndividual.build("ri name", "ri@example.com"),
       "ms admin",
       "admin@example.com".toLaxEmail,
@@ -205,7 +206,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   def buildToUDoc(
       state: ResponsibleIndividualVerificationState,
-      createdOn: LocalDateTime = now,
+      createdOn: Instant = instant,
       submissionId: SubmissionId = SubmissionId.random,
       submissionIndex: Int = 0
     ) =
@@ -221,7 +222,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   def buildTouUpliftDoc(
       state: ResponsibleIndividualVerificationState,
-      createdOn: LocalDateTime = now,
+      createdOn: Instant = instant,
       submissionId: SubmissionId = SubmissionId.random,
       submissionIndex: Int = 0
     ) =
@@ -239,7 +240,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   def buildUpdateDoc(
       state: ResponsibleIndividualVerificationState,
-      createdOn: LocalDateTime = now,
+      createdOn: Instant = instant,
       submissionId: SubmissionId = SubmissionId.random,
       submissionIndex: Int = 0
     ) =
@@ -258,7 +259,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   def buildAndSaveDoc(
       state: ResponsibleIndividualVerificationState,
-      createdOn: LocalDateTime = now,
+      createdOn: Instant = instant,
       submissionId: SubmissionId = SubmissionId.random,
       submissionIndex: Int = 0
     ) = {
@@ -267,7 +268,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   def buildAndSaveTouUpliftDoc(
       state: ResponsibleIndividualVerificationState,
-      createdOn: LocalDateTime = now,
+      createdOn: Instant = instant,
       submissionId: SubmissionId = SubmissionId.random,
       submissionIndex: Int = 0
     ) = {
@@ -280,7 +281,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "save" should {
     "save ToU document to the database" in {
-      val doc = buildToUDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
+      val doc = buildToUDoc(INITIAL, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
       await(repository.save(doc))
 
       val allDocs = await(repository.findAll)
@@ -288,7 +289,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
     }
 
     "save ToU uplift document to the database" in {
-      val doc = buildTouUpliftDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
+      val doc = buildTouUpliftDoc(INITIAL, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
       await(repository.save(doc))
 
       val allDocs = await(repository.findAll)
@@ -296,7 +297,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
     }
 
     "save update document to the database" in {
-      val doc = buildUpdateDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
+      val doc = buildUpdateDoc(INITIAL, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
       await(repository.save(doc))
 
       val allDocs = await(repository.findAll)
@@ -306,7 +307,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "fetch" should {
     "retrieve a document by id" in {
-      val savedDoc   = buildAndSaveDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
+      val savedDoc   = buildAndSaveDoc(INITIAL, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
       val fetchedDoc = await(repository.fetch(savedDoc.id))
 
       Some(savedDoc) mustBe fetchedDoc
@@ -315,7 +316,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "delete" should {
     "remove a document by id" in {
-      val savedDoc = buildAndSaveDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
+      val savedDoc = buildAndSaveDoc(INITIAL, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
       await(repository.delete(savedDoc.id))
 
       await(repository.findAll) mustBe List()
@@ -323,9 +324,9 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
     "remove the record matching the latest submission instance only" in {
       val submissionId                   = SubmissionId.random
-      val savedDocForSubmissionInstance0 = buildAndSaveDoc(INITIAL, now.minusDays(FEW_DAYS_AGO), submissionId, 0)
-      buildAndSaveDoc(INITIAL, now.minusDays(FEW_DAYS_AGO), submissionId, 1)
-      val submissionWithTwoInstances     = Submission.addInstance(answersToQuestions, Submission.Status.Answering(now, true))(aSubmission.copy(id = submissionId))
+      val savedDocForSubmissionInstance0 = buildAndSaveDoc(INITIAL, instant.minus(Duration.ofDays(FEW_DAYS_AGO)), submissionId, 0)
+      buildAndSaveDoc(INITIAL, instant.minus(Duration.ofDays(FEW_DAYS_AGO)), submissionId, 1)
+      val submissionWithTwoInstances     = Submission.addInstance(answersToQuestions, Submission.Status.Answering(instant, true))(aSubmission.copy(id = submissionId))
       await(repository.delete(submissionWithTwoInstances))
 
       await(repository.findAll) mustBe List(savedDocForSubmissionInstance0)
@@ -334,12 +335,12 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "fetchByStateAndAge" should {
     "retrieve correct documents" in {
-      val initialWithOldDate = buildAndSaveDoc(INITIAL, now.minusDays(MANY_DAYS_AGO))
-      buildAndSaveDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
-      buildAndSaveDoc(REMINDERS_SENT, now.minusDays(MANY_DAYS_AGO))
-      buildAndSaveDoc(REMINDERS_SENT, now.minusDays(FEW_DAYS_AGO))
+      val initialWithOldDate = buildAndSaveDoc(INITIAL, instant.minus(Duration.ofDays(MANY_DAYS_AGO)))
+      buildAndSaveDoc(INITIAL, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
+      buildAndSaveDoc(REMINDERS_SENT, instant.minus(Duration.ofDays(MANY_DAYS_AGO)))
+      buildAndSaveDoc(REMINDERS_SENT, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
 
-      val results = await(repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, INITIAL, now.minusDays(UPDATE_THRESHOLD)))
+      val results = await(repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, INITIAL, instant.minus(Duration.ofDays(UPDATE_THRESHOLD))))
 
       results mustBe List(initialWithOldDate)
     }
@@ -347,14 +348,14 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "fetchByStateAgeAndTypes" should {
     "retrieve correct documents" in {
-      val initialWithOldDate = buildAndSaveTouUpliftDoc(INITIAL, now.minusDays(MANY_DAYS_AGO))
-      buildAndSaveTouUpliftDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
-      buildAndSaveDoc(INITIAL, now.minusDays(MANY_DAYS_AGO))
-      buildAndSaveTouUpliftDoc(REMINDERS_SENT, now.minusDays(FEW_DAYS_AGO))
+      val initialWithOldDate = buildAndSaveTouUpliftDoc(INITIAL, instant.minus(Duration.ofDays(MANY_DAYS_AGO)))
+      buildAndSaveTouUpliftDoc(INITIAL, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
+      buildAndSaveDoc(INITIAL, instant.minus(Duration.ofDays(MANY_DAYS_AGO)))
+      buildAndSaveTouUpliftDoc(REMINDERS_SENT, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
 
       val results = await(repository.fetchByStateAgeAndTypes(
         INITIAL,
-        now.minusDays(UPDATE_THRESHOLD),
+        instant.minus(Duration.ofDays(UPDATE_THRESHOLD)),
         ResponsibleIndividualVerification.VerificationTypeUpdate,
         ResponsibleIndividualVerification.VerificationTypeTouUplift
       ))
@@ -378,7 +379,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "updateSetDefaultVerificationType" should {
     "not change any records where verificationType already exists" in {
-      val doc        = buildUpdateDoc(INITIAL, now.minusDays(FEW_DAYS_AGO))
+      val doc        = buildUpdateDoc(INITIAL, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
       val updateType = await(repository.save(doc))
 
       val stateInitial      = buildAndSaveDoc(INITIAL)
@@ -436,8 +437,8 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.save(existingRecordNotMatchingSubmissionId))
       await(repository.save(existingRecordNotMatchingSubmissionIndex))
 
-      val updateTimestamp = now.plusHours(1)
-      val event           = buildRiVerificationStartedEvent(existingSubmissionId, existingSubmissionIndex).copy(eventDateTime = updateTimestamp.toInstant(ZoneOffset.UTC))
+      val updateTimestamp = instant.plus(Duration.ofHours(1))
+      val event           = buildRiVerificationStartedEvent(existingSubmissionId, existingSubmissionIndex).copy(eventDateTime = updateTimestamp)
 
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
 

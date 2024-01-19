@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -65,7 +65,7 @@ class ResetLastAccessDateJob @Inject() (
 
     application => {
       application.lastAccess match {
-        case Some(lastAccessDate) => if (lastAccessDate.toLocalDate.isBefore(earliestLastAccessDate)) updateApplicationRecord(application.id, application.name)
+        case Some(lastAccessDate) => if (LocalDateTime.from(lastAccessDate).toLocalDate.isBefore(earliestLastAccessDate)) updateApplicationRecord(application.id, application.name)
         case None                 => updateApplicationRecord(application.id, application.name)
       }
     }

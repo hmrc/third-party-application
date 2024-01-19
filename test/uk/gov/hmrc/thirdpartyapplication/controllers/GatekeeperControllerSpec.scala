@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.time.temporal.ChronoUnit._
-import java.time.{Instant, LocalDateTime}
+import java.time.{Instant, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
@@ -249,9 +249,9 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
         "app 1",
         1,
         List(
-          ApplicationStateHistoryResponse.Item(State.TESTING, LocalDateTime.parse("2022-07-01T12:00:00")),
-          ApplicationStateHistoryResponse.Item(State.PENDING_GATEKEEPER_APPROVAL, LocalDateTime.parse("2022-07-01T13:00:00")),
-          ApplicationStateHistoryResponse.Item(State.PRODUCTION, LocalDateTime.parse("2022-07-01T14:00:00"))
+          ApplicationStateHistoryResponse.Item(State.TESTING, Instant.parse("2022-07-01T12:00:00")),
+          ApplicationStateHistoryResponse.Item(State.PENDING_GATEKEEPER_APPROVAL, Instant.parse("2022-07-01T13:00:00")),
+          ApplicationStateHistoryResponse.Item(State.PRODUCTION, Instant.parse("2022-07-01T14:00:00"))
         )
       ),
       ApplicationStateHistoryResponse(ApplicationId.random, "app 2", 2, List())
@@ -670,7 +670,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, now)
   }
 
-  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: LocalDateTime = now, state: ApplicationState = testingState()) = {
+  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: Instant = now, state: ApplicationState = testingState()) = {
     ApplicationWithUpliftRequest(id, "app 1", submittedOn, state.name)
   }
 

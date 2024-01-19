@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
@@ -34,7 +34,7 @@ abstract class BaseService(stateHistoryRepository: StateHistoryRepository, clock
       actor: Actor,
       rollback: StoredApplication => Any
     ): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = Instant.now(clock))
     stateHistoryRepository.insert(stateHistory)
       .andThen {
         case e: Failure[_] =>

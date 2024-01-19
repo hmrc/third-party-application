@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
@@ -31,14 +31,14 @@ case class ExtendedApplicationResponse(
     deployedTo: String,
     description: Option[String] = None,
     collaborators: Set[Collaborator],
-    createdOn: LocalDateTime,
-    lastAccess: Option[LocalDateTime],
+    createdOn: Instant,
+    lastAccess: Option[Instant],
     grantLength: Int,
     redirectUris: List[RedirectUri] = List.empty,
     termsAndConditionsUrl: Option[String] = None,
     privacyPolicyUrl: Option[String] = None,
     access: Access = Access.Standard(),
-    state: ApplicationState = ApplicationState(name = State.TESTING, updatedOn = LocalDateTime.now(Clock.systemUTC)),
+    state: ApplicationState = ApplicationState(name = State.TESTING, updatedOn = Instant.now(Clock.systemUTC)),
     rateLimitTier: RateLimitTier = RateLimitTier.BRONZE,
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,

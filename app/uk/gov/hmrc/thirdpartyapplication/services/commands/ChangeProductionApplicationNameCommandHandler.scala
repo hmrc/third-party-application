@@ -60,7 +60,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
       ApplicationEvents.ProductionAppNameChangedEvent(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         oldAppName = app.name,
         newAppName = cmd.newName,

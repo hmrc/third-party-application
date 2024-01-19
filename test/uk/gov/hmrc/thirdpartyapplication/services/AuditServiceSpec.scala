@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
+import java.time.Instant
 import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -180,8 +180,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
       val declinedData               = Map("status" -> "declined", "reasons" -> reasons)
       val fmt                        = DateTimeFormatter.ISO_DATE_TIME
       val submissionPreviousInstance = declinedSubmission.instances.tail.head
-      val submittedOn: LocalDateTime = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
-      val declinedOn: LocalDateTime  = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
+      val submittedOn: Instant       = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+      val declinedOn: Instant        = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
       val dates                      = Map(
         "submission.started.date"   -> declinedSubmission.startedOn.format(fmt),
         "submission.submitted.date" -> submittedOn.format(fmt),

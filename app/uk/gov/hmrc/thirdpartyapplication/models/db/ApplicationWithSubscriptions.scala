@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiIdentifier, ApplicationId}
 
 case class ApplicationWithSubscriptions(
     id: ApplicationId,
     name: String,
-    lastAccess: Option[LocalDateTime],
+    lastAccess: Option[Instant],
     apiIdentifiers: Set[ApiIdentifier]
   )

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.Instant
 
 import play.api.libs.json.{Format, Json, OFormat}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
@@ -32,12 +32,12 @@ sealed trait ResponsibleIndividualVerification {
   def submissionId: SubmissionId
   def submissionInstance: Int
   def applicationName: String
-  def createdOn: LocalDateTime
+  def createdOn: Instant
   def state: ResponsibleIndividualVerificationState
 }
 
 object ResponsibleIndividualVerification {
-  implicit val dateFormat: Format[LocalDateTime]                                                  = MongoJavatimeFormats.localDateTimeFormat
+  implicit val dateFormat: Format[Instant]                                                        = MongoJavatimeFormats.instantFormat
   implicit val riVerificationFormat: OFormat[ResponsibleIndividualToUVerification]                = Json.format[ResponsibleIndividualToUVerification]
   implicit val riVerificationTouUpliftFormat: OFormat[ResponsibleIndividualTouUpliftVerification] = Json.format[ResponsibleIndividualTouUpliftVerification]
   implicit val riUpdateVerificationFormat: OFormat[ResponsibleIndividualUpdateVerification]       = Json.format[ResponsibleIndividualUpdateVerification]
@@ -59,7 +59,7 @@ case class ResponsibleIndividualToUVerification(
     submissionId: SubmissionId,
     submissionInstance: Int,
     applicationName: String,
-    createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    createdOn: Instant = Instant.now(),
     state: ResponsibleIndividualVerificationState = INITIAL
   ) extends ResponsibleIndividualVerification
 
@@ -69,7 +69,7 @@ case class ResponsibleIndividualTouUpliftVerification(
     submissionId: SubmissionId,
     submissionInstance: Int,
     applicationName: String,
-    createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    createdOn: Instant = Instant.now(),
     requestingAdminName: String,
     requestingAdminEmail: LaxEmailAddress,
     state: ResponsibleIndividualVerificationState = INITIAL
@@ -81,7 +81,7 @@ case class ResponsibleIndividualUpdateVerification(
     submissionId: SubmissionId,
     submissionInstance: Int,
     applicationName: String,
-    createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    createdOn: Instant = Instant.now(),
     responsibleIndividual: ResponsibleIndividual,
     requestingAdminName: String,
     requestingAdminEmail: LaxEmailAddress,

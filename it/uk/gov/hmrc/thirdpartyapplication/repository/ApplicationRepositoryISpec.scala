@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.{Clock, Duration, LocalDateTime, ZoneOffset}
+import java.time.{Clock, Duration, Instant, ZoneOffset}
 import scala.util.Random.nextString
 
 import org.mockito.MockitoSugar.{mock, times, verify, verifyNoMoreInteractions}
@@ -62,8 +62,8 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     Set(Collaborators.Administrator(userId, LaxEmailAddress("bob@example.com"))),
     None,
     "wso2",
-    ApplicationTokens(StoredToken(clientId, "accessABC", List(StoredClientSecret("a", now, None, clientSecretId, "hashme")))),
-    ApplicationState(State.TESTING, None, None, None, now),
+    ApplicationTokens(StoredToken(clientId, "accessABC", List(StoredClientSecret("a", instant, None, clientSecretId, "hashme")))),
+    ApplicationState(State.TESTING, None, None, None, instant),
     Access.Standard(
       importantSubmissionData = Some(ImportantSubmissionData(
         organisationUrl = None,
@@ -71,7 +71,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
         serverLocations = Set(ServerLocation.InUK),
         termsAndConditionsLocation = TermsAndConditionsLocations.InDesktopSoftware,
         privacyPolicyLocation = PrivacyPolicyLocations.NoneProvided,
-        termsOfUseAcceptances = List(TermsOfUseAcceptance(aResponsibleIndividual, now, submissionId))
+        termsOfUseAcceptances = List(TermsOfUseAcceptance(aResponsibleIndividual, instant, submissionId))
       ))
     ),
     now,
@@ -82,7 +82,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     Some(CheckInformation(
       Some(ContactDetails(FullName("Contact"), LaxEmailAddress("contact@example.com"), "123456789")),
       termsOfUseAgreements = List(
-        TermsOfUseAgreement(LaxEmailAddress("bob@example.com"), now, "1.0")
+        TermsOfUseAgreement(LaxEmailAddress("bob@example.com"), instant, "1.0")
       )
     )),
     false,
@@ -326,7 +326,7 @@ class ApplicationRepositoryISpec
             productionState("requestorEmail@example.com")
           ).copy(
             rateLimitTier = Some(RateLimitTier.BRONZE),
-            lastAccess = Some(now)
+            lastAccess = Some(instant)
           )
         )
       )
@@ -453,7 +453,7 @@ class ApplicationRepositoryISpec
           productionState("requestorEmail@example.com")
         )
           .copy(lastAccess =
-            Some(now.minusDays(20))
+            Some(instant.minus(Duration.ofDays(20)))
           ) // scalastyle:ignore magic.number
 
       await(applicationRepository.save(application))
@@ -475,7 +475,7 @@ class ApplicationRepositoryISpec
           grantLength = newGrantLength
         )
           .copy(lastAccess =
-            Some(now.minusDays(20))
+            Some(instant.minus(Duration.ofDays(20)))
           ) // scalastyle:ignore magic.number
 
       await(applicationRepository.save(application))
@@ -496,7 +496,7 @@ class ApplicationRepositoryISpec
           productionState("requestorEmail@example.com")
         )
           .copy(lastAccess =
-            Some(now.minusDays(20))
+            Some(instant.minus(Duration.ofDays(20)))
           ) // scalastyle:ignore magic.number
 
       application.tokens.production.lastAccessTokenUsage mustBe None
@@ -549,7 +549,7 @@ class ApplicationRepositoryISpec
           List(
             aClientSecret(
               name = "Default",
-              lastAccess = Some(now.minusDays(20)),
+              lastAccess = Some(instant.minus(Duration.ofDays(20))),
               hashedSecret = "hashed-secret"
             )
           )
@@ -583,12 +583,12 @@ class ApplicationRepositoryISpec
     }
 
     "update the correct client secret when there are multiple" in {
-      val testStartTime     = now
+      val testStartTime     = instant
       val applicationId     = ApplicationId.random
       val secretToUpdate    =
         aClientSecret(
           name = "SecretToUpdate",
-          lastAccess = Some(now.minusDays(20)),
+          lastAccess = Some(instant.minus(Duration.ofDays(20))),
           hashedSecret = "hashed-secret"
         )
       val applicationTokens =
@@ -600,7 +600,7 @@ class ApplicationRepositoryISpec
               secretToUpdate,
               aClientSecret(
                 name = "SecretToLeave",
-                lastAccess = Some(now.minusDays(20)),
+                lastAccess = Some(instant.minus(Duration.ofDays(20))),
                 hashedSecret = "hashed-secret"
               )
             )
@@ -910,9 +910,9 @@ class ApplicationRepositoryISpec
 
   "fetchAllByStatusDetails" should {
 
-    val dayOfExpiry          = now
-    val expiryOnTheDayBefore = dayOfExpiry.minusDays(1)
-    val expiryOnTheDayAfter  = dayOfExpiry.plusDays(1)
+    val dayOfExpiry          = instant
+    val expiryOnTheDayBefore = dayOfExpiry.minus(Duration.ofDays(1))
+    val expiryOnTheDayAfter  = dayOfExpiry.plus(Duration.ofDays(1))
 
     def verifyApplications(
         responseApplications: Seq[StoredApplication],
@@ -1558,7 +1558,7 @@ class ApplicationRepositoryISpec
   "Search" should {
     def applicationWithLastAccessDate(
         applicationId: ApplicationId,
-        lastAccessDate: LocalDateTime
+        lastAccessDate: Instant
       ): StoredApplication =
       anApplicationDataForTest(
         id = applicationId,
@@ -2434,8 +2434,8 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by submitted ascending" in {
-      val firstCreatedOn    = now.minusDays(2)
-      val secondCreatedOn   = now.minusDays(1)
+      val firstCreatedOn    = instant.minus(Duration.ofDays(2))
+      val secondCreatedOn   = instant.minus(Duration.ofDays(1))
       val firstApplication  =
         anApplicationDataForTest(
           id = ApplicationId.random,
@@ -2464,8 +2464,8 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by submitted descending" in {
-      val firstCreatedOn    = now.minusDays(2)
-      val secondCreatedOn   = now.minusDays(1)
+      val firstCreatedOn    = instant.minus(Duration.ofDays(2))
+      val secondCreatedOn   = instant.minus(Duration.ofDays(1))
       val firstApplication  =
         anApplicationDataForTest(
           id = ApplicationId.random,
@@ -2494,8 +2494,8 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by lastAccess ascending" in {
-      val mostRecentlyAccessedDate = now.minusDays(1)
-      val oldestLastAccessDate     = now.minusDays(2)
+      val mostRecentlyAccessedDate = instant.minus(Duration.ofDays(1))
+      val oldestLastAccessDate     = instant.minus(Duration.ofDays(2))
       val firstApplication         = applicationWithLastAccessDate(
         ApplicationId.random,
         mostRecentlyAccessedDate
@@ -2522,8 +2522,8 @@ class ApplicationRepositoryISpec
     }
 
     "return applications sorted by lastAccess descending" in {
-      val mostRecentlyAccessedDate = now.minusDays(1)
-      val oldestLastAccessDate     = now.minusDays(2)
+      val mostRecentlyAccessedDate = instant.minus(Duration.ofDays(1))
+      val oldestLastAccessDate     = instant.minus(Duration.ofDays(2))
       val firstApplication         = applicationWithLastAccessDate(
         ApplicationId.random,
         mostRecentlyAccessedDate
@@ -3538,7 +3538,7 @@ class ApplicationRepositoryISpec
 
   def createAppWithStatusUpdatedOn(
       state: State,
-      updatedOn: LocalDateTime
+      updatedOn: Instant
     ): StoredApplication =
     anApplicationDataForTest(
       id = ApplicationId.random,
@@ -3617,7 +3617,7 @@ class ApplicationRepositoryISpec
     )
   }
 
-  def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[LocalDateTime] = None, hashedSecret: String = "") =
+  def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[Instant] = None, hashedSecret: String = "") =
     StoredClientSecret(
       id = id,
       name = name,

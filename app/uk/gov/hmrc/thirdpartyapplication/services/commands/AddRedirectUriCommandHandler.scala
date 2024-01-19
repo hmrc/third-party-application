@@ -56,7 +56,7 @@ class AddRedirectUriCommandHandler @Inject() (applicationRepository: Application
       ApplicationEvents.RedirectUriAdded(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = cmd.actor,
         newRedirectUri = cmd.redirectUriToAdd
       )

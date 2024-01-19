@@ -58,7 +58,7 @@ class UnsubscribeFromApiCommandHandler @Inject() (
       ApiUnsubscribedV2(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = cmd.actor,
         context = cmd.apiIdentifier.context,
         version = cmd.apiIdentifier.versionNbr

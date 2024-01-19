@@ -132,9 +132,9 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
   }
 
   "state transition from PRODUCTION " should {
-    val startingState = productionState(upliftRequestedByEmail).copy(updatedOn = FixedClock.now.minusHours(24L))
+    val startingState = productionState(upliftRequestedByEmail).copy(updatedOn = instant.minusHours(24L))
     "move back application to TESTING state" in {
-      val resultState = startingState.toTesting(FixedClock.now.minusHours(2L))
+      val resultState = startingState.toTesting(instant.minusHours(2L))
 
       resultState.name shouldBe State.TESTING
       resultState.requestedByEmailAddress shouldBe None
@@ -143,7 +143,7 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
     }
 
     "move to DELETED state" in {
-      val resultState = startingState.toDeleted(FixedClock.now.minusHours(2L))
+      val resultState = startingState.toDeleted(instant.minusHours(2L))
 
       resultState.name shouldBe State.DELETED
       resultState.isDeleted shouldBe true

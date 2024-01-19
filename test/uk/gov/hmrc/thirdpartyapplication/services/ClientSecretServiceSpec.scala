@@ -73,8 +73,8 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   "lastUsedOrdering" should {
     val mostRecent = StoredClientSecret(name = "secret-1", hashedSecret = "foo", lastAccess = Some(now))
-    val middle     = StoredClientSecret(name = "secret-2", hashedSecret = "bar", lastAccess = Some(now.minusDays(1)))
-    val agesAgo    = StoredClientSecret(name = "secret-3", hashedSecret = "baz", lastAccess = Some(now.minusDays(10)))
+    val middle     = StoredClientSecret(name = "secret-2", hashedSecret = "bar", lastAccess = Some(instant.minus(Duration.ofDays(1))))
+    val agesAgo    = StoredClientSecret(name = "secret-3", hashedSecret = "baz", lastAccess = Some(instant.minus(Duration.ofDays(10))))
 
     "sort client secrets by most recently used" in new Setup {
       val sortedList = List(middle, agesAgo, mostRecent).sortWith(underTest.lastUsedOrdering)

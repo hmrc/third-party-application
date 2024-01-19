@@ -17,14 +17,14 @@
 package uk.gov.hmrc.thirdpartyapplication.util
 
 import java.time.temporal.ChronoField
-import java.time.{Clock, LocalDateTime, ZoneOffset}
+import java.time.{Clock, Instant, ZoneOffset}
 
 import org.scalatest.matchers.should.Matchers._
 
 trait JavaDateTimeTestUtils {
 
-  def timestampShouldBeApproximatelyNow(date: LocalDateTime, thresholdMillis: Int = 500, clock: Clock) = {
-    val now                   = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC)
+  def timestampShouldBeApproximatelyNow(date: Instant, thresholdMillis: Int = 500, clock: Clock) = {
+    val now                   = Instant.ofInstant(clock.instant(), ZoneOffset.UTC)
     val reasonableExpectation = now.minus(thresholdMillis, ChronoField.MILLI_OF_SECOND.getBaseUnit)
 
     withClue(s"timestamp $date was not within ${thresholdMillis}ms of ${now}") {

@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.Instant
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
 
 case class StoredClientSecret(
     name: String,
-    createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-    lastAccess: Option[LocalDateTime] = None,
+    createdOn: Instant = Instant.now(),
+    lastAccess: Option[Instant] = None,
     id: ClientSecret.Id = ClientSecret.Id.random,
     hashedSecret: String
   )
