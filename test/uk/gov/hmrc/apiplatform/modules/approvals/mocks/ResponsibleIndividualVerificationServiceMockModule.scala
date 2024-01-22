@@ -43,7 +43,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
       def thenCreateNewVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
         when(aMock.createNewToUVerification(*[StoredApplication], *[SubmissionId], *)).thenAnswer((appData: StoredApplication, submissionId: SubmissionId, index: Int) =>
           Future.successful(
-            ResponsibleIndividualToUVerification(verificationId, appData.id, submissionId, index, appData.name, now)
+            ResponsibleIndividualToUVerification(verificationId, appData.id, submissionId, index, appData.name, instant)
           )
         )
       }
@@ -55,7 +55,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
         when(aMock.createNewTouUpliftVerification(*[StoredApplication], *[SubmissionId], *, *, *[LaxEmailAddress])).thenAnswer(
           (appData: StoredApplication, submissionId: SubmissionId, index: Int, requesterName: String, requesterEmail: LaxEmailAddress) =>
             Future.successful(
-              ResponsibleIndividualTouUpliftVerification(verificationId, appData.id, submissionId, index, appData.name, now, requesterName, requesterEmail)
+              ResponsibleIndividualTouUpliftVerification(verificationId, appData.id, submissionId, index, appData.name, instant, requesterName, requesterEmail)
             )
         )
       }
@@ -72,7 +72,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
               SubmissionId.random,
               0,
               "App name",
-              now
+              instant
             )
           ))
         )

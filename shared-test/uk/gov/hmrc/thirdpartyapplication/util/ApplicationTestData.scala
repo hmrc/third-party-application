@@ -28,10 +28,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.db._
 
 trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData with ActorTestData with EmailTestData with FixedClock {
 
-  def aSecret(secret: String): StoredClientSecret = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = now)
+  def aSecret(secret: String): StoredClientSecret = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = instant)
 
   val serverToken           = "b3c83934c02df8b111e7f9f8700000"
-  val serverTokenLastAccess = now
+  val serverTokenLastAccess = instant
   val productionToken       = StoredToken(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   val requestedByName  = "john smith"
@@ -58,8 +58,8 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
       ApplicationTokens(productionToken),
       state,
       access,
-      now,
-      Some(now),
+      instant,
+      Some(instant),
       grantLength,
       rateLimitTier = rateLimitTier,
       environment = environment.toString,

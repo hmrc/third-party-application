@@ -39,8 +39,8 @@ class AddCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val adminsToEmail = Set(anAdminEmail, devEmail)
 
-    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, now)
-    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, now)
+    val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, instant)
+    val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, instant)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).value

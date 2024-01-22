@@ -20,8 +20,8 @@ import java.time.{ZoneOffset, ZonedDateTime}
 
 import play.api.test.FakeRequest
 
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
 class ApplicationSearchSpec extends HmrcSpec {
 
@@ -82,8 +82,10 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       val parsedFilter = searchObject.filters.head
-      parsedFilter.isInstanceOf[LastUseBeforeDate] should be(true)
-      parsedFilter.asInstanceOf[LastUseBeforeDate].lastUseDate.isEqual(expectedDateTime) should be(true)
+      parsedFilter match {
+        case LastUseBeforeDate(lastUseDate) => lastUseDate shouldBe expectedDateTime
+        case _                              => fail()
+      }
     }
 
     "correctly parse date only into LastUseBeforeDate filter" in {
@@ -95,8 +97,10 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       val parsedFilter = searchObject.filters.head
-      parsedFilter.isInstanceOf[LastUseBeforeDate] should be(true)
-      parsedFilter.asInstanceOf[LastUseBeforeDate].lastUseDate.isEqual(expectedDateTime) should be(true)
+      parsedFilter match {
+        case LastUseBeforeDate(lastUseDate) => lastUseDate shouldBe expectedDateTime
+        case _                              => fail()
+      }
     }
 
     "correctly parse lastUseAfter into LastUseAfterDate filter" in {
@@ -108,8 +112,10 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       val parsedFilter = searchObject.filters.head
-      parsedFilter.isInstanceOf[LastUseAfterDate] should be(true)
-      parsedFilter.asInstanceOf[LastUseAfterDate].lastUseDate.isEqual(expectedDateTime) should be(true)
+      parsedFilter match {
+        case LastUseAfterDate(lastUseDate) => lastUseDate shouldBe expectedDateTime
+        case _                             => fail()
+      }
     }
 
     "correctly parse date only into LastUseAfterDate filter" in {
@@ -122,8 +128,10 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       val parsedFilter = searchObject.filters.head
-      parsedFilter.isInstanceOf[LastUseAfterDate] should be(true)
-      parsedFilter.asInstanceOf[LastUseAfterDate].lastUseDate.isEqual(expectedDateTime) should be(true)
+      parsedFilter match {
+        case LastUseAfterDate(lastUseDate) => lastUseDate shouldBe expectedDateTime
+        case _                             => fail()
+      }
     }
 
     "correctly parses multiple filters" in {

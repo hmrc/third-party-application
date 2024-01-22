@@ -16,10 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
+import java.time.Duration
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
-import uk.gov.hmrc.thirdpartyapplication.util.{ActorTestData, HmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.ActorTestData
 
 class StateHistorySpec extends HmrcSpec with ActorTestData with FixedClock {
 
@@ -27,8 +29,8 @@ class StateHistorySpec extends HmrcSpec with ActorTestData with FixedClock {
 
   "State history" should {
     "sort by date" in {
-      val stateHistory1 = StateHistory(applicationId, State.TESTING, otherAdminAsActor, changedAt = now.minusHours(5))
-      val stateHistory2 = StateHistory(applicationId, State.TESTING, otherAdminAsActor, changedAt = now.minusHours(3))
+      val stateHistory1 = StateHistory(applicationId, State.TESTING, otherAdminAsActor, changedAt = instant.minus(Duration.ofHours(5)))
+      val stateHistory2 = StateHistory(applicationId, State.TESTING, otherAdminAsActor, changedAt = instant.minus(Duration.ofHours(3)))
 
       Seq(stateHistory2, stateHistory1).sortBy(_.changedAt) should contain.inOrder(stateHistory1, stateHistory2)
     }

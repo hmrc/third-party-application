@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import play.api.test.FakeRequest
 
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 
 class TermsOfUseSearchSpec extends HmrcSpec {
 

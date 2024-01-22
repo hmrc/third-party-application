@@ -37,8 +37,8 @@ class AddClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
     val secretValue = "secret"
     val id          = ClientSecret.Id.random
 
-    val addClientSecretByDev   = AddClientSecret(developerActor, "name", id, "hashed", now)
-    val addClientSecretByAdmin = AddClientSecret(otherAdminAsActor, "name", id, "hashed", now)
+    val addClientSecretByDev   = AddClientSecret(developerActor, "name", id, "hashed", instant)
+    val addClientSecretByAdmin = AddClientSecret(otherAdminAsActor, "name", id, "hashed", instant)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>

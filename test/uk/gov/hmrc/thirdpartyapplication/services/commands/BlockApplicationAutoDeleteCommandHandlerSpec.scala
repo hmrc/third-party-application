@@ -59,7 +59,7 @@ class BlockApplicationAutoDeleteCommandHandlerSpec extends CommandHandlerBaseSpe
   }
 
   "BlockApplicationAutoDelete" should {
-    val cmd = BlockApplicationAutoDelete(gatekeeperUser, reasons, now)
+    val cmd = BlockApplicationAutoDelete(gatekeeperUser, reasons, instant)
 
     "create correct event for a valid request with app" in new Setup {
       ApplicationRepoMock.UpdateAllowAutoDelete.thenReturnWhen(false)(appWithAutoDeleteBlocked)

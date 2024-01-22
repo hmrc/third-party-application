@@ -45,7 +45,7 @@ class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiId
     val apiIdentifier       = "some-context".asIdentifier("1.1")
     val timestamp           = FixedClock.instant
 
-    val subscribeToApi = SubscribeToApi(gatekeeperUserActor, apiIdentifier, now)
+    val subscribeToApi = SubscribeToApi(gatekeeperUserActor, apiIdentifier, instant)
 
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).value

@@ -88,7 +88,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
 
   val actor       = gatekeeperActor
   val reasons     = "reasons description text"
-  val ts: Instant = now
+  val ts: Instant = instant
 
   "DeleteApplicationByGatekeeper" should {
     val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, ts)

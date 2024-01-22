@@ -85,7 +85,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       SubmissionId.random,
       0,
       appName,
-      now
+      instant
     )
     val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual, "Rick Deckard", "rick@submitter.com")
   }

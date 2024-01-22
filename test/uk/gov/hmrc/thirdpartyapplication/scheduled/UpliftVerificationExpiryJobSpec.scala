@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.Instant
+import java.time.{Duration => JavaTimeDuration, Instant}
 import java.util.concurrent.TimeUnit.{DAYS, HOURS, SECONDS}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
@@ -44,7 +44,7 @@ class UpliftVerificationExpiryJobSpec
     with NoMetricsGuiceOneAppPerSuite
     with CollaboratorTestData {
 
-  final val FixedTimeNow     = now
+  final val FixedTimeNow     = instant
   final val expiryTimeInDays = 90
   final val sixty            = 60
   final val twentyFour       = 24
@@ -85,7 +85,7 @@ class UpliftVerificationExpiryJobSpec
         .thenAnswer((a: StoredApplication) => successful(a))
 
       await(underTest.execute)
-      verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, instant.minus(Duration.ofDays(expiryTimeInDays)))
+      verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, instant.minus(JavaTimeDuration.ofDays(expiryTimeInDays)))
       verify(mockApplicationRepository).save(app1.copy(state = testingState()))
       verify(mockApplicationRepository).save(app2.copy(state = testingState()))
       verify(mockStateHistoryRepository).insert(StateHistory(
@@ -93,14 +93,14 @@ class UpliftVerificationExpiryJobSpec
         State.TESTING,
         Actors.ScheduledJob("UpliftVerificationExpiryJob"),
         Some(State.PENDING_REQUESTER_VERIFICATION),
-        changedAt = now
+        changedAt = instant
       ))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app2.id,
         State.TESTING,
         Actors.ScheduledJob("UpliftVerificationExpiryJob"),
         Some(State.PENDING_REQUESTER_VERIFICATION),
-        changedAt = now
+        changedAt = instant
       ))
     }
 
@@ -133,7 +133,7 @@ class UpliftVerificationExpiryJobSpec
 
       val result: underTest.Result = await(underTest.execute)
 
-      verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, instant.minus(Duration.ofDays(expiryTimeInDays)))
+      verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, instant.minus(JavaTimeDuration.ofDays(expiryTimeInDays)))
       result.message shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing save db query'." +
         " The next execution of the job will do retry."
@@ -153,8 +153,8 @@ class UpliftVerificationExpiryJobSpec
       ),
       state,
       Access.Standard(),
-      now,
-      Some(now)
+      instant,
+      Some(instant)
     )
   }
 }

@@ -43,7 +43,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     val ts                                   = FixedClock.instant
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
-    val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, now)
+    val cmd = DeleteProductionCredentialsApplication("DeleteUnusedApplicationsJob", reasons, instant)
 
     val underTest = new DeleteProductionCredentialsApplicationCommandHandler(
       authControlConfig,

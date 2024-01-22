@@ -59,7 +59,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
     val timestamp = FixedClock.instant
     val actor     = otherAdminAsActor
 
-    val update = ChangeProductionApplicationTermsAndConditionsLocation(userId, now, newLocation)
+    val update = ChangeProductionApplicationTermsAndConditionsLocation(userId, instant, newLocation)
 
     val underTest = new ChangeProductionApplicationTermsAndConditionsLocationCommandHandler(ApplicationRepoMock.aMock)
 
@@ -122,7 +122,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
     "return an error if application is still in the process of being approved" in new Setup {
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
-        underTest.process(newJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = now)), update)
+        underTest.process(newJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant)), update)
       }
     }
 
@@ -154,7 +154,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
     "return an error if application is still in the process of being approved" in new Setup {
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
-        underTest.process(oldJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = now)), update)
+        underTest.process(oldJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant)), update)
       }
     }
 

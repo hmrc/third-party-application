@@ -201,8 +201,8 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
       ApplicationTokens(productionToken),
       state,
       Access.Standard(),
-      now,
-      Some(now),
+      instant,
+      Some(instant),
       rateLimitTier = rateLimitTier
     )
   }

@@ -86,7 +86,7 @@ class ApplicationRepositorySerialisationISpec
         name = name,
         lastAccess = lastAccess,
         hashedSecret = hashedSecret,
-        createdOn = now
+        createdOn = instant
       )
 
     val applicationData = StoredApplication(
@@ -103,8 +103,8 @@ class ApplicationRepositorySerialisationISpec
       ),
       testingState(),
       Access.Standard(),
-      now,
-      Some(now),
+      instant,
+      Some(instant),
       grantLength = grantLength,
       checkInformation = None
     )

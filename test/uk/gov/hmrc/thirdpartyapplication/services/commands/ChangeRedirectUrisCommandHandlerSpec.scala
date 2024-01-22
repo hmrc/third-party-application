@@ -45,8 +45,8 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val developerActor       = Actors.AppCollaborator(developerCollaborator.emailAddress)
 
     val timestamp  = FixedClock.instant
-    val cmdAsAdmin = ChangeRedirectUri(adminActor, toBeReplacedRedirectUri, replacementUri, now)
-    val cmdAsDev   = ChangeRedirectUri(developerActor, toBeReplacedRedirectUri, replacementUri, now)
+    val cmdAsAdmin = ChangeRedirectUri(adminActor, toBeReplacedRedirectUri, replacementUri, instant)
+    val cmdAsDev   = ChangeRedirectUri(developerActor, toBeReplacedRedirectUri, replacementUri, instant)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>

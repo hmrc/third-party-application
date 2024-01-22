@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.{Clock, Duration, Instant, ZoneOffset}
+import java.time.{Clock, Duration, Instant}
 import scala.util.Random.nextString
 
+import _root_.uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import org.mockito.MockitoSugar.{mock, times, verify, verifyNoMoreInteractions}
 import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
@@ -32,7 +33,6 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
@@ -74,7 +74,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
         termsOfUseAcceptances = List(TermsOfUseAcceptance(aResponsibleIndividual, instant, submissionId))
       ))
     ),
-    now,
+    instant,
     None,
     123,
     Some(RateLimitTier.BRONZE),
@@ -105,7 +105,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
         "accessToken"   -> JsString("accessABC"),
         "clientSecrets" -> JsArray(Seq(Json.obj(
           "name"         -> JsString("a"),
-          "createdOn"    -> MongoJavatimeHelper.asJsValue(now),
+          "createdOn"    -> MongoJavatimeHelper.asJsValue(instant),
           "id"           -> JsString(clientSecretId.toString()),
           "hashedSecret" -> JsString("hashme")
         )))
@@ -113,7 +113,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     ),
     "state"               -> Json.obj(
       "name"      -> JsString("TESTING"),
-      "updatedOn" -> MongoJavatimeHelper.asJsValue(now)
+      "updatedOn" -> MongoJavatimeHelper.asJsValue(instant)
     ),
     "access"              -> Json.obj(
       "redirectUris"            -> JsArray(Seq()),
@@ -133,7 +133,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
                 "fullName"     -> "bob",
                 "emailAddress" -> "bob@example.com"
               ),
-              "dateTime"              -> MongoJavatimeHelper.asJsValue(now),
+              "dateTime"              -> MongoJavatimeHelper.asJsValue(instant),
               "submissionId"          -> JsString(submissionId.toString()),
               "submissionInstance"    -> JsNumber(0)
             )
@@ -143,7 +143,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
                 "fullName"     -> "bob",
                 "emailAddress" -> "bob@example.com"
               ),
-              "dateTime"              -> MongoJavatimeHelper.asJsValue(now),
+              "dateTime"              -> MongoJavatimeHelper.asJsValue(instant),
               "submissionId"          -> JsString(submissionId.toString())
             )
           }
@@ -151,7 +151,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
       ),
       "accessType"              -> JsString("STANDARD")
     ),
-    "createdOn"           -> MongoJavatimeHelper.asJsValue(now),
+    "createdOn"           -> MongoJavatimeHelper.asJsValue(instant),
     "grantLength"         -> JsNumber(123),
     "rateLimitTier"       -> JsString("BRONZE"),
     "environment"         -> JsString("PRODUCTION"),
@@ -169,7 +169,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
       "teamConfirmed"                          -> JsFalse,
       "termsOfUseAgreements"                   -> JsArray(Seq(Json.obj(
         "emailAddress" -> JsString("bob@example.com"),
-        "timeStamp"    -> MongoJavatimeHelper.asJsValue(now),
+        "timeStamp"    -> MongoJavatimeHelper.asJsValue(instant),
         "version"      -> JsString("1.0")
       )))
     ),
@@ -1023,11 +1023,10 @@ class ApplicationRepositoryISpec
   }
 
   "fetchByStatusDetailsAndEnvironment" should {
-
-    val currentDate        = now
-    val yesterday          = currentDate.minusDays(1)
-    val dayBeforeYesterday = currentDate.minusDays(2)
-    val lastWeek           = currentDate.minusDays(7)
+    val currentDate        = instant
+    val yesterday          = currentDate.minus(Duration.ofDays(1))
+    val dayBeforeYesterday = currentDate.minus(Duration.ofDays(2))
+    val lastWeek           = currentDate.minus(Duration.ofDays(7))
 
     def verifyApplications(
         responseApplications: Seq[StoredApplication],
@@ -1071,10 +1070,10 @@ class ApplicationRepositoryISpec
 
   "fetchByStatusDetailsAndEnvironmentNotAleadyNotified" should {
 
-    val currentDate        = now
-    val yesterday          = currentDate.minusDays(1)
-    val dayBeforeYesterday = currentDate.minusDays(2)
-    val lastWeek           = currentDate.minusDays(7)
+    val currentDate        = instant
+    val yesterday          = currentDate.minus(Duration.ofDays(1))
+    val dayBeforeYesterday = currentDate.minus(Duration.ofDays(2))
+    val lastWeek           = currentDate.minus(Duration.ofDays(7))
 
     def verifyApplications(
         responseApplications: Seq[StoredApplication],
@@ -1191,7 +1190,7 @@ class ApplicationRepositoryISpec
         state = pendingRequesterVerificationState("requestorEmail@example.com")
       )
       await(applicationRepository.save(application))
-      await(applicationRepository.delete(application.id, now))
+      await(applicationRepository.delete(application.id, instant))
 
       val retrieved = await(
         applicationRepository.fetchVerifiableUpliftBy(generatedVerificationCode)
@@ -1265,7 +1264,7 @@ class ApplicationRepositoryISpec
       val retrieved = await(applicationRepository.fetch(application.id)).get
       retrieved mustBe application
 
-      await(applicationRepository.delete(application.id, now))
+      await(applicationRepository.delete(application.id, instant))
       val result = await(applicationRepository.fetch(application.id))
 
       result.isDefined mustBe true
@@ -1661,7 +1660,7 @@ class ApplicationRepositoryISpec
         prodClientId = generateClientId
       )
       val applicationInProduction =
-        createAppWithStatusUpdatedOn(State.PRODUCTION, now)
+        createAppWithStatusUpdatedOn(State.PRODUCTION, instant)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationInProduction))
 
@@ -1684,7 +1683,7 @@ class ApplicationRepositoryISpec
         prodClientId = generateClientId
       )
       val applicationDeleted =
-        createAppWithStatusUpdatedOn(State.DELETED, now)
+        createAppWithStatusUpdatedOn(State.DELETED, instant)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationDeleted))
 
@@ -1707,7 +1706,7 @@ class ApplicationRepositoryISpec
         prodClientId = generateClientId
       )
       val applicationDeleted =
-        createAppWithStatusUpdatedOn(State.DELETED, now)
+        createAppWithStatusUpdatedOn(State.DELETED, instant)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationDeleted))
 
@@ -1875,7 +1874,7 @@ class ApplicationRepositoryISpec
         prodClientId = generateClientId
       )
       await(applicationRepository.save(randomDeletedApplication))
-      await(applicationRepository.delete(randomDeletedApplication.id, now))
+      await(applicationRepository.delete(randomDeletedApplication.id, instant))
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -1914,7 +1913,7 @@ class ApplicationRepositoryISpec
         prodClientId = generateClientId
       )
       await(applicationRepository.save(randomDeletedApplication))
-      await(applicationRepository.delete(randomDeletedApplication.id, now))
+      await(applicationRepository.delete(randomDeletedApplication.id, instant))
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -2141,13 +2140,13 @@ class ApplicationRepositoryISpec
 
     "return applications last used before a certain date" in {
       val oldApplicationId = ApplicationId.random
-      val cutoffDate       = now.minusMonths(12)
+      val cutoffDate       = instant.minus(Duration.ofDays(365))
 
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             oldApplicationId,
-            now.minusMonths(18)
+            instant.minus(Duration.ofDays(18 * 30))
           )
         )
       )
@@ -2155,7 +2154,7 @@ class ApplicationRepositoryISpec
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            now
+            instant
           )
         )
       )
@@ -2177,21 +2176,20 @@ class ApplicationRepositoryISpec
     "include applications with no lastAccess date where they were created before cutoff date" in {
       val oldApplicationId = ApplicationId.random
       val oldApplication   = anApplicationDataForTest(oldApplicationId).copy(
-        createdOn = now.minusMonths(18),
+        createdOn = instant.minus(Duration.ofDays(18 * 30)),
         lastAccess = None
       )
-      val cutoffDate       = now.minusMonths(12)
-
       await(applicationRepository.save(oldApplication))
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            now
+            instant
           )
         )
       )
 
+      val cutoffDate        = instant.minus(Duration.ofDays(12 * 30))
       val applicationSearch =
         new ApplicationSearch(filters = List(LastUseBeforeDate(cutoffDate)))
 
@@ -2208,7 +2206,7 @@ class ApplicationRepositoryISpec
 
     "return applications that are equal to the specified cutoff date when searching for older applications" in {
       val oldApplicationId = ApplicationId.random
-      val cutoffDate       = now.minusMonths(12)
+      val cutoffDate       = instant.minus(Duration.ofDays(12 * 30))
 
       await(
         applicationRepository.save(
@@ -2231,12 +2229,12 @@ class ApplicationRepositoryISpec
     }
 
     "return no results if no applications are last used before the cutoff date" in {
-      val cutoffDate = now.minusMonths(12)
+      val cutoffDate = instant.minus(Duration.ofDays(12 * 30))
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            now
+            instant
           )
         )
       )
@@ -2252,13 +2250,13 @@ class ApplicationRepositoryISpec
 
     "return applications last used after a certain date" in {
       val newerApplicationId = ApplicationId.random
-      val cutoffDate         = now.minusMonths(12)
+      val cutoffDate         = instant.minus(Duration.ofDays(12 * 30))
 
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             newerApplicationId,
-            now
+            instant
           )
         )
       )
@@ -2266,7 +2264,7 @@ class ApplicationRepositoryISpec
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            now.minusMonths(18)
+            instant.minus(Duration.ofDays(18 * 30))
           )
         )
       )
@@ -2289,14 +2287,14 @@ class ApplicationRepositoryISpec
       val newerApplicationId = ApplicationId.random
       val newerApplication   =
         anApplicationDataForTest(newerApplicationId).copy(lastAccess = None)
-      val cutoffDate         = now.minusMonths(12)
+      val cutoffDate         = instant.minus(Duration.ofDays(12 * 30))
 
       await(applicationRepository.save(newerApplication))
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            now.minusMonths(18)
+            instant.minus(Duration.ofDays(18 * 30))
           )
         )
       )
@@ -2317,7 +2315,7 @@ class ApplicationRepositoryISpec
 
     "return applications that are equal to the specified cutoff date when searching for newer applications" in {
       val applicationId = ApplicationId.random
-      val cutoffDate    = now.minusMonths(12)
+      val cutoffDate    = instant.minus(Duration.ofDays(365))
 
       await(
         applicationRepository.save(
@@ -2340,12 +2338,12 @@ class ApplicationRepositoryISpec
     }
 
     "return no results if no applications are last used after the cutoff date" in {
-      val cutoffDate = now
+      val cutoffDate = instant
       await(
         applicationRepository.save(
           applicationWithLastAccessDate(
             ApplicationId.random,
-            now.minusMonths(6)
+            instant.minus(Duration.ofDays(6 * 30))
           )
         )
       )
@@ -2834,7 +2832,7 @@ class ApplicationRepositoryISpec
         FullName("bob"),
         LaxEmailAddress("bob@example.com")
       )
-      val acceptanceDate          = now
+      val acceptanceDate          = instant
       val submissionId            = SubmissionId.random
       val acceptance              = TermsOfUseAcceptance(
         responsibleIndividual,
@@ -2872,9 +2870,7 @@ class ApplicationRepositoryISpec
       val termsOfUseAcceptance = termsOfUseAcceptances.head
       termsOfUseAcceptance.responsibleIndividual mustBe responsibleIndividual
       termsOfUseAcceptance.dateTime
-        .toInstant(ZoneOffset.UTC)
         .toEpochMilli mustBe acceptanceDate
-        .toInstant(ZoneOffset.UTC)
         .toEpochMilli
       termsOfUseAcceptance.submissionId mustBe submissionId
       termsOfUseAcceptance.submissionInstance mustBe 0
@@ -3297,9 +3293,9 @@ class ApplicationRepositoryISpec
 
     await(applicationRepository.save(app))
     app.state.name mustBe State.PRODUCTION
-    val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, now, anAdminEmail.text, adminName))
+    val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, instant, anAdminEmail.text, adminName))
     appWithUpdatedState.state.name mustBe State.PENDING_GATEKEEPER_APPROVAL
-    appWithUpdatedState.state.updatedOn mustBe now
+    appWithUpdatedState.state.updatedOn mustBe instant
     appWithUpdatedState.state.requestedByEmailAddress mustBe Some(anAdminEmail.text)
     appWithUpdatedState.state.requestedByName mustBe Some(adminName)
   }
@@ -3316,14 +3312,14 @@ class ApplicationRepositoryISpec
       Set.empty,
       TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocations.InDesktopSoftware,
-      List(TermsOfUseAcceptance(oldRi, now, submissionId, submissionIndex))
+      List(TermsOfUseAcceptance(oldRi, instant, submissionId, submissionIndex))
     )
     val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = anApplicationData(applicationId).copy(access = access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedRI =
-      await(applicationRepository.updateApplicationChangeResponsibleIndividualToSelf(applicationId, adminName, anAdminEmail, now, submissionId, submissionIndex))
+      await(applicationRepository.updateApplicationChangeResponsibleIndividualToSelf(applicationId, adminName, anAdminEmail, instant, submissionId, submissionIndex))
 
     appWithUpdatedRI.access match {
       case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
@@ -3366,13 +3362,13 @@ class ApplicationRepositoryISpec
       Set.empty,
       TermsAndConditionsLocations.InDesktopSoftware,
       PrivacyPolicyLocations.InDesktopSoftware,
-      List(TermsOfUseAcceptance(oldRi, now, submissionId, submissionIndex))
+      List(TermsOfUseAcceptance(oldRi, instant, submissionId, submissionIndex))
     )
     val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = anApplicationData(applicationId).copy(access = access)
     await(applicationRepository.save(app))
 
-    val appWithUpdatedRI = await(applicationRepository.updateApplicationChangeResponsibleIndividual(applicationId, riName, riEmail, now, submissionId, submissionIndex))
+    val appWithUpdatedRI = await(applicationRepository.updateApplicationChangeResponsibleIndividual(applicationId, riName, riEmail, instant, submissionId, submissionIndex))
     appWithUpdatedRI.access match {
       case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         importantSubmissionData.responsibleIndividual.fullName.value mustBe riName
@@ -3390,7 +3386,7 @@ class ApplicationRepositoryISpec
     def saveApp(state: State, timeOffset: Duration, isNewJourney: Boolean = true, environment: Environment = Environment.PRODUCTION) = {
       val appId = ApplicationId.random
       val app   = anApplicationData(appId).copy(
-        state = ApplicationState(name = state, updatedOn = now),
+        state = ApplicationState(name = state, updatedOn = instant),
         access = Access.Standard(importantSubmissionData = isNewJourney match {
           case true  => Some(ImportantSubmissionData(
               None,
@@ -3402,7 +3398,7 @@ class ApplicationRepositoryISpec
             ))
           case false => None
         }),
-        createdOn = now.plus(timeOffset),
+        createdOn = instant.plus(timeOffset),
         environment = environment.toString,
         tokens = ApplicationTokens(StoredToken(ClientId.random, "access token"))
       )
@@ -3413,7 +3409,7 @@ class ApplicationRepositoryISpec
     def saveHistoryStatePair(appId: ApplicationId, oldState: State, newState: State, timeOffset: Duration)     = saveHistory(appId, Some(oldState), newState, timeOffset)
     def saveHistory(appId: ApplicationId, maybeOldState: Option[State], newState: State, timeOffset: Duration) = {
       val stateHistory =
-        StateHistory(appId, newState, Actors.GatekeeperUser("actor"), maybeOldState, None, now.plus(timeOffset))
+        StateHistory(appId, newState, Actors.GatekeeperUser("actor"), maybeOldState, None, instant.plus(timeOffset))
       await(stateHistoryRepository.insert(stateHistory))
       stateHistory
     }
@@ -3610,8 +3606,8 @@ class ApplicationRepositoryISpec
       ),
       state,
       access,
-      now,
-      Some(now),
+      instant,
+      Some(instant),
       grantLength = grantLength,
       checkInformation = checkInformation
     )
@@ -3623,7 +3619,7 @@ class ApplicationRepositoryISpec
       name = name,
       lastAccess = lastAccess,
       hashedSecret = hashedSecret,
-      createdOn = now
+      createdOn = instant
     )
 
 }

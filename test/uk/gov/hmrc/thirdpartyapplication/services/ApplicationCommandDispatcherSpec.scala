@@ -117,7 +117,7 @@ class ApplicationCommandDispatcherSpec
     }
   }
 
-  val timestamp         = now
+  val timestamp         = instant
   val jobId             = "jobId"
   val scheduledJobActor = Actors.ScheduledJob(jobId)
   val reasons           = "some reason or other"
@@ -127,7 +127,7 @@ class ApplicationCommandDispatcherSpec
   "dispatch" when {
     "AddClientSecret is received" should {
       val id                                         = ClientSecret.Id.random
-      val cmd: AddClientSecret                       = AddClientSecret(otherAdminAsActor, "name", id, "hashedSecret", now)
+      val cmd: AddClientSecret                       = AddClientSecret(otherAdminAsActor, "name", id, "hashedSecret", instant)
       val evt: ApplicationEvents.ClientSecretAddedV2 = ApplicationEvents.ClientSecretAddedV2(EventId.random, applicationId, instant, otherAdminAsActor, "name", id.value.toString)
 
       "call AddClientSecretCommand Handler and relevant common services if application exists" in new Setup {
@@ -146,7 +146,7 @@ class ApplicationCommandDispatcherSpec
     }
 
     "RemoveClientSecret is received" should {
-      val cmd: RemoveClientSecret                      = RemoveClientSecret(otherAdminAsActor, ClientSecret.Id.random, now)
+      val cmd: RemoveClientSecret                      = RemoveClientSecret(otherAdminAsActor, ClientSecret.Id.random, instant)
       val evt: ApplicationEvents.ClientSecretRemovedV2 =
         ApplicationEvents.ClientSecretRemovedV2(EventId.random, applicationId, instant, otherAdminAsActor, cmd.clientSecretId.value.toString(), "someName")
 
@@ -168,7 +168,7 @@ class ApplicationCommandDispatcherSpec
 
     "AddCollaborator is received" should {
       val collaborator                               = "email".developer()
-      val cmd: AddCollaborator                       = AddCollaborator(otherAdminAsActor, collaborator, now)
+      val cmd: AddCollaborator                       = AddCollaborator(otherAdminAsActor, collaborator, instant)
       val evt: ApplicationEvents.CollaboratorAddedV2 = ApplicationEvents.CollaboratorAddedV2(
         EventId.random,
         applicationId,
@@ -196,7 +196,7 @@ class ApplicationCommandDispatcherSpec
     "RemoveCollaborator is received" should {
 
       val collaborator                                 = "email".developer()
-      val cmd: RemoveCollaborator                      = RemoveCollaborator(otherAdminAsActor, collaborator, now)
+      val cmd: RemoveCollaborator                      = RemoveCollaborator(otherAdminAsActor, collaborator, instant)
       val evt: ApplicationEvents.CollaboratorRemovedV2 = ApplicationEvents.CollaboratorRemovedV2(
         EventId.random,
         applicationId,
@@ -230,7 +230,7 @@ class ApplicationCommandDispatcherSpec
       val actor          = Actors.GatekeeperUser(gatekeeperUser)
       val userId         = UserId.random
 
-      val timestamp = now
+      val timestamp = instant
       val cmd       = ChangeProductionApplicationName(gatekeeperUser, userId, timestamp, newName)
       val evt       = ApplicationEvents.ProductionAppNameChangedEvent(
         EventId.random,
@@ -266,7 +266,7 @@ class ApplicationCommandDispatcherSpec
       val newUrl      = "http://example.com/new"
       val newLocation = PrivacyPolicyLocations.Url(newUrl)
       val userId      = idOf(anAdminEmail)
-      val timestamp   = now
+      val timestamp   = instant
       val actor       = otherAdminAsActor
 
       val cmd = ChangeProductionApplicationPrivacyPolicyLocation(userId, timestamp, newLocation)
@@ -305,7 +305,7 @@ class ApplicationCommandDispatcherSpec
       val newUrl      = "http://example.com/new"
       val newLocation = TermsAndConditionsLocations.Url(newUrl)
       val userId      = idOf(anAdminEmail)
-      val timestamp   = now
+      val timestamp   = instant
       val actor       = otherAdminAsActor
 
       val cmd = ChangeProductionApplicationTermsAndConditionsLocation(userId, timestamp, newLocation)
@@ -405,7 +405,7 @@ class ApplicationCommandDispatcherSpec
     }
 
     "DeclineApplicationApprovalRequest is received" should {
-      val timestamp = now
+      val timestamp = instant
       val actor     = Actors.GatekeeperUser(gatekeeperUser)
 
       val cmd = DeclineApplicationApprovalRequest(actor.user, reasons, timestamp)

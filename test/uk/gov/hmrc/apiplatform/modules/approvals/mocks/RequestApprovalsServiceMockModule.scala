@@ -43,7 +43,7 @@ trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatche
         when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToDuplicateName("my app")))
 
       def thenRequestFailsWithIncorrectSubmissionErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectSubmissionState(Submission.Status.Created(now, "Bob@fake.com"))))
+        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectSubmissionState(Submission.Status.Created(instant, "Bob@fake.com"))))
 
       def thenRequestFailsWithIllegalNameErrorFor(applicationId: ApplicationId, emailAddress: String) =
         when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIllegalName("my app")))

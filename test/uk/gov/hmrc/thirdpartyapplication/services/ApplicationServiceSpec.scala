@@ -190,8 +190,8 @@ class ApplicationServiceSpec
         tokens = tokens,
         state = testingState(),
         access = access,
-        createdOn = now,
-        lastAccess = Some(now)
+        createdOn = instant,
+        lastAccess = Some(instant)
       )
       val newRedirectUris                       = List(RedirectUri.unsafeApply("https://new-url.example.com"))
       val updatedApplication: StoredApplication = existingApplication.copy(
@@ -210,7 +210,7 @@ class ApplicationServiceSpec
         actor = gatekeeperActor,
         oldRedirectUris = List.empty,
         newRedirectUris = newRedirectUris,
-        timestamp = now
+        timestamp = instant
       )
 
       ApplicationRepoMock.Fetch.thenReturn(existingApplication)
@@ -249,7 +249,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -284,7 +284,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -312,7 +312,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -336,7 +336,7 @@ class ApplicationServiceSpec
         anApplicationData(
           createdApp.application.id,
           collaborators = Set(loggedInUserAdminCollaborator),
-          state = ApplicationState(State.PRODUCTION, updatedOn = now),
+          state = ApplicationState(State.PRODUCTION, updatedOn = instant),
           environment = Environment.SANDBOX
         )
 
@@ -348,7 +348,7 @@ class ApplicationServiceSpec
         createdApp.application.id,
         State.PRODUCTION,
         Actors.AppCollaborator(loggedInUser),
-        changedAt = now
+        changedAt = instant
       ))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
@@ -377,7 +377,7 @@ class ApplicationServiceSpec
 
       val expectedApplicationData: StoredApplication = anApplicationData(
         createdApp.application.id,
-        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = now),
+        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = instant),
         collaborators = Set(loggedInUserAdminCollaborator),
         access = Access.Privileged(totpIds = Some(TotpId("prodTotpId")))
       )
@@ -387,7 +387,7 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -411,7 +411,7 @@ class ApplicationServiceSpec
 
       val expectedApplicationData: StoredApplication = anApplicationData(
         createdApp.application.id,
-        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = now),
+        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = instant),
         collaborators = Set(loggedInUserAdminCollaborator),
         access = Access.Ropc()
       )
@@ -419,7 +419,7 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = now))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -504,7 +504,7 @@ class ApplicationServiceSpec
     "update the repository correctly" in new Setup {
       val termsOfUseAcceptance = TermsOfUseAcceptance(
         ResponsibleIndividual.build("bob", "bob@example.com"),
-        now,
+        instant,
         SubmissionId.random,
         0
       )
@@ -1037,8 +1037,8 @@ class ApplicationServiceSpec
       ApplicationTokens(productionToken),
       state,
       access,
-      now,
-      Some(now),
+      instant,
+      Some(instant),
       rateLimitTier = rateLimitTier,
       environment = environment.toString
     )

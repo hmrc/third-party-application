@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.utils
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
@@ -30,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, _}
 
-class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples with CollaboratorTestData {
+class ApplicationSpec extends utils.HmrcSpec with ApplicationStateUtil with UpliftRequestSamples with CollaboratorTestData {
 
   "Application with Uplift request" should {
     val app     =
@@ -44,10 +45,10 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         ApplicationTokens(StoredToken(ClientId("cid"), "at")),
         productionState("user1"),
         Access.Standard(),
-        now,
-        Some(now)
+        instant,
+        Some(instant)
       )
-    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator("1".toLaxEmail), changedAt = now)
+    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator("1".toLaxEmail), changedAt = instant)
 
     "create object" in {
       val result = ApplicationWithUpliftRequest.create(app, history)
@@ -79,7 +80,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
       createApplicationRequest = request,
       wso2ApplicationName = "wso2ApplicationName",
       environmentToken = StoredToken(ClientId("clientId"), "accessToken"),
-      createdOn = now
+      createdOn = instant
     )
   }
 
@@ -101,7 +102,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         createApplicationRequest = request,
         wso2ApplicationName = "wso2ApplicationName",
         environmentToken = StoredToken(ClientId("clientId"), "accessToken"),
-        createdOn = now
+        createdOn = instant
       )
     }
 

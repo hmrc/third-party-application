@@ -22,27 +22,27 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Applicat
 trait ApplicationStateUtil extends FixedClock {
   val generatedVerificationCode: String = "verificationCode"
 
-  def testingState() = ApplicationState(name = State.TESTING, updatedOn = now)
+  def testingState() = ApplicationState(name = State.TESTING, updatedOn = instant)
 
   def preProductionState(requestedBy: String) = ApplicationState(
     name = State.PRE_PRODUCTION,
     requestedByEmailAddress = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
-    updatedOn = now
+    updatedOn = instant
   )
 
   def productionState(requestedBy: String) = ApplicationState(
     name = State.PRODUCTION,
     requestedByEmailAddress = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
-    updatedOn = now
+    updatedOn = instant
   )
 
   def pendingRequesterVerificationState(requestedBy: String) = ApplicationState(
     name = State.PENDING_REQUESTER_VERIFICATION,
     requestedByEmailAddress = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
-    updatedOn = now
+    updatedOn = instant
   )
 
   def pendingGatekeeperApprovalState(requestedBy: String) = ApplicationState(
@@ -50,7 +50,7 @@ trait ApplicationStateUtil extends FixedClock {
     requestedByEmailAddress = Some(requestedBy),
     requestedByName = Some(requestedBy),
     verificationCode = None,
-    updatedOn = now
+    updatedOn = instant
   )
 
   def pendingResponsibleIndividualVerificationState(requestedBy: String, requestedByEmail: String) = ApplicationState(
@@ -58,7 +58,7 @@ trait ApplicationStateUtil extends FixedClock {
     requestedByEmailAddress = Some(requestedByEmail),
     requestedByName = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
-    updatedOn = now
+    updatedOn = instant
   )
 
   def deletedState(requestedBy: String) = ApplicationState(
@@ -66,6 +66,6 @@ trait ApplicationStateUtil extends FixedClock {
     requestedByEmailAddress = Some(requestedBy),
     requestedByName = Some(requestedBy),
     verificationCode = None,
-    updatedOn = now
+    updatedOn = instant
   )
 }

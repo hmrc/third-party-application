@@ -186,8 +186,8 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       ),
       ApplicationStateExamples.testing,
       Access.Privileged(None, scopes),
-      now,
-      Some(now)
+      instant,
+      Some(instant)
     )
 
   private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): StoredApplication =
@@ -203,8 +203,8 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       ),
       ApplicationStateExamples.testing,
       Access.Ropc(scopes),
-      now,
-      Some(now)
+      instant,
+      Some(instant)
     )
 
   private def standardApplicationDataWithOverrides(applicationId: ApplicationId, overrides: Set[OverrideFlag]): StoredApplication =
@@ -220,7 +220,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       ),
       ApplicationStateExamples.testing,
       Access.Standard(redirectUris = List.empty, overrides = overrides),
-      now,
-      Some(now)
+      instant,
+      Some(instant)
     )
 }

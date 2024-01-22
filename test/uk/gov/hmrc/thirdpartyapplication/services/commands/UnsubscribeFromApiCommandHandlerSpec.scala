@@ -46,7 +46,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with A
     val apiIdentifier       = "some-context".asIdentifier("1.1")
     val timestamp           = FixedClock.instant
 
-    val unsubscribeFromApi = UnsubscribeFromApi(gatekeeperUserActor, apiIdentifier, now)
+    val unsubscribeFromApi = UnsubscribeFromApi(gatekeeperUserActor, apiIdentifier, instant)
 
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).value

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.github.t3hnar.bcrypt._
@@ -40,9 +41,9 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   "clientSecretIsValid" should {
     val applicationId = ApplicationId.random
-    val fooSecret     = StoredClientSecret(name = "secret-1", createdOn = now, hashedSecret = "foo".bcrypt(myWorkFactor))
-    val barSecret     = StoredClientSecret(name = "secret-2", createdOn = now, hashedSecret = "bar".bcrypt(myWorkFactor))
-    val bazSecret     = StoredClientSecret(name = "secret-3", createdOn = now, hashedSecret = "baz".bcrypt(myWorkFactor))
+    val fooSecret     = StoredClientSecret(name = "secret-1", createdOn = instant, hashedSecret = "foo".bcrypt(myWorkFactor))
+    val barSecret     = StoredClientSecret(name = "secret-2", createdOn = instant, hashedSecret = "bar".bcrypt(myWorkFactor))
+    val bazSecret     = StoredClientSecret(name = "secret-3", createdOn = instant, hashedSecret = "baz".bcrypt(myWorkFactor))
 
     "return the ClientSecret that matches the provided secret value" in new Setup {
       val matchingSecret = await(underTest.clientSecretIsValid(applicationId, "bar", Seq(fooSecret, barSecret, bazSecret)))
@@ -52,7 +53,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "return the ClientSecret that matches the provided secret value and rehash it if the work factor has changed" in new Setup {
-      val secretWithDifferentWorkFactor = StoredClientSecret(name = "secret-4", createdOn = now, hashedSecret = "different-work-factor".bcrypt(myWorkFactor - 1))
+      val secretWithDifferentWorkFactor = StoredClientSecret(name = "secret-4", createdOn = instant, hashedSecret = "different-work-factor".bcrypt(myWorkFactor - 1))
 
       ApplicationRepoMock.UpdateClientSecretHash.thenReturn(applicationId, secretWithDifferentWorkFactor.id)(mock[StoredApplication])
 
@@ -72,7 +73,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
   }
 
   "lastUsedOrdering" should {
-    val mostRecent = StoredClientSecret(name = "secret-1", hashedSecret = "foo", lastAccess = Some(now))
+    val mostRecent = StoredClientSecret(name = "secret-1", hashedSecret = "foo", lastAccess = Some(instant))
     val middle     = StoredClientSecret(name = "secret-2", hashedSecret = "bar", lastAccess = Some(instant.minus(Duration.ofDays(1))))
     val agesAgo    = StoredClientSecret(name = "secret-3", hashedSecret = "baz", lastAccess = Some(instant.minus(Duration.ofDays(10))))
 
@@ -85,7 +86,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "sort client secrets with no last used date to the end" in new Setup {
-      val noLastUsedDate = StoredClientSecret(name = "secret-1", createdOn = now, hashedSecret = "foo", lastAccess = None)
+      val noLastUsedDate = StoredClientSecret(name = "secret-1", createdOn = instant, hashedSecret = "foo", lastAccess = None)
 
       val sortedList = List(noLastUsedDate, middle, agesAgo, mostRecent).sortWith(underTest.lastUsedOrdering)
 

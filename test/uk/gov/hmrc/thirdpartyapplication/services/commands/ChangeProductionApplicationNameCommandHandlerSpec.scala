@@ -47,7 +47,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
     val newApp = app.copy(name = newName, normalisedName = newName.toLowerCase())
 
     val timestamp = FixedClock.instant
-    val update    = ChangeProductionApplicationName(gatekeeperUser, userId, now, newName)
+    val update    = ChangeProductionApplicationName(gatekeeperUser, userId, instant, newName)
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
@@ -112,7 +112,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
 
     "return an error if application is still in the process of being approved" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val appPendingApproval = app.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = now))
+      val appPendingApproval = app.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
 
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
         underTest.process(appPendingApproval, update)

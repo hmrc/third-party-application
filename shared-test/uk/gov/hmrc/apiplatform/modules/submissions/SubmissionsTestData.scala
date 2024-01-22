@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions
 
-import java.time.Instant
 import scala.util.Random
 
 import cats.data.NonEmptyList
@@ -35,28 +34,28 @@ trait StatusTestDataHelper {
 
     def hasCompletelyAnsweredWith(answers: Submission.AnswersToQuestions): Submission = {
       (
-        Submission.addStatusHistory(Submission.Status.Answering(now, true)) andThen
+        Submission.addStatusHistory(Submission.Status.Answering(instant, true)) andThen
           Submission.updateLatestAnswersTo(answers)
       )(submission)
     }
 
     def hasCompletelyAnswered: Submission = {
-      Submission.addStatusHistory(Submission.Status.Answering(now, true))(submission)
+      Submission.addStatusHistory(Submission.Status.Answering(instant, true))(submission)
     }
 
     def answeringWith(answers: Submission.AnswersToQuestions): Submission = {
       (
-        Submission.addStatusHistory(Submission.Status.Answering(now, false)) andThen
+        Submission.addStatusHistory(Submission.Status.Answering(instant, false)) andThen
           Submission.updateLatestAnswersTo(answers)
       )(submission)
     }
 
     def answering: Submission = {
-      Submission.addStatusHistory(Submission.Status.Answering(now, false))(submission)
+      Submission.addStatusHistory(Submission.Status.Answering(instant, false))(submission)
     }
 
     def submitted: Submission = {
-      Submission.submit(now, "bob@example.com")(submission)
+      Submission.submit(instant, "bob@example.com")(submission)
     }
   }
 }
@@ -97,11 +96,11 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
     AskWhen.Context.Keys.VAT_OR_ITSA             -> "No",
     AskWhen.Context.Keys.NEW_TERMS_OF_USE_UPLIFT -> "No"
   )
-  val aSubmission                      = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
+  val aSubmission                      = Submission.create("bob@example.com", submissionId, applicationId, instant, testGroups, testQuestionIdsOfInterest, standardContext)
 
   val altSubmissionId = SubmissionId.random
   require(altSubmissionId != submissionId)
-  val altSubmission   = Submission.create("bob@example.com", altSubmissionId, applicationId, now.plusSeconds(100), testGroups, testQuestionIdsOfInterest, standardContext)
+  val altSubmission   = Submission.create("bob@example.com", altSubmissionId, applicationId, instant.plusSeconds(100), testGroups, testQuestionIdsOfInterest, standardContext)
 
   val completedSubmissionId = SubmissionId.random
   require(completedSubmissionId != submissionId)
@@ -118,13 +117,13 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
   val createdSubmission             = aSubmission
   val answeringSubmission           = createdSubmission.answeringWith(answersToQuestions)
   val answeredSubmission            = createdSubmission.hasCompletelyAnsweredWith(AnsweringQuestionsHelper.answersForGroups(Pass)(answeringSubmission.groups))
-  val submittedSubmission           = Submission.submit(now, "bob@example.com")(answeredSubmission)
-  val declinedSubmission            = Submission.decline(now, gatekeeperUserName, reasons)(submittedSubmission)
-  val grantedSubmission             = Submission.grant(now, gatekeeperUserName, None, None)(submittedSubmission)
-  val grantedWithWarningsSubmission = Submission.grantWithWarnings(now, gatekeeperUserName, "Warnings", None)(submittedSubmission)
-  val pendingRISubmission           = Submission.pendingResponsibleIndividual(now, "bob@example.com")(submittedSubmission)
-  val warningsSubmission            = Submission.warnings(now, "bob@example.com")(submittedSubmission)
-  val failSubmission                = Submission.fail(now, "bob@example.com")(submittedSubmission)
+  val submittedSubmission           = Submission.submit(instant, "bob@example.com")(answeredSubmission)
+  val declinedSubmission            = Submission.decline(instant, gatekeeperUserName, reasons)(submittedSubmission)
+  val grantedSubmission             = Submission.grant(instant, gatekeeperUserName, None, None)(submittedSubmission)
+  val grantedWithWarningsSubmission = Submission.grantWithWarnings(instant, gatekeeperUserName, "Warnings", None)(submittedSubmission)
+  val pendingRISubmission           = Submission.pendingResponsibleIndividual(instant, "bob@example.com")(submittedSubmission)
+  val warningsSubmission            = Submission.warnings(instant, "bob@example.com")(submittedSubmission)
+  val failSubmission                = Submission.fail(instant, "bob@example.com")(submittedSubmission)
 
   def buildSubmissionWithQuestions(): Submission = {
     val subId = SubmissionId.random
@@ -173,7 +172,7 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
       "bob@example.com",
       subId,
       appId,
-      now,
+      instant,
       questionnaireGroups,
       QuestionIdsOfInterest(
         questionName.id,
@@ -320,7 +319,7 @@ trait MarkedSubmissionsTestData extends SubmissionsTestData with AnsweringQuesti
 
   val markedSubmission = MarkedSubmission(submittedSubmission, markedAnswers)
 
-  def markAsPass(now: Instant = now, requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
+  def markAsPass(requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
     val answers = answersForGroups(Pass)(submission.groups)
     val marks   = answers.map { case (q, a) => q -> Pass }
 

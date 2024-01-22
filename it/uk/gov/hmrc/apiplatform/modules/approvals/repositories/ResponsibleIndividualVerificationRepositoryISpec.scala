@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
-import java.time.{Clock, Instant, ZoneOffset}
+import java.time.{Clock, Duration, Instant}
 import java.util.UUID
 
 import cats.data.NonEmptyList
@@ -44,7 +44,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import java.time.Duration
 
 object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
   val appName = "my app"

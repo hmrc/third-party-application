@@ -20,17 +20,17 @@ import java.time.Clock
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+
 import akka.actor.{Cancellable, Scheduler}
 import org.mockito.scalatest.MockitoSugar
 import org.scalatest.concurrent.Eventually
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Minute, Span}
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
+
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.inject.{ApplicationLifecycle, bind}
-import play.api.test.Helpers.{await, defaultAwaitTimeout}
+
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.config.{ClockModule, SchedulerModule}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec

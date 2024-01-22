@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import _root_.uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -26,14 +28,13 @@ import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, ApplicationId}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 object StateHistoryRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random
   val actor: Actor = Actors.AppCollaborator("admin@example.com".toLaxEmail)
-  val stateHistory = StateHistory(appId, State.TESTING, actor, changedAt = now)
+  val stateHistory = StateHistory(appId, State.TESTING, actor, changedAt = instant)
 
   val json = Json.obj(
     "applicationId" -> JsString(appId.toString()),
@@ -42,7 +43,7 @@ object StateHistoryRepositoryISpecExample extends FixedClock {
       "email"     -> "admin@example.com",
       "actorType" -> "COLLABORATOR"
     ),
-    "changedAt"     -> MongoJavatimeHelper.asJsValue(now)
+    "changedAt"     -> MongoJavatimeHelper.asJsValue(instant)
   )
 }
 
@@ -90,7 +91,7 @@ class StateHistoryRepositoryISpec
 
     "Save a state history" in {
 
-      val stateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = now)
+      val stateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = instant)
 
       val result = await(repository.insert(stateHistory))
 
@@ -105,8 +106,8 @@ class StateHistoryRepositoryISpec
     "Return the state history of the application" in {
 
       val applicationId          = ApplicationId.random
-      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = now)
-      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = now)
+      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = instant)
+      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = instant)
       await(repository.insert(stateHistory))
       await(repository.insert(anotherAppStateHistory))
 
@@ -122,9 +123,9 @@ class StateHistoryRepositoryISpec
 
       val applicationId   = ApplicationId.random
       val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = instant.minus(Duration.ofDays(5)))
-      val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = now)
-      val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = now)
-      val pendingHistory3 = StateHistory(ApplicationId.random, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = now)
+      val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = instant)
+      val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = instant)
+      val pendingHistory3 = StateHistory(ApplicationId.random, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = instant)
 
       await(repository.insert(pendingHistory1))
       await(repository.insert(approvedHistory))
@@ -143,9 +144,9 @@ class StateHistoryRepositoryISpec
 
       val applicationId   = ApplicationId.random
       val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = instant.minus(Duration.ofDays(5)))
-      val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = now)
-      val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = now)
-      val pendingHistory3 = StateHistory(ApplicationId.random, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = now)
+      val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = instant)
+      val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = instant)
+      val pendingHistory3 = StateHistory(ApplicationId.random, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = instant)
 
       await(repository.insert(pendingHistory1))
       await(repository.insert(approvedHistory))
@@ -163,8 +164,8 @@ class StateHistoryRepositoryISpec
     "Delete the state histories of the application" in {
 
       val applicationId          = ApplicationId.random
-      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = now)
-      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = now)
+      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = instant)
+      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = instant)
       await(repository.insert(stateHistory))
       await(repository.insert(anotherAppStateHistory))
 
@@ -179,7 +180,7 @@ class StateHistoryRepositoryISpec
     "insert a StateHistory record" in {
       val requesterEmail = "bill.badger@rupert.com".toLaxEmail
       val appId          = ApplicationId.random
-      val ts             = now
+      val ts             = instant
       val actor: Actor   = Actors.AppCollaborator(requesterEmail)
 
       val stateHistory = StateHistory(appId, State.PENDING_GATEKEEPER_APPROVAL, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)

@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import java.time.Instant
 import java.time.temporal.ChronoUnit._
-import java.time.{Instant, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
@@ -35,6 +35,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, InvalidStateTransition, State}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationServiceMockModule, StrideGatekeeperRoleAuthorisationServiceMockModule}
@@ -52,7 +53,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with ApplicationLogger
-    with ControllerTestData with ApplicationTestData {
+    with ControllerTestData with ApplicationTestData with FixedClock {
 
   import play.api.test.Helpers._
 
@@ -71,7 +72,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     val mockGatekeeperService           = mock[GatekeeperService]
     implicit val headers: HeaderCarrier = HeaderCarrier()
 
-    val nowInstant = Instant.now(clock).truncatedTo(MILLIS)
+    val nowInstant = instant
     val invite     = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, EMAIL_SENT)
 
     lazy val underTest =
@@ -249,9 +250,9 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
         "app 1",
         1,
         List(
-          ApplicationStateHistoryResponse.Item(State.TESTING, Instant.parse("2022-07-01T12:00:00")),
-          ApplicationStateHistoryResponse.Item(State.PENDING_GATEKEEPER_APPROVAL, Instant.parse("2022-07-01T13:00:00")),
-          ApplicationStateHistoryResponse.Item(State.PRODUCTION, Instant.parse("2022-07-01T14:00:00"))
+          ApplicationStateHistoryResponse.Item(State.TESTING, Instant.parse("2022-07-01T12:00:00Z")),
+          ApplicationStateHistoryResponse.Item(State.PENDING_GATEKEEPER_APPROVAL, Instant.parse("2022-07-01T13:00:00Z")),
+          ApplicationStateHistoryResponse.Item(State.PRODUCTION, Instant.parse("2022-07-01T14:00:00Z"))
         )
       ),
       ApplicationStateHistoryResponse(ApplicationId.random, "app 2", 2, List())
@@ -667,15 +668,15 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, now)
+    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, instant)
   }
 
-  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: Instant = now, state: ApplicationState = testingState()) = {
+  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: Instant = instant, state: ApplicationState = testingState()) = {
     ApplicationWithUpliftRequest(id, "app 1", submittedOn, state.name)
   }
 
   private def anAppResponse(appId: ApplicationId) = {
     val grantLengthInDays = 547
-    new Application(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, now, Some(now), grantLengthInDays)
+    new Application(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, instant, Some(instant), grantLengthInDays)
   }
 }

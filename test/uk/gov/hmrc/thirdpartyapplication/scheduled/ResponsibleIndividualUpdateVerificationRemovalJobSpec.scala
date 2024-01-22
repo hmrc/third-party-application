@@ -88,7 +88,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
         completelyAnswerExtendedSubmission.submission.id,
         0,
         "my app",
-        now,
+        instant,
         ResponsibleIndividual.build("ri name", "ri@example.com"),
         "Mr Admin",
         "admin@example.com".toLaxEmail
@@ -99,7 +99,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
 
       ResponsibleIndividualVerificationRepositoryMock.FetchByStateAgeAndTypes.verifyCalledWith(
         INITIAL,
-        now.minus(removalInterval.toSeconds, SECONDS),
+        instant.minus(removalInterval.toSeconds, SECONDS),
         ResponsibleIndividualVerification.VerificationTypeUpdate,
         ResponsibleIndividualVerification.VerificationTypeTouUplift
       )

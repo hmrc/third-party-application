@@ -31,6 +31,7 @@ import uk.gov.hmrc.play.audit.model.DataEvent
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.services.InstantSyntax
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
@@ -48,14 +49,14 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
-    with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
+    with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule with InstantSyntax {
 
   class Setup {
     val mockAuditConnector = mock[AuditConnector]
     val auditService       = new AuditService(mockAuditConnector, SubmissionsServiceMock.aMock, clock)
   }
 
-  val timestamp             = now
+  val timestamp             = instant
   val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
   val testImportantSubmissionData = ImportantSubmissionData(
@@ -183,9 +184,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
       val submittedOn: Instant       = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
       val declinedOn: Instant        = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
       val dates                      = Map(
-        "submission.started.date"   -> declinedSubmission.startedOn.format(fmt),
-        "submission.submitted.date" -> submittedOn.format(fmt),
-        "submission.declined.date"  -> declinedOn.format(fmt)
+        "submission.started.date"   -> fmt.format(declinedSubmission.startedOn.asLDT()),
+        "submission.submitted.date" -> fmt.format(submittedOn.asLDT()),
+        "submission.declined.date"  -> fmt.format(declinedOn.asLDT())
       )
       val markedAnswers              = MarkAnswer.markSubmission(declinedSubmission)
       val nbrOfFails                 = markedAnswers.filter(_._2 == Fail).size
@@ -487,8 +488,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
       wso2ApplicationName = "wso2ApplicationName",
       tokens = tokens,
       state = testingState(),
-      createdOn = now,
-      lastAccess = Some(now)
+      createdOn = instant,
+      lastAccess = Some(instant)
     )
 
     val updatedApp = previousApp.copy(

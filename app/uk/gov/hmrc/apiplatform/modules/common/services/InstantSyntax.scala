@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.util
+package uk.gov.hmrc.apiplatform.modules.common.services
 
-import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 
-import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
+trait InstantSyntax {
 
-abstract class AsyncHmrcSpec extends HmrcSpec with DefaultAwaitTimeout with FutureAwaits {}
+  implicit class InstantSyntax(instant: Instant) {
+    def asLDT(): LocalDateTime = instant.atZone(ZoneOffset.UTC).toLocalDateTime()
+  }
+}

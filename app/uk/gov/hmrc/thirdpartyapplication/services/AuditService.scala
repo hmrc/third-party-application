@@ -29,7 +29,7 @@ import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.common.services.{EitherTHelper, InstantSyntax}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
@@ -45,9 +45,10 @@ import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
 @Singleton
 class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(implicit val ec: ExecutionContext)
-    extends EitherTHelper[String] {
+    extends InstantSyntax {
 
   import cats.instances.future.catsStdInstancesForFuture
+  private val E = EitherTHelper.make[String]
 
   def audit(action: AuditAction, data: Map[String, String])(implicit hc: HeaderCarrier): Future[AuditResult] =
     audit(action, data, Map.empty)
@@ -96,7 +97,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   // scalastyle:on cyclomatic.complexity
 
   private def auditApplicationDeletedByGatekeeper(app: StoredApplication, evt: ApplicationDeletedByGatekeeper)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
-    liftF(auditGatekeeperAction(evt.actor.user, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail.text)))
+    E.liftF(auditGatekeeperAction(evt.actor.user, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail.text)))
       .toOption
       .value
   }
@@ -104,9 +105,9 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   private def auditApplicationApprovalRequestDeclined(app: StoredApplication, evt: ApplicationApprovalRequestDeclined)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     (
       for {
-        submission  <- fromOptionF(submissionService.fetchLatest(evt.applicationId), "No submission provided to audit")
+        submission  <- E.fromOptionF(submissionService.fetchLatest(evt.applicationId), "No submission provided to audit")
         extraDetails = AuditHelper.createExtraDetailsForApplicationApprovalRequestDeclined(app, submission, evt)
-        result      <- liftF(auditGatekeeperAction(evt.decliningUserName, app, ApplicationApprovalDeclined, extraDetails))
+        result      <- E.liftF(auditGatekeeperAction(evt.decliningUserName, app, ApplicationApprovalDeclined, extraDetails))
       } yield result
     )
       .toOption
@@ -114,19 +115,19 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   }
 
   private def auditAddCollaborator(app: StoredApplication, evt: CollaboratorAddedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
-    liftF(audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(evt.collaborator)))
+    E.liftF(audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(evt.collaborator)))
       .toOption
       .value
   }
 
   private def auditRemoveCollaborator(app: StoredApplication, evt: CollaboratorRemovedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
-    liftF(audit(CollaboratorRemovedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorRemovedAudit.details(evt.collaborator)))
+    E.liftF(audit(CollaboratorRemovedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorRemovedAudit.details(evt.collaborator)))
       .toOption
       .value
   }
 
   private def auditApiSubscribed(app: StoredApplication, evt: ApiSubscribedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
-    liftF(audit(
+    E.liftF(audit(
       Subscribed,
       Map("applicationId" -> app.id.value.toString, "apiVersion" -> evt.version.value, "apiContext" -> evt.context.value)
     ))
@@ -134,7 +135,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .value
 
   private def auditApiUnsubscribed(app: StoredApplication, evt: ApiUnsubscribedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
-    liftF(audit(
+    E.liftF(audit(
       Unsubscribed,
       Map("applicationId" -> app.id.value.toString, "apiVersion" -> evt.version.value, "apiContext" -> evt.context.value)
     ))
@@ -142,7 +143,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .value
 
   private def auditClientSecretAdded(app: StoredApplication, evt: ClientSecretAddedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
-    liftF(audit(
+    E.liftF(audit(
       ClientSecretAddedAudit,
       Map("applicationId" -> app.id.value.toString, "newClientSecret" -> evt.clientSecretName, "clientSecretType" -> "PRODUCTION")
     ))
@@ -150,7 +151,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .value
 
   private def auditClientSecretRemoved(app: StoredApplication, evt: ClientSecretRemovedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
-    liftF(audit(
+    E.liftF(audit(
       ClientSecretRemovedAudit,
       Map("applicationId" -> app.id.value.toString, "removedClientSecret" -> evt.clientSecretId)
     ))
@@ -158,7 +159,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .value
 
   private def auditRedirectUrisUpdated(app: StoredApplication, evt: RedirectUrisUpdatedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
-    liftF(audit(
+    E.liftF(audit(
       AppRedirectUrisChanged,
       Map("applicationId" -> app.id.value.toString, "newRedirectUris" -> evt.newRedirectUris.mkString(","))
     ))
@@ -337,7 +338,7 @@ object AuditAction {
   }
 }
 
-object AuditHelper {
+object AuditHelper extends InstantSyntax {
 
   def applicationId(applicationId: ApplicationId) = Map("applicationId" -> applicationId.value.toString)
 
@@ -402,9 +403,9 @@ object AuditHelper {
       (t.submissionId == submission.id && t.submissionInstance == submissionPreviousInstance.index)
     ).map(_.dateTime)
     val dates                                                  = Map(
-      "submission.started.date"   -> fmt.format(submission.startedOn),
-      "submission.submitted.date" -> fmt.format(submittedOn),
-      "submission.declined.date"  -> fmt.format(declinedOn)
+      "submission.started.date"   -> fmt.format(submission.startedOn.asLDT()),
+      "submission.submitted.date" -> fmt.format(submittedOn.asLDT()),
+      "submission.declined.date"  -> fmt.format(declinedOn.asLDT())
     ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> fmt.format(rivd)))
 
     val markedAnswers = MarkAnswer.markSubmission(submission)

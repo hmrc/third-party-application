@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.component
 
-import java.time.ZoneOffset
 import java.util.UUID
 import scala.concurrent.Await.{ready, result}
 import scala.util.Random
@@ -328,8 +327,8 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
                                              |    "role": "DEVELOPER",
                                              |    "userId": "${newUserId.value}"
                                              |  },
-                                             |  "timestamp": "2020-01-01T12:00:00",
-                                             |  "updateType": "addCollaborator"
+                                             |  "updateType": "addCollaborator",
+                                             |  "timestamp": "2020-01-01T12:00:00.000Z"
                                              | }""".stripMargin
 
       val response = postData(
@@ -376,7 +375,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
                               |    "role": "DEVELOPER",
                               |    "userId": "${userId.value}"
                               |  },
-                              |  "timestamp": "2020-01-01T12:00:00",
+                              |  "timestamp": "2020-01-01T12:00:00.000Z",
                               |  "updateType": "removeCollaborator"
                               | }""".stripMargin
 

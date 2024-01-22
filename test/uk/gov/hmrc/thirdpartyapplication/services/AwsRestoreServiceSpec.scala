@@ -50,7 +50,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
         ),
         applicationName,
         StoredToken(ClientId(""), serverToken, List.empty),
-        createdOn = now
+        createdOn = instant
       )
     }
 

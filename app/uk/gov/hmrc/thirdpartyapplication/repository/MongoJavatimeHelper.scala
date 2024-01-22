@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.util
+package uk.gov.hmrc.thirdpartyapplication.repository
 
-import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
+import java.time.Instant
 
-import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
+import play.api.libs.json._
 
-abstract class AsyncHmrcSpec extends HmrcSpec with DefaultAwaitTimeout with FutureAwaits {}
+object MongoJavatimeHelper {
+  def asJsValue(instant: Instant): JsValue = Json.obj("$date" -> Json.obj("$numberLong" -> JsString(instant.toEpochMilli().toString())))
+}

@@ -82,7 +82,7 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
       EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
       EmailConnectorMock.SendVerifyResponsibleIndividualReminderToAdmin.thenReturnSuccess()
 
-      val verification = ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, SubmissionId.random, 0, appName, now)
+      val verification = ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, SubmissionId.random, 0, appName, instant)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
       ResponsibleIndividualVerificationRepositoryMock.UpdateState.thenReturnSuccess()
 
@@ -93,7 +93,7 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
         ResponsibleIndividualVerification.VerificationTypeToU,
         INITIAL,
-        now.minus(reminderInterval.toSeconds, SECONDS)
+        instant.minus(reminderInterval.toSeconds, SECONDS)
       )
       ResponsibleIndividualVerificationRepositoryMock.UpdateState.verifyCalledWith(verification.id, REMINDERS_SENT)
     }

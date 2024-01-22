@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.models
 
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
+import uk.gov.hmrc.apiplatform.modules.common.utils
 
-class MarkSpec extends HmrcSpec {
+class MarkSpec extends utils.HmrcSpec {
 
   import Mark._
 

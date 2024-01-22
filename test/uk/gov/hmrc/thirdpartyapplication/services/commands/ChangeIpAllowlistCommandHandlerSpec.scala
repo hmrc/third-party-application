@@ -46,7 +46,7 @@ class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
     )
 
     val timestamp = FixedClock.instant
-    val update    = ApplicationCommands.ChangeIpAllowlist(loggedInAsActor, now, true, oldIpAllowList, newIpAllowlist)
+    val update    = ApplicationCommands.ChangeIpAllowlist(loggedInAsActor, instant, true, oldIpAllowList, newIpAllowlist)
 
     val underTest = new ChangeIpAllowlistCommandHandler(ApplicationRepoMock.aMock)
 
@@ -95,7 +95,7 @@ class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
       val badIpAllowList = List(
         CidrBlock("Bad CIDR Block")
       )
-      val badUpdate      = ApplicationCommands.ChangeIpAllowlist(loggedInAsActor, now, true, oldIpAllowList, badIpAllowList)
+      val badUpdate      = ApplicationCommands.ChangeIpAllowlist(loggedInAsActor, instant, true, oldIpAllowList, badIpAllowList)
 
       checkFailsWith("Not all new allowlist IP addresses are valid CIDR blocks") {
         underTest.process(anApplication, badUpdate)
