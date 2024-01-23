@@ -20,7 +20,6 @@ import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import _root_.uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -32,6 +31,7 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId, Environment, LaxEmailAddress, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, IpAllowlist, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil

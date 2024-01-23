@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import _root_.uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -28,6 +27,7 @@ import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, ApplicationId}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
