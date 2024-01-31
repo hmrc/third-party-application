@@ -67,7 +67,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
     val riEmail   = "ri@example.com".toLaxEmail
     val underTest = new ChangeResponsibleIndividualToSelfCommandHandler(ApplicationRepoMock.aMock, SubmissionsServiceMock.aMock)
 
-    val changeResponsibleIndividualToSelfCommand = ChangeResponsibleIndividualToSelf(appAdminUserId, now, riName, riEmail)
+    val changeResponsibleIndividualToSelfCommand = ChangeResponsibleIndividualToSelf(appAdminUserId, instant, riName, riEmail)
 
     def checkSuccessResult(expectedActor: Actor, expectedPreviousEmail: LaxEmailAddress, expectedPreviousName: String)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).value
@@ -114,7 +114,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
     "return an error if no submission is found for the application" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
       checkFailsWith(s"No submission found for application ${app.id.value}") {
-        underTest.process(app, ChangeResponsibleIndividualToSelf(appAdminUserId, now, riName, riEmail))
+        underTest.process(app, ChangeResponsibleIndividualToSelf(appAdminUserId, instant, riName, riEmail))
       }
     }
 
@@ -122,7 +122,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(nonStandardApp, ChangeResponsibleIndividualToSelf(appAdminUserId, now, riName, riEmail))
+        underTest.process(nonStandardApp, ChangeResponsibleIndividualToSelf(appAdminUserId, instant, riName, riEmail))
       }
     }
 
@@ -130,7 +130,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(oldJourneyApp, ChangeResponsibleIndividualToSelf(appAdminUserId, now, riName, riEmail))
+        underTest.process(oldJourneyApp, ChangeResponsibleIndividualToSelf(appAdminUserId, instant, riName, riEmail))
       }
     }
 
@@ -138,21 +138,21 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val notApprovedApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
-        underTest.process(notApprovedApp, ChangeResponsibleIndividualToSelf(appAdminUserId, now, riName, riEmail))
+        underTest.process(notApprovedApp, ChangeResponsibleIndividualToSelf(appAdminUserId, instant, riName, riEmail))
       }
     }
 
     "return an error if the requester is not an admin for the application" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(app, ChangeResponsibleIndividualToSelf(UserId.random, now, riName, riEmail))
+        underTest.process(app, ChangeResponsibleIndividualToSelf(UserId.random, instant, riName, riEmail))
       }
     }
 
     "return an error if the requester is already the RI for the application" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       checkFailsWith(s"The specified individual is already the RI for this application") {
-        underTest.process(app, ChangeResponsibleIndividualToSelf(oldRiUserId, now, oldRiName, oldRiEmail))
+        underTest.process(app, ChangeResponsibleIndividualToSelf(oldRiUserId, instant, oldRiName, oldRiEmail))
       }
     }
 

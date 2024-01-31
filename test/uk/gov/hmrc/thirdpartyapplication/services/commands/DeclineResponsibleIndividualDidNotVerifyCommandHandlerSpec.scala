@@ -93,7 +93,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      now,
+      instant,
       ResponsibleIndividualVerificationState.INITIAL
     )
 
@@ -103,7 +103,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      now,
+      instant,
       requesterName,
       requesterEmail,
       ResponsibleIndividualVerificationState.INITIAL
@@ -115,7 +115,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      now,
+      instant,
       newResponsibleIndividual,
       requesterName,
       requesterEmail,
@@ -226,7 +226,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       StateHistoryRepoMock.Insert.succeeds()
 
       checkSuccessResultToU(Actors.AppCollaborator(appAdminEmail)) {
-        underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, now))
+        underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }
 
@@ -237,7 +237,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
       checkSuccessResultUpdate(Actors.AppCollaborator(appAdminEmail)) {
-        underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, now))
+        underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }
 
@@ -251,14 +251,14 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
       checkSuccessResultTouUplift(Actors.AppCollaborator(appAdminEmail)) {
-        underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, now))
+        underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturnNothing
       checkFailsWith(s"No responsibleIndividualVerification found for code $code") {
-        underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, now))
+        underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }
 
@@ -266,7 +266,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(nonStandardApp, DeclineResponsibleIndividualDidNotVerify(code, now))
+        underTest.process(nonStandardApp, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }
 
@@ -274,7 +274,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(oldJourneyApp, DeclineResponsibleIndividualDidNotVerify(code, now))
+        underTest.process(oldJourneyApp, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }
 
@@ -285,12 +285,12 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
         submission.id,
         submission.latestInstance.index,
         "App Name",
-        now,
+        instant,
         ResponsibleIndividualVerificationState.INITIAL
       )
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification2)
       checkFailsWith("The given application id is different") {
-        underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, now))
+        underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }
 
@@ -298,7 +298,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val pendingGKApprovalApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName))
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state") {
-        underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividualDidNotVerify(code, now))
+        underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }
   }

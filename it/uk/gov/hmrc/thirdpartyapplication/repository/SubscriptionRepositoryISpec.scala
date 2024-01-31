@@ -386,8 +386,8 @@ class SubscriptionRepositoryISpec
       ApplicationTokens(StoredToken(clientId, generateAccessToken)),
       state,
       access,
-      now,
-      Some(now),
+      instant,
+      Some(instant),
       checkInformation = checkInformation
     )
   }

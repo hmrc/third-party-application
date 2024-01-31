@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.services
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 import play.api.libs.json._
 
@@ -32,7 +32,7 @@ trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
 
   import uk.gov.hmrc.play.json.Union
 
-  implicit val utcReads: Reads[LocalDateTime] = DefaultLocalDateTimeReads
+  implicit val utcReads: Reads[Instant] = DefaultInstantReads
 
   implicit val responsibleIndividualVerificationFormat: OFormat[ResponsibleIndividualToUVerification]                = Json.format[ResponsibleIndividualToUVerification]
   implicit val responsibleIndividualTouUpliftVerificationFormat: OFormat[ResponsibleIndividualTouUpliftVerification] = Json.format[ResponsibleIndividualTouUpliftVerification]

@@ -61,7 +61,7 @@ class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val adminsToEmail = Set(anAdminEmail, devEmail)
 
-    val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), collaborator, now)
+    val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), collaborator, instant)
 
     def checkSuccessResult(expectedActor: Actor)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>

@@ -42,7 +42,7 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
     val newApp                 = app.copy(grantLength = replaceWithGrantLength.days)
 
     val timestamp = FixedClock.instant
-    val update    = ApplicationCommands.ChangeGrantLength(gatekeeperUser, now, replaceWithGrantLength)
+    val update    = ApplicationCommands.ChangeGrantLength(gatekeeperUser, instant, replaceWithGrantLength)
 
     val underTest = new ChangeGrantLengthCommandHandler(ApplicationRepoMock.aMock)
 

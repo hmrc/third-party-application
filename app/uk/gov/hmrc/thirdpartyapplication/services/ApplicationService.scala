@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{apply => _, _}
@@ -116,7 +116,7 @@ class ApplicationService @Inject() (
     for {
       app            <- fetchApp(applicationId)
       oldState        = app.state
-      newState        = app.state.toProduction(now())
+      newState        = app.state.toProduction(instant())
       appWithNewState = app.copy(state = newState)
       updatedApp     <- applicationRepository.save(appWithNewState)
       stateHistory    = StateHistory(applicationId, newState.name, Actors.AppCollaborator(requesterEmailAddress), Some(oldState.name), None, app.state.updatedOn)
@@ -315,7 +315,7 @@ class ApplicationService @Inject() (
                         }
       totp           <- generateApplicationTotp(createApplicationRequest.accessType)
       modifiedRequest = applyTotpForPrivAppsOnly(totp, createApplicationRequest)
-      appData         = StoredApplication.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), LocalDateTime.now(clock))
+      appData         = StoredApplication.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), Instant.now(clock))
       _              <- createInApiGateway(appData)
       _              <- applicationRepository.save(appData)
       _              <- createStateHistory(appData)
@@ -407,7 +407,7 @@ class ApplicationService @Inject() (
       actor: Actor,
       rollback: StoredApplication => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = Instant.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)

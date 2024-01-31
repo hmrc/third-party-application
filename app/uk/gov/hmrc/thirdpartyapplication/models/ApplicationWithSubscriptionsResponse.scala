@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationWithSubscriptions
 
-case class ApplicationWithSubscriptionsResponse(id: ApplicationId, name: String, lastAccess: Option[LocalDateTime], apiIdentifiers: Set[ApiIdentifier])
+case class ApplicationWithSubscriptionsResponse(id: ApplicationId, name: String, lastAccess: Option[Instant], apiIdentifiers: Set[ApiIdentifier])
 
 object ApplicationWithSubscriptionsResponse {
   import play.api.libs.json.{Format, Json}

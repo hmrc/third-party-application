@@ -79,7 +79,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
         ResponsibleIndividualDeclinedUpdate(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(riVerification.requestingAdminEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress,
@@ -121,7 +121,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
         ResponsibleIndividualDidNotVerify(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress,
@@ -134,7 +134,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
         ApplicationApprovalRequestDeclined(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
           decliningUserName = responsibleIndividual.fullName.value,
           decliningUserEmail = responsibleIndividual.emailAddress,
@@ -181,7 +181,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
         ResponsibleIndividualDeclinedOrDidNotVerify(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress,

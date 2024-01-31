@@ -50,7 +50,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
     val ts                = FixedClock.instant
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
 
-    val cmd = DeleteApplicationByCollaborator(appAdminUserId, reasons, now)
+    val cmd = DeleteApplicationByCollaborator(appAdminUserId, reasons, instant)
 
     val underTest = new DeleteApplicationByCollaboratorCommandHandler(
       authControlConfig,
@@ -123,7 +123,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
 
     "return an error if the actor is not an admin of the application" in new Setup {
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, now))
+        underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, instant))
       }
     }
 

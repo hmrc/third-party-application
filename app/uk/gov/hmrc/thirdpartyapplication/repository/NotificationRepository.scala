@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.LocalDateTime
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 import com.google.inject.{Inject, Singleton}
@@ -36,7 +36,7 @@ object NotificationRepository {
 
   object MongoFormats {
     import play.api.libs.json.{Format, Json, OFormat}
-    implicit val dateFormat: Format[LocalDateTime]         = MongoJavatimeFormats.localDateTimeFormat
+    implicit val dateFormat: Format[Instant]               = MongoJavatimeFormats.instantFormat
     implicit val formatNotification: OFormat[Notification] = Json.format[Notification]
   }
 }

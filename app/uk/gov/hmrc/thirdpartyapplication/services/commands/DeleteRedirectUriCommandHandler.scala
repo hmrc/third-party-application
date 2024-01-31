@@ -64,7 +64,7 @@ class DeleteRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
       ApplicationEvents.RedirectUriDeleted(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = cmd.actor,
         deletedRedirectUri = cmd.redirectUriToDelete
       )

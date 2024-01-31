@@ -59,7 +59,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
         ApplicationEvents.ProductionLegacyAppTermsConditionsLocationChanged(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(getRequester(app, cmd.instigator)),
           oldUrl = oldUrl,
           newUrl = newUrl
@@ -88,7 +88,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
         ApplicationEvents.ProductionAppTermsConditionsLocationChanged(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(getRequester(app, cmd.instigator)),
           oldLocation = oldLocation,
           newLocation = cmd.newLocation

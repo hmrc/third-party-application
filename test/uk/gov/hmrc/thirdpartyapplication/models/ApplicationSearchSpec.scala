@@ -20,8 +20,8 @@ import java.time.{ZoneOffset, ZonedDateTime}
 
 import play.api.test.FakeRequest
 
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
 class ApplicationSearchSpec extends HmrcSpec {
 
@@ -75,55 +75,63 @@ class ApplicationSearchSpec extends HmrcSpec {
 
     "correctly parse lastUseBefore into LastUseBeforeDate filter" in {
       val dateAsISOString  = "2020-02-22T16:35:00Z"
-      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toLocalDateTime
+      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toInstant
 
       val request = FakeRequest("GET", s"/applications?lastUseBefore=$dateAsISOString")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       val parsedFilter = searchObject.filters.head
-      parsedFilter.isInstanceOf[LastUseBeforeDate] should be(true)
-      parsedFilter.asInstanceOf[LastUseBeforeDate].lastUseDate.isEqual(expectedDateTime) should be(true)
+      parsedFilter match {
+        case LastUseBeforeDate(lastUseDate) => lastUseDate shouldBe expectedDateTime
+        case _                              => fail()
+      }
     }
 
     "correctly parse date only into LastUseBeforeDate filter" in {
       val dateAsISOString  = "2020-02-22"
-      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 0, 0, 0, 0, ZoneOffset.UTC).toLocalDateTime
+      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 0, 0, 0, 0, ZoneOffset.UTC).toInstant
 
       val request = FakeRequest("GET", s"/applications?lastUseBefore=$dateAsISOString")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       val parsedFilter = searchObject.filters.head
-      parsedFilter.isInstanceOf[LastUseBeforeDate] should be(true)
-      parsedFilter.asInstanceOf[LastUseBeforeDate].lastUseDate.isEqual(expectedDateTime) should be(true)
+      parsedFilter match {
+        case LastUseBeforeDate(lastUseDate) => lastUseDate shouldBe expectedDateTime
+        case _                              => fail()
+      }
     }
 
     "correctly parse lastUseAfter into LastUseAfterDate filter" in {
       val dateAsISOString  = "2020-02-22T16:35:00Z"
-      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toLocalDateTime
+      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toInstant
 
       val request = FakeRequest("GET", s"/applications?lastUseAfter=$dateAsISOString")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       val parsedFilter = searchObject.filters.head
-      parsedFilter.isInstanceOf[LastUseAfterDate] should be(true)
-      parsedFilter.asInstanceOf[LastUseAfterDate].lastUseDate.isEqual(expectedDateTime) should be(true)
+      parsedFilter match {
+        case LastUseAfterDate(lastUseDate) => lastUseDate shouldBe expectedDateTime
+        case _                             => fail()
+      }
     }
 
     "correctly parse date only into LastUseAfterDate filter" in {
       val dateAsISOString = "2020-02-22"
 
-      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 0, 0, 0, 0, ZoneOffset.UTC).toLocalDateTime
+      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 0, 0, 0, 0, ZoneOffset.UTC).toInstant
 
       val request = FakeRequest("GET", s"/applications?lastUseAfter=$dateAsISOString")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       val parsedFilter = searchObject.filters.head
-      parsedFilter.isInstanceOf[LastUseAfterDate] should be(true)
-      parsedFilter.asInstanceOf[LastUseAfterDate].lastUseDate.isEqual(expectedDateTime) should be(true)
+      parsedFilter match {
+        case LastUseAfterDate(lastUseDate) => lastUseDate shouldBe expectedDateTime
+        case _                             => fail()
+      }
     }
 
     "correctly parses multiple filters" in {

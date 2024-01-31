@@ -59,7 +59,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
       ApplicationEvents.ApplicationDeletedByGatekeeper(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,

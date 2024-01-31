@@ -197,8 +197,8 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
         "PRODUCTION",
         Some("description"),
         Set.empty,
-        now,
-        Some(now),
+        instant,
+        Some(instant),
         grantLengthInDays,
         access = Access.Standard()
       )
@@ -210,7 +210,7 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
 
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
-        Application(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, now, Some(now), grantLengthInDays)
+        Application(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, instant, Some(instant), grantLengthInDays)
       when(mockApplicationService.fetch(applicationId)).thenReturn(
         OptionT.pure[Future](
           applicationResponse.copy(clientId = ClientId("privilegedClientId"), name = "privilegedName", access = Access.Privileged(scopes = Set("scope:privilegedScopeKey")))

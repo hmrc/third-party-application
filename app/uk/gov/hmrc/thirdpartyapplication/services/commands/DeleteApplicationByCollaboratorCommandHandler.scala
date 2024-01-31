@@ -67,7 +67,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
       ApplicationEvents.ApplicationDeleted(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = Actors.AppCollaborator(requesterEmail),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,

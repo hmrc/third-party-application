@@ -93,7 +93,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
   val authKey: String = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
 
   "DeleteUnusedApplicationCommand" should {
-    val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, now)
+    val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, instant)
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
@@ -109,7 +109,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
     }
 
     "return an error when auth key doesnt match" in new Setup {
-      val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", "notAuthKey", reasons, now)
+      val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", "notAuthKey", reasons, instant)
 
       checkFailsWith("Cannot delete this applicaton") {
         underTest.process(app, cmd)

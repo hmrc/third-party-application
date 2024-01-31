@@ -42,7 +42,7 @@ class ChangeRateLimitTierCommandHandlerSpec extends CommandHandlerBaseSpec {
     val newApp                   = app.copy(rateLimitTier = Some(replaceWithRateLimitTier))
 
     val timestamp = FixedClock.instant
-    val update    = ApplicationCommands.ChangeRateLimitTier(gatekeeperUser, now, replaceWithRateLimitTier)
+    val update    = ApplicationCommands.ChangeRateLimitTier(gatekeeperUser, instant, replaceWithRateLimitTier)
 
     val underTest = new ChangeRateLimitTierCommandHandler(ApiGatewayStoreMock.aMock, ApplicationRepoMock.aMock)
 

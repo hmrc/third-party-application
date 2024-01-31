@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.LocalDateTime
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -53,7 +53,7 @@ object ApplicationRepository {
     import uk.gov.hmrc.play.json.Union
     import play.api.libs.functional.syntax._
 
-    implicit val formatLocalDateTime: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+    implicit val formatInstant: Format[Instant] = MongoJavatimeFormats.instantFormat
 
     implicit val formatTermsOfUseAcceptance: OFormat[TermsOfUseAcceptance]       = Json.using[Json.WithDefaultValues].format[TermsOfUseAcceptance]
     implicit val formatTermsOfUserAgreement: OFormat[TermsOfUseAgreement]        = Json.format[TermsOfUseAgreement]
@@ -125,8 +125,8 @@ object ApplicationRepository {
         (JsPath \ "tokens").read[ApplicationTokens] and
         (JsPath \ "state").read[ApplicationState] and
         (JsPath \ "access").read[Access] and
-        (JsPath \ "createdOn").read[LocalDateTime] and
-        (JsPath \ "lastAccess").readNullable[LocalDateTime] and
+        (JsPath \ "createdOn").read[Instant] and
+        (JsPath \ "lastAccess").readNullable[Instant] and
         ((JsPath \ "grantLength").read[Int] or Reads.pure(grantLengthConfig)) and
         (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
         (JsPath \ "environment").read[String] and
@@ -394,7 +394,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     collection.find(query).headOption()
   }
 
-  def fetchAllByStatusDetails(state: State, updatedBefore: LocalDateTime): Future[Seq[StoredApplication]] = {
+  def fetchAllByStatusDetails(state: State, updatedBefore: Instant): Future[Seq[StoredApplication]] = {
     val query = and(
       equal("state.name", state.toString()),
       lte("state.updatedOn", updatedBefore)
@@ -403,7 +403,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     collection.find(query).toFuture()
   }
 
-  def fetchByStatusDetailsAndEnvironment(state: State, updatedBefore: LocalDateTime, environment: Environment): Future[Seq[StoredApplication]] = {
+  def fetchByStatusDetailsAndEnvironment(state: State, updatedBefore: Instant, environment: Environment): Future[Seq[StoredApplication]] = {
     collection.aggregate(
       Seq(
         filter(equal("state.name", state.toString())),
@@ -413,7 +413,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     ).toFuture()
   }
 
-  def fetchByStatusDetailsAndEnvironmentNotAleadyNotified(state: State, updatedBefore: LocalDateTime, environment: Environment): Future[Seq[StoredApplication]] = {
+  def fetchByStatusDetailsAndEnvironmentNotAleadyNotified(state: State, updatedBefore: Instant, environment: Environment): Future[Seq[StoredApplication]] = {
     timeFuture(
       "Fetch Applications by Status Details and Environment not Already Notified",
       "application.repository.fetchByStatusDetailsAndEnvironmentNotAleadyNotified"
@@ -784,7 +784,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       .map(_ => HasSucceeded)
   }
 
-  def delete(id: ApplicationId, updatedOn: LocalDateTime): Future[StoredApplication] = {
+  def delete(id: ApplicationId, updatedOn: Instant): Future[StoredApplication] = {
     updateApplication(
       id,
       Updates.combine(
@@ -870,7 +870,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       applicationId: ApplicationId,
       newResponsibleIndividualName: String,
       newResponsibleIndividualEmail: LaxEmailAddress,
-      eventDateTime: LocalDateTime,
+      eventDateTime: Instant,
       submissionId: SubmissionId,
       submissionIndex: Int
     ): Future[StoredApplication] = {
@@ -897,7 +897,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       applicationId: ApplicationId,
       requestingAdminName: String,
       requestingAdminEmail: LaxEmailAddress,
-      timeOfChange: LocalDateTime,
+      timeOfChange: Instant,
       submissionId: SubmissionId,
       submissionIndex: Int
     ): Future[StoredApplication] =
@@ -922,7 +922,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       applicationId: ApplicationId,
       responsibleIndividualName: String,
       responsibleIndividualEmail: LaxEmailAddress,
-      eventDateTime: LocalDateTime,
+      eventDateTime: Instant,
       submissionId: SubmissionId,
       submissionIndex: Int
     ): Future[StoredApplication] =
@@ -944,7 +944,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def updateApplicationState(
       applicationId: ApplicationId,
       newAppState: State,
-      timestamp: LocalDateTime,
+      timestamp: Instant,
       requestingAdminEmail: String,
       requestingAdminName: String
     ): Future[StoredApplication] =

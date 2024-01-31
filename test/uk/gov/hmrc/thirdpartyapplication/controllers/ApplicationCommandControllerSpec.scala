@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneOffset}
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -64,7 +64,7 @@ class ApplicationCommandControllerSpec
   }
 
   val actor                   = Actors.AppCollaborator("fred@smith.com".toLaxEmail)
-  val cmd: ApplicationCommand = AddCollaborator(actor, Collaborators.Administrator(UserId.random, "bob@smith.com".toLaxEmail), LocalDateTime.now)
+  val cmd: ApplicationCommand = AddCollaborator(actor, Collaborators.Administrator(UserId.random, "bob@smith.com".toLaxEmail), instant)
   val dispatch                = ApplicationCommandController.DispatchRequest(cmd, Set("fred".toLaxEmail))
 
   implicit val tempWriter: OWrites[ApplicationCommandController.DispatchRequest] = Json.writes[ApplicationCommandController.DispatchRequest]
@@ -75,7 +75,7 @@ class ApplicationCommandControllerSpec
     val validUpdateNameRequestBody = Json.obj(
       "updateType"     -> "changeProductionApplicationName",
       "instigator"     -> instigatorUserId,
-      "timestamp"      -> now,
+      "timestamp"      -> instant,
       "gatekeeperUser" -> gatekeeperUser,
       "newName"        -> "bob"
     )
@@ -83,7 +83,7 @@ class ApplicationCommandControllerSpec
     "dispatch request" should {
       val jsonText  =
         s"""{"command":{"actor":{"actorType":"UNKNOWN"},"collaborator":{"userId":"${developerCollaborator.userId.value}","emailAddress":"dev@example.com","role":"DEVELOPER"},"timestamp":"2020-01-01T12:00:00Z","updateType":"removeCollaborator"},"verifiedCollaboratorsToNotify":["admin@example.com"]}"""
-      val timestamp = LocalDateTime.of(2020, 1, 1, 12, 0, 0)
+      val timestamp = LocalDateTime.of(2020, 1, 1, 12, 0, 0).toInstant(ZoneOffset.UTC)
       val cmd       = RemoveCollaborator(Actors.Unknown, developerCollaborator, timestamp)
       val req       = ApplicationCommandController.DispatchRequest(cmd, Set(anAdminEmail))
       import cats.syntax.option._

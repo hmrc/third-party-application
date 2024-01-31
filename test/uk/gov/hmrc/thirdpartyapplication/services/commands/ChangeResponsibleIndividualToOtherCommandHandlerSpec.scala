@@ -88,7 +88,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      now,
+      instant,
       ResponsibleIndividualVerificationState.INITIAL
     )
 
@@ -98,7 +98,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      now,
+      instant,
       requesterName,
       requesterEmail,
       ResponsibleIndividualVerificationState.INITIAL
@@ -110,7 +110,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       submission.id,
       submission.latestInstance.index,
       "App Name",
-      now,
+      instant,
       newResponsibleIndividual,
       requesterName,
       requesterEmail,
@@ -243,7 +243,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       StateHistoryRepoMock.Insert.succeeds()
 
       checkSuccessResultToU() {
-        underTest.process(pendingRIApp, ChangeResponsibleIndividualToOther(code, now))
+        underTest.process(pendingRIApp, ChangeResponsibleIndividualToOther(code, instant))
       }
     }
 
@@ -257,7 +257,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
       checkSuccessResultTouUplift(false) {
-        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, now))
+        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, instant))
       }
     }
 
@@ -272,7 +272,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
       checkSuccessResultTouUplift(true) {
-        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, now))
+        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, instant))
       }
     }
 
@@ -283,14 +283,14 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       ApplicationRepoMock.UpdateApplicationChangeResponsibleIndividual.thenReturn(prodApp)
 
       checkSuccessResultUpdate() {
-        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, now))
+        underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, instant))
       }
     }
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturnNothing
       checkFailsWith(s"No responsibleIndividualVerification found for code $code") {
-        underTest.process(app, ChangeResponsibleIndividualToOther(code, now))
+        underTest.process(app, ChangeResponsibleIndividualToOther(code, instant))
       }
     }
 
@@ -298,7 +298,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(nonStandardApp, ChangeResponsibleIndividualToOther(code, now))
+        underTest.process(nonStandardApp, ChangeResponsibleIndividualToOther(code, instant))
       }
     }
 
@@ -306,7 +306,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(oldJourneyApp, ChangeResponsibleIndividualToOther(code, now))
+        underTest.process(oldJourneyApp, ChangeResponsibleIndividualToOther(code, instant))
       }
     }
 
@@ -317,12 +317,12 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
         submission.id,
         submission.latestInstance.index,
         "App Name",
-        now,
+        instant,
         ResponsibleIndividualVerificationState.INITIAL
       )
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification2)
       checkFailsWith("The given application id is different") {
-        underTest.process(app, ChangeResponsibleIndividualToOther(code, now))
+        underTest.process(app, ChangeResponsibleIndividualToOther(code, instant))
       }
     }
 
@@ -330,7 +330,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val pendingGKApprovalApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName))
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state") {
-        underTest.process(pendingGKApprovalApp, ChangeResponsibleIndividualToOther(code, now))
+        underTest.process(pendingGKApprovalApp, ChangeResponsibleIndividualToOther(code, instant))
       }
     }
 

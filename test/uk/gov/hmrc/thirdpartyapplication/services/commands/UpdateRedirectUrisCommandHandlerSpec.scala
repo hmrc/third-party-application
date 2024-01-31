@@ -44,7 +44,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_))
 
     val timestamp  = FixedClock.instant
-    val cmdAsGK    = UpdateRedirectUris(gatekeeperActor, oldRedirectUris, newRedirectUris, now)
+    val cmdAsGK    = UpdateRedirectUris(gatekeeperActor, oldRedirectUris, newRedirectUris, instant)
     val cmdAsAdmin = cmdAsGK.copy(actor = adminActor)
     val cmdAsDev   = cmdAsGK.copy(actor = developerActor)
 

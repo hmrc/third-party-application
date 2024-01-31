@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
-import java.time.LocalDateTime
+import java.time.Instant
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
@@ -38,18 +38,18 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
     object FetchByTypeStateAndAge {
 
       def thenReturn(verifications: ResponsibleIndividualVerification*) =
-        when(aMock.fetchByTypeStateAndAge(*, *[ResponsibleIndividualVerificationState], *[LocalDateTime])).thenReturn(Future.successful(List(verifications: _*)))
+        when(aMock.fetchByTypeStateAndAge(*, *[ResponsibleIndividualVerificationState], *[Instant])).thenReturn(Future.successful(List(verifications: _*)))
 
-      def verifyCalledWith(verificationType: String, state: ResponsibleIndividualVerificationState, dateTime: LocalDateTime) =
+      def verifyCalledWith(verificationType: String, state: ResponsibleIndividualVerificationState, dateTime: Instant) =
         verify(aMock).fetchByTypeStateAndAge(verificationType, state, dateTime)
     }
 
     object FetchByStateAgeAndTypes {
 
       def thenReturn(verifications: ResponsibleIndividualVerification*) =
-        when(aMock.fetchByStateAgeAndTypes(*[ResponsibleIndividualVerificationState], *[LocalDateTime], *)).thenReturn(Future.successful(List(verifications: _*)))
+        when(aMock.fetchByStateAgeAndTypes(*[ResponsibleIndividualVerificationState], *[Instant], *)).thenReturn(Future.successful(List(verifications: _*)))
 
-      def verifyCalledWith(state: ResponsibleIndividualVerificationState, dateTime: LocalDateTime, verificationType1: String, verificationType2: String) =
+      def verifyCalledWith(state: ResponsibleIndividualVerificationState, dateTime: Instant, verificationType1: String, verificationType2: String) =
         verify(aMock).fetchByStateAgeAndTypes(state, dateTime, verificationType1, verificationType2)
     }
 

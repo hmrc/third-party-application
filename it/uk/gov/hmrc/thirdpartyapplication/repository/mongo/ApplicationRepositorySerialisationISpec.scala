@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository.mongo
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import scala.util.Random.nextString
 
 import org.mongodb.scala.Document
@@ -80,13 +80,13 @@ class ApplicationRepositorySerialisationISpec
       nextString(lengthOfRandomToken)
     }
 
-    private def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[LocalDateTime] = None, hashedSecret: String = "hashed-secret") =
+    private def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[Instant] = None, hashedSecret: String = "hashed-secret") =
       StoredClientSecret(
         id = id,
         name = name,
         lastAccess = lastAccess,
         hashedSecret = hashedSecret,
-        createdOn = now
+        createdOn = instant
       )
 
     val applicationData = StoredApplication(
@@ -103,8 +103,8 @@ class ApplicationRepositorySerialisationISpec
       ),
       testingState(),
       Access.Standard(),
-      now,
-      Some(now),
+      instant,
+      Some(instant),
       grantLength = grantLength,
       checkInformation = None
     )

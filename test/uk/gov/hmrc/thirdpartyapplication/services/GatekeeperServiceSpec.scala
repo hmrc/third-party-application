@@ -56,11 +56,11 @@ class GatekeeperServiceSpec
   private val productionToken = StoredToken(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL): StateHistory = {
-    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(State.TESTING), changedAt = now)
+    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(State.TESTING), changedAt = instant)
   }
 
   private def aStateHistoryResponse(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, now)
+    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, instant)
   }
 
   private def anApplicationData(
@@ -78,8 +78,8 @@ class GatekeeperServiceSpec
       ApplicationTokens(productionToken),
       state,
       Access.Standard(),
-      now,
-      Some(now)
+      instant,
+      Some(instant)
     )
   }
 
@@ -222,7 +222,7 @@ class GatekeeperServiceSpec
         state = State.PENDING_REQUESTER_VERIFICATION,
         actor = Actors.GatekeeperUser(gatekeeperUserId),
         previousState = Some(State.PENDING_GATEKEEPER_APPROVAL),
-        changedAt = now
+        changedAt = instant
       )
 
       ApplicationRepoMock.Fetch.thenReturn(application)
@@ -344,7 +344,7 @@ class GatekeeperServiceSpec
         actor = Actors.GatekeeperUser(gatekeeperUserId),
         previousState = Some(State.PENDING_GATEKEEPER_APPROVAL),
         notes = Some(rejectReason),
-        changedAt = now
+        changedAt = instant
       )
 
       ApplicationRepoMock.Fetch.thenReturn(application)
@@ -500,9 +500,9 @@ class GatekeeperServiceSpec
     "return correct state history values" in new Setup {
       val appId1   = ApplicationId.random
       val appId2   = ApplicationId.random
-      val ts1      = now
-      val ts2      = now
-      val ts3      = now
+      val ts1      = instant
+      val ts2      = instant
+      val ts3      = instant
       val history1 = ApplicationWithStateHistory(
         appId1,
         "app1",

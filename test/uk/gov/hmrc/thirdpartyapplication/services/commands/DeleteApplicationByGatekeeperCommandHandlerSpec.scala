@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.LocalDateTime
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
@@ -86,9 +86,9 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
     }
   }
 
-  val actor             = gatekeeperActor
-  val reasons           = "reasons description text"
-  val ts: LocalDateTime = now
+  val actor       = gatekeeperActor
+  val reasons     = "reasons description text"
+  val ts: Instant = instant
 
   "DeleteApplicationByGatekeeper" should {
     val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, ts)

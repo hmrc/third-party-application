@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models.db
+package uk.gov.hmrc.apiplatform.modules.common.services
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiIdentifier, ApplicationId}
+trait InstantSyntax {
 
-case class ApplicationWithSubscriptions(
-    id: ApplicationId,
-    name: String,
-    lastAccess: Option[Instant],
-    apiIdentifiers: Set[ApiIdentifier]
-  )
+  implicit class InstantSyntax(instant: Instant) {
+    def asLDT(): LocalDateTime = instant.atZone(ZoneOffset.UTC).toLocalDateTime()
+  }
+}

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import java.time.temporal.ChronoUnit.SECONDS
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -58,7 +58,7 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
   override val lockService: LockService     = responsibleIndividualVerificationReminderJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val remindIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.reminderInterval.toSeconds, SECONDS)
+    val remindIfCreatedBeforeNow                    = Instant.now(clock).minus(jobConfig.reminderInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
       remindersDue <-
         repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.INITIAL, remindIfCreatedBeforeNow)

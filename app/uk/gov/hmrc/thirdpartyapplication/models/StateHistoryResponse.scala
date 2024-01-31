@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 import play.api.libs.json.{Json, OFormat}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 
-case class StateHistoryResponse(applicationId: ApplicationId, state: State, actor: Actor, notes: Option[String], changedAt: LocalDateTime)
+case class StateHistoryResponse(applicationId: ApplicationId, state: State, actor: Actor, notes: Option[String], changedAt: Instant)
 
 object StateHistoryResponse {
   def from(sh: StateHistory) = StateHistoryResponse(sh.applicationId, sh.state, sh.actor, sh.notes, sh.changedAt)

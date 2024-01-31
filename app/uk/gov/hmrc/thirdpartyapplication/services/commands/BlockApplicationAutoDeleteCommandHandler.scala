@@ -50,7 +50,7 @@ class BlockApplicationAutoDeleteCommandHandler @Inject() (
         id = EventId.random,
         applicationId = app.id,
         reasons = cmd.reasons,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser)
       )
     )

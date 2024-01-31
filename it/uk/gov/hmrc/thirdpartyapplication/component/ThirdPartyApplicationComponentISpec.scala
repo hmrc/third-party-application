@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.component
 
-import java.time.ZoneOffset
 import java.util.UUID
 import scala.concurrent.Await.{ready, result}
 import scala.util.Random
@@ -49,7 +48,7 @@ class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
 }
 
-class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with CollaboratorTestData with Inside {
+class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with CollaboratorTestData with Inside with FixedClock {
 
   val configOverrides = Map[String, Any](
     "microservice.services.api-subscription-fields.port"         -> 19650,
@@ -172,7 +171,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       Given("A third party application")
       val application: Application = createApplication(appName)
       val cmd                      =
-        ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, FixedClock.now)
+        ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
 
       sendApplicationCommand(cmd, application)
       val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
@@ -193,7 +192,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       // We have to compare contents individually
       val returnedClientSecret = returnedResponse.clientSecrets.head
       returnedClientSecret.name should be(expectedClientSecrets.head.name)
-      returnedClientSecret.createdOn.toInstant(ZoneOffset.UTC).toEpochMilli should be(expectedClientSecrets.head.createdOn.toInstant(ZoneOffset.UTC).toEpochMilli)
+      returnedClientSecret.createdOn.toEpochMilli should be(expectedClientSecrets.head.createdOn.toEpochMilli)
     }
   }
 
@@ -218,7 +217,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       import com.github.t3hnar.bcrypt._
       val secret       = UUID.randomUUID().toString
       val hashedSecret = secret.bcrypt(4)
-      val cmd          = ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, hashedSecret, FixedClock.now)
+      val cmd          = ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, hashedSecret, instant)
 
       val addClientSecretResponse = sendApplicationCommand(cmd, application)
       addClientSecretResponse.code shouldBe OK
@@ -328,8 +327,8 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
                                              |    "role": "DEVELOPER",
                                              |    "userId": "${newUserId.value}"
                                              |  },
-                                             |  "timestamp": "2020-01-01T12:00:00",
-                                             |  "updateType": "addCollaborator"
+                                             |  "updateType": "addCollaborator",
+                                             |  "timestamp": "2020-01-01T12:00:00.000Z"
                                              | }""".stripMargin
 
       val response = postData(
@@ -376,7 +375,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
                               |    "role": "DEVELOPER",
                               |    "userId": "${userId.value}"
                               |  },
-                              |  "timestamp": "2020-01-01T12:00:00",
+                              |  "timestamp": "2020-01-01T12:00:00.000Z",
                               |  "updateType": "removeCollaborator"
                               | }""".stripMargin
 
@@ -464,7 +463,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       When("I request to add a production client secret")
       val cmd =
-        ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, FixedClock.now)
+        ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
 
       val cmdResponse = sendApplicationCommand(cmd, application)
       cmdResponse.code shouldBe OK
@@ -478,7 +477,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       When("I request to add a second production client secret")
       val secondCmd         =
-        ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, FixedClock.now)
+        ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
       val secondCmdResponse = sendApplicationCommand(secondCmd, application)
       secondCmdResponse.code shouldBe OK
       // check secret was added
@@ -491,7 +490,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       moreSecrets should have size 2
 
       When("I request to remove a production client secret")
-      val removeCmd         = ApplicationCommands.RemoveClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), secondCmd.id, FixedClock.now)
+      val removeCmd         = ApplicationCommands.RemoveClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), secondCmd.id, instant)
       val removeCmdResponse = sendApplicationCommand(removeCmd, application)
       removeCmdResponse.code shouldBe OK
 
@@ -559,7 +558,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       And("I subscribe the application to an API")
       apiPlatformEventsStub.willReceiveApiSubscribedEvent()
-      val cmd = ApplicationCommands.SubscribeToApi(Actors.AppCollaborator("admin@example.com".toLaxEmail), ApiIdentifier(context, version), FixedClock.now)
+      val cmd = ApplicationCommands.SubscribeToApi(Actors.AppCollaborator("admin@example.com".toLaxEmail), ApiIdentifier(context, version), instant)
 
       val subscribeResponse = sendApplicationCommand(cmd, application)
 
@@ -588,7 +587,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       apiPlatformEventsStub.willReceiveApiSubscribedEvent()
 
       When("I request to subscribe the application to the API")
-      val cmd = ApplicationCommands.SubscribeToApi(Actors.AppCollaborator("admin@example.com".toLaxEmail), ApiIdentifier(context, version), FixedClock.now)
+      val cmd = ApplicationCommands.SubscribeToApi(Actors.AppCollaborator("admin@example.com".toLaxEmail), ApiIdentifier(context, version), instant)
 
       val response = sendApplicationCommand(cmd, application)
 
@@ -608,12 +607,12 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       Given("I have subscribed the application to the API")
       apiPlatformEventsStub.willReceiveApiSubscribedEvent()
-      val subcmd = ApplicationCommands.SubscribeToApi(Actors.AppCollaborator("admin@example.com".toLaxEmail), ApiIdentifier(context, version), FixedClock.now)
+      val subcmd = ApplicationCommands.SubscribeToApi(Actors.AppCollaborator("admin@example.com".toLaxEmail), ApiIdentifier(context, version), instant)
       sendApplicationCommand(subcmd, application)
 
       When("I request to unsubscribe the application from an API")
       apiPlatformEventsStub.willReceiveApiUnsubscribedEvent()
-      val cmd      = ApplicationCommands.UnsubscribeFromApi(Actors.AppCollaborator("admin@example.com".toLaxEmail), ApiIdentifier(context, version), FixedClock.now)
+      val cmd      = ApplicationCommands.UnsubscribeFromApi(Actors.AppCollaborator("admin@example.com".toLaxEmail), ApiIdentifier(context, version), instant)
       val response = sendApplicationCommand(cmd, application)
 
       Then("A 200 is returned")
@@ -635,7 +634,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       Given("I have updated the grant lenth to six months")
       apiPlatformEventsStub.willReceiveChangeGrantLengthEvent()
-      val subcmd   = ApplicationCommands.ChangeGrantLength("admin@example.com", FixedClock.now, GrantLength.SIX_MONTHS)
+      val subcmd   = ApplicationCommands.ChangeGrantLength("admin@example.com", instant, GrantLength.SIX_MONTHS)
       val response = sendApplicationCommand(subcmd, application)
       response.body.contains("\"grantLength\":180")
 
@@ -658,7 +657,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       Given("I have updated the rate limit to GOLD")
       apiPlatformEventsStub.willReceiveChangeRateLimitEvent()
-      val subcmd   = ApplicationCommands.ChangeRateLimitTier("admin@example.com", FixedClock.now, RateLimitTier.GOLD)
+      val subcmd   = ApplicationCommands.ChangeRateLimitTier("admin@example.com", instant, RateLimitTier.GOLD)
       val response = sendApplicationCommand(subcmd, application)
       response.body.contains("\"rateLimitTier\":\"GOLD\"") shouldBe true
 

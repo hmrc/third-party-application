@@ -76,7 +76,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
 
-      val result = await(underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail)).value).value
+      val result = await(underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, instant, appAdminName, riName, riEmail)).value).value
 
       inside(result) { case (app, events) =>
         events should have size 1
@@ -101,7 +101,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
 
       checkFailsWith(s"No submission found for application $applicationId") {
-        underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail))
+        underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, instant, appAdminName, riName, riEmail))
       }
     }
 
@@ -110,7 +110,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
 
       checkFailsWith("Must be a standard new journey application") {
-        underTest.process(nonStandardApp, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail))
+        underTest.process(nonStandardApp, VerifyResponsibleIndividual(appAdminUserId, instant, appAdminName, riName, riEmail))
       }
     }
 
@@ -119,7 +119,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith("Must be a standard new journey application") {
-        underTest.process(oldJourneyApp, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail))
+        underTest.process(oldJourneyApp, VerifyResponsibleIndividual(appAdminUserId, instant, appAdminName, riName, riEmail))
       }
     }
 
@@ -128,7 +128,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       val notApprovedApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
-        underTest.process(notApprovedApp, VerifyResponsibleIndividual(appAdminUserId, now, appAdminName, riName, riEmail))
+        underTest.process(notApprovedApp, VerifyResponsibleIndividual(appAdminUserId, instant, appAdminName, riName, riEmail))
       }
     }
 
@@ -136,7 +136,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(app, VerifyResponsibleIndividual(UserId.random, now, appAdminName, riName, riEmail))
+        underTest.process(app, VerifyResponsibleIndividual(UserId.random, instant, appAdminName, riName, riEmail))
       }
     }
 
@@ -144,7 +144,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
       checkFailsWith(s"The specified individual is already the RI for this application") {
-        underTest.process(app, VerifyResponsibleIndividual(oldRiUserId, now, appAdminName, oldRiName, oldRiEmail))
+        underTest.process(app, VerifyResponsibleIndividual(oldRiUserId, instant, appAdminName, oldRiName, oldRiEmail))
       }
     }
   }

@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.time.temporal.ChronoUnit
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.{Duration, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
@@ -141,10 +140,10 @@ class ApplicationControllerSpec
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
   val credentialServiceResponseToken: ApplicationTokenResponse =
-    ApplicationTokenResponse(ClientId("111"), "222", clientSecrets = List(ClientSecretResponse(ClientSecret.Id.random, "222", createdOn = now)))
+    ApplicationTokenResponse(ClientId("111"), "222", clientSecrets = List(ClientSecretResponse(ClientSecret.Id.random, "222", createdOn = instant)))
 
   "update approval" should {
-    val termsOfUseAgreement = TermsOfUseAgreement(LaxEmailAddress("test@example.com"), now, "1.0".asVersion.value)
+    val termsOfUseAgreement = TermsOfUseAgreement(LaxEmailAddress("test@example.com"), instant, "1.0".asVersion.value)
     val checkInformation    = CheckInformation(
       contactDetails = Some(ContactDetails(FullName("Tester"), LaxEmailAddress("test@example.com"), "12345677890")),
       termsOfUseAgreements = List(termsOfUseAgreement)
@@ -348,9 +347,13 @@ class ApplicationControllerSpec
     val clientId = ClientId("A123XC")
 
     trait LastAccessedSetup extends Setup {
-      val updatedLastAccessTime: LocalDateTime = now.truncatedTo(ChronoUnit.MILLIS)
-      val lastAccessTime: LocalDateTime        = updatedLastAccessTime.minusDays(10) // scalastyle:ignore magic.number
-      val applicationId: ApplicationId         = ApplicationId.random
+      val updatedLastAccessTime: Instant = instant
+      val updatedEpochMillis             = updatedLastAccessTime.toEpochMilli()
+
+      val lastAccessTime: Instant = updatedLastAccessTime.minus(Duration.ofDays(10)) // scalastyle:ignore magic.number
+      val lastAccessEpochMillis   = lastAccessTime.toEpochMilli()
+
+      val applicationId: ApplicationId = ApplicationId.random
 
       val applicationResponse: Application                        = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
       val updatedApplicationResponse: ExtendedApplicationResponse =
@@ -425,11 +428,11 @@ class ApplicationControllerSpec
       val scenarios =
         Table(
           ("headers", "expectedLastAccessTime", "shouldUpdate"),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, true),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer,foobar"), updatedLastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, true),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar,APIPlatformAuthorizer"), updatedLastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, true),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar"), lastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, false),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken), lastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, false)
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer"), updatedEpochMillis, true),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer,foobar"), updatedEpochMillis, true),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar,APIPlatformAuthorizer"), updatedEpochMillis, true),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar"), lastAccessEpochMillis, false),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken), lastAccessEpochMillis, false)
         )
 
       forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
@@ -452,11 +455,11 @@ class ApplicationControllerSpec
       val scenarios =
         Table(
           ("headers", "expectedLastAccessTime", "shouldUpdate"),
-          (Seq(USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, true),
-          (Seq(USER_AGENT -> "APIPlatformAuthorizer,foobar"), updatedLastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, true),
-          (Seq(USER_AGENT -> "foobar,APIPlatformAuthorizer"), updatedLastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, true),
-          (Seq(USER_AGENT -> "foobar"), lastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, false),
-          (Seq(), lastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, false)
+          (Seq(USER_AGENT -> "APIPlatformAuthorizer"), updatedEpochMillis, true),
+          (Seq(USER_AGENT -> "APIPlatformAuthorizer,foobar"), updatedEpochMillis, true),
+          (Seq(USER_AGENT -> "foobar,APIPlatformAuthorizer"), updatedEpochMillis, true),
+          (Seq(USER_AGENT -> "foobar"), lastAccessEpochMillis, false),
+          (Seq(), lastAccessEpochMillis, false)
         )
 
       forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
@@ -745,7 +748,7 @@ class ApplicationControllerSpec
   }
 
   "notStrideUserDeleteApplication" should {
-    val application             = aNewApplicationResponse(environment = Environment.SANDBOX, state = ApplicationState(State.PRODUCTION, updatedOn = now))
+    val application             = aNewApplicationResponse(environment = Environment.SANDBOX, state = ApplicationState(State.PRODUCTION, updatedOn = instant))
     val applicationId           = application.id
     val gatekeeperUserId        = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com".toLaxEmail
@@ -762,7 +765,7 @@ class ApplicationControllerSpec
     }
 
     "succeed when a principal application is in TESTING state is deleted" in new Setup with ProductionAuthSetup {
-      val inTesting   = aNewApplicationResponse(state = ApplicationState(name = State.TESTING, updatedOn = now), environment = Environment.PRODUCTION)
+      val inTesting   = aNewApplicationResponse(state = ApplicationState(name = State.TESTING, updatedOn = instant), environment = Environment.PRODUCTION)
       val inTestingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inTestingId)(inTesting)
@@ -775,7 +778,7 @@ class ApplicationControllerSpec
     }
 
     "succeed when a principal application is in PENDING_GATEKEEPER_APPROVAL state is deleted" in new Setup with ProductionAuthSetup {
-      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_GATEKEEPER_APPROVAL, updatedOn = now), environment = Environment.PRODUCTION)
+      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant), environment = Environment.PRODUCTION)
       val inPendingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inPendingId)(inPending)
@@ -788,7 +791,7 @@ class ApplicationControllerSpec
     }
 
     "succeed when a principal application is in PENDING_REQUESTER_VERIFICATION state is deleted" in new Setup with ProductionAuthSetup {
-      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_REQUESTER_VERIFICATION, updatedOn = now), environment = Environment.PRODUCTION)
+      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_REQUESTER_VERIFICATION, updatedOn = instant), environment = Environment.PRODUCTION)
       val inPendingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inPendingId)(inPending)
@@ -801,7 +804,7 @@ class ApplicationControllerSpec
     }
 
     "fail when a principal application is in PRODUCTION state is deleted" in new Setup with ProductionAuthSetup {
-      val inProd   = aNewApplicationResponse(state = ApplicationState(name = State.PRODUCTION, updatedOn = now), environment = Environment.PRODUCTION)
+      val inProd   = aNewApplicationResponse(state = ApplicationState(name = State.PRODUCTION, updatedOn = instant), environment = Environment.PRODUCTION)
       val inProdId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inProdId)(inProd)

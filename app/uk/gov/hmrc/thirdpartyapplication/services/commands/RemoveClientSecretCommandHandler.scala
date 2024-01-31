@@ -57,7 +57,7 @@ class RemoveClientSecretCommandHandler @Inject() (
       ApplicationEvents.ClientSecretRemovedV2(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = cmd.actor,
         clientSecretId = cmd.clientSecretId.value.toString(),
         clientSecretName = clientSecret.map(_.name).getOrElse("")

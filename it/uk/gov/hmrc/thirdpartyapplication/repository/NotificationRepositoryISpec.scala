@@ -39,11 +39,11 @@ import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHel
 
 object NotificationRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random
-  val notification = Notification(appId, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)
+  val notification = Notification(appId, instant, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)
 
   val json = Json.obj(
     "applicationId"    -> JsString(appId.toString()),
-    "lastUpdated"      -> MongoJavatimeHelper.asJsValue(now),
+    "lastUpdated"      -> MongoJavatimeHelper.asJsValue(instant),
     "notificationType" -> "PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING",
     "status"           -> "SENT"
   )
@@ -116,7 +116,7 @@ class NotificationRepositoryISpec
       val applicationId = ApplicationId.random
 
       val result =
-        await(notificationRepository.createEntity(Notification(applicationId, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
+        await(notificationRepository.createEntity(Notification(applicationId, instant, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
 
       result mustBe true
       await(notificationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 1
@@ -128,8 +128,8 @@ class NotificationRepositoryISpec
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
 
-      await(notificationRepository.createEntity(Notification(applicationId1, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
-      await(notificationRepository.createEntity(Notification(applicationId2, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
+      await(notificationRepository.createEntity(Notification(applicationId1, instant, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
+      await(notificationRepository.createEntity(Notification(applicationId2, instant, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
 
       val result = await(notificationRepository.deleteAllByApplicationId(applicationId1))
 

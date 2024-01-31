@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.{Instant, LocalDateTime, ZoneOffset}
+import java.time.Instant
 
 import play.api.libs.json._
 
 object MongoJavatimeHelper {
-  def asJsValue(ldt: LocalDateTime): JsValue = Json.obj("$date" -> Json.obj("$numberLong" -> JsString(ldt.toInstant(ZoneOffset.UTC).toEpochMilli().toString())))
-  def asJsValue(instant: Instant): JsValue   = Json.obj("$date" -> Json.obj("$numberLong" -> JsString(instant.toEpochMilli().toString())))
+  def asJsValue(instant: Instant): JsValue = Json.obj("$date" -> Json.obj("$numberLong" -> JsString(instant.toEpochMilli().toString())))
 }

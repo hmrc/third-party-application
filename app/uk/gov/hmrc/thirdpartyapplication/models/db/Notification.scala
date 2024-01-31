@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 import play.api.libs.json.Format
 
@@ -40,4 +40,4 @@ object NotificationType extends Enumeration {
 import NotificationStatus._
 import NotificationType._
 
-case class Notification(applicationId: ApplicationId, lastUpdated: LocalDateTime, notificationType: NotificationType, status: NotificationStatus)
+case class Notification(applicationId: ApplicationId, lastUpdated: Instant, notificationType: NotificationType, status: NotificationStatus)

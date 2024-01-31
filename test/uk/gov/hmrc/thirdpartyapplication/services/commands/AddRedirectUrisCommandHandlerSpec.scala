@@ -45,8 +45,8 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val developerActor = Actors.AppCollaborator(developerCollaborator.emailAddress)
 
     val timestamp  = FixedClock.instant
-    val cmdAsAdmin = AddRedirectUri(adminActor, toAddRedirectUri, now)
-    val cmdAsDev   = AddRedirectUri(developerActor, toAddRedirectUri, now)
+    val cmdAsAdmin = AddRedirectUri(adminActor, toAddRedirectUri, instant)
+    val cmdAsDev   = AddRedirectUri(developerActor, toAddRedirectUri, instant)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>

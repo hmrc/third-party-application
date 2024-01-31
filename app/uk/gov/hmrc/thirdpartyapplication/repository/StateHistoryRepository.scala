@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.LocalDateTime
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,8 +36,8 @@ object StateHistoryRepository {
 
   object MongoFormats {
     import play.api.libs.json.{Format, Json, OFormat}
-    implicit val formatLocalDateTime: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
-    implicit val formatStateHistory: OFormat[StateHistory]  = Json.format[StateHistory]
+    implicit val formatInstant: Format[Instant]            = MongoJavatimeFormats.instantFormat
+    implicit val formatStateHistory: OFormat[StateHistory] = Json.format[StateHistory]
   }
 }
 

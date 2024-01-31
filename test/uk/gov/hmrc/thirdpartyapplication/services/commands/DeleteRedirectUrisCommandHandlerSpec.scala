@@ -44,8 +44,8 @@ class DeleteRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val developerActor       = Actors.AppCollaborator(developerCollaborator.emailAddress)
 
     val timestamp  = FixedClock.instant
-    val cmdAsAdmin = DeleteRedirectUri(adminActor, toBeDeletedRedirectUri, now)
-    val cmdAsDev   = DeleteRedirectUri(developerActor, toBeDeletedRedirectUri, now)
+    val cmdAsAdmin = DeleteRedirectUri(adminActor, toBeDeletedRedirectUri, instant)
+    val cmdAsDev   = DeleteRedirectUri(developerActor, toBeDeletedRedirectUri, instant)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>

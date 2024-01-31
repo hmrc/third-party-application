@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{Instant, LocalDate, ZoneOffset}
 
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates
@@ -173,8 +173,8 @@ case object AllowAutoDeleteFilter extends AllowAutoDeleteFilter {
 
 sealed trait LastUseDateFilter extends ApplicationSearchFilter
 
-case class LastUseBeforeDate(lastUseDate: LocalDateTime) extends LastUseDateFilter {
-  implicit val dateFormat: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+case class LastUseBeforeDate(lastUseDate: Instant) extends LastUseDateFilter {
+  implicit val format: Format[Instant] = MongoJavatimeFormats.instantFormat
 
   def toMongoMatch: Bson = {
     Aggregates.filter(
@@ -182,15 +182,15 @@ case class LastUseBeforeDate(lastUseDate: LocalDateTime) extends LastUseDateFilt
         lte("lastAccess", Codecs.toBson(lastUseDate)),
         and(
           exists("lastAccess", false),
-          lte("createdOn", lastUseDate)
+          lte("createdOn", Codecs.toBson(lastUseDate))
         )
       )
     )
   }
 }
 
-case class LastUseAfterDate(lastUseDate: LocalDateTime) extends LastUseDateFilter {
-  implicit val dateFormat: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+case class LastUseAfterDate(lastUseDate: Instant) extends LastUseDateFilter {
+  implicit val format: Format[Instant] = MongoJavatimeFormats.instantFormat
 
   def toMongoMatch: Bson = {
     Aggregates.filter(
@@ -198,7 +198,7 @@ case class LastUseAfterDate(lastUseDate: LocalDateTime) extends LastUseDateFilte
         gte("lastAccess", Codecs.toBson(lastUseDate)),
         and(
           exists("lastAccess", false),
-          gte("createdOn", lastUseDate)
+          gte("createdOn", Codecs.toBson(lastUseDate))
         )
       )
     )
@@ -208,8 +208,8 @@ case class LastUseAfterDate(lastUseDate: LocalDateTime) extends LastUseDateFilte
 case object LastUseDateFilter extends LastUseDateFilter {
 
   private def parseDateString(value: String) = {
-    if (value.matches("""^\d{4}-\d{1,2}-\d{1,2}$""")) LocalDate.parse(value, DateTimeFormatter.ISO_DATE).atStartOfDay()
-    else LocalDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME)
+    if (value.matches("""^\d{4}-\d{1,2}-\d{1,2}$""")) LocalDate.parse(value, DateTimeFormatter.ISO_DATE).atStartOfDay().toInstant(ZoneOffset.UTC)
+    else Instant.parse(value)
   }
 
   def apply(queryType: String, value: String): Option[LastUseDateFilter] =

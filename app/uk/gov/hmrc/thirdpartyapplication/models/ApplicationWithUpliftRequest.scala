@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
@@ -33,4 +33,4 @@ object ApplicationWithUpliftRequest {
 
 }
 
-case class ApplicationWithUpliftRequest(id: ApplicationId, name: String, submittedOn: LocalDateTime, state: State)
+case class ApplicationWithUpliftRequest(id: ApplicationId, name: String, submittedOn: Instant, state: State)

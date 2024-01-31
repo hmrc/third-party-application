@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -111,9 +111,9 @@ class RequestApprovalsService @Inject() (
         normalisedName = applicationName.toLowerCase,
         access = updateStandardData(existing.access, importantSubmissionData),
         state = if (isRequesterTheResponsibleIndividual) {
-          existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, requestedByName, now())
+          existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, requestedByName, instant())
         } else {
-          existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress, requestedByName, now())
+          existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress, requestedByName, instant())
         }
       )
 
@@ -136,7 +136,7 @@ class RequestApprovalsService @Inject() (
         savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
         _                                  <- ET.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, updatedApp, submission, requestedByName, requestedByEmailAddress))
         _                                  <- ET.liftF(writeStateHistory(updatedApp, requestedByEmailAddress))
-        updatedSubmission                   = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
+        updatedSubmission                   = Submission.submit(Instant.now(clock), requestedByEmailAddress)(submission)
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
         _                                  <- ET.liftF(sendProdCredsVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
         _                                   = logCompletedApprovalRequest(savedApp)
@@ -168,9 +168,9 @@ class RequestApprovalsService @Inject() (
       ): Submission = {
 
       if (isRequesterTheResponsibleIndividual) {
-        Submission.automaticallyMark(LocalDateTime.now(clock), requestedByEmailAddress)(existingSubmission)
+        Submission.automaticallyMark(Instant.now(clock), requestedByEmailAddress)(existingSubmission)
       } else {
-        Submission.pendingResponsibleIndividual(LocalDateTime.now(clock), requestedByEmailAddress)(existingSubmission)
+        Submission.pendingResponsibleIndividual(Instant.now(clock), requestedByEmailAddress)(existingSubmission)
       }
     }
 
@@ -190,7 +190,7 @@ class RequestApprovalsService @Inject() (
         importantSubmissionData             = getImportantSubmissionData(submission, requestedByName, requestedByEmailAddress).get // Safe at this point
         updatedApp                          = deriveNewAppDetails(originalApp, importantSubmissionData)
         savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
-        submittedSubmission                 = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
+        submittedSubmission                 = Submission.submit(Instant.now(clock), requestedByEmailAddress)(submission)
         updatedSubmission                   = deriveNewSubmissionsDetails(isRequesterTheResponsibleIndividual, submittedSubmission)
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
         addTouAcceptance                    = isRequesterTheResponsibleIndividual && savedSubmission.status.isGranted
@@ -234,7 +234,7 @@ class RequestApprovalsService @Inject() (
     ): Future[StoredApplication] = {
     if (addTouAcceptance) {
       val responsibleIndividual = ResponsibleIndividual.build(requestedByName, requestedByEmailAddress)
-      val acceptance            = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submission.id, submission.latestInstance.index)
+      val acceptance            = TermsOfUseAcceptance(responsibleIndividual, Instant.now(clock), submission.id, submission.latestInstance.index)
       applicationService.addTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
     } else {
       Future.successful(appWithoutTouAcceptance)

@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
@@ -25,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequestV2,
   StandardAccessDataToCopy
 }
-import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, HmrcSpec, UpliftRequestSamples}
+import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, UpliftRequestSamples}
 
 class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with CollaboratorTestData {
   import ApiIdentifierSyntax._

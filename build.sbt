@@ -65,15 +65,6 @@ lazy val microservice = Project(appName, file("."))
     )
   )
 
-commands ++= Seq(
-  Command.command("run-all-tests") { state => "test" :: "it:test" :: state },
-
-  Command.command("clean-and-test") { state => "clean" :: "compile" :: "run-all-tests" :: state },
-
-  // Coverage does not need compile !
-  Command.command("pre-commit") { state => "clean" :: "scalafmtAll" :: "scalafixAll" :: "coverage" :: "run-all-tests" :: "coverageReport" :: "coverageOff" :: state }
-)
-
 def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
   tests map { test =>
     Group(

@@ -74,7 +74,7 @@ class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applica
   }
 
   def lastUsedOrdering: (StoredClientSecret, StoredClientSecret) => Boolean = {
-    val oldEpochDateTime = Instant.ofEpochMilli(0).atOffset(ZoneOffset.UTC).toLocalDateTime
+    val oldEpochDateTime = Instant.ofEpochMilli(0).atOffset(ZoneOffset.UTC).toInstant
     (first, second) => first.lastAccess.getOrElse(oldEpochDateTime).isAfter(second.lastAccess.getOrElse(oldEpochDateTime))
   }
 }

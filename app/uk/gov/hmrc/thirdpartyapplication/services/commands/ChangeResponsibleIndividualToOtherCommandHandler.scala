@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -95,7 +95,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         ResponsibleIndividualSet(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress,
@@ -108,7 +108,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         ApplicationStateChanged(
           id = EventId.random,
           applicationId = app.id,
-          eventDateTime = cmd.timestamp.instant,
+          eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
           app.state.name.toString,
           State.PENDING_GATEKEEPER_APPROVAL.toString,
@@ -165,7 +165,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
           TermsOfUsePassed(
             id = EventId.random,
             applicationId = app.id,
-            eventDateTime = cmd.timestamp.instant,
+            eventDateTime = cmd.timestamp,
             actor = Actors.AppCollaborator(requesterEmail),
             submissionId = SubmissionId(riVerificationToU.submissionId.value),
             submissionIndex = riVerificationToU.submissionInstance
@@ -190,7 +190,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
       ResponsibleIndividualSet(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = Actors.AppCollaborator(requesterEmail),
         responsibleIndividualName = responsibleIndividual.fullName.value,
         responsibleIndividualEmail = responsibleIndividual.emailAddress,
@@ -210,7 +210,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         responsibleIndividual: ResponsibleIndividual
       ): Future[StoredApplication] = {
       if (addTouAcceptance) {
-        val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), submissionId, submissionInstance)
+        val acceptance = TermsOfUseAcceptance(responsibleIndividual, Instant.now(clock), submissionId, submissionInstance)
         applicationRepository.addApplicationTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
       } else {
         Future.successful(appWithoutTouAcceptance)
@@ -255,7 +255,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
       ResponsibleIndividualChanged(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = Actors.AppCollaborator(riVerification.requestingAdminEmail),
         previousResponsibleIndividualName = currentResponsibleIndividual.fullName.value,
         previousResponsibleIndividualEmail = currentResponsibleIndividual.emailAddress,

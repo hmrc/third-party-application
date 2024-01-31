@@ -60,7 +60,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
       ApplicationEvents.ProductionCredentialsApplicationDeleted(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = Actors.ScheduledJob(cmd.jobId),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,

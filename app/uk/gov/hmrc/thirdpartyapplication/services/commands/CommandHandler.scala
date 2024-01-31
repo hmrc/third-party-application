@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import java.time.{Instant, LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext
 
 import cats.data.{NonEmptyList, Validated}
@@ -44,15 +43,11 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   import CommandFailures._
 
-  implicit class InstantSyntax(value: LocalDateTime) {
-    def instant: Instant = value.toInstant(ZoneOffset.UTC)
-  }
-
   def fromStateHistory(stateHistory: StateHistory, requestingAdminName: String, requestingAdminEmail: LaxEmailAddress) =
     ApplicationEvents.ApplicationStateChanged(
       id = EventId.random,
       applicationId = stateHistory.applicationId,
-      eventDateTime = stateHistory.changedAt.instant,
+      eventDateTime = stateHistory.changedAt,
       actor = stateHistory.actor,
       stateHistory.previousState.fold("")(_.toString),
       stateHistory.state.toString,

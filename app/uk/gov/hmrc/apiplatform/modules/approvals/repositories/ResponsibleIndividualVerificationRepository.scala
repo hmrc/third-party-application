@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.NonEmptyList
@@ -88,7 +88,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
   def fetchByTypeStateAndAge(
       verificationType: String,
       state: ResponsibleIndividualVerificationState,
-      minimumCreatedOn: LocalDateTime
+      minimumCreatedOn: Instant
     ): Future[List[ResponsibleIndividualVerification]] = {
     collection.find(and(
       equal("verificationType", verificationType),
@@ -100,7 +100,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
 
   def fetchByStateAgeAndTypes(
       state: ResponsibleIndividualVerificationState,
-      minimumCreatedOn: LocalDateTime,
+      minimumCreatedOn: Instant,
       verificationTypes: String*
     ): Future[List[ResponsibleIndividualVerification]] = {
     collection.aggregate(
@@ -179,7 +179,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       SubmissionId(evt.submissionId.value),
       evt.submissionIndex,
       evt.applicationName,
-      LocalDateTime.ofInstant(evt.eventDateTime, ZoneOffset.UTC),
+      evt.eventDateTime,
       ResponsibleIndividual.build(evt.responsibleIndividualName, evt.responsibleIndividualEmail.text),
       evt.requestingAdminName,
       evt.requestingAdminEmail,

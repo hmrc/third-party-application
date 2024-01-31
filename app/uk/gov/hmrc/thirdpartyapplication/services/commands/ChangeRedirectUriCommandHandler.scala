@@ -62,7 +62,7 @@ class ChangeRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
       ApplicationEvents.RedirectUriChanged(
         id = EventId.random,
         applicationId = app.id,
-        eventDateTime = cmd.timestamp.instant,
+        eventDateTime = cmd.timestamp,
         actor = cmd.actor,
         oldRedirectUri = cmd.redirectUriToReplace,
         newRedirectUri = cmd.redirectUri

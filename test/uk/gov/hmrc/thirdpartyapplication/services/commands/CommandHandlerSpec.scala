@@ -19,10 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, UserId}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, HmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClock {
 

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
@@ -46,7 +46,7 @@ trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters 
 
   implicit val questionnaireProgressFormat: OFormat[QuestionnaireProgress] = Json.format[QuestionnaireProgress]
 
-  implicit val answersToQuestionsFormat: OFormat[Map[Question.Id, Option[ActualAnswer]]] = implicitly
+//  implicit val answersToQuestionsFormat: OFormat[Map[Question.Id, Option[ActualAnswer]]] = implicitly
 
   implicit val questionIdsOfInterestFormat: OFormat[QuestionIdsOfInterest] = Json.format[QuestionIdsOfInterest]
 }
@@ -54,7 +54,7 @@ trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters 
 trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
   import Submission.Status._
 
-  implicit val dateFormat: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+  implicit val dateFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
 
   implicit val RejectedStatusFormat: OFormat[Declined]                                         = Json.format[Declined]
   implicit val AcceptedStatusFormat: OFormat[Granted]                                          = Json.format[Granted]
@@ -88,7 +88,7 @@ trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters wi
 
   import Submission.Status._
 
-  implicit val utcReads: Reads[LocalDateTime] = DefaultLocalDateTimeReads
+  implicit val utcReads: Reads[Instant] = DefaultInstantReads
 
   implicit val rejectedStatusFormat: OFormat[Declined]                                         = Json.format[Declined]
   implicit val acceptedStatusFormat: OFormat[Granted]                                          = Json.format[Granted]
