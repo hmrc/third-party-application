@@ -74,7 +74,7 @@ class ApplicationSearchSpec extends HmrcSpec {
     }
 
     "correctly parse lastUseBefore into LastUseBeforeDate filter" in {
-      val dateAsISOString  = "2020-02-22T16:35:00Z"
+      val dateAsISOString  = "2020-02-22T16:35:00"
       val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toInstant
 
       val request = FakeRequest("GET", s"/applications?lastUseBefore=$dateAsISOString")
