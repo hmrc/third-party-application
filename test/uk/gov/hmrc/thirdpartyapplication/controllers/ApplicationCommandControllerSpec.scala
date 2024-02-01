@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.time.{LocalDateTime, ZoneOffset}
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -29,6 +28,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
@@ -42,7 +42,8 @@ class ApplicationCommandControllerSpec
     with ApplicationStateUtil
     with ControllerTestData
     with TableDrivenPropertyChecks
-    with ApplicationTestData {
+    with ApplicationTestData
+    with FixedClock {
 
   import play.api.test.Helpers._
 
@@ -81,11 +82,10 @@ class ApplicationCommandControllerSpec
     )
 
     "dispatch request" should {
-      val jsonText  =
-        s"""{"command":{"actor":{"actorType":"UNKNOWN"},"collaborator":{"userId":"${developerCollaborator.userId.value}","emailAddress":"dev@example.com","role":"DEVELOPER"},"timestamp":"2020-01-01T12:00:00Z","updateType":"removeCollaborator"},"verifiedCollaboratorsToNotify":["admin@example.com"]}"""
-      val timestamp = LocalDateTime.of(2020, 1, 1, 12, 0, 0).toInstant(ZoneOffset.UTC)
-      val cmd       = RemoveCollaborator(Actors.Unknown, developerCollaborator, timestamp)
-      val req       = ApplicationCommandController.DispatchRequest(cmd, Set(anAdminEmail))
+      val jsonText =
+        s"""{"command":{"actor":{"actorType":"UNKNOWN"},"collaborator":{"userId":"${developerCollaborator.userId.value}","emailAddress":"dev@example.com","role":"DEVELOPER"},"timestamp":"$nowAsText","updateType":"removeCollaborator"},"verifiedCollaboratorsToNotify":["admin@example.com"]}"""
+      val cmd      = RemoveCollaborator(Actors.Unknown, developerCollaborator, instant)
+      val req      = ApplicationCommandController.DispatchRequest(cmd, Set(anAdminEmail))
       import cats.syntax.option._
 
       "write to json" in {
