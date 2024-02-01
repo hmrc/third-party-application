@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, LocalDate, ZoneOffset}
+import java.time.Instant
 
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates
@@ -28,6 +27,7 @@ import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.InstantJsonFormatter.lenientFormatter
 
 // scalastyle:off number.of.types
 
@@ -208,8 +208,7 @@ case class LastUseAfterDate(lastUseDate: Instant) extends LastUseDateFilter {
 case object LastUseDateFilter extends LastUseDateFilter {
 
   private def parseDateString(value: String) = {
-    if (value.matches("""^\d{4}-\d{1,2}-\d{1,2}$""")) LocalDate.parse(value, DateTimeFormatter.ISO_DATE).atStartOfDay().toInstant(ZoneOffset.UTC)
-    else Instant.parse(value)
+    Instant.from(lenientFormatter.parse(value))
   }
 
   def apply(queryType: String, value: String): Option[LastUseDateFilter] =
