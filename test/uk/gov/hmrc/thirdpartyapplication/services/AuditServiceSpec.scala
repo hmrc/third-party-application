@@ -24,16 +24,18 @@ import scala.concurrent.Future
 import cats.data.NonEmptyList
 import org.mockito.ArgumentMatcher
 
+import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.InstantSyntax
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvents, EventId}
@@ -184,9 +186,10 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
       val submittedOn: Instant       = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
       val declinedOn: Instant        = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
       val dates                      = Map(
-        "submission.started.date"   -> fmt.format(declinedSubmission.startedOn.asLDT()),
-        "submission.submitted.date" -> fmt.format(submittedOn.asLDT()),
-        "submission.declined.date"  -> fmt.format(declinedOn.asLDT())
+        "submission.started.date"                 -> fmt.format(declinedSubmission.startedOn.asLDT()),
+        "submission.submitted.date"               -> fmt.format(submittedOn.asLDT()),
+        "submission.declined.date"                -> fmt.format(declinedOn.asLDT()),
+        "responsibleIndividual.verification.date" -> nowAsText
       )
       val markedAnswers              = MarkAnswer.markSubmission(declinedSubmission)
       val nbrOfFails                 = markedAnswers.filter(_._2 == Fail).size
@@ -213,8 +216,16 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
       when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
       SubmissionsServiceMock.FetchLatest.thenReturn(declinedSubmission)
 
-      val result = await(auditService.applyEvents(appInTesting, NonEmptyList.one(appApprovalRequestDeclined)))
-
+      val result = await(auditService.applyEvents(
+        appInTesting.copy(access =
+          Access.Standard(importantSubmissionData =
+            Some(testImportantSubmissionData.copy(termsOfUseAcceptances =
+              List(TermsOfUseAcceptance(ResponsibleIndividual(FullName("dave"), LaxEmailAddress("a@b.com")), instant, submissionId, submissionInstance = 0))
+            ))
+          )
+        ),
+        NonEmptyList.one(appApprovalRequestDeclined)
+      ))
       result shouldBe Some(AuditResult.Success)
       verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
     }

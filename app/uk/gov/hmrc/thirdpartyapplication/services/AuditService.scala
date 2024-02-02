@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.time.format.DateTimeFormatter
-import java.time.{Clock, Instant}
+import java.time.{Clock, Instant, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -389,7 +389,7 @@ object AuditHelper extends InstantSyntax {
 
   def createExtraDetailsForApplicationApprovalRequestDeclined(app: StoredApplication, submission: Submission, evt: ApplicationApprovalRequestDeclined): Map[String, String] = {
 
-    val fmt = DateTimeFormatter.ISO_DATE_TIME
+    val fmt = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneOffset.UTC)
 
     val importantSubmissionData    = app.importantSubmissionData.getOrElse(throw new RuntimeException("No importantSubmissionData found in application"))
     val submissionPreviousInstance = submission.instances.tail.head
