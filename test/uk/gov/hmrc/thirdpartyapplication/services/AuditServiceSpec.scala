@@ -24,7 +24,6 @@ import scala.concurrent.Future
 import cats.data.NonEmptyList
 import org.mockito.ArgumentMatcher
 
-import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
@@ -32,7 +31,6 @@ import uk.gov.hmrc.play.audit.model.DataEvent
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.common.services.InstantSyntax
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
@@ -51,7 +49,9 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
-    with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule with InstantSyntax {
+    with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
+
+  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
 
   class Setup {
     val mockAuditConnector = mock[AuditConnector]
@@ -186,9 +186,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
       val submittedOn: Instant       = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
       val declinedOn: Instant        = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
       val dates                      = Map(
-        "submission.started.date"                 -> fmt.format(declinedSubmission.startedOn.asLDT()),
-        "submission.submitted.date"               -> fmt.format(submittedOn.asLDT()),
-        "submission.declined.date"                -> fmt.format(declinedOn.asLDT()),
+        "submission.started.date"                 -> fmt.format(declinedSubmission.startedOn.asLocalDateTime),
+        "submission.submitted.date"               -> fmt.format(submittedOn.asLocalDateTime),
+        "submission.declined.date"                -> fmt.format(declinedOn.asLocalDateTime),
         "responsibleIndividual.verification.date" -> nowAsText
       )
       val markedAnswers              = MarkAnswer.markSubmission(declinedSubmission)

@@ -41,6 +41,8 @@ class ResetLastAccessDateJob @Inject() (
     with ApplicationLogger
     with MongoJavatimeFormats.Implicits {
 
+  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
+
   override def name: String                 = "ResetLastAccessDateJob"
   override def isEnabled: Boolean           = jobConfig.enabled
   override def initialDelay: FiniteDuration = 5.minutes
@@ -59,7 +61,7 @@ class ResetLastAccessDateJob @Inject() (
         logger.info(s"[ResetLastAccessDateJob (Dry Run)]: Application [$applicationName (${applicationId.value})] would have had lastAccess set to [$earliestLastAccessDate]")
       } else {
         logger.info(s"[ResetLastAccessDateJob]: Setting lastAccess of application [$applicationName (${applicationId.value})] to [$earliestLastAccessDate]")
-        applicationRepository.updateApplication(applicationId, Updates.set("lastAccess", Codecs.toBson(earliestLastAccessDate.atStartOfDay())))
+        applicationRepository.updateApplication(applicationId, Updates.set("lastAccess", Codecs.toBson(earliestLastAccessDate.asInstant)))
       }
     }
 

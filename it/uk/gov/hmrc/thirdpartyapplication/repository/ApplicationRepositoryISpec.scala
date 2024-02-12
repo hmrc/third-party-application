@@ -222,9 +222,9 @@ class ApplicationRepositoryISpec
     await(subscriptionRepository.collection.drop().toFuture())
     await(notificationRepository.collection.drop().toFuture())
 
-    await(applicationRepository.ensureIndexes)
-    await(subscriptionRepository.ensureIndexes)
-    await(notificationRepository.ensureIndexes)
+    await(applicationRepository.ensureIndexes())
+    await(subscriptionRepository.ensureIndexes())
+    await(notificationRepository.ensureIndexes())
   }
 
   lazy val defaultGrantLength = 547

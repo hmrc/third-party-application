@@ -21,7 +21,6 @@ import java.time.format.DateTimeFormatter
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.services.InstantSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
@@ -37,7 +36,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
-class GrantApprovalsServiceSpec extends AsyncHmrcSpec with InstantSyntax {
+class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
+  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
 
   trait Setup extends AuditServiceMockModule
       with ApplicationRepositoryMockModule
@@ -124,7 +124,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec with InstantSyntax {
 
       AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserName
       AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationApprovalGranted
-      AuditServiceMock.AuditGatekeeperAction.verifyExtras().get("responsibleIndividual.verification.date").value shouldBe fmt.format(acceptanceDate.asLDT())
+      AuditServiceMock.AuditGatekeeperAction.verifyExtras().get("responsibleIndividual.verification.date").value shouldBe fmt.format(acceptanceDate.asLocalDateTime)
       AuditServiceMock.AuditGatekeeperAction.verifyExtras().get(someQuestionWording).value shouldBe ActualAnswersAsText(expectedAnswer)
     }
 

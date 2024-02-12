@@ -86,8 +86,8 @@ class TermsOfUseInvitationRepositoryISpec
     await(termsOfUseInvitationRepository.collection.drop().toFuture())
     await(applicationRepository.collection.drop().toFuture())
 
-    await(termsOfUseInvitationRepository.ensureIndexes)
-    await(applicationRepository.ensureIndexes)
+    await(termsOfUseInvitationRepository.ensureIndexes())
+    await(applicationRepository.ensureIndexes())
   }
 
   "mongo formats" should {
