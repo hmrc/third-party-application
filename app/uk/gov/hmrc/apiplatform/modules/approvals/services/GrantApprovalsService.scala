@@ -268,4 +268,25 @@ class GrantApprovalsService @Inject() (
     )
       .fold[Result](identity, identity)
   }
+
+  def resetForTouUplift(
+      originalApp: StoredApplication,
+      submission: Submission,
+      gatekeeperUserName: String,
+      reasons: String
+    ): Future[GrantApprovalsService.Result] = {
+    import cats.instances.future.catsStdInstancesForFuture
+
+    val ET = EitherTHelper.make[Result]
+    (
+      for {
+        _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
+
+        updatedSubmission = Submission.decline(Instant.now(clock), gatekeeperUserName, "RESET: " + reasons)(submission)
+        savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
+        _                <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
+      } yield Actioned(originalApp)
+    )
+      .fold[Result](identity, identity)
+  }
 }

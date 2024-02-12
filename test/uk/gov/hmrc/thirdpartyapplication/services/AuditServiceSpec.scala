@@ -24,7 +24,6 @@ import scala.concurrent.Future
 import cats.data.NonEmptyList
 import org.mockito.ArgumentMatcher
 
-import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}

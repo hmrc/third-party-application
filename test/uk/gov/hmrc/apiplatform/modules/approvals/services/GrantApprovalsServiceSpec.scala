@@ -268,4 +268,30 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec with InstantSyntax {
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
     }
   }
+
+  "GrantApprovalsService.resetForTouUplift" should {
+    "reset the specified ToU application" in new Setup {
+
+      SubmissionsServiceMock.Store.thenReturn()
+      TermsOfUseInvitationServiceMock.UpdateResetBackToEmailSent.thenReturn()
+
+      val warning = "Here are some warnings"
+      val result  = await(underTest.resetForTouUplift(applicationProduction, pendingRISubmission, gatekeeperUserName, warning))
+
+      result should matchPattern {
+        case GrantApprovalsService.Actioned(app) =>
+      }
+      SubmissionsServiceMock.Store.verifyCalledWith().status.isAnswering shouldBe true
+      SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
+        case Submission.Status.Answering(_, gatekeeperUserName) =>
+      }
+    }
+
+    "fail to decline the specified application if the application is in the incorrect state" in new Setup {
+      val warning = "Here are some warnings"
+      val result  = await(underTest.resetForTouUplift(anApplicationData(applicationId, testingState()), pendingRISubmission, gatekeeperUserName, warning))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
+    }
+  }
 }
