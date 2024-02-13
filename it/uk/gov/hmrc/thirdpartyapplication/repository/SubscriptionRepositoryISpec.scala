@@ -73,8 +73,8 @@ class SubscriptionRepositoryISpec
     await(applicationRepository.collection.drop().toFuture())
     await(subscriptionRepository.collection.drop().toFuture())
 
-    await(applicationRepository.ensureIndexes)
-    await(subscriptionRepository.ensureIndexes)
+    await(applicationRepository.ensureIndexes())
+    await(subscriptionRepository.ensureIndexes())
   }
 
   "add" should {

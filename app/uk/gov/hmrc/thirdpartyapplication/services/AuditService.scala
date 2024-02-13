@@ -29,7 +29,7 @@ import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.services.{EitherTHelper, InstantSyntax}
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
@@ -44,8 +44,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 // scalastyle:off number.of.types
 
 @Singleton
-class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(implicit val ec: ExecutionContext)
-    extends InstantSyntax {
+class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(implicit val ec: ExecutionContext) {
 
   import cats.instances.future.catsStdInstancesForFuture
   private val E = EitherTHelper.make[String]
@@ -338,7 +337,8 @@ object AuditAction {
   }
 }
 
-object AuditHelper extends InstantSyntax {
+object AuditHelper {
+  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
 
   def applicationId(applicationId: ApplicationId) = Map("applicationId" -> applicationId.value.toString)
 
@@ -403,9 +403,9 @@ object AuditHelper extends InstantSyntax {
       (t.submissionId == submission.id && t.submissionInstance == submissionPreviousInstance.index)
     ).map(_.dateTime)
     val dates                                                  = Map(
-      "submission.started.date"   -> fmt.format(submission.startedOn.asLDT()),
-      "submission.submitted.date" -> fmt.format(submittedOn.asLDT()),
-      "submission.declined.date"  -> fmt.format(declinedOn.asLDT())
+      "submission.started.date"   -> fmt.format(submission.startedOn.asLocalDateTime),
+      "submission.submitted.date" -> fmt.format(submittedOn.asLocalDateTime),
+      "submission.declined.date"  -> fmt.format(declinedOn.asLocalDateTime)
     ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> fmt.format(rivd)))
 
     val markedAnswers = MarkAnswer.markSubmission(submission)

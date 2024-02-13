@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.{Format, Json}
 
 case class PaginationTotal(total: Int)
 
 object PaginationTotal {
-  implicit val reads: Reads[PaginationTotal] = Json.reads[PaginationTotal]
+  implicit val formatPaginationTotal: Format[PaginationTotal] = Json.format[PaginationTotal]
 }
 
 case class PaginatedApplicationData(applications: List[StoredApplication], totals: List[PaginationTotal], matching: List[PaginationTotal])

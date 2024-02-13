@@ -107,7 +107,7 @@ class NotificationRepositoryISpec
     super.beforeEach()
     await(notificationRepository.collection.drop().toFuture())
 
-    await(notificationRepository.ensureIndexes)
+    await(notificationRepository.ensureIndexes())
   }
 
   "createEntity" should {

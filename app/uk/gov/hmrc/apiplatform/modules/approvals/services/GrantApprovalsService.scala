@@ -27,7 +27,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
-import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper, InstantSyntax}
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, TermsOfUseAcceptance}
@@ -68,8 +68,9 @@ class GrantApprovalsService @Inject() (
   )(implicit ec: ExecutionContext
   ) extends BaseService(stateHistoryRepository, clock)
     with ApplicationLogger
-    with ClockNow
-    with InstantSyntax {
+    with ClockNow {
+
+  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
 
   import GrantApprovalsService._
 
@@ -145,10 +146,10 @@ class GrantApprovalsService @Inject() (
       importantSubmissionData.termsOfUseAcceptances.find(t => (t.submissionId == submission.id && t.submissionInstance == submission.latestInstance.index)).map(_.dateTime)
 
     val dates = Map(
-      "submission.started.date"   -> fmt.format(submission.startedOn.asLDT()),
-      "submission.submitted.date" -> fmt.format(submittedOn.asLDT()),
-      "submission.granted.date"   -> fmt.format(grantedOn.asLDT())
-    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> fmt.format(rivd.asLDT())))
+      "submission.started.date"   -> fmt.format(submission.startedOn.asLocalDateTime),
+      "submission.submitted.date" -> fmt.format(submittedOn.asLocalDateTime),
+      "submission.granted.date"   -> fmt.format(grantedOn.asLocalDateTime)
+    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> fmt.format(rivd.asLocalDateTime)))
 
     val markedAnswers = MarkAnswer.markSubmission(submission)
     val nbrOfFails    = markedAnswers.filter(_._2 == Fail).size
