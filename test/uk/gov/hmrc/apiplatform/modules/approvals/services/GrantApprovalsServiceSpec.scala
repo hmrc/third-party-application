@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{ActualAnswer
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
@@ -43,6 +43,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec with InstantSyntax {
       with ApplicationRepositoryMockModule
       with StateHistoryRepositoryMockModule
       with TermsOfUseInvitationServiceMockModule
+      with ResponsibleIndividualVerificationRepositoryMockModule
       with SubmissionsServiceMockModule
       with EmailConnectorMockModule
       with ApplicationTestData
@@ -93,6 +94,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec with InstantSyntax {
         ApplicationRepoMock.aMock,
         StateHistoryRepoMock.aMock,
         TermsOfUseInvitationServiceMock.aMock,
+        ResponsibleIndividualVerificationRepositoryMock.aMock,
         SubmissionsServiceMock.aMock,
         EmailConnectorMock.aMock,
         clock
@@ -274,6 +276,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec with InstantSyntax {
 
       SubmissionsServiceMock.Store.thenReturn()
       TermsOfUseInvitationServiceMock.UpdateResetBackToEmailSent.thenReturn()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
 
       val warning = "Here are some warnings"
       val result  = await(underTest.resetForTouUplift(applicationProduction, pendingRISubmission, gatekeeperUserName, warning))

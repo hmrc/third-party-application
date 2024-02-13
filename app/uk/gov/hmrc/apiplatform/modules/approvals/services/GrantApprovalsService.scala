@@ -31,6 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Clock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, TermsOfUseAcceptance}
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
@@ -60,6 +61,7 @@ class GrantApprovalsService @Inject() (
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     termsOfUseInvitationService: TermsOfUseInvitationService,
+    responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     submissionService: SubmissionsService,
     emailConnector: EmailConnector,
     val clock: Clock
@@ -284,6 +286,7 @@ class GrantApprovalsService @Inject() (
 
         updatedSubmission = Submission.decline(Instant.now(clock), gatekeeperUserName, "RESET: " + reasons)(submission)
         savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
+        _                <- ET.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(submission.id, submission.latestInstance.index))
         _                <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
       } yield Actioned(originalApp)
     )
