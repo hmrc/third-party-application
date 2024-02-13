@@ -19,10 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import akka.stream.Materializer
-import akka.stream.testkit.NoMaterializer
 import cats.data.OptionT
 import cats.implicits._
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.testkit.NoMaterializer
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 import play.api.libs.json.Json

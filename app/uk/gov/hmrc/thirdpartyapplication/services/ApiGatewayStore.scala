@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.collection._
 import scala.concurrent.{ExecutionContext, Future}
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 
 import uk.gov.hmrc.http.HeaderCarrier
 

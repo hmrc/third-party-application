@@ -20,8 +20,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-import akka.actor.{Cancellable, Scheduler}
 import org.apache.commons.lang3.time.StopWatch
+import org.apache.pekko.actor.{Cancellable, Scheduler}
 
 import play.api.Application
 import play.api.inject.ApplicationLifecycle

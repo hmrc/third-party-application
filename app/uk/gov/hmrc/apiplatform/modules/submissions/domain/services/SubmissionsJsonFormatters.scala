@@ -26,8 +26,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
 
-  implicit val keyReadsQuestionnaireId: KeyReads[Questionnaire.Id]   = key => JsSuccess(Questionnaire.Id(key))
-  implicit val keyWritesQuestionnaireId: KeyWrites[Questionnaire.Id] = _.value
+  implicit val keyReadsQuestionnaireId: KeyReads[Questionnaire.Id]   = KeyReads(key => JsSuccess(Questionnaire.Id(key)))
+  implicit val keyWritesQuestionnaireId: KeyWrites[Questionnaire.Id] = KeyWrites(_.value)
 
   implicit val stateWrites: Writes[QuestionnaireState] = Writes {
     case QuestionnaireState.NotStarted    => JsString("NotStarted")

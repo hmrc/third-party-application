@@ -40,11 +40,11 @@ trait QuestionJsonFormatters extends StatementJsonFormatters with MapJsonFormatt
     case _                => JsError("Failed to parse Mark value")
   }
 
-  implicit val keyReadsQuestionId: KeyReads[Question.Id]   = key => JsSuccess(Question.Id(key))
-  implicit val keyWritesQuestionId: KeyWrites[Question.Id] = _.value
+  implicit val keyReadsQuestionId: KeyReads[Question.Id]   = KeyReads(key => JsSuccess(Question.Id(key)))
+  implicit val keyWritesQuestionId: KeyWrites[Question.Id] = KeyWrites(_.value)
 
-  implicit val keyReadsPossibleAnswer: KeyReads[PossibleAnswer]   = key => JsSuccess(PossibleAnswer(key))
-  implicit val keyWritesPossibleAnswer: KeyWrites[PossibleAnswer] = _.value
+  implicit val keyReadsPossibleAnswer: KeyReads[PossibleAnswer]   = KeyReads(key => JsSuccess(PossibleAnswer(key)))
+  implicit val keyWritesPossibleAnswer: KeyWrites[PossibleAnswer] = KeyWrites(_.value)
 
   implicit val jsonListMapKV: Reads[ListMap[PossibleAnswer, Mark]] = listMapReads[PossibleAnswer, Mark]
 

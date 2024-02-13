@@ -20,9 +20,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _}
 
-import akka.stream.Materializer
-import akka.stream.testkit.NoMaterializer
 import org.apache.http.HttpStatus._
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.testkit.NoMaterializer
 
 import play.api.libs.json.{JsValue, Json, OWrites}
 import play.api.test.{FakeRequest, Helpers}

@@ -18,8 +18,8 @@ package uk.gov.hmrc.apiplatform.modules.submissions
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import akka.stream.Materializer
-import akka.stream.testkit.NoMaterializer
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.testkit.NoMaterializer
 
 import play.api.libs.json.{JsError, JsSuccess}
 import play.api.test.Helpers._

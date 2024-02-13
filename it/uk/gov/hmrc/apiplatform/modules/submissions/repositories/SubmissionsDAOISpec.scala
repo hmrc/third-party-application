@@ -54,7 +54,7 @@ class SubmissionsDAOISpec
 
   override def beforeEach(): Unit = {
     await(submissionsRepository.collection.drop().toFuture())
-    await(submissionsRepository.ensureIndexes)
+    await(submissionsRepository.ensureIndexes())
   }
 
   "save and retrieved" should {

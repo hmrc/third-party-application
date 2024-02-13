@@ -18,8 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import scala.concurrent.Future
 
-import akka.stream.Materializer
-import akka.stream.testkit.NoMaterializer
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.testkit.NoMaterializer
 
 import play.api.http.Writeable
 import play.api.inject.bind
