@@ -24,13 +24,13 @@ import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
-import akka.actor.ActorSystem
 import cats.data.OptionT
-import com.kenshoo.play.metrics.Metrics
+import org.apache.pekko.actor.ActorSystem
 
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
@@ -89,7 +89,7 @@ class ApplicationService @Inject() (
         Future(x)
       case None    =>
         logger.warn(s"Application creation is locked. Retry scheduled for ${application.name}")
-        akka.pattern.after(Duration(3, TimeUnit.SECONDS), using = system.scheduler) {
+        org.apache.pekko.pattern.after(Duration(3, TimeUnit.SECONDS), using = system.scheduler) {
           create(application)
         }
     }

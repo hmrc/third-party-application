@@ -52,7 +52,7 @@ trait TermsOfUseInvitationRepositoryMockModule extends MockitoSugar with Argumen
     }
 
     object FetchByStatusesBeforeDueBy {
-      def thenReturn(invitations: List[TermsOfUseInvitation]) = when(aMock.fetchByStatusesBeforeDueBy(*, *)).thenAnswer(successful(invitations))
+      def thenReturn(invitations: List[TermsOfUseInvitation]) = when(aMock.fetchByStatusesBeforeDueBy(*, *, *)).thenAnswer(successful(invitations))
 
       def verifyCalledWith(dueBy: Instant, status1: TermsOfUseInvitationState, status2: TermsOfUseInvitationState) =
         verify(aMock).fetchByStatusesBeforeDueBy(eqTo(dueBy), eqTo(status1), eqTo(status2))

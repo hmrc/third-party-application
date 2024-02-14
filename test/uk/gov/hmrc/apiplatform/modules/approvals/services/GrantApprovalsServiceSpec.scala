@@ -37,7 +37,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
-  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
 
   trait Setup extends AuditServiceMockModule
       with ApplicationRepositoryMockModule

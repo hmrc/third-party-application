@@ -50,7 +50,7 @@ class UpliftLinksRepositoryISpec
     super.beforeEach()
     await(repository.collection.drop().toFuture())
 
-    await(repository.ensureIndexes)
+    await(repository.ensureIndexes())
   }
 
   trait Setup {

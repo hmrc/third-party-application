@@ -51,8 +51,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpe
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
 
-  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
-
   class Setup {
     val mockAuditConnector = mock[AuditConnector]
     val auditService       = new AuditService(mockAuditConnector, SubmissionsServiceMock.aMock, clock)

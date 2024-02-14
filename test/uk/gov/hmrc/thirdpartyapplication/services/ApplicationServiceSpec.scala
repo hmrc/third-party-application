@@ -23,15 +23,15 @@ import scala.concurrent.Future.successful
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-import akka.actor.ActorSystem
 import cats.implicits._
-import com.kenshoo.play.metrics.Metrics
+import org.apache.pekko.actor.ActorSystem
 import org.mockito.captor.ArgCaptor
 import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._

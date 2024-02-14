@@ -200,7 +200,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   override def beforeEach(): Unit = {
     await(repository.collection.drop().toFuture())
-    await(repository.ensureIndexes)
+    await(repository.ensureIndexes())
   }
 
   def buildToUDoc(

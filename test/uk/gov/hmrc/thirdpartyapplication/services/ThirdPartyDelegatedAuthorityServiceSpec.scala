@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 
 import uk.gov.hmrc.http.HeaderCarrier
 
