@@ -3,5 +3,6 @@ POST          /application/:id/grant                       uk.gov.hmrc.apiplatfo
 POST          /application/:id/grant-with-warn-tou         uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.grantWithWarningsForTouUplift(id: ApplicationId)
 POST          /application/:id/grant-tou                   uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.grantForTouUplift(id: ApplicationId)
 POST          /application/:id/decline-tou                 uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.declineForTouUplift(id: ApplicationId)
+POST          /application/:id/reset-tou                   uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.resetForTouUplift(id: ApplicationId)
 
 GET           /responsible-individual-verification/:code   uk.gov.hmrc.apiplatform.modules.approvals.controllers.ResponsibleIndividualVerificationController.getVerification(code: String)

@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{ActualAnswer
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
@@ -42,6 +42,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       with ApplicationRepositoryMockModule
       with StateHistoryRepositoryMockModule
       with TermsOfUseInvitationServiceMockModule
+      with ResponsibleIndividualVerificationRepositoryMockModule
       with SubmissionsServiceMockModule
       with EmailConnectorMockModule
       with ApplicationTestData
@@ -92,6 +93,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
         ApplicationRepoMock.aMock,
         StateHistoryRepoMock.aMock,
         TermsOfUseInvitationServiceMock.aMock,
+        ResponsibleIndividualVerificationRepositoryMock.aMock,
         SubmissionsServiceMock.aMock,
         EmailConnectorMock.aMock,
         clock
@@ -265,6 +267,33 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       val result  = await(underTest.declineForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
+    }
+  }
+
+  "GrantApprovalsService.resetForTouUplift" should {
+    "reset the specified ToU application" in new Setup {
+
+      SubmissionsServiceMock.Store.thenReturn()
+      TermsOfUseInvitationServiceMock.UpdateResetBackToEmailSent.thenReturn()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
+
+      val warning = "Here are some warnings"
+      val result  = await(underTest.resetForTouUplift(applicationProduction, pendingRISubmission, gatekeeperUserName, warning))
+
+      result should matchPattern {
+        case GrantApprovalsService.Actioned(app) =>
+      }
+      SubmissionsServiceMock.Store.verifyCalledWith().status.isAnswering shouldBe true
+      SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
+        case Submission.Status.Answering(_, gatekeeperUserName) =>
+      }
+    }
+
+    "fail to decline the specified application if the application is in the incorrect state" in new Setup {
+      val warning = "Here are some warnings"
+      val result  = await(underTest.resetForTouUplift(anApplicationData(applicationId, testingState()), pendingRISubmission, gatekeeperUserName, warning))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
   }
 }

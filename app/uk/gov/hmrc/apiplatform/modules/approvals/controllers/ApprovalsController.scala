@@ -148,6 +148,23 @@ class ApprovalsController @Inject() (
       .recover(recovery)
   }
 
+  def resetForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
+    import GrantApprovalsService._
+
+    withJsonBodyFromAnyContent[TouUpliftRequest] { upliftRequest =>
+      grantApprovalService.resetForTouUplift(request.application, request.submission, upliftRequest.gatekeeperUserName, upliftRequest.reasons)
+        .map(_ match {
+          case Actioned(application)                  => Ok(Json.toJson(Application(application)))
+          case RejectedDueToIncorrectSubmissionState  =>
+            PreconditionFailed(asJsonError("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId was not in the expected state"))
+          case RejectedDueToIncorrectApplicationState =>
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
+          case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
+        })
+    }
+      .recover(recovery)
+  }
+
   private def asJsonError(errorCode: String, message: String): JsValue =
     Json.toJson(
       Json.obj(
