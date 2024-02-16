@@ -54,11 +54,15 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val warningTime: Instant = instant().minus(Period.ofDays(productionCredentialsRequestExpiryWarningInterval.toDays.toInt))
-    logger.info(s"Send production credentials request expiry warning email for production applications having status of TESTING with updatedOn earlier than $warningTime")
+    logger.info(s"Send production credentials request expiry warning email for production applications having status of TESTING with updatedOn earlier than $warningTime with allowAutoDelete true")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
       warningApps <-
-        applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(state = State.TESTING, updatedBefore = warningTime, environment = Environment.PRODUCTION)
+        applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotifiedForDeleteJob(
+          state = State.TESTING,
+          updatedBefore = warningTime,
+          environment = Environment.PRODUCTION
+        )
       _            = logger.info(s"Scheduled job $name found ${warningApps.size} applications")
       _           <- Future.sequence(warningApps.map(sendWarningEmail))
     } yield RunningOfJobSuccessful

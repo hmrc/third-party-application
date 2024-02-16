@@ -67,7 +67,7 @@ class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with Befo
 
   "ProductionCredentialsRequestExpiredJob" should {
     "delete applications, send emails correctly and delete any notification records" in new Setup {
-      ApplicationRepoMock.FetchByStatusDetailsAndEnvironment.thenReturn(app)
+      ApplicationRepoMock.FetchByStatusDetailsAndEnvironmentForDeleteJob.thenReturn(app)
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(app)
 
       await(job.runJob)

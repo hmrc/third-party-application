@@ -69,7 +69,7 @@ class ProductionCredentialsRequestExpiryWarningJobSpec extends AsyncHmrcSpec wit
 
   "ProductionCredentialsRequestExpiryWarningJob" should {
     "send emails correctly and create a notification record" in new Setup {
-      ApplicationRepoMock.FetchByStatusDetailsAndEnvironmentNotAleadyNotified.thenReturn(app)
+      ApplicationRepoMock.FetchByStatusDetailsAndEnvironmentNotAleadyNotifiedForDeleteJob.thenReturn(app)
       EmailConnectorMock.SendProductionCredentialsRequestExpiryWarning.thenReturnSuccess()
       NotificationRepositoryMock.CreateEntity.thenReturnSuccess()
 
