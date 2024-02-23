@@ -429,16 +429,16 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.fetchProdAppStateHistories()).thenReturn(Future.successful(appStateHistories.toList))
     }
 
-    object FetchByStatusDetailsAndEnvironment {
+    object FetchByStatusDetailsAndEnvironmentForDeleteJob {
 
       def thenReturn(apps: StoredApplication*) =
-        when(aMock.fetchByStatusDetailsAndEnvironment(*, *, *)).thenReturn(successful(apps.toList))
+        when(aMock.fetchByStatusDetailsAndEnvironmentForDeleteJob(*, *, *)).thenReturn(successful(apps.toList))
     }
 
-    object FetchByStatusDetailsAndEnvironmentNotAleadyNotified {
+    object FetchByStatusDetailsAndEnvironmentNotAleadyNotifiedForDeleteJob {
 
       def thenReturn(apps: StoredApplication*) =
-        when(aMock.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(*, *, *)).thenReturn(successful(apps.toList))
+        when(aMock.fetchByStatusDetailsAndEnvironmentNotAleadyNotifiedForDeleteJob(*, *, *)).thenReturn(successful(apps.toList))
     }
 
     object UpdateApplicationName {

@@ -403,17 +403,22 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     collection.find(query).toFuture()
   }
 
-  def fetchByStatusDetailsAndEnvironment(state: State, updatedBefore: Instant, environment: Environment): Future[Seq[StoredApplication]] = {
+  def fetchByStatusDetailsAndEnvironmentForDeleteJob(state: State, updatedBefore: Instant, environment: Environment): Future[Seq[StoredApplication]] = {
     collection.aggregate(
       Seq(
         filter(equal("state.name", state.toString())),
         filter(equal("environment", Codecs.toBson(environment))),
+        filter(notEqual("allowAutoDelete", false)),
         filter(lte("state.updatedOn", updatedBefore))
       )
     ).toFuture()
   }
 
-  def fetchByStatusDetailsAndEnvironmentNotAleadyNotified(state: State, updatedBefore: Instant, environment: Environment): Future[Seq[StoredApplication]] = {
+  def fetchByStatusDetailsAndEnvironmentNotAleadyNotifiedForDeleteJob(
+      state: State,
+      updatedBefore: Instant,
+      environment: Environment
+    ): Future[Seq[StoredApplication]] = {
     timeFuture(
       "Fetch Applications by Status Details and Environment not Already Notified",
       "application.repository.fetchByStatusDetailsAndEnvironmentNotAleadyNotified"
@@ -422,6 +427,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         Seq(
           filter(equal("state.name", state.toString())),
           filter(equal("environment", Codecs.toBson(environment))),
+          filter(notEqual("allowAutoDelete", false)),
           filter(lte("state.updatedOn", updatedBefore)),
           lookup(from = "notifications", localField = "id", foreignField = "applicationId", as = "matched"),
           filter(size("matched", 0))

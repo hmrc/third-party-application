@@ -1043,17 +1043,18 @@ class ApplicationRepositoryISpec
 
     "retrieve the only application with TESTING state that have been updated before the expiryDay" in {
       val applications = Seq(
-        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
-        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
+        createAppWithStatusUpdatedOn(State.TESTING, currentDate, true),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday, true),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday, true),
+        createAppWithStatusUpdatedOn(State.TESTING, lastWeek, false),
+        createAppWithStatusUpdatedOn(State.TESTING, lastWeek, true)
       )
       applications.foreach(application =>
         await(applicationRepository.save(application))
       )
 
       val applicationDetails = await(
-        applicationRepository.fetchByStatusDetailsAndEnvironment(
+        applicationRepository.fetchByStatusDetailsAndEnvironmentForDeleteJob(
           State.TESTING,
           yesterday,
           Environment.PRODUCTION
@@ -1090,17 +1091,18 @@ class ApplicationRepositoryISpec
 
     "retrieve the only application with TESTING state that have been updated before the expiryDay" in {
       val applications = Seq(
-        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
-        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
+        createAppWithStatusUpdatedOn(State.TESTING, currentDate, true),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday, true),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday, true),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday, false),
+        createAppWithStatusUpdatedOn(State.TESTING, lastWeek, true)
       )
       applications.foreach(application =>
         await(applicationRepository.save(application))
       )
 
       val applicationDetails = await(
-        applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(
+        applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotifiedForDeleteJob(
           State.TESTING,
           yesterday,
           Environment.PRODUCTION
@@ -1115,12 +1117,13 @@ class ApplicationRepositoryISpec
     }
 
     "retrieve the only application with TESTING state that have been updated before the expiryDay and don't return already notified ones" in {
-      val app4 = createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
+      val app4 = createAppWithStatusUpdatedOn(State.TESTING, lastWeek, true)
 
       val applications = Seq(
-        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
-        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, currentDate, true),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday, true),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday, false),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday, true),
         app4
       )
       applications.foreach(application =>
@@ -1129,7 +1132,7 @@ class ApplicationRepositoryISpec
       await(notificationRepository.createEntity(Notification(app4.id, lastWeek, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
 
       val applicationDetails = await(
-        applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(
+        applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotifiedForDeleteJob(
           State.TESTING,
           yesterday,
           Environment.PRODUCTION
@@ -3534,7 +3537,8 @@ class ApplicationRepositoryISpec
 
   def createAppWithStatusUpdatedOn(
       state: State,
-      updatedOn: Instant
+      updatedOn: Instant,
+      allowAutoDelete: Boolean = true
     ): StoredApplication =
     anApplicationDataForTest(
       id = ApplicationId.random,
@@ -3545,7 +3549,8 @@ class ApplicationRepositoryISpec
         Some("requesterName"),
         Some("aVerificationCode"),
         updatedOn
-      )
+      ),
+      allowAutoDelete = allowAutoDelete
     )
 
   def aSubscriptionData(
@@ -3566,7 +3571,8 @@ class ApplicationRepositoryISpec
         "user@example.com".admin()
       ),
       checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret"))
+      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
+      allowAutoDelete: Boolean = true
     ): StoredApplication = {
 
     aNamedApplicationData(
@@ -3578,7 +3584,8 @@ class ApplicationRepositoryISpec
       users,
       checkInformation,
       clientSecrets,
-      grantLength
+      grantLength,
+      allowAutoDelete
     )
   }
 
@@ -3591,7 +3598,8 @@ class ApplicationRepositoryISpec
       users: Set[Collaborator] = Set("user@example.com".admin()),
       checkInformation: Option[CheckInformation] = None,
       clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
-      grantLength: Int = defaultGrantLength
+      grantLength: Int = defaultGrantLength,
+      allowAutoDelete: Boolean = true
     ): StoredApplication = {
 
     StoredApplication(
@@ -3609,7 +3617,8 @@ class ApplicationRepositoryISpec
       instant,
       Some(instant),
       grantLength = grantLength,
-      checkInformation = checkInformation
+      checkInformation = checkInformation,
+      allowAutoDelete = allowAutoDelete
     )
   }
 
