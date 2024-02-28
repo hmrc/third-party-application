@@ -38,7 +38,7 @@ class QuestionnairesController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) {
   import QuestionnairesController._
-  import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.GroupOfQuestionnairesJsonFormatters._
+  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.GroupOfQuestionnaires._
 
   def activeQuestionnaires = Action.async {
     dao.fetchActiveGroupsOfQuestionnaires().map(xs => Ok(Json.toJson(xs)))

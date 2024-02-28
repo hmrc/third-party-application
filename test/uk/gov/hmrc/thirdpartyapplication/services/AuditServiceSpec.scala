@@ -190,8 +190,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
         "responsibleIndividual.verification.date" -> nowAsText
       )
       val markedAnswers              = MarkAnswer.markSubmission(declinedSubmission)
-      val nbrOfFails                 = markedAnswers.filter(_._2 == Fail).size
-      val nbrOfWarnings              = markedAnswers.filter(_._2 == Warn).size
+      val nbrOfFails                 = markedAnswers.filter(_._2 == Mark.Fail).size
+      val nbrOfWarnings              = markedAnswers.filter(_._2 == Mark.Warn).size
       val counters                   = Map(
         "submission.failures" -> nbrOfFails.toString,
         "submission.warnings" -> nbrOfWarnings.toString

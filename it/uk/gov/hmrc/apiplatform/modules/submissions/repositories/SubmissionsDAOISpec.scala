@@ -29,7 +29,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{SingleChoiceAnswer, Submission}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ActualAnswer, Submission}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
@@ -102,7 +102,7 @@ class SubmissionsDAOISpec
       await(submissionsDao.save(aSubmission))
 
       val oldAnswers        = aSubmission.latestInstance.answersToQuestions
-      val newAnswers        = oldAnswers + (questionId -> SingleChoiceAnswer("Yes"))
+      val newAnswers        = oldAnswers + (questionId -> ActualAnswer.SingleChoiceAnswer("Yes"))
       val updatedSubmission = Submission.updateLatestAnswersTo(newAnswers)(aSubmission)
 
       await(submissionsDao.update(updatedSubmission)) mustBe updatedSubmission

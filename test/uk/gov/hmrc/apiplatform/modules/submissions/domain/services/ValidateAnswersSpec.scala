@@ -36,7 +36,7 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
       val question = acknowledgementOnly(1)
       type AnswerMatching = Either[Unit, ActualAnswer]
       val aFailure: AnswerMatching    = Left(())
-      val validAnswer: AnswerMatching = Right(AcknowledgedAnswer)
+      val validAnswer: AnswerMatching = Right(ActualAnswer.AcknowledgedAnswer)
 
       val passes = Table(
         ("description", "question", "answer", "expects"),
@@ -59,8 +59,8 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
       val optionalQuestion = question.makeOptionalPass
       type AnswerMatching = Either[Unit, ActualAnswer]
       val aFailure: AnswerMatching         = Left(())
-      val validAnswer: AnswerMatching      = Right(SingleChoiceAnswer("Yes"))
-      val validEmptyAnswer: AnswerMatching = Right(NoAnswer)
+      val validAnswer: AnswerMatching      = Right(ActualAnswer.SingleChoiceAnswer("Yes"))
+      val validEmptyAnswer: AnswerMatching = Right(ActualAnswer.NoAnswer)
 
       val passes = Table(
         ("description", "question", "answer", "expects"),
@@ -88,9 +88,9 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
       val optionalQuestion = question.makeOptionalPass
       type AnswerMatching = Either[Unit, ActualAnswer]
       val aFailure: AnswerMatching          = Left(())
-      val validSingleAnswer: AnswerMatching = Right(MultipleChoiceAnswer(Set("One")))
-      val validMultiAnswer: AnswerMatching  = Right(MultipleChoiceAnswer(Set("One", "Two")))
-      val validEmptyAnswer: AnswerMatching  = Right(NoAnswer)
+      val validSingleAnswer: AnswerMatching = Right(ActualAnswer.MultipleChoiceAnswer(Set("One")))
+      val validMultiAnswer: AnswerMatching  = Right(ActualAnswer.MultipleChoiceAnswer(Set("One", "Two")))
+      val validEmptyAnswer: AnswerMatching  = Right(ActualAnswer.NoAnswer)
 
       val passes = Table(
         ("description", "question", "answer", "expects"),
@@ -125,8 +125,8 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
       val optionalQuestion = question.makeOptionalPass
       type AnswerMatching = Either[Unit, ActualAnswer]
       val aFailure: AnswerMatching         = Left(())
-      val validAnswer: AnswerMatching      = Right(TextAnswer("Bobby"))
-      val validEmptyAnswer: AnswerMatching = Right(NoAnswer)
+      val validAnswer: AnswerMatching      = Right(ActualAnswer.TextAnswer("Bobby"))
+      val validEmptyAnswer: AnswerMatching = Right(ActualAnswer.NoAnswer)
 
       val passes = Table(
         ("description", "question", "answer", "expects"),
@@ -152,8 +152,8 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
       val optionalQuestion = question.makeOptionalPass
       type AnswerMatching = Either[Unit, ActualAnswer]
       val aFailure: AnswerMatching         = Left(())
-      val validAnswer: AnswerMatching      = Right(TextAnswer("123"))
-      val validEmptyAnswer: AnswerMatching = Right(NoAnswer)
+      val validAnswer: AnswerMatching      = Right(ActualAnswer.TextAnswer("123"))
+      val validEmptyAnswer: AnswerMatching = Right(ActualAnswer.NoAnswer)
 
       val passes = Table(
         ("description", "question", "answer", "expects"),

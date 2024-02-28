@@ -60,7 +60,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
             submission.applicationId shouldBe submission.applicationId
             submission.startedOn shouldBe submission.startedOn
             submission.groups shouldBe submission.groups
-            submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+            submission.latestInstance.answersToQuestions.get(questionId).value shouldBe ActualAnswer.SingleChoiceAnswer("Yes")
         }
       }
 
@@ -70,7 +70,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
 
         inside(s2.value) {
           case ExtendedSubmission(submission, _) =>
-            submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
+            submission.latestInstance.answersToQuestions.get(questionId).value shouldBe ActualAnswer.SingleChoiceAnswer("No")
         }
       }
 
@@ -81,8 +81,8 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
 
         inside(s2.value) {
           case ExtendedSubmission(submission, _) =>
-            submission.latestInstance.answersToQuestions.get(question2Id).value shouldBe SingleChoiceAnswer("Yes")
-            submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
+            submission.latestInstance.answersToQuestions.get(question2Id).value shouldBe ActualAnswer.SingleChoiceAnswer("Yes")
+            submission.latestInstance.answersToQuestions.get(questionId).value shouldBe ActualAnswer.SingleChoiceAnswer("No")
         }
       }
 
@@ -93,8 +93,8 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
 
         inside(s2.value) {
           case ExtendedSubmission(submission, _) =>
-            submission.latestInstance.answersToQuestions.get(question2Id).value shouldBe SingleChoiceAnswer("Yes")
-            submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
+            submission.latestInstance.answersToQuestions.get(question2Id).value shouldBe ActualAnswer.SingleChoiceAnswer("Yes")
+            submission.latestInstance.answersToQuestions.get(questionId).value shouldBe ActualAnswer.SingleChoiceAnswer("No")
         }
       }
 
@@ -125,7 +125,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
 
       "return in progress, with answerable questions when a question is answered" in new Setup {
         val context = soldContext
-        val answers = Map(ServiceManagementPractices.question1.id -> SingleChoiceAnswer("Yes"))
+        val answers = Map(ServiceManagementPractices.question1.id -> ActualAnswer.SingleChoiceAnswer("Yes"))
         val res     = AnswerQuestion.deriveProgressOfQuestionnaire(ServiceManagementPractices.questionnaire, context, answers)
 
         res shouldBe QuestionnaireProgress(QuestionnaireState.InProgress, ServiceManagementPractices.questionnaire.questions.asIds())
@@ -133,7 +133,10 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
 
       "return completed, with answerable questions when all questions are answered" in new Setup {
         val context = soldContext
-        val answers = Map(ServiceManagementPractices.question1.id -> SingleChoiceAnswer("Yes"), ServiceManagementPractices.question2.id -> SingleChoiceAnswer("Yes"))
+        val answers = Map(
+          ServiceManagementPractices.question1.id -> ActualAnswer.SingleChoiceAnswer("Yes"),
+          ServiceManagementPractices.question2.id -> ActualAnswer.SingleChoiceAnswer("Yes")
+        )
         val res     = AnswerQuestion.deriveProgressOfQuestionnaire(ServiceManagementPractices.questionnaire, context, answers)
 
         res shouldBe QuestionnaireProgress(QuestionnaireState.Completed, ServiceManagementPractices.questionnaire.questions.asIds())
@@ -170,7 +173,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
 
       "return completed and all questions except second and third questions based on answer of the first excluding the others" in new Setup {
         val context = simpleContext
-        val answers = Map(SoftwareSecurity.question1.id -> SingleChoiceAnswer("No"))
+        val answers = Map(SoftwareSecurity.question1.id -> ActualAnswer.SingleChoiceAnswer("No"))
         val res     = AnswerQuestion.deriveProgressOfQuestionnaire(SoftwareSecurity.questionnaire, context, answers)
 
         res shouldBe QuestionnaireProgress(QuestionnaireState.Completed, List(SoftwareSecurity.question1.id))
@@ -178,7 +181,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
 
       "return in progress and all questions for questionnaire that skips second and third questions based on answer of the first including the others" in new Setup {
         val context = simpleContext
-        val answers = Map(SoftwareSecurity.question1.id -> SingleChoiceAnswer("Yes"))
+        val answers = Map(SoftwareSecurity.question1.id -> ActualAnswer.SingleChoiceAnswer("Yes"))
         val res     = AnswerQuestion.deriveProgressOfQuestionnaire(SoftwareSecurity.questionnaire, context, answers)
 
         res shouldBe QuestionnaireProgress(QuestionnaireState.InProgress, SoftwareSecurity.questionnaire.questions.asIds())

@@ -24,7 +24,7 @@ import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
-trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
+trait BaseSubmissionsJsonFormatters {
 
   implicit val keyReadsQuestionnaireId: KeyReads[Questionnaire.Id]   = KeyReads(key => JsSuccess(Questionnaire.Id(key)))
   implicit val keyWritesQuestionnaireId: KeyWrites[Questionnaire.Id] = KeyWrites(_.value)
@@ -78,44 +78,11 @@ trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
     .and[Created]("created")
     .format
 
+  import GroupOfQuestionnaires._
+  import Question._
+
   implicit val submissionInstanceFormat: OFormat[Submission.Instance] = Json.format[Submission.Instance]
   implicit val submissionFormat: OFormat[Submission]                  = Json.format[Submission]
 }
 
 object SubmissionsJsonFormatters extends SubmissionsJsonFormatters
-
-trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters with EnvReads {
-
-  import Submission.Status._
-
-  implicit val utcReads: Reads[Instant] = DefaultInstantReads
-
-  implicit val rejectedStatusFormat: OFormat[Declined]                                         = Json.format[Declined]
-  implicit val acceptedStatusFormat: OFormat[Granted]                                          = Json.format[Granted]
-  implicit val acceptedWithWarningsStatusFormat: OFormat[GrantedWithWarnings]                  = Json.format[GrantedWithWarnings]
-  implicit val failedStatusFormat: OFormat[Failed]                                             = Json.format[Failed]
-  implicit val warningsStatusFormat: OFormat[Warnings]                                         = Json.format[Warnings]
-  implicit val pendingResponsibleIndividualStatusFormat: OFormat[PendingResponsibleIndividual] = Json.format[PendingResponsibleIndividual]
-  implicit val submittedStatusFormat: OFormat[Submitted]                                       = Json.format[Submitted]
-  implicit val answeringStatusFormat: OFormat[Answering]                                       = Json.format[Answering]
-  implicit val createdStatusFormat: OFormat[Created]                                           = Json.format[Created]
-
-  implicit val submissionStatus: OFormat[Submission.Status] = Union.from[Submission.Status]("Submission.StatusType")
-    .and[Declined]("declined")
-    .and[Granted]("granted")
-    .and[GrantedWithWarnings]("grantedWithWarnings")
-    .and[Failed]("failed")
-    .and[Warnings]("warnings")
-    .and[PendingResponsibleIndividual]("pendingResponsibleIndividual")
-    .and[Submitted]("submitted")
-    .and[Answering]("answering")
-    .and[Created]("created")
-    .format
-
-  implicit val submissionInstanceFormat: OFormat[Submission.Instance] = Json.format[Submission.Instance]
-  implicit val submissionFormat: OFormat[Submission]                  = Json.format[Submission]
-  implicit val extendedSubmissionFormat: OFormat[ExtendedSubmission]  = Json.format[ExtendedSubmission]
-  implicit val markedSubmissionFormat: OFormat[MarkedSubmission]      = Json.format[MarkedSubmission]
-}
-
-object SubmissionsFrontendJsonFormatters extends SubmissionsFrontendJsonFormatters

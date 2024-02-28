@@ -25,9 +25,9 @@ class QuestionsAndAnswersToMapSpec extends HmrcSpec {
   trait Setup extends SubmissionsTestData {
 
     val answersToQuestionsWithMissingIds: Map[Question.Id, ActualAnswer] = Map(
-      (Question.Id.random                            -> TextAnswer("bad question")),
-      (CustomersAuthorisingYourSoftware.question1.id -> TextAnswer("question 1")),
-      (CustomersAuthorisingYourSoftware.question2.id -> TextAnswer("question 2"))
+      (Question.Id.random                            -> ActualAnswer.TextAnswer("bad question")),
+      (CustomersAuthorisingYourSoftware.question1.id -> ActualAnswer.TextAnswer("question 1")),
+      (CustomersAuthorisingYourSoftware.question2.id -> ActualAnswer.TextAnswer("question 2"))
     )
     val submissionWithMissingQuestionIds                                 = Submission.updateLatestAnswersTo(answersToQuestionsWithMissingIds)(aSubmission)
   }
@@ -35,8 +35,8 @@ class QuestionsAndAnswersToMapSpec extends HmrcSpec {
   "QuestionsAndAnswersToMap" should {
     "return a map of questions to answers" in new Setup {
       val answers: Map[Question.Id, ActualAnswer] = Map(
-        (CustomersAuthorisingYourSoftware.question1.id -> TextAnswer("question 1")),
-        (CustomersAuthorisingYourSoftware.question2.id -> TextAnswer("question 2"))
+        (CustomersAuthorisingYourSoftware.question1.id -> ActualAnswer.TextAnswer("question 1")),
+        (CustomersAuthorisingYourSoftware.question2.id -> ActualAnswer.TextAnswer("question 2"))
       )
 
       val map = QuestionsAndAnswersToMap(aSubmission.answeringWith(answers))
@@ -47,9 +47,9 @@ class QuestionsAndAnswersToMapSpec extends HmrcSpec {
 
     "return a map of questions to answers omitting missing question ids" in new Setup {
       val answers: Map[Question.Id, ActualAnswer] = Map(
-        (Question.Id.random                            -> TextAnswer("bad question")),
-        (CustomersAuthorisingYourSoftware.question1.id -> TextAnswer("question 1")),
-        (CustomersAuthorisingYourSoftware.question2.id -> TextAnswer("question 2"))
+        (Question.Id.random                            -> ActualAnswer.TextAnswer("bad question")),
+        (CustomersAuthorisingYourSoftware.question1.id -> ActualAnswer.TextAnswer("question 1")),
+        (CustomersAuthorisingYourSoftware.question2.id -> ActualAnswer.TextAnswer("question 2"))
       )
 
       val map = QuestionsAndAnswersToMap(aSubmission.answeringWith(answers))

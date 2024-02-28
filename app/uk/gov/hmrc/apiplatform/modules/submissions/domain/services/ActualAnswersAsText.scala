@@ -21,11 +21,11 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 object ActualAnswersAsText {
 
   def apply(answer: ActualAnswer): String = answer match {
-    case SingleChoiceAnswer(value)    => value
-    case TextAnswer(value)            => value
-    case MultipleChoiceAnswer(values) => values.mkString
-    case NoAnswer                     => "n/a"
-    case AcknowledgedAnswer           => ""
+    case ActualAnswer.SingleChoiceAnswer(value)    => value
+    case ActualAnswer.TextAnswer(value)            => value
+    case ActualAnswer.MultipleChoiceAnswer(values) => values.mkString
+    case ActualAnswer.NoAnswer                     => "n/a"
+    case ActualAnswer.AcknowledgedAnswer           => ""
   }
 
 }

@@ -116,7 +116,7 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
 
   val createdSubmission             = aSubmission
   val answeringSubmission           = createdSubmission.answeringWith(answersToQuestions)
-  val answeredSubmission            = createdSubmission.hasCompletelyAnsweredWith(AnsweringQuestionsHelper.answersForGroups(Pass)(answeringSubmission.groups))
+  val answeredSubmission            = createdSubmission.hasCompletelyAnsweredWith(AnsweringQuestionsHelper.answersForGroups(Mark.Pass)(answeringSubmission.groups))
   val submittedSubmission           = Submission.submit(instant, "bob@example.com")(answeredSubmission)
   val declinedSubmission            = Submission.decline(instant, gatekeeperUserName, reasons)(submittedSubmission)
   val grantedSubmission             = Submission.grant(instant, gatekeeperUserName, None, None)(submittedSubmission)
@@ -195,15 +195,16 @@ trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with Que
 
     def passAnswer(question: Question): ActualAnswer = {
       question match {
-        case TextQuestion(id, wording, statement, _, _, _, _, absence, _)                      => TextAnswer("some random text")
-        case ChooseOneOfQuestion(id, wording, statement, _, _, _, marking, absence, _)         => SingleChoiceAnswer(marking.filter {
-            case (pa, Pass) => true; case _ => false
+        case Question.TextQuestion(id, wording, statement, _, _, _, _, absence, _)                      => ActualAnswer.TextAnswer("some random text")
+        case Question.ChooseOneOfQuestion(id, wording, statement, _, _, _, marking, absence, _)         => ActualAnswer.SingleChoiceAnswer(marking.filter {
+            case (pa, Mark.Pass) => true; case _ => false
           }.head._1.value)
-        case MultiChoiceQuestion(id, wording, statement, _, _, _, marking, absence, _)         => MultipleChoiceAnswer(Set(marking.filter {
-            case (pa, Pass) => true; case _ => false
+        case Question.MultiChoiceQuestion(id, wording, statement, _, _, _, marking, absence, _)         => ActualAnswer.MultipleChoiceAnswer(Set(marking.filter {
+            case (pa, Mark.Pass) => true; case _ => false
           }.head._1.value))
-        case AcknowledgementOnly(id, wording, statement)                                       => AcknowledgedAnswer
-        case YesNoQuestion(id, wording, statement, _, _, _, yesMarking, noMarking, absence, _) => if (yesMarking == Pass) SingleChoiceAnswer("Yes") else SingleChoiceAnswer("No")
+        case Question.AcknowledgementOnly(id, wording, statement)                                       => ActualAnswer.AcknowledgedAnswer
+        case Question.YesNoQuestion(id, wording, statement, _, _, _, yesMarking, noMarking, absence, _) =>
+          if (yesMarking == Mark.Pass) ActualAnswer.SingleChoiceAnswer("Yes") else ActualAnswer.SingleChoiceAnswer("No")
       }
     }
 
@@ -240,38 +241,38 @@ trait AnsweringQuestionsHelper {
   def answerForQuestion(desiredMark: Mark)(question: Question): Map[Question.Id, Option[ActualAnswer]] = {
     val answers: List[Option[ActualAnswer]] = question match {
 
-      case YesNoQuestion(id, _, _, _, _, _, yesMarking, noMarking, absence, _) =>
-        (if (yesMarking == desiredMark) Some(SingleChoiceAnswer("Yes")) else None) ::
-          (if (noMarking == desiredMark) Some(SingleChoiceAnswer("No")) else None) ::
-          (absence.flatMap(a => if (a._2 == desiredMark) Some(NoAnswer) else None)) ::
+      case Question.YesNoQuestion(id, _, _, _, _, _, yesMarking, noMarking, absence, _) =>
+        (if (yesMarking == desiredMark) Some(ActualAnswer.SingleChoiceAnswer("Yes")) else None) ::
+          (if (noMarking == desiredMark) Some(ActualAnswer.SingleChoiceAnswer("No")) else None) ::
+          (absence.flatMap(a => if (a._2 == desiredMark) Some(ActualAnswer.NoAnswer) else None)) ::
           List.empty[Option[ActualAnswer]]
 
-      case ChooseOneOfQuestion(id, _, _, _, _, _, marking, absence, _) => {
+      case Question.ChooseOneOfQuestion(id, _, _, _, _, _, marking, absence, _) => {
         marking.map {
-          case (pa, mark) => Some(SingleChoiceAnswer(pa.value))
+          case (pa, mark) => Some(ActualAnswer.SingleChoiceAnswer(pa.value))
           case _          => None
         }
           .toList ++
-          List(absence.flatMap(a => if (a._2 == desiredMark) Some(NoAnswer) else None))
+          List(absence.flatMap(a => if (a._2 == desiredMark) Some(ActualAnswer.NoAnswer) else None))
       }
 
-      case TextQuestion(id, _, _, _, _, _, _, absence, _) =>
-        if (desiredMark == Pass)
-          Some(TextAnswer(Random.nextString(Random.nextInt(25) + 1))) ::
-            absence.flatMap(a => if (a._2 == desiredMark) Some(NoAnswer) else None) ::
+      case Question.TextQuestion(id, _, _, _, _, _, _, absence, _) =>
+        if (desiredMark == Mark.Pass)
+          Some(ActualAnswer.TextAnswer(Random.nextString(Random.nextInt(25) + 1))) ::
+            absence.flatMap(a => if (a._2 == desiredMark) Some(ActualAnswer.NoAnswer) else None) ::
             List.empty[Option[ActualAnswer]]
         else
-          List(Some(NoAnswer)) // Cos we can't do anything else
+          List(Some(ActualAnswer.NoAnswer)) // Cos we can't do anything else
 
-      case AcknowledgementOnly(id, _, _) => List(Some(AcknowledgedAnswer))
+      case Question.AcknowledgementOnly(id, _, _) => List(Some(ActualAnswer.AcknowledgedAnswer))
 
-      case MultiChoiceQuestion(id, _, _, _, _, _, marking, absence, _) =>
+      case Question.MultiChoiceQuestion(id, _, _, _, _, _, marking, absence, _) =>
         marking.map {
-          case (pa, mark) if (mark == desiredMark) => Some(MultipleChoiceAnswer(Set(pa.value)))
+          case (pa, mark) if (mark == desiredMark) => Some(ActualAnswer.MultipleChoiceAnswer(Set(pa.value)))
           case _                                   => None
         }
           .toList ++
-          List(absence.flatMap(a => if (a._2 == desiredMark) Some(NoAnswer) else None))
+          List(absence.flatMap(a => if (a._2 == desiredMark) Some(ActualAnswer.NoAnswer) else None))
     }
 
     Map(question.id -> Random.shuffle(
@@ -306,22 +307,22 @@ object AnsweringQuestionsHelper extends AnsweringQuestionsHelper
 trait MarkedSubmissionsTestData extends SubmissionsTestData with AnsweringQuestionsHelper {
 
   val markedAnswers: Map[Question.Id, Mark] = Map(
-    (DevelopmentPractices.question1.id             -> Pass),
-    (DevelopmentPractices.question2.id             -> Fail),
-    (DevelopmentPractices.question3.id             -> Warn),
-    (OrganisationDetails.question1.id              -> Pass),
-    (OrganisationDetails.questionRI1.id            -> Pass),
-    (OrganisationDetails.questionRI2.id            -> Pass),
-    (CustomersAuthorisingYourSoftware.question3.id -> Pass),
-    (CustomersAuthorisingYourSoftware.question4.id -> Pass),
-    (CustomersAuthorisingYourSoftware.question6.id -> Fail)
+    (DevelopmentPractices.question1.id             -> Mark.Pass),
+    (DevelopmentPractices.question2.id             -> Mark.Fail),
+    (DevelopmentPractices.question3.id             -> Mark.Warn),
+    (OrganisationDetails.question1.id              -> Mark.Pass),
+    (OrganisationDetails.questionRI1.id            -> Mark.Pass),
+    (OrganisationDetails.questionRI2.id            -> Mark.Pass),
+    (CustomersAuthorisingYourSoftware.question3.id -> Mark.Pass),
+    (CustomersAuthorisingYourSoftware.question4.id -> Mark.Pass),
+    (CustomersAuthorisingYourSoftware.question6.id -> Mark.Fail)
   )
 
   val markedSubmission = MarkedSubmission(submittedSubmission, markedAnswers)
 
   def markAsPass(requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
-    val answers = answersForGroups(Pass)(submission.groups)
-    val marks   = answers.map { case (q, a) => q -> Pass }
+    val answers = answersForGroups(Mark.Pass)(submission.groups)
+    val marks   = answers.map { case (q, a) => q -> Mark.Pass }
 
     MarkedSubmission(submission.hasCompletelyAnsweredWith(answers), marks)
   }

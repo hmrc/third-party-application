@@ -34,7 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Mark, Submission}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -409,8 +409,8 @@ object AuditHelper {
     ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> fmt.format(rivd)))
 
     val markedAnswers = MarkAnswer.markSubmission(submission)
-    val nbrOfFails    = markedAnswers.filter(_._2 == Fail).size
-    val nbrOfWarnings = markedAnswers.filter(_._2 == Warn).size
+    val nbrOfFails    = markedAnswers.filter(_._2 == Mark.Fail).size
+    val nbrOfWarnings = markedAnswers.filter(_._2 == Mark.Warn).size
     val counters      = Map(
       "submission.failures" -> nbrOfFails.toString,
       "submission.warnings" -> nbrOfWarnings.toString

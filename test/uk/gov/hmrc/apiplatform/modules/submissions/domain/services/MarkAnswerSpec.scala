@@ -31,8 +31,8 @@ class MarkAnswerSpec extends HmrcSpec {
 
     val questionnaireAId = Questionnaire.Id.random
 
-    val YES = SingleChoiceAnswer("Yes")
-    val NO  = SingleChoiceAnswer("No")
+    val YES = ActualAnswer.SingleChoiceAnswer("Yes")
+    val NO  = ActualAnswer.SingleChoiceAnswer("No")
 
     val ANSWER_FAIL = "a1"
     val ANSWER_WARN = "a2"
@@ -49,7 +49,7 @@ class MarkAnswerSpec extends HmrcSpec {
       aSubmission.copy(groups = oneGroups)
     }
 
-    def buildYesNoQuestion(id: Question.Id, yesMark: Mark, noMark: Mark) = YesNoQuestion(
+    def buildYesNoQuestion(id: Question.Id, yesMark: Mark, noMark: Mark) = Question.YesNoQuestion(
       id,
       Wording("wording1"),
       Some(Statement(StatementText("Statement1"))),
@@ -60,20 +60,20 @@ class MarkAnswerSpec extends HmrcSpec {
       noMark
     )
 
-    def buildTextQuestion(id: Question.Id) = TextQuestion(
+    def buildTextQuestion(id: Question.Id) = Question.TextQuestion(
       id,
       Wording("wording1"),
       Some(Statement(StatementText("Statement1"))),
-      absence = Some(("blah blah blah", Fail))
+      absence = Some(("blah blah blah", Mark.Fail))
     )
 
-    def buildAcknowledgementOnlyQuestion(id: Question.Id) = AcknowledgementOnly(
+    def buildAcknowledgementOnlyQuestion(id: Question.Id) = Question.AcknowledgementOnly(
       id,
       Wording("wording1"),
       Some(Statement(StatementText("Statement1")))
     )
 
-    def buildMultiChoiceQuestion(id: Question.Id, answerMap: ListMap[PossibleAnswer, Mark]) = MultiChoiceQuestion(
+    def buildMultiChoiceQuestion(id: Question.Id, answerMap: ListMap[PossibleAnswer, Mark]) = Question.MultiChoiceQuestion(
       id,
       Wording("wording1"),
       Some(Statement(StatementText("Statement1"))),
@@ -84,8 +84,8 @@ class MarkAnswerSpec extends HmrcSpec {
     )
 
     object YesNoQuestionnaireData {
-      val question1 = buildYesNoQuestion(question1Id, Pass, Warn)
-      val question2 = buildYesNoQuestion(question2Id, Pass, Warn)
+      val question1 = buildYesNoQuestion(question1Id, Mark.Pass, Mark.Warn)
+      val question2 = buildYesNoQuestion(question2Id, Mark.Pass, Mark.Warn)
 
       val submission = buildSubmissionFromQuestions(question1, question2)
     }
@@ -103,7 +103,9 @@ class MarkAnswerSpec extends HmrcSpec {
     }
 
     object MultiChoiceQuestionnaireData {
-      val question1 = buildMultiChoiceQuestion(question1Id, ListMap(PossibleAnswer(ANSWER_PASS) -> Pass, PossibleAnswer(ANSWER_WARN) -> Warn, PossibleAnswer(ANSWER_FAIL) -> Fail))
+
+      val question1 =
+        buildMultiChoiceQuestion(question1Id, ListMap(PossibleAnswer(ANSWER_PASS) -> Mark.Pass, PossibleAnswer(ANSWER_WARN) -> Mark.Warn, PossibleAnswer(ANSWER_FAIL) -> Mark.Fail))
 
       val submission = buildSubmissionFromQuestions(question1)
     }
@@ -111,7 +113,7 @@ class MarkAnswerSpec extends HmrcSpec {
 
   import TestQuestionnaires._
 
-  def withYesNoAnswers(answer1: SingleChoiceAnswer, answer2: SingleChoiceAnswer): Submission = {
+  def withYesNoAnswers(answer1: ActualAnswer.SingleChoiceAnswer, answer2: ActualAnswer.SingleChoiceAnswer): Submission = {
     require(List(YES, NO).contains(answer1))
     require(List(YES, NO).contains(answer2))
 
@@ -119,19 +121,19 @@ class MarkAnswerSpec extends HmrcSpec {
   }
 
   def withSingleOptionalQuestionNoAnswer(): Submission = {
-    OptionalQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> NoAnswer))
+    OptionalQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> ActualAnswer.NoAnswer))
   }
 
   def withSingleOptionalQuestionAndAnswer(): Submission = {
-    OptionalQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> TextAnswer("blah blah")))
+    OptionalQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> ActualAnswer.TextAnswer("blah blah")))
   }
 
   def withAcknowledgementOnlyAnswers(): Submission = {
-    AcknowledgementOnlyQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> AcknowledgedAnswer))
+    AcknowledgementOnlyQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> ActualAnswer.AcknowledgedAnswer))
   }
 
   def withMultiChoiceAnswers(answers: String*): Submission = {
-    MultiChoiceQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> MultipleChoiceAnswer(answers.toList.toSet)))
+    MultiChoiceQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> ActualAnswer.MultipleChoiceAnswer(answers.toList.toSet)))
   }
 
   "markSubmission" should {
@@ -144,61 +146,61 @@ class MarkAnswerSpec extends HmrcSpec {
     "return Fail for NoAnswer in optional text question" in {
       val markedQuestions = MarkAnswer.markSubmission(withSingleOptionalQuestionNoAnswer())
 
-      markedQuestions shouldBe Map(question1Id -> Fail)
+      markedQuestions shouldBe Map(question1Id -> Mark.Fail)
     }
 
     "return Pass for Answer in optional text question" in {
       val markedQuestions = MarkAnswer.markSubmission(withSingleOptionalQuestionAndAnswer())
 
-      markedQuestions shouldBe Map(question1Id -> Pass)
+      markedQuestions shouldBe Map(question1Id -> Mark.Pass)
     }
 
     "return the correct marks for Single Choice questions" in {
       val markedQuestions = MarkAnswer.markSubmission(withYesNoAnswers(YES, NO))
 
-      markedQuestions shouldBe Map(question1Id -> Pass, question2Id -> Warn)
+      markedQuestions shouldBe Map(question1Id -> Mark.Pass, question2Id -> Mark.Warn)
     }
 
     "return the correct mark for AcknowledgementOnly question" in {
       val markedQuestions = MarkAnswer.markSubmission(withAcknowledgementOnlyAnswers())
 
-      markedQuestions shouldBe Map(question1Id -> Pass)
+      markedQuestions shouldBe Map(question1Id -> Mark.Pass)
     }
 
     "return Fail for Multiple Choice question" in {
       val markedQuestions = MarkAnswer.markSubmission(withMultiChoiceAnswers(ANSWER_FAIL))
 
-      markedQuestions shouldBe Map(question1Id -> Fail)
+      markedQuestions shouldBe Map(question1Id -> Mark.Fail)
     }
 
     "return Warn for Multiple Choice question" in {
       val markedQuestions = MarkAnswer.markSubmission(withMultiChoiceAnswers(ANSWER_WARN))
 
-      markedQuestions shouldBe Map(question1Id -> Warn)
+      markedQuestions shouldBe Map(question1Id -> Mark.Warn)
     }
 
     "return Pass for Multiple Choice question" in {
       val markedQuestions = MarkAnswer.markSubmission(withMultiChoiceAnswers(ANSWER_PASS))
 
-      markedQuestions shouldBe Map(question1Id -> Pass)
+      markedQuestions shouldBe Map(question1Id -> Mark.Pass)
     }
 
     "return Fail for Multiple Choice question if answer includes a single failure for the first answer" in {
       val markedQuestions = MarkAnswer.markSubmission(withMultiChoiceAnswers(ANSWER_FAIL, ANSWER_WARN, ANSWER_PASS))
 
-      markedQuestions shouldBe Map(question1Id -> Fail)
+      markedQuestions shouldBe Map(question1Id -> Mark.Fail)
     }
 
     "return Fail for Multiple Choice question if answer includes a single failure for the last answer" in {
       val markedQuestions = MarkAnswer.markSubmission(withMultiChoiceAnswers(ANSWER_PASS, ANSWER_WARN, ANSWER_FAIL))
 
-      markedQuestions shouldBe Map(question1Id -> Fail)
+      markedQuestions shouldBe Map(question1Id -> Mark.Fail)
     }
 
     "return Warn for Multiple Choice question if answer includes a single warnng and no failure" in {
       val markedQuestions = MarkAnswer.markSubmission(withMultiChoiceAnswers(ANSWER_WARN, ANSWER_PASS))
 
-      markedQuestions shouldBe Map(question1Id -> Warn)
+      markedQuestions shouldBe Map(question1Id -> Mark.Warn)
     }
   }
 }
