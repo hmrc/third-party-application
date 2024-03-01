@@ -27,5 +27,5 @@ object AppDependencies {
     "org.mockito"           %% "mockito-scala-scalatest"         % "1.17.29",
     "com.vladsch.flexmark"   % "flexmark-all"                    % "0.62.2",
     "uk.gov.hmrc"           %% "api-platform-test-common-domain" % commonDomainVersion
-  ).map(_ % "test, it")
+  ).map(_ % "test")
 }
