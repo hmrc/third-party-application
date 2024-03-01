@@ -72,7 +72,7 @@ object Submission {
       NonEmptyList[GroupOfQuestionnaires],
       QuestionIdsOfInterest,
       AskWhen.Context
-  ) => Submission = (requestedBy, id, applicationId, timestamp, groups, questionIdsOfInterest, context) => {
+    ) => Submission = (requestedBy, id, applicationId, timestamp, groups, questionIdsOfInterest, context) => {
 
     val initialStatus    = Submission.Status.Created(timestamp, requestedBy)
     val initialInstances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(initialStatus)))
