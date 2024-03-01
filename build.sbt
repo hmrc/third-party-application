@@ -1,4 +1,3 @@
-import bloop.integrations.sbt.BloopDefaults
 import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
 import sbt._
@@ -9,8 +8,8 @@ lazy val appName = "third-party-application"
 
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
-scalaVersion := "2.13.12"
-
+ThisBuild / scalaVersion := "2.13.12"
+ThisBuild / majorVersion := 0
 ThisBuild / libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
@@ -27,7 +26,6 @@ lazy val microservice = Project(appName, file("."))
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator,
-    majorVersion    := 0,
     scalacOptions   += "-Wconf:src=routes/.*:s",
     routesImport ++= Seq(
       "uk.gov.hmrc.apiplatform.modules.common.domain.models._",
@@ -45,17 +43,6 @@ lazy val microservice = Project(appName, file("."))
     Test / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "test", baseDirectory.value / "shared-test"),
     Test / parallelExecution := false
   )
-  .configs(IntegrationTest)
-  .settings(DefaultBuildSettings.integrationTestSettings())
-  .settings(scalafixConfigSettings(IntegrationTest))
-  .settings(
-    IntegrationTest / fork              := false,
-    IntegrationTest / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "it", baseDirectory.value / "shared-test"),
-    addTestReportOption(IntegrationTest, "int-test-reports"),
-    IntegrationTest / testGrouping      := oneForkedJvmPerTest((IntegrationTest / definedTests).value),
-    IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
-    IntegrationTest / parallelExecution := false
-  )
   .settings(
     scalacOptions ++= Seq(
     "-Wconf:cat=unused&src=views/.*\\.scala:s",
@@ -65,24 +52,23 @@ lazy val microservice = Project(appName, file("."))
     )
   )
 
-def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
-  tests map { test =>
-    Group(
-      test.name,
-      Seq(test),
-      SubProcess(
-        ForkOptions().withRunJVMOptions(Vector(s"-Dtest.name=${test.name}"))
-      )
-    )
-  }
+lazy val it = (project in file("it"))
+  .enablePlugins(PlayScala)
+  .dependsOn(microservice % "test->test")
+  .settings(
+    name := "integration-tests",
+    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+    DefaultBuildSettings.itSettings()
+  )
 
 Global / bloopAggregateSourceDependencies := true
 
 commands ++= Seq(
-  Command.command("run-all-tests") { state => "test" :: "it:test" :: state },
-
+  Command.command("cleanAll") { state => "clean" :: "it/clean" :: state },
+  Command.command("fmtAll") { state => "scalafmtAll" :: "it/scalafmtAll" :: state },
+  Command.command("fixAll") { state => "scalafixAll" :: "it/scalafixAll" :: state },
+  Command.command("testAll") { state => "test" :: "it/test" :: state },
+  Command.command("run-all-tests") { state => "testAll" :: state },
   Command.command("clean-and-test") { state => "clean" :: "compile" :: "run-all-tests" :: state },
-
-  // Coverage does not need compile !
   Command.command("pre-commit") { state => "clean" :: "scalafmtAll" :: "scalafixAll" :: "coverage" :: "run-all-tests" :: "coverageOff" :: "coverageAggregate" :: state }
 )
