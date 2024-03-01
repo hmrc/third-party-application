@@ -54,7 +54,6 @@ object SubmissionsRepository {
     }
 
     implicit val questionnaireProgressFormat: OFormat[QuestionnaireProgress] = Json.format[QuestionnaireProgress]
-
     implicit val questionIdsOfInterestFormat: OFormat[QuestionIdsOfInterest] = Json.format[QuestionIdsOfInterest]
 
     implicit val dateFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
