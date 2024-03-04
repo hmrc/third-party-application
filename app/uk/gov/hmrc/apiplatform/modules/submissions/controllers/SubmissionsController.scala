@@ -26,7 +26,6 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 
 object SubmissionsController {
@@ -46,8 +45,9 @@ class SubmissionsController @Inject() (
     service: SubmissionsService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
-  ) extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
+  ) extends BackendController(cc) {
   import SubmissionsController._
+  import Submission._
 
   def createSubmissionFor(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))

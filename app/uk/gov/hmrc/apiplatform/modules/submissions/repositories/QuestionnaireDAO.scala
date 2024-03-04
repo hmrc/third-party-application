@@ -63,7 +63,7 @@ object QuestionnaireDAO {
 
     object OrganisationDetails {
 
-      val questionRI1 = YesNoQuestion(
+      val questionRI1 = Question.YesNoQuestion(
         Question.Id("99d9362d-e365-4af1-aa46-88e95f9858f7"),
         Wording("Are you the individual responsible for the software in your organisation?"),
         statement = Statement(
@@ -79,12 +79,12 @@ object QuestionnaireDAO {
             )
           )
         ).some,
-        yesMarking = Pass,
-        noMarking = Pass,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
         errorInfo = ErrorInfo("Select Yes if you are the individual responsible for the software in your organisation").some
       )
 
-      val questionRI2 = TextQuestion(
+      val questionRI2 = Question.TextQuestion(
         Question.Id("36b7e670-83fc-4b31-8f85-4d3394908495"),
         Wording("Who is responsible for the software in your organisation?"),
         statement = None,
@@ -92,7 +92,7 @@ object QuestionnaireDAO {
         errorInfo = ErrorInfo("Enter a first and last name", "First and last name cannot be blank").some
       )
 
-      val questionRI3 = TextQuestion(
+      val questionRI3 = Question.TextQuestion(
         Question.Id("fb9b8036-cc88-4f4e-ad84-c02caa4cebae"),
         Wording("Give us the email address of the individual responsible for the software"),
         statement = None,
@@ -105,34 +105,34 @@ object QuestionnaireDAO {
         errorInfo = ErrorInfo("Enter an email address in the correct format, like yourname@example.com", "Email address cannot be blank").some
       )
 
-      val question1 = TextQuestion(
+      val question1 = Question.TextQuestion(
         Question.Id("b9dbf0a5-e72b-4c89-a735-26f0858ca6cc"),
         Wording("What is your organisation’s URL?"),
         statement = None,
         hintText = StatementText("For example https://example.com").some,
-        absence = ("My organisation doesn't have a website", Fail).some,
+        absence = ("My organisation doesn't have a website", Mark.Fail).some,
         validation = TextValidation.Url.some,
         errorInfo = ErrorInfo("Enter a URL in the correct format, like https://example.com", "Enter a URL in the correct format, like https://example.com").some
       )
 
-      val question2 = ChooseOneOfQuestion(
+      val question2 = Question.ChooseOneOfQuestion(
         Question.Id("cbdf264f-be39-4638-92ff-6ecd2259c662"),
         Wording("Identify your organisation"),
         statement = Statement(
           StatementText("Provide evidence that you or your organisation is officially registered in the UK. Choose one option.")
         ).some,
         marking = ListMap(
-          (PossibleAnswer("Unique Taxpayer Reference (UTR)")                                 -> Pass),
-          (PossibleAnswer("VAT registration number")                                         -> Pass),
-          (PossibleAnswer("Corporation Tax Unique Taxpayer Reference (UTR)")                 -> Pass),
-          (PossibleAnswer("PAYE reference")                                                  -> Pass),
-          (PossibleAnswer("My organisation is in the UK and doesn't have any of these")      -> Pass),
-          (PossibleAnswer("My organisation is outside the UK and doesn't have any of these") -> Warn)
+          (PossibleAnswer("Unique Taxpayer Reference (UTR)")                                 -> Mark.Pass),
+          (PossibleAnswer("VAT registration number")                                         -> Mark.Pass),
+          (PossibleAnswer("Corporation Tax Unique Taxpayer Reference (UTR)")                 -> Mark.Pass),
+          (PossibleAnswer("PAYE reference")                                                  -> Mark.Pass),
+          (PossibleAnswer("My organisation is in the UK and doesn't have any of these")      -> Mark.Pass),
+          (PossibleAnswer("My organisation is outside the UK and doesn't have any of these") -> Mark.Warn)
         ),
         errorInfo = ErrorInfo("Select a way to identify your organisation").some
       )
 
-      val question2a = TextQuestion(
+      val question2a = Question.TextQuestion(
         Question.Id("4e148791-1a07-4f28-8fe4-ba3e18cdc118"),
         Wording("What is your company registration number?"),
         statement = Statement(
@@ -143,11 +143,11 @@ object QuestionnaireDAO {
           )
         ).some,
         hintText = StatementText("It is 8 characters. For example, 01234567 or AC012345.").some,
-        absence = Tuple2("My organisation doesn't have a company registration", Fail).some,
+        absence = Tuple2("My organisation doesn't have a company registration", Mark.Fail).some,
         errorInfo = ErrorInfo("Your company registration number cannot be blank", "Enter your company registration number, like 01234567").some
       )
 
-      val question2b = TextQuestion(
+      val question2b = Question.TextQuestion(
         Question.Id("55da0b97-178c-45b5-a139-b61ad7b9ca84"),
         Wording("What is your Self Assessment Unique Taxpayer Reference?"),
         statement = None,
@@ -160,7 +160,7 @@ object QuestionnaireDAO {
         errorInfo = ErrorInfo("Your Self Assessment Unique Taxpayer Reference cannot be blank", "Enter your Self Assessment Unique Taxpayer Reference, like 1234567890").some
       )
 
-      val question2c = TextQuestion(
+      val question2c = Question.TextQuestion(
         Question.Id("dd12fd8b-907b-4ba1-95d3-ef6317f36199"),
         Wording("What is your company’s VAT registration number?"),
         statement = None,
@@ -170,7 +170,7 @@ object QuestionnaireDAO {
         errorInfo = ErrorInfo("Your company's VAT registration number cannot be blank", "Enter your company's VAT registration number, like 123456789").some
       )
 
-      val question2d = TextQuestion(
+      val question2d = Question.TextQuestion(
         Question.Id("6be23951-ac69-47bf-aa56-86d3d690ee0b"),
         Wording("What is your Corporation Tax Unique Taxpayer Reference?"),
         statement = None,
@@ -183,7 +183,7 @@ object QuestionnaireDAO {
         errorInfo = ErrorInfo("Your Corporation Tax Unique Taxpayer Reference cannot be blank", "Enter your Corporation Tax Unique Taxpayer Reference, like 1234567890").some
       )
 
-      val question2e = TextQuestion(
+      val question2e = Question.TextQuestion(
         Question.Id("a143760e-72f3-423b-a6b4-558db37a3453"),
         Wording("What is your company’s employer PAYE reference?"),
         statement = None,
@@ -193,7 +193,7 @@ object QuestionnaireDAO {
         errorInfo = ErrorInfo("Your company's employer PAYE reference number cannot be blank", "Enter your company's employer PAYE reference number, like 123/AB456").some
       )
 
-      val question3 = AcknowledgementOnly(
+      val question3 = Question.AcknowledgementOnly(
         Question.Id("a12f314e-bc12-4e0d-87ba-1326acb31008"),
         Wording("Provide evidence of your organisation’s registration"),
         statement = Statement(
@@ -207,23 +207,23 @@ object QuestionnaireDAO {
         label = Questionnaire.Label("Organisation details"),
         questions = NonEmptyList.of(
           QuestionItem(questionRI1),
-          QuestionItem(questionRI2, AskWhenAnswer(questionRI1, "No")),
-          QuestionItem(questionRI3, AskWhenAnswer(questionRI1, "No")),
+          QuestionItem(questionRI2, AskWhen.AskWhenAnswer(questionRI1, "No")),
+          QuestionItem(questionRI3, AskWhen.AskWhenAnswer(questionRI1, "No")),
           QuestionItem(question1),
           QuestionItem(question2),
-          QuestionItem(question2a, AskWhenAnswer(question2, "My organisation is in the UK and doesn't have any of these")),
-          QuestionItem(question2b, AskWhenAnswer(question2, "Unique Taxpayer Reference (UTR)")),
-          QuestionItem(question2c, AskWhenAnswer(question2, "VAT registration number")),
-          QuestionItem(question2d, AskWhenAnswer(question2, "Corporation Tax Unique Taxpayer Reference (UTR)")),
-          QuestionItem(question2e, AskWhenAnswer(question2, "PAYE reference")),
-          QuestionItem(question3, AskWhenAnswer(question2, "My organisation is outside the UK and doesn't have any of these"))
+          QuestionItem(question2a, AskWhen.AskWhenAnswer(question2, "My organisation is in the UK and doesn't have any of these")),
+          QuestionItem(question2b, AskWhen.AskWhenAnswer(question2, "Unique Taxpayer Reference (UTR)")),
+          QuestionItem(question2c, AskWhen.AskWhenAnswer(question2, "VAT registration number")),
+          QuestionItem(question2d, AskWhen.AskWhenAnswer(question2, "Corporation Tax Unique Taxpayer Reference (UTR)")),
+          QuestionItem(question2e, AskWhen.AskWhenAnswer(question2, "PAYE reference")),
+          QuestionItem(question3, AskWhen.AskWhenAnswer(question2, "My organisation is outside the UK and doesn't have any of these"))
         )
       )
     }
 
     object DevelopmentPractices {
 
-      val question1 = YesNoQuestion(
+      val question1 = Question.YesNoQuestion(
         Question.Id("653d2ee4-09cf-46a0-bc73-350a385ae860"),
         Wording("Do your development practices follow our guidance?"),
         statement = Statement(
@@ -233,12 +233,12 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ).some,
-        yesMarking = Pass,
-        noMarking = Warn,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Warn,
         errorInfo = ErrorInfo("Select yes if your development practices follow our guidance").some
       )
 
-      val question2 = YesNoQuestion(
+      val question2 = Question.YesNoQuestion(
         id = Question.Id("6139f57d-36ab-4338-85b3-a2079d6cf376"),
         wording = Wording("Does your error handling meet our specification?"),
         statement = Statement(
@@ -248,12 +248,12 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ).some,
-        yesMarking = Pass,
-        noMarking = Fail,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Fail,
         errorInfo = ErrorInfo("Select yes if your error handling meets our specification").some
       )
 
-      val question3 = YesNoQuestion(
+      val question3 = Question.YesNoQuestion(
         Question.Id("3c5cd29d-bec2-463f-8593-cd5412fab1e5"),
         Wording("Does your software meet accessibility standards?"),
         statement = Statement(
@@ -263,8 +263,8 @@ object QuestionnaireDAO {
             StatementText(". Desktop software should follow equivalent offline standards.")
           )
         ).some,
-        yesMarking = Pass,
-        noMarking = Warn,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Warn,
         errorInfo = ErrorInfo("Select yes if your software meets accessibility standards").some
       )
 
@@ -281,18 +281,18 @@ object QuestionnaireDAO {
 
     object ServiceManagementPractices {
 
-      val question1 = YesNoQuestion(
+      val question1 = Question.YesNoQuestion(
         Question.Id("f67c64be-6a1a-41f4-a899-6c93fa7bd98d"),
         Wording("Do you provide a way for your customers or third parties to tell you about a security risk or incident?"),
         statement = Statement(
           StatementText("We expect you to provide an easy contact method in the case of a security breach.")
         ).some,
-        yesMarking = Pass,
-        noMarking = Fail,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Fail,
         errorInfo = ErrorInfo("Select yes if you provide a way for your customers or third parties to tell you about a security risk or incident").some
       )
 
-      val question2 = YesNoQuestion(
+      val question2 = Question.YesNoQuestion(
         Question.Id("b30e3d75-b16b-4bcb-b1ae-4f47d8b23fd0"),
         Wording("Do you have a process for notifying HMRC in the case of a security breach?"),
         statement = Statement(
@@ -306,8 +306,8 @@ object QuestionnaireDAO {
             StatementText(" within 72 hours of becoming aware of it.")
           )
         ).some,
-        yesMarking = Pass,
-        noMarking = Fail,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Fail,
         errorInfo = ErrorInfo("Select yes if have a process for notifying HMRC in the case of a security breach").some
       )
 
@@ -315,7 +315,7 @@ object QuestionnaireDAO {
         id = Questionnaire.Id("ba30fb9b-db99-4d18-8ed8-8e5d94842bcc"),
         label = Questionnaire.Label("Service management practices"),
         questions = NonEmptyList.of(
-          QuestionItem(question1, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question1, AskWhen.AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question2)
         )
       )
@@ -323,7 +323,7 @@ object QuestionnaireDAO {
 
     object HandlingPersonalData {
 
-      val question1 = YesNoQuestion(
+      val question1 = Question.YesNoQuestion(
         Question.Id("31b9f463-eafe-4273-be80-227922048046"),
         Wording("Do you comply with the UK General Data Protection Regulation (UK GDPR)?"),
         statement = Statement(
@@ -341,12 +341,12 @@ object QuestionnaireDAO {
             )
           )
         ).some,
-        yesMarking = Pass,
-        noMarking = Fail,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Fail,
         errorInfo = ErrorInfo("Select yes if you comply with the UK General Data Protection Regulation").some
       )
 
-      val question2 = YesNoQuestion(
+      val question2 = Question.YesNoQuestion(
         Question.Id("00ec1641-fc7f-4398-b537-348ddf7ec435"),
         Wording("Do you encrypt all customer data that you handle?"),
         statement = Statement(
@@ -359,12 +359,12 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ).some,
-        yesMarking = Pass,
-        noMarking = Fail,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Fail,
         errorInfo = ErrorInfo("Select yes if you encrypt all customer data that you handle").some
       )
 
-      val question3 = ChooseOneOfQuestion(
+      val question3 = Question.ChooseOneOfQuestion(
         Question.Id("36c22dc2-8101-4469-adf4-12717ade4528"),
         Wording("Do you ensure that each customer’s data cannot be accessed by unauthorised users?"),
         statement = Statement(
@@ -380,14 +380,14 @@ object QuestionnaireDAO {
           )
         ).some,
         marking = ListMap(
-          (PossibleAnswer("Yes")                       -> Pass),
-          (PossibleAnswer("No")                        -> Fail),
-          (PossibleAnswer("We only have one customer") -> Pass)
+          (PossibleAnswer("Yes")                       -> Mark.Pass),
+          (PossibleAnswer("No")                        -> Mark.Fail),
+          (PossibleAnswer("We only have one customer") -> Mark.Pass)
         ),
         errorInfo = ErrorInfo("Select yes if you ensure that unauthorised users cannot access each customer's data").some
       )
 
-      val question4 = ChooseOneOfQuestion(
+      val question4 = Question.ChooseOneOfQuestion(
         Question.Id("164ff4b1-aa49-484e-82cf-1981835b34cf"),
         Wording("Do you have access control for employees using customer data?"),
         statement = Statement(
@@ -401,14 +401,14 @@ object QuestionnaireDAO {
           )
         ).some,
         marking = ListMap(
-          (PossibleAnswer("Yes")                   -> Pass),
-          (PossibleAnswer("No")                    -> Fail),
-          (PossibleAnswer("We only have one user") -> Pass)
+          (PossibleAnswer("Yes")                   -> Mark.Pass),
+          (PossibleAnswer("No")                    -> Mark.Fail),
+          (PossibleAnswer("We only have one user") -> Mark.Pass)
         ),
         errorInfo = ErrorInfo("Select yes if you have access control for employees using customer data").some
       )
 
-      val question5 = YesNoQuestion(
+      val question5 = Question.YesNoQuestion(
         Question.Id("10249171-e87a-498e-8239-a417af29e2ff"),
         Wording("Can customers get their data from your software if they switch providers?"),
         statement = Statement(
@@ -420,19 +420,19 @@ object QuestionnaireDAO {
             )
           )
         ).some,
-        yesMarking = Pass,
-        noMarking = Fail,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Fail,
         errorInfo = ErrorInfo("Select yes if customers get their data from your software if they switch providers").some
       )
 
-      val question6 = YesNoQuestion(
+      val question6 = Question.YesNoQuestion(
         Question.Id("a66cd7b1-e8c1-4982-9ee8-727aa172aa9b"),
         Wording("Do you store your customers’ Government Gateway credentials?"),
         statement = Statement(
           StatementText("Implementing OAuth 2.0 means there is no need to store Government Gateway credentials.")
         ).some,
-        yesMarking = Fail,
-        noMarking = Pass,
+        yesMarking = Mark.Fail,
+        noMarking = Mark.Pass,
         errorInfo = ErrorInfo("Select yes if you store your customers’ Government Gateway credentials").some
       )
 
@@ -444,15 +444,15 @@ object QuestionnaireDAO {
           QuestionItem(question2),
           QuestionItem(question3),
           QuestionItem(question4),
-          QuestionItem(question5, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question6, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No"))
+          QuestionItem(question5, AskWhen.AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question6, AskWhen.AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No"))
         )
       )
     }
 
     object CustomersAuthorisingYourSoftware {
 
-      val question1a = AcknowledgementOnly(
+      val question1a = Question.AcknowledgementOnly(
         Question.Id("95da25e8-af3a-4e05-a621-4a5f4ca788f6"),
         Wording("Customers authorising your software"),
         statement = Statement(
@@ -467,7 +467,7 @@ object QuestionnaireDAO {
         ).some
       )
 
-      val question1b = AcknowledgementOnly(
+      val question1b = Question.AcknowledgementOnly(
         Question.Id("dba97fee-4a06-4688-846a-89b45dcd7164"),
         Wording("Customers authorising your software"),
         statement = Statement(
@@ -481,7 +481,7 @@ object QuestionnaireDAO {
         ).some
       )
 
-      val question2 = TextQuestion(
+      val question2 = Question.TextQuestion(
         Question.Id("4d5a41c8-8727-4d09-96c0-e2ce1bc222d3"),
         Wording("Confirm the name of your software"),
         statement = Statement(
@@ -496,7 +496,7 @@ object QuestionnaireDAO {
         errorInfo = ErrorInfo("The name of your software cannot be blank", "Enter the name of your software").some
       )
 
-      val question3 = MultiChoiceQuestion(
+      val question3 = Question.MultiChoiceQuestion(
         Question.Id("57d706ad-c0b8-462b-a4f8-90e7aa58e57a"),
         Wording("Where are your servers that process customer information?"),
         statement = Statement(
@@ -518,29 +518,29 @@ object QuestionnaireDAO {
           )
         ).some,
         marking = ListMap(
-          (PossibleAnswer("In the UK")                                   -> Pass),
-          (PossibleAnswer("In the European Economic Area (EEA)")         -> Pass),
-          (PossibleAnswer("Outside the EEA with adequacy agreements")    -> Pass),
-          (PossibleAnswer("Outside the EEA with no adequacy agreements") -> Pass)
+          (PossibleAnswer("In the UK")                                   -> Mark.Pass),
+          (PossibleAnswer("In the European Economic Area (EEA)")         -> Mark.Pass),
+          (PossibleAnswer("Outside the EEA with adequacy agreements")    -> Mark.Pass),
+          (PossibleAnswer("Outside the EEA with no adequacy agreements") -> Mark.Pass)
         ),
         hintText = StatementText("Select all that apply.").some,
         errorInfo = ErrorInfo("Select where your servers that process customer information are?").some
       )
 
-      val question4 = ChooseOneOfQuestion(
+      val question4 = Question.ChooseOneOfQuestion(
         Question.Id("b0ae9d71-e6a7-4cf6-abd4-7eb7ba992bc6"),
         Wording("Do you have a privacy policy URL for your software?"),
         statement = None,
         hintText = StatementText("You need a privacy policy covering the software you request production credentials for.").some,
         marking = ListMap(
-          (PossibleAnswer("Yes")                                       -> Pass),
-          (PossibleAnswer("No")                                        -> Fail),
-          (PossibleAnswer("The privacy policy is in desktop software") -> Pass)
+          (PossibleAnswer("Yes")                                       -> Mark.Pass),
+          (PossibleAnswer("No")                                        -> Mark.Fail),
+          (PossibleAnswer("The privacy policy is in desktop software") -> Mark.Pass)
         ),
         errorInfo = ErrorInfo("Select yes if you have a privacy policy URL for your software").some
       )
 
-      val question5 = TextQuestion(
+      val question5 = Question.TextQuestion(
         Question.Id("c0e4b068-23c9-4d51-a1fa-2513f50e428f"),
         Wording("What is your privacy policy URL?"),
         statement = None,
@@ -548,20 +548,20 @@ object QuestionnaireDAO {
         validation = TextValidation.Url.some
       )
 
-      val question6 = ChooseOneOfQuestion(
+      val question6 = Question.ChooseOneOfQuestion(
         Question.Id("ca6af382-4007-4228-a781-1446231578b9"),
         Wording("Do you have a terms and conditions URL for your software?"),
         statement = None,
         hintText = StatementText("You need terms and conditions covering the software you request production credentials for.").some,
         marking = ListMap(
-          (PossibleAnswer("Yes")                                              -> Pass),
-          (PossibleAnswer("No")                                               -> Fail),
-          (PossibleAnswer("The terms and conditions are in desktop software") -> Pass)
+          (PossibleAnswer("Yes")                                              -> Mark.Pass),
+          (PossibleAnswer("No")                                               -> Mark.Fail),
+          (PossibleAnswer("The terms and conditions are in desktop software") -> Mark.Pass)
         ),
         errorInfo = ErrorInfo("Select yes if you have a terms and conditions URL for your software").some
       )
 
-      val question7 = TextQuestion(
+      val question7 = Question.TextQuestion(
         Question.Id("0a6d6973-c49a-49c3-93ff-de58daa1b90c"),
         Wording("What is your terms and conditions URL?"),
         statement = None,
@@ -573,32 +573,32 @@ object QuestionnaireDAO {
         id = Questionnaire.Id("3a7f3369-8e28-447c-bd47-efbabeb6d93f"),
         label = Questionnaire.Label("Customers authorising your software"),
         questions = NonEmptyList.of(
-          QuestionItem(question1a, AskWhenContext(Keys.NEW_TERMS_OF_USE_UPLIFT, "No")),
-          QuestionItem(question1b, AskWhenContext(Keys.NEW_TERMS_OF_USE_UPLIFT, "Yes")),
-          QuestionItem(question2, AskWhenContext(Keys.NEW_TERMS_OF_USE_UPLIFT, "No")),
-          QuestionItem(question3, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question1a, AskWhen.AskWhenContext(Keys.NEW_TERMS_OF_USE_UPLIFT, "No")),
+          QuestionItem(question1b, AskWhen.AskWhenContext(Keys.NEW_TERMS_OF_USE_UPLIFT, "Yes")),
+          QuestionItem(question2, AskWhen.AskWhenContext(Keys.NEW_TERMS_OF_USE_UPLIFT, "No")),
+          QuestionItem(question3, AskWhen.AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question4),
-          QuestionItem(question5, AskWhenAnswer(question4, "Yes")),
+          QuestionItem(question5, AskWhen.AskWhenAnswer(question4, "Yes")),
           QuestionItem(question6),
-          QuestionItem(question7, AskWhenAnswer(question6, "Yes"))
+          QuestionItem(question7, AskWhen.AskWhenAnswer(question6, "Yes"))
         )
       )
     }
 
     object SoftwareSecurity {
 
-      val question1 = ChooseOneOfQuestion(
+      val question1 = Question.ChooseOneOfQuestion(
         Question.Id("227b404a-ae8a-4a76-9a4b-70bc568109ac"),
         Wording("Do you provide software as a service (SaaS)?"),
         statement = None,
         marking = ListMap(
-          (PossibleAnswer("Yes") -> Pass),
-          (PossibleAnswer("No")  -> Pass)
+          (PossibleAnswer("Yes") -> Mark.Pass),
+          (PossibleAnswer("No")  -> Mark.Pass)
         ),
         errorInfo = ErrorInfo("Select yes if you provide software as a service").some
       )
 
-      val question2 = YesNoQuestion(
+      val question2 = Question.YesNoQuestion(
         Question.Id("d6f895de-962c-4dc4-8399-9b995ab5da45"),
         Wording("Has your application passed software penetration testing?"),
         statement = Statement(
@@ -608,12 +608,12 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ).some,
-        yesMarking = Pass,
-        noMarking = Warn,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Warn,
         errorInfo = ErrorInfo("Select yes if your application passed software penetration testing").some
       )
 
-      val question3 = YesNoQuestion(
+      val question3 = Question.YesNoQuestion(
         Question.Id("a26fe624-179c-4beb-b469-63f2dbe358a0"),
         Wording("Do you audit security controls to ensure you comply with data protection law?"),
         statement = Statement(
@@ -623,8 +623,8 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ).some,
-        yesMarking = Pass,
-        noMarking = Warn,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Warn,
         errorInfo = ErrorInfo("Select yes if you audit security controls to ensure you comply with data protection law").some
       )
 
@@ -633,15 +633,15 @@ object QuestionnaireDAO {
         label = Questionnaire.Label("Software security"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
-          QuestionItem(question2, AskWhenAnswer(question1, "Yes")),
-          QuestionItem(question3, AskWhenAnswer(question1, "Yes"))
+          QuestionItem(question2, AskWhen.AskWhenAnswer(question1, "Yes")),
+          QuestionItem(question3, AskWhen.AskWhenAnswer(question1, "Yes"))
         )
       )
     }
 
     object FraudPreventionHeaders {
 
-      val question1 = YesNoQuestion(
+      val question1 = Question.YesNoQuestion(
         Question.Id("968076cb-6267-43fe-a193-d1b7a090c844"),
         Wording("Does your software submit fraud prevention data?"),
         statement = Statement(
@@ -651,12 +651,12 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ).some,
-        yesMarking = Pass,
-        noMarking = Pass,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
         errorInfo = ErrorInfo("Select yes if your software submits fraud prevention data").some
       )
 
-      val question2 = YesNoQuestion(
+      val question2 = Question.YesNoQuestion(
         Question.Id("b58f910f-3630-4b0f-9431-7727aed4c2a1"),
         Wording("Have you checked that your software submits fraud prevention data correctly?"),
         statement = Statement(
@@ -669,8 +669,8 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ).some,
-        yesMarking = Pass,
-        noMarking = Fail,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Fail,
         errorInfo = ErrorInfo("Select yes if you checked that your software submits fraud prevention data correctly").some
       )
 
@@ -678,24 +678,24 @@ object QuestionnaireDAO {
         id = Questionnaire.Id("f6483de4-7bfa-49d2-b4a2-70f95316472e"),
         label = Questionnaire.Label("Fraud prevention data"),
         questions = NonEmptyList.of(
-          QuestionItem(question1, AskWhenContext(Keys.VAT_OR_ITSA, "Yes")),
-          QuestionItem(question2, AskWhenContext(Keys.VAT_OR_ITSA, "Yes"))
+          QuestionItem(question1, AskWhen.AskWhenContext(Keys.VAT_OR_ITSA, "Yes")),
+          QuestionItem(question2, AskWhen.AskWhenContext(Keys.VAT_OR_ITSA, "Yes"))
         )
       )
     }
 
     object MarketingYourSoftware {
 
-      val question1 = YesNoQuestion(
+      val question1 = Question.YesNoQuestion(
         Question.Id("169f2ba5-4a07-438a-8eaa-cfc0efd5cdcf"),
         Wording("Do you use HMRC logos in your software, marketing or website?"),
         statement = None,
-        yesMarking = Warn,
-        noMarking = Pass,
+        yesMarking = Mark.Warn,
+        noMarking = Mark.Pass,
         errorInfo = ErrorInfo("Select yes if you use HMRC logos in your software, marketing or website").some
       )
 
-      val question2 = ChooseOneOfQuestion(
+      val question2 = Question.ChooseOneOfQuestion(
         Question.Id("3a37889c-6e6c-4aa8-a818-12ac28f7dcc2"),
         Wording("Do adverts in your software comply with UK standards?"),
         statement = Statement(
@@ -706,28 +706,28 @@ object QuestionnaireDAO {
           )
         ).some,
         marking = ListMap(
-          (PossibleAnswer("Yes")                                 -> Pass),
-          (PossibleAnswer("No")                                  -> Warn),
-          (PossibleAnswer("There are no adverts in my software") -> Pass)
+          (PossibleAnswer("Yes")                                 -> Mark.Pass),
+          (PossibleAnswer("No")                                  -> Mark.Warn),
+          (PossibleAnswer("There are no adverts in my software") -> Mark.Pass)
         ),
         errorInfo = ErrorInfo("Select yes if adverts in your software comply with UK standards").some
       )
 
-      val question3 = ChooseOneOfQuestion(
+      val question3 = Question.ChooseOneOfQuestion(
         Question.Id("0b4695a0-f9bd-4595-9383-279f64ff3e2e"),
         Wording("Do you advertise your software as ‘HMRC recognised’?"),
         statement = Statement(
           StatementText("Only use ‘HMRC recognised’ when advertising your software.  Do not use terms like ‘accredited’ or ‘approved’.")
         ).some,
         marking = ListMap(
-          PossibleAnswer("Yes")                            -> Pass,
-          PossibleAnswer("No, I call it something else")   -> Warn,
-          PossibleAnswer("I do not advertise my software") -> Pass
+          PossibleAnswer("Yes")                            -> Mark.Pass,
+          PossibleAnswer("No, I call it something else")   -> Mark.Warn,
+          PossibleAnswer("I do not advertise my software") -> Mark.Pass
         ),
         errorInfo = ErrorInfo("Select yes if you advertise your software as ‘HMRC recognised’").some
       )
 
-      val question4 = ChooseOneOfQuestion(
+      val question4 = Question.ChooseOneOfQuestion(
         Question.Id("1dd933ee-7f89-4eb4-a54e-bc54396afa55"),
         Wording("Do you get customers’ consent before sharing their personal data for marketing?"),
         statement = Statement(
@@ -738,9 +738,9 @@ object QuestionnaireDAO {
           )
         ).some,
         marking = ListMap(
-          (PossibleAnswer("Yes")                          -> Pass),
-          (PossibleAnswer("No")                           -> Fail),
-          (PossibleAnswer("I do not share customer data") -> Pass)
+          (PossibleAnswer("Yes")                          -> Mark.Pass),
+          (PossibleAnswer("No")                           -> Mark.Fail),
+          (PossibleAnswer("I do not share customer data") -> Mark.Pass)
         ),
         errorInfo = ErrorInfo("Select yes if you get your customers’ consent before sharing their personal data for marketing").some
       )
@@ -750,9 +750,9 @@ object QuestionnaireDAO {
         label = Questionnaire.Label("Marketing your software"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
-          QuestionItem(question2, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question3, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question4, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No"))
+          QuestionItem(question2, AskWhen.AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question3, AskWhen.AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question4, AskWhen.AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No"))
         )
       )
     }

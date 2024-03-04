@@ -24,38 +24,38 @@ object ValidateAnswers {
 
   def validate(question: Question, rawAnswers: List[String]): Either[String, ActualAnswer] = {
     (question, rawAnswers) match {
-      case (_: AcknowledgementOnly, Nil) => Either.right(AcknowledgedAnswer)
-      case (_: AcknowledgementOnly, _)   => Either.left("Acknowledgement cannot accept answers")
+      case (_: Question.AcknowledgementOnly, Nil) => Either.right(ActualAnswer.AcknowledgedAnswer)
+      case (_: Question.AcknowledgementOnly, _)   => Either.left("Acknowledgement cannot accept answers")
 
-      case (_, Nil) if (question.isOptional) => Either.right(NoAnswer)
+      case (_, Nil) if (question.isOptional) => Either.right(ActualAnswer.NoAnswer)
       case (_, Nil)                          => Either.left("Question requires an answer")
 
-      case (q: MultiChoiceQuestion, answers) => validateAgainstPossibleAnswers(q, answers.toSet)
-      case (_, a :: b :: Nil)                => Either.left("Question only accepts one answer")
+      case (q: Question.MultiChoiceQuestion, answers) => validateAgainstPossibleAnswers(q, answers.toSet)
+      case (_, a :: b :: Nil)                         => Either.left("Question only accepts one answer")
 
-      case (q: TextQuestion, head :: Nil)         => validateAgainstPossibleTextValidationRule(q, head)
-      case (q: SingleChoiceQuestion, head :: Nil) => validateAgainstPossibleAnswers(q, head)
+      case (q: Question.TextQuestion, head :: Nil)         => validateAgainstPossibleTextValidationRule(q, head)
+      case (q: Question.SingleChoiceQuestion, head :: Nil) => validateAgainstPossibleAnswers(q, head)
 
     }
   }
 
-  def validateAgainstPossibleTextValidationRule(question: TextQuestion, rawAnswer: String): Either[String, ActualAnswer] = {
+  def validateAgainstPossibleTextValidationRule(question: Question.TextQuestion, rawAnswer: String): Either[String, ActualAnswer] = {
     question.validation
       .fold(rawAnswer.asRight[String])(v => v.validate(rawAnswer))
-      .map(TextAnswer(_))
+      .map(ActualAnswer.TextAnswer(_))
   }
 
-  def validateAgainstPossibleAnswers(question: MultiChoiceQuestion, rawAnswers: Set[String]): Either[String, ActualAnswer] = {
+  def validateAgainstPossibleAnswers(question: Question.MultiChoiceQuestion, rawAnswers: Set[String]): Either[String, ActualAnswer] = {
     if (rawAnswers subsetOf question.choices.map(_.value)) {
-      Either.right(MultipleChoiceAnswer(rawAnswers))
+      Either.right(ActualAnswer.MultipleChoiceAnswer(rawAnswers))
     } else {
       Either.left("Not all answers are valid")
     }
   }
 
-  def validateAgainstPossibleAnswers(question: SingleChoiceQuestion, rawAnswer: String): Either[String, ActualAnswer] = {
+  def validateAgainstPossibleAnswers(question: Question.SingleChoiceQuestion, rawAnswer: String): Either[String, ActualAnswer] = {
     if (question.choices.map(_.value).contains(rawAnswer)) {
-      Either.right(SingleChoiceAnswer(rawAnswer))
+      Either.right(ActualAnswer.SingleChoiceAnswer(rawAnswer))
     } else {
       Either.left("Answer is not valid")
     }

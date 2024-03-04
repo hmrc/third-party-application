@@ -27,26 +27,26 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 object SubmissionDataExtracter extends ApplicationLogger {
 
   private def getTextQuestionOfInterest(submission: Submission, questionId: Question.Id) = {
-    val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
+    val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, ActualAnswer.NoAnswer)
     actualAnswer match {
-      case TextAnswer(answer) => Some(answer)
-      case _                  => None
+      case ActualAnswer.TextAnswer(answer) => Some(answer)
+      case _                               => None
     }
   }
 
   private def getSingleChoiceQuestionOfInterest(submission: Submission, questionId: Question.Id) = {
-    val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
+    val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, ActualAnswer.NoAnswer)
     actualAnswer match {
-      case SingleChoiceAnswer(answer) => Some(answer)
-      case _                          => None
+      case ActualAnswer.SingleChoiceAnswer(answer) => Some(answer)
+      case _                                       => None
     }
   }
 
   private def getMultiChoiceQuestionOfInterest(submission: Submission, questionId: Question.Id): Option[Set[String]] = {
-    val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
+    val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, ActualAnswer.NoAnswer)
     actualAnswer match {
-      case MultipleChoiceAnswer(answers) => Some(answers)
-      case _                             => None
+      case ActualAnswer.MultipleChoiceAnswer(answers) => Some(answers)
+      case _                                          => None
     }
   }
 

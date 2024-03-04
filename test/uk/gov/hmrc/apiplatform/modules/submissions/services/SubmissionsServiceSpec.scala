@@ -127,7 +127,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
     "fetchLatestMarkedSubmission" should {
       "fetch latest marked submission for id" in new Setup {
-        val completedAnswers: Submission.AnswersToQuestions = Map(Question.Id("q1") -> TextAnswer("ok"))
+        val completedAnswers: Submission.AnswersToQuestions = Map(Question.Id("q1") -> ActualAnswer.TextAnswer("ok"))
         val completeSubmission                              = aSubmission.copy(
           groups = NonEmptyList.of(
             GroupOfQuestionnaires(
@@ -138,7 +138,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
                   label = Questionnaire.Label("Marketing your software"),
                   questions = NonEmptyList.of(
                     QuestionItem(
-                      TextQuestion(
+                      Question.TextQuestion(
                         Question.Id("q1"),
                         Wording("Do you provide software as a service (SaaS)?"),
                         Some(Statement(
@@ -192,7 +192,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         val result = await(underTest.recordAnswers(submissionId, questionId, List("Yes")))
 
         val out = result.value
-        out.submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+        out.submission.latestInstance.answersToQuestions.get(questionId).value shouldBe ActualAnswer.SingleChoiceAnswer("Yes")
         SubmissionsDAOMock.Update.verifyCalled()
       }
 
@@ -204,7 +204,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         val result = await(underTest.recordAnswers(submissionId, optionalQuestionId, List.empty))
 
         val out = result.value
-        out.submission.latestInstance.answersToQuestions.get(optionalQuestionId).value shouldBe NoAnswer
+        out.submission.latestInstance.answersToQuestions.get(optionalQuestionId).value shouldBe ActualAnswer.NoAnswer
         SubmissionsDAOMock.Update.verifyCalled()
       }
 

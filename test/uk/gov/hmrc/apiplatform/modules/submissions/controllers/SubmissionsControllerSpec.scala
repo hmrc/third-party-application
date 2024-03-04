@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
-  import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters._
+  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission._
   implicit val mat: Materializer = NoMaterializer
 
   implicit val readsExtendedSubmission: Reads[Submission] = Json.reads[Submission]

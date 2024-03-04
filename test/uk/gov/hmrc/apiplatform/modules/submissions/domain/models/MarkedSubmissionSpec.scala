@@ -27,10 +27,10 @@ class MarkedSubmissionSpec extends HmrcSpec {
   }
 
   trait Setup {
-    val submissionWithAllPasses     = buildMarkedSubmissionWithMarks(Pass, Pass, Pass)
-    val submissionWithOneFail       = buildMarkedSubmissionWithMarks(Pass, Fail, Pass)
-    val submissionWithThreeWarnings = buildMarkedSubmissionWithMarks(Pass, Warn, Warn, Pass, Warn)
-    val submissionWithFourWarnings  = buildMarkedSubmissionWithMarks(Warn, Warn, Warn, Pass, Warn)
+    val submissionWithAllPasses     = buildMarkedSubmissionWithMarks(Mark.Pass, Mark.Pass, Mark.Pass)
+    val submissionWithOneFail       = buildMarkedSubmissionWithMarks(Mark.Pass, Mark.Fail, Mark.Pass)
+    val submissionWithThreeWarnings = buildMarkedSubmissionWithMarks(Mark.Pass, Mark.Warn, Mark.Warn, Mark.Pass, Mark.Warn)
+    val submissionWithFourWarnings  = buildMarkedSubmissionWithMarks(Mark.Warn, Mark.Warn, Mark.Warn, Mark.Pass, Mark.Warn)
     val submissionWithNoQuestions   = buildMarkedSubmissionWithMarks()
   }
 

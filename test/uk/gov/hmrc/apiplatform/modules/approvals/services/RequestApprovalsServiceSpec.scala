@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{NoAnswer, SingleChoiceAnswer, Submission, TextAnswer}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ActualAnswer, Submission}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
@@ -96,9 +96,9 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         val questionsRiName                 = "andy pandy"
         val questionsRiEmail                = "andy@pandy.com"
         val answersWithRIDetails            = answersToQuestions
-          .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("No"))
-          .updated(testQuestionIdsOfInterest.responsibleIndividualEmailId, TextAnswer(questionsRiEmail))
-          .updated(testQuestionIdsOfInterest.responsibleIndividualNameId, TextAnswer(questionsRiName))
+          .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, ActualAnswer.SingleChoiceAnswer("No"))
+          .updated(testQuestionIdsOfInterest.responsibleIndividualEmailId, ActualAnswer.TextAnswer(questionsRiEmail))
+          .updated(testQuestionIdsOfInterest.responsibleIndividualNameId, ActualAnswer.TextAnswer(questionsRiName))
         val answeredSubmissionWithRIDetails = answeredSubmission.hasCompletelyAnsweredWith(answersWithRIDetails)
 
         val result = await(underTest.requestApproval(application, answeredSubmissionWithRIDetails, requestedByName, requestedByEmail.text))
@@ -131,9 +131,9 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(fakeSavedApplication)
 
         val answersWithoutRIDetails            = answersToQuestions
-          .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("Yes"))
-          .updated(testQuestionIdsOfInterest.responsibleIndividualEmailId, NoAnswer)
-          .updated(testQuestionIdsOfInterest.responsibleIndividualNameId, NoAnswer)
+          .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, ActualAnswer.SingleChoiceAnswer("Yes"))
+          .updated(testQuestionIdsOfInterest.responsibleIndividualEmailId, ActualAnswer.NoAnswer)
+          .updated(testQuestionIdsOfInterest.responsibleIndividualNameId, ActualAnswer.NoAnswer)
         val answeredSubmissionWithoutRIDetails = answeredSubmission.hasCompletelyAnsweredWith(answersWithoutRIDetails)
 
         val result = await(underTest.requestApproval(application, answeredSubmissionWithoutRIDetails, requestedByName, requestedByEmail.text))
@@ -201,7 +201,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
         val answersWithoutRIDetails            = sampleAnswersToQuestions
-          .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("Yes"))
+          .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, ActualAnswer.SingleChoiceAnswer("Yes"))
         val answeredSubmissionWithoutRIDetails = testPassAnsweredSubmission.hasCompletelyAnsweredWith(answersWithoutRIDetails)
 
         val result = await(underTest.requestApproval(prodApplication, answeredSubmissionWithoutRIDetails, requestedByName, requestedByEmail.text))
@@ -233,8 +233,11 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
         val answersWithWarnings            = sampleAnswersToQuestions
-          .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("Yes"))
-          .updated(testQuestionIdsOfInterest.identifyYourOrganisationId, SingleChoiceAnswer("My organisation is outside the UK and doesn't have any of these"))
+          .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, ActualAnswer.SingleChoiceAnswer("Yes"))
+          .updated(
+            testQuestionIdsOfInterest.identifyYourOrganisationId,
+            ActualAnswer.SingleChoiceAnswer("My organisation is outside the UK and doesn't have any of these")
+          )
         val answeredSubmissionWithWarnings = testPassAnsweredSubmission.hasCompletelyAnsweredWith(answersWithWarnings)
 
         val result = await(underTest.requestApproval(prodApplication, answeredSubmissionWithWarnings, requestedByName, requestedByEmail.text))
@@ -266,8 +269,8 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
         val answersWithFails            = sampleAnswersToQuestions
-          .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("Yes"))
-          .updated(testQuestionIdsOfInterest.privacyPolicyId, SingleChoiceAnswer("No"))
+          .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, ActualAnswer.SingleChoiceAnswer("Yes"))
+          .updated(testQuestionIdsOfInterest.privacyPolicyId, ActualAnswer.SingleChoiceAnswer("No"))
         val answeredSubmissionWithFails = testPassAnsweredSubmission.hasCompletelyAnsweredWith(answersWithFails)
 
         val result = await(underTest.requestApproval(prodApplication, answeredSubmissionWithFails, requestedByName, requestedByEmail.text))
