@@ -139,6 +139,12 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
       GenericFailure("App is not in TESTING state")
     )
 
+  def isInSandboxEnvironment(app: StoredApplication) =
+    cond(
+      app.environment == Environment.SANDBOX.toString(),
+      GenericFailure("App is not in Sandbox environment")
+    )
+
   def isInProduction(app: StoredApplication) =
     cond(
       app.isInProduction,

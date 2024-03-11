@@ -64,7 +64,8 @@ class ApplicationCommandDispatcher @Inject() (
     updateRedirectUrisCmdHdlr: UpdateRedirectUrisCommandHandler,
     allowApplicationAutoDeleteCmdHdlr: AllowApplicationAutoDeleteCommandHandler,
     blockApplicationAutoDeleteCmdHdlr: BlockApplicationAutoDeleteCommandHandler,
-    changeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler
+    changeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler,
+    changeSandboxApplicationNameCommandHandler: ChangeSandboxApplicationNameCommandHandler
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -89,34 +90,46 @@ class ApplicationCommandDispatcher @Inject() (
   private def processUpdate(app: StoredApplication, command: ApplicationCommand)(implicit hc: HeaderCarrier): AppCmdResultT = {
     import ApplicationCommands._
     command match {
-      case cmd: AddCollaborator                                       => addCollaboratorCmdHdlr.process(app, cmd)
-      case cmd: RemoveCollaborator                                    => removeCollaboratorCmdHdlr.process(app, cmd)
-      case cmd: AddClientSecret                                       => addClientSecretCmdHdlr.process(app, cmd)
-      case cmd: AddRedirectUri                                        => addRedirectUriCommandHandle.process(app, cmd)
-      case cmd: RemoveClientSecret                                    => removeClientSecretCmdHdlr.process(app, cmd)
-      case cmd: ChangeGrantLength                                     => changeGrantLengthCmdHdlr.process(app, cmd)
-      case cmd: ChangeRateLimitTier                                   => changeRateLimitTierCmdHdlr.process(app, cmd)
+      case cmd: AddCollaborator     => addCollaboratorCmdHdlr.process(app, cmd)
+      case cmd: RemoveCollaborator  => removeCollaboratorCmdHdlr.process(app, cmd)
+      case cmd: AddClientSecret     => addClientSecretCmdHdlr.process(app, cmd)
+      case cmd: AddRedirectUri      => addRedirectUriCommandHandle.process(app, cmd)
+      case cmd: RemoveClientSecret  => removeClientSecretCmdHdlr.process(app, cmd)
+      case cmd: ChangeGrantLength   => changeGrantLengthCmdHdlr.process(app, cmd)
+      case cmd: ChangeRateLimitTier => changeRateLimitTierCmdHdlr.process(app, cmd)
+
+      // Sandbox application changing
+      case cmd: ChangeSandboxApplicationName                          => changeSandboxApplicationNameCommandHandler.process(app, cmd)
+      // case cmd: ChangeSandboxApplicationDescription                   => ???
+      // case cmd: ChangeSandboxApplicationPrivacyPolicyUrl              => ???
+      // case cmd: ChangeSandboxApplicationTermsAndConditionsUrl         => ???
+      // case cmd: ClearSandboxApplicationDescription                    => ???
+      // case cmd: RemoveSandboxApplicationPrivacyPolicyUrl              => ???
+      // case cmd: RemoveSandboxApplicationTermsAndConditionsUrl         => ???
+
+      // Production application changing
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
-      case cmd: ChangeRedirectUri                                     => changeRedirectUriCmdHdlr.process(app, cmd)
-      case cmd: ChangeResponsibleIndividualToSelf                     => changeResponsibleIndividualToSelfCmdHdlr.process(app, cmd)
-      case cmd: ChangeResponsibleIndividualToOther                    => changeResponsibleIndividualToOtherCmdHdlr.process(app, cmd)
-      case cmd: VerifyResponsibleIndividual                           => verifyResponsibleIndividualCmdHdlr.process(app, cmd)
-      case cmd: DeclineResponsibleIndividual                          => declineResponsibleIndividualCmdHdlr.process(app, cmd)
-      case cmd: DeclineResponsibleIndividualDidNotVerify              => declineResponsibleIndividualDidNotVerifyCmdHdlr.process(app, cmd)
-      case cmd: DeclineApplicationApprovalRequest                     => declineApplicationApprovalRequestCmdHdlr.process(app, cmd)
-      case cmd: DeleteApplicationByCollaborator                       => deleteApplicationByCollaboratorCmdHdlr.process(app, cmd)
-      case cmd: DeleteApplicationByGatekeeper                         => deleteApplicationByGatekeeperCmdHdlr.process(app, cmd)
-      case cmd: DeleteUnusedApplication                               => deleteUnusedApplicationCmdHdlr.process(app, cmd)
-      case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCmdHdlr.process(app, cmd)
-      case cmd: DeleteRedirectUri                                     => deleteRedirectUriCmdHdlr.process(app, cmd)
-      case cmd: SubscribeToApi                                        => subscribeToApiCmdHdlr.process(app, cmd)
-      case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCmdHdlr.process(app, cmd)
-      case cmd: UpdateRedirectUris                                    => updateRedirectUrisCmdHdlr.process(app, cmd)
-      case cmd: AllowApplicationAutoDelete                            => allowApplicationAutoDeleteCmdHdlr.process(app, cmd)
-      case cmd: BlockApplicationAutoDelete                            => blockApplicationAutoDeleteCmdHdlr.process(app, cmd)
-      case cmd: ChangeIpAllowlist                                     => changeIpAllowlistCommandHandler.process(app, cmd)
+
+      case cmd: ChangeRedirectUri                        => changeRedirectUriCmdHdlr.process(app, cmd)
+      case cmd: ChangeResponsibleIndividualToSelf        => changeResponsibleIndividualToSelfCmdHdlr.process(app, cmd)
+      case cmd: ChangeResponsibleIndividualToOther       => changeResponsibleIndividualToOtherCmdHdlr.process(app, cmd)
+      case cmd: VerifyResponsibleIndividual              => verifyResponsibleIndividualCmdHdlr.process(app, cmd)
+      case cmd: DeclineResponsibleIndividual             => declineResponsibleIndividualCmdHdlr.process(app, cmd)
+      case cmd: DeclineResponsibleIndividualDidNotVerify => declineResponsibleIndividualDidNotVerifyCmdHdlr.process(app, cmd)
+      case cmd: DeclineApplicationApprovalRequest        => declineApplicationApprovalRequestCmdHdlr.process(app, cmd)
+      case cmd: DeleteApplicationByCollaborator          => deleteApplicationByCollaboratorCmdHdlr.process(app, cmd)
+      case cmd: DeleteApplicationByGatekeeper            => deleteApplicationByGatekeeperCmdHdlr.process(app, cmd)
+      case cmd: DeleteUnusedApplication                  => deleteUnusedApplicationCmdHdlr.process(app, cmd)
+      case cmd: DeleteProductionCredentialsApplication   => deleteProductionCredentialsApplicationCmdHdlr.process(app, cmd)
+      case cmd: DeleteRedirectUri                        => deleteRedirectUriCmdHdlr.process(app, cmd)
+      case cmd: SubscribeToApi                           => subscribeToApiCmdHdlr.process(app, cmd)
+      case cmd: UnsubscribeFromApi                       => unsubscribeFromApiCmdHdlr.process(app, cmd)
+      case cmd: UpdateRedirectUris                       => updateRedirectUrisCmdHdlr.process(app, cmd)
+      case cmd: AllowApplicationAutoDelete               => allowApplicationAutoDeleteCmdHdlr.process(app, cmd)
+      case cmd: BlockApplicationAutoDelete               => blockApplicationAutoDeleteCmdHdlr.process(app, cmd)
+      case cmd: ChangeIpAllowlist                        => changeIpAllowlistCommandHandler.process(app, cmd)
     }
   }
   // scalastyle:on cyclomatic.complexity

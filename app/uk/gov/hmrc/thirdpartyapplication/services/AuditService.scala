@@ -90,10 +90,22 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       case evt: ApiSubscribedV2                    => auditApiSubscribed(app, evt)
       case evt: ApiUnsubscribedV2                  => auditApiUnsubscribed(app, evt)
       case evt: RedirectUrisUpdatedV2              => auditRedirectUrisUpdated(app, evt)
+      case evt: SandboxApplicationNameChanged      => auditSandboxApplicationNameChangeAction(app, evt)
       case _                                       => Future.successful(None)
     }
   }
   // scalastyle:on cyclomatic.complexity
+
+  private def auditSandboxApplicationNameChangeAction(app: StoredApplication, evt: SandboxApplicationNameChanged)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+    E.liftF(
+      audit(
+        AppNameChanged,
+        Map("applicationId" -> app.id.value.toString, "oldApplicationName" -> evt.oldName, "newApplicationName" -> evt.newName)
+      )
+    )
+      .toOption
+      .value
+  }
 
   private def auditApplicationDeletedByGatekeeper(app: StoredApplication, evt: ApplicationDeletedByGatekeeper)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     E.liftF(auditGatekeeperAction(evt.actor.user, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail.text)))
