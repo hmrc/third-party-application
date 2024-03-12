@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services.commands
+package uk.gov.hmrc.thirdpartyapplication.services.commands.redirects
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -30,6 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Comma
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class DeleteRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
@@ -42,7 +43,7 @@ class DeleteRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
       case _                                            => List.empty
     }
 
-    val standardAccess  = isStandardAccess(app)
+    val standardAccess  = ensureStandardAccess(app)
     val hasRequestedUri =
       if (standardAccess.isValid)
         cond(
@@ -53,7 +54,7 @@ class DeleteRedirectUriCommandHandler @Inject() (applicationRepository: Applicat
         ().validNel
 
     Apply[Validated[Failures, *]].map3(
-      isStandardAccess(app),
+      ensureStandardAccess(app),
       isAdminIfInProduction(cmd.actor, app),
       hasRequestedUri
     )((_, _, _) => existingRedirects)

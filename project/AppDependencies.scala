@@ -7,7 +7,7 @@ object AppDependencies {
   lazy val bootstrapVersion         = "8.4.0"
   lazy val hmrcMongoVersion         = "1.7.0"
   lazy val commonDomainVersion      = "0.13.0"
-  lazy val applicationEventVersion  = "0.45.0"
+  lazy val applicationEventVersion  = "0.46.0-SNAPSHOT"
 
   private lazy val compileDeps      = Seq(
     "uk.gov.hmrc"       %% "bootstrap-backend-play-30"         % bootstrapVersion,
@@ -16,7 +16,7 @@ object AppDependencies {
     "com.github.t3hnar" %% "scala-bcrypt"                      % "4.1",
     "commons-validator"  % "commons-validator"                 % "1.7",
     "uk.gov.hmrc"       %% "internal-auth-client-play-30"      % "1.10.0",
-        "uk.gov.hmrc"       %% "api-platform-application-domain"   % "0.41.0-SNAPSHOT",
+    "uk.gov.hmrc"       %% "api-platform-application-domain"   % "0.42.0",
     "uk.gov.hmrc"       %% "api-platform-application-events"   % applicationEventVersion
   )
 

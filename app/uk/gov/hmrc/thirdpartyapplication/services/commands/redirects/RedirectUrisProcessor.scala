@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services.commands.deleteapplication
+package uk.gov.hmrc.thirdpartyapplication.services.commands.redirects
 
 import javax.inject.{Inject, Singleton}
 
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommands, RedirectUriMixin}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, _}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class RedirectUrisProcessor @Inject() (

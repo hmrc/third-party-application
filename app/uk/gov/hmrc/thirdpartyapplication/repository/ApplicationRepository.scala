@@ -848,6 +848,12 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
+  def updateDescription(applicationId: ApplicationId, description: Option[String]) =
+    updateApplication(applicationId, Updates.set("description", Codecs.toBson(description.filter(_.isBlank()))))
+
+  def updateLegacyPrivacyPolicyUrl(applicationId: ApplicationId, privacyPolicyUrl: Option[String]) =
+    updateApplication(applicationId, Updates.set("access.privacyPolicyUrl", Codecs.toBson(privacyPolicyUrl.filter(_.isBlank()))))
+
   def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[RedirectUri]) =
     updateApplication(applicationId, Updates.set("access.redirectUris", Codecs.toBson(redirectUris)))
 
@@ -862,9 +868,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   def updateApplicationPrivacyPolicyLocation(applicationId: ApplicationId, location: PrivacyPolicyLocation): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData.privacyPolicyLocation", Codecs.toBson(location)))
-
-  def updateLegacyApplicationPrivacyPolicyLocation(applicationId: ApplicationId, url: String): Future[StoredApplication] =
-    updateApplication(applicationId, Updates.set("access.privacyPolicyUrl", url))
 
   def updateApplicationTermsAndConditionsLocation(applicationId: ApplicationId, location: TermsAndConditionsLocation): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData.termsAndConditionsLocation", Codecs.toBson(location)))

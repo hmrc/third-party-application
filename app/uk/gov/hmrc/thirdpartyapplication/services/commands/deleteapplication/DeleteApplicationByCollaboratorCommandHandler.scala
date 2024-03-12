@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, AbstractDeleteApplicationCommandHandler}
 
 @Singleton
 class DeleteApplicationByCollaboratorCommandHandler @Inject() (
@@ -56,7 +56,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
   private def validate(app: StoredApplication, cmd: DeleteApplicationByCollaborator): Validated[Failures, Collaborator] = {
     Apply[Validated[Failures, *]].map3(
       isAdminOnApp(cmd.instigator, app),
-      isStandardAccess(app),
+      ensureStandardAccess(app),
       canDeleteApplicationsOrNotProductionApp(app)
     ) { case (admin, _, _) => admin }
   }

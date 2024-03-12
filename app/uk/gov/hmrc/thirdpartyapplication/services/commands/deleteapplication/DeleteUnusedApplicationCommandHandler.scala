@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services.commands
+package uk.gov.hmrc.thirdpartyapplication.services.commands.deleteapplication
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
@@ -36,7 +36,8 @@ import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
-import deleteapplication.AbstractDeleteApplicationCommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, AbstractDeleteApplicationCommandHandler}
+
 
 @Singleton
 class DeleteUnusedApplicationCommandHandler @Inject() (

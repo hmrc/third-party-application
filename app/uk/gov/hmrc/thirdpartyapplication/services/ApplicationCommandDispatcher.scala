@@ -28,10 +28,14 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Eithe
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, ChangeGrantLengthCommandHandler, CommandHandler, _}
+import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 import commands.deleteapplication.DeleteApplicationProcessor
-import uk.gov.hmrc.thirdpartyapplication.services.commands.deleteapplication.RedirectUrisProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.redirects.RedirectUrisProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.responsibleindividual.RIProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.sandbox.SandboxProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.gatekeeper.GatekeeperProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.production.ProductionProcessor
 
 @Singleton
 class ApplicationCommandDispatcher @Inject() (
@@ -41,25 +45,22 @@ class ApplicationCommandDispatcher @Inject() (
     auditService: AuditService,
     deleteApplicationProcessor: DeleteApplicationProcessor,
     redirectUrisProcessor: RedirectUrisProcessor,
+    riProcessor: RIProcessor,
+    sandboxProcessor: SandboxProcessor,
+    gatekeeperProcessor: GatekeeperProcessor,
+    productionProcessor: ProductionProcessor,
+
     addClientSecretCmdHdlr: AddClientSecretCommandHandler,
-    addCollaboratorCmdHdlr: AddCollaboratorCommandHandler,
     removeClientSecretCmdHdlr: RemoveClientSecretCommandHandler,
-    changeGrantLengthCmdHdlr: ChangeGrantLengthCommandHandler,
-    changeRateLimitTierCmdHdlr: ChangeRateLimitTierCommandHandler,
-    changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
+    
+    addCollaboratorCmdHdlr: AddCollaboratorCommandHandler,
     removeCollaboratorCmdHdlr: RemoveCollaboratorCommandHandler,
-    changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-    changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
-    changeResponsibleIndividualToSelfCmdHdlr: ChangeResponsibleIndividualToSelfCommandHandler,
-    changeResponsibleIndividualToOtherCmdHdlr: ChangeResponsibleIndividualToOtherCommandHandler,
-    verifyResponsibleIndividualCmdHdlr: VerifyResponsibleIndividualCommandHandler,
-    declineResponsibleIndividualCmdHdlr: DeclineResponsibleIndividualCommandHandler,
-    declineResponsibleIndividualDidNotVerifyCmdHdlr: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
-    declineApplicationApprovalRequestCmdHdlr: DeclineApplicationApprovalRequestCommandHandler,
+
     subscribeToApiCmdHdlr: SubscribeToApiCommandHandler,
     unsubscribeFromApiCmdHdlr: UnsubscribeFromApiCommandHandler,
-    changeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler,
-    changeSandboxApplicationNameCommandHandler: ChangeSandboxApplicationNameCommandHandler
+    
+    changeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler
+
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -84,6 +85,14 @@ class ApplicationCommandDispatcher @Inject() (
   private def process(app: StoredApplication, command: ApplicationCommand)(implicit hc: HeaderCarrier): AppCmdResultT = {
     import ApplicationCommands._
     command match {
+      case cmd: RedirectUriMixin => redirectUrisProcessor.process(app, cmd)
+      
+      case cmd: ResponsibleIndividualMixin => riProcessor.process(app, cmd)
+
+      case cmd: GatekeeperMixin => gatekeeperProcessor.process(app, cmd)
+      
+      case cmd: DeleteApplicationMixin => deleteApplicationProcessor.process(app, cmd)
+
       case cmd: AddCollaborator    => addCollaboratorCmdHdlr.process(app, cmd)
       case cmd: RemoveCollaborator => removeCollaboratorCmdHdlr.process(app, cmd)
 
@@ -93,36 +102,13 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: SubscribeToApi     => subscribeToApiCmdHdlr.process(app, cmd)
       case cmd: UnsubscribeFromApi => unsubscribeFromApiCmdHdlr.process(app, cmd)
 
-      case cmd: RedirectUriMixin => redirectUrisProcessor.process(app, cmd)
-
-      case cmd: ChangeGrantLength => changeGrantLengthCmdHdlr.process(app, cmd)
-
-      case cmd: ChangeRateLimitTier => changeRateLimitTierCmdHdlr.process(app, cmd)
-
+      
       // Sandbox application changing
-      case cmd: ChangeSandboxApplicationName                  => changeSandboxApplicationNameCommandHandler.process(app, cmd)
-      case cmd: ChangeSandboxApplicationDescription           => ???
-      case cmd: ChangeSandboxApplicationPrivacyPolicyUrl      => ???
-      case cmd: ChangeSandboxApplicationTermsAndConditionsUrl => ???
-      case cmd: ClearSandboxApplicationDescription            => ???
-      case cmd: RemoveSandboxApplicationPrivacyPolicyUrl      => ???
-      case cmd: RemoveSandboxApplicationTermsAndConditionsUrl => ???
-
+      case cmd: SandboxMixin => sandboxProcessor.process(app, cmd)
+      
       // Production application changing
-      case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
-      case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
-      case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
-
-      case cmd: ChangeResponsibleIndividualToSelf        => changeResponsibleIndividualToSelfCmdHdlr.process(app, cmd)
-      case cmd: ChangeResponsibleIndividualToOther       => changeResponsibleIndividualToOtherCmdHdlr.process(app, cmd)
-      case cmd: VerifyResponsibleIndividual              => verifyResponsibleIndividualCmdHdlr.process(app, cmd)
-      case cmd: DeclineResponsibleIndividual             => declineResponsibleIndividualCmdHdlr.process(app, cmd)
-      case cmd: DeclineResponsibleIndividualDidNotVerify => declineResponsibleIndividualDidNotVerifyCmdHdlr.process(app, cmd)
-
-      case cmd: DeclineApplicationApprovalRequest => declineApplicationApprovalRequestCmdHdlr.process(app, cmd)
-
-      case cmd: DeleteApplicationMixin => deleteApplicationProcessor.process(app, cmd)
-
+      case cmd: ProductionMixin => productionProcessor.process(app, cmd)
+      
       case cmd: ChangeIpAllowlist => changeIpAllowlistCommandHandler.process(app, cmd)
     }
   }

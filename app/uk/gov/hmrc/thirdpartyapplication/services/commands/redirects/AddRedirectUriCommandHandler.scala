@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services.commands
+package uk.gov.hmrc.thirdpartyapplication.services.commands.redirects
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -30,6 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Comma
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class AddRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
@@ -45,7 +46,7 @@ class AddRedirectUriCommandHandler @Inject() (applicationRepository: Application
     val hasFourOrFewerURIs = cond((existingRedirects.size < 5), CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
 
     Apply[Validated[Failures, *]].map3(
-      isStandardAccess(app),
+      ensureStandardAccess(app),
       isAdminIfInProduction(cmd.actor, app),
       hasFourOrFewerURIs
     )((_, _, _) => existingRedirects)
