@@ -36,8 +36,8 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{
   NotificationServiceMockModule,
   ThirdPartyDelegatedAuthorityServiceMockModule
 }
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, ChangeGrantLengthCommandHandler, _}
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationCommandDispatcher, DeleteApplicationProcessor}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
@@ -95,11 +95,21 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockChangeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler                                               = mock[ChangeIpAllowlistCommandHandler]
     val mockChangeSandboxApplicationNameCommandHandler: ChangeSandboxApplicationNameCommandHandler                         = mock[ChangeSandboxApplicationNameCommandHandler]
 
+    val deleteApplicationProcessor = new DeleteApplicationProcessor(
+      mockDeleteApplicationByCollaboratorCommandHandler,
+      mockDeleteApplicationByGatekeeperCommandHandler,
+      mockDeleteUnusedApplicationCommandHandler,
+      mockDeleteProductionCredentialsApplicationCommandHandler,
+      mockAllowApplicationAutoDeleteCommandHandler,
+      mockBlockApplicationAutoDeleteCommandHandler
+    )
+
     val underTest = new ApplicationCommandDispatcher(
       ApplicationRepoMock.aMock,
       NotificationServiceMock.aMock,
       ApiPlatformEventServiceMock.aMock,
       AuditServiceMock.aMock,
+      deleteApplicationProcessor,
       mockAddClientSecretCommandHandler,
       mockAddCollaboratorCommandHandler,
       mockAddRedirectUriCommandHandler,
@@ -117,16 +127,10 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockDeclineResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
       mockDeclineApplicationApprovalRequestCommandHandler,
-      mockDeleteApplicationByCollaboratorCommandHandler,
-      mockDeleteApplicationByGatekeeperCommandHandler,
-      mockDeleteUnusedApplicationCommandHandler,
-      mockDeleteProductionCredentialsApplicationCommandHandler,
       mockDeleteRedirectUriCommandHandler,
       mockSubscribeToApiCommandHandler,
       mockUnsubscribeFromApiCommandHandler,
       mockUpdateRedirectUrisCommandHandler,
-      mockAllowApplicationAutoDeleteCommandHandler,
-      mockBlockApplicationAutoDeleteCommandHandler,
       mockChangeIpAllowlistCommandHandler,
       mockChangeSandboxApplicationNameCommandHandler
     )

@@ -16,6 +16,7 @@ object AppDependencies {
     "com.github.t3hnar" %% "scala-bcrypt"                      % "4.1",
     "commons-validator"  % "commons-validator"                 % "1.7",
     "uk.gov.hmrc"       %% "internal-auth-client-play-30"      % "1.10.0",
+        "uk.gov.hmrc"       %% "api-platform-application-domain"   % "0.41.0-SNAPSHOT",
     "uk.gov.hmrc"       %% "api-platform-application-events"   % applicationEventVersion
   )
 
