@@ -109,6 +109,12 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockRemoveSandboxApplicationPrivacyPolicyUrlCommandHandler: RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler =
       mock[RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler]
 
+    val mockChangeSandboxApplicationTermsAndConditionsUrlCommandHandler: ChangeSandboxApplicationTermsAndConditionsUrlCommandHandler =
+      mock[ChangeSandboxApplicationTermsAndConditionsUrlCommandHandler]
+
+    val mockRemoveSandboxApplicationTermsAndConditionsUrlCommandHandler: RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler =
+      mock[RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler]
+
     val deleteApplicationProcessor = new DeleteApplicationProcessor(
       mockDeleteApplicationByCollaboratorCommandHandler,
       mockDeleteUnusedApplicationCommandHandler,
@@ -135,7 +141,9 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockChangeSandboxApplicationDescriptionCommandHandler,
       mockChangeSandboxApplicationPrivacyPolicyUrlCommandHandler,
       mockClearSandboxApplicationDescriptionCommandHandler,
-      mockRemoveSandboxApplicationPrivacyPolicyUrlCommandHandler
+      mockRemoveSandboxApplicationPrivacyPolicyUrlCommandHandler,
+      mockChangeSandboxApplicationTermsAndConditionsUrlCommandHandler,
+      mockRemoveSandboxApplicationTermsAndConditionsUrlCommandHandler
     )
 
     val gatekeeperProcessor = new GatekeeperProcessor(

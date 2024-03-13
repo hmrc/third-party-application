@@ -23,14 +23,14 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationPrivacyPolicyUrl
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationTermsAndConditionsUrl
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
-class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
+class ChangeSandboxApplicationTermsAndConditionsUrlCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
@@ -39,35 +39,36 @@ class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
 
   private def validate(
       app: StoredApplication,
-      cmd: ChangeSandboxApplicationPrivacyPolicyUrl
+      cmd: ChangeSandboxApplicationTermsAndConditionsUrl
     ): Validated[Failures, Option[String]] = {
+
     Apply[Validated[Failures, *]].map5(
       isInSandboxEnvironment(app),
       isApproved(app),
       ensureStandardAccess(app),
       isAppActorACollaboratorOnApp(cmd.actor, app),
-      cond(cmd.privacyPolicyUrl.isBlank() == false, "Privacy Policy URL cannot be empty")
-    ) { case (_, _, std, _, _) => std.privacyPolicyUrl }
+      cond(cmd.termsAndConditionsUrl.isBlank() == false, "Terms and Conditions URL cannot be empty")
+    ) { case (_, _, std, _, _) => std.termsAndConditionsUrl }
   }
 
-  private def asEvents(app: StoredApplication, oldPrivacyPolicyUrl: Option[String], cmd: ChangeSandboxApplicationPrivacyPolicyUrl): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, oldTermsAndConditionsUrl: Option[String], cmd: ChangeSandboxApplicationTermsAndConditionsUrl): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      ApplicationEvents.SandboxApplicationPrivacyPolicyUrlChanged(
+      ApplicationEvents.SandboxApplicationTermsAndConditionsUrlChanged(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
-        oldPrivacyPolicyUrl,
-        privacyPolicyUrl = cmd.privacyPolicyUrl
+        oldTermsAndConditionsUrl,
+        termsAndConditionsUrl = cmd.termsAndConditionsUrl
       )
     )
   }
 
-  def process(app: StoredApplication, cmd: ChangeSandboxApplicationPrivacyPolicyUrl): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: ChangeSandboxApplicationTermsAndConditionsUrl): AppCmdResultT = {
     for {
-      oldPrivacyPolicyUrl <- E.fromEither(validate(app, cmd).toEither)
-      savedApp            <- E.liftF(applicationRepository.updateLegacyPrivacyPolicyUrl(app.id, Some(cmd.privacyPolicyUrl)))
-      events               = asEvents(app, oldPrivacyPolicyUrl, cmd)
+      oldTermsAndConditionsUrl <- E.fromEither(validate(app, cmd).toEither)
+      savedApp                 <- E.liftF(applicationRepository.updateLegacyTermsAndConditionsUrl(app.id, Some(cmd.termsAndConditionsUrl)))
+      events                    = asEvents(app, oldTermsAndConditionsUrl, cmd)
     } yield (savedApp, events)
   }
 }

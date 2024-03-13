@@ -28,7 +28,9 @@ class SandboxProcessor @Inject() (
     changeSandboxApplicationDescriptionCommandHandler: ChangeSandboxApplicationDescriptionCommandHandler,
     changeSandboxApplicationPrivacyPolicyUrlCommandHandler: ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler,
     clearSandboxApplicationDescriptionCommandHandler: ClearSandboxApplicationDescriptionCommandHandler,
-    removeSandboxApplicationPrivacyPolicyUrlCommandHandler: RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler
+    removeSandboxApplicationPrivacyPolicyUrlCommandHandler: RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler,
+    changeSandboxApplicationTermsAndConditionsUrlCommandHandler: ChangeSandboxApplicationTermsAndConditionsUrlCommandHandler,
+    removeSandboxApplicationTermsAndConditionsUrlCommandHandler: RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler
   ) {
   import CommandHandler._
   import ApplicationCommands._
@@ -37,9 +39,9 @@ class SandboxProcessor @Inject() (
     case cmd: ChangeSandboxApplicationName                  => changeSandboxApplicationNameCommandHandler.process(app, cmd)
     case cmd: ChangeSandboxApplicationDescription           => changeSandboxApplicationDescriptionCommandHandler.process(app, cmd)
     case cmd: ChangeSandboxApplicationPrivacyPolicyUrl      => changeSandboxApplicationPrivacyPolicyUrlCommandHandler.process(app, cmd)
-    case cmd: ChangeSandboxApplicationTermsAndConditionsUrl => ???
+    case cmd: ChangeSandboxApplicationTermsAndConditionsUrl => changeSandboxApplicationTermsAndConditionsUrlCommandHandler.process(app, cmd)
     case cmd: ClearSandboxApplicationDescription            => clearSandboxApplicationDescriptionCommandHandler.process(app, cmd)
     case cmd: RemoveSandboxApplicationPrivacyPolicyUrl      => removeSandboxApplicationPrivacyPolicyUrlCommandHandler.process(app, cmd)
-    case cmd: RemoveSandboxApplicationTermsAndConditionsUrl => ???
+    case cmd: RemoveSandboxApplicationTermsAndConditionsUrl => removeSandboxApplicationTermsAndConditionsUrlCommandHandler.process(app, cmd)
   }
 }

@@ -40,32 +40,34 @@ class ClearSandboxApplicationDescriptionCommandHandler @Inject() (
   private def validate(
       app: StoredApplication,
       cmd: ClearSandboxApplicationDescription
-    ): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, *]].map4(
+    ): Validated[Failures, String] = {
+    Apply[Validated[Failures, *]].map3(
       isInSandboxEnvironment(app),
       isApproved(app),
-      isAppActorACollaboratorOnApp(cmd.actor, app),
-      cond(app.description.isDefined, "App does not currently have a description to clear")
-    ) { case _ => app }
+      isAppActorACollaboratorOnApp(cmd.actor, app)
+    ) { case _ => () }
+      .andThen(_ =>
+        mustBeDefined(app.description, "App does not currently have a description to clear")
+      )
   }
 
-  private def asEvents(app: StoredApplication, cmd: ClearSandboxApplicationDescription): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, oldDescription: String, cmd: ClearSandboxApplicationDescription): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       ApplicationEvents.SandboxApplicationDescriptionCleared(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
-        oldDescription = app.description.get // This is guarded by the validate function
+        oldDescription
       )
     )
   }
 
   def process(app: StoredApplication, cmd: ClearSandboxApplicationDescription): AppCmdResultT = {
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
-      savedApp <- E.liftF(applicationRepository.updateDescription(app.id, None))
-      events    = asEvents(app, cmd)
+      oldDescription <- E.fromEither(validate(app, cmd).toEither)
+      savedApp       <- E.liftF(applicationRepository.updateDescription(app.id, None))
+      events          = asEvents(app, oldDescription, cmd)
     } yield (savedApp, events)
   }
 }

@@ -3280,7 +3280,7 @@ class ApplicationRepositoryISpec
     val app           = anApplicationData(applicationId).copy(access = access)
     await(applicationRepository.save(app))
 
-    val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateLegacyTermsAndConditionsUrl(applicationId, newUrl))
+    val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateLegacyTermsAndConditionsUrl(applicationId, Some(newUrl)))
     appWithUpdatedTermsConditionsLocation.access match {
       case Access.Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
       case _                                                              => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)

@@ -23,14 +23,15 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationPrivacyPolicyUrl
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveSandboxApplicationTermsAndConditionsUrl
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
-class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
+class RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
@@ -39,35 +40,39 @@ class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
 
   private def validate(
       app: StoredApplication,
-      cmd: ChangeSandboxApplicationPrivacyPolicyUrl
-    ): Validated[Failures, Option[String]] = {
-    Apply[Validated[Failures, *]].map5(
+      cmd: RemoveSandboxApplicationTermsAndConditionsUrl
+    ): Validated[Failures, String] = {
+
+    Apply[Validated[Failures, *]].map4(
       isInSandboxEnvironment(app),
       isApproved(app),
       ensureStandardAccess(app),
-      isAppActorACollaboratorOnApp(cmd.actor, app),
-      cond(cmd.privacyPolicyUrl.isBlank() == false, "Privacy Policy URL cannot be empty")
-    ) { case (_, _, std, _, _) => std.privacyPolicyUrl }
+      isAppActorACollaboratorOnApp(cmd.actor, app)
+    ) {
+      case (_, _, std, _) => std.termsAndConditionsUrl
+    }
+      .andThen(termsAndConditionsUrl =>
+        mustBeDefined(termsAndConditionsUrl, CommandFailures.GenericFailure("Cannot remove a Terms and Conditions URL that is already empty"))
+      )
   }
 
-  private def asEvents(app: StoredApplication, oldPrivacyPolicyUrl: Option[String], cmd: ChangeSandboxApplicationPrivacyPolicyUrl): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: RemoveSandboxApplicationTermsAndConditionsUrl, oldTermsAndConditionsUrl: String): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      ApplicationEvents.SandboxApplicationPrivacyPolicyUrlChanged(
+      ApplicationEvents.SandboxApplicationTermsAndConditionsUrlRemoved(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
-        oldPrivacyPolicyUrl,
-        privacyPolicyUrl = cmd.privacyPolicyUrl
+        oldTermsAndConditionsUrl
       )
     )
   }
 
-  def process(app: StoredApplication, cmd: ChangeSandboxApplicationPrivacyPolicyUrl): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: RemoveSandboxApplicationTermsAndConditionsUrl): AppCmdResultT = {
     for {
-      oldPrivacyPolicyUrl <- E.fromEither(validate(app, cmd).toEither)
-      savedApp            <- E.liftF(applicationRepository.updateLegacyPrivacyPolicyUrl(app.id, Some(cmd.privacyPolicyUrl)))
-      events               = asEvents(app, oldPrivacyPolicyUrl, cmd)
+      oldTermsAndConditionsUrl <- E.fromEither(validate(app, cmd).toEither)
+      savedApp                 <- E.liftF(applicationRepository.updateLegacyTermsAndConditionsUrl(app.id, None))
+      events                    = asEvents(app, cmd, oldTermsAndConditionsUrl)
     } yield (savedApp, events)
   }
 }

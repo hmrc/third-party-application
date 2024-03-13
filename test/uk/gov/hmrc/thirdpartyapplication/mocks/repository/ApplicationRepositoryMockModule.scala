@@ -473,6 +473,9 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object UpdateLegacyTermsAndConditionsUrl {
 
+      def succeedsFor(newValue: Option[String]) =
+        when(aMock.updateLegacyTermsAndConditionsUrl(*[ApplicationId], eqTo(newValue))).thenReturn(successful(mock[StoredApplication]))
+
       def succeeds() =
         when(aMock.updateLegacyTermsAndConditionsUrl(*[ApplicationId], *)).thenReturn(successful(mock[StoredApplication]))
     }

@@ -12,6 +12,8 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
+    <logger name="pekko" level="ERROR"/>
+
     <root level="${logger.application:-ERROR}">
         <appender-ref ref="STDOUT"/>
     </root>

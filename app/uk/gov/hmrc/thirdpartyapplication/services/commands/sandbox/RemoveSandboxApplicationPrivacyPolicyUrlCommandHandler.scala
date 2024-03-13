@@ -47,13 +47,15 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
       case Standard(_, _, privacyPolicyUrl, _, _, _) => (true, privacyPolicyUrl)
       case _                                         => (false, None)
     }
-    Apply[Validated[Failures, *]].map5(
+    Apply[Validated[Failures, *]].map4(
       isInSandboxEnvironment(app),
       isApproved(app),
       ensureStandardAccess(app),
-      isAppActorACollaboratorOnApp(cmd.actor, app),
-      mustBeDefined(privacyPolicyUrl, CommandFailures.GenericFailure("Cannot clear a privacy policy that is already empty"))
-    ) { case (_, _, _, _, privacyPolicyUrl) => privacyPolicyUrl }
+      isAppActorACollaboratorOnApp(cmd.actor, app)
+    ) { case (_, _, std, _) => std.privacyPolicyUrl }
+      .andThen(privacyPolicyUrl =>
+        mustBeDefined(privacyPolicyUrl, CommandFailures.GenericFailure("Cannot remove a Privacy Policy URL that is already empty"))
+      )
   }
 
   private def asEvents(app: StoredApplication, cmd: RemoveSandboxApplicationPrivacyPolicyUrl, oldPrivacyPolicyUrl: String): NonEmptyList[ApplicationEvent] = {

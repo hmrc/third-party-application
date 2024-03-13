@@ -873,8 +873,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def updateApplicationTermsAndConditionsLocation(applicationId: ApplicationId, location: TermsAndConditionsLocation): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData.termsAndConditionsLocation", Codecs.toBson(location)))
 
-  def updateLegacyTermsAndConditionsUrl(applicationId: ApplicationId, url: String): Future[StoredApplication] =
-    updateApplication(applicationId, Updates.set("access.termsAndConditionsUrl", url))
+  def updateLegacyTermsAndConditionsUrl(applicationId: ApplicationId, termsAndConditionsUrl: Option[String]): Future[StoredApplication] =
+    updateApplication(applicationId, Updates.set("access.termsAndConditionsUrl", Codecs.toBson(termsAndConditionsUrl.filterNot(_.isBlank()))))
 
   def updateApplicationChangeResponsibleIndividual(
       applicationId: ApplicationId,

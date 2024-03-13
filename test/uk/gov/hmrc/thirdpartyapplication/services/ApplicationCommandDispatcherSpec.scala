@@ -96,6 +96,12 @@ class ApplicationCommandDispatcherSpec
 
       // Sandbox Commands
       mockChangeSandboxApplicationNameCommandHandler,
+      mockChangeSandboxApplicationDescriptionCommandHandler,
+      mockChangeSandboxApplicationPrivacyPolicyUrlCommandHandler,
+      mockClearSandboxApplicationDescriptionCommandHandler,
+      mockRemoveSandboxApplicationPrivacyPolicyUrlCommandHandler,
+      mockChangeSandboxApplicationTermsAndConditionsUrlCommandHandler,
+      mockRemoveSandboxApplicationTermsAndConditionsUrlCommandHandler,
 
       // GateKeeper Only Commands
       mockDeleteApplicationByGatekeeperCommandHandler,
