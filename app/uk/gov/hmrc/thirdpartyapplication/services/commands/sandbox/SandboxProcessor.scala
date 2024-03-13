@@ -29,17 +29,17 @@ class SandboxProcessor @Inject() (
     changeSandboxApplicationPrivacyPolicyUrlCommandHandler: ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler,
     clearSandboxApplicationDescriptionCommandHandler: ClearSandboxApplicationDescriptionCommandHandler,
     removeSandboxApplicationPrivacyPolicyUrlCommandHandler: RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler
-) {
+  ) {
   import CommandHandler._
   import ApplicationCommands._
 
   def process(app: StoredApplication, command: SandboxMixin): AppCmdResultT = command match {
-      case cmd: ChangeSandboxApplicationName                  => changeSandboxApplicationNameCommandHandler.process(app, cmd)
-      case cmd: ChangeSandboxApplicationDescription           => changeSandboxApplicationDescriptionCommandHandler.process(app, cmd)
-      case cmd: ChangeSandboxApplicationPrivacyPolicyUrl      => changeSandboxApplicationPrivacyPolicyUrlCommandHandler.process(app,cmd)
-      case cmd: ChangeSandboxApplicationTermsAndConditionsUrl => ???
-      case cmd: ClearSandboxApplicationDescription            => clearSandboxApplicationDescriptionCommandHandler.process(app,cmd)
-      case cmd: RemoveSandboxApplicationPrivacyPolicyUrl      => removeSandboxApplicationPrivacyPolicyUrlCommandHandler.process(app,cmd)
-      case cmd: RemoveSandboxApplicationTermsAndConditionsUrl => ???
+    case cmd: ChangeSandboxApplicationName                  => changeSandboxApplicationNameCommandHandler.process(app, cmd)
+    case cmd: ChangeSandboxApplicationDescription           => changeSandboxApplicationDescriptionCommandHandler.process(app, cmd)
+    case cmd: ChangeSandboxApplicationPrivacyPolicyUrl      => changeSandboxApplicationPrivacyPolicyUrlCommandHandler.process(app, cmd)
+    case cmd: ChangeSandboxApplicationTermsAndConditionsUrl => ???
+    case cmd: ClearSandboxApplicationDescription            => clearSandboxApplicationDescriptionCommandHandler.process(app, cmd)
+    case cmd: RemoveSandboxApplicationPrivacyPolicyUrl      => removeSandboxApplicationPrivacyPolicyUrlCommandHandler.process(app, cmd)
+    case cmd: RemoveSandboxApplicationTermsAndConditionsUrl => ???
   }
 }

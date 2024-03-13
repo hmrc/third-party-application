@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.redirects
 
 import javax.inject.{Inject, Singleton}
 
-
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommands, RedirectUriMixin}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -34,9 +33,9 @@ class RedirectUrisProcessor @Inject() (
   import ApplicationCommands._
 
   def process(app: StoredApplication, command: RedirectUriMixin): AppCmdResultT = command match {
-      case cmd: AddRedirectUri    => addRedirectUriCommandHandle.process(app, cmd)
-      case cmd: ChangeRedirectUri => changeRedirectUriCmdHdlr.process(app, cmd)
-      case cmd: DeleteRedirectUri => deleteRedirectUriCmdHdlr.process(app, cmd)
-      case cmd: UpdateRedirectUris => updateRedirectUrisCmdHdlr.process(app, cmd)
+    case cmd: AddRedirectUri     => addRedirectUriCommandHandle.process(app, cmd)
+    case cmd: ChangeRedirectUri  => changeRedirectUriCmdHdlr.process(app, cmd)
+    case cmd: DeleteRedirectUri  => deleteRedirectUriCmdHdlr.process(app, cmd)
+    case cmd: UpdateRedirectUris => updateRedirectUrisCmdHdlr.process(app, cmd)
   }
 }

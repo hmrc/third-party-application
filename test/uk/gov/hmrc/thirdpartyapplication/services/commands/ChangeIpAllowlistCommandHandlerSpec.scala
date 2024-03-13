@@ -26,9 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CidrBloc
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.services.commands.ChangeIpAllowlistCommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{ChangeIpAllowlistCommandHandler, CommandHandler, CommandHandlerBaseSpec}
 
 class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
 

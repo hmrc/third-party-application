@@ -24,13 +24,13 @@ import cats.implicits._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, Environment, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.services.BaseCommandHandler
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 
 trait CommandHandler {
   implicit def ec: ExecutionContext
@@ -160,7 +160,7 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
   def ensureStandardAccess(app: StoredApplication): Validated[Failures, Access.Standard] = {
     val std = app.access match {
       case std: Access.Standard => Some(std)
-      case _ => None
+      case _                    => None
     }
     mustBeDefined(std, GenericFailure("App must have a STANDARD access type"))
   }

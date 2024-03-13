@@ -29,15 +29,15 @@ class RIProcessor @Inject() (
     verifyResponsibleIndividualCmdHdlr: VerifyResponsibleIndividualCommandHandler,
     declineResponsibleIndividualCmdHdlr: DeclineResponsibleIndividualCommandHandler,
     declineResponsibleIndividualDidNotVerifyCmdHdlr: DeclineResponsibleIndividualDidNotVerifyCommandHandler
-) {
+  ) {
   import CommandHandler._
   import ApplicationCommands._
 
   def process(app: StoredApplication, command: ResponsibleIndividualMixin): AppCmdResultT = command match {
-      case cmd: ChangeResponsibleIndividualToSelf        => changeResponsibleIndividualToSelfCmdHdlr.process(app, cmd)
-      case cmd: ChangeResponsibleIndividualToOther       => changeResponsibleIndividualToOtherCmdHdlr.process(app, cmd)
-      case cmd: VerifyResponsibleIndividual              => verifyResponsibleIndividualCmdHdlr.process(app, cmd)
-      case cmd: DeclineResponsibleIndividual             => declineResponsibleIndividualCmdHdlr.process(app, cmd)
-      case cmd: DeclineResponsibleIndividualDidNotVerify => declineResponsibleIndividualDidNotVerifyCmdHdlr.process(app, cmd)
+    case cmd: ChangeResponsibleIndividualToSelf        => changeResponsibleIndividualToSelfCmdHdlr.process(app, cmd)
+    case cmd: ChangeResponsibleIndividualToOther       => changeResponsibleIndividualToOtherCmdHdlr.process(app, cmd)
+    case cmd: VerifyResponsibleIndividual              => verifyResponsibleIndividualCmdHdlr.process(app, cmd)
+    case cmd: DeclineResponsibleIndividual             => declineResponsibleIndividualCmdHdlr.process(app, cmd)
+    case cmd: DeclineResponsibleIndividualDidNotVerify => declineResponsibleIndividualDidNotVerifyCmdHdlr.process(app, cmd)
   }
 }

@@ -3232,7 +3232,7 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "handle ProductionLegacyAppPrivacyPolicyLocationChanged correctly" in {
+  "handle LegacyAppPrivacyPolicyLocationChanged correctly" in {
     val applicationId = ApplicationId.random
     val oldUrl        = "http://example.com/old"
     val newUrl        = "http://example.com/new"
@@ -3240,9 +3240,10 @@ class ApplicationRepositoryISpec
     val app           = anApplicationData(applicationId).copy(access = access)
     await(applicationRepository.save(app))
 
-    val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateLegacyApplicationPrivacyPolicyLocation(applicationId, newUrl))
+    val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateLegacyPrivacyPolicyUrl(applicationId, Some(newUrl)))
     appWithUpdatedPrivacyPolicyLocation.access match {
       case Access.Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
+      case Access.Standard(_, _, None, _, _, None)                   => fail("unexpected lack of privacyPolicyUrl")
       case _                                                         => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
     }
   }
@@ -3279,7 +3280,7 @@ class ApplicationRepositoryISpec
     val app           = anApplicationData(applicationId).copy(access = access)
     await(applicationRepository.save(app))
 
-    val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateLegacyApplicationTermsAndConditionsLocation(applicationId, newUrl))
+    val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateLegacyTermsAndConditionsUrl(applicationId, newUrl))
     appWithUpdatedTermsConditionsLocation.access match {
       case Access.Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
       case _                                                              => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)

@@ -70,7 +70,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
 
     for {
       newUrl   <- E.fromEither(validate.toEither)
-      savedApp <- E.liftF(applicationRepository.updateLegacyApplicationTermsAndConditionsLocation(app.id, newUrl))
+      savedApp <- E.liftF(applicationRepository.updateLegacyTermsAndConditionsUrl(app.id, newUrl))
       events    = asEvents(newUrl)
     } yield (savedApp, events)
   }

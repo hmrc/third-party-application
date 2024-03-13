@@ -24,23 +24,20 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Environment
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommands, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
 class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  
   trait Setup extends ApplicationRepositoryMockModule {
-    
+
     implicit val hc: HeaderCarrier = HeaderCarrier()
-    
-    val oldValue   = "some url"
-    val newValue   = "new url"
-    val app = subordinateApp.copy(access = Access.Standard(privacyPolicyUrl = Some(oldValue)))
+
+    val oldValue  = "some url"
+    val newValue  = "new url"
+    val app       = subordinateApp.copy(access = Access.Standard(privacyPolicyUrl = Some(oldValue)))
     val requester = "requester"
 
     val userId = idOf(anAdminEmail)

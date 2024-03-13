@@ -29,13 +29,13 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
-import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
-import commands.deleteapplication.DeleteApplicationProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.deleteapplication.DeleteApplicationProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.gatekeeper.GatekeeperProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.production.ProductionProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirects.RedirectUrisProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.responsibleindividual.RIProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.sandbox.SandboxProcessor
-import uk.gov.hmrc.thirdpartyapplication.services.commands.gatekeeper.GatekeeperProcessor
-import uk.gov.hmrc.thirdpartyapplication.services.commands.production.ProductionProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 
 @Singleton
 class ApplicationCommandDispatcher @Inject() (
@@ -49,18 +49,13 @@ class ApplicationCommandDispatcher @Inject() (
     sandboxProcessor: SandboxProcessor,
     gatekeeperProcessor: GatekeeperProcessor,
     productionProcessor: ProductionProcessor,
-
     addClientSecretCmdHdlr: AddClientSecretCommandHandler,
     removeClientSecretCmdHdlr: RemoveClientSecretCommandHandler,
-    
     addCollaboratorCmdHdlr: AddCollaboratorCommandHandler,
     removeCollaboratorCmdHdlr: RemoveCollaboratorCommandHandler,
-
     subscribeToApiCmdHdlr: SubscribeToApiCommandHandler,
     unsubscribeFromApiCmdHdlr: UnsubscribeFromApiCommandHandler,
-    
     changeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler
-
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -72,7 +67,7 @@ class ApplicationCommandDispatcher @Inject() (
   def dispatch(applicationId: ApplicationId, command: ApplicationCommand, verifiedCollaborators: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       app               <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyList.one(CommandFailures.ApplicationNotFound))
-      updateResults     <- process(app,command)
+      updateResults     <- process(app, command)
       (savedApp, events) = updateResults
 
       _ <- E.liftF(apiPlatformEventService.applyEvents(events))
@@ -86,11 +81,11 @@ class ApplicationCommandDispatcher @Inject() (
     import ApplicationCommands._
     command match {
       case cmd: RedirectUriMixin => redirectUrisProcessor.process(app, cmd)
-      
+
       case cmd: ResponsibleIndividualMixin => riProcessor.process(app, cmd)
 
       case cmd: GatekeeperMixin => gatekeeperProcessor.process(app, cmd)
-      
+
       case cmd: DeleteApplicationMixin => deleteApplicationProcessor.process(app, cmd)
 
       case cmd: AddCollaborator    => addCollaboratorCmdHdlr.process(app, cmd)
@@ -102,13 +97,12 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: SubscribeToApi     => subscribeToApiCmdHdlr.process(app, cmd)
       case cmd: UnsubscribeFromApi => unsubscribeFromApiCmdHdlr.process(app, cmd)
 
-      
       // Sandbox application changing
       case cmd: SandboxMixin => sandboxProcessor.process(app, cmd)
-      
+
       // Production application changing
       case cmd: ProductionMixin => productionProcessor.process(app, cmd)
-      
+
       case cmd: ChangeIpAllowlist => changeIpAllowlistCommandHandler.process(app, cmd)
     }
   }

@@ -23,8 +23,10 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommands, ProductionMixin}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.commands.production.ChangeProductionApplicationPrivacyPolicyLocationCommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.commands.production.ChangeProductionApplicationTermsAndConditionsLocationCommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.production.{
+  ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
+  ChangeProductionApplicationTermsAndConditionsLocationCommandHandler
+}
 
 @Singleton
 class ProductionProcessor @Inject() (

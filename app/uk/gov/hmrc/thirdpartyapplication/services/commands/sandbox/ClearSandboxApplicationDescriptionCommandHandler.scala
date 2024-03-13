@@ -23,11 +23,11 @@ import cats._
 import cats.data._
 import cats.implicits._
 
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ClearSandboxApplicationDescription
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ClearSandboxApplicationDescription
 
 @Singleton
 class ClearSandboxApplicationDescriptionCommandHandler @Inject() (
@@ -39,13 +39,13 @@ class ClearSandboxApplicationDescriptionCommandHandler @Inject() (
 
   private def validate(
       app: StoredApplication,
-      cmd: ClearSandboxApplicationDescription,
+      cmd: ClearSandboxApplicationDescription
     ): Validated[Failures, StoredApplication] = {
     Apply[Validated[Failures, *]].map4(
       isInSandboxEnvironment(app),
       isApproved(app),
       isAppActorACollaboratorOnApp(cmd.actor, app),
-      cond(app.description.isDefined, "App does not currently have a description to clear"),
+      cond(app.description.isDefined, "App does not currently have a description to clear")
     ) { case _ => app }
   }
 
@@ -56,16 +56,16 @@ class ClearSandboxApplicationDescriptionCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
-        oldDescription = app.description.get  // This is guarded by the validate function
+        oldDescription = app.description.get // This is guarded by the validate function
       )
     )
   }
 
   def process(app: StoredApplication, cmd: ClearSandboxApplicationDescription): AppCmdResultT = {
     for {
-      valid                <- E.fromEither(validate(app, cmd).toEither)
-      savedApp             <- E.liftF(applicationRepository.updateDescription(app.id, None))
-      events                = asEvents(app, cmd)
+      valid    <- E.fromEither(validate(app, cmd).toEither)
+      savedApp <- E.liftF(applicationRepository.updateDescription(app.id, None))
+      events    = asEvents(app, cmd)
     } yield (savedApp, events)
   }
 }

@@ -28,8 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
 class ClearSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -41,7 +40,7 @@ class ClearSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandle
 
     val oldDescription = app.description
     val newDescription = "New app name"
-    val requester = "requester"
+    val requester      = "requester"
 
     val userId = idOf(anAdminEmail)
 
@@ -110,7 +109,7 @@ class ClearSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandle
       }
     }
 
-    "return an error if the application already has the specified description" in new Setup {
+    "return an error if the application already has a blank description" in new Setup {
       val appWithNoExistingDescription = app.copy(description = None)
 
       checkFailsWith("App does not currently have a description to clear") {

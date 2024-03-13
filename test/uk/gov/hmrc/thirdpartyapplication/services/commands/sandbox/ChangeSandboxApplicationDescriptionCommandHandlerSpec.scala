@@ -24,12 +24,10 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Environment
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommands, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
 class ChangeSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -39,9 +37,9 @@ class ChangeSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandl
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val oldDescription   = app.description
-    val newDescription   = "New app description"
-    val requester = "requester"
+    val oldDescription = app.description
+    val newDescription = "New app description"
+    val requester      = "requester"
 
     val userId = idOf(anAdminEmail)
 

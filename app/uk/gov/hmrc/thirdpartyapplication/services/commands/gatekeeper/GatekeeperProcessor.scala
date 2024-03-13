@@ -22,8 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommands, GatekeeperMixin}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, _}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.GatekeeperMixin
+import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class GatekeeperProcessor @Inject() (
@@ -34,18 +33,17 @@ class GatekeeperProcessor @Inject() (
     changeRateLimitTierCmdHdlr: ChangeRateLimitTierCommandHandler,
     changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
     declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler
-    
   ) {
   import CommandHandler._
   import ApplicationCommands._
 
   def process(app: StoredApplication, command: GatekeeperMixin)(implicit hc: HeaderCarrier): AppCmdResultT = command match {
-    case cmd: DeleteApplicationByGatekeeper          => deleteApplicationByGatekeeperCmdHdlr.process(app, cmd)
-    case cmd: AllowApplicationAutoDelete             => allowApplicationAutoDeleteCmdHdlr.process(app, cmd)
-    case cmd: BlockApplicationAutoDelete             => blockApplicationAutoDeleteCmdHdlr.process(app, cmd)
-    case cmd: ChangeGrantLength => changeGrantLengthCmdHdlr.process(app, cmd)
-    case cmd: ChangeRateLimitTier => changeRateLimitTierCmdHdlr.process(app, cmd)
-    case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
-    case cmd: DeclineApplicationApprovalRequest  => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
+    case cmd: DeleteApplicationByGatekeeper     => deleteApplicationByGatekeeperCmdHdlr.process(app, cmd)
+    case cmd: AllowApplicationAutoDelete        => allowApplicationAutoDeleteCmdHdlr.process(app, cmd)
+    case cmd: BlockApplicationAutoDelete        => blockApplicationAutoDeleteCmdHdlr.process(app, cmd)
+    case cmd: ChangeGrantLength                 => changeGrantLengthCmdHdlr.process(app, cmd)
+    case cmd: ChangeRateLimitTier               => changeRateLimitTierCmdHdlr.process(app, cmd)
+    case cmd: ChangeProductionApplicationName   => changeProductionApplicationNameCmdHdlr.process(app, cmd)
+    case cmd: DeclineApplicationApprovalRequest => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
   }
 }

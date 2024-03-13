@@ -36,16 +36,15 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{
   NotificationServiceMockModule,
   ThirdPartyDelegatedAuthorityServiceMockModule
 }
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.production._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.sandbox._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.gatekeeper._
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
+import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.deleteapplication._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.gatekeeper.{DeclineApplicationApprovalRequestCommandHandler, _}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.production._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirects._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.responsibleindividual._
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
-import uk.gov.hmrc.thirdpartyapplication.services.commands.gatekeeper.DeclineApplicationApprovalRequestCommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.sandbox._
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     with ApplicationStateUtil
@@ -102,16 +101,20 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockChangeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler                                               = mock[ChangeIpAllowlistCommandHandler]
     val mockChangeSandboxApplicationNameCommandHandler: ChangeSandboxApplicationNameCommandHandler                         = mock[ChangeSandboxApplicationNameCommandHandler]
     val mockChangeSandboxApplicationDescriptionCommandHandler: ChangeSandboxApplicationDescriptionCommandHandler           = mock[ChangeSandboxApplicationDescriptionCommandHandler]
-    val mockChangeSandboxApplicationPrivacyPolicyUrlCommandHandler: ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler = mock[ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler]
+
+    val mockChangeSandboxApplicationPrivacyPolicyUrlCommandHandler: ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler =
+      mock[ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler]
     val mockClearSandboxApplicationDescriptionCommandHandler: ClearSandboxApplicationDescriptionCommandHandler             = mock[ClearSandboxApplicationDescriptionCommandHandler]
-    val mockRemoveSandboxApplicationPrivacyPolicyUrlCommandHandler: RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler = mock[RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler]
+
+    val mockRemoveSandboxApplicationPrivacyPolicyUrlCommandHandler: RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler =
+      mock[RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler]
 
     val deleteApplicationProcessor = new DeleteApplicationProcessor(
       mockDeleteApplicationByCollaboratorCommandHandler,
       mockDeleteUnusedApplicationCommandHandler,
       mockDeleteProductionCredentialsApplicationCommandHandler
     )
-    
+
     val redirectUrisProcessor = new RedirectUrisProcessor(
       mockAddRedirectUriCommandHandler,
       mockDeleteRedirectUriCommandHandler,
@@ -161,16 +164,12 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       sandboxProcessor,
       gatekeeperProcessor,
       productionProcessor,
-
       mockAddClientSecretCommandHandler,
       mockRemoveClientSecretCommandHandler,
-
       mockAddCollaboratorCommandHandler,
       mockRemoveCollaboratorCommandHandler,
-
       mockSubscribeToApiCommandHandler,
       mockUnsubscribeFromApiCommandHandler,
-
       mockChangeIpAllowlistCommandHandler
     )
   }

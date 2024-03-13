@@ -54,7 +54,7 @@ lazy val microservice = Project(appName, file("."))
 
 lazy val it = (project in file("it"))
   .enablePlugins(PlayScala)
-  .dependsOn(microservice % "test->test")
+  .dependsOn(microservice % "test->test;compile->compile")
   .settings(
     name := "integration-tests",
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),

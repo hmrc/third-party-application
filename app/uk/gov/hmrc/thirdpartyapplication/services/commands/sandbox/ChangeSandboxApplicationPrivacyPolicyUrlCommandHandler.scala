@@ -23,12 +23,12 @@ import cats._
 import cats.data._
 import cats.implicits._
 
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationPrivacyPolicyUrl
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationPrivacyPolicyUrl
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
 
 @Singleton
 class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
@@ -40,7 +40,7 @@ class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
 
   private def validate(
       app: StoredApplication,
-      cmd: ChangeSandboxApplicationPrivacyPolicyUrl,
+      cmd: ChangeSandboxApplicationPrivacyPolicyUrl
     ): Validated[Failures, StoredApplication] = {
     Apply[Validated[Failures, *]].map5(
       isInSandboxEnvironment(app),
@@ -54,7 +54,7 @@ class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
   private def asEvents(app: StoredApplication, cmd: ChangeSandboxApplicationPrivacyPolicyUrl): NonEmptyList[ApplicationEvent] = {
     val oldPrivacyPolicyUrl = app.access match {
       case Standard(_, _, privacyPolicyUrl, _, _, _) => privacyPolicyUrl
-      case _ => throw new RuntimeException("Cannot reach this code due to validation")
+      case _                                         => throw new RuntimeException("Cannot reach this code due to validation")
     }
 
     NonEmptyList.of(
@@ -71,9 +71,9 @@ class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: ChangeSandboxApplicationPrivacyPolicyUrl): AppCmdResultT = {
     for {
-      valid                <- E.fromEither(validate(app, cmd).toEither)
-      savedApp             <- E.liftF(applicationRepository.updateLegacyPrivacyPolicyUrl(app.id, Some(cmd.privacyPolicyUrl)))
-      events                = asEvents(app, cmd)
+      valid    <- E.fromEither(validate(app, cmd).toEither)
+      savedApp <- E.liftF(applicationRepository.updateLegacyPrivacyPolicyUrl(app.id, Some(cmd.privacyPolicyUrl)))
+      events    = asEvents(app, cmd)
     } yield (savedApp, events)
   }
 }

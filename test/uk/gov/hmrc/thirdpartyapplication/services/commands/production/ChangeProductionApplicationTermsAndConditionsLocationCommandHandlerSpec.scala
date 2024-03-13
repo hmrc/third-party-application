@@ -28,8 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.Te
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationTermsAndConditionsLocation
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
-import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
 class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -137,7 +136,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
   "process with a legacy journey app" should {
     "create correct events for a valid request" in new Setup {
-      ApplicationRepoMock.UpdateLegacyTermsAndConditionsPolicyLocation.succeeds()
+      ApplicationRepoMock.UpdateLegacyTermsAndConditionsUrl.succeeds()
 
       checkLegacySuccessResult(actor)(underTest.process(oldJourneyApp, update))
     }

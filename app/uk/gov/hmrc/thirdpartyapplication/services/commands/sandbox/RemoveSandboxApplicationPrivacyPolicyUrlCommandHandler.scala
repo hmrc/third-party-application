@@ -23,13 +23,13 @@ import cats._
 import cats.data._
 import cats.implicits._
 
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveSandboxApplicationPrivacyPolicyUrl
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveSandboxApplicationPrivacyPolicyUrl
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 
 @Singleton
 class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
@@ -41,11 +41,11 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
 
   private def validate(
       app: StoredApplication,
-      cmd: RemoveSandboxApplicationPrivacyPolicyUrl,
+      cmd: RemoveSandboxApplicationPrivacyPolicyUrl
     ): Validated[Failures, String] = {
     val (isStd, privacyPolicyUrl) = app.access match {
       case Standard(_, _, privacyPolicyUrl, _, _, _) => (true, privacyPolicyUrl)
-      case _ => (false, None)
+      case _                                         => (false, None)
     }
     Apply[Validated[Failures, *]].map5(
       isInSandboxEnvironment(app),
@@ -53,7 +53,7 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
       ensureStandardAccess(app),
       isAppActorACollaboratorOnApp(cmd.actor, app),
       mustBeDefined(privacyPolicyUrl, CommandFailures.GenericFailure("Cannot clear a privacy policy that is already empty"))
-    ) { case (_, _, _, _, privacyPolicyUrl ) => privacyPolicyUrl }
+    ) { case (_, _, _, _, privacyPolicyUrl) => privacyPolicyUrl }
   }
 
   private def asEvents(app: StoredApplication, cmd: RemoveSandboxApplicationPrivacyPolicyUrl, oldPrivacyPolicyUrl: String): NonEmptyList[ApplicationEvent] = {
@@ -70,9 +70,9 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: RemoveSandboxApplicationPrivacyPolicyUrl): AppCmdResultT = {
     for {
-      oldPrivacyPolicyUrl  <- E.fromEither(validate(app, cmd).toEither)
-      savedApp             <- E.liftF(applicationRepository.updateLegacyPrivacyPolicyUrl(app.id, None))
-      events                = asEvents(app, cmd, oldPrivacyPolicyUrl)
+      oldPrivacyPolicyUrl <- E.fromEither(validate(app, cmd).toEither)
+      savedApp            <- E.liftF(applicationRepository.updateLegacyPrivacyPolicyUrl(app.id, None))
+      events               = asEvents(app, cmd, oldPrivacyPolicyUrl)
     } yield (savedApp, events)
   }
 }

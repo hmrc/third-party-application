@@ -28,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class DeleteApplicationProcessor @Inject() (
     deleteApplicationByCollaboratorCmdHdlr: DeleteApplicationByCollaboratorCommandHandler,
     deleteUnusedApplicationCmdHdlr: DeleteUnusedApplicationCommandHandler,
-    deleteProductionCredentialsApplicationCmdHdlr: DeleteProductionCredentialsApplicationCommandHandler,
+    deleteProductionCredentialsApplicationCmdHdlr: DeleteProductionCredentialsApplicationCommandHandler
   ) {
   import CommandHandler._
   import ApplicationCommands._

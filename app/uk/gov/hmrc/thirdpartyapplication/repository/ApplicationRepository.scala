@@ -849,10 +849,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     )
 
   def updateDescription(applicationId: ApplicationId, description: Option[String]) =
-    updateApplication(applicationId, Updates.set("description", Codecs.toBson(description.filter(_.isBlank()))))
+    updateApplication(applicationId, Updates.set("description", Codecs.toBson(description.filterNot(_.isBlank()))))
 
-  def updateLegacyPrivacyPolicyUrl(applicationId: ApplicationId, privacyPolicyUrl: Option[String]) =
-    updateApplication(applicationId, Updates.set("access.privacyPolicyUrl", Codecs.toBson(privacyPolicyUrl.filter(_.isBlank()))))
+  def updateLegacyPrivacyPolicyUrl(applicationId: ApplicationId, privacyPolicyUrl: Option[String]) = {
+    updateApplication(applicationId, Updates.set("access.privacyPolicyUrl", Codecs.toBson(privacyPolicyUrl.filterNot(_.isBlank()))))
+  }
 
   def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[RedirectUri]) =
     updateApplication(applicationId, Updates.set("access.redirectUris", Codecs.toBson(redirectUris)))
@@ -872,7 +873,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def updateApplicationTermsAndConditionsLocation(applicationId: ApplicationId, location: TermsAndConditionsLocation): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData.termsAndConditionsLocation", Codecs.toBson(location)))
 
-  def updateLegacyApplicationTermsAndConditionsLocation(applicationId: ApplicationId, url: String): Future[StoredApplication] =
+  def updateLegacyTermsAndConditionsUrl(applicationId: ApplicationId, url: String): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("access.termsAndConditionsUrl", url))
 
   def updateApplicationChangeResponsibleIndividual(
