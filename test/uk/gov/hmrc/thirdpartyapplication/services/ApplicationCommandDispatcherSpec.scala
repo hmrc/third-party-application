@@ -35,11 +35,16 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.deleteapplication._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.gatekeeper.{ChangeProductionApplicationNameCommandHandler, DeclineApplicationApprovalRequestCommandHandler, _}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.production._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.redirects._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.responsibleindividual._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.delete._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.UpdateRedirectUrisCommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
 
 class ApplicationCommandDispatcherSpec
@@ -76,25 +81,18 @@ class ApplicationCommandDispatcherSpec
     }
 
     val allCommandHandlers = Set(
-      // Delete Commands
       mockDeleteApplicationByCollaboratorCommandHandler,
       mockDeleteUnusedApplicationCommandHandler,
       mockDeleteProductionCredentialsApplicationCommandHandler,
-
-      // Redirect URI Commands
       mockAddRedirectUriCommandHandler,
       mockDeleteRedirectUriCommandHandler,
       mockChangeRedirectUriCommandHandler,
       mockUpdateRedirectUrisCommandHandler,
-
-      // Responsible Individual Commands
       mockChangeResponsibleIndividualToSelfCommandHandler,
       mockChangeResponsibleIndividualToOtherCommandHandler,
       mockVerifyResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
-
-      // Sandbox Commands
       mockChangeSandboxApplicationNameCommandHandler,
       mockChangeSandboxApplicationDescriptionCommandHandler,
       mockChangeSandboxApplicationPrivacyPolicyUrlCommandHandler,
@@ -102,20 +100,14 @@ class ApplicationCommandDispatcherSpec
       mockRemoveSandboxApplicationPrivacyPolicyUrlCommandHandler,
       mockChangeSandboxApplicationTermsAndConditionsUrlCommandHandler,
       mockRemoveSandboxApplicationTermsAndConditionsUrlCommandHandler,
-
-      // GateKeeper Only Commands
       mockDeleteApplicationByGatekeeperCommandHandler,
       mockAllowApplicationAutoDeleteCommandHandler,
       mockBlockApplicationAutoDeleteCommandHandler,
       mockChangeGrantLengthCommandHandler,
       mockChangeRateLimitTierCommandHandler,
       mockChangeProductionApplicationNameCommandHandler,
-
-      // Production Commands
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
       mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
-
-      // Misc Commands
       mockAddClientSecretCommandHandler,
       mockAddCollaboratorCommandHandler,
       mockRemoveClientSecretCommandHandler,

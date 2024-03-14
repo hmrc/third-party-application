@@ -37,13 +37,17 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{
   ThirdPartyDelegatedAuthorityServiceMockModule
 }
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.deleteapplication._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.gatekeeper.{DeclineApplicationApprovalRequestCommandHandler, _}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.production._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.redirects._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.responsibleindividual._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.sandbox._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.delete._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ipallowlist._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
@@ -115,50 +119,72 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockRemoveSandboxApplicationTermsAndConditionsUrlCommandHandler: RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler =
       mock[RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler]
 
-    val deleteApplicationProcessor = new DeleteApplicationProcessor(
+    val clientSecretCommandsProcessor = new ClientSecretCommandsProcessor(
+      mockAddClientSecretCommandHandler,
+      mockRemoveClientSecretCommandHandler
+    )
+
+    val collaboratorCommandsProcessor = new CollaboratorCommandsProcessor(
+      mockAddCollaboratorCommandHandler,
+      mockRemoveCollaboratorCommandHandler
+    )
+
+    val deleteCommandsProcessor = new DeleteCommandsProcessor(
+      mockDeleteApplicationByGatekeeperCommandHandler,
+      mockAllowApplicationAutoDeleteCommandHandler,
+      mockBlockApplicationAutoDeleteCommandHandler,
       mockDeleteApplicationByCollaboratorCommandHandler,
       mockDeleteUnusedApplicationCommandHandler,
       mockDeleteProductionCredentialsApplicationCommandHandler
     )
 
-    val redirectUrisProcessor = new RedirectUrisProcessor(
+    val grantLengthCommandsProcessor = new GrantLengthCommandsProcessor(
+      mockChangeGrantLengthCommandHandler
+    )
+
+    val ipAllowListCommandsProcessor = new IpAllowListCommandsProcessor(
+      mockChangeIpAllowlistCommandHandler
+    )
+
+    val nameDescriptionCommandsProcessor = new NameDescriptionCommandsProcessor(
+      mockChangeProductionApplicationNameCommandHandler,
+      mockChangeSandboxApplicationNameCommandHandler,
+      mockChangeSandboxApplicationDescriptionCommandHandler,
+      mockClearSandboxApplicationDescriptionCommandHandler
+    )
+
+    val policyCommandsProcessor = new PolicyCommandsProcessor(
+      mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
+      mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
+      mockChangeSandboxApplicationPrivacyPolicyUrlCommandHandler,
+      mockRemoveSandboxApplicationPrivacyPolicyUrlCommandHandler,
+      mockChangeSandboxApplicationTermsAndConditionsUrlCommandHandler,
+      mockRemoveSandboxApplicationTermsAndConditionsUrlCommandHandler
+    )
+
+    val rateLimitCommandsProcessor = new RateLimitCommandsProcessor(
+      mockChangeRateLimitTierCommandHandler
+    )
+
+    val redirectUriCommandsProcessor = new RedirectUriCommandsProcessor(
       mockAddRedirectUriCommandHandler,
       mockDeleteRedirectUriCommandHandler,
       mockChangeRedirectUriCommandHandler,
       mockUpdateRedirectUrisCommandHandler
     )
 
-    val riProcessor = new RIProcessor(
+    val submissionsCommandsProcessor = new SubmissionCommandsProcessor(
       mockChangeResponsibleIndividualToSelfCommandHandler,
       mockChangeResponsibleIndividualToOtherCommandHandler,
       mockVerifyResponsibleIndividualCommandHandler,
+      mockDeclineApplicationApprovalRequestCommandHandler,
       mockDeclineResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualDidNotVerifyCommandHandler
     )
 
-    val sandboxProcessor = new SandboxProcessor(
-      mockChangeSandboxApplicationNameCommandHandler,
-      mockChangeSandboxApplicationDescriptionCommandHandler,
-      mockChangeSandboxApplicationPrivacyPolicyUrlCommandHandler,
-      mockClearSandboxApplicationDescriptionCommandHandler,
-      mockRemoveSandboxApplicationPrivacyPolicyUrlCommandHandler,
-      mockChangeSandboxApplicationTermsAndConditionsUrlCommandHandler,
-      mockRemoveSandboxApplicationTermsAndConditionsUrlCommandHandler
-    )
-
-    val gatekeeperProcessor = new GatekeeperProcessor(
-      mockDeleteApplicationByGatekeeperCommandHandler,
-      mockAllowApplicationAutoDeleteCommandHandler,
-      mockBlockApplicationAutoDeleteCommandHandler,
-      mockChangeGrantLengthCommandHandler,
-      mockChangeRateLimitTierCommandHandler,
-      mockChangeProductionApplicationNameCommandHandler,
-      mockDeclineApplicationApprovalRequestCommandHandler
-    )
-
-    val productionProcessor = new ProductionProcessor(
-      mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-      mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler
+    val subscriptionCommandsProcessor = new SubscriptionCommandsProcessor(
+      mockSubscribeToApiCommandHandler,
+      mockUnsubscribeFromApiCommandHandler
     )
 
     val underTest = new ApplicationCommandDispatcher(
@@ -166,19 +192,17 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       NotificationServiceMock.aMock,
       ApiPlatformEventServiceMock.aMock,
       AuditServiceMock.aMock,
-      deleteApplicationProcessor,
-      redirectUrisProcessor,
-      riProcessor,
-      sandboxProcessor,
-      gatekeeperProcessor,
-      productionProcessor,
-      mockAddClientSecretCommandHandler,
-      mockRemoveClientSecretCommandHandler,
-      mockAddCollaboratorCommandHandler,
-      mockRemoveCollaboratorCommandHandler,
-      mockSubscribeToApiCommandHandler,
-      mockUnsubscribeFromApiCommandHandler,
-      mockChangeIpAllowlistCommandHandler
+      clientSecretCommandsProcessor,
+      collaboratorCommandsProcessor,
+      deleteCommandsProcessor,
+      grantLengthCommandsProcessor,
+      ipAllowListCommandsProcessor,
+      nameDescriptionCommandsProcessor,
+      policyCommandsProcessor,
+      rateLimitCommandsProcessor,
+      redirectUriCommandsProcessor,
+      submissionsCommandsProcessor,
+      subscriptionCommandsProcessor
     )
   }
 }

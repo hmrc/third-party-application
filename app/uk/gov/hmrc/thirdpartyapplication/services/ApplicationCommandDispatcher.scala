@@ -29,12 +29,17 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.deleteapplication.DeleteApplicationProcessor
-import uk.gov.hmrc.thirdpartyapplication.services.commands.gatekeeper.GatekeeperProcessor
-import uk.gov.hmrc.thirdpartyapplication.services.commands.production.ProductionProcessor
-import uk.gov.hmrc.thirdpartyapplication.services.commands.redirects.RedirectUrisProcessor
-import uk.gov.hmrc.thirdpartyapplication.services.commands.responsibleindividual.RIProcessor
-import uk.gov.hmrc.thirdpartyapplication.services.commands.sandbox.SandboxProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret.ClientSecretCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator.CollaboratorCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.delete.DeleteCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength.GrantLengthCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ipallowlist.IpAllowListCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription.NameDescriptionCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.policy.PolicyCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit.RateLimitCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.RedirectUriCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.submission.SubmissionCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription.SubscriptionCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 
 @Singleton
@@ -43,19 +48,17 @@ class ApplicationCommandDispatcher @Inject() (
     notificationService: NotificationService,
     apiPlatformEventService: ApiPlatformEventService,
     auditService: AuditService,
-    deleteApplicationProcessor: DeleteApplicationProcessor,
-    redirectUrisProcessor: RedirectUrisProcessor,
-    riProcessor: RIProcessor,
-    sandboxProcessor: SandboxProcessor,
-    gatekeeperProcessor: GatekeeperProcessor,
-    productionProcessor: ProductionProcessor,
-    addClientSecretCmdHdlr: AddClientSecretCommandHandler,
-    removeClientSecretCmdHdlr: RemoveClientSecretCommandHandler,
-    addCollaboratorCmdHdlr: AddCollaboratorCommandHandler,
-    removeCollaboratorCmdHdlr: RemoveCollaboratorCommandHandler,
-    subscribeToApiCmdHdlr: SubscribeToApiCommandHandler,
-    unsubscribeFromApiCmdHdlr: UnsubscribeFromApiCommandHandler,
-    changeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler
+    clientSecretCommandsProcessor: ClientSecretCommandsProcessor,
+    collaboratorCommandsProcessor: CollaboratorCommandsProcessor,
+    deleteCommandsProcessor: DeleteCommandsProcessor,
+    grantLengthCommandsProcessor: GrantLengthCommandsProcessor,
+    ipAllowListCommandsProcessor: IpAllowListCommandsProcessor,
+    nameDescriptionCommandsProcessor: NameDescriptionCommandsProcessor,
+    policyCommandsProcessor: PolicyCommandsProcessor,
+    rateLimitCommandsProcessor: RateLimitCommandsProcessor,
+    redirectUriCommandsProcessor: RedirectUriCommandsProcessor,
+    submissionsCommandsProcessor: SubmissionCommandsProcessor,
+    subscriptionCommandsProcessor: SubscriptionCommandsProcessor
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -78,32 +81,19 @@ class ApplicationCommandDispatcher @Inject() (
 
   // scalastyle:off cyclomatic.complexity
   private def process(app: StoredApplication, command: ApplicationCommand)(implicit hc: HeaderCarrier): AppCmdResultT = {
-    import ApplicationCommands._
     command match {
-      case cmd: RedirectUriMixin => redirectUrisProcessor.process(app, cmd)
+      case cmd: ClientSecretCommand    => clientSecretCommandsProcessor.process(app, cmd)
+      case cmd: CollaboratorCommand    => collaboratorCommandsProcessor.process(app, cmd)
+      case cmd: DeleteCommand          => deleteCommandsProcessor.process(app, cmd)
+      case cmd: GrantLengthCommand     => grantLengthCommandsProcessor.process(app, cmd)
+      case cmd: IpAllowListCommand     => ipAllowListCommandsProcessor.process(app, cmd)
+      case cmd: NameDescriptionCommand => nameDescriptionCommandsProcessor.process(app, cmd)
+      case cmd: PolicyCommand          => policyCommandsProcessor.process(app, cmd)
+      case cmd: RateLimitCommand       => rateLimitCommandsProcessor.process(app, cmd)
+      case cmd: RedirectCommand        => redirectUriCommandsProcessor.process(app, cmd)
+      case cmd: SubmissionCommand      => submissionsCommandsProcessor.process(app, cmd)
+      case cmd: SubscriptionCommand    => subscriptionCommandsProcessor.process(app, cmd)
 
-      case cmd: ResponsibleIndividualMixin => riProcessor.process(app, cmd)
-
-      case cmd: GatekeeperMixin => gatekeeperProcessor.process(app, cmd)
-
-      case cmd: DeleteApplicationMixin => deleteApplicationProcessor.process(app, cmd)
-
-      case cmd: AddCollaborator    => addCollaboratorCmdHdlr.process(app, cmd)
-      case cmd: RemoveCollaborator => removeCollaboratorCmdHdlr.process(app, cmd)
-
-      case cmd: AddClientSecret    => addClientSecretCmdHdlr.process(app, cmd)
-      case cmd: RemoveClientSecret => removeClientSecretCmdHdlr.process(app, cmd)
-
-      case cmd: SubscribeToApi     => subscribeToApiCmdHdlr.process(app, cmd)
-      case cmd: UnsubscribeFromApi => unsubscribeFromApiCmdHdlr.process(app, cmd)
-
-      // Sandbox application changing
-      case cmd: SandboxMixin => sandboxProcessor.process(app, cmd)
-
-      // Production application changing
-      case cmd: ProductionMixin => productionProcessor.process(app, cmd)
-
-      case cmd: ChangeIpAllowlist => changeIpAllowlistCommandHandler.process(app, cmd)
     }
   }
   // scalastyle:on cyclomatic.complexity
