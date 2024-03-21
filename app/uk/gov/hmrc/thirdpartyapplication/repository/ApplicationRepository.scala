@@ -848,6 +848,13 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
+  def updateDescription(applicationId: ApplicationId, description: Option[String]) =
+    updateApplication(applicationId, Updates.set("description", Codecs.toBson(description.filterNot(_.isBlank()))))
+
+  def updateLegacyPrivacyPolicyUrl(applicationId: ApplicationId, privacyPolicyUrl: Option[String]) = {
+    updateApplication(applicationId, Updates.set("access.privacyPolicyUrl", Codecs.toBson(privacyPolicyUrl.filterNot(_.isBlank()))))
+  }
+
   def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[RedirectUri]) =
     updateApplication(applicationId, Updates.set("access.redirectUris", Codecs.toBson(redirectUris)))
 
@@ -863,14 +870,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def updateApplicationPrivacyPolicyLocation(applicationId: ApplicationId, location: PrivacyPolicyLocation): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData.privacyPolicyLocation", Codecs.toBson(location)))
 
-  def updateLegacyApplicationPrivacyPolicyLocation(applicationId: ApplicationId, url: String): Future[StoredApplication] =
-    updateApplication(applicationId, Updates.set("access.privacyPolicyUrl", url))
-
   def updateApplicationTermsAndConditionsLocation(applicationId: ApplicationId, location: TermsAndConditionsLocation): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData.termsAndConditionsLocation", Codecs.toBson(location)))
 
-  def updateLegacyApplicationTermsAndConditionsLocation(applicationId: ApplicationId, url: String): Future[StoredApplication] =
-    updateApplication(applicationId, Updates.set("access.termsAndConditionsUrl", url))
+  def updateLegacyTermsAndConditionsUrl(applicationId: ApplicationId, termsAndConditionsUrl: Option[String]): Future[StoredApplication] =
+    updateApplication(applicationId, Updates.set("access.termsAndConditionsUrl", Codecs.toBson(termsAndConditionsUrl.filterNot(_.isBlank()))))
 
   def updateApplicationChangeResponsibleIndividual(
       applicationId: ApplicationId,

@@ -8,11 +8,13 @@
         </encoder>
     </appender>
 
-    <logger name="application" level="${logger.application:-DEBUG}">
+    <logger name="application" level="${logger.application:-WARN}">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <root level="${logger.application:-WARN}">
+    <logger name="pekko" level="ERROR"/>
+
+    <root level="${logger.application:-ERROR}">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>

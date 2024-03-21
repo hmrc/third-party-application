@@ -34,7 +34,17 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, _}
+import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.delete._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.UpdateRedirectUrisCommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
 
 class ApplicationCommandDispatcherSpec
@@ -71,28 +81,41 @@ class ApplicationCommandDispatcherSpec
     }
 
     val allCommandHandlers = Set(
-      mockAddClientSecretCommandHandler,
-      mockRemoveClientSecretCommandHandler,
-      mockChangeProductionApplicationNameCommandHandler,
-      mockAddCollaboratorCommandHandler,
-      mockRemoveCollaboratorCommandHandler,
-      mockChangeGrantLengthCommandHandler,
-      mockChangeRateLimitTierCommandHandler,
-      mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-      mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
+      mockDeleteApplicationByCollaboratorCommandHandler,
+      mockDeleteUnusedApplicationCommandHandler,
+      mockDeleteProductionCredentialsApplicationCommandHandler,
+      mockAddRedirectUriCommandHandler,
+      mockDeleteRedirectUriCommandHandler,
+      mockChangeRedirectUriCommandHandler,
+      mockUpdateRedirectUrisCommandHandler,
       mockChangeResponsibleIndividualToSelfCommandHandler,
       mockChangeResponsibleIndividualToOtherCommandHandler,
       mockVerifyResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
-      mockDeclineApplicationApprovalRequestCommandHandler,
-      mockDeleteApplicationByCollaboratorCommandHandler,
+      mockChangeSandboxApplicationNameCommandHandler,
+      mockChangeSandboxApplicationDescriptionCommandHandler,
+      mockChangeSandboxApplicationPrivacyPolicyUrlCommandHandler,
+      mockClearSandboxApplicationDescriptionCommandHandler,
+      mockRemoveSandboxApplicationPrivacyPolicyUrlCommandHandler,
+      mockChangeSandboxApplicationTermsAndConditionsUrlCommandHandler,
+      mockRemoveSandboxApplicationTermsAndConditionsUrlCommandHandler,
       mockDeleteApplicationByGatekeeperCommandHandler,
-      mockDeleteUnusedApplicationCommandHandler,
-      mockDeleteProductionCredentialsApplicationCommandHandler,
+      mockAllowApplicationAutoDeleteCommandHandler,
+      mockBlockApplicationAutoDeleteCommandHandler,
+      mockChangeGrantLengthCommandHandler,
+      mockChangeRateLimitTierCommandHandler,
+      mockChangeProductionApplicationNameCommandHandler,
+      mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
+      mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
+      mockAddClientSecretCommandHandler,
+      mockAddCollaboratorCommandHandler,
+      mockRemoveClientSecretCommandHandler,
+      mockRemoveCollaboratorCommandHandler,
+      mockDeclineApplicationApprovalRequestCommandHandler,
       mockSubscribeToApiCommandHandler,
       mockUnsubscribeFromApiCommandHandler,
-      mockUpdateRedirectUrisCommandHandler
+      mockChangeIpAllowlistCommandHandler
     )
 
     def verifyNoneButGivenCmmandHandlerCalled[A <: CommandHandler]()(implicit ct: ClassTag[A]) = {

@@ -25,10 +25,21 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, ApplicationCommands, CommandFailures}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{AddClientSecretCommandHandler, ChangeGrantLengthCommandHandler, CommandHandler, _}
+import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret.ClientSecretCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator.CollaboratorCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.delete.DeleteCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength.GrantLengthCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ipallowlist.IpAllowListCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription.NameDescriptionCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.policy.PolicyCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit.RateLimitCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.RedirectUriCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.submission.SubmissionCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription.SubscriptionCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 
 @Singleton
@@ -37,34 +48,17 @@ class ApplicationCommandDispatcher @Inject() (
     notificationService: NotificationService,
     apiPlatformEventService: ApiPlatformEventService,
     auditService: AuditService,
-    addClientSecretCmdHdlr: AddClientSecretCommandHandler,
-    addCollaboratorCmdHdlr: AddCollaboratorCommandHandler,
-    addRedirectUriCommandHandle: AddRedirectUriCommandHandler,
-    removeClientSecretCmdHdlr: RemoveClientSecretCommandHandler,
-    changeGrantLengthCmdHdlr: ChangeGrantLengthCommandHandler,
-    changeRateLimitTierCmdHdlr: ChangeRateLimitTierCommandHandler,
-    changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-    removeCollaboratorCmdHdlr: RemoveCollaboratorCommandHandler,
-    changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-    changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
-    changeResponsibleIndividualToSelfCmdHdlr: ChangeResponsibleIndividualToSelfCommandHandler,
-    changeResponsibleIndividualToOtherCmdHdlr: ChangeResponsibleIndividualToOtherCommandHandler,
-    changeRedirectUriCmdHdlr: ChangeRedirectUriCommandHandler,
-    verifyResponsibleIndividualCmdHdlr: VerifyResponsibleIndividualCommandHandler,
-    declineResponsibleIndividualCmdHdlr: DeclineResponsibleIndividualCommandHandler,
-    declineResponsibleIndividualDidNotVerifyCmdHdlr: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
-    declineApplicationApprovalRequestCmdHdlr: DeclineApplicationApprovalRequestCommandHandler,
-    deleteApplicationByCollaboratorCmdHdlr: DeleteApplicationByCollaboratorCommandHandler,
-    deleteApplicationByGatekeeperCmdHdlr: DeleteApplicationByGatekeeperCommandHandler,
-    deleteUnusedApplicationCmdHdlr: DeleteUnusedApplicationCommandHandler,
-    deleteProductionCredentialsApplicationCmdHdlr: DeleteProductionCredentialsApplicationCommandHandler,
-    deleteRedirectUriCmdHdlr: DeleteRedirectUriCommandHandler,
-    subscribeToApiCmdHdlr: SubscribeToApiCommandHandler,
-    unsubscribeFromApiCmdHdlr: UnsubscribeFromApiCommandHandler,
-    updateRedirectUrisCmdHdlr: UpdateRedirectUrisCommandHandler,
-    allowApplicationAutoDeleteCmdHdlr: AllowApplicationAutoDeleteCommandHandler,
-    blockApplicationAutoDeleteCmdHdlr: BlockApplicationAutoDeleteCommandHandler,
-    changeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler
+    clientSecretCommandsProcessor: ClientSecretCommandsProcessor,
+    collaboratorCommandsProcessor: CollaboratorCommandsProcessor,
+    deleteCommandsProcessor: DeleteCommandsProcessor,
+    grantLengthCommandsProcessor: GrantLengthCommandsProcessor,
+    ipAllowListCommandsProcessor: IpAllowListCommandsProcessor,
+    nameDescriptionCommandsProcessor: NameDescriptionCommandsProcessor,
+    policyCommandsProcessor: PolicyCommandsProcessor,
+    rateLimitCommandsProcessor: RateLimitCommandsProcessor,
+    redirectUriCommandsProcessor: RedirectUriCommandsProcessor,
+    submissionsCommandsProcessor: SubmissionCommandsProcessor,
+    subscriptionCommandsProcessor: SubscriptionCommandsProcessor
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -76,7 +70,7 @@ class ApplicationCommandDispatcher @Inject() (
   def dispatch(applicationId: ApplicationId, command: ApplicationCommand, verifiedCollaborators: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       app               <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyList.one(CommandFailures.ApplicationNotFound))
-      updateResults     <- processUpdate(app, command)
+      updateResults     <- process(app, command)
       (savedApp, events) = updateResults
 
       _ <- E.liftF(apiPlatformEventService.applyEvents(events))
@@ -86,37 +80,20 @@ class ApplicationCommandDispatcher @Inject() (
   }
 
   // scalastyle:off cyclomatic.complexity
-  private def processUpdate(app: StoredApplication, command: ApplicationCommand)(implicit hc: HeaderCarrier): AppCmdResultT = {
-    import ApplicationCommands._
+  private def process(app: StoredApplication, command: ApplicationCommand)(implicit hc: HeaderCarrier): AppCmdResultT = {
     command match {
-      case cmd: AddCollaborator                                       => addCollaboratorCmdHdlr.process(app, cmd)
-      case cmd: RemoveCollaborator                                    => removeCollaboratorCmdHdlr.process(app, cmd)
-      case cmd: AddClientSecret                                       => addClientSecretCmdHdlr.process(app, cmd)
-      case cmd: AddRedirectUri                                        => addRedirectUriCommandHandle.process(app, cmd)
-      case cmd: RemoveClientSecret                                    => removeClientSecretCmdHdlr.process(app, cmd)
-      case cmd: ChangeGrantLength                                     => changeGrantLengthCmdHdlr.process(app, cmd)
-      case cmd: ChangeRateLimitTier                                   => changeRateLimitTierCmdHdlr.process(app, cmd)
-      case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
-      case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
-      case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
-      case cmd: ChangeRedirectUri                                     => changeRedirectUriCmdHdlr.process(app, cmd)
-      case cmd: ChangeResponsibleIndividualToSelf                     => changeResponsibleIndividualToSelfCmdHdlr.process(app, cmd)
-      case cmd: ChangeResponsibleIndividualToOther                    => changeResponsibleIndividualToOtherCmdHdlr.process(app, cmd)
-      case cmd: VerifyResponsibleIndividual                           => verifyResponsibleIndividualCmdHdlr.process(app, cmd)
-      case cmd: DeclineResponsibleIndividual                          => declineResponsibleIndividualCmdHdlr.process(app, cmd)
-      case cmd: DeclineResponsibleIndividualDidNotVerify              => declineResponsibleIndividualDidNotVerifyCmdHdlr.process(app, cmd)
-      case cmd: DeclineApplicationApprovalRequest                     => declineApplicationApprovalRequestCmdHdlr.process(app, cmd)
-      case cmd: DeleteApplicationByCollaborator                       => deleteApplicationByCollaboratorCmdHdlr.process(app, cmd)
-      case cmd: DeleteApplicationByGatekeeper                         => deleteApplicationByGatekeeperCmdHdlr.process(app, cmd)
-      case cmd: DeleteUnusedApplication                               => deleteUnusedApplicationCmdHdlr.process(app, cmd)
-      case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCmdHdlr.process(app, cmd)
-      case cmd: DeleteRedirectUri                                     => deleteRedirectUriCmdHdlr.process(app, cmd)
-      case cmd: SubscribeToApi                                        => subscribeToApiCmdHdlr.process(app, cmd)
-      case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCmdHdlr.process(app, cmd)
-      case cmd: UpdateRedirectUris                                    => updateRedirectUrisCmdHdlr.process(app, cmd)
-      case cmd: AllowApplicationAutoDelete                            => allowApplicationAutoDeleteCmdHdlr.process(app, cmd)
-      case cmd: BlockApplicationAutoDelete                            => blockApplicationAutoDeleteCmdHdlr.process(app, cmd)
-      case cmd: ChangeIpAllowlist                                     => changeIpAllowlistCommandHandler.process(app, cmd)
+      case cmd: ClientSecretCommand    => clientSecretCommandsProcessor.process(app, cmd)
+      case cmd: CollaboratorCommand    => collaboratorCommandsProcessor.process(app, cmd)
+      case cmd: DeleteCommand          => deleteCommandsProcessor.process(app, cmd)
+      case cmd: GrantLengthCommand     => grantLengthCommandsProcessor.process(app, cmd)
+      case cmd: IpAllowListCommand     => ipAllowListCommandsProcessor.process(app, cmd)
+      case cmd: NameDescriptionCommand => nameDescriptionCommandsProcessor.process(app, cmd)
+      case cmd: PolicyCommand          => policyCommandsProcessor.process(app, cmd)
+      case cmd: RateLimitCommand       => rateLimitCommandsProcessor.process(app, cmd)
+      case cmd: RedirectCommand        => redirectUriCommandsProcessor.process(app, cmd)
+      case cmd: SubmissionCommand      => submissionsCommandsProcessor.process(app, cmd)
+      case cmd: SubscriptionCommand    => subscriptionCommandsProcessor.process(app, cmd)
+
     }
   }
   // scalastyle:on cyclomatic.complexity

@@ -24,7 +24,7 @@ import cats.implicits._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, Environment, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
@@ -139,6 +139,12 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
       GenericFailure("App is not in TESTING state")
     )
 
+  def isInSandboxEnvironment(app: StoredApplication) =
+    cond(
+      app.environment == Environment.SANDBOX.toString(),
+      GenericFailure("App is not in Sandbox environment")
+    )
+
   def isInProduction(app: StoredApplication) =
     cond(
       app.isInProduction,
@@ -151,8 +157,13 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
       GenericFailure("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state")
     )
 
-  def isStandardAccess(app: StoredApplication) =
-    cond(app.access.accessType == AccessType.STANDARD, GenericFailure("App must have a STANDARD access type"))
+  def ensureStandardAccess(app: StoredApplication): Validated[Failures, Access.Standard] = {
+    val std = app.access match {
+      case std: Access.Standard => Some(std)
+      case _                    => None
+    }
+    mustBeDefined(std, GenericFailure("App must have a STANDARD access type"))
+  }
 
   def isStandardNewJourneyApp(app: StoredApplication) =
     cond(

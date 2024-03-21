@@ -465,22 +465,34 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.updateApplicationPrivacyPolicyLocation(*[ApplicationId], *[PrivacyPolicyLocation])).thenReturn(successful(mock[StoredApplication]))
     }
 
-    object UpdateLegacyPrivacyPolicyLocation {
-
-      def succeeds() =
-        when(aMock.updateLegacyApplicationPrivacyPolicyLocation(*[ApplicationId], *)).thenReturn(successful(mock[StoredApplication]))
-    }
-
     object UpdateTermsAndConditionsPolicyLocation {
 
       def succeeds() =
         when(aMock.updateApplicationTermsAndConditionsLocation(*[ApplicationId], *[TermsAndConditionsLocation])).thenReturn(successful(mock[StoredApplication]))
     }
 
-    object UpdateLegacyTermsAndConditionsPolicyLocation {
+    object UpdateLegacyTermsAndConditionsUrl {
+
+      def succeedsFor(newValue: Option[String]) =
+        when(aMock.updateLegacyTermsAndConditionsUrl(*[ApplicationId], eqTo(newValue))).thenReturn(successful(mock[StoredApplication]))
 
       def succeeds() =
-        when(aMock.updateLegacyApplicationTermsAndConditionsLocation(*[ApplicationId], *)).thenReturn(successful(mock[StoredApplication]))
+        when(aMock.updateLegacyTermsAndConditionsUrl(*[ApplicationId], *)).thenReturn(successful(mock[StoredApplication]))
+    }
+
+    object UpdateDescription {
+
+      def succeedsFor(newDescription: Option[String]) =
+        when(aMock.updateDescription(*[ApplicationId], eqTo(newDescription))).thenReturn(successful(mock[StoredApplication]))
+    }
+
+    object UpdateLegacyPrivacyPolicyUrl {
+
+      def succeedsFor(newValue: Option[String]) =
+        when(aMock.updateLegacyPrivacyPolicyUrl(*[ApplicationId], eqTo(newValue))).thenReturn(successful(mock[StoredApplication]))
+
+      def succeeds() =
+        when(aMock.updateLegacyPrivacyPolicyUrl(*[ApplicationId], *)).thenReturn(successful(mock[StoredApplication]))
     }
   }
 

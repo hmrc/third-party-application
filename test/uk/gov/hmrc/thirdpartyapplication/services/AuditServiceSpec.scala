@@ -445,6 +445,155 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
       verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
     }
 
+    "applyEvents with a SandboxNameChanged event" in new Setup {
+
+      val sandboxApplicationNameChanged = ApplicationEvents.SandboxApplicationNameChanged(
+        EventId.random,
+        applicationId,
+        instant,
+        collaboratorActor,
+        oldName = "oldName",
+        newName = "newName"
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = AppNameChanged.auditType,
+        tags = hc.toAuditTags(AppNameChanged.name, "-"),
+        detail = Map(
+          "applicationId"      -> applicationId.value.toString,
+          "oldApplicationName" -> "oldName",
+          "newApplicationName" -> "newName"
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(sandboxApplicationNameChanged)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
+    "applyEvents with a SandboxApplicationPrivacyPolicyUrlChanged event" in new Setup {
+
+      val sandboxApplicationNameChanged = ApplicationEvents.SandboxApplicationPrivacyPolicyUrlChanged(
+        EventId.random,
+        applicationId,
+        instant,
+        collaboratorActor,
+        Some("anOldPrivacyPolicyUrl"),
+        "aNewPrivacyPolicyUrl"
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = AppPrivacyPolicyUrlChanged.auditType,
+        tags = hc.toAuditTags(AppPrivacyPolicyUrlChanged.name, "-"),
+        detail = Map(
+          "applicationId"       -> applicationId.value.toString,
+          "newPrivacyPolicyUrl" -> "aNewPrivacyPolicyUrl"
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(sandboxApplicationNameChanged)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
+    "applyEvents with a SandboxApplicationPrivacyPolicyUrlRemoved event" in new Setup {
+
+      val sandboxApplicationNameChanged = ApplicationEvents.SandboxApplicationPrivacyPolicyUrlRemoved(
+        EventId.random,
+        applicationId,
+        instant,
+        collaboratorActor,
+        "anOldPrivacyPolicyUrl"
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = AppPrivacyPolicyUrlChanged.auditType,
+        tags = hc.toAuditTags(AppPrivacyPolicyUrlChanged.name, "-"),
+        detail = Map(
+          "applicationId"       -> applicationId.value.toString,
+          "newPrivacyPolicyUrl" -> ""
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(sandboxApplicationNameChanged)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
+    "applyEvents with a SandboxApplicationTermsAndConditionsUrlChanged event" in new Setup {
+
+      val sandboxApplicationNameChanged = ApplicationEvents.SandboxApplicationTermsAndConditionsUrlChanged(
+        EventId.random,
+        applicationId,
+        instant,
+        collaboratorActor,
+        Some("anOldTermsAndConditionsUrl"),
+        "aNewTermsAndConditionsUrl"
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = AppTermsAndConditionsUrlChanged.auditType,
+        tags = hc.toAuditTags(AppTermsAndConditionsUrlChanged.name, "-"),
+        detail = Map(
+          "applicationId"            -> applicationId.value.toString,
+          "newTermsAndConditionsUrl" -> "aNewTermsAndConditionsUrl"
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(sandboxApplicationNameChanged)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
+    "applyEvents with a SandboxApplicationTermsAndConditionsUrlRemoved event" in new Setup {
+
+      val sandboxApplicationNameChanged = ApplicationEvents.SandboxApplicationTermsAndConditionsUrlRemoved(
+        EventId.random,
+        applicationId,
+        instant,
+        collaboratorActor,
+        "anOldTermsAndConditionsUrl"
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = AppTermsAndConditionsUrlChanged.auditType,
+        tags = hc.toAuditTags(AppTermsAndConditionsUrlChanged.name, "-"),
+        detail = Map(
+          "applicationId"            -> applicationId.value.toString,
+          "newTermsAndConditionsUrl" -> ""
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(sandboxApplicationNameChanged)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
     // "applyEvents with a ApplicationDeletedByGatekeeper event" in new Setup {
 
     //   val event = ApplicationDeletedByGatekeeper(

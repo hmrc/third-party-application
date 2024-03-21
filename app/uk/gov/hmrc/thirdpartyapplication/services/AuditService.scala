@@ -81,19 +81,83 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   // scalastyle:off cyclomatic.complexity
   private def applyEvent(app: StoredApplication, event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     event match {
-      case evt: ApplicationApprovalRequestDeclined => auditApplicationApprovalRequestDeclined(app, evt)
-      case evt: ClientSecretAddedV2                => auditClientSecretAdded(app, evt)
-      case evt: ClientSecretRemovedV2              => auditClientSecretRemoved(app, evt)
-      case evt: CollaboratorAddedV2                => auditAddCollaborator(app, evt)
-      case evt: CollaboratorRemovedV2              => auditRemoveCollaborator(app, evt)
-      case evt: ApplicationDeletedByGatekeeper     => auditApplicationDeletedByGatekeeper(app, evt)
-      case evt: ApiSubscribedV2                    => auditApiSubscribed(app, evt)
-      case evt: ApiUnsubscribedV2                  => auditApiUnsubscribed(app, evt)
-      case evt: RedirectUrisUpdatedV2              => auditRedirectUrisUpdated(app, evt)
-      case _                                       => Future.successful(None)
+      case evt: ApplicationApprovalRequestDeclined             => auditApplicationApprovalRequestDeclined(app, evt)
+      case evt: ClientSecretAddedV2                            => auditClientSecretAdded(app, evt)
+      case evt: ClientSecretRemovedV2                          => auditClientSecretRemoved(app, evt)
+      case evt: CollaboratorAddedV2                            => auditAddCollaborator(app, evt)
+      case evt: CollaboratorRemovedV2                          => auditRemoveCollaborator(app, evt)
+      case evt: ApplicationDeletedByGatekeeper                 => auditApplicationDeletedByGatekeeper(app, evt)
+      case evt: ApiSubscribedV2                                => auditApiSubscribed(app, evt)
+      case evt: ApiUnsubscribedV2                              => auditApiUnsubscribed(app, evt)
+      case evt: RedirectUrisUpdatedV2                          => auditRedirectUrisUpdated(app, evt)
+      case evt: SandboxApplicationNameChanged                  => auditSandboxApplicationNameChangeAction(app, evt)
+      case evt: SandboxApplicationPrivacyPolicyUrlChanged      => auditSandboxApplicationPrivacyPolicyUrlChanged(app, evt)
+      case evt: SandboxApplicationPrivacyPolicyUrlRemoved      => auditSandboxApplicationPrivacyPolicyUrlRemoved(app, evt)
+      case evt: SandboxApplicationTermsAndConditionsUrlChanged => auditSandboxApplicationTermsAndConditionsUrlChanged(app, evt)
+      case evt: SandboxApplicationTermsAndConditionsUrlRemoved => auditSandboxApplicationTermsAndConditionsUrlRemoved(app, evt)
+      case _                                                   => Future.successful(None)
     }
   }
   // scalastyle:on cyclomatic.complexity
+
+  private def auditSandboxApplicationNameChangeAction(app: StoredApplication, evt: SandboxApplicationNameChanged)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+    E.liftF(
+      audit(
+        AppNameChanged,
+        Map("applicationId" -> app.id.value.toString, "oldApplicationName" -> evt.oldName, "newApplicationName" -> evt.newName)
+      )
+    )
+      .toOption
+      .value
+  }
+
+  private def auditSandboxApplicationTermsAndConditionsUrlChanged(app: StoredApplication, evt: SandboxApplicationTermsAndConditionsUrlChanged)(implicit hc: HeaderCarrier)
+      : Future[Option[AuditResult]] = {
+    E.liftF(
+      audit(
+        AppTermsAndConditionsUrlChanged,
+        Map("applicationId" -> app.id.value.toString, "newTermsAndConditionsUrl" -> evt.termsAndConditionsUrl)
+      )
+    )
+      .toOption
+      .value
+  }
+
+  private def auditSandboxApplicationTermsAndConditionsUrlRemoved(app: StoredApplication, evt: SandboxApplicationTermsAndConditionsUrlRemoved)(implicit hc: HeaderCarrier)
+      : Future[Option[AuditResult]] = {
+    E.liftF(
+      audit(
+        AppTermsAndConditionsUrlChanged,
+        Map("applicationId" -> app.id.value.toString, "newTermsAndConditionsUrl" -> "")
+      )
+    )
+      .toOption
+      .value
+  }
+
+  private def auditSandboxApplicationPrivacyPolicyUrlChanged(app: StoredApplication, evt: SandboxApplicationPrivacyPolicyUrlChanged)(implicit hc: HeaderCarrier)
+      : Future[Option[AuditResult]] = {
+    E.liftF(
+      audit(
+        AppPrivacyPolicyUrlChanged,
+        Map("applicationId" -> app.id.value.toString, "newPrivacyPolicyUrl" -> evt.privacyPolicyUrl)
+      )
+    )
+      .toOption
+      .value
+  }
+
+  private def auditSandboxApplicationPrivacyPolicyUrlRemoved(app: StoredApplication, evt: SandboxApplicationPrivacyPolicyUrlRemoved)(implicit hc: HeaderCarrier)
+      : Future[Option[AuditResult]] = {
+    E.liftF(
+      audit(
+        AppPrivacyPolicyUrlChanged,
+        Map("applicationId" -> app.id.value.toString, "newPrivacyPolicyUrl" -> "")
+      )
+    )
+      .toOption
+      .value
+  }
 
   private def auditApplicationDeletedByGatekeeper(app: StoredApplication, evt: ApplicationDeletedByGatekeeper)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     E.liftF(auditGatekeeperAction(evt.actor.user, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail.text)))
