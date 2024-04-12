@@ -32,7 +32,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, RedirectUri}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, GrantLength, RedirectUri}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
@@ -367,7 +367,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   }
 
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
-    val grantLengthInDays = 547
+    val grantLength = GrantLength.EIGHTEEN_MONTHS
     new Application(
       ApplicationId.random,
       ClientId("clientId"),
@@ -378,7 +378,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       collaborators,
       instant,
       Some(instant),
-      grantLengthInDays,
+      grantLength,
       None,
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,

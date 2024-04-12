@@ -30,8 +30,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 
 class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  val originalGrantLength = GrantLength.SIX_MONTHS.days
-  val app                 = principalApp.copy(grantLength = originalGrantLength)
+  val originalGrantLength = GrantLength.SIX_MONTHS
+  val app                 = principalApp.copy(grantLength = originalGrantLength.period.getDays)
 
   trait Setup extends ApplicationRepositoryMockModule {
 
@@ -39,7 +39,7 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val gatekeeperUser         = "gkuser"
     val replaceWithGrantLength = GrantLength.ONE_YEAR
-    val newApp                 = app.copy(grantLength = replaceWithGrantLength.days)
+    val newApp                 = app.copy(grantLength = replaceWithGrantLength.period.getDays)
 
     val timestamp = FixedClock.instant
     val update    = ApplicationCommands.ChangeGrantLength(gatekeeperUser, instant, replaceWithGrantLength)
@@ -58,8 +58,8 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
             appId shouldBe applicationId
             anActor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            anOldGrantLength shouldBe originalGrantLength
-            aNewGrantLength shouldBe replaceWithGrantLength.days
+            anOldGrantLength shouldBe originalGrantLength.period.getDays
+            aNewGrantLength shouldBe replaceWithGrantLength.period.getDays
         }
       }
     }
@@ -67,7 +67,7 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   "process" should {
     "create correct events for a valid request with app" in new Setup {
-      ApplicationRepoMock.UpdateGrantLength.thenReturnWhen(app.id, replaceWithGrantLength.days)(newApp)
+      ApplicationRepoMock.UpdateGrantLength.thenReturnWhen(app.id, replaceWithGrantLength.period.getDays)(newApp)
 
       checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
         underTest.process(app, update)
@@ -75,7 +75,7 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
     }
 
     "return an error if the application already has the specified grant length" in new Setup {
-      val updateWithSameGrantLength = update.copy(grantLengthInDays = GrantLength.SIX_MONTHS)
+      val updateWithSameGrantLength = update.copy(grantLength = GrantLength.SIX_MONTHS)
 
       checkFailsWith("Grant length is already 180 days") {
         underTest.process(app, updateWithSameGrantLength)

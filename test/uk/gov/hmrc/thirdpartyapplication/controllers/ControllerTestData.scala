@@ -22,7 +22,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, Collaborator, RedirectUri, State}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, Collaborator, GrantLength, RedirectUri, State}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.{Application, ExtendedApplicationResponse}
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
@@ -56,7 +56,7 @@ trait ControllerTestData extends CollaboratorTestData with FixedClock {
       appId: ApplicationId = ApplicationId.random,
       state: ApplicationState = ApplicationState(State.TESTING, updatedOn = instant)
     ) = {
-    val grantLengthInDays = 547
+    val grantLengthInDays = GrantLength.EIGHTEEN_MONTHS
     new Application(
       appId,
       ClientId("clientId"),
