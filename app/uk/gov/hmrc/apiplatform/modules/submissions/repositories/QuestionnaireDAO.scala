@@ -427,13 +427,13 @@ object QuestionnaireDAO {
 
       val question6 = Question.YesNoQuestion(
         Question.Id("a66cd7b1-e8c1-4982-9ee8-727aa172aa9b"),
-        Wording("Do you store your customers’ Government Gateway credentials?"),
+        Wording("Do you store your customers’ HMRC sign in details?"),
         statement = Statement(
-          StatementText("Implementing OAuth 2.0 means there is no need to store Government Gateway credentials.")
+          StatementText("Implementing OAuth 2.0 means there is no need to store HMRC sign in details.")
         ).some,
         yesMarking = Mark.Fail,
         noMarking = Mark.Pass,
-        errorInfo = ErrorInfo("Select yes if you store your customers’ Government Gateway credentials").some
+        errorInfo = ErrorInfo("Select yes if you store your customers’ HMRC sign in details").some
       )
 
       val questionnaire = Questionnaire(
