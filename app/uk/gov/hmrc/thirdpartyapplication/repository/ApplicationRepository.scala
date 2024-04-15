@@ -41,7 +41,7 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, Collaborator, RateLimitTier, _}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
@@ -50,8 +50,8 @@ import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 object ApplicationRepository {
 
   object MongoFormats {
-    import uk.gov.hmrc.play.json.Union
     import play.api.libs.functional.syntax._
+    import uk.gov.hmrc.play.json.Union
 
     implicit val formatInstant: Format[Instant] = MongoJavatimeFormats.instantFormat
 

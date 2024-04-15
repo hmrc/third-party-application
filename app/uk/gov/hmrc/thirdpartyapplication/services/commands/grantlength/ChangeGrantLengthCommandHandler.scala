@@ -41,7 +41,7 @@ class ChangeGrantLengthCommandHandler @Inject() (
 
   private def validate(app: StoredApplication, cmd: ChangeGrantLength): Validated[Failures, Unit] = {
     Apply[Validated[Failures, *]].map(
-      cond((cmd.grantLengthInDays.days != app.grantLength), CommandFailures.GenericFailure(s"Grant length is already ${app.grantLength} days"))
+      cond((cmd.grantLength.period.getDays != app.grantLength), CommandFailures.GenericFailure(s"Grant length is already ${app.grantLength} days"))
     ) { case _ => () }
   }
 
@@ -53,7 +53,7 @@ class ChangeGrantLengthCommandHandler @Inject() (
         eventDateTime = cmd.timestamp,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         oldGrantLengthInDays = app.grantLength,
-        newGrantLengthInDays = cmd.grantLengthInDays.days
+        newGrantLengthInDays = cmd.grantLength.period.getDays
       )
     )
   }
@@ -62,7 +62,7 @@ class ChangeGrantLengthCommandHandler @Inject() (
 
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
-      savedApp <- E.liftF(applicationRepository.updateApplicationGrantLength(app.id, cmd.grantLengthInDays.days))
+      savedApp <- E.liftF(applicationRepository.updateApplicationGrantLength(app.id, cmd.grantLength.period.getDays))
       events    = asEvents(app, cmd)
     } yield (savedApp, events)
   }

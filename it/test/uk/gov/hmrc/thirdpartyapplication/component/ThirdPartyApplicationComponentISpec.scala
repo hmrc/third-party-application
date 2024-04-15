@@ -16,26 +16,20 @@
 
 package uk.gov.hmrc.thirdpartyapplication.component
 
-import java.util.UUID
-import scala.concurrent.Await.{ready, result}
-import scala.util.Random
-
 import org.scalatest.Inside
-import scalaj.http.{Http, HttpResponse}
-
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{Json, OWrites}
-
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, _}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import scalaj.http.{Http, HttpResponse}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, ApplicationCommands}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -43,6 +37,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, CredentialGenerator}
+
+import java.util.UUID
+import scala.concurrent.Await.{ready, result}
+import scala.util.Random
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
@@ -630,9 +628,9 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       Given("A third party application")
       val application = createApplication()
-      application.grantLength shouldBe GrantLength.EIGHTEEN_MONTHS.days
+      application.grantLength shouldBe GrantLength.EIGHTEEN_MONTHS
 
-      Given("I have updated the grant lenth to six months")
+      Given("I have updated the grant length to six months")
       apiPlatformEventsStub.willReceiveChangeGrantLengthEvent()
       val subcmd   = ApplicationCommands.ChangeGrantLength("admin@example.com", instant, GrantLength.SIX_MONTHS)
       val response = sendApplicationCommand(subcmd, application)

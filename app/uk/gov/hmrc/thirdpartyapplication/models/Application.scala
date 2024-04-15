@@ -33,7 +33,7 @@ case class Application(
     collaborators: Set[Collaborator],
     createdOn: Instant,
     lastAccess: Option[Instant],
-    grantLength: Int,
+    grantLength: GrantLength,
     lastAccessTokenUsage: Option[Instant] = None, // API-4376: Temporary inclusion whilst Server Token functionality is retired
     redirectUris: List[RedirectUri] = List.empty,
     termsAndConditionsUrl: Option[String] = None,
@@ -81,7 +81,7 @@ object Application {
       data.collaborators,
       data.createdOn,
       data.lastAccess,
-      data.grantLength,
+      GrantLength.apply(data.grantLength).getOrElse(GrantLength.EIGHTEEN_MONTHS),
       data.tokens.production.lastAccessTokenUsage,
       redirectUris(data),
       termsAndConditionsUrl(data),

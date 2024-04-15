@@ -690,7 +690,7 @@ class ApplicationServiceSpec
         collaborators = data.collaborators,
         createdOn = data.createdOn,
         lastAccess = data.lastAccess,
-        grantLength = data.grantLength,
+        grantLength = GrantLength.EIGHTEEN_MONTHS,
         lastAccessTokenUsage = productionToken.lastAccessTokenUsage,
         redirectUris = List.empty,
         termsAndConditionsUrl = None,

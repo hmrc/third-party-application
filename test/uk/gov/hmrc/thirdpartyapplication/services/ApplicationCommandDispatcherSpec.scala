@@ -699,8 +699,8 @@ class ApplicationCommandDispatcherSpec
         applicationId,
         instant,
         gatekeeperActor,
-        oldGrantLength.days,
-        newGrantLength.days
+        oldGrantLength.period.getDays,
+        newGrantLength.period.getDays
       )
 
       "call ChangeGrantLength Handler and relevant common services if application exists" in new Setup {
