@@ -56,7 +56,7 @@ trait ControllerTestData extends CollaboratorTestData with FixedClock {
       appId: ApplicationId = ApplicationId.random,
       state: ApplicationState = ApplicationState(State.TESTING, updatedOn = instant)
     ) = {
-    val grantLengthInDays = GrantLength.EIGHTEEN_MONTHS
+    val grantLength = GrantLength.EIGHTEEN_MONTHS
     new Application(
       appId,
       ClientId("clientId"),
@@ -67,7 +67,7 @@ trait ControllerTestData extends CollaboratorTestData with FixedClock {
       collaborators,
       instant,
       Some(instant),
-      grantLengthInDays,
+      grantLength,
       None,
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,

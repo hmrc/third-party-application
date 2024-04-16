@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import java.time.Period
+
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
@@ -46,8 +48,10 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   implicit val formatApplicationState: OFormat[ApplicationState] = Json.format[ApplicationState]
 
-  implicit val formatUpdateApplicationRequest: OFormat[UpdateApplicationRequest]         = Json.format[UpdateApplicationRequest]
-  implicit val formatApplicationResponse: OFormat[Application]                           = Json.format[Application]
+  implicit val formatUpdateApplicationRequest: OFormat[UpdateApplicationRequest] = Json.format[UpdateApplicationRequest]
+  implicit val writesGrantLength: Writes[GrantLength]                            = implicitly[Writes[Period]].contramap(gl => gl.period)
+  implicit val formatApplicationResponse: OFormat[Application]                   = Json.format[Application]
+
   implicit val formatExtendedApplicationResponse: OFormat[ExtendedApplicationResponse]   = Json.format[ExtendedApplicationResponse]
   implicit val formatPaginatedApplicationResponse: OFormat[PaginatedApplicationResponse] = Json.format[PaginatedApplicationResponse]
   implicit val formatUpdateIpAllowlistRequest: OFormat[UpdateIpAllowlistRequest]         = Json.format[UpdateIpAllowlistRequest]

@@ -487,42 +487,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  /*
-    db.application.aggregate( [
-        {
-            $match:
-            {
-                "collaborators.userId" : "85682eda-5758-4a13-8b97-057c94b3657b"
-            }
-        },
-        {
-            $lookup:
-            {
-                from: "subscription",
-                localField: "id",
-                foreignField: "applications",
-                as: "subs"
-            }
-        },
-        {
-            $project:
-            {
-                _id: 0,
-                "apiIdentifier": "$subs.apiIdentifier"
-            }
-        },
-        {
-            $unwind: "$apiIdentifier"
-        },
-        {
-            $project: {
-                _id: 0,
-                "context": "$apiIdentifier.context",
-                "version": "$apiIdentifier.version"
-            }
-        }
-    ] )
-   */
   def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
     timeFuture("Get Subscriptions for Developer", "application.repository.getSubscriptionsForDeveloper") {
 
