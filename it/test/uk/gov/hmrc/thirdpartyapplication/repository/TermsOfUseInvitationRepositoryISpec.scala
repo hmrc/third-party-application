@@ -16,30 +16,28 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant}
-import scala.concurrent.ExecutionContext.Implicits.global
-
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
-import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
-import uk.gov.hmrc.utils.ServerBaseISpec
-
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId, Environment, LaxEmailAddress, UserId}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, IpAllowlist, RateLimitTier}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.utils.ServerBaseISpec
+
+import java.time.temporal.ChronoUnit
+import java.time.{Clock, Instant}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object TermsOfUseInvitationRepositoryISpecExample extends FixedClock {
   val appId                = ApplicationId.random

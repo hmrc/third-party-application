@@ -31,6 +31,7 @@ import play.api.test.FakeRequest
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.GrantLength
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -187,7 +188,7 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
   }
 
   trait StandardFixture extends Fixture {
-    val grantLengthInDays = 547
+    val grantLength = GrantLength.EIGHTEEN_MONTHS
     when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](
       Application(
         applicationId,
@@ -199,18 +200,18 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
         Set.empty,
         instant,
         Some(instant),
-        grantLengthInDays,
+        grantLength,
         access = Access.Standard()
       )
     ))
   }
 
   trait PrivilegedAndRopcFixture extends Fixture {
-    val grantLengthInDays = 547
+    val grantLength = GrantLength.EIGHTEEN_MONTHS
 
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
-        Application(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, instant, Some(instant), grantLengthInDays)
+        Application(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, instant, Some(instant), grantLength)
       when(mockApplicationService.fetch(applicationId)).thenReturn(
         OptionT.pure[Future](
           applicationResponse.copy(clientId = ClientId("privilegedClientId"), name = "privilegedName", access = Access.Privileged(scopes = Set("scope:privilegedScopeKey")))
