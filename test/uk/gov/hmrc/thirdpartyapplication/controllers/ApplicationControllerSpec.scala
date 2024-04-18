@@ -182,6 +182,15 @@ class ApplicationControllerSpec
       status(result) shouldBe OK
     }
 
+    "return the grant length formatted as a Period" in new Setup {
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
+
+      val result = underTest.fetch(applicationId)(request)
+
+      (contentAsJson(result) \ "grantLength").as[String] shouldBe "P547D"
+      status(result) shouldBe OK
+    }
+
     "fail with a 404 (not found) if no application exists for the given id" in new Setup {
       ApplicationServiceMock.Fetch.thenReturnNothingFor(applicationId)
 

@@ -27,9 +27,9 @@ import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborators, GrantLength}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -214,4 +214,27 @@ class ApplicationCommandControllerSpec
     }
   }
 
+  "updateGrantLength" when {
+    "dispatch request" should {
+      val cmd = ChangeGrantLength(gatekeeperUser = "a a", timestamp = instant, grantLength = GrantLength.SIX_MONTHS)
+      val req = ApplicationCommandController.DispatchRequest(cmd, Set.empty[LaxEmailAddress])
+      import cats.syntax.option._
+
+      "read from json where grant length is an Int" in {
+        val jsonText =
+          """{"command":{"gatekeeperUser":"a a","timestamp":"2020-01-02T03:04:05.006Z","grantLength":180,"updateType":"changeGrantLength"},"verifiedCollaboratorsToNotify":[]}"""
+        Json.parse(jsonText).asOpt[ApplicationCommandController.DispatchRequest] shouldBe req.some
+      }
+      "read from json where grant length is a Period" in {
+        val jsonText =
+          """{"command":{"gatekeeperUser":"a a","timestamp":"2020-01-02T03:04:05.006Z","grantLength":"P180D","updateType":"changeGrantLength"},"verifiedCollaboratorsToNotify":[]}"""
+        Json.parse(jsonText).asOpt[ApplicationCommandController.DispatchRequest] shouldBe req.some
+      }
+      "write to json" in {
+        val jsonText =
+          """{"command":{"gatekeeperUser":"a a","timestamp":"2020-01-02T03:04:05.006Z","grantLength":180,"updateType":"changeGrantLength"},"verifiedCollaboratorsToNotify":[]}"""
+        Json.toJson(req).toString() shouldBe jsonText
+      }
+    }
+  }
 }
