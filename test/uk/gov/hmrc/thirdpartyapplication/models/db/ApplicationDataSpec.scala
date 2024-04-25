@@ -20,6 +20,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.GrantLength
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
@@ -32,6 +33,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
   import ApiIdentifierSyntax._
 
   "StoredApplication" should {
+    val refreshTokensAvailableFor = GrantLength.EIGHTEEN_MONTHS.period
     "for version 1 requests" should {
       "do not set the check information when app is created without subs" in {
         val token = StoredToken(ClientId.random, "st")
@@ -78,8 +80,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             subscriptions = Some(Set("context".asIdentifier))
           )
 
-        val grantLengthInDays = 547
-        StoredApplication.create(request, "bob", token).grantLength shouldBe grantLengthInDays
+        StoredApplication.create(request, "bob", token).refreshTokensAvailableFor shouldBe refreshTokensAvailableFor
       }
     }
 
@@ -103,7 +104,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
       }
 
       "ensure correct grant length when app is created" in {
-        StoredApplication.create(request, "bob", token).grantLength shouldBe 547
+        StoredApplication.create(request, "bob", token).refreshTokensAvailableFor shouldBe refreshTokensAvailableFor
       }
     }
   }

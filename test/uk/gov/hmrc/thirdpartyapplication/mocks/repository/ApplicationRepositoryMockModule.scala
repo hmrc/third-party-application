@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
-import java.time.Instant
+import java.time.{Instant, Period}
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
@@ -275,10 +275,10 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def thenReturn() = when(aMock.updateApplicationGrantLength(*[ApplicationId], *)).thenReturn(successful(mock[StoredApplication]))
 
-      def verifyCalledWith(applicationId: ApplicationId, newGrantLength: Int) =
+      def verifyCalledWith(applicationId: ApplicationId, newGrantLength: Period) =
         ApplicationRepoMock.verify.updateApplicationGrantLength(eqTo(applicationId), eqTo(newGrantLength))
 
-      def thenReturnWhen(applicationId: ApplicationId, newGrantLength: Int)(updatedApplicationData: StoredApplication) =
+      def thenReturnWhen(applicationId: ApplicationId, newGrantLength: Period)(updatedApplicationData: StoredApplication) =
         when(aMock.updateApplicationGrantLength(eqTo(applicationId), eqTo(newGrantLength))).thenReturn(successful(updatedApplicationData))
     }
 

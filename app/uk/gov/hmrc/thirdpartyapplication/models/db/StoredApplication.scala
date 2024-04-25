@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import java.time.Instant
+import java.time.{Instant, Period}
 
 import com.typesafe.config.ConfigFactory
 
@@ -39,7 +39,7 @@ case class StoredApplication(
     access: Access = Access.Standard(),
     createdOn: Instant,
     lastAccess: Option[Instant],
-    grantLength: Int = grantLengthConfig,
+    refreshTokensAvailableFor: Period = Period.ofDays(grantLengthConfig),
     rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
     environment: String = Environment.PRODUCTION.toString,
     checkInformation: Option[CheckInformation] = None,

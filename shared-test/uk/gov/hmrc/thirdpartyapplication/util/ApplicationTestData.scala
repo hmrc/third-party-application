@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
+import java.time.Period
+
 import com.github.t3hnar.bcrypt._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
@@ -36,7 +38,7 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
 
   val requestedByName  = "john smith"
   val requestedByEmail = "john.smith@example.com".toLaxEmail
-  val grantLength      = 547
+  val grantLength      = GrantLength.EIGHTEEN_MONTHS.period
 
   def anApplicationData(
       applicationId: ApplicationId,
@@ -46,7 +48,7 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
       rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
       environment: Environment = Environment.PRODUCTION,
       ipAllowlist: IpAllowlist = IpAllowlist(),
-      grantLength: Int = grantLength
+      grantLength: Period = grantLength
     ) = {
     StoredApplication(
       applicationId,

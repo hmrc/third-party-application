@@ -23,7 +23,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, IpAllowlist, RateLimitTier}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, GrantLength, IpAllowlist, RateLimitTier}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
@@ -475,7 +475,7 @@ class TermsOfUseInvitationRepositoryISpec
       Standard(),
       instant,
       Some(instant),
-      547,
+      GrantLength.EIGHTEEN_MONTHS.period,
       Some(RateLimitTier.BRONZE),
       Environment.PRODUCTION.toString(),
       None,

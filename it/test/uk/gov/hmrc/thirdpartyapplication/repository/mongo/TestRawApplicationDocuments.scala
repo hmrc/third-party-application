@@ -16,12 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository.mongo
 
+import play.api.libs.json.{JsBoolean, JsNumber, JsObject, Json}
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-
-import play.api.libs.json.{JsBoolean, JsObject, Json}
-
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 trait TestRawApplicationDocuments {
 
@@ -29,8 +28,36 @@ trait TestRawApplicationDocuments {
 
   import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.MongoFormats._
 
-  def applicationToMongoJson(application: StoredApplication, allowAutoDelete: Option[Boolean] = None): JsObject = {
-    val applicationJson = Json.obj(
+  def applicationToMongoJson(application: StoredApplication, allowAutoDelete: Option[Boolean] = None,
+                             grantLength: Option[Int] = Some(547), refreshTokensAvailableFor: Boolean = true): JsObject = {
+
+    def addAttributes(json: JsObject): JsObject = {
+      (allowAutoDelete, grantLength, refreshTokensAvailableFor) match {
+        case (Some(aad: Boolean), Some(gl: Int), true) =>
+          json ++ Json.obj("allowAutoDelete" -> JsBoolean(aad),
+            "grantLength" -> JsNumber(gl),
+            "refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor))
+        case (Some(aad: Boolean), Some(gl: Int), false) =>
+          json ++ Json.obj("allowAutoDelete" -> JsBoolean(aad),
+            "grantLength" -> JsNumber(gl))
+        case (Some(aad: Boolean), None, true) =>
+          json ++ Json.obj("allowAutoDelete" -> JsBoolean(aad),
+            "refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor))
+        case (None, Some(gl: Int), true) =>
+          json ++ Json.obj(
+            "grantLength" -> JsNumber(gl),
+            "refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor))
+        case (None, None, true) =>
+          json ++ Json.obj("refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor))
+        case (Some(aad: Boolean), None, false) =>
+          json ++ Json.obj("allowAutoDelete" -> JsBoolean(aad))
+        case (None, Some(gl: Int), false) =>
+          json ++ Json.obj("grantLength" -> JsNumber(gl))
+        case (None, None, false) => json
+      }
+    }
+
+    val applicationJson: JsObject = Json.obj(
       "id"                  -> application.id,
       "name"                -> application.name,
       "normalisedName"      -> application.normalisedName,
@@ -42,17 +69,12 @@ trait TestRawApplicationDocuments {
       "access"              -> application.access,
       "createdOn"           -> dateToJsonObj(application.createdOn),
       "lastAccess"          -> dateToJsonObj(application.createdOn),
-      "grantLength"         -> 547,
       "rateLimitTier"       -> "BRONZE",
       "environment"         -> "PRODUCTION",
       "blocked"             -> false,
       "ipAllowlist"         -> application.ipAllowlist
     )
 
-    allowAutoDelete match {
-      case Some(value: Boolean) =>
-        applicationJson + ("allowAutoDelete" -> JsBoolean(value))
-      case None                 => applicationJson
-    }
+    addAttributes(applicationJson)
   }
 }
