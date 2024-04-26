@@ -74,11 +74,19 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
       }
     }
 
-    "return an error if the application already has the specified grant length" in new Setup {
+    "return an error if the application already has refreshTokenAvailableFor 180 days" in new Setup {
       val updateWithSameGrantLength = update.copy(grantLength = GrantLength.SIX_MONTHS)
 
-      checkFailsWith("Grant length is already P180D") {
+      checkFailsWith("Grant length is already 180 days") {
         underTest.process(app, updateWithSameGrantLength)
+      }
+    }
+
+    "return an error if the application already has refreshTokenAvailableFor 0 days (i.e. 4 hours and no refresh tokens)" in new Setup {
+      val updateWithSameGrantLength = update.copy(grantLength = GrantLength.FOUR_HOURS)
+
+      checkFailsWith("Grant length is already 4 hours and no refresh tokens") {
+        underTest.process(app.copy(refreshTokensAvailableFor = GrantLength.FOUR_HOURS.period), updateWithSameGrantLength)
       }
     }
 

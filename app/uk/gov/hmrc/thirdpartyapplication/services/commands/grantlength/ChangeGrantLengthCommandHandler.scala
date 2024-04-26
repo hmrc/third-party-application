@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength
 
+import java.time.Period
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -40,10 +41,16 @@ class ChangeGrantLengthCommandHandler @Inject() (
   import CommandHandler._
 
   private def validate(app: StoredApplication, cmd: ChangeGrantLength): Validated[Failures, Unit] = {
+    def printRefreshTokensAvailableFor(refreshTokensAvailableFor: Period): String = {
+      val refreshTokensAvailableForDays = refreshTokensAvailableFor.getDays
+      val grantLength                   = if (refreshTokensAvailableForDays > 0) s"$refreshTokensAvailableForDays days" else "4 hours and no refresh tokens"
+      s"Grant length is already $grantLength"
+    }
+
     Apply[Validated[Failures, *]].map(
       cond(
         (cmd.grantLength.period != app.refreshTokensAvailableFor),
-        CommandFailures.GenericFailure(s"Grant length is already ${app.refreshTokensAvailableFor}")
+        CommandFailures.GenericFailure(printRefreshTokensAvailableFor(app.refreshTokensAvailableFor))
       )
     ) { case _ => () }
   }
