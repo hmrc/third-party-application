@@ -69,6 +69,6 @@ commands ++= Seq(
   Command.command("fixAll") { state => "scalafixAll" :: "it/scalafixAll" :: state },
   Command.command("testAll") { state => "test" :: "it/test" :: state },
   Command.command("run-all-tests") { state => "testAll" :: state },
-  Command.command("clean-and-test") { state => "clean" :: "compile" :: "run-all-tests" :: state },
-  Command.command("pre-commit") { state => "clean" :: "scalafmtAll" :: "scalafixAll" :: "coverage" :: "run-all-tests" :: "coverageOff" :: "coverageAggregate" :: state }
+  Command.command("clean-and-test") { state => "cleanAll" :: "compile" :: "run-all-tests" :: state },
+  Command.command("pre-commit") { state => "cleanAll" :: "fmtAll" :: "fixAll" :: "coverage" :: "testAll" :: "coverageOff" :: "coverageAggregate" :: state }
 )

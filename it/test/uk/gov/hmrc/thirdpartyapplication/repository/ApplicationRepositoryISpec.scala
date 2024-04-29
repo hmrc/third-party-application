@@ -16,33 +16,35 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import java.time.{Clock, Duration, Instant, Period}
+import scala.util.Random.nextString
+
 import org.mockito.MockitoSugar.{mock, times, verify, verifyNoMoreInteractions}
 import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
+
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
+import uk.gov.hmrc.mongo.play.json.Codecs
+import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
+import uk.gov.hmrc.utils.ServerBaseISpec
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.mongo.play.json.Codecs
-import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess => _, _}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
-import uk.gov.hmrc.utils.ServerBaseISpec
-
-import java.time.{Clock, Duration, Instant, Period}
-import scala.util.Random.nextString
 
 object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock {
   val clientId       = ClientId.random
@@ -88,16 +90,16 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
   )
 
   def json(withInstance: Boolean) = Json.obj(
-    "id"                  -> JsString(appId.toString()),
-    "name"                -> JsString("AppName"),
-    "normalisedName"      -> JsString("appname"),
-    "collaborators"       -> JsArray(Seq(Json.obj(
+    "id"                        -> JsString(appId.toString()),
+    "name"                      -> JsString("AppName"),
+    "normalisedName"            -> JsString("appname"),
+    "collaborators"             -> JsArray(Seq(Json.obj(
       "userId"       -> JsString(userId.toString()),
       "emailAddress" -> "bob@example.com",
       "role"         -> "ADMINISTRATOR"
     ))),
-    "wso2ApplicationName" -> JsString("wso2"),
-    "tokens"              -> Json.obj(
+    "wso2ApplicationName"       -> JsString("wso2"),
+    "tokens"                    -> Json.obj(
       "production" -> Json.obj(
         "clientId"      -> JsString(clientId.toString()),
         "accessToken"   -> JsString("accessABC"),
@@ -109,11 +111,11 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
         )))
       )
     ),
-    "state"               -> Json.obj(
+    "state"                     -> Json.obj(
       "name"      -> JsString("TESTING"),
       "updatedOn" -> MongoJavatimeHelper.asJsValue(instant)
     ),
-    "access"              -> Json.obj(
+    "access"                    -> Json.obj(
       "redirectUris"            -> JsArray(Seq()),
       "overrides"               -> JsArray(Seq()),
       "importantSubmissionData" -> Json.obj(
@@ -149,11 +151,11 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
       ),
       "accessType"              -> JsString("STANDARD")
     ),
-    "createdOn"           -> MongoJavatimeHelper.asJsValue(instant),
-    "refreshTokensAvailableFor"         -> GrantLength.EIGHTEEN_MONTHS.period,
-    "rateLimitTier"       -> JsString("BRONZE"),
-    "environment"         -> JsString("PRODUCTION"),
-    "checkInformation"    -> Json.obj(
+    "createdOn"                 -> MongoJavatimeHelper.asJsValue(instant),
+    "refreshTokensAvailableFor" -> GrantLength.EIGHTEEN_MONTHS.period,
+    "rateLimitTier"             -> JsString("BRONZE"),
+    "environment"               -> JsString("PRODUCTION"),
+    "checkInformation"          -> Json.obj(
       "contactDetails"                         -> Json.obj(
         "fullname"        -> JsString("Contact"),
         "email"           -> JsString("contact@example.com"),
@@ -171,9 +173,9 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
         "version"      -> JsString("1.0")
       )))
     ),
-    "blocked"             -> JsFalse,
-    "ipAllowlist"         -> Json.obj("required" -> JsFalse, "allowlist" -> JsArray.empty),
-    "allowAutoDelete"     -> JsTrue
+    "blocked"                   -> JsFalse,
+    "ipAllowlist"               -> Json.obj("required" -> JsFalse, "allowlist" -> JsArray.empty),
+    "allowAutoDelete"           -> JsTrue
   )
 }
 
@@ -3560,17 +3562,17 @@ class ApplicationRepositoryISpec
   }
 
   def anApplicationDataForTest(
-                                id: ApplicationId,
-                                prodClientId: ClientId = ClientId("aaa"),
-                                state: ApplicationState = testingState(),
-                                access: Access = Access.Standard(),
-                                refreshTokensAvailableFor: Period = defaultGrantLength,
-                                users: Set[Collaborator] = Set(
+      id: ApplicationId,
+      prodClientId: ClientId = ClientId("aaa"),
+      state: ApplicationState = testingState(),
+      access: Access = Access.Standard(),
+      refreshTokensAvailableFor: Period = defaultGrantLength,
+      users: Set[Collaborator] = Set(
         "user@example.com".admin()
       ),
-                                checkInformation: Option[CheckInformation] = None,
-                                clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
-                                allowAutoDelete: Boolean = true
+      checkInformation: Option[CheckInformation] = None,
+      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
+      allowAutoDelete: Boolean = true
     ): StoredApplication = {
 
     aNamedApplicationData(
@@ -3588,16 +3590,16 @@ class ApplicationRepositoryISpec
   }
 
   def aNamedApplicationData(
-                             id: ApplicationId,
-                             name: String,
-                             prodClientId: ClientId = ClientId("aaa"),
-                             state: ApplicationState = testingState(),
-                             access: Access = Access.Standard(),
-                             users: Set[Collaborator] = Set("user@example.com".admin()),
-                             checkInformation: Option[CheckInformation] = None,
-                             clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
-                             refreshTokensAvailableFor: Period = defaultGrantLength,
-                             allowAutoDelete: Boolean = true
+      id: ApplicationId,
+      name: String,
+      prodClientId: ClientId = ClientId("aaa"),
+      state: ApplicationState = testingState(),
+      access: Access = Access.Standard(),
+      users: Set[Collaborator] = Set("user@example.com".admin()),
+      checkInformation: Option[CheckInformation] = None,
+      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
+      refreshTokensAvailableFor: Period = defaultGrantLength,
+      allowAutoDelete: Boolean = true
     ): StoredApplication = {
 
     StoredApplication(
