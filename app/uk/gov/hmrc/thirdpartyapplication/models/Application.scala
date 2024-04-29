@@ -81,7 +81,7 @@ object Application {
       data.collaborators,
       data.createdOn,
       data.lastAccess,
-      GrantLength.apply(data.grantLength).getOrElse(GrantLength.EIGHTEEN_MONTHS),
+      GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
       data.tokens.production.lastAccessTokenUsage,
       redirectUris(data),
       termsAndConditionsUrl(data),

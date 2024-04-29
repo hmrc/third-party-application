@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   val originalGrantLength = GrantLength.SIX_MONTHS
-  val app                 = principalApp.copy(grantLength = originalGrantLength.period.getDays)
+  val app                 = principalApp.copy(refreshTokensAvailableFor = originalGrantLength.period)
 
   trait Setup extends ApplicationRepositoryMockModule {
 
@@ -39,7 +39,7 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val gatekeeperUser         = "gkuser"
     val replaceWithGrantLength = GrantLength.ONE_YEAR
-    val newApp                 = app.copy(grantLength = replaceWithGrantLength.period.getDays)
+    val newApp                 = app.copy(refreshTokensAvailableFor = replaceWithGrantLength.period)
 
     val timestamp = FixedClock.instant
     val update    = ApplicationCommands.ChangeGrantLength(gatekeeperUser, instant, replaceWithGrantLength)
@@ -67,18 +67,26 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   "process" should {
     "create correct events for a valid request with app" in new Setup {
-      ApplicationRepoMock.UpdateGrantLength.thenReturnWhen(app.id, replaceWithGrantLength.period.getDays)(newApp)
+      ApplicationRepoMock.UpdateGrantLength.thenReturnWhen(app.id, replaceWithGrantLength.period)(newApp)
 
       checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
         underTest.process(app, update)
       }
     }
 
-    "return an error if the application already has the specified grant length" in new Setup {
+    "return an error if the application already has refreshTokenAvailableFor 180 days" in new Setup {
       val updateWithSameGrantLength = update.copy(grantLength = GrantLength.SIX_MONTHS)
 
       checkFailsWith("Grant length is already 180 days") {
         underTest.process(app, updateWithSameGrantLength)
+      }
+    }
+
+    "return an error if the application already has refreshTokenAvailableFor 0 days (i.e. 4 hours and no refresh tokens)" in new Setup {
+      val updateWithSameGrantLength = update.copy(grantLength = GrantLength.FOUR_HOURS)
+
+      checkFailsWith("Grant length is already 4 hours and no refresh tokens") {
+        underTest.process(app.copy(refreshTokensAvailableFor = GrantLength.FOUR_HOURS.period), updateWithSameGrantLength)
       }
     }
 

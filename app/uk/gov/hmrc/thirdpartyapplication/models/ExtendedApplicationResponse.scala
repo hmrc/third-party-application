@@ -61,7 +61,7 @@ object ExtendedApplicationResponse {
       data.collaborators,
       data.createdOn,
       data.lastAccess,
-      GrantLength.apply(data.grantLength).getOrElse(GrantLength.EIGHTEEN_MONTHS),
+      GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
       Application.redirectUris(data),
       Application.termsAndConditionsUrl(data),
       Application.privacyPolicyUrl(data),

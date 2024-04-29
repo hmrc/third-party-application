@@ -16,33 +16,35 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import java.time.{Clock, Duration, Instant, Period}
+import scala.util.Random.nextString
+
 import org.mockito.MockitoSugar.{mock, times, verify, verifyNoMoreInteractions}
 import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
+
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
+import uk.gov.hmrc.mongo.play.json.Codecs
+import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
+import uk.gov.hmrc.utils.ServerBaseISpec
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.mongo.play.json.Codecs
-import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess => _, _}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
-import uk.gov.hmrc.utils.ServerBaseISpec
-
-import java.time.{Clock, Duration, Instant}
-import scala.util.Random.nextString
 
 object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock {
   val clientId       = ClientId.random
@@ -74,7 +76,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     ),
     instant,
     None,
-    123,
+    GrantLength.EIGHTEEN_MONTHS.period,
     Some(RateLimitTier.BRONZE),
     "PRODUCTION",
     Some(CheckInformation(
@@ -88,16 +90,16 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
   )
 
   def json(withInstance: Boolean) = Json.obj(
-    "id"                  -> JsString(appId.toString()),
-    "name"                -> JsString("AppName"),
-    "normalisedName"      -> JsString("appname"),
-    "collaborators"       -> JsArray(Seq(Json.obj(
+    "id"                        -> JsString(appId.toString()),
+    "name"                      -> JsString("AppName"),
+    "normalisedName"            -> JsString("appname"),
+    "collaborators"             -> JsArray(Seq(Json.obj(
       "userId"       -> JsString(userId.toString()),
       "emailAddress" -> "bob@example.com",
       "role"         -> "ADMINISTRATOR"
     ))),
-    "wso2ApplicationName" -> JsString("wso2"),
-    "tokens"              -> Json.obj(
+    "wso2ApplicationName"       -> JsString("wso2"),
+    "tokens"                    -> Json.obj(
       "production" -> Json.obj(
         "clientId"      -> JsString(clientId.toString()),
         "accessToken"   -> JsString("accessABC"),
@@ -109,11 +111,11 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
         )))
       )
     ),
-    "state"               -> Json.obj(
+    "state"                     -> Json.obj(
       "name"      -> JsString("TESTING"),
       "updatedOn" -> MongoJavatimeHelper.asJsValue(instant)
     ),
-    "access"              -> Json.obj(
+    "access"                    -> Json.obj(
       "redirectUris"            -> JsArray(Seq()),
       "overrides"               -> JsArray(Seq()),
       "importantSubmissionData" -> Json.obj(
@@ -149,11 +151,11 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
       ),
       "accessType"              -> JsString("STANDARD")
     ),
-    "createdOn"           -> MongoJavatimeHelper.asJsValue(instant),
-    "grantLength"         -> JsNumber(123),
-    "rateLimitTier"       -> JsString("BRONZE"),
-    "environment"         -> JsString("PRODUCTION"),
-    "checkInformation"    -> Json.obj(
+    "createdOn"                 -> MongoJavatimeHelper.asJsValue(instant),
+    "refreshTokensAvailableFor" -> GrantLength.EIGHTEEN_MONTHS.period,
+    "rateLimitTier"             -> JsString("BRONZE"),
+    "environment"               -> JsString("PRODUCTION"),
+    "checkInformation"          -> Json.obj(
       "contactDetails"                         -> Json.obj(
         "fullname"        -> JsString("Contact"),
         "email"           -> JsString("contact@example.com"),
@@ -171,9 +173,9 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
         "version"      -> JsString("1.0")
       )))
     ),
-    "blocked"             -> JsFalse,
-    "ipAllowlist"         -> Json.obj("required" -> JsFalse, "allowlist" -> JsArray.empty),
-    "allowAutoDelete"     -> JsTrue
+    "blocked"                   -> JsFalse,
+    "ipAllowlist"               -> Json.obj("required" -> JsFalse, "allowlist" -> JsArray.empty),
+    "allowAutoDelete"           -> JsTrue
   )
 }
 
@@ -225,8 +227,8 @@ class ApplicationRepositoryISpec
     await(notificationRepository.ensureIndexes())
   }
 
-  lazy val defaultGrantLength = 547
-  lazy val newGrantLength     = 1000
+  lazy val defaultGrantLength = GrantLength.EIGHTEEN_MONTHS.period
+  lazy val newGrantLength     = GrantLength.ONE_MONTH.period
 
   private def generateClientId = ClientId.random
 
@@ -347,14 +349,14 @@ class ApplicationRepositoryISpec
           anApplicationDataForTest(
             applicationId,
             ClientId("aaa"),
-            grantLength = newGrantLength
+            refreshTokensAvailableFor = newGrantLength
           )
         )
       )
 
       val newRetrieved = await(applicationRepository.fetch(applicationId)).get
 
-      newRetrieved.grantLength mustBe newGrantLength
+      newRetrieved.refreshTokensAvailableFor mustBe newGrantLength
     }
 
     "set the rateLimitTier field on an Application document where none previously existed" in {
@@ -406,15 +408,14 @@ class ApplicationRepositoryISpec
       val applicationId = ApplicationId.random
       await(applicationRepository.save(anApplicationDataForTest(applicationId)))
 
-      val updatedGrantLength = newGrantLength
       val updatedApplication = await(
         applicationRepository.updateApplicationGrantLength(
           applicationId,
-          updatedGrantLength
+          newGrantLength
         )
       )
 
-      updatedApplication.grantLength mustBe updatedGrantLength
+      updatedApplication.refreshTokensAvailableFor mustBe newGrantLength
     }
   }
 
@@ -470,7 +471,7 @@ class ApplicationRepositoryISpec
           applicationId,
           clientId,
           productionState("requestorEmail@example.com"),
-          grantLength = newGrantLength
+          refreshTokensAvailableFor = newGrantLength
         )
           .copy(lastAccess =
             Some(instant.minus(Duration.ofDays(20)))
@@ -480,7 +481,7 @@ class ApplicationRepositoryISpec
       val retrieved =
         await(applicationRepository.findAndRecordApplicationUsage(clientId)).get
 
-      retrieved.grantLength mustBe newGrantLength
+      retrieved.refreshTokensAvailableFor mustBe newGrantLength
     }
   }
 
@@ -660,8 +661,8 @@ class ApplicationRepositoryISpec
     }
 
     "retrieve the grant length for an application for a given client id when it has a matching client id" in {
-      val grantLength1 = 510
-      val grantLength2 = 1000
+      val grantLength1 = GrantLength.ONE_MONTH.period
+      val grantLength2 = GrantLength.ONE_YEAR.period
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("aaa"),
@@ -691,8 +692,8 @@ class ApplicationRepositoryISpec
         )
       )
 
-      retrieved1.map(_.grantLength) mustBe Some(grantLength1)
-      retrieved2.map(_.grantLength) mustBe Some(grantLength2)
+      retrieved1.map(_.refreshTokensAvailableFor) mustBe Some(grantLength1)
+      retrieved2.map(_.refreshTokensAvailableFor) mustBe Some(grantLength2)
     }
 
     "do not retrieve the application for a given client id when it has a matching client id but is deleted" in {
@@ -3565,7 +3566,7 @@ class ApplicationRepositoryISpec
       prodClientId: ClientId = ClientId("aaa"),
       state: ApplicationState = testingState(),
       access: Access = Access.Standard(),
-      grantLength: Int = defaultGrantLength,
+      refreshTokensAvailableFor: Period = defaultGrantLength,
       users: Set[Collaborator] = Set(
         "user@example.com".admin()
       ),
@@ -3583,7 +3584,7 @@ class ApplicationRepositoryISpec
       users,
       checkInformation,
       clientSecrets,
-      grantLength,
+      refreshTokensAvailableFor,
       allowAutoDelete
     )
   }
@@ -3597,7 +3598,7 @@ class ApplicationRepositoryISpec
       users: Set[Collaborator] = Set("user@example.com".admin()),
       checkInformation: Option[CheckInformation] = None,
       clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
-      grantLength: Int = defaultGrantLength,
+      refreshTokensAvailableFor: Period = defaultGrantLength,
       allowAutoDelete: Boolean = true
     ): StoredApplication = {
 
@@ -3615,7 +3616,7 @@ class ApplicationRepositoryISpec
       access,
       instant,
       Some(instant),
-      grantLength = grantLength,
+      refreshTokensAvailableFor = refreshTokensAvailableFor,
       checkInformation = checkInformation,
       allowAutoDelete = allowAutoDelete
     )

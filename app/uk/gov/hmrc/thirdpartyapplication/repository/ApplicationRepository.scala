@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.Instant
+import java.time.{Instant, Period}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
+import com.typesafe.config.ConfigFactory
 import org.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.bson.{BsonArray, BsonInt32, BsonString, Document}
@@ -105,14 +106,15 @@ object ApplicationRepository {
     implicit val formatApplicationState: OFormat[ApplicationState]   = Json.format[ApplicationState]
     implicit val formatApplicationTokens: OFormat[ApplicationTokens] = Json.format[ApplicationTokens]
 
-    import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLengthConfig
-
     // Non-standard format compared to companion object
     val ipAllowlistReads: Reads[IpAllowlist]             = (
       ((JsPath \ "required").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "allowlist").read[Set[String]] or Reads.pure(Set.empty[String]))
     )(IpAllowlist.apply _)
     implicit val formatIpAllowlist: OFormat[IpAllowlist] = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
+
+    def periodFromInt(i: Int): Period = (GrantLength.apply(i).getOrElse(GrantLength.EIGHTEEN_MONTHS)).period
+    val grantLengthConfig             = ConfigFactory.load().getInt("grantLengthInDays")
 
     // Non-standard format compared to companion object
     val readStoredApplication: Reads[StoredApplication] = (
@@ -127,7 +129,9 @@ object ApplicationRepository {
         (JsPath \ "access").read[Access] and
         (JsPath \ "createdOn").read[Instant] and
         (JsPath \ "lastAccess").readNullable[Instant] and
-        ((JsPath \ "grantLength").read[Int] or Reads.pure(grantLengthConfig)) and
+        (((JsPath \ "refreshTokensAvailableFor").read[Period]
+          .orElse((JsPath \ "grantLength").read[Int].map(periodFromInt(_))))
+          or Reads.pure(periodFromInt(grantLengthConfig))) and
         (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
         (JsPath \ "environment").read[String] and
         (JsPath \ "checkInformation").readNullable[CheckInformation] and
@@ -247,8 +251,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def updateApplicationIpAllowlist(applicationId: ApplicationId, ipAllowlist: IpAllowlist): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("ipAllowlist", Codecs.toBson(ipAllowlist)))
 
-  def updateApplicationGrantLength(applicationId: ApplicationId, grantLength: Int): Future[StoredApplication] =
-    updateApplication(applicationId, Updates.set("grantLength", grantLength))
+  def updateApplicationGrantLength(applicationId: ApplicationId, refreshTokensAvailableFor: Period): Future[StoredApplication] =
+    updateApplication(applicationId, Updates.set("refreshTokensAvailableFor", Codecs.toBson(refreshTokensAvailableFor)))
 
   def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[StoredApplication] =
     updateApplication(applicationId, Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(acceptance)))
@@ -685,6 +689,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           "access",
           "createdOn",
           "lastAccess",
+          "grantLength",
+          "refreshTokensAvailableFor",
           "rateLimitTier",
           "environment",
           "allowAutoDelete"
