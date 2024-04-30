@@ -195,23 +195,6 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       await(connector.sendApplicationApprovedNotification(applicationName, Set(adminEmail1, adminEmail2)))
     }
 
-    "send application rejected notification email" in new Setup {
-
-      val reason                                  = "Test Error"
-      val expectedTemplateId                      = "apiApplicationRejectedNotification"
-      val expectedToEmails                        = Set(adminEmail1, adminEmail2)
-      val expectedParameters: Map[String, String] = Map(
-        "applicationName" -> applicationName,
-        "guidelinesUrl"   -> s"${connector.devHubBaseUrl}/api-documentation/docs/using-the-hub/name-guidelines",
-        "supportUrl"      -> s"${connector.devHubBaseUrl}/developer/support",
-        "reason"          -> s"$reason"
-      )
-      val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
-      emailWillReturn(expectedRequest)
-
-      await(connector.sendApplicationRejectedNotification(applicationName, expectedToEmails, reason))
-    }
-
     "send application deleted notification email" in new Setup {
       val expectedTemplateId                      = "apiApplicationDeletedNotification"
       val expectedToEmails                        = Set(adminEmail1, adminEmail2)

@@ -51,32 +51,9 @@ class GatekeeperController @Inject() (
     with OnlyStrideGatekeeperRoleAuthoriseAction
     with TermsOfUseInvitationActionBuilders {
 
-  private lazy val badStateResponse = PreconditionFailed(
-    JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'")
-  )
-
   private lazy val badResendResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_REQUESTER_VERIFICATION'")
   )
-
-  def approveUplift(id: ApplicationId) = requiresAuthentication().async(parse.json) {
-    implicit request =>
-      withJsonBody[ApproveUpliftRequest] { approveUpliftPayload =>
-        gatekeeperService.approveUplift(id, approveUpliftPayload.gatekeeperUserId)
-          .map(_ => NoContent)
-      } recover {
-        case _: InvalidStateTransition => badStateResponse
-      } recover recovery
-  }
-
-  def rejectUplift(id: ApplicationId) = requiresAuthentication().async(parse.json) {
-    implicit request =>
-      withJsonBody[RejectUpliftRequest] {
-        gatekeeperService.rejectUplift(id, _).map(_ => NoContent)
-      } recover {
-        case _: InvalidStateTransition => badStateResponse
-      } recover recovery
-  }
 
   def resendVerification(id: ApplicationId) = requiresAuthentication().async(parse.json) {
     implicit request =>
