@@ -31,7 +31,6 @@ GET           /application/:id/subscription/:context/:version        uk.gov.hmrc
 
 POST          /application/:id/delete                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteApplication(id: ApplicationId)
 
-POST          /application/:id/request-uplift                        uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController.requestUplift(id: ApplicationId)
 POST          /verify-uplift/:code                                   uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController.verifyUplift(code: String)
 
 # Gatekeeper ONLY routes

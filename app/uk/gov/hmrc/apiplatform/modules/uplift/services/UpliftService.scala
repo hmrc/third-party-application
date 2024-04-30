@@ -18,17 +18,17 @@ package uk.gov.hmrc.apiplatform.modules.uplift.services
 
 import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, UpliftRequested, UpliftVerified}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, UpliftVerified}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -44,32 +44,6 @@ class UpliftService @Inject() (
     val clock: Clock
   )(implicit ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
-
-  def requestUplift(applicationId: ApplicationId, applicationName: String, requestedByEmailAddress: LaxEmailAddress)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-
-    def uplift(existing: StoredApplication) = existing.copy(
-      name = applicationName,
-      normalisedName = applicationName.toLowerCase,
-      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress.text, requestedByEmailAddress.text, instant())
-    )
-
-    for {
-      app        <- fetchApp(applicationId)
-      upliftedApp = uplift(app)
-      _          <- applicationNamingService.assertAppHasUniqueNameAndAudit(applicationName, app.access.accessType, Some(app))
-      updatedApp <- applicationRepository.save(upliftedApp)
-      _          <- insertStateHistory(
-                      app,
-                      State.PENDING_GATEKEEPER_APPROVAL,
-                      Some(State.TESTING),
-                      Actors.AppCollaborator(requestedByEmailAddress),
-                      (a: StoredApplication) => applicationRepository.save(a)
-                    )
-      _           = logger.info(s"UPLIFT01: uplift request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} " +
-                      s"appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
-      _           = auditService.audit(ApplicationUpliftRequested, AuditHelper.applicationId(applicationId) ++ AuditHelper.calculateAppNameChange(app, updatedApp))
-    } yield UpliftRequested
-  }
 
   def verifyUplift(verificationCode: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
 
@@ -132,15 +106,6 @@ class UpliftService @Inject() (
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)
-    }
-  }
-
-  private def fetchApp(applicationId: ApplicationId): Future[StoredApplication] = {
-    val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
-
-    applicationRepository.fetch(applicationId).flatMap {
-      case None      => failed(notFoundException)
-      case Some(app) => successful(app)
     }
   }
 }

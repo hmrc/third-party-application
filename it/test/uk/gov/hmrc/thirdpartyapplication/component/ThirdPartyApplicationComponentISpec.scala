@@ -668,30 +668,6 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
     }
   }
 
-  Feature("Uplift") {
-
-    Scenario("Request uplift for an application") {
-
-      Given("No applications exist")
-      emptyApplicationRepository()
-
-      Given("A third party application")
-      val application = createApplication()
-
-      When("I request to uplift an application to production")
-      val result = postData(
-        s"/application/${application.id.value}/request-uplift",
-        s"""{"requestedByEmailAddress":"admin@example.com", "applicationName": "Prod Application Name"}"""
-      )
-
-      Then("The application is updated to PENDING_GATEKEEPER_APPROVAL")
-      result.code shouldBe NO_CONTENT
-      val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
-      fetchedApplication.name shouldBe "Prod Application Name"
-    }
-  }
-
   Feature("Application name validation") {
     Scenario("for the invalid name 'HMRC'") {
       When("I request if a name is invalid")
