@@ -28,6 +28,7 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 
@@ -36,6 +37,7 @@ class UpliftVerificationExpiryJob @Inject() (
     upliftVerificationExpiryJobLockService: UpliftVerificationExpiryJobLockService,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
+    submissionService: SubmissionsService,
     val clock: Clock,
     jobConfig: UpliftVerificationExpiryJobConfig
   )(implicit val ec: ExecutionContext
@@ -61,6 +63,7 @@ class UpliftVerificationExpiryJob @Inject() (
                       Some(State.PENDING_REQUESTER_VERIFICATION),
                       changedAt = instant()
                     ))
+      _          <- submissionService.declineSubmission(app.id, app.state.requestedByEmailAddress.getOrElse(""), "Declined because requester did not verify")
     } yield updatedApp
   }
 
