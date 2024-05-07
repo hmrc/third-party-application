@@ -64,7 +64,6 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   val applicationApprovedGatekeeperConfirmation = "apiApplicationApprovedGatekeeperConfirmation"
   val applicationApprovedAdminConfirmation      = "apiApplicationApprovedAdminConfirmation"
   val applicationApprovedNotification           = "apiApplicationApprovedNotification"
-  val applicationRejectedNotification           = "apiApplicationRejectedNotification"
   val applicationDeletedNotification            = "apiApplicationDeletedNotification"
   val productionCredentialsRequestExpiryWarning = "apiProductionCredentialsRequestExpiryWarning"
   val productionCredentialsRequestExpired       = "apiProductionCredentialsRequestExpired"
@@ -138,19 +137,6 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
   def sendApplicationApprovedNotification(application: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(recipients, applicationApprovedNotification, Map("applicationName" -> application)))
-  }
-
-  def sendApplicationRejectedNotification(application: String, recipients: Set[LaxEmailAddress], reason: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(
-      recipients,
-      applicationRejectedNotification,
-      Map(
-        "applicationName" -> application,
-        "guidelinesUrl"   -> s"$devHubBaseUrl/api-documentation/docs/using-the-hub/name-guidelines",
-        "supportUrl"      -> s"$devHubBaseUrl/developer/support",
-        "reason"          -> reason
-      )
-    ))
   }
 
   def sendApplicationDeletedNotification(

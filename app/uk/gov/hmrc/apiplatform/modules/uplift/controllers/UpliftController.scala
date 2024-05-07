@@ -22,13 +22,10 @@ import scala.concurrent.ExecutionContext
 import play.api.libs.json.OFormat
 import play.api.mvc.ControllerComponents
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{InvalidStateTransition, State}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsErrorResponse, JsonUtils}
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
 
 object UpliftController {
   import play.api.libs.json.Json
@@ -41,20 +38,6 @@ object UpliftController {
 class UpliftController @Inject() (upliftService: UpliftService, cc: ControllerComponents)(implicit val ec: ExecutionContext)
     extends ExtraHeadersController(cc)
     with JsonUtils {
-
-  import UpliftController._
-
-  def requestUplift(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[UpliftApplicationRequest] { upliftRequest =>
-      upliftService.requestUplift(applicationId, upliftRequest.applicationName, upliftRequest.requestedByEmailAddress)
-        .map(_ => NoContent)
-    } recover {
-      case _: InvalidStateTransition   =>
-        PreconditionFailed(JsErrorResponse(INVALID_STATE_TRANSITION, s"Application is not in state '${State.TESTING}'"))
-      case e: ApplicationAlreadyExists =>
-        Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
-    } recover recovery
-  }
 
   def verifyUplift(verificationCode: String) = Action.async { implicit request =>
     upliftService.verifyUplift(verificationCode) map (_ => NoContent) recover {
