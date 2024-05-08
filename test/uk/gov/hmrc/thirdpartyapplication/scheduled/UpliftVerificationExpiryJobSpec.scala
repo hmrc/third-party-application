@@ -112,12 +112,12 @@ class UpliftVerificationExpiryJobSpec
       verify(mockSubmissionsService).declineSubmission(
         app1.id,
         "requester1@example.com",
-        "Declined because requester did not verify"
+        "Automatically declined because requester did not verify"
       )
       verify(mockSubmissionsService).declineSubmission(
         app2.id,
         "requester2@example.com",
-        "Declined because requester did not verify"
+        "Automatically declined because requester did not verify"
       )
     }
 

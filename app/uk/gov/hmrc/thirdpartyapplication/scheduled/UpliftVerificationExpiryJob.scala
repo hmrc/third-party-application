@@ -63,7 +63,7 @@ class UpliftVerificationExpiryJob @Inject() (
                       Some(State.PENDING_REQUESTER_VERIFICATION),
                       changedAt = instant()
                     ))
-      _          <- submissionService.declineSubmission(app.id, app.state.requestedByEmailAddress.getOrElse(""), "Declined because requester did not verify")
+      _          <- submissionService.declineSubmission(app.id, app.state.requestedByEmailAddress.getOrElse(""), "Automatically declined because requester did not verify")
     } yield updatedApp
   }
 
