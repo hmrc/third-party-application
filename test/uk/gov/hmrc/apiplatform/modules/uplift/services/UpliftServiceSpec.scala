@@ -17,21 +17,18 @@
 package uk.gov.hmrc.apiplatform.modules.uplift.services
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.successful
 
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{InvalidStateTransition, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories.UpliftLinksRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, UpliftRequested, UpliftVerified}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, UpliftVerified}
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
@@ -55,117 +52,6 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
 
     val underTest: UpliftService =
       new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, UpliftNamingServiceMock.aMock, ApiGatewayStoreMock.aMock, clock)
-  }
-
-  "requestUplift" should {
-    val requestedName          = "application name"
-    val upliftRequestedByEmail = "email@example.com".toLaxEmail
-
-    "update the state of the application" in new Setup {
-      AuditServiceMock.Audit.thenReturnSuccess()
-      ApplicationRepoMock.Save.thenAnswer(successful)
-
-      val application: StoredApplication         = anApplicationData(applicationId, testingState())
-      val expectedApplication: StoredApplication =
-        application.copy(state = pendingGatekeeperApprovalState(upliftRequestedByEmail.text), name = requestedName, normalisedName = requestedName.toLowerCase)
-
-      val expectedStateHistory = StateHistory(
-        applicationId = expectedApplication.id,
-        state = State.PENDING_GATEKEEPER_APPROVAL,
-        actor = Actors.AppCollaborator(upliftRequestedByEmail),
-        previousState = Some(State.TESTING),
-        changedAt = instant
-      )
-
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.FetchByName.thenReturnWhen(requestedName)(application, expectedApplication)
-
-      UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
-      StateHistoryRepoMock.Insert.thenAnswer()
-
-      val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
-
-      ApplicationRepoMock.Save.verifyCalledWith(expectedApplication)
-      StateHistoryRepoMock.Insert.verifyCalledWith(expectedStateHistory)
-      result shouldBe UpliftRequested
-    }
-
-    "rollback the application when storing the state history fails" in new Setup {
-      val application: StoredApplication = anApplicationData(applicationId, testingState())
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.Save.thenAnswer(successful)
-      ApplicationRepoMock.FetchByName.thenReturnWhen(requestedName)(application)
-      StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))
-      UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
-
-      intercept[RuntimeException] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
-      }
-
-      ApplicationRepoMock.Save.verifyCalledWith(application)
-    }
-
-    "send an Audit event when an application uplift is successfully requested with no name change" in new Setup {
-      val application: StoredApplication = anApplicationData(applicationId, testingState())
-
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.Save.thenAnswer(successful)
-      ApplicationRepoMock.FetchByName.thenReturnEmptyList()
-      UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
-      StateHistoryRepoMock.Insert.thenAnswer()
-
-      await(underTest.requestUplift(applicationId, application.name, upliftRequestedByEmail))
-      AuditServiceMock.Audit.verifyCalledWith(ApplicationUpliftRequested, Map("applicationId" -> application.id.value.toString), hc)
-    }
-
-    "send an Audit event when an application uplift is successfully requested with a name change" in new Setup {
-      val application: StoredApplication = anApplicationData(applicationId, testingState())
-
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.Save.thenAnswer(successful)
-      ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(requestedName)
-      UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
-      StateHistoryRepoMock.Insert.thenAnswer()
-
-      await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
-
-      val expectedAuditDetails: Map[String, String] = Map("applicationId" -> application.id.value.toString, "newApplicationName" -> requestedName)
-      AuditServiceMock.Audit.verifyCalledWith(ApplicationUpliftRequested, expectedAuditDetails, hc)
-    }
-
-    "fail with InvalidStateTransition without invoking fetchNonTestingApplicationByName when the application is not in testing" in new Setup {
-      val application: StoredApplication = anApplicationData(applicationId, pendingGatekeeperApprovalState("test@example.com"))
-
-      ApplicationRepoMock.Fetch.thenReturn(application)
-
-      intercept[InvalidStateTransition] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
-      }
-      ApplicationRepoMock.FetchByName.veryNeverCalled()
-    }
-
-    "fail with ApplicationAlreadyExists when another uplifted application already exist with the same name" in new Setup {
-      AuditServiceMock.Audit.thenReturnSuccess()
-
-      val application: StoredApplication        = anApplicationData(applicationId, testingState())
-      val anotherApplication: StoredApplication = anApplicationData(ApplicationId.random, productionState("admin@example.com"))
-
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.FetchByName.thenReturnWhen(requestedName)(application, anotherApplication)
-      UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
-
-      intercept[ApplicationAlreadyExists] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
-      }
-    }
-
-    "propagate the exception when the repository fail" in new Setup {
-      ApplicationRepoMock.Fetch.thenFail(new RuntimeException("Expected test failure"))
-
-      intercept[RuntimeException] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
-      }
-    }
   }
 
   "verifyUplift" should {

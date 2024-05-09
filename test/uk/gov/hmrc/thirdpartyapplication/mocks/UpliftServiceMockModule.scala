@@ -21,10 +21,9 @@ import scala.concurrent.Future.{failed, successful}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, UpliftVerified}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftVerified
 
 trait UpliftServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -36,19 +35,6 @@ trait UpliftServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
     def verify(mode: VerificationMode) = MockitoSugar.verify(aMock, mode)
 
     def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
-
-    object RequestUplift {
-
-      def thenReturnWhen(appId: ApplicationId, name: String, email: LaxEmailAddress)(value: ApplicationStateChange) =
-        when(aMock.requestUplift(eqTo(appId), eqTo(name), eqTo(email))(*)).thenReturn(successful(value))
-
-      def thenReturn(value: ApplicationStateChange) = {
-        when(aMock.requestUplift(*[ApplicationId], *, *[LaxEmailAddress])(*)).thenReturn(successful(value))
-      }
-
-      def thenFailsWith(ex: Exception) =
-        when(aMock.requestUplift(*[ApplicationId], *, *[LaxEmailAddress])(*)).thenReturn(failed(ex))
-    }
 
     object VerifyUplift {
 

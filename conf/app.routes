@@ -31,7 +31,6 @@ GET           /application/:id/subscription/:context/:version        uk.gov.hmrc
 
 POST          /application/:id/delete                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteApplication(id: ApplicationId)
 
-POST          /application/:id/request-uplift                        uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController.requestUplift(id: ApplicationId)
 POST          /verify-uplift/:code                                   uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController.verifyUplift(code: String)
 
 # Gatekeeper ONLY routes
@@ -42,8 +41,6 @@ GET           /gatekeeper/applications/stateHistory                  uk.gov.hmrc
 GET           /gatekeeper/applications/subscriptions                 uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAllAppsWithSubscriptions()
 GET           /gatekeeper/developer/:userId/applications             uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAllForCollaborator(userId: UserId)
 POST          /gatekeeper/application/:id/delete                     uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.deleteApplication(id: ApplicationId)
-POST          /application/:id/approve-uplift                        uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.approveUplift(id: ApplicationId)
-POST          /application/:id/reject-uplift                         uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.rejectUplift(id: ApplicationId)
 POST          /application/:id/resend-verification                   uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.resendVerification(id: ApplicationId)
 POST          /application/:id/block                                 uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.blockApplication(id: ApplicationId)
 POST          /application/:id/unblock                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.unblockApplication(id: ApplicationId)
