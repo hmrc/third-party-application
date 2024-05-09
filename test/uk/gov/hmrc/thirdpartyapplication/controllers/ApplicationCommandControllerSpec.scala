@@ -232,7 +232,7 @@ class ApplicationCommandControllerSpec
       }
       "write to json" in {
         val jsonText =
-          """{"command":{"gatekeeperUser":"a a","timestamp":"2020-01-02T03:04:05.006Z","grantLength":180,"updateType":"changeGrantLength"},"verifiedCollaboratorsToNotify":[]}"""
+          """{"command":{"gatekeeperUser":"a a","timestamp":"2020-01-02T03:04:05.006Z","grantLength":"P180D","updateType":"changeGrantLength"},"verifiedCollaboratorsToNotify":[]}"""
         Json.toJson(req).toString() shouldBe jsonText
       }
     }
