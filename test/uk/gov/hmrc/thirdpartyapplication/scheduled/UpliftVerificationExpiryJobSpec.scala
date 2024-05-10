@@ -31,6 +31,8 @@ import uk.gov.hmrc.mongo.test.MongoSupport
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
@@ -49,9 +51,10 @@ class UpliftVerificationExpiryJobSpec
   final val sixty            = 60
   final val twentyFour       = 24
 
-  trait Setup {
+  trait Setup extends SubmissionsTestData {
     val mockApplicationRepository: ApplicationRepository   = mock[ApplicationRepository]
     val mockStateHistoryRepository: StateHistoryRepository = mock[StateHistoryRepository]
+    val mockSubmissionsService: SubmissionsService         = mock[SubmissionsService]
     val mongoLockRepository: MongoLockRepository           = app.injector.instanceOf[MongoLockRepository]
     val lockKeeperSuccess: () => Boolean                   = () => true
 
@@ -69,20 +72,24 @@ class UpliftVerificationExpiryJobSpec
     val config: UpliftVerificationExpiryJobConfig  = UpliftVerificationExpiryJobConfig(initialDelay, interval, enabled = true, upliftVerificationValidity)
 
     val underTest =
-      new UpliftVerificationExpiryJob(mockUpliftVerificationExpiryJobLockService, mockApplicationRepository, mockStateHistoryRepository, clock, config)
+      new UpliftVerificationExpiryJob(mockUpliftVerificationExpiryJobLockService, mockApplicationRepository, mockStateHistoryRepository, mockSubmissionsService, clock, config)
   }
 
   "uplift verification expiry job execution" should {
 
     "expire all application uplifts having expiry date before the expiry time" in new Setup {
-      val app1: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"))
-      val app2: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app1: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"), pendingRequesterVerificationState("requester1@example.com"))
+      val app2: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"), pendingRequesterVerificationState("requester2@example.com"))
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), any[Instant]))
         .thenReturn(successful(List(app1, app2)))
 
       when(mockApplicationRepository.save(*[StoredApplication]))
         .thenAnswer((a: StoredApplication) => successful(a))
+      when(mockStateHistoryRepository.insert(*))
+        .thenAnswer((h: StateHistory) => successful(h))
+      when(mockSubmissionsService.declineSubmission(*[ApplicationId], *, *))
+        .thenReturn(successful(Some(aSubmission)))
 
       await(underTest.execute)
       verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, instant.minus(JavaTimeDuration.ofDays(expiryTimeInDays)))
@@ -102,6 +109,16 @@ class UpliftVerificationExpiryJobSpec
         Some(State.PENDING_REQUESTER_VERIFICATION),
         changedAt = instant
       ))
+      verify(mockSubmissionsService).declineSubmission(
+        app1.id,
+        "requester1@example.com",
+        "Automatically declined because requester did not verify"
+      )
+      verify(mockSubmissionsService).declineSubmission(
+        app2.id,
+        "requester2@example.com",
+        "Automatically declined because requester did not verify"
+      )
     }
 
     "not execute if the job is already running" in new Setup {
