@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.{Clock, Instant, Period}
+import java.time.temporal.ChronoUnit.SECONDS
+import java.time.{Clock, Instant}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -68,7 +69,7 @@ class UpliftVerificationExpiryJob @Inject() (
   }
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val expiredTime: Instant = instant().minus(Period.ofDays(upliftVerificationValidity.toDays.toInt))
+    val expiredTime: Instant = Instant.now(clock).minus(upliftVerificationValidity.toSeconds, SECONDS)
     logger.info(s"Move back applications to TESTING having status 'PENDING_REQUESTER_VERIFICATION' with timestamp earlier than $expiredTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
