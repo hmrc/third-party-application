@@ -79,6 +79,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockChangeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler                                       = mock[ChangeResponsibleIndividualToOtherCommandHandler]
     val mockVerifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler                                                     = mock[VerifyResponsibleIndividualCommandHandler]
     val mockDeclineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler                                                   = mock[DeclineResponsibleIndividualCommandHandler]
+    val mockResendRequesterEmailVerificationCommandHandler: ResendRequesterEmailVerificationCommandHandler                                           = mock[ResendRequesterEmailVerificationCommandHandler]
 
     val mockDeclineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler =
       mock[DeclineResponsibleIndividualDidNotVerifyCommandHandler]
@@ -179,7 +180,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockVerifyResponsibleIndividualCommandHandler,
       mockDeclineApplicationApprovalRequestCommandHandler,
       mockDeclineResponsibleIndividualCommandHandler,
-      mockDeclineResponsibleIndividualDidNotVerifyCommandHandler
+      mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
+      mockResendRequesterEmailVerificationCommandHandler
     )
 
     val subscriptionCommandsProcessor = new SubscriptionCommandsProcessor(
