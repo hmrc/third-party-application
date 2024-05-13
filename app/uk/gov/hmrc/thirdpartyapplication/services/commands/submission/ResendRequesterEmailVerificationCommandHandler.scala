@@ -55,13 +55,14 @@ class ResendRequesterEmailVerificationCommandHandler @Inject() (
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[Failures, *]].map5(
+      Apply[Validated[Failures, *]].map6(
         isStandardNewJourneyApp(app),
         isPendingRequesterVerification(app),
         ensureRequesterEmailDefined(app),
         ensureRequesterNameDefined(app),
+        ensureVerificationCodeDefined(app),
         checkSubmission(maybeSubmission)
-      ) { case (_, _, requesterEmail, requesterName, submission) => (requesterEmail, requesterName, submission) }
+      ) { case (_, _, requesterEmail, requesterName, _, submission) => (requesterEmail, requesterName, submission) }
     }
   }
 

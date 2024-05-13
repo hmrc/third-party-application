@@ -207,4 +207,10 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def appHasLessThanLimitOfSecrets(app: StoredApplication, clientSecretLimit: Int): Validated[Failures, Unit] =
     cond(app.tokens.production.clientSecrets.size < clientSecretLimit, GenericFailure("Client secret limit has been exceeded"))
+
+  def getVerificationCode(app: StoredApplication): Option[String] =
+    app.state.verificationCode
+
+  def ensureVerificationCodeDefined(app: StoredApplication) =
+    mustBeDefined(getVerificationCode(app), "The verificationCode has not been set for this application")
 }

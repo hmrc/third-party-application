@@ -24,6 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ResendRequesterEmailVerification
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.RequesterEmailVerificationResent
@@ -113,11 +114,20 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
       }
     }
 
+    "return an error if the application has no verification code" in new Setup {
+      SubmissionsServiceMock.FetchLatest.thenReturn(submission)
+      val noVerificationCodeApp = app.copy(state = ApplicationState(State.PENDING_REQUESTER_VERIFICATION, Some(appAdminEmail.text), Some(appAdminName), None, instant))
+
+      checkFailsWith("The verificationCode has not been set for this application") {
+        underTest.process(noVerificationCodeApp, ResendRequesterEmailVerification(gatekeeperUser, instant))
+      }
+    }
+
     "return an error if the application is not pending requester verification" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val notApprovedApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
-      checkFailsWith("App is not in PENDING_REQUESTER_VERIFICATION state") {
+      checkFailsWith("App is not in PENDING_REQUESTER_VERIFICATION state", "The verificationCode has not been set for this application") {
         underTest.process(notApprovedApp, ResendRequesterEmailVerification(gatekeeperUser, instant))
       }
     }
