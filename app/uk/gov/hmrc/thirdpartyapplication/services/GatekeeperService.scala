@@ -88,6 +88,7 @@ class GatekeeperService @Inject() (
     } yield history
   }
 
+  @deprecated
   def resendVerification(applicationId: ApplicationId, gatekeeperUserId: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def rejectIfNotPendingVerification(existing: StoredApplication) = {
       existing.state.requireState(State.PENDING_REQUESTER_VERIFICATION, State.PENDING_REQUESTER_VERIFICATION)

@@ -133,6 +133,12 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
       GenericFailure("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state")
     )
 
+  def isPendingRequesterVerification(app: StoredApplication) =
+    cond(
+      app.isPendingRequesterVerification,
+      GenericFailure("App is not in PENDING_REQUESTER_VERIFICATION state")
+    )
+
   def isInTesting(app: StoredApplication) =
     cond(
       app.isInTesting,
