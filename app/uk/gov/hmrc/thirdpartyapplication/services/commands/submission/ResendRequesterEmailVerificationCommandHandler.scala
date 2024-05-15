@@ -23,8 +23,6 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.validated._
 
-import uk.gov.hmrc.http.HeaderCarrier
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ResendRequesterEmailVerification
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
@@ -33,14 +31,11 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.ApplicationVerficationResent
-import uk.gov.hmrc.thirdpartyapplication.services.AuditService
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class ResendRequesterEmailVerificationCommandHandler @Inject() (
-    submissionService: SubmissionsService,
-    auditService: AuditService
+    submissionService: SubmissionsService
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
@@ -87,11 +82,10 @@ class ResendRequesterEmailVerificationCommandHandler @Inject() (
     )
   }
 
-  def process(app: StoredApplication, cmd: ResendRequesterEmailVerification)(implicit hc: HeaderCarrier): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: ResendRequesterEmailVerification): AppCmdResultT = {
     for {
       validated                                  <- E.fromValidatedF(validate(app))
       (requesterEmail, requesterName, submission) = validated
-      result                                     <- E.liftF(auditService.auditGatekeeperAction(cmd.gatekeeperUser, app, ApplicationVerficationResent))
       emailResent                                 = asEvents(app, cmd, submission, requesterEmail, requesterName)
     } yield (app, NonEmptyList.one(emailResent))
   }

@@ -104,7 +104,7 @@ class GatekeeperService @Inject() (
     for {
       app <- fetchApp(applicationId)
       _    = rejectIfNotPendingVerification(app)
-      _    = auditService.auditGatekeeperAction(gatekeeperUserId, app, ApplicationVerficationResent)
+      _    = auditService.auditGatekeeperAction(gatekeeperUserId, app, ApplicationVerificationResent)
       _    = recoverAll(sendEmails(app))
     } yield UpliftApproved
 

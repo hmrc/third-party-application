@@ -485,7 +485,7 @@ class ApplicationCommandDispatcherSpec
       "call ResendRequesterEmailVerification Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockResendRequesterEmailVerificationCommandHandler.process(*[StoredApplication], *[ResendRequesterEmailVerification])(*)).thenReturn(E.pure((
+        when(mockResendRequesterEmailVerificationCommandHandler.process(*[StoredApplication], *[ResendRequesterEmailVerification])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))

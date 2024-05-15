@@ -28,9 +28,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 object VerifyRequesterEmailNotification {
 
   def sendAdviceEmail(emailConnector: EmailConnector, app: StoredApplication, event: RequesterEmailVerificationResent)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    val verificationCode: String = app.state.verificationCode.getOrElse("") // Note verificationCode has already been validated
     emailConnector.sendApplicationApprovedAdminConfirmation(
       app.name,
-      app.state.verificationCode.getOrElse(""), // Note verificationCode has already been validated
+      verificationCode,
       Set(event.requestingAdminEmail)
     )
   }

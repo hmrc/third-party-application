@@ -31,12 +31,11 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.Applica
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
 
 class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
 
-  trait Setup extends SubmissionsServiceMockModule with AuditServiceMockModule {
+  trait Setup extends SubmissionsServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -62,13 +61,12 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
     val ts = FixedClock.instant
 
-    val underTest = new ResendRequesterEmailVerificationCommandHandler(SubmissionsServiceMock.aMock, AuditServiceMock.aMock)
+    val underTest = new ResendRequesterEmailVerificationCommandHandler(SubmissionsServiceMock.aMock)
   }
 
   "process" should {
     "create correct event for a valid request with a standard app" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
 
       val result = await(underTest.process(app, ResendRequesterEmailVerification(gatekeeperUser, instant)).value).value
 

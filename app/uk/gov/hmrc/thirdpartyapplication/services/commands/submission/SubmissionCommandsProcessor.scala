@@ -18,8 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
 import javax.inject.{Inject, Singleton}
 
-import uk.gov.hmrc.http.HeaderCarrier
-
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommands, SubmissionCommand}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -37,7 +35,7 @@ class SubmissionCommandsProcessor @Inject() (
   import CommandHandler._
   import ApplicationCommands._
 
-  def process(app: StoredApplication, command: SubmissionCommand)(implicit hc: HeaderCarrier): AppCmdResultT = command match {
+  def process(app: StoredApplication, command: SubmissionCommand): AppCmdResultT = command match {
     case cmd: ChangeResponsibleIndividualToSelf        => changeResponsibleIndividualToSelfCmdHdlr.process(app, cmd)
     case cmd: ChangeResponsibleIndividualToOther       => changeResponsibleIndividualToOtherCmdHdlr.process(app, cmd)
     case cmd: VerifyResponsibleIndividual              => verifyResponsibleIndividualCmdHdlr.process(app, cmd)

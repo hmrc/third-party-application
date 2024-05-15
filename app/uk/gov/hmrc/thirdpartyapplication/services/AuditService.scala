@@ -95,6 +95,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       case evt: SandboxApplicationPrivacyPolicyUrlRemoved      => auditSandboxApplicationPrivacyPolicyUrlRemoved(app, evt)
       case evt: SandboxApplicationTermsAndConditionsUrlChanged => auditSandboxApplicationTermsAndConditionsUrlChanged(app, evt)
       case evt: SandboxApplicationTermsAndConditionsUrlRemoved => auditSandboxApplicationTermsAndConditionsUrlRemoved(app, evt)
+      case evt: RequesterEmailVerificationResent               => auditRequesterEmailVerificationResent(app, evt)
       case _                                                   => Future.successful(None)
     }
   }
@@ -228,6 +229,16 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
     ))
       .toOption
       .value
+
+  private def auditRequesterEmailVerificationResent(app: StoredApplication, evt: RequesterEmailVerificationResent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+    E.liftF(auditGatekeeperAction(
+      evt.actor.user,
+      app,
+      ApplicationVerificationResent
+    ))
+      .toOption
+      .value
+
 }
 
 sealed trait AuditAction {
@@ -317,7 +328,7 @@ object AuditAction {
     val auditType = "ApplicationNameDeclinedByGatekeeper"
   }
 
-  case object ApplicationVerficationResent extends AuditAction {
+  case object ApplicationVerificationResent extends AuditAction {
     val name      = "verification email has been resent"
     val auditType = "VerificationEmailResentByGatekeeper"
   }

@@ -128,6 +128,9 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   }
 
   def sendApplicationApprovedAdminConfirmation(application: String, code: String, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
+println(s"****** $application, $code, ${recipients.head}")
+
     post(SendEmailRequest(
       recipients,
       applicationApprovedAdminConfirmation,
