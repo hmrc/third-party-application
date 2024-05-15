@@ -200,7 +200,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
         "applicationId"          -> appInTesting.id.value.toString,
         "applicationName"        -> appInTesting.name,
         "upliftRequestedByEmail" -> appInTesting.state.requestedByEmailAddress.getOrElse("-"),
-        "applicationAdmins"      -> appInTesting.admins.map(_.emailAddress).mkString(", ")
+        "applicationAdmins"      -> appInTesting.admins.map(_.emailAddress.text).mkString(", ")
       )
 
       val extraDetail       = questionsWithAnswers ++ declinedData ++ dates ++ counters ++ gatekeeperDetails
