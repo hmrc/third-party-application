@@ -426,7 +426,7 @@ object AuditHelper {
       "applicationId"          -> app.id.value.toString,
       "applicationName"        -> app.name,
       "upliftRequestedByEmail" -> app.state.requestedByEmailAddress.getOrElse("-"),
-      "applicationAdmins"      -> app.admins.map(_.emailAddress).mkString(", ")
+      "applicationAdmins"      -> app.admins.map(_.emailAddress.text).mkString(", ")
     )
 
   def calculateAppChanges(previous: StoredApplication, updated: StoredApplication) = {
