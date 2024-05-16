@@ -55,6 +55,7 @@ class GatekeeperController @Inject() (
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_REQUESTER_VERIFICATION'")
   )
 
+  @deprecated
   def resendVerification(id: ApplicationId) = requiresAuthentication().async(parse.json) {
     implicit request =>
       withJsonBody[ResendVerificationRequest] { resendVerificationPayload =>

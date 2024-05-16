@@ -133,6 +133,12 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
       GenericFailure("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state")
     )
 
+  def isPendingRequesterVerification(app: StoredApplication) =
+    cond(
+      app.isPendingRequesterVerification,
+      GenericFailure("App is not in PENDING_REQUESTER_VERIFICATION state")
+    )
+
   def isInTesting(app: StoredApplication) =
     cond(
       app.isInTesting,
@@ -201,4 +207,10 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def appHasLessThanLimitOfSecrets(app: StoredApplication, clientSecretLimit: Int): Validated[Failures, Unit] =
     cond(app.tokens.production.clientSecrets.size < clientSecretLimit, GenericFailure("Client secret limit has been exceeded"))
+
+  def getVerificationCode(app: StoredApplication): Option[String] =
+    app.state.verificationCode
+
+  def ensureVerificationCodeDefined(app: StoredApplication) =
+    mustBeDefined(getVerificationCode(app), "The verificationCode has not been set for this application")
 }

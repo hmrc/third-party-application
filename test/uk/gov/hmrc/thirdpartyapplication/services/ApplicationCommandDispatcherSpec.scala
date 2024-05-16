@@ -92,6 +92,7 @@ class ApplicationCommandDispatcherSpec
       mockChangeResponsibleIndividualToOtherCommandHandler,
       mockVerifyResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualCommandHandler,
+      mockResendRequesterEmailVerificationCommandHandler,
       mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
       mockChangeSandboxApplicationNameCommandHandler,
       mockChangeSandboxApplicationDescriptionCommandHandler,
@@ -463,6 +464,40 @@ class ApplicationCommandDispatcherSpec
         testFailure(cmd)
       }
 
+    }
+
+    "ResendRequesterEmailVerification is received" should {
+      val timestamp = instant
+      val actor     = Actors.GatekeeperUser(gatekeeperUser)
+
+      val cmd = ResendRequesterEmailVerification(actor.user, timestamp)
+      val evt = ApplicationEvents.RequesterEmailVerificationResent(
+        EventId.random,
+        applicationId,
+        instant,
+        actor,
+        SubmissionId(SubmissionId.random.value),
+        1,
+        "adminName",
+        "anAdminEmail".toLaxEmail
+      )
+
+      "call ResendRequesterEmailVerification Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(mockResendRequesterEmailVerificationCommandHandler.process(*[StoredApplication], *[ResendRequesterEmailVerification])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
+
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[ResendRequesterEmailVerificationCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
     }
 
     "DeleteApplicationByCollaborator is received" should {

@@ -217,7 +217,7 @@ class GatekeeperServiceSpec
       await(underTest.resendVerification(applicationId, gatekeeperUserId))
 
       AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserId
-      AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationVerficationResent
+      AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationVerificationResent
     }
 
     "fail with InvalidStateTransition when the application is not in PENDING_REQUESTER_VERIFICATION state" in new Setup {

@@ -30,6 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{S
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
@@ -520,6 +521,30 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendProductionCredentialsRequestExpired.verifyCalledWith(applicationData.name, collaboratorEmails)
+    }
+
+    "when receive a RequesterEmailVerificationResent, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendApplicationApprovedAdminConfirmation.thenReturnSuccess()
+      val requesterName    = "Bob Fleming"
+      val requesterEmail   = LaxEmailAddress("bob@example.com")
+      val verificationCode = "123456789"
+      val app              = applicationData.copy(
+        state = ApplicationStateExamples.pendingRequesterVerification(requesterEmail.text, requesterName, verificationCode)
+      )
+      val event            = ApplicationEvents.RequesterEmailVerificationResent(
+        EventId.random,
+        app.id,
+        instant,
+        gatekeeperActor,
+        SubmissionId.random,
+        1,
+        requesterName,
+        requesterEmail
+      )
+
+      val result = await(underTest.sendNotifications(app, NonEmptyList.one(event), Set.empty))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendApplicationApprovedAdminConfirmation.verifyCalledWith(app.name, verificationCode, Set(requesterEmail))
     }
   }
 }
