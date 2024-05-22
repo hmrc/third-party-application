@@ -30,6 +30,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.Application
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import cats.data.NonEmptyList
+import scala.concurrent.Future.successful
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
 
 object ApplicationCommandController {
   case class DispatchRequest(command: ApplicationCommand, verifiedCollaboratorsToNotify: Set[LaxEmailAddress])
@@ -54,6 +58,7 @@ object ApplicationCommandController {
 @Singleton
 class ApplicationCommandController @Inject() (
     val applicationCommandDispatcher: ApplicationCommandDispatcher,
+    val applicationCommandAuthenticator: ApplicationCommandAuthenticator,
     val applicationService: ApplicationService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
@@ -63,6 +68,8 @@ class ApplicationCommandController @Inject() (
 
   import cats.implicits._
   import ApplicationCommandController._
+  
+  val E = EitherTHelper.make[CommandHandler.Failures]
 
   private def fails(applicationId: ApplicationId)(e: CommandHandler.Failures) = {
 
@@ -89,8 +96,27 @@ class ApplicationCommandController @Inject() (
       Ok(Json.toJson(output))
     }
 
+    lazy val unAuth = Unauthorized("Authentication needed for this command")
+
     withJsonBody[DispatchRequest] { dispatchRequest =>
-      applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(fails(applicationId), passes(_))
+      for {
+        authResult     <- applicationCommandAuthenticator.authenticateCommand(dispatchRequest.command)
+        _              <- E.cond(authResult, (), unAuth)
+        dispatchResult <- applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(fails(applicationId), passes(_))
+          // Right app, nel(events)  
+          // Left commandsFailures
+          //val one = applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify)
+          //val two = E.leftT[StoredApplication, NonEmptyList[ApplicationEvent]](CommandFailures.InsufficientPrivileges("Authentication needed for this command"))
+          
+          // if(authResult) 
+          //   applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(fails(applicationId), passes(_))
+          // else 
+          //   E.fromEitherF[CommandHandler.Success](successful(Left(NonEmptyList.one(CommandFailures.InsufficientPrivileges("Authentication needed for this command")))))
+          //   // CommandFailures.InsufficientPrivileges("Authentication needed for this command")
+        //}
+      } yield dispatchResult
+
+      // applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(fails(applicationId), passes(_))
     }
   }
 }
