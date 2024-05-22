@@ -33,6 +33,10 @@ trait ApplicationCommandAuthenticatorMockModule extends MockitoSugar with Argume
       def succeeds() = {
         when(aMock.authenticateCommand(*)(*)).thenReturn(successful(true))
       }
+
+      def fails() = {
+        when(aMock.authenticateCommand(*)(*)).thenReturn(successful(false))
+      }
     }
 
   }

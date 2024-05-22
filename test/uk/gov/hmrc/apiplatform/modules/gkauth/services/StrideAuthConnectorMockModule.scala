@@ -32,6 +32,10 @@ trait StrideAuthConnectorMockModule {
       def succeeds = when(aMock.authorise[Unit](*, *)(*, *)).thenReturn(successful(()))
 
       def fails = when(aMock.authorise[Unit](*, *)(*, *)).thenReturn(failed(new RuntimeException))
+
+      def verifyNotCalled = verify(aMock, never).authorise[Unit](*, *)(*, *)
+
+      def verifyCalledOnce = verify(aMock, times(1)).authorise[Unit](*, *)(*, *)
     }
   }
 

@@ -28,11 +28,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, GatekeeperMixin}
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
 @Singleton
 class ApplicationCommandAuthenticator @Inject() (
-    authControlConfig: AuthControlConfig,
     strideAuthRoles: StrideAuthRoles,
     strideAuthConnector: StrideAuthConnector
   )(implicit ec: ExecutionContext
@@ -42,9 +40,7 @@ class ApplicationCommandAuthenticator @Inject() (
   def authenticateCommand(cmd: ApplicationCommand)(implicit hc: HeaderCarrier): Future[Boolean] = {
     if (requiresStrideAuthentication(cmd)) {
       isStrideAuthorised()
-    } else {
-      successful(true)
-    }
+    } else successful(true)
   }
 
   private def requiresStrideAuthentication(cmd: ApplicationCommand): Boolean = {
@@ -56,15 +52,9 @@ class ApplicationCommandAuthenticator @Inject() (
 
   private def isStrideAuthorised()(implicit hc: HeaderCarrier): Future[Boolean] = {
     strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval)
-      .map(_ => {
-        println("XXXXX Auth passed XXXXX")
-        true
-      })
+      .map(_ => true)
       .recoverWith {
-        case NonFatal(_) => {
-          println("XXXXX Auth failed XXXXX")
-          successful(false)
-        }
+        case NonFatal(_) => successful(false)
       }
   }
 

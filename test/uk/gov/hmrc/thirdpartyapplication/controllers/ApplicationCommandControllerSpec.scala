@@ -220,6 +220,13 @@ class ApplicationCommandControllerSpec
         status(result) shouldBe BAD_REQUEST
       }
 
+      "return 401 error if application command request is not authorised" in new Setup {
+        ApplicationCommandAuthenticatorMock.AuthenticateCommand.fails()
+        val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody))
+
+        ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
+        status(result) shouldBe UNAUTHORIZED
+      }
     }
   }
 
