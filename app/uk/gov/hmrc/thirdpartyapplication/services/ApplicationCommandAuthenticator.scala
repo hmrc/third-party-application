@@ -45,8 +45,8 @@ class ApplicationCommandAuthenticator @Inject() (
 
   private def requiresStrideAuthentication(cmd: ApplicationCommand): Boolean = {
     cmd match {
-      case _: GatekeeperMixin => true
-      case _                  => false
+      case _: ApplicationCommand with GatekeeperMixin => true
+      case _                                          => false
     }
   }
 
