@@ -632,11 +632,15 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val application = createApplication()
       application.grantLength shouldBe GrantLength.EIGHTEEN_MONTHS
 
+      Given("The gatekeeper is logged in")
+      authStub.willValidateLoggedInUserHasGatekeeperRole()
+
       Given("I have updated the grant length to six months")
       apiPlatformEventsStub.willReceiveChangeGrantLengthEvent()
+
       val subcmd   = ApplicationCommands.ChangeGrantLength("admin@example.com", instant, GrantLength.SIX_MONTHS)
-      val response = sendApplicationCommand(subcmd, application)
-      response.body.contains("\"grantLength\":180")
+      val response = sendApplicationCommand(subcmd, application, Seq(AUTHORIZATION -> UUID.randomUUID.toString))
+      response.body.contains("\"newGrantLengthInDays\":180") shouldBe true
 
       Then("A 200 is returned")
       response.code shouldBe OK
@@ -655,10 +659,13 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val application: Application = createApplication()
       application.rateLimitTier shouldBe RateLimitTier.BRONZE
 
+      Given("The gatekeeper is logged in")
+      authStub.willValidateLoggedInUserHasGatekeeperRole()
+
       Given("I have updated the rate limit to GOLD")
       apiPlatformEventsStub.willReceiveChangeRateLimitEvent()
       val subcmd   = ApplicationCommands.ChangeRateLimitTier("admin@example.com", instant, RateLimitTier.GOLD)
-      val response = sendApplicationCommand(subcmd, application)
+      val response = sendApplicationCommand(subcmd, application, Seq(AUTHORIZATION -> UUID.randomUUID.toString))
       response.body.contains("\"rateLimitTier\":\"GOLD\"") shouldBe true
 
       Then("A 200 is returned")
@@ -717,10 +724,10 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       .asString
   }
 
-  def sendApplicationCommand(cmd: ApplicationCommand, application: Application): HttpResponse[String] = {
+  def sendApplicationCommand(cmd: ApplicationCommand, application: Application, extraHeaders: Seq[(String, String)] = Seq()): HttpResponse[String] = {
     val request                                   = DispatchRequest(cmd, Set.empty)
     implicit val writer: OWrites[DispatchRequest] = Json.writes[DispatchRequest]
-    postData(s"/application/${application.id.value}/dispatch", Json.toJson(request).toString(), "PATCH")
+    postData(s"/application/${application.id.value}/dispatch", Json.toJson(request).toString(), "PATCH", extraHeaders)
   }
 
   private def applicationRequest(name: String, access: Access) = {

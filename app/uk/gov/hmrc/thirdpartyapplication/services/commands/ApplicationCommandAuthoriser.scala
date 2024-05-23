@@ -16,6 +16,4 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-class ApplicationCommandAuthoriser {
-  
-}
+class ApplicationCommandAuthoriser {}

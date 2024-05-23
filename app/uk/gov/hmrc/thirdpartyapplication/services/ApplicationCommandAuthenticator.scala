@@ -17,60 +17,55 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
+
+import uk.gov.hmrc.auth.core.Enrolment
+import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
+import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, GatekeeperMixin}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
-import uk.gov.hmrc.apiplatform.modules.gkauth.services._
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
-import scala.concurrent.Future
-import scala.concurrent.Future.successful
-import scala.util.control.NonFatal
-import uk.gov.hmrc.auth.core.Enrolment
-import scala.concurrent.ExecutionContext
- 
-@Singleton 
-class ApplicationCommandAuthenticator @Inject()(
-  strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,
-  authControlConfig: AuthControlConfig,
-  strideAuthRoles: StrideAuthRoles,
-  strideAuthConnector: StrideAuthConnector
-)(implicit ec: ExecutionContext) {
-    private lazy val hasAnyGatekeeperEnrolment = Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
-    def authenticateCommand(cmd: ApplicationCommand)(implicit hc: HeaderCarrier): Future[Boolean] = {
-      if(requiresStrideAuthentication(cmd)){
-        for { 
-          authResult <- isAuthorised()
-          cmdresult =  handleAuthResult(authResult)
-        } yield cmdresult
-      } else {
-        successful(true)
-      }
+@Singleton
+class ApplicationCommandAuthenticator @Inject() (
+    authControlConfig: AuthControlConfig,
+    strideAuthRoles: StrideAuthRoles,
+    strideAuthConnector: StrideAuthConnector
+  )(implicit ec: ExecutionContext
+  ) {
+  private lazy val hasAnyGatekeeperEnrolment = Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
+
+  def authenticateCommand(cmd: ApplicationCommand)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    if (requiresStrideAuthentication(cmd)) {
+      isStrideAuthorised()
+    } else {
+      successful(true)
     }
-
-    private def handleAuthResult(isAuthorised: Boolean): Boolean = {
-      if(!isAuthorised) {false}
-      else {true}
-    }
-
-    private def requiresStrideAuthentication(cmd: ApplicationCommand): Boolean = {
-      cmd match {
-        case _: GatekeeperMixin => true
-        case _ => false
-      }
-    }
-
-    def isAuthorised()(implicit hc: HeaderCarrier): Future[Boolean] = {
-      strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval)
-        .map(_ => true)
-        .recoverWith {
-          case NonFatal(_) => successful(false)
-        }
   }
-  
+
+  private def requiresStrideAuthentication(cmd: ApplicationCommand): Boolean = {
+    cmd match {
+      case _: GatekeeperMixin => true
+      case _                  => false
+    }
+  }
+
+  private def isStrideAuthorised()(implicit hc: HeaderCarrier): Future[Boolean] = {
+    strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval)
+      .map(_ => {
+        println("XXXXX Auth passed XXXXX")
+        true
+      })
+      .recoverWith {
+        case NonFatal(_) => {
+          println("XXXXX Auth failed XXXXX")
+          successful(false)
+        }
+      }
+  }
+
 }
