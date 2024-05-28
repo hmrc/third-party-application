@@ -633,7 +633,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       application.grantLength shouldBe GrantLength.EIGHTEEN_MONTHS
 
       Given("The gatekeeper is logged in")
-      authStub.willValidateLoggedInUserHasGatekeeperRole()
+      authStub.willValidateLoggedInUserHasGatekeeperRole("admin@example.com")
 
       Given("I have updated the grant length to six months")
       apiPlatformEventsStub.willReceiveChangeGrantLengthEvent()
@@ -660,7 +660,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       application.rateLimitTier shouldBe RateLimitTier.BRONZE
 
       Given("The gatekeeper is logged in")
-      authStub.willValidateLoggedInUserHasGatekeeperRole()
+      authStub.willValidateLoggedInUserHasGatekeeperRole("admin@example.com")
 
       Given("I have updated the rate limit to GOLD")
       apiPlatformEventsStub.willReceiveChangeRateLimitEvent()

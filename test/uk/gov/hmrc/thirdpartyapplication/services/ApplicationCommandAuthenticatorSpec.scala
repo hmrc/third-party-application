@@ -58,7 +58,7 @@ class ApplicationCommandAuthenticatorSpec extends AsyncHmrcSpec with StrideAuthC
 
     "command has GatekeeperMixin" should {
       "authorisation is performed and passes, returns true" in new Setup {
-        StrideAuthConnectorMock.Authorise.succeeds
+        StrideAuthConnectorMock.Authorise.succeedsAndReturnsName(gatekeeperUser)
         val cmd: ResendRequesterEmailVerification = ResendRequesterEmailVerification(gatekeeperUser, instant)
         val result                                = await(underTest.authenticateCommand(cmd))
         result shouldBe true
@@ -67,6 +67,13 @@ class ApplicationCommandAuthenticatorSpec extends AsyncHmrcSpec with StrideAuthC
 
       "authorisation is performed and fails, returns false" in new Setup {
         StrideAuthConnectorMock.Authorise.fails
+        val cmd: ResendRequesterEmailVerification = ResendRequesterEmailVerification(gatekeeperUser, instant)
+        val result                                = await(underTest.authenticateCommand(cmd))
+        result shouldBe false
+      }
+
+      "authorisation is performed and passes but the name is different from the command, returns false" in new Setup {
+        StrideAuthConnectorMock.Authorise.succeedsAndReturnsName("Bob")
         val cmd: ResendRequesterEmailVerification = ResendRequesterEmailVerification(gatekeeperUser, instant)
         val result                                = await(underTest.authenticateCommand(cmd))
         result shouldBe false

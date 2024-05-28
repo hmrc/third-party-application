@@ -27,20 +27,33 @@ import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
 object AuthStub extends Stub {
   override val stub = MockHost(18500)
 
-  val json = Json.obj(
-    "authorise" -> Json.arr((Enrolment("user-role") or Enrolment("super-user-role") or Enrolment("admin-role")).toJson),
-    "retrieve"  -> Json.arr()
-  )
+  def willValidateLoggedInUserHasGatekeeperRole() = {
+    val response = """{"authorise":[{"identifiers":[],"state":"Activated","enrolment":"super-user-role"}],"retrieve":[]}"""
+    val json     = Json.obj(
+      "authorise" -> Json.arr((Enrolment("user-role") or Enrolment("super-user-role") or Enrolment("admin-role")).toJson),
+      "retrieve"  -> Json.arr()
+    )
+    stubValidateLoggedInUserHasGatekeeperRole(json.toString, response)
+  }
 
-  def willValidateLoggedInUserHasGatekeeperRole() =
+  def willValidateLoggedInUserHasGatekeeperRole(name: String) = {
+    val response = s"""{"authorise":[{"identifiers":[],"state":"Activated","enrolment":"super-user-role"}],"retrieve":[],"optionalName":{"name":"$name","lastName":"Smith"}}"""
+    val json     = Json.obj(
+      "authorise" -> Json.arr((Enrolment("user-role") or Enrolment("super-user-role") or Enrolment("admin-role")).toJson),
+      "retrieve"  -> Json.arr(Json.toJson("optionalName"))
+    )
+    stubValidateLoggedInUserHasGatekeeperRole(json.toString, response)
+  }
+
+  private def stubValidateLoggedInUserHasGatekeeperRole(requestBody: String, responseBody: String) =
     stub.mock.register(
       post(
         urlPathEqualTo("/auth/authorise")
       )
-        .withRequestBody(equalTo(json.toString))
+        .withRequestBody(equalTo(requestBody))
         .willReturn(
           aResponse()
-            .withBody("""{"authorise":[{"identifiers":[],"state":"Activated","enrolment":"super-user-role"}],"retrieve":[]}""")
+            .withBody(responseBody)
             .withStatus(OK)
         )
     )

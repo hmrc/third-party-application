@@ -22,7 +22,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 import uk.gov.hmrc.auth.core.Enrolment
-import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
+import uk.gov.hmrc.auth.core.retrieve.Name
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, GatekeeperMixin}
@@ -35,27 +36,30 @@ class ApplicationCommandAuthenticator @Inject() (
     strideAuthConnector: StrideAuthConnector
   )(implicit ec: ExecutionContext
   ) {
-  private lazy val hasAnyGatekeeperEnrolment = Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
 
   def authenticateCommand(cmd: ApplicationCommand)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    if (requiresStrideAuthentication(cmd)) {
-      isStrideAuthorised()
-    } else successful(true)
-  }
-
-  private def requiresStrideAuthentication(cmd: ApplicationCommand): Boolean = {
     cmd match {
-      case _: ApplicationCommand with GatekeeperMixin => true
-      case _                                          => false
+      case gkcmd: ApplicationCommand with GatekeeperMixin => isStrideAuthorised(gkcmd)
+      case _                                              => successful(true)
     }
   }
 
-  private def isStrideAuthorised()(implicit hc: HeaderCarrier): Future[Boolean] = {
-    strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval)
-      .map(_ => true)
-      .recoverWith {
-        case NonFatal(_) => successful(false)
-      }
+  private def isStrideAuthorised(gkcmd: ApplicationCommand with GatekeeperMixin)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    authorise() map {
+      case Some(name) => checkName(gkcmd, name)
+      case _          => false
+    } recover {
+      case NonFatal(_) => false
+    }
   }
 
+  private def authorise()(implicit hc: HeaderCarrier): Future[Option[Name]] = {
+    val hasAnyGatekeeperEnrolment = Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
+    val retrieval                 = Retrievals.name
+    strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, retrieval)
+  }
+
+  private def checkName(gkcmd: ApplicationCommand with GatekeeperMixin, retrieveName: Name): Boolean = {
+    retrieveName.name.fold(false)(name => gkcmd.gatekeeperUser.equalsIgnoreCase(name))
+  }
 }

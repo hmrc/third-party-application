@@ -20,6 +20,8 @@ import scala.concurrent.Future.{failed, successful}
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
+import uk.gov.hmrc.auth.core.retrieve.Name
+
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 trait StrideAuthConnectorMockModule {
@@ -30,6 +32,8 @@ trait StrideAuthConnectorMockModule {
 
     object Authorise {
       def succeeds = when(aMock.authorise[Unit](*, *)(*, *)).thenReturn(successful(()))
+
+      def succeedsAndReturnsName(name: String) = when(aMock.authorise[Option[Name]](*, *)(*, *)).thenReturn(successful((Some(Name(Some(name), Some("Example"))))))
 
       def fails = when(aMock.authorise[Unit](*, *)(*, *)).thenReturn(failed(new RuntimeException))
 
