@@ -33,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collabor
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandAuthenticatorMockModule, ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
@@ -50,13 +50,14 @@ class ApplicationCommandControllerSpec
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup
-      extends ApplicationCommandDispatcherMockModule with ApplicationServiceMockModule {
+      extends ApplicationCommandDispatcherMockModule with ApplicationServiceMockModule with ApplicationCommandAuthenticatorMockModule {
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
     lazy val underTest = new ApplicationCommandController(
       ApplicationCommandDispatcherMock.aMock,
+      ApplicationCommandAuthenticatorMock.aMock,
       ApplicationServiceMock.aMock,
       Helpers.stubControllerComponents()
     )
@@ -153,6 +154,7 @@ class ApplicationCommandControllerSpec
     "calling dispatch" should {
 
       "return success if application command request is valid" in new Setup {
+        ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
         ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(anApplicationData(applicationId))
 
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody))
@@ -161,6 +163,7 @@ class ApplicationCommandControllerSpec
       }
 
       "return success if dispatch request is valid" in new Setup {
+        ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
         ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(anApplicationData(applicationId))
 
         val result = underTest.dispatch(applicationId)(request.withBody(Json.toJson(dispatch)))
@@ -169,6 +172,7 @@ class ApplicationCommandControllerSpec
       }
 
       "return 422 error if application command request is missing updateType" in new Setup {
+        ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody - "updateType"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
@@ -176,6 +180,7 @@ class ApplicationCommandControllerSpec
       }
 
       "return 422 error if application command request is missing instigator" in new Setup {
+        ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody - "instigator"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
@@ -183,6 +188,7 @@ class ApplicationCommandControllerSpec
       }
 
       "return 422 error if application command request is missing timestamp" in new Setup {
+        ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody - "timestamp"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
@@ -190,6 +196,7 @@ class ApplicationCommandControllerSpec
       }
 
       "return 422 error if application command request is missing gatekeeperUser" in new Setup {
+        ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody - "gatekeeperUser"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
@@ -197,6 +204,7 @@ class ApplicationCommandControllerSpec
       }
 
       "return 422 error if application command request is missing newName" in new Setup {
+        ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody - "newName"))
 
         ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
@@ -204,6 +212,7 @@ class ApplicationCommandControllerSpec
       }
 
       "return 400 error if application command request is valid but update fails" in new Setup {
+        ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
         ApplicationCommandDispatcherMock.Dispatch.thenReturnFailed("update failed!")
 
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody))
@@ -211,6 +220,13 @@ class ApplicationCommandControllerSpec
         status(result) shouldBe BAD_REQUEST
       }
 
+      "return 401 error if application command request is not authorised" in new Setup {
+        ApplicationCommandAuthenticatorMock.AuthenticateCommand.fails()
+        val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody))
+
+        ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
+        status(result) shouldBe UNAUTHORIZED
+      }
     }
   }
 

@@ -18,12 +18,13 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future.successful
 
 import play.api.libs.json.{Json, OFormat, Reads}
 import play.api.mvc._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.Application
@@ -54,6 +55,7 @@ object ApplicationCommandController {
 @Singleton
 class ApplicationCommandController @Inject() (
     val applicationCommandDispatcher: ApplicationCommandDispatcher,
+    val applicationCommandAuthenticator: ApplicationCommandAuthenticator,
     val applicationService: ApplicationService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
@@ -63,6 +65,8 @@ class ApplicationCommandController @Inject() (
 
   import cats.implicits._
   import ApplicationCommandController._
+
+  val E = EitherTHelper.make[CommandHandler.Failures]
 
   private def fails(applicationId: ApplicationId)(e: CommandHandler.Failures) = {
 
@@ -89,8 +93,14 @@ class ApplicationCommandController @Inject() (
       Ok(Json.toJson(output))
     }
 
+    lazy val unAuth = Unauthorized("Authentication needed for this command")
+
     withJsonBody[DispatchRequest] { dispatchRequest =>
-      applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(fails(applicationId), passes(_))
+      applicationCommandAuthenticator.authenticateCommand(dispatchRequest.command).flatMap(isAuthorised =>
+        if (isAuthorised) {
+          applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(fails(applicationId), passes(_))
+        } else successful(unAuth)
+      )
     }
   }
 }

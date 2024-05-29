@@ -46,4 +46,5 @@ class StrideGatekeeperRoleAuthorisationService @Inject() (
         case NonFatal(_) => UNAUTHORIZED_RESPONSE
       }
   }
+
 }
