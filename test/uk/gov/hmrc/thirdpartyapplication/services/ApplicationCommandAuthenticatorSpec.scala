@@ -27,6 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSec
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideAuthConnectorMockModule
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class ApplicationCommandAuthenticatorSpec extends AsyncHmrcSpec with StrideAuthConnectorMockModule with FixedClock {
@@ -37,12 +38,15 @@ class ApplicationCommandAuthenticatorSpec extends AsyncHmrcSpec with StrideAuthC
     val developerAsActor = Actors.AppCollaborator(devEmail)
     val gatekeeperUser   = "gatekeeper.user"
 
-    val strideAuthRoles: StrideAuthRoles = StrideAuthRoles("admin", "super-user", "user")
-    implicit val headers: HeaderCarrier  = HeaderCarrier()
+    val strideAuthRoles: StrideAuthRoles     = StrideAuthRoles("admin", "super-user", "user")
+    val authControlConfig: AuthControlConfig = AuthControlConfig(true, true, "authKey")
+
+    implicit val headers: HeaderCarrier = HeaderCarrier()
 
     val underTest = new ApplicationCommandAuthenticator(
       strideAuthRoles,
-      StrideAuthConnectorMock.aMock
+      StrideAuthConnectorMock.aMock,
+      authControlConfig
     )
   }
 

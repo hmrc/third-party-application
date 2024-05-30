@@ -26,30 +26,43 @@ import uk.gov.hmrc.auth.core.retrieve.Name
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, GatekeeperMixin}
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
 @Singleton
 class ApplicationCommandAuthenticator @Inject() (
     strideAuthRoles: StrideAuthRoles,
-    strideAuthConnector: StrideAuthConnector
+    strideAuthConnector: StrideAuthConnector,
+    authControlConfig: AuthControlConfig
   )(implicit ec: ExecutionContext
-  ) {
+  ) extends ApplicationLogger {
 
   def authenticateCommand(cmd: ApplicationCommand)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    cmd match {
-      case gkcmd: ApplicationCommand with GatekeeperMixin => isStrideAuthorised(gkcmd)
-      case _                                              => successful(true)
+    if (authControlConfig.enabled) {
+      cmd match {
+        case gkcmd: ApplicationCommand with GatekeeperMixin => isStrideAuthorised(gkcmd)
+        case _                                              => successful(true)
+      }
+    } else {
+      successful(true)
     }
   }
 
   private def isStrideAuthorised(gkcmd: ApplicationCommand with GatekeeperMixin)(implicit hc: HeaderCarrier): Future[Boolean] = {
     authorise() map {
       case Some(name) => checkName(gkcmd, name)
-      case _          => false
+      case _          => {
+        logger.info("Authorisation failed because authorise returned nothing")
+        false
+      }
     } recover {
-      case NonFatal(_) => false
+      case NonFatal(e) => {
+        logger.info(s"Authorisation failed because authorise threw an exception: ${e.getMessage()}")
+        false
+      }
     }
   }
 
@@ -60,6 +73,16 @@ class ApplicationCommandAuthenticator @Inject() (
   }
 
   private def checkName(gkcmd: ApplicationCommand with GatekeeperMixin, retrieveName: Name): Boolean = {
-    retrieveName.name.fold(false)(name => gkcmd.gatekeeperUser.equalsIgnoreCase(name))
+    retrieveName.name.fold {
+      logger.info("Authorisation failed because name retrieved was empty")
+      false
+    } { name =>
+      if (gkcmd.gatekeeperUser.equalsIgnoreCase(name)) {
+        true
+      } else {
+        logger.info(s"Authorisation failed because name retrieved ($name) was different from name supplied in command (${gkcmd.gatekeeperUser})")
+        false
+      }
+    }
   }
 }
