@@ -138,7 +138,7 @@ class RequestApprovalsService @Inject() (
         _                                  <- ET.liftF(writeStateHistory(updatedApp, requestedByEmailAddress))
         updatedSubmission                   = Submission.submit(Instant.now(clock), requestedByEmailAddress)(submission)
         savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
-        _                                  <- ET.liftF(sendProdCredsVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
+        _                                  <- ET.liftF(sendResponsibleIndividualVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
         _                                   = logCompletedApprovalRequest(savedApp)
         _                                  <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
       } yield ApprovalAccepted(savedApp)
@@ -241,7 +241,7 @@ class RequestApprovalsService @Inject() (
     }
   }
 
-  private def sendProdCredsVerificationEmailIfNeeded(
+  private def sendResponsibleIndividualVerificationEmailIfNeeded(
       isRequesterTheResponsibleIndividual: Boolean,
       application: StoredApplication,
       submission: Submission,

@@ -27,10 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationWithDetails
 }
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
@@ -39,12 +36,8 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
   trait Setup
       extends ApplicationTestData
       with SubmissionsTestData
-      with ApplicationRepositoryMockModule
       with StateHistoryRepositoryMockModule
-      with ResponsibleIndividualVerificationRepositoryMockModule
-      with ApplicationServiceMockModule
-      with SubmissionsServiceMockModule
-      with EmailConnectorMockModule {
+      with ResponsibleIndividualVerificationRepositoryMockModule {
 
     val appName                 = "my shiny app"
     val submissionInstanceIndex = 0
@@ -69,11 +62,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
 
     val underTest = new ResponsibleIndividualVerificationService(
       ResponsibleIndividualVerificationRepositoryMock.aMock,
-      ApplicationRepoMock.aMock,
       StateHistoryRepoMock.aMock,
-      ApplicationServiceMock.aMock,
-      SubmissionsServiceMock.aMock,
-      EmailConnectorMock.aMock,
       clock
     )
 
