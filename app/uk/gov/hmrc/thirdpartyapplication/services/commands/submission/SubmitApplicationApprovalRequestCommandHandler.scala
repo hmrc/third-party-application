@@ -37,10 +37,9 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
@@ -62,7 +61,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       for {
         submission     <- OptionT(submissionService.fetchLatest(app.id))
         appName        <- OptionT.fromOption[Future](SubmissionDataExtracter.getApplicationName(submission))
-        nameValidation <- OptionT.liftF[Future, ApplicationNameValidationResult](approvalsNamingService.validateApplicationName(appName, noExclusions))
+        nameValidation <- OptionT.liftF[Future, ApplicationNameValidationResult](validateApplicationName(appName, app.id))
       } yield (submission, appName, nameValidation)
     )
       .fold[Validated[Failures, (Submission, String)]](
@@ -152,6 +151,9 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
 
   private def logCompletedApprovalRequest(app: StoredApplication) =
     logger.info(s"Approval-02: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name}")
+
+  private def validateApplicationName(appName: String, appId: ApplicationId): Future[ApplicationNameValidationResult] =
+    approvalsNamingService.validateApplicationName(appName, appId)
 
   private def deriveNewAppDetails(
       existing: StoredApplication,
