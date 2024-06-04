@@ -254,6 +254,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def updateApplicationGrantLength(applicationId: ApplicationId, refreshTokensAvailableFor: Period): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("refreshTokensAvailableFor", Codecs.toBson(refreshTokensAvailableFor)))
 
+  def addApplicationImportantSubmissionData(applicationId: ApplicationId, importantSubmissionData: ImportantSubmissionData): Future[StoredApplication] =
+    updateApplication(applicationId, Updates.push("access.importantSubmissionData", Codecs.toBson(importantSubmissionData)))
+
+
   def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[StoredApplication] =
     updateApplication(applicationId, Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(acceptance)))
 
