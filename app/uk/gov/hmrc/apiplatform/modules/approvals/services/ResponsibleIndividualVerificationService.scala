@@ -30,19 +30,12 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationId
 }
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 
 class ResponsibleIndividualVerificationService @Inject() (
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
-    applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
-    applicationService: ApplicationService,
-    submissionService: SubmissionsService,
-    emailConnector: EmailConnector,
     clock: Clock
   )(implicit ec: ExecutionContext
   ) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
