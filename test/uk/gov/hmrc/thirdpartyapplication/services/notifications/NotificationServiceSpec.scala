@@ -211,6 +211,34 @@ class NotificationServiceSpec
       )
     }
 
+    "when receive a ResponsibleIndividualVerificationRequired, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
+      val event = ApplicationEvents.ResponsibleIndividualVerificationRequired(
+        EventId.random,
+        ApplicationId.random,
+        instant,
+        otherAdminAsActor,
+        "app name",
+        "admin name",
+        "admin@example.com".toLaxEmail,
+        "ri name",
+        "ri@example.com".toLaxEmail,
+        SubmissionId.random,
+        1,
+        ResponsibleIndividualVerificationId.random.value
+      )
+
+      val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendVerifyResponsibleIndividualNotification.verifyCalledWith(
+        event.responsibleIndividualName,
+        event.responsibleIndividualEmail,
+        event.applicationName,
+        event.requestingAdminName,
+        event.verificationId
+      )
+    }
+
     "when receive a ResponsibleIndividualChanged, call the event handler and return successfully" in new Setup {
       val newRIemail = "ri@example.com".toLaxEmail
       val oldRIemail = "oldri@example.com".toLaxEmail
