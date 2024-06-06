@@ -96,6 +96,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       case evt: SandboxApplicationTermsAndConditionsUrlChanged => auditSandboxApplicationTermsAndConditionsUrlChanged(app, evt)
       case evt: SandboxApplicationTermsAndConditionsUrlRemoved => auditSandboxApplicationTermsAndConditionsUrlRemoved(app, evt)
       case evt: RequesterEmailVerificationResent               => auditRequesterEmailVerificationResent(app, evt)
+      case evt: ApplicationApprovalRequestSubmitted            => auditCompletedApprovalRequest(app, evt)
       case _                                                   => Future.successful(None)
     }
   }
@@ -235,6 +236,14 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       evt.actor.user,
       app,
       ApplicationVerificationResent
+    ))
+      .toOption
+      .value
+
+  private def auditCompletedApprovalRequest(app: StoredApplication, evt: ApplicationApprovalRequestSubmitted)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+    E.liftF(audit(
+      ApplicationUpliftRequested,
+      AuditHelper.applicationId(app.id) ++ Map("newApplicationName" -> app.name)
     ))
       .toOption
       .value

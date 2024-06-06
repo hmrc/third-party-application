@@ -594,6 +594,38 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
       verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
     }
 
+    "applyEvents with a ApplicationApprovalRequestSubmitted event" in new Setup {
+
+      val applicationApprovalRequestSubmitted = ApplicationEvents.ApplicationApprovalRequestSubmitted(
+        id = EventId.random,
+        applicationId = applicationId,
+        eventDateTime = instant,
+        actor = collaboratorActor,
+        submissionId = SubmissionId.random,
+        submissionIndex = 0,
+        requestingAdminName = "Mr Admin",
+        requestingAdminEmail = LaxEmailAddress("admin@anycorp.com")
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = ApplicationUpliftRequested.auditType,
+        tags = hc.toAuditTags(ApplicationUpliftRequested.name, "-"),
+        detail = Map(
+          "applicationId"      -> applicationId.value.toString,
+          "newApplicationName" -> "MyApp"
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(applicationApprovalRequestSubmitted)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
     // "applyEvents with a ApplicationDeletedByGatekeeper event" in new Setup {
 
     //   val event = ApplicationDeletedByGatekeeper(
