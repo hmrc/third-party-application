@@ -75,6 +75,7 @@ class RequestApprovalsService @Inject() (
 
   import RequestApprovalsService._
 
+  @deprecated
   def requestApproval(
       app: StoredApplication,
       submission: Submission,

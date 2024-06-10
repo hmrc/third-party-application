@@ -64,6 +64,7 @@ class ApprovalsController @Inject() (
 
   import ApprovalsController._
 
+  @deprecated
   def requestApproval(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
     import RequestApprovalsService._
 
