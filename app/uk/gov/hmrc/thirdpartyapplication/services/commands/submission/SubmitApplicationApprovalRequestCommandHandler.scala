@@ -68,7 +68,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       ) {
         case (submission, nameFromSubmission, nameValidationResult) => {
           Apply[Validated[Failures, *]].map5(
-            isStandardNewJourneyApp(app),
+            ensureStandardAccess(app),
             isInTesting(app),
             cond(submission.status.isAnsweredCompletely, "Submission has not been answered completely"),
             cond(nameValidationResult != DuplicateName, "New name is a duplicate"),
