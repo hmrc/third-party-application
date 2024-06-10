@@ -101,6 +101,9 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
 
     object Store {
 
+      def thenReturnWith(s: Submission) =
+        when(aMock.store(*[Submission])).thenReturn(successful(s))
+
       def thenReturn() =
         when(aMock.store(*[Submission])).thenAnswer((s: Submission) => (successful(s)))
 

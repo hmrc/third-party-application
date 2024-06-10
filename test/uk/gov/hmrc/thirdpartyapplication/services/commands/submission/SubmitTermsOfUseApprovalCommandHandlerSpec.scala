@@ -16,30 +16,30 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.successful
 
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.approvals.services.ApprovalsNamingService
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubmitApplicationApprovalRequest
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.{ApplicationApprovalRequestSubmitted, ResponsibleIndividualVerificationRequired}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubmitTermsOfUseApproval
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.{ResponsibleIndividualVerificationStarted, TermsOfUseApprovalSubmitted, TermsOfUsePassed}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.AnswerQuestion
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName, ValidName}
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
+import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
 
-class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
+class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
 
   trait Setup extends SubmissionsServiceMockModule
       with ApplicationRepositoryMockModule
@@ -51,10 +51,13 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
 
     val submission               = buildFullyAnsweredSubmission(aSubmission)
     val submissionRequesterNotRI = AnswerQuestion.recordAnswer(submission, submission.questionIdsOfInterest.responsibleIndividualIsRequesterId, List("No")).value.submission
+    val submissionWithFail       = AnswerQuestion.recordAnswer(submission, submission.questionIdsOfInterest.privacyPolicyId, List("No")).value.submission
 
     val appAdminUserId = UserId.random
     val appAdminEmail  = "admin@example.com".toLaxEmail
     val appAdminName   = "Ms Admin"
+
+    val termsOfUseInvitation = TermsOfUseInvitation(applicationId, Instant.now(), Instant.now(), Instant.now(), None, TermsOfUseInvitationState.EMAIL_SENT)
 
     val importantSubmissionData = ImportantSubmissionData(
       None,
@@ -66,70 +69,39 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
     )
 
     val app = anApplicationData(applicationId).copy(
-      state = ApplicationStateExamples.testing,
+      state = ApplicationStateExamples.production("bob@example.com", "Bob"),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
 
-    val ts                                                 = FixedClock.instant
-    val mockApprovalsNamingService: ApprovalsNamingService = mock[ApprovalsNamingService]
+    val ts = FixedClock.instant
 
-    def namingServiceReturns(result: ApplicationNameValidationResult) =
-      when(mockApprovalsNamingService.validateApplicationName(*, *[ApplicationId])).thenReturn(successful(result))
-
-    val underTest = new SubmitApplicationApprovalRequestCommandHandler(
+    val underTest = new SubmitTermsOfUseApprovalCommandHandler(
       SubmissionsServiceMock.aMock,
       ApplicationRepoMock.aMock,
-      StateHistoryRepoMock.aMock,
       TermsOfUseInvitationRepositoryMock.aMock,
-      mockApprovalsNamingService,
       ResponsibleIndividualVerificationServiceMock.aMock
     )
   }
 
   "process" should {
-    "create correct event for a valid request with a standard app and submission where requester is the responsible individual" in new Setup {
+    "create correct event for a valid request with a standard app and submission  will pass where requester is the responsible individual" in new Setup {
+      TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(termsOfUseInvitation)
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      namingServiceReturns(ValidName)
       ApplicationRepoMock.Save.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()
       SubmissionsServiceMock.Store.thenReturn()
+      ApplicationRepoMock.UpdateApplicationImportantSubmissionData.succeeds()
+
       ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(app)
 
-      val result = await(underTest.process(app, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail)).value).value
-
-      inside(result) { case (_, events) =>
-        events should have size 1
-
-        inside(events.head) {
-          case event: ApplicationApprovalRequestSubmitted =>
-            event.applicationId shouldBe applicationId
-            event.eventDateTime shouldBe ts
-            event.actor shouldBe Actors.AppCollaborator(appAdminEmail)
-            event.submissionIndex shouldBe submission.latestInstance.index
-            event.submissionId.value shouldBe submission.id.value
-            event.requestingAdminEmail shouldBe appAdminEmail
-            event.requestingAdminName shouldBe appAdminName
-        }
-      }
-    }
-
-    "create correct event for a valid request with a standard app and submission where requester is NOT the responsible individual" in new Setup {
-      SubmissionsServiceMock.FetchLatest.thenReturn(submissionRequesterNotRI)
-      namingServiceReturns(ValidName)
-      ApplicationRepoMock.Save.thenReturn(app)
-      StateHistoryRepoMock.Insert.succeeds()
-      SubmissionsServiceMock.Store.thenReturn()
-      ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(app)
-      val code = ResponsibleIndividualVerificationId.random
-      ResponsibleIndividualVerificationServiceMock.CreateNewTouUpliftVerification.thenCreateNewTouUpliftVerification(code)
-
-      val result = await(underTest.process(app, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail)).value).value
+      val result = await(underTest.process(app, SubmitTermsOfUseApproval(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail)).value).value
 
       inside(result) { case (_, events) =>
         events should have size 2
 
         inside(events.head) {
-          case event: ApplicationApprovalRequestSubmitted =>
+          case event: TermsOfUseApprovalSubmitted =>
             event.applicationId shouldBe applicationId
             event.eventDateTime shouldBe ts
             event.actor shouldBe Actors.AppCollaborator(appAdminEmail)
@@ -140,7 +112,78 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
         }
 
         inside(events.tail.head) {
-          case event: ResponsibleIndividualVerificationRequired =>
+          case event: TermsOfUsePassed =>
+            event.applicationId shouldBe applicationId
+            event.eventDateTime shouldBe ts
+            event.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+            event.submissionIndex shouldBe submission.latestInstance.index
+            event.submissionId.value shouldBe submission.id.value
+        }
+
+      }
+    }
+
+    "create correct event for a valid request with a standard app and submission will fail where requester is the responsible individual" in new Setup {
+      TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(termsOfUseInvitation)
+      TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
+
+      SubmissionsServiceMock.FetchLatest.thenReturn(submissionWithFail)
+      ApplicationRepoMock.Save.thenReturn(app)
+      StateHistoryRepoMock.Insert.succeeds()
+      SubmissionsServiceMock.Store.thenReturnWith(failSubmission)
+      ApplicationRepoMock.UpdateApplicationImportantSubmissionData.succeeds()
+
+      ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(app)
+
+      val result = await(underTest.process(app, SubmitTermsOfUseApproval(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail)).value).value
+
+      inside(result) { case (_, events) =>
+        events should have size 1
+
+        inside(events.head) {
+          case event: TermsOfUseApprovalSubmitted =>
+            event.applicationId shouldBe applicationId
+            event.eventDateTime shouldBe ts
+            event.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+            event.submissionIndex shouldBe submission.latestInstance.index
+            event.submissionId.value shouldBe submission.id.value
+            event.requestingAdminEmail shouldBe appAdminEmail
+            event.requestingAdminName shouldBe appAdminName
+        }
+
+      }
+    }
+
+    "create correct event for a valid request with a standard app and submission where requester is NOT the responsible individual" in new Setup {
+      SubmissionsServiceMock.FetchLatest.thenReturn(submissionRequesterNotRI)
+      TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(termsOfUseInvitation)
+      ApplicationRepoMock.Save.thenReturn(app)
+      StateHistoryRepoMock.Insert.succeeds()
+      SubmissionsServiceMock.Store.thenReturn()
+      ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(app)
+      ApplicationRepoMock.UpdateApplicationImportantSubmissionData.succeeds()
+
+      val code = ResponsibleIndividualVerificationId.random
+      ResponsibleIndividualVerificationServiceMock.CreateNewTouUpliftVerification.thenCreateNewTouUpliftVerification(code)
+
+      val result = await(underTest.process(app, SubmitTermsOfUseApproval(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail)).value).value
+
+      inside(result) { case (_, events) =>
+        events should have size 2
+
+        inside(events.head) {
+          case event: TermsOfUseApprovalSubmitted =>
+            event.applicationId shouldBe applicationId
+            event.eventDateTime shouldBe ts
+            event.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+            event.submissionIndex shouldBe submission.latestInstance.index
+            event.submissionId.value shouldBe submission.id.value
+            event.requestingAdminEmail shouldBe appAdminEmail
+            event.requestingAdminName shouldBe appAdminName
+        }
+
+        inside(events.tail.head) {
+          case event: ResponsibleIndividualVerificationStarted =>
             event.applicationId shouldBe applicationId
             event.eventDateTime shouldBe ts
             event.actor shouldBe Actors.AppCollaborator(appAdminEmail)
@@ -154,58 +197,43 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
     }
 
     "return an error if no submission is found for the application" in new Setup {
+      TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(termsOfUseInvitation)
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
 
-      checkFailsWith(s"No submission found for application $applicationId") {
-        underTest.process(app, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
+      checkFailsWith(s"No submission/termsOfUseInvitation found for application $applicationId") {
+        underTest.process(app, SubmitTermsOfUseApproval(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
       }
     }
 
     "return an error if the application is non-standard" in new Setup {
+      TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(termsOfUseInvitation)
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      namingServiceReturns(ValidName)
+
       val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
 
-      checkFailsWith("Must be a standard new journey application") {
-        underTest.process(nonStandardApp, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
+      checkFailsWith("App must have a STANDARD access type") {
+        underTest.process(nonStandardApp, SubmitTermsOfUseApproval(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
       }
     }
 
-    "return an error if the application is old journey" in new Setup {
-      SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      namingServiceReturns(ValidName)
-      val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
+    "return an error if submission has not been answered completely" in new Setup {
+      TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(termsOfUseInvitation)
+      val partiallyAnsweredSubmission = buildPartiallyAnsweredSubmission(submission)
+      SubmissionsServiceMock.FetchLatest.thenReturn(partiallyAnsweredSubmission)
 
-      checkFailsWith("Must be a standard new journey application") {
-        underTest.process(oldJourneyApp, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
+      checkFailsWith("Submission has not been answered completely") {
+        underTest.process(app, SubmitTermsOfUseApproval(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
       }
     }
 
-    "return an error if the application name is not unique" in new Setup {
+    "return an error if the application is not in PRODUCTION" in new Setup {
+      TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(termsOfUseInvitation)
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      namingServiceReturns(DuplicateName)
 
-      checkFailsWith("New name is a duplicate") {
-        underTest.process(app, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
-      }
-    }
-
-    "return an error if the application name is invalid" in new Setup {
-      SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      namingServiceReturns(InvalidName)
-
-      checkFailsWith("New name is invalid") {
-        underTest.process(app, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
-      }
-    }
-
-    "return an error if the application is not in TESTING" in new Setup {
-      SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      namingServiceReturns(ValidName)
       val notTestingApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
-      checkFailsWith("App is not in TESTING state") {
-        underTest.process(notTestingApp, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
+      checkFailsWith("App is not in PRODUCTION state") {
+        underTest.process(notTestingApp, SubmitTermsOfUseApproval(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
       }
     }
   }
