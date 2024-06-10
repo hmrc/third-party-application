@@ -71,8 +71,8 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
             ensureStandardAccess(app),
             isInTesting(app),
             cond(submission.status.isAnsweredCompletely, "Submission has not been answered completely"),
-            cond(nameValidationResult != DuplicateName, "New name is a duplicate"),
-            cond(nameValidationResult != InvalidName, "New name is invalid")
+            cond(nameValidationResult != DuplicateName, CommandFailures.DuplicateApplicationName),
+            cond(nameValidationResult != InvalidName, CommandFailures.InvalidApplicationName)
           ) { case _ => (submission, nameFromSubmission) }
         }
       }

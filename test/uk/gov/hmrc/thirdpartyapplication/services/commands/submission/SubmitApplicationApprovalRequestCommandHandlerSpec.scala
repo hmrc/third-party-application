@@ -30,6 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ApprovalsNamingService
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubmitApplicationApprovalRequest
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.{ApplicationApprovalRequestSubmitted, ResponsibleIndividualVerificationRequired}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.AnswerQuestion
@@ -175,7 +176,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       namingServiceReturns(DuplicateName)
 
-      checkFailsWith("New name is a duplicate") {
+      checkFailsWith(CommandFailures.DuplicateApplicationName) {
         underTest.process(app, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
       }
     }
@@ -184,7 +185,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       namingServiceReturns(InvalidName)
 
-      checkFailsWith("New name is invalid") {
+      checkFailsWith(CommandFailures.InvalidApplicationName) {
         underTest.process(app, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
       }
     }
