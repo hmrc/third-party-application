@@ -122,7 +122,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
       SubmissionsServiceMock.Store.thenReturn()
       ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(app)
       val code = ResponsibleIndividualVerificationId.random
-      ResponsibleIndividualVerificationServiceMock.CreateNewTouUpliftVerification.thenCreateNewTouUpliftVerification(code)
+      ResponsibleIndividualVerificationServiceMock.CreateNewToUVerification.thenCreateNewToUVerification(code)
 
       val result = await(underTest.process(app, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail)).value).value
 

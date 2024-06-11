@@ -133,7 +133,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       _                                  <- E.liftF(stateHistoryRepository.insert(createStateHistory(updatedApp, cmd)))
       updatedSubmission                   = Submission.submit(cmd.timestamp, cmd.requesterEmail.text)(submission)
       savedSubmission                    <- E.liftF(submissionService.store(updatedSubmission))
-      createTouUpliftResult               = createTouUpliftVerificationRecordIfNeeded(isRequesterTheResponsibleIndividual, savedApp, savedSubmission, cmd)
+      createTouUpliftResult               = createResponsibleIndividualVerificationRecordIfNeeded(isRequesterTheResponsibleIndividual, savedApp, savedSubmission, cmd)
 
       verificationId <- E.liftF(createTouUpliftResult)
       _               = logCompletedApprovalRequest(savedApp)
@@ -181,7 +181,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       cmd.timestamp
     )
 
-  private def createTouUpliftVerificationRecordIfNeeded(
+  private def createResponsibleIndividualVerificationRecordIfNeeded(
       isRequesterTheResponsibleIndividual: Boolean,
       application: StoredApplication,
       submission: Submission,
@@ -189,12 +189,10 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
     ): Future[Option[ResponsibleIndividualVerificationId]] = {
     if (!isRequesterTheResponsibleIndividual) {
       for {
-        verification <- responsibleIndividualVerificationService.createNewTouUpliftVerification(
+        verification <- responsibleIndividualVerificationService.createNewToUVerification(
                           application,
                           submission.id,
-                          submission.latestInstance.index,
-                          cmd.requesterName,
-                          cmd.requesterEmail
+                          submission.latestInstance.index
                         )
       } yield Some(verification.id)
 
