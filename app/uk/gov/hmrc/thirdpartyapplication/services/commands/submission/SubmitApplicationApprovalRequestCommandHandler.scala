@@ -137,7 +137,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
 
       verificationId <- E.liftF(createTouUpliftResult)
       _               = logCompletedApprovalRequest(savedApp)
-      events          = asEvents(app, cmd, savedSubmission, isRequesterTheResponsibleIndividual, verificationId, importantSubmissionData)
+      events          = asEvents(updatedApp, cmd, savedSubmission, isRequesterTheResponsibleIndividual, verificationId, importantSubmissionData)
     } yield (app, events)
   }
 

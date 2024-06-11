@@ -143,6 +143,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
         inside(events.tail.head) {
           case event: ResponsibleIndividualVerificationRequired =>
             event.applicationId shouldBe applicationId
+            event.applicationName shouldBe "MyApp"
             event.eventDateTime shouldBe ts
             event.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             event.submissionIndex shouldBe submission.latestInstance.index
