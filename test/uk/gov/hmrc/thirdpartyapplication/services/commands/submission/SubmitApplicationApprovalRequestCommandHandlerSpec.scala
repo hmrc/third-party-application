@@ -176,7 +176,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       namingServiceReturns(DuplicateName)
 
-      checkFailsWith(CommandFailures.DuplicateApplicationName) {
+      checkFailsWith(CommandFailures.DuplicateApplicationName("some random text")) {
         underTest.process(app, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
       }
     }
@@ -185,7 +185,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       namingServiceReturns(InvalidName)
 
-      checkFailsWith(CommandFailures.InvalidApplicationName) {
+      checkFailsWith(CommandFailures.InvalidApplicationName("some random text")) {
         underTest.process(app, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
       }
     }
