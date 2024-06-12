@@ -25,9 +25,8 @@ import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, ResponsibleIndividual, TermsOfUseAcceptance}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.services.{ApprovalsNamingService, ResponsibleIndividualVerificationService}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubmitApplicationApprovalRequest
@@ -45,13 +44,13 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class SubmitApplicationApprovalRequestCommandHandler @Inject() (
     submissionService: SubmissionsService,
-    applicationRepository: ApplicationRepository,
+    val applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
-    termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
+    val termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     approvalsNamingService: ApprovalsNamingService,
     responsibleIndividualVerificationService: ResponsibleIndividualVerificationService
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler with ApplicationLogger {
+  ) extends SubmissionApprovalCommandsHandler with ApplicationLogger {
 
   import CommandHandler._
   import CommandFailures._
@@ -59,22 +58,22 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
   private def validate(app: StoredApplication): Future[Validated[Failures, (Submission, String)]] = {
     (
       for {
-        submission     <- OptionT(submissionService.fetchLatest(app.id))
-        appName        <- OptionT.fromOption[Future](SubmissionDataExtracter.getApplicationName(submission))
-        nameValidation <- OptionT.liftF[Future, ApplicationNameValidationResult](validateApplicationName(appName, app.id))
-      } yield (submission, appName, nameValidation)
+        submission         <- OptionT(submissionService.fetchLatest(app.id))
+        nameFromSubmission <- OptionT.fromOption[Future](SubmissionDataExtracter.getApplicationName(submission))
+        nameValidation     <- OptionT.liftF[Future, ApplicationNameValidationResult](validateApplicationName(nameFromSubmission, app.id))
+      } yield (submission, nameFromSubmission, nameValidation)
     )
       .fold[Validated[Failures, (Submission, String)]](
         GenericFailure(s"No submission found for application ${app.id.value}").invalidNel[(Submission, String)]
       ) {
-        case (submission, appName, nameValidationResult) => {
+        case (submission, nameFromSubmission, nameValidationResult) => {
           Apply[Validated[Failures, *]].map5(
-            isStandardNewJourneyApp(app),
+            ensureStandardAccess(app),
             isInTesting(app),
             cond(submission.status.isAnsweredCompletely, "Submission has not been answered completely"),
-            cond(nameValidationResult != DuplicateName, "New name is a duplicate"),
-            cond(nameValidationResult != InvalidName, "New name is invalid")
-          ) { case _ => (submission, appName) }
+            cond(nameValidationResult != DuplicateName, CommandFailures.DuplicateApplicationName(nameFromSubmission)),
+            cond(nameValidationResult != InvalidName, CommandFailures.InvalidApplicationName(nameFromSubmission))
+          ) { case _ => (submission, nameFromSubmission) }
         }
       }
   }
@@ -87,7 +86,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       verificationId: Option[ResponsibleIndividualVerificationId],
       importantSubmissionData: ImportantSubmissionData
     ): NonEmptyList[ApplicationEvent] = {
-    val submittedEvent = ApplicationApprovalRequestSubmitted(
+    val submittedEvents = NonEmptyList.of(ApplicationApprovalRequestSubmitted(
       id = EventId.random,
       applicationId = app.id,
       eventDateTime = cmd.timestamp,
@@ -96,15 +95,10 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       submissionIndex = submission.latestInstance.index,
       requestingAdminName = cmd.requesterName,
       requestingAdminEmail = cmd.requesterEmail
-    )
+    ))
 
-    if (isRequesterTheResponsibleIndividual) {
-      NonEmptyList.one(
-        submittedEvent
-      )
-    } else {
-      NonEmptyList.of(
-        submittedEvent,
+    if (!isRequesterTheResponsibleIndividual && verificationId.nonEmpty) {
+      submittedEvents ++ List(
         ResponsibleIndividualVerificationRequired(
           id = EventId.random,
           applicationId = app.id,
@@ -120,7 +114,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
           verificationId = verificationId.get.value
         )
       )
-    }
+    } else submittedEvents
   }
 
   def process(app: StoredApplication, cmd: SubmitApplicationApprovalRequest): AppCmdResultT = {
@@ -130,26 +124,36 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
 
     for {
       validated                          <- E.fromValidatedF(validate(app))
-      (submission, appName)               = validated
+      (submission, newAppName)            = validated
       isRequesterTheResponsibleIndividual = SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission)
       importantSubmissionData             = getImportantSubmissionData(submission, cmd.requesterName, cmd.requesterEmail.text).get // Safe at this point
-      updatedApp                          = deriveNewAppDetails(app, isRequesterTheResponsibleIndividual, appName, importantSubmissionData, cmd)
-      savedApp                           <- E.liftF(applicationRepository.save(updatedApp))
-      _                                  <- E.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, updatedApp, submission, cmd))
-      _                                  <- E.liftF(stateHistoryRepository.insert(createStateHistory(savedApp, cmd)))
+      newAppState                         = determineNewApplicationState(isRequesterTheResponsibleIndividual, app, cmd)
+      savedApp                           <- E.liftF(applicationRepository.save(deriveNewAppDetails(app, newAppName, importantSubmissionData, newAppState)))
+      updatedApp                         <- E.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, cmd.timestamp, cmd.requesterName, cmd.requesterEmail))
+      _                                  <- E.liftF(stateHistoryRepository.insert(createStateHistory(updatedApp, cmd)))
       updatedSubmission                   = Submission.submit(cmd.timestamp, cmd.requesterEmail.text)(submission)
       savedSubmission                    <- E.liftF(submissionService.store(updatedSubmission))
-      verificationId                     <- E.liftF(createTouUpliftVerificationRecordIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, cmd))
-      _                                   = logCompletedApprovalRequest(savedApp)
-      events                              = asEvents(app, cmd, submission, isRequesterTheResponsibleIndividual, verificationId, importantSubmissionData)
+      createTouUpliftResult               = createTouUpliftVerificationRecordIfNeeded(isRequesterTheResponsibleIndividual, savedApp, savedSubmission, cmd)
+
+      verificationId <- E.liftF(createTouUpliftResult)
+      _               = logCompletedApprovalRequest(savedApp)
+      events          = asEvents(updatedApp, cmd, savedSubmission, isRequesterTheResponsibleIndividual, verificationId, importantSubmissionData)
     } yield (app, events)
   }
 
-  private def logStartingApprovalRequestProcessing(applicationId: ApplicationId) = {
+  private def determineNewApplicationState(isRequesterTheResponsibleIndividual: Boolean, app: StoredApplication, cmd: SubmitApplicationApprovalRequest): ApplicationState = {
+    if (isRequesterTheResponsibleIndividual) {
+      app.state.toPendingGatekeeperApproval(cmd.requesterEmail.text, cmd.requesterName, cmd.timestamp)
+    } else {
+      app.state.toPendingResponsibleIndividualVerification(cmd.requesterEmail.text, cmd.requesterName, cmd.timestamp)
+    }
+  }
+
+  private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Unit = {
     logger.info(s"Approval-01: approval request made for appId:${applicationId}")
   }
 
-  private def logCompletedApprovalRequest(app: StoredApplication) =
+  private def logCompletedApprovalRequest(app: StoredApplication): Unit =
     logger.info(s"Approval-02: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name}")
 
   private def validateApplicationName(appName: String, appId: ApplicationId): Future[ApplicationNameValidationResult] =
@@ -157,28 +161,15 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
 
   private def deriveNewAppDetails(
       existing: StoredApplication,
-      isRequesterTheResponsibleIndividual: Boolean,
       applicationName: String,
       importantSubmissionData: ImportantSubmissionData,
-      cmd: SubmitApplicationApprovalRequest
-    ): StoredApplication =
-    existing.copy(
-      name = applicationName,
-      normalisedName = applicationName.toLowerCase,
-      access = updateStandardData(existing.access, importantSubmissionData),
-      state = if (isRequesterTheResponsibleIndividual) {
-        existing.state.toPendingGatekeeperApproval(cmd.requesterEmail.text, cmd.requesterName, cmd.timestamp)
-      } else {
-        existing.state.toPendingResponsibleIndividualVerification(cmd.requesterEmail.text, cmd.requesterName, cmd.timestamp)
-      }
-    )
-
-  private def updateStandardData(existingAccess: Access, importantSubmissionData: ImportantSubmissionData): Access = {
-    existingAccess match {
-      case s: Access.Standard => s.copy(importantSubmissionData = Some(importantSubmissionData))
-      case _                  => existingAccess
-    }
-  }
+      newState: ApplicationState
+    ): StoredApplication = existing.copy(
+    name = applicationName,
+    normalisedName = applicationName.toLowerCase,
+    access = updateStandardData(existing.access, importantSubmissionData),
+    state = newState
+  )
 
   private def createStateHistory(snapshotApp: StoredApplication, cmd: SubmitApplicationApprovalRequest): StateHistory =
     StateHistory(
@@ -189,21 +180,6 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       None,
       cmd.timestamp
     )
-
-  private def addTouAcceptanceIfNeeded(
-      addTouAcceptance: Boolean,
-      appWithoutTouAcceptance: StoredApplication,
-      submission: Submission,
-      cmd: SubmitApplicationApprovalRequest
-    ): Future[StoredApplication] = {
-    if (addTouAcceptance) {
-      val responsibleIndividual = ResponsibleIndividual.build(cmd.requesterName, cmd.requesterEmail.text)
-      val acceptance            = TermsOfUseAcceptance(responsibleIndividual, cmd.timestamp, submission.id, submission.latestInstance.index)
-      applicationRepository.addApplicationTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
-    } else {
-      Future.successful(appWithoutTouAcceptance)
-    }
-  }
 
   private def createTouUpliftVerificationRecordIfNeeded(
       isRequesterTheResponsibleIndividual: Boolean,

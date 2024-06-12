@@ -494,6 +494,13 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def succeeds() =
         when(aMock.updateLegacyPrivacyPolicyUrl(*[ApplicationId], *)).thenReturn(successful(mock[StoredApplication]))
     }
+
+    object UpdateApplicationImportantSubmissionData {
+
+      def succeeds() =
+        when(aMock.updateApplicationImportantSubmissionData(*[ApplicationId], *)).thenReturn(successful(mock[StoredApplication]))
+    }
+
   }
 
   object ApplicationRepoMock extends BaseApplicationRepoMock {

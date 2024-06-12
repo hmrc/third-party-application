@@ -2879,6 +2879,42 @@ class ApplicationRepositoryISpec
     }
   }
 
+  "updateApplicationImportantSubmissionData" should {
+    "update the application correctly" in {
+      val responsibleIndividual   = ResponsibleIndividual(
+        FullName("bob"),
+        LaxEmailAddress("bob@example.com")
+      )
+      val applicationId           = ApplicationId.random
+      val organisationUrl         = "http://anycorp.com"
+      val importantSubmissionData = ImportantSubmissionData(
+        Some(organisationUrl),
+        responsibleIndividual,
+        Set.empty,
+        TermsAndConditionsLocations.InDesktopSoftware,
+        PrivacyPolicyLocations.InDesktopSoftware,
+        termsOfUseAcceptances = List()
+      )
+      val application             = anApplicationDataForTest(applicationId)
+
+      await(applicationRepository.save(application))
+      val updatedApplication = await(
+        applicationRepository.updateApplicationImportantSubmissionData(
+          applicationId,
+          importantSubmissionData
+        )
+      )
+
+      val actualImportantSubmissionData = updatedApplication.access
+        .asInstanceOf[Access.Standard]
+        .importantSubmissionData
+      actualImportantSubmissionData.isDefined mustBe true
+
+      actualImportantSubmissionData.get.responsibleIndividual mustBe responsibleIndividual
+      actualImportantSubmissionData.get.organisationUrl mustBe Some(organisationUrl)
+    }
+  }
+
   "updateClientSecretHash" should {
     "overwrite an existing hashedSecretField" in {
       val applicationId = ApplicationId.random
