@@ -138,7 +138,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       verificationId <- E.liftF(createTouUpliftResult)
       _               = logCompletedApprovalRequest(savedApp)
       events          = asEvents(updatedApp, cmd, savedSubmission, isRequesterTheResponsibleIndividual, verificationId, importantSubmissionData)
-    } yield (app, events)
+    } yield (updatedApp, events)
   }
 
   private def determineNewApplicationState(isRequesterTheResponsibleIndividual: Boolean, app: StoredApplication, cmd: SubmitApplicationApprovalRequest): ApplicationState = {
