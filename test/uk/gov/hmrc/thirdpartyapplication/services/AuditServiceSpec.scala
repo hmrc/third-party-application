@@ -77,11 +77,12 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
   def isSameDataEvent(expected: DataEvent) =
     new ArgumentMatcher[DataEvent] {
 
-      override def matches(de: DataEvent): Boolean =
+      override def matches(de: DataEvent): Boolean = {
         de.auditSource == expected.auditSource &&
-          de.auditType == expected.auditType &&
-          de.tags == expected.tags &&
-          de.detail == expected.detail
+        de.auditType == expected.auditType &&
+        de.tags == expected.tags &&
+        de.detail == expected.detail
+      }
     };
 
   "AuditService audit" should {
@@ -225,6 +226,82 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
         NonEmptyList.one(appApprovalRequestDeclined)
       ))
       result shouldBe Some(AuditResult.Success)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
+    "applyEvents with a single ApplicationApprovalRequestGranted event" in new Setup {
+
+      val submission    = grantedSubmission
+      val importSubData = testImportantSubmissionData.copy(termsOfUseAcceptances =
+        List(TermsOfUseAcceptance(ResponsibleIndividual(FullName("dave"), LaxEmailAddress("a@b.com")), instant, submissionId, submissionInstance = 0))
+      )
+
+      val appInGKApproval = applicationData.copy(
+        state = ApplicationStateExamples.pendingGatekeeperApproval("requestedByEmail", "requestedByName"),
+        access = Access.Standard(importantSubmissionData = Some(importSubData))
+      )
+
+      val appApprovalRequestGranted = ApplicationEvents.ApplicationApprovalRequestGranted(
+        EventId.random,
+        applicationId,
+        instant,
+        Actors.GatekeeperUser(gatekeeperUser),
+        SubmissionId.random,
+        1,
+        requesterName,
+        requesterEmail.toLaxEmail
+      )
+
+      val tags                 = Map("gatekeeperId" -> gatekeeperUser)
+      val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
+      val grantedData          = Map("status" -> "granted")
+      val warningsData         = Map.empty[String, String]
+      val escalatedData        = Map.empty[String, String]
+      val fmt                  = DateTimeFormatter.ISO_DATE_TIME
+
+      val submittedOn: Instant = submission.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+      val grantedOn: Instant   = submission.latestInstance.statusHistory.find(s => s.isGrantedWithOrWithoutWarnings).map(_.timestamp).get
+      val rivd: Instant        =
+        importSubData.termsOfUseAcceptances.find(t => (t.submissionId == submission.id && t.submissionInstance == submission.latestInstance.index)).map(_.dateTime).get
+
+      val dates = Map(
+        "submission.started.date"                 -> fmt.format(submission.startedOn.asLocalDateTime),
+        "submission.submitted.date"               -> fmt.format(submittedOn.asLocalDateTime),
+        "submission.granted.date"                 -> fmt.format(grantedOn.asLocalDateTime),
+        "responsibleIndividual.verification.date" -> fmt.format(rivd.asLocalDateTime)
+      )
+
+      val markedAnswers     = MarkAnswer.markSubmission(submission)
+      val nbrOfFails        = markedAnswers.filter(_._2 == Mark.Fail).size
+      val nbrOfWarnings     = markedAnswers.filter(_._2 == Mark.Warn).size
+      val counters          = Map(
+        "submission.failures" -> nbrOfFails.toString,
+        "submission.warnings" -> nbrOfWarnings.toString
+      )
+      val gatekeeperDetails = Map(
+        "applicationId"          -> appInGKApproval.id.value.toString,
+        "applicationName"        -> appInGKApproval.name,
+        "upliftRequestedByEmail" -> appInGKApproval.state.requestedByEmailAddress.getOrElse("-"),
+        "applicationAdmins"      -> appInGKApproval.admins.map(_.emailAddress.text).mkString(", ")
+      )
+
+      val extraData         = questionsWithAnswers ++ grantedData ++ warningsData ++ dates ++ counters ++ escalatedData ++ gatekeeperDetails
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = ApplicationApprovalGranted.auditType,
+        tags = hc.toAuditTags(ApplicationApprovalGranted.name, "-") ++ tags,
+        detail = extraData
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      SubmissionsServiceMock.FetchLatest.thenReturn(submission)
+
+      val result = await(auditService.applyEvents(
+        appInGKApproval,
+        NonEmptyList.one(appApprovalRequestGranted)
+      ))
+      result shouldBe Some(AuditResult.Success)
+
       verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
     }
 

@@ -20,8 +20,9 @@ import java.time.Instant
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, ResponsibleIndividual, TermsOfUseAcceptance}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status.{Failed, Granted, Warnings}
@@ -68,4 +69,14 @@ trait SubmissionApprovalCommandsHandler extends CommandHandler {
       case _                  => existingAccess
     }
   }
+
+  def createStateHistory(snapshotApp: StoredApplication, previousState: State, actor: Actor, timestamp: Instant): StateHistory =
+    StateHistory(
+      snapshotApp.id,
+      snapshotApp.state.name,
+      actor,
+      Some(previousState),
+      None,
+      timestamp
+    )
 }

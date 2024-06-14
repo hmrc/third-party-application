@@ -139,6 +139,12 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
       GenericFailure("App is not in PENDING_REQUESTER_VERIFICATION state")
     )
 
+  def isInPendingGatekeeperApproval(app: StoredApplication) =
+    cond(
+      app.isPendingGatekeeperApproval,
+      GenericFailure("App is not in PENDING_GATEKEEPER_APPROVAL state")
+    )
+
   def isInTesting(app: StoredApplication) =
     cond(
       app.isInTesting,
