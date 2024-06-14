@@ -99,6 +99,8 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
         case evt: ApplicationDeletedByGatekeeper                    => ApplicationDeletedByGatekeeperNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: RequesterEmailVerificationResent                  => VerifyRequesterEmailNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ResponsibleIndividualVerificationRequired         => ResponsibleIndividualVerificationRequiredNotification.sendAdviceEmail(emailConnector, app, evt)
+        case evt: ApplicationApprovalRequestGranted                 => ApplicationApprovalRequestGrantedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail)
+        case evt: ApplicationApprovalRequestGrantedWithWarnings     => ApplicationApprovalRequestGrantedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail)
         case _                                                      => Future.successful(HasSucceeded)
       }
     }
