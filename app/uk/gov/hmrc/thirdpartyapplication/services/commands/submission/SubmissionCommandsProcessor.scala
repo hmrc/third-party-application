@@ -33,7 +33,8 @@ class SubmissionCommandsProcessor @Inject() (
     resendRequesterEmailVerificationCmdHdlr: ResendRequesterEmailVerificationCommandHandler,
     submitApplicationApprovalRequestCmdHdlr: SubmitApplicationApprovalRequestCommandHandler,
     submitTermsOfUseApprovalCommandHandler: SubmitTermsOfUseApprovalCommandHandler,
-    grantApplicationApprovalRequestCommandHandler: GrantApplicationApprovalRequestCommandHandler
+    grantApplicationApprovalRequestCommandHandler: GrantApplicationApprovalRequestCommandHandler,
+    grantTermsOfUseApprovalCommandHandler: GrantTermsOfUseApprovalCommandHandler
   ) {
   import CommandHandler._
   import ApplicationCommands._
@@ -49,5 +50,6 @@ class SubmissionCommandsProcessor @Inject() (
     case cmd: SubmitApplicationApprovalRequest         => submitApplicationApprovalRequestCmdHdlr.process(app, cmd)
     case cmd: SubmitTermsOfUseApproval                 => submitTermsOfUseApprovalCommandHandler.process(app, cmd)
     case cmd: GrantApplicationApprovalRequest          => grantApplicationApprovalRequestCommandHandler.process(app, cmd)
+    case cmd: GrantTermsOfUseApproval                  => grantTermsOfUseApprovalCommandHandler.process(app, cmd)
   }
 }

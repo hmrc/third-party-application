@@ -33,9 +33,12 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status.{Failed, Granted, Warnings}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -44,7 +47,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class SubmitTermsOfUseApprovalCommandHandler @Inject() (
     submissionService: SubmissionsService,
     val applicationRepository: ApplicationRepository,
-    val termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
+    termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     responsibleIndividualVerificationService: ResponsibleIndividualVerificationService
   )(implicit val ec: ExecutionContext
   ) extends SubmissionApprovalCommandsHandler with ApplicationLogger {
@@ -177,6 +180,15 @@ class SubmitTermsOfUseApprovalCommandHandler @Inject() (
       _                 <- E.liftF(setTermsOfUseInvitationStatus(app.id, savedSubmission))
       events             = asEvents(savedSubmission.status.isGranted)
     } yield (mayBeUpdatedApp, events)
+  }
+
+  def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission): Future[HasSucceeded] = {
+    submission.status match {
+      case Granted(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
+      case Warnings(_, _)      => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
+      case Failed(_, _)        => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
+      case _                   => successful(HasSucceeded)
+    }
   }
 
   private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Unit = {

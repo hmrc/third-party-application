@@ -67,7 +67,6 @@ class GrantApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBa
     val underTest = new GrantApplicationApprovalRequestCommandHandler(
       ApplicationRepoMock.aMock,
       StateHistoryRepoMock.aMock,
-      TermsOfUseInvitationRepositoryMock.aMock,
       SubmissionsServiceMock.aMock,
       FixedClock.clock
     )

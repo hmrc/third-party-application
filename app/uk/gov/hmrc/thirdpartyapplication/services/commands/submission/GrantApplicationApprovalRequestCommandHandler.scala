@@ -37,14 +37,13 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class GrantApplicationApprovalRequestCommandHandler @Inject() (
     val applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
-    val termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     submissionService: SubmissionsService,
     val clock: Clock
   )(implicit val ec: ExecutionContext
