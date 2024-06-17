@@ -34,13 +34,14 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, _}
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec
     with BeforeAndAfterAll
     with ApplicationStateUtil
     with ApplicationTestData
+    with CollaboratorTestData
     with UpliftRequestSamples {
 
   trait Setup extends EmailConnectorMockModule {
@@ -573,6 +574,60 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(app, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendApplicationApprovedAdminConfirmation.verifyCalledWith(app.name, verificationCode, Set(requesterEmail))
+    }
+
+    "when receive a ApplicationApprovalRequestGranted, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendApplicationApprovedAdminConfirmation.thenReturnSuccess()
+      EmailConnectorMock.SendApplicationApprovedNotification.thenReturnSuccess()
+      val requesterName    = "Bob Fleming"
+      val requesterEmail   = loggedInUserAdminCollaborator.emailAddress
+      val verificationCode = "123456789"
+      val app              = applicationData.copy(
+        state = ApplicationStateExamples.pendingRequesterVerification(requesterEmail.text, requesterName, verificationCode)
+      )
+      val event            = ApplicationEvents.ApplicationApprovalRequestGranted(
+        EventId.random,
+        app.id,
+        instant,
+        gatekeeperActor,
+        SubmissionId.random,
+        1,
+        requesterName,
+        requesterEmail
+      )
+
+      val result = await(underTest.sendNotifications(app, NonEmptyList.one(event), Set.empty))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendApplicationApprovedAdminConfirmation.verifyCalledWith(app.name, verificationCode, Set(requesterEmail))
+      EmailConnectorMock.SendApplicationApprovedNotification.verifyCalledWith(app.name, Set(otherAdminCollaborator.emailAddress))
+    }
+
+    "when receive a ApplicationApprovalRequestGrantedWithWarnings, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendApplicationApprovedAdminConfirmation.thenReturnSuccess()
+      EmailConnectorMock.SendApplicationApprovedNotification.thenReturnSuccess()
+      val requesterName    = "Bob Fleming"
+      val requesterEmail   = loggedInUserAdminCollaborator.emailAddress
+      val verificationCode = "123456789"
+      val app              = applicationData.copy(
+        state = ApplicationStateExamples.pendingRequesterVerification(requesterEmail.text, requesterName, verificationCode)
+      )
+      val event            = ApplicationEvents.ApplicationApprovalRequestGrantedWithWarnings(
+        EventId.random,
+        app.id,
+        instant,
+        gatekeeperActor,
+        SubmissionId.random,
+        1,
+        "warnings",
+        None,
+        requesterName,
+        requesterEmail
+      )
+
+      val result = await(underTest.sendNotifications(app, NonEmptyList.one(event), Set.empty))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendApplicationApprovedAdminConfirmation.verifyCalledWith(app.name, verificationCode, Set(requesterEmail))
+      EmailConnectorMock.SendApplicationApprovedNotification.verifyCalledWith(app.name, Set(otherAdminCollaborator.emailAddress))
     }
   }
 }

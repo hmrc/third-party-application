@@ -25,7 +25,7 @@ import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.services.{ApprovalsNamingService, ResponsibleIndividualVerificationService}
@@ -130,7 +130,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       newAppState                         = determineNewApplicationState(isRequesterTheResponsibleIndividual, app, cmd)
       savedApp                           <- E.liftF(applicationRepository.save(deriveNewAppDetails(app, newAppName, importantSubmissionData, newAppState)))
       updatedApp                         <- E.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, cmd.timestamp, cmd.requesterName, cmd.requesterEmail))
-      _                                  <- E.liftF(stateHistoryRepository.insert(createStateHistory(updatedApp, cmd)))
+      _                                  <- E.liftF(stateHistoryRepository.insert(createStateHistory(updatedApp, State.TESTING, Actors.AppCollaborator(cmd.requesterEmail), cmd.timestamp)))
       updatedSubmission                   = Submission.submit(cmd.timestamp, cmd.requesterEmail.text)(submission)
       savedSubmission                    <- E.liftF(submissionService.store(updatedSubmission))
       createTouUpliftResult               = createResponsibleIndividualVerificationRecordIfNeeded(isRequesterTheResponsibleIndividual, savedApp, savedSubmission, cmd)
@@ -170,16 +170,6 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
     access = updateStandardData(existing.access, importantSubmissionData),
     state = newState
   )
-
-  private def createStateHistory(snapshotApp: StoredApplication, cmd: SubmitApplicationApprovalRequest): StateHistory =
-    StateHistory(
-      snapshotApp.id,
-      snapshotApp.state.name,
-      Actors.AppCollaborator(cmd.requesterEmail),
-      Some(State.TESTING),
-      None,
-      cmd.timestamp
-    )
 
   private def createResponsibleIndividualVerificationRecordIfNeeded(
       isRequesterTheResponsibleIndividual: Boolean,

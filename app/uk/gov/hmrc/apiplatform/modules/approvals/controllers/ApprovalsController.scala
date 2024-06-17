@@ -84,6 +84,7 @@ class ApprovalsController @Inject() (
     }
   }
 
+  @deprecated
   def grant(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
     import GrantApprovalsService._
 

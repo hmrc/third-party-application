@@ -74,6 +74,7 @@ class GrantApprovalsService @Inject() (
 
   import GrantApprovalsService._
 
+  @deprecated
   def grant(
       originalApp: StoredApplication,
       submission: Submission,
@@ -152,8 +153,8 @@ class GrantApprovalsService @Inject() (
     ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> fmt.format(rivd.asLocalDateTime)))
 
     val markedAnswers = MarkAnswer.markSubmission(submission)
-    val nbrOfFails    = markedAnswers.filter(_._2 == Mark.Fail).size
-    val nbrOfWarnings = markedAnswers.filter(_._2 == Mark.Warn).size
+    val nbrOfFails    = markedAnswers.count(_._2 == Mark.Fail)
+    val nbrOfWarnings = markedAnswers.count(_._2 == Mark.Warn)
     val counters      = Map(
       "submission.failures" -> nbrOfFails.toString,
       "submission.warnings" -> nbrOfWarnings.toString

@@ -81,6 +81,8 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   // scalastyle:off cyclomatic.complexity
   private def applyEvent(app: StoredApplication, event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     event match {
+      case evt: ApplicationApprovalRequestGranted              => auditApplicationApprovalRequestGranted(app, evt)
+      case evt: ApplicationApprovalRequestGrantedWithWarnings  => auditApplicationApprovalRequestGrantedWithWarnings(app, evt)
       case evt: ApplicationApprovalRequestDeclined             => auditApplicationApprovalRequestDeclined(app, evt)
       case evt: ClientSecretAddedV2                            => auditClientSecretAdded(app, evt)
       case evt: ClientSecretRemovedV2                          => auditClientSecretRemoved(app, evt)
@@ -163,6 +165,28 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
 
   private def auditApplicationDeletedByGatekeeper(app: StoredApplication, evt: ApplicationDeletedByGatekeeper)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     E.liftF(auditGatekeeperAction(evt.actor.user, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail.text)))
+      .toOption
+      .value
+  }
+
+  private def auditApplicationApprovalRequestGranted(app: StoredApplication, evt: ApplicationApprovalRequestGranted)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+    handleApprovalRequestGranted(app, evt.actor.user, None, None)
+  }
+
+  private def auditApplicationApprovalRequestGrantedWithWarnings(app: StoredApplication, evt: ApplicationApprovalRequestGrantedWithWarnings)(implicit hc: HeaderCarrier)
+      : Future[Option[AuditResult]] = {
+    handleApprovalRequestGranted(app, evt.actor.user, Some(evt.warnings), evt.escalatedTo)
+  }
+
+  private def handleApprovalRequestGranted(app: StoredApplication, user: String, warnings: Option[String], escalatedTo: Option[String])(implicit hc: HeaderCarrier)
+      : Future[Option[AuditResult]] = {
+    (
+      for {
+        submission  <- E.fromOptionF(submissionService.fetchLatest(app.id), "No submission provided to audit")
+        extraDetails = AuditHelper.createExtraDetailsForApplicationApprovalRequestGranted(app, submission, user, warnings, escalatedTo)
+        result      <- E.liftF(auditGatekeeperAction(user, app, ApplicationApprovalGranted, extraDetails))
+      } yield result
+    )
       .toOption
       .value
   }
@@ -502,6 +526,46 @@ object AuditHelper {
 
     questionsWithAnswers ++ declinedData ++ dates ++ counters
   }
+
+  def createExtraDetailsForApplicationApprovalRequestGranted(
+      updatedApp: StoredApplication,
+      submission: Submission,
+      gatekeeperUserName: String,
+      warnings: Option[String],
+      escalatedTo: Option[String]
+    ): Map[String, String] = {
+
+    import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
+
+    val fmt                                                    = DateTimeFormatter.ISO_DATE_TIME
+    val importantSubmissionData                                = updatedApp.importantSubmissionData.getOrElse(throw new RuntimeException("No importantSubmissionData found in application"))
+    val questionsWithAnswers                                   = QuestionsAndAnswersToMap(submission)
+    val grantedData                                            = Map("status" -> "granted")
+    val warningsData                                           = warnings.fold(Map.empty[String, String])(warning => Map("warnings" -> warning))
+    val escalatedData                                          = escalatedTo.fold(Map.empty[String, String])(escalatedTo => Map("escalatedTo" -> escalatedTo))
+    val submittedOn: Instant                                   = submission.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+    val grantedOn: Instant                                     = submission.latestInstance.statusHistory.find(s => s.isGrantedWithOrWithoutWarnings).map(_.timestamp).get
+    val responsibleIndividualVerificationDate: Option[Instant] =
+      importantSubmissionData.termsOfUseAcceptances.find(t => (t.submissionId == submission.id && t.submissionInstance == submission.latestInstance.index)).map(_.dateTime)
+
+    val dates = Map(
+      "submission.started.date"   -> fmt.format(submission.startedOn.asLocalDateTime),
+      "submission.submitted.date" -> fmt.format(submittedOn.asLocalDateTime),
+      "submission.granted.date"   -> fmt.format(grantedOn.asLocalDateTime)
+    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> fmt.format(rivd.asLocalDateTime)))
+
+    val markedAnswers = MarkAnswer.markSubmission(submission)
+    val nbrOfFails    = markedAnswers.count(_._2 == Mark.Fail)
+    val nbrOfWarnings = markedAnswers.count(_._2 == Mark.Warn)
+    val counters      = Map(
+      "submission.failures" -> nbrOfFails.toString,
+      "submission.warnings" -> nbrOfWarnings.toString
+    )
+
+    questionsWithAnswers ++ grantedData ++ warningsData ++ dates ++ counters ++ escalatedData
+
+  }
+
 }
 
 // scalastyle:on number.of.types
