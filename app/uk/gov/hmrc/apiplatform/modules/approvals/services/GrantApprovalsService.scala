@@ -74,6 +74,7 @@ class GrantApprovalsService @Inject() (
 
   import GrantApprovalsService._
 
+  @deprecated
   def grant(
       originalApp: StoredApplication,
       submission: Submission,
