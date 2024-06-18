@@ -27,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNamingService, AuditService}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 @Singleton
 class UpliftNamingService @Inject() (
@@ -50,8 +51,12 @@ class UpliftNamingService @Inject() (
   def isDuplicateName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[Boolean] =
     isDuplicateName(applicationName, upliftFilter(selfApplicationId))
 
-  def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[ApplicationNameValidationResult] =
-    validateApplicationName(applicationName, upliftFilter(selfApplicationId))
+  def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[ApplicationNameValidationResult] = {
+    ValidatedApplicationName(applicationName) match {
+      case Some(validatedAppName) => validateApplicationName(validatedAppName, upliftFilter(selfApplicationId))
+      case _                      => Future.successful(InvalidName)
+    }
+  }
 
   def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[StoredApplication] = None)(implicit hc: HeaderCarrier) = {
 

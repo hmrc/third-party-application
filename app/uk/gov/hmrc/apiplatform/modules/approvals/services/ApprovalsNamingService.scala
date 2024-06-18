@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNamingService, AuditService}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 @Singleton
 class ApprovalsNamingService @Inject() (
@@ -44,16 +45,16 @@ class ApprovalsNamingService @Inject() (
 
   private def approvalsFilter(appId: ApplicationId): ExclusionCondition = or(excludeThisAppId(appId), excludeInTesting)
 
-  def validateApplicationName(applicationName: String, appId: ApplicationId): Future[ApplicationNameValidationResult] =
+  def validateApplicationName(applicationName: ValidatedApplicationName, appId: ApplicationId): Future[ApplicationNameValidationResult] =
     validateApplicationName(applicationName, approvalsFilter(appId))
 
-  def validateApplicationNameAndAudit(applicationName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[ApplicationNameValidationResult] =
+  def validateApplicationNameAndAudit(applicationName: ValidatedApplicationName, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[ApplicationNameValidationResult] =
     for {
       validationResult <- validateApplicationName(applicationName, approvalsFilter(appId))
       _                <- validationResult match {
                             case ValidName     => successful(())
-                            case DuplicateName => auditDeniedDueToNaming(applicationName, accessType, Some(appId))
-                            case InvalidName   => auditDeniedDueToDenyListed(applicationName, accessType, Some(appId))
+                            case DuplicateName => auditDeniedDueToNaming(applicationName.value, accessType, Some(appId))
+                            case InvalidName   => auditDeniedDueToDenyListed(applicationName.value, accessType, Some(appId))
                           }
     } yield validationResult
 }

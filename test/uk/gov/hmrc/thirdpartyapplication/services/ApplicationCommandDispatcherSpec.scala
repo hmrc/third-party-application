@@ -46,6 +46,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.UpdateRed
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
@@ -255,7 +256,7 @@ class ApplicationCommandDispatcherSpec
       val userId         = UserId.random
 
       val timestamp = instant
-      val cmd       = ChangeProductionApplicationName(gatekeeperUser, userId, timestamp, newName)
+      val cmd       = ChangeProductionApplicationName(gatekeeperUser, userId, timestamp, ValidatedApplicationName(newName).get)
       val evt       = ApplicationEvents.ProductionAppNameChangedEvent(
         EventId.random,
         applicationId,

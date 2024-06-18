@@ -40,6 +40,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 @Singleton
 class SubmitApplicationApprovalRequestCommandHandler @Inject() (
@@ -156,8 +157,12 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
   private def logCompletedApprovalRequest(app: StoredApplication): Unit =
     logger.info(s"Approval-02: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name}")
 
-  private def validateApplicationName(appName: String, appId: ApplicationId): Future[ApplicationNameValidationResult] =
-    approvalsNamingService.validateApplicationName(appName, appId)
+  private def validateApplicationName(appName: String, appId: ApplicationId): Future[ApplicationNameValidationResult] = {
+    ValidatedApplicationName(appName) match {
+      case Some(validatedAppName) => approvalsNamingService.validateApplicationName(validatedAppName, appId)
+      case _                      => Future.successful(InvalidName)
+    }
+  }
 
   private def deriveNewAppDetails(
       existing: StoredApplication,

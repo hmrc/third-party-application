@@ -254,7 +254,7 @@ class ApplicationServiceSpec
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name,
+          "newApplicationName"        -> applicationRequest.name.value,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -289,7 +289,7 @@ class ApplicationServiceSpec
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name,
+          "newApplicationName"        -> applicationRequest.name.value,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -317,7 +317,7 @@ class ApplicationServiceSpec
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name,
+          "newApplicationName"        -> applicationRequest.name.value,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -354,7 +354,7 @@ class ApplicationServiceSpec
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name,
+          "newApplicationName"        -> applicationRequest.name.value,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
         hc
@@ -367,7 +367,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Save.thenAnswer(successful)
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Privileged())
 
-      ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name)
+      ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name.value)
 
       val prodTOTP                       = Totp("prodTotp", "prodTotpId")
       val totpQueue: mutable.Queue[Totp] = mutable.Queue(prodTOTP)
@@ -392,7 +392,7 @@ class ApplicationServiceSpec
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name,
+          "newApplicationName"        -> applicationRequest.name.value,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -405,7 +405,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Save.thenAnswer(successful)
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Ropc())
 
-      ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name)
+      ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name.value)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -424,7 +424,7 @@ class ApplicationServiceSpec
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name,
+          "newApplicationName"        -> applicationRequest.name.value,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -434,7 +434,7 @@ class ApplicationServiceSpec
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Access.Privileged())
 
-      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
+      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name.value)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
@@ -446,7 +446,7 @@ class ApplicationServiceSpec
     "fail with ApplicationAlreadyExists for ropc application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Access.Ropc())
 
-      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
+      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name.value)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
@@ -1009,7 +1009,7 @@ class ApplicationServiceSpec
 
   private def aNewV1ApplicationRequestWithCollaboratorWithUserId(access: Access, environment: Environment) = {
     CreateApplicationRequestV1(
-      "MyApp",
+      ValidatedApplicationName("MyApp").get,
       access,
       Some("description"),
       environment,
@@ -1045,12 +1045,12 @@ class ApplicationServiceSpec
   }
 
   private def aNewV1ApplicationRequest(access: Access = Access.Standard(), environment: Environment = Environment.PRODUCTION) = {
-    CreateApplicationRequestV1("MyApp", access, Some("description"), environment, Set(loggedInUser.admin()), None)
+    CreateApplicationRequestV1(ValidatedApplicationName("MyApp").get, access, Some("description"), environment, Set(loggedInUser.admin()), None)
   }
 
   private def aNewV2ApplicationRequest(environment: Environment) = {
     CreateApplicationRequestV2(
-      "MyApp",
+      ValidatedApplicationName("MyApp").get,
       StandardAccessDataToCopy(),
       Some("description"),
       environment,

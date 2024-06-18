@@ -41,6 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, HasSucceeded, In
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, AuditHelper, AuditService}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 object RequestApprovalsService {
   sealed trait RequestApprovalResult
@@ -320,12 +321,20 @@ class RequestApprovalsService @Inject() (
     }
   }
 
-  private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] =
+  private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] = {
+    ValidatedApplicationName(appName) match {
+      case Some(validatedAppName) => callValidateApplicationName(validatedAppName, appId, accessType)
+      case _                      => Future.successful(Left(ApprovalRejectedDueToIllegalName(appName)))
+    }
+  } 
+
+  private def callValidateApplicationName(appName: ValidatedApplicationName, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] = {
     approvalsNamingService.validateApplicationNameAndAudit(appName, appId, accessType).map(_ match {
       case ValidName     => Right(ApprovalAccepted)
-      case InvalidName   => Left(ApprovalRejectedDueToIllegalName(appName))
-      case DuplicateName => Left(ApprovalRejectedDueToDuplicateName(appName))
+      case InvalidName   => Left(ApprovalRejectedDueToIllegalName(appName.toString()))
+      case DuplicateName => Left(ApprovalRejectedDueToDuplicateName(appName.toString()))
     })
+  }
 
   private def logCompletedApprovalRequest(app: StoredApplication) =
     logger.info(s"Approval-02: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name}")

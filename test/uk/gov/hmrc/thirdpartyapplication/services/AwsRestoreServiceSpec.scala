@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock with CollaboratorTestData {
 
@@ -41,7 +42,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
     def buildApplication(applicationName: String, serverToken: String): StoredApplication = {
       StoredApplication.create(
         CreateApplicationRequestV1.create(
-          name = applicationName,
+          name = ValidatedApplicationName(applicationName).get,
           access = Access.Standard(),
           environment = Environment.PRODUCTION,
           collaborators = Set("foo@bar.com".admin()),

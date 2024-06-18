@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 object ApplicationNamingService {
   type ExclusionCondition = (StoredApplication) => Boolean
@@ -67,10 +68,10 @@ abstract class AbstractApplicationNamingService(
     !isValid
   }
 
-  def validateApplicationName(applicationName: String, exclusions: ExclusionCondition): Future[ApplicationNameValidationResult] = {
+  def validateApplicationName(applicationName: ValidatedApplicationName, exclusions: ExclusionCondition): Future[ApplicationNameValidationResult] = {
     for {
-      isDuplicate <- isDuplicateName(applicationName, exclusions)
-      isDenyListed = isDenyListedName(applicationName)
+      isDuplicate <- isDuplicateName(applicationName.value, exclusions)
+      isDenyListed = isDenyListedName(applicationName.value)
     } yield (isDenyListed, isDuplicate) match {
       case (false, false) => ValidName
       case (true, _)      => InvalidName

@@ -28,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   StandardAccessDataToCopy
 }
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, UpliftRequestSamples}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with CollaboratorTestData {
   import ApiIdentifierSyntax._
@@ -40,7 +41,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
 
         val request: CreateApplicationRequest =
           CreateApplicationRequestV1.create(
-            name = "bob",
+            name = ValidatedApplicationName("bob").get,
             access = Access.Standard(),
             description = None,
             environment = Environment.PRODUCTION,
@@ -56,7 +57,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
 
         val request: CreateApplicationRequest =
           CreateApplicationRequestV1.create(
-            name = "bob",
+            name = ValidatedApplicationName("bob").get,
             access = Access.Standard(),
             description = None,
             environment = Environment.PRODUCTION,
@@ -72,7 +73,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
 
         val request: CreateApplicationRequest =
           CreateApplicationRequestV1.create(
-            name = "bob",
+            name = ValidatedApplicationName("bob").get,
             access = Access.Standard(),
             description = None,
             environment = Environment.PRODUCTION,
@@ -89,7 +90,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
 
       val request: CreateApplicationRequest =
         CreateApplicationRequestV2.create(
-          name = "bob",
+          name = ValidatedApplicationName("bob").get,
           access = StandardAccessDataToCopy(),
           description = None,
           environment = Environment.PRODUCTION,

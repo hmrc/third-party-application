@@ -52,6 +52,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{Application, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, UpliftRequestSamples}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks
@@ -388,7 +389,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   }
 
   private def aCreateApplicationRequestV1(access: Access) = CreateApplicationRequestV1(
-    "My Application",
+    ValidatedApplicationName("My Application").get,
     access,
     Some("Description"),
     Environment.PRODUCTION,
@@ -400,7 +401,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   )
 
   private def aCreateApplicationRequestV2(access: StandardAccessDataToCopy) = CreateApplicationRequestV2(
-    "My Application",
+    ValidatedApplicationName("My Application").get,
     access,
     Some("Description"),
     Environment.PRODUCTION,

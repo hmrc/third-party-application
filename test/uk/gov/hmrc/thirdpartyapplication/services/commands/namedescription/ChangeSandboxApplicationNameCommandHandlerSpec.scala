@@ -30,6 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseSpec {
 
@@ -48,7 +49,7 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
     val newApp = app.copy(name = newName, normalisedName = newName.toLowerCase())
 
     val timestamp = FixedClock.instant
-    val update    = ChangeSandboxApplicationName(developerActor, instant, newName)
+    val update    = ChangeSandboxApplicationName(developerActor, instant, ValidatedApplicationName(newName).get)
 
     val underTest = new ChangeSandboxApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 

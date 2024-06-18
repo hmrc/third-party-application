@@ -638,11 +638,11 @@ class NotificationServiceSpec
     val requesterEmail   = loggedInUserAdminCollaborator.emailAddress
     val verificationCode = "123456789"
 
-    val app              = applicationData.copy(
+    val app = applicationData.copy(
       state = ApplicationStateExamples.pendingRequesterVerification(requesterEmail.text, requesterName, verificationCode)
     )
 
-    val event            = ApplicationEvents.ApplicationApprovalRequestGranted(
+    val event = ApplicationEvents.ApplicationApprovalRequestGranted(
       EventId.random,
       app.id,
       instant,
@@ -664,11 +664,11 @@ class NotificationServiceSpec
     val requesterName  = "Bob Fleming"
     val requesterEmail = loggedInUserAdminCollaborator.emailAddress
 
-    val app            = applicationData.copy(
+    val app = applicationData.copy(
       state = ApplicationStateExamples.production(requesterEmail.text, requesterName)
     )
 
-    val event          = ApplicationEvents.TermsOfUseApprovalGranted(
+    val event = ApplicationEvents.TermsOfUseApprovalGranted(
       EventId.random,
       app.id,
       instant,
