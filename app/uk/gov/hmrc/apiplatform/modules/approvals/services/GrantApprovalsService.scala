@@ -217,6 +217,7 @@ class GrantApprovalsService @Inject() (
       .fold[Result](identity, identity)
   }
 
+  @deprecated
   def grantForTouUplift(
       originalApp: StoredApplication,
       submission: Submission,

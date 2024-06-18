@@ -18,23 +18,18 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
 import java.time.Instant
 import scala.concurrent.Future
-import scala.concurrent.Future.successful
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, ApplicationId, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, ResponsibleIndividual, TermsOfUseAcceptance}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status.{Failed, Granted, Warnings}
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{FAILED, TERMS_OF_USE_V2, WARNINGS}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, TermsOfUseInvitationRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 trait SubmissionApprovalCommandsHandler extends CommandHandler {
 
-  val termsOfUseInvitationRepository: TermsOfUseInvitationRepository
   val applicationRepository: ApplicationRepository
 
   def addTouAcceptanceIfNeeded(
@@ -54,15 +49,6 @@ trait SubmissionApprovalCommandsHandler extends CommandHandler {
     }
   }
 
-  def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission): Future[HasSucceeded] = {
-    submission.status match {
-      case Granted(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
-      case Warnings(_, _)      => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
-      case Failed(_, _)        => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
-      case _                   => successful(HasSucceeded)
-    }
-  }
-
   def updateStandardData(existingAccess: Access, importantSubmissionData: ImportantSubmissionData): Access = {
     existingAccess match {
       case s: Access.Standard => s.copy(importantSubmissionData = Some(importantSubmissionData))
@@ -79,4 +65,5 @@ trait SubmissionApprovalCommandsHandler extends CommandHandler {
       None,
       timestamp
     )
+
 }

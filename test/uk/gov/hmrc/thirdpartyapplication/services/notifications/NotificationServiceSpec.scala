@@ -630,4 +630,59 @@ class NotificationServiceSpec
       EmailConnectorMock.SendApplicationApprovedNotification.verifyCalledWith(app.name, Set(otherAdminCollaborator.emailAddress))
     }
   }
+
+  "when receive a ApplicationApprovalRequestGranted, call the event handler and return successfully" in new Setup {
+    EmailConnectorMock.SendApplicationApprovedAdminConfirmation.thenReturnSuccess()
+    EmailConnectorMock.SendApplicationApprovedNotification.thenReturnSuccess()
+    val requesterName    = "Bob Fleming"
+    val requesterEmail   = loggedInUserAdminCollaborator.emailAddress
+    val verificationCode = "123456789"
+
+    val app              = applicationData.copy(
+      state = ApplicationStateExamples.pendingRequesterVerification(requesterEmail.text, requesterName, verificationCode)
+    )
+
+    val event            = ApplicationEvents.ApplicationApprovalRequestGranted(
+      EventId.random,
+      app.id,
+      instant,
+      gatekeeperActor,
+      SubmissionId.random,
+      1,
+      requesterName,
+      requesterEmail
+    )
+
+    val result = await(underTest.sendNotifications(app, NonEmptyList.one(event), Set.empty))
+    result shouldBe List(HasSucceeded)
+    EmailConnectorMock.SendApplicationApprovedAdminConfirmation.verifyCalledWith(app.name, verificationCode, Set(requesterEmail))
+    EmailConnectorMock.SendApplicationApprovedNotification.verifyCalledWith(app.name, Set(otherAdminCollaborator.emailAddress))
+  }
+
+  "when receive a TermsOfUseApprovalGrantedWith, call the event handler and return successfully" in new Setup {
+    EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
+    val requesterName  = "Bob Fleming"
+    val requesterEmail = loggedInUserAdminCollaborator.emailAddress
+
+    val app            = applicationData.copy(
+      state = ApplicationStateExamples.production(requesterEmail.text, requesterName)
+    )
+
+    val event          = ApplicationEvents.TermsOfUseApprovalGranted(
+      EventId.random,
+      app.id,
+      instant,
+      gatekeeperActor,
+      SubmissionId.random,
+      1,
+      "reasons",
+      Some("escalated To"),
+      requesterName,
+      requesterEmail
+    )
+
+    val result = await(underTest.sendNotifications(app, NonEmptyList.one(event), Set.empty))
+    result shouldBe List(HasSucceeded)
+    EmailConnectorMock.SendNewTermsOfUseConfirmation.verifyCalledWith(app.name, app.admins.map(_.emailAddress))
+  }
 }

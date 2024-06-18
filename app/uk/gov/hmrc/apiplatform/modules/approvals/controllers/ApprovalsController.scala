@@ -117,6 +117,7 @@ class ApprovalsController @Inject() (
       .recover(recovery)
   }
 
+  @deprecated
   def grantForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
     import GrantApprovalsService._
 

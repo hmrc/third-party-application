@@ -85,6 +85,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mock[DeclineResponsibleIndividualDidNotVerifyCommandHandler]
     val mockSubmitApplicationApprovalRequestCommandHandler: SubmitApplicationApprovalRequestCommandHandler                 = mock[SubmitApplicationApprovalRequestCommandHandler]
     val mockGrantApplicationApprovalRequestCommandHandler: GrantApplicationApprovalRequestCommandHandler                   = mock[GrantApplicationApprovalRequestCommandHandler]
+    val mockGrantTermsOfUseApprovalCommandHander: GrantTermsOfUseApprovalCommandHandler                                    = mock[GrantTermsOfUseApprovalCommandHandler]
     val mockSubmitTermsOfUseApprovalCommandHandler: SubmitTermsOfUseApprovalCommandHandler                                 = mock[SubmitTermsOfUseApprovalCommandHandler]
     val mockDeclineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler               = mock[DeclineApplicationApprovalRequestCommandHandler]
     val mockDeleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler                   = mock[DeleteApplicationByCollaboratorCommandHandler]
@@ -187,7 +188,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockResendRequesterEmailVerificationCommandHandler,
       mockSubmitApplicationApprovalRequestCommandHandler,
       mockSubmitTermsOfUseApprovalCommandHandler,
-      mockGrantApplicationApprovalRequestCommandHandler
+      mockGrantApplicationApprovalRequestCommandHandler,
+      mockGrantTermsOfUseApprovalCommandHander
     )
 
     val subscriptionCommandsProcessor = new SubscriptionCommandsProcessor(
