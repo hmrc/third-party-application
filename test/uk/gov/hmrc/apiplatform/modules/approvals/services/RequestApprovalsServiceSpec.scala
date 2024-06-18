@@ -35,8 +35,8 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModu
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, TermsOfUseInvitation}
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
@@ -309,6 +309,32 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         val result = await(underTest.requestApproval(application, answeredSubmission, requestedByName, requestedByEmail.text))
 
         result shouldBe RequestApprovalsService.ApprovalRejectedDueToIllegalName(generatedName)
+        StateHistoryRepoMock.Insert.verifyNeverCalled()
+        AuditServiceMock.Audit.verifyNeverCalled()
+        ApplicationRepoMock.Save.verifyNeverCalled()
+      }
+
+      "return illegal application name has invalid length" in new Setup {
+        namingServiceReturns(InvalidLength)
+
+        val generatedName = SubmissionDataExtracter.getApplicationName(submittedSubmission).get
+
+        val result = await(underTest.requestApproval(application, answeredSubmission, requestedByName, requestedByEmail.text))
+
+        result shouldBe RequestApprovalsService.ApprovalRejectedDueToInvalidLength(generatedName)
+        StateHistoryRepoMock.Insert.verifyNeverCalled()
+        AuditServiceMock.Audit.verifyNeverCalled()
+        ApplicationRepoMock.Save.verifyNeverCalled()
+      }
+
+      "return illegal application name if has invalid characters" in new Setup {
+        namingServiceReturns(InvalidChars)
+
+        val generatedName = SubmissionDataExtracter.getApplicationName(submittedSubmission).get
+
+        val result = await(underTest.requestApproval(application, answeredSubmission, requestedByName, requestedByEmail.text))
+
+        result shouldBe RequestApprovalsService.ApprovalRejectedDueToInvalidChars(generatedName)
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()

@@ -381,6 +381,36 @@ object AuditAction {
     val auditType = "CreateRopcApplicationRequestDeniedDueToDenyListedName"
   }
 
+  case object ApplicationUpliftRequestDeniedDueToInvalidLength extends AuditAction {
+    val name      = "application uplift to production request has been denied, due to name not being 2 to 50 characters"
+    val auditType = "ApplicationUpliftRequestDeniedDueToInvalidLength"
+  }
+
+  case object CreatePrivilegedApplicationRequestDeniedDueToInvalidLength extends AuditAction {
+    val name      = "create privileged application request has been denied, due to name not being 2 to 50 characters"
+    val auditType = "CreatePrivilegedApplicationRequestDeniedDueToInvalidLength"
+  }
+
+  case object CreateRopcApplicationRequestDeniedDueToInvalidLength extends AuditAction {
+    val name      = "create ropc application request has been denied, due to name not being 2 to 50 characters"
+    val auditType = "CreateRopcApplicationRequestDeniedDueToInvalidLength"
+  }
+
+  case object ApplicationUpliftRequestDeniedDueToInvalidChars extends AuditAction {
+    val name      = "application uplift to production request has been denied, due to name containing invalid characters"
+    val auditType = "ApplicationUpliftRequestDeniedDueToInvalidChars"
+  }
+
+  case object CreatePrivilegedApplicationRequestDeniedDueToInvalidChars extends AuditAction {
+    val name      = "create privileged application request has been denied, due to name containing invalid characters"
+    val auditType = "CreatePrivilegedApplicationRequestDeniedDueToInvalidChars"
+  }
+
+  case object CreateRopcApplicationRequestDeniedDueToInvalidChars extends AuditAction {
+    val name      = "create ropc application request has been denied, due to name containing invalid characters"
+    val auditType = "CreateRopcApplicationRequestDeniedDueToInvalidChars"
+  }
+
   case object CollaboratorAddedAudit extends AuditAction {
     val name      = "Collaborator added to an application"
     val auditType = "CollaboratorAddedToApplication"

@@ -47,6 +47,12 @@ trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatche
 
       def thenRequestFailsWithIllegalNameErrorFor(applicationId: ApplicationId, emailAddress: String) =
         when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIllegalName("my app")))
+
+      def thenRequestFailsWithInvalidLengthErrorFor(applicationId: ApplicationId, emailAddress: String) =
+        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToInvalidLength("a")))
+
+      def thenRequestFailsWithInvalidCharsErrorFor(applicationId: ApplicationId, emailAddress: String) =
+        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToInvalidChars("<script>")))
     }
   }
 

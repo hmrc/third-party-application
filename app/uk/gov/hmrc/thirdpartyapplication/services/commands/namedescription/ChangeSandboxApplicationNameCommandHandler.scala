@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidChars, InvalidLength, InvalidName}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -46,13 +46,15 @@ class ChangeSandboxApplicationNameCommandHandler @Inject() (
       cmd: ChangeSandboxApplicationName,
       nameValidationResult: ApplicationNameValidationResult
     ): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, *]].map6(
+    Apply[Validated[Failures, *]].map8(
       isInSandboxEnvironment(app),
       isApproved(app),
       isAppActorACollaboratorOnApp(cmd.actor, app),
       cond(app.name != cmd.newName, "App already has that name"),
       cond(nameValidationResult != DuplicateName, "New name is a duplicate"),
-      cond(nameValidationResult != InvalidName, "New name is invalid")
+      cond(nameValidationResult != InvalidName, "New name is invalid"),
+      cond(nameValidationResult != InvalidLength, "New name is not between 2 and 50 characters"),
+      cond(nameValidationResult != InvalidChars, "New name contains invalid characters")
     ) { case _ => app }
   }
 

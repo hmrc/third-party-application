@@ -330,7 +330,7 @@ class ApplicationControllerSpec
 
       status(result) shouldBe OK
 
-      contentAsJson(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false))
+      contentAsJson(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false, "invalidLength" -> false, "invalidChars" -> false))
 
       verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(None))
     }
@@ -346,7 +346,39 @@ class ApplicationControllerSpec
 
       status(result) shouldBe OK
 
-      contentAsJson(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
+      contentAsJson(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true, "invalidLength" -> false, "invalidChars" -> false))
+
+      verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(None))
+    }
+
+    "Reject an app name as it has invalid length" in new Setup {
+      val applicationName = "a"
+      val payload         = s"""{"applicationName":"${applicationName}"}"""
+
+      when(mockUpliftNamingService.validateApplicationName(*, *))
+        .thenReturn(successful(InvalidLength))
+
+      private val result = underTest.validateApplicationName(request.withBody(Json.parse(payload)))
+
+      status(result) shouldBe OK
+
+      contentAsJson(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> false, "invalidLength" -> true, "invalidChars" -> false))
+
+      verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(None))
+    }
+
+    "Reject an app name as it has invalid characters" in new Setup {
+      val applicationName = "<script>"
+      val payload         = s"""{"applicationName":"${applicationName}"}"""
+
+      when(mockUpliftNamingService.validateApplicationName(*, *))
+        .thenReturn(successful(InvalidChars))
+
+      private val result = underTest.validateApplicationName(request.withBody(Json.parse(payload)))
+
+      status(result) shouldBe OK
+
+      contentAsJson(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> false, "invalidLength" -> false, "invalidChars" -> true))
 
       verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(None))
     }

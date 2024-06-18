@@ -24,6 +24,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, Environment}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.TextValidation
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -67,14 +68,27 @@ abstract class AbstractApplicationNamingService(
     !isValid
   }
 
+  def isInvalidLengthName(applicationName: String): Boolean = {
+    applicationName.length < 2 || applicationName.length > 50
+  }
+
+  def isInvalidCharsName(applicationName: String): Boolean = {
+    println(s"****** applicationName = ${applicationName}")
+    !TextValidation.MatchRegex("""(?!^.*[<>\/\\'"`].*$)^[ -~]*$""").isValid(applicationName)
+  }
+
   def validateApplicationName(applicationName: String, exclusions: ExclusionCondition): Future[ApplicationNameValidationResult] = {
     for {
-      isDuplicate <- isDuplicateName(applicationName, exclusions)
-      isDenyListed = isDenyListedName(applicationName)
-    } yield (isDenyListed, isDuplicate) match {
-      case (false, false) => ValidName
-      case (true, _)      => InvalidName
-      case (_, true)      => DuplicateName
+      isDuplicate    <- isDuplicateName(applicationName, exclusions)
+      isDenyListed    = isDenyListedName(applicationName)
+      isInvalidLength = isInvalidLengthName(applicationName)
+      isInvalidChars  = isInvalidCharsName(applicationName)
+    } yield (isDenyListed, isDuplicate, isInvalidLength, isInvalidChars) match {
+      case (false, false, false, false) => ValidName
+      case (true, _, _, _)              => InvalidName
+      case (_, true, _, _)              => DuplicateName
+      case (_, _, true, _)              => InvalidLength
+      case (_, _, _, true)              => InvalidChars
     }
   }
 
@@ -97,4 +111,25 @@ abstract class AbstractApplicationNamingService(
           existingAppId.map(id => AuditHelper.applicationId(id)).getOrElse(Map.empty) ++ Map("applicationName" -> submittedAppName)
         )
     }
+
+  def auditDeniedDueToInvalidLength(submittedAppName: String, accessType: AccessType, existingAppId: Option[ApplicationId])(implicit hc: HeaderCarrier): Future[AuditResult] =
+    accessType match {
+      case AccessType.PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToInvalidLength, Map("applicationName" -> submittedAppName))
+      case AccessType.ROPC       => auditService.audit(CreateRopcApplicationRequestDeniedDueToInvalidLength, Map("applicationName" -> submittedAppName))
+      case _                     => auditService.audit(
+          ApplicationUpliftRequestDeniedDueToInvalidLength,
+          existingAppId.map(id => AuditHelper.applicationId(id)).getOrElse(Map.empty) ++ Map("applicationName" -> submittedAppName)
+        )
+    }
+
+  def auditDeniedDueToInvalidChars(submittedAppName: String, accessType: AccessType, existingAppId: Option[ApplicationId])(implicit hc: HeaderCarrier): Future[AuditResult] =
+    accessType match {
+      case AccessType.PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToInvalidChars, Map("applicationName" -> submittedAppName))
+      case AccessType.ROPC       => auditService.audit(CreateRopcApplicationRequestDeniedDueToInvalidChars, Map("applicationName" -> submittedAppName))
+      case _                     => auditService.audit(
+          ApplicationUpliftRequestDeniedDueToInvalidChars,
+          existingAppId.map(id => AuditHelper.applicationId(id)).getOrElse(Map.empty) ++ Map("applicationName" -> submittedAppName)
+        )
+    }
+
 }

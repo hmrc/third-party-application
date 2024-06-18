@@ -169,8 +169,10 @@ class ApplicationController @Inject() (
 
             val json = result match {
               case ValidName     => Json.obj()
-              case InvalidName   => Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false))
-              case DuplicateName => Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
+              case InvalidName   => Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false, "invalidLength" -> false, "invalidChars" -> false))
+              case DuplicateName => Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true, "invalidLength" -> false, "invalidChars" -> false))
+              case InvalidLength => Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> false, "invalidLength" -> true, "invalidChars" -> false))
+              case InvalidChars  => Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> false, "invalidLength" -> false, "invalidChars" -> true))
             }
 
             Ok(json)

@@ -31,13 +31,13 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, HasSucceeded, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, AuditHelper, AuditService}
@@ -54,6 +54,8 @@ object RequestApprovalsService {
   sealed trait ApprovalRejectedDueToName                      extends ApprovalRejectedResult
   case class ApprovalRejectedDueToDuplicateName(name: String) extends ApprovalRejectedDueToName
   case class ApprovalRejectedDueToIllegalName(name: String)   extends ApprovalRejectedDueToName
+  case class ApprovalRejectedDueToInvalidLength(name: String) extends ApprovalRejectedDueToName
+  case class ApprovalRejectedDueToInvalidChars(name: String)  extends ApprovalRejectedDueToName
 }
 
 @Singleton
@@ -219,10 +221,10 @@ class RequestApprovalsService @Inject() (
 
   private def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
     submission.status match {
-      case Granted(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
-      case Warnings(_, _)      => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
-      case Failed(_, _)        => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
-      case _                   => successful(HasSucceeded)
+      case Status.Granted(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
+      case Status.Warnings(_, _)      => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
+      case Status.Failed(_, _)        => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
+      case _                          => successful(HasSucceeded)
     }
   }
 
@@ -323,6 +325,8 @@ class RequestApprovalsService @Inject() (
   private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] =
     approvalsNamingService.validateApplicationNameAndAudit(appName, appId, accessType).map(_ match {
       case ValidName     => Right(ApprovalAccepted)
+      case InvalidLength => Left(ApprovalRejectedDueToInvalidLength(appName))
+      case InvalidChars  => Left(ApprovalRejectedDueToInvalidChars(appName))
       case InvalidName   => Left(ApprovalRejectedDueToIllegalName(appName))
       case DuplicateName => Left(ApprovalRejectedDueToDuplicateName(appName))
     })

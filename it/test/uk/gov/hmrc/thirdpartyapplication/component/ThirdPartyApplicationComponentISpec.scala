@@ -689,7 +689,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       Then("The response should not contain any errors")
 
-      result.body shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false)).toString
+      result.body shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false, "invalidLength" -> false, "invalidChars" -> false)).toString
     }
   }
 

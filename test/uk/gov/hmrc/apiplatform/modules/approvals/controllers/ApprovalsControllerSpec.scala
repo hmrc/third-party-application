@@ -131,6 +131,24 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
 
       status(result) shouldBe PRECONDITION_FAILED
     }
+
+    "return 'precondition failed' error response if name has invalid length" in new Setup {
+      hasApp
+      hasSubmission
+      RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithInvalidLengthErrorFor(appId, emailAddress)
+      val result = underTest.requestApproval(appId)(request)
+
+      status(result) shouldBe PRECONDITION_FAILED
+    }
+
+    "return 'precondition failed' error response if name has invalid characters" in new Setup {
+      hasApp
+      hasSubmission
+      RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithInvalidCharsErrorFor(appId, emailAddress)
+      val result = underTest.requestApproval(appId)(request)
+
+      status(result) shouldBe PRECONDITION_FAILED
+    }
   }
 
   "grant" should {

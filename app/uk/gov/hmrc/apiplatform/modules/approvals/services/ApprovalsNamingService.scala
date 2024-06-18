@@ -54,6 +54,8 @@ class ApprovalsNamingService @Inject() (
                             case ValidName     => successful(())
                             case DuplicateName => auditDeniedDueToNaming(applicationName, accessType, Some(appId))
                             case InvalidName   => auditDeniedDueToDenyListed(applicationName, accessType, Some(appId))
+                            case InvalidLength => auditDeniedDueToInvalidLength(applicationName, accessType, Some(appId))
+                            case InvalidChars  => auditDeniedDueToInvalidChars(applicationName, accessType, Some(appId))
                           }
     } yield validationResult
 }

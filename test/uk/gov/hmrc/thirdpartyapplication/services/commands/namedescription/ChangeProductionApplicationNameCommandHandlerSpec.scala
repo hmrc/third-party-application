@@ -144,5 +144,21 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
         underTest.process(app, update)
       }
     }
+
+    "return an error if the name has invalid length" in new Setup {
+      UpliftNamingServiceMock.ValidateApplicationName.failsWithInvalidLength()
+
+      checkFailsWith("New name is not between 2 and 50 characters") {
+        underTest.process(app, update)
+      }
+    }
+
+    "return an error if the name has invalid characters" in new Setup {
+      UpliftNamingServiceMock.ValidateApplicationName.failsWithInvalidChars()
+
+      checkFailsWith("New name contains invalid characters") {
+        underTest.process(app, update)
+      }
+    }
   }
 }

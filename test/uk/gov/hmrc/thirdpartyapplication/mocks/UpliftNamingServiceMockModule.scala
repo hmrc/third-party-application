@@ -23,8 +23,8 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, DuplicateName, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.ExclusionCondition
 
 trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -53,6 +53,8 @@ trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSu
       def succeeds()               = when(aMock.validateApplicationName(*[String], *[ExclusionCondition])).thenReturn(successful(ValidName))
       def failsWithDuplicateName() = when(aMock.validateApplicationName(*, *[ExclusionCondition])).thenReturn(successful(DuplicateName))
       def failsWithInvalidName()   = when(aMock.validateApplicationName(*, *[ExclusionCondition])).thenReturn(successful(InvalidName))
+      def failsWithInvalidLength() = when(aMock.validateApplicationName(*, *[ExclusionCondition])).thenReturn(successful(InvalidLength))
+      def failsWithInvalidChars()  = when(aMock.validateApplicationName(*, *[ExclusionCondition])).thenReturn(successful(InvalidChars))
     }
   }
 

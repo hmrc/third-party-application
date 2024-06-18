@@ -77,6 +77,10 @@ class ApprovalsController @Inject() (
           case ApprovalRejectedDueToDuplicateName(name)             => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name '$name' "))
           case ApprovalRejectedDueToIllegalName(name)               =>
             PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name '$name' contains words that are prohibited"))
+          case ApprovalRejectedDueToInvalidLength(name)             =>
+            PreconditionFailed(asJsonError("INVALID_LENGTH", s"The application name '$name' must be between 2 and 50 characters"))
+          case ApprovalRejectedDueToInvalidChars(name)              =>
+            PreconditionFailed(asJsonError("INVALID_CHARS", s"The application name '$name' must only contain ASCII characters excluding <>/\\\"'`"))
           case ApprovalRejectedDueToIncorrectApplicationState       => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'"))
         }
       )

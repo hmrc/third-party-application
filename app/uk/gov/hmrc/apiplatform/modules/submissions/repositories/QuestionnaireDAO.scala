@@ -493,7 +493,8 @@ object QuestionnaireDAO {
           )
         ).some,
         label = Question.Label("Application name").some,
-        errorInfo = ErrorInfo("The name of your software cannot be blank", "Enter the name of your software").some
+        validation = TextValidation.MatchRegex("""(?!^.*[<>/\\"'`].*$)^[ -~]{2,50}$""").some,
+        errorInfo = ErrorInfo("The name of your software must be between 2 and 50 characters and only use ASCII characters excluding <>/\\\"'`", "Enter the name of your software").some
       )
 
       val question3 = Question.MultiChoiceQuestion(

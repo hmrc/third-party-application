@@ -128,6 +128,24 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
         result shouldBe ValidName
       }
+
+      "block an app name with invalid length" in new Setup {
+        ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
+        ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(false)
+
+        val result = await(underTest.validateApplicationName("a", applicationId))
+
+        result shouldBe InvalidLength
+      }
+
+      "block an app name with invalid characters" in new Setup {
+        ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
+        ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(false)
+
+        val result = await(underTest.validateApplicationName("<script>", applicationId))
+
+        result shouldBe InvalidChars
+      }
     }
   }
 }
