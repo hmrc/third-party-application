@@ -23,11 +23,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNamingService, AuditService}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 @Singleton
 class UpliftNamingService @Inject() (

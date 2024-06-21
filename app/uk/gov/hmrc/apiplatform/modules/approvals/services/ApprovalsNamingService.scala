@@ -24,11 +24,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNamingService, AuditService}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 @Singleton
 class ApprovalsNamingService @Inject() (
@@ -48,7 +48,8 @@ class ApprovalsNamingService @Inject() (
   def validateApplicationName(applicationName: ValidatedApplicationName, appId: ApplicationId): Future[ApplicationNameValidationResult] =
     validateApplicationName(applicationName, approvalsFilter(appId))
 
-  def validateApplicationNameAndAudit(applicationName: ValidatedApplicationName, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[ApplicationNameValidationResult] =
+  def validateApplicationNameAndAudit(applicationName: ValidatedApplicationName, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier)
+      : Future[ApplicationNameValidationResult] =
     for {
       validationResult <- validateApplicationName(applicationName, approvalsFilter(appId))
       _                <- validationResult match {

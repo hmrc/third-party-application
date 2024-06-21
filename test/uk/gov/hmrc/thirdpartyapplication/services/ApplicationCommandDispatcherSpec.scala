@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, GrantLength, RateLimitTier, RedirectUri}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, GrantLength, RateLimitTier, RedirectUri, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocations, SubmissionId, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
@@ -46,7 +46,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.UpdateRed
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils

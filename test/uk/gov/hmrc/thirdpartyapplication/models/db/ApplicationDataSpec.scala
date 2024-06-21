@@ -20,7 +20,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.GrantLength
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{GrantLength, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
@@ -28,7 +28,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   StandardAccessDataToCopy
 }
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, UpliftRequestSamples}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with CollaboratorTestData {
   import ApiIdentifierSyntax._

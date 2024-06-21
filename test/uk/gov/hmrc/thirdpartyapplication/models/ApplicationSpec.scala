@@ -20,7 +20,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
@@ -30,7 +30,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, _}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 class ApplicationSpec extends utils.HmrcSpec with ApplicationStateUtil with UpliftRequestSamples with CollaboratorTestData {
 

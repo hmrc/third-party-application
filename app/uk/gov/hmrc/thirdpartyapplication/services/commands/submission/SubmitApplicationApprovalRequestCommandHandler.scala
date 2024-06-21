@@ -25,7 +25,7 @@ import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.services.{ApprovalsNamingService, ResponsibleIndividualVerificationService}
@@ -40,7 +40,6 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 @Singleton
 class SubmitApplicationApprovalRequestCommandHandler @Inject() (

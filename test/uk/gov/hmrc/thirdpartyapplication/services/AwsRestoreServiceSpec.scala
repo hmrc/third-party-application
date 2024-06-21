@@ -26,14 +26,13 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, Environment}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{RateLimitTier, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.CreateApplicationRequestV1
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock with CollaboratorTestData {
 
