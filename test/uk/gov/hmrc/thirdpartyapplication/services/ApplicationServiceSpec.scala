@@ -1009,7 +1009,7 @@ class ApplicationServiceSpec
 
   private def aNewV1ApplicationRequestWithCollaboratorWithUserId(access: Access, environment: Environment) = {
     CreateApplicationRequestV1(
-      ValidatedApplicationName("MyApp").get,
+      ApplicationName("MyApp"),
       access,
       Some("description"),
       environment,
@@ -1045,12 +1045,12 @@ class ApplicationServiceSpec
   }
 
   private def aNewV1ApplicationRequest(access: Access = Access.Standard(), environment: Environment = Environment.PRODUCTION) = {
-    CreateApplicationRequestV1(ValidatedApplicationName("MyApp").get, access, Some("description"), environment, Set(loggedInUser.admin()), None)
+    CreateApplicationRequestV1(ApplicationName("MyApp"), access, Some("description"), environment, Set(loggedInUser.admin()), None)
   }
 
   private def aNewV2ApplicationRequest(environment: Environment) = {
     CreateApplicationRequestV2(
-      ValidatedApplicationName("MyApp").get,
+      ApplicationName("MyApp"),
       StandardAccessDataToCopy(),
       Some("description"),
       environment,
