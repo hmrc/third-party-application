@@ -101,8 +101,8 @@ object StoredApplication {
 
     StoredApplication(
       ApplicationId.random,
-      name,
-      name.toLowerCase,
+      name.value,
+      name.value.toLowerCase,
       collaborators,
       createApplicationRequest.description.filterNot(_ => environment == Environment.PRODUCTION),
       wso2ApplicationName,

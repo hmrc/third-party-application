@@ -50,7 +50,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
     Apply[Validated[Failures, *]].map5(
       isAdminOnApp(cmd.instigator, app),
       isNotInProcessOfBeingApproved(app),
-      cond(app.name != cmd.newName, "App already has that name"),
+      cond(app.name != cmd.newName.value, "App already has that name"),
       cond(nameValidationResult != DuplicateName, "New name is a duplicate"),
       cond(nameValidationResult != InvalidName, "New name is invalid")
     ) { case _ => app }
@@ -64,7 +64,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
         eventDateTime = cmd.timestamp,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         oldAppName = app.name,
-        newAppName = cmd.newName,
+        newAppName = cmd.newName.value,
         requestingAdminEmail = getRequester(app, cmd.instigator)
       )
     )
@@ -74,7 +74,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
     for {
       nameValidationResult <- E.liftF(namingService.validateApplicationName(cmd.newName, noExclusions))
       valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
-      savedApp             <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName))
+      savedApp             <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName.value))
       events                = asEvents(app, cmd)
     } yield (savedApp, events)
   }

@@ -23,7 +23,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationName
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
@@ -48,7 +48,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
     val newApp = app.copy(name = newName, normalisedName = newName.toLowerCase())
 
     val timestamp = FixedClock.instant
-    val update    = ChangeProductionApplicationName(gatekeeperUser, userId, instant, newName)
+    val update    = ChangeProductionApplicationName(gatekeeperUser, userId, instant, ValidatedApplicationName(newName).get)
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 

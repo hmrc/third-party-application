@@ -22,6 +22,7 @@ import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, DuplicateName, InvalidName, ValidName}
@@ -50,9 +51,9 @@ trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     }
 
     object ValidateApplicationName {
-      def succeeds()               = when(aMock.validateApplicationName(*[String], *[ExclusionCondition])).thenReturn(successful(ValidName))
-      def failsWithDuplicateName() = when(aMock.validateApplicationName(*, *[ExclusionCondition])).thenReturn(successful(DuplicateName))
-      def failsWithInvalidName()   = when(aMock.validateApplicationName(*, *[ExclusionCondition])).thenReturn(successful(InvalidName))
+      def succeeds()               = when(aMock.validateApplicationName(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(ValidName))
+      def failsWithDuplicateName() = when(aMock.validateApplicationName(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(DuplicateName))
+      def failsWithInvalidName()   = when(aMock.validateApplicationName(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(InvalidName))
     }
   }
 

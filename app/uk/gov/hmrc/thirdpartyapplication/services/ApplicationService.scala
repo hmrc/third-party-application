@@ -309,8 +309,8 @@ class ApplicationService @Inject() (
 
     val f = for {
       _              <- createApplicationRequest.accessType match {
-                          case AccessType.PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, AccessType.PRIVILEGED)
-                          case AccessType.ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, AccessType.ROPC)
+                          case AccessType.PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.PRIVILEGED)
+                          case AccessType.ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.ROPC)
                           case _                     => successful(())
                         }
       totp           <- generateApplicationTotp(createApplicationRequest.accessType)

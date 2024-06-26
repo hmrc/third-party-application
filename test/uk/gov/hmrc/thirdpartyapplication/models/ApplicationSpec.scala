@@ -20,7 +20,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
@@ -68,7 +68,7 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateUtil with Upli
   def createRequestV1(access: Access, environment: Environment) = {
     val request: CreateApplicationRequest =
       CreateApplicationRequestV1.create(
-        name = "an application",
+        name = ApplicationName("an application"),
         access = access,
         description = None,
         environment = environment,
@@ -88,7 +88,7 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateUtil with Upli
     def createRequestV2(access: StandardAccessDataToCopy, environment: Environment) = {
       val request: CreateApplicationRequest =
         CreateApplicationRequestV2.create(
-          name = "an application",
+          name = ApplicationName("an application"),
           access = access,
           description = None,
           environment = environment,
