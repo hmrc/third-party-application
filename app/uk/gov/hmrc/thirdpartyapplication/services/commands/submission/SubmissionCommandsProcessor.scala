@@ -34,7 +34,8 @@ class SubmissionCommandsProcessor @Inject() (
     submitApplicationApprovalRequestCmdHdlr: SubmitApplicationApprovalRequestCommandHandler,
     submitTermsOfUseApprovalCommandHandler: SubmitTermsOfUseApprovalCommandHandler,
     grantApplicationApprovalRequestCommandHandler: GrantApplicationApprovalRequestCommandHandler,
-    grantTermsOfUseApprovalCommandHandler: GrantTermsOfUseApprovalCommandHandler
+    grantTermsOfUseApprovalCommandHandler: GrantTermsOfUseApprovalCommandHandler,
+    sendTermsOfUseInvitationCommandHandler: SendTermsOfUseInvitationCommandHandler
   ) {
   import CommandHandler._
   import ApplicationCommands._
@@ -43,13 +44,16 @@ class SubmissionCommandsProcessor @Inject() (
     case cmd: ChangeResponsibleIndividualToSelf        => changeResponsibleIndividualToSelfCmdHdlr.process(app, cmd)
     case cmd: ChangeResponsibleIndividualToOther       => changeResponsibleIndividualToOtherCmdHdlr.process(app, cmd)
     case cmd: VerifyResponsibleIndividual              => verifyResponsibleIndividualCmdHdlr.process(app, cmd)
-    case cmd: DeclineApplicationApprovalRequest        => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
     case cmd: DeclineResponsibleIndividual             => declineResponsibleIndividualCmdHdlr.process(app, cmd)
     case cmd: DeclineResponsibleIndividualDidNotVerify => declineResponsibleIndividualDidNotVerifyCmdHdlr.process(app, cmd)
-    case cmd: ResendRequesterEmailVerification         => resendRequesterEmailVerificationCmdHdlr.process(app, cmd)
-    case cmd: SubmitApplicationApprovalRequest         => submitApplicationApprovalRequestCmdHdlr.process(app, cmd)
-    case cmd: SubmitTermsOfUseApproval                 => submitTermsOfUseApprovalCommandHandler.process(app, cmd)
-    case cmd: GrantApplicationApprovalRequest          => grantApplicationApprovalRequestCommandHandler.process(app, cmd)
-    case cmd: GrantTermsOfUseApproval                  => grantTermsOfUseApprovalCommandHandler.process(app, cmd)
+
+    case cmd: SubmitApplicationApprovalRequest  => submitApplicationApprovalRequestCmdHdlr.process(app, cmd)
+    case cmd: GrantApplicationApprovalRequest   => grantApplicationApprovalRequestCommandHandler.process(app, cmd)
+    case cmd: DeclineApplicationApprovalRequest => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
+    case cmd: ResendRequesterEmailVerification  => resendRequesterEmailVerificationCmdHdlr.process(app, cmd)
+
+    case cmd: SendTermsOfUseInvitation => sendTermsOfUseInvitationCommandHandler.process(app, cmd)
+    case cmd: SubmitTermsOfUseApproval => submitTermsOfUseApprovalCommandHandler.process(app, cmd)
+    case cmd: GrantTermsOfUseApproval  => grantTermsOfUseApprovalCommandHandler.process(app, cmd)
   }
 }

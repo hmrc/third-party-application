@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
+import java.time.temporal.ChronoUnit._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.NonEmptyList
@@ -684,5 +685,28 @@ class NotificationServiceSpec
     val result = await(underTest.sendNotifications(app, NonEmptyList.one(event), Set.empty))
     result shouldBe List(HasSucceeded)
     EmailConnectorMock.SendNewTermsOfUseConfirmation.verifyCalledWith(app.name, app.admins.map(_.emailAddress))
+  }
+
+  "when receive a TermsOfUseInvitationSent, call the event handler and return successfully" in new Setup {
+    EmailConnectorMock.SendNewTermsOfUseInvitation.thenReturnSuccess()
+    val requesterName  = "Bob Fleming"
+    val requesterEmail = loggedInUserAdminCollaborator.emailAddress
+    val dueBy          = instant.plus(21, DAYS)
+
+    val app            = applicationData.copy(
+      state = ApplicationStateExamples.production(requesterEmail.text, requesterName)
+    )
+
+    val event = ApplicationEvents.TermsOfUseInvitationSent(
+      EventId.random,
+      app.id,
+      instant,
+      gatekeeperActor,
+      dueBy
+    )
+
+    val result = await(underTest.sendNotifications(app, NonEmptyList.one(event), Set.empty))
+    result shouldBe List(HasSucceeded)
+    EmailConnectorMock.SendNewTermsOfUseInvitation.verifyCalledWith(dueBy, app.name, app.admins.map(_.emailAddress))
   }
 }

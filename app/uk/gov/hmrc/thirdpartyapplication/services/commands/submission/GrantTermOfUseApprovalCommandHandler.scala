@@ -27,7 +27,7 @@ import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
-import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper}
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ResponsibleIndividual, TermsOfUseAcceptance}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.GrantTermsOfUseApproval
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
@@ -98,16 +98,14 @@ class GrantTermsOfUseApprovalCommandHandler @Inject() (
   }
 
   def process(originalApp: StoredApplication, cmd: GrantTermsOfUseApproval): AppCmdResultT = {
-    val ET = EitherTHelper.make[CommandHandler.Failures]
-
     for {
       validateResult                     <- E.fromValidatedF(validate(originalApp))
       (submission, responsibleIndividual) = validateResult
       updatedSubmission                   = Submission.grant(Instant.now(clock), cmd.gatekeeperUser, Some(cmd.reasons), cmd.escalatedTo)(submission)
-      savedSubmission                    <- ET.liftF(submissionService.store(updatedSubmission))
-      _                                  <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
+      savedSubmission                    <- E.liftF(submissionService.store(updatedSubmission))
+      _                                  <- E.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
       acceptance                          = TermsOfUseAcceptance(responsibleIndividual, Instant.now(clock), submission.id, submission.latestInstance.index)
-      updatedApp                         <- ET.liftF(applicationRepository.addApplicationTermsOfUseAcceptance(originalApp.id, acceptance))
+      updatedApp                         <- E.liftF(applicationRepository.addApplicationTermsOfUseAcceptance(originalApp.id, acceptance))
       events                              = asEvents(updatedApp, cmd, savedSubmission)
     } yield (updatedApp, events)
   }
