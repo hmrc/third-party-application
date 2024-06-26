@@ -25,7 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ActualAnswer, Submission}
@@ -62,7 +62,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
     val mockApprovalsNamingService: ApprovalsNamingService = mock[ApprovalsNamingService]
 
     def namingServiceReturns(result: ApplicationNameValidationResult) =
-      when(mockApprovalsNamingService.validateApplicationNameAndAudit(*, *[ApplicationId], *)(*)).thenReturn(successful(result))
+      when(mockApprovalsNamingService.validateApplicationNameAndAudit(*[ValidatedApplicationName], *[ApplicationId], *)(*)).thenReturn(successful(result))
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
@@ -289,11 +289,15 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       "return duplicate application name if duplicate" in new Setup {
+        val answersWithAppName            = sampleAnswersToQuestions
+          .updated(testQuestionIdsOfInterest.applicationNameId, ActualAnswer.TextAnswer("Test App Name"))
+        val answeredSubmissionWithAppName = testPassAnsweredSubmission.hasCompletelyAnsweredWith(answersWithAppName)
+
         namingServiceReturns(DuplicateName)
 
-        val result = await(underTest.requestApproval(application, answeredSubmission, requestedByName, requestedByEmail.text))
+        val result = await(underTest.requestApproval(application, answeredSubmissionWithAppName, requestedByName, requestedByEmail.text))
 
-        val generatedName = SubmissionDataExtracter.getApplicationName(submittedSubmission).get
+        val generatedName = SubmissionDataExtracter.getApplicationName(answeredSubmissionWithAppName).get
 
         result shouldBe RequestApprovalsService.ApprovalRejectedDueToDuplicateName(generatedName)
         StateHistoryRepoMock.Insert.verifyNeverCalled()
@@ -302,11 +306,15 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       "return illegal application name if deny-listed name" in new Setup {
+        val answersWithAppName            = sampleAnswersToQuestions
+          .updated(testQuestionIdsOfInterest.applicationNameId, ActualAnswer.TextAnswer("Test App Name"))
+        val answeredSubmissionWithAppName = testPassAnsweredSubmission.hasCompletelyAnsweredWith(answersWithAppName)
+
         namingServiceReturns(InvalidName)
 
-        val generatedName = SubmissionDataExtracter.getApplicationName(submittedSubmission).get
+        val generatedName = SubmissionDataExtracter.getApplicationName(answeredSubmissionWithAppName).get
 
-        val result = await(underTest.requestApproval(application, answeredSubmission, requestedByName, requestedByEmail.text))
+        val result = await(underTest.requestApproval(application, answeredSubmissionWithAppName, requestedByName, requestedByEmail.text))
 
         result shouldBe RequestApprovalsService.ApprovalRejectedDueToIllegalName(generatedName)
         StateHistoryRepoMock.Insert.verifyNeverCalled()

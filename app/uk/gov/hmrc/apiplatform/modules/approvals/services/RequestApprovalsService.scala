@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
@@ -320,12 +320,22 @@ class RequestApprovalsService @Inject() (
     }
   }
 
-  private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] =
+  private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier)
+      : Future[Either[ApprovalRejectedDueToName, Unit]] = {
+    ValidatedApplicationName(appName) match {
+      case Some(validatedAppName) => callValidateApplicationName(validatedAppName, appId, accessType)
+      case _                      => Future.successful(Left(ApprovalRejectedDueToIllegalName(appName)))
+    }
+  }
+
+  private def callValidateApplicationName(appName: ValidatedApplicationName, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier)
+      : Future[Either[ApprovalRejectedDueToName, Unit]] = {
     approvalsNamingService.validateApplicationNameAndAudit(appName, appId, accessType).map(_ match {
       case ValidName     => Right(ApprovalAccepted)
-      case InvalidName   => Left(ApprovalRejectedDueToIllegalName(appName))
-      case DuplicateName => Left(ApprovalRejectedDueToDuplicateName(appName))
+      case InvalidName   => Left(ApprovalRejectedDueToIllegalName(appName.toString()))
+      case DuplicateName => Left(ApprovalRejectedDueToDuplicateName(appName.toString()))
     })
+  }
 
   private def logCompletedApprovalRequest(app: StoredApplication) =
     logger.info(s"Approval-02: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name}")

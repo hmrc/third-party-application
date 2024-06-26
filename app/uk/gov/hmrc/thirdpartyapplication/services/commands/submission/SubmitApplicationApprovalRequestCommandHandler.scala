@@ -25,7 +25,7 @@ import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.services.{ApprovalsNamingService, ResponsibleIndividualVerificationService}
@@ -156,8 +156,12 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
   private def logCompletedApprovalRequest(app: StoredApplication): Unit =
     logger.info(s"Approval-02: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name}")
 
-  private def validateApplicationName(appName: String, appId: ApplicationId): Future[ApplicationNameValidationResult] =
-    approvalsNamingService.validateApplicationName(appName, appId)
+  private def validateApplicationName(appName: String, appId: ApplicationId): Future[ApplicationNameValidationResult] = {
+    ValidatedApplicationName(appName) match {
+      case Some(validatedAppName) => approvalsNamingService.validateApplicationName(validatedAppName, appId)
+      case _                      => Future.successful(InvalidName)
+    }
+  }
 
   private def deriveNewAppDetails(
       existing: StoredApplication,

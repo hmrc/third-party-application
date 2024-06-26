@@ -50,7 +50,7 @@ class ChangeSandboxApplicationNameCommandHandler @Inject() (
       isInSandboxEnvironment(app),
       isApproved(app),
       isAppActorACollaboratorOnApp(cmd.actor, app),
-      cond(app.name != cmd.newName, "App already has that name"),
+      cond(app.name != cmd.newName.value, "App already has that name"),
       cond(nameValidationResult != DuplicateName, "New name is a duplicate"),
       cond(nameValidationResult != InvalidName, "New name is invalid")
     ) { case _ => app }
@@ -64,7 +64,7 @@ class ChangeSandboxApplicationNameCommandHandler @Inject() (
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
         oldName = app.name,
-        newName = cmd.newName
+        newName = cmd.newName.value
       )
     )
   }
@@ -73,7 +73,7 @@ class ChangeSandboxApplicationNameCommandHandler @Inject() (
     for {
       nameValidationResult <- E.liftF(namingService.validateApplicationName(cmd.newName, noExclusions))
       valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
-      savedApp             <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName))
+      savedApp             <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName.value))
       events                = asEvents(app, cmd)
     } yield (savedApp, events)
   }

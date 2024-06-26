@@ -32,7 +32,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, GrantLength, RedirectUri}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, Collaborator, GrantLength, RedirectUri}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
@@ -388,7 +388,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   }
 
   private def aCreateApplicationRequestV1(access: Access) = CreateApplicationRequestV1(
-    "My Application",
+    ApplicationName("My Application"),
     access,
     Some("Description"),
     Environment.PRODUCTION,
@@ -400,7 +400,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   )
 
   private def aCreateApplicationRequestV2(access: StandardAccessDataToCopy) = CreateApplicationRequestV2(
-    "My Application",
+    ApplicationName("My Application"),
     access,
     Some("Description"),
     Environment.PRODUCTION,

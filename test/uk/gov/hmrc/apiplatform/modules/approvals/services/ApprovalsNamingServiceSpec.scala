@@ -22,6 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, Environment}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationNameValidationConfigMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -50,7 +51,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
         ApplicationRepoMock.FetchByName.thenReturnEmptyList()
         ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("HMRC"))
 
-        val result = await(underTest.validateApplicationNameAndAudit("my application name", applicationId, accessType))
+        val result = await(underTest.validateApplicationNameAndAudit(ValidatedApplicationName("my application name").get, applicationId, accessType))
 
         result shouldBe ValidName
       }
@@ -59,7 +60,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
         ApplicationRepoMock.FetchByName.thenReturnEmptyList()
         ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("HMRC"))
 
-        val result = await(underTest.validateApplicationName("Invalid name HMRC", applicationId))
+        val result = await(underTest.validateApplicationName(ValidatedApplicationName("Invalid name HMRC").get, applicationId))
 
         result shouldBe InvalidName
       }
@@ -68,7 +69,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
         ApplicationRepoMock.FetchByName.thenReturnEmptyList()
         ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("InvalidName1", "InvalidName2", "InvalidName3"))
 
-        val result = await(underTest.validateApplicationName("ValidName InvalidName1 InvalidName2", applicationId))
+        val result = await(underTest.validateApplicationName(ValidatedApplicationName("ValidName InvalidName1 InvalidName2").get, applicationId))
 
         result shouldBe InvalidName
       }
@@ -77,7 +78,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
         ApplicationRepoMock.FetchByName.thenReturnEmptyList()
         ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("InvalidName"))
 
-        val result = await(underTest.validateApplicationName("invalidname", applicationId))
+        val result = await(underTest.validateApplicationName(ValidatedApplicationName("invalidname").get, applicationId))
 
         result shouldBe InvalidName
       }
@@ -88,7 +89,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
         ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 
         private val duplicateName = "duplicate name"
-        val result                = await(underTest.validateApplicationName(duplicateName, applicationId))
+        val result                = await(underTest.validateApplicationName(ValidatedApplicationName(duplicateName).get, applicationId))
 
         result shouldBe DuplicateName
 
@@ -101,7 +102,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
         ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 
         private val duplicateName = "duplicate name"
-        val result                = await(underTest.validateApplicationName(duplicateName, applicationId))
+        val result                = await(underTest.validateApplicationName(ValidatedApplicationName(duplicateName).get, applicationId))
 
         result shouldBe ValidName
 
@@ -112,7 +113,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
         ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
         ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(false)
 
-        val result = await(underTest.validateApplicationName("app name", applicationId))
+        val result = await(underTest.validateApplicationName(ValidatedApplicationName("app name").get, applicationId))
 
         result shouldBe ValidName
 
@@ -124,7 +125,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
         ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = applicationId))
 
-        val result = await(underTest.validateApplicationName("app name", applicationId))
+        val result = await(underTest.validateApplicationName(ValidatedApplicationName("app name").get, applicationId))
 
         result shouldBe ValidName
       }

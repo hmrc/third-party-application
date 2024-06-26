@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, GrantLength, RateLimitTier, RedirectUri}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, GrantLength, RateLimitTier, RedirectUri, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocations, SubmissionId, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
@@ -255,7 +255,7 @@ class ApplicationCommandDispatcherSpec
       val userId         = UserId.random
 
       val timestamp = instant
-      val cmd       = ChangeProductionApplicationName(gatekeeperUser, userId, timestamp, newName)
+      val cmd       = ChangeProductionApplicationName(gatekeeperUser, userId, timestamp, ValidatedApplicationName(newName).get)
       val evt       = ApplicationEvents.ProductionAppNameChangedEvent(
         EventId.random,
         applicationId,

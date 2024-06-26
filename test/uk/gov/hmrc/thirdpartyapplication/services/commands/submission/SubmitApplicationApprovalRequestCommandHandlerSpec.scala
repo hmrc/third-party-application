@@ -25,6 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
@@ -75,7 +76,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
     val mockApprovalsNamingService: ApprovalsNamingService = mock[ApprovalsNamingService]
 
     def namingServiceReturns(result: ApplicationNameValidationResult) =
-      when(mockApprovalsNamingService.validateApplicationName(*, *[ApplicationId])).thenReturn(successful(result))
+      when(mockApprovalsNamingService.validateApplicationName(*[ValidatedApplicationName], *[ApplicationId])).thenReturn(successful(result))
 
     val underTest = new SubmitApplicationApprovalRequestCommandHandler(
       SubmissionsServiceMock.aMock,
