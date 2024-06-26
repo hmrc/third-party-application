@@ -124,7 +124,7 @@ class GrantTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec w
 
       val testingApp = app.copy(state = ApplicationStateExamples.testing)
 
-      checkFailsWith("App is not in PRODUCTION state", "No requestedBy email found", "No requestedBy name found") {
+      checkFailsWith("App is not in PRODUCTION state", "No requestedBy email found") {
         underTest.process(testingApp, GrantTermsOfUseApproval(gkUserEmail, instant, reasons, escalatedTo))
       }
 

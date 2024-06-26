@@ -64,14 +64,13 @@ class GrantTermsOfUseApprovalCommandHandler @Inject() (
         GenericFailure(s"No submission found for application ${app.id.value}").invalidNel[(Submission, ResponsibleIndividual)]
       ) {
         case (submission) => {
-          Apply[Validated[Failures, *]].map6(
+          Apply[Validated[Failures, *]].map5(
             ensureStandardAccess(app),
             isInProduction(app),
             ensureResponsibleIndividualDefined(app),
             cond(app.state.requestedByEmailAddress.nonEmpty, "No requestedBy email found"),
-            cond(app.state.requestedByName.nonEmpty, "No requestedBy name found"),
             cond((submission.status.isGrantedWithWarnings || submission.status.isFailed), "Rejected due to incorrect submission state")
-          ) { case (_, _, responsibleIndividual, _, _, _) => (submission, responsibleIndividual) }
+          ) { case (_, _, responsibleIndividual, _, _) => (submission, responsibleIndividual) }
         }
       }
   }
@@ -92,7 +91,7 @@ class GrantTermsOfUseApprovalCommandHandler @Inject() (
       reasons = cmd.reasons,
       escalatedTo = cmd.escalatedTo,
       requestingAdminEmail = app.state.requestedByEmailAddress.get.toLaxEmail,
-      requestingAdminName = app.state.requestedByName.get
+      requestingAdminName = app.state.requestedByName.getOrElse("UNKNOWN")
     ))
 
   }
