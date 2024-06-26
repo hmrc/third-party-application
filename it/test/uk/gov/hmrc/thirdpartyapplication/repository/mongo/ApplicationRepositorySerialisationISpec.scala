@@ -17,15 +17,19 @@
 package uk.gov.hmrc.thirdpartyapplication.repository.mongo
 
 import java.time.{Clock, Instant}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.nextString
 
 import org.mongodb.scala.Document
+import org.mongodb.scala.bson.BsonDocument
+import org.mongodb.scala.model.Filters
 import org.mongodb.scala.result.InsertOneResult
 import org.scalatest.BeforeAndAfterEach
 
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.JsObject
+import play.api.libs.json.{JsObject, JsPath, Json, __}
+import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.test.MongoSupport
 import uk.gov.hmrc.utils.ServerBaseISpec
 
@@ -112,6 +116,18 @@ class ApplicationRepositorySerialisationISpec
 
     def saveApplicationAsMongoJson(applicationAsRawJson: JsObject): InsertOneResult = {
       await(mongoDatabase.getCollection("application").insertOne(Document(applicationAsRawJson.toString())).toFuture())
+    }
+
+    def fetchApplicationRawJson(applicationId: ApplicationId): BsonDocument = {
+      await(mongoDatabase.getCollection("application").find(Filters.equal("id", Codecs.toBson(applicationId))).headOption().map(_.value)).toBsonDocument()
+    }
+
+    def validateGrantLength(raw: BsonDocument, required: Boolean): Unit = {
+      val path: JsPath = __ \ "grantLength"
+      path(Json.parse(raw.toJson)) match {
+        case Seq(x) => if (required) succeed else fail
+        case _      => if (required) fail else succeed
+      }
     }
   }
 
@@ -281,4 +297,31 @@ class ApplicationRepositorySerialisationISpec
     appSearchResult.applications.head.allowAutoDelete mustBe true
     appSearchResult.applications.head.refreshTokensAvailableFor mustBe GrantLength.ONE_MONTH.period
   }
+
+  "successfully remove old grantLength attribute when grantLength 1 day and refreshTokensAvailableFor 1 month" in new Setup {
+    val rawJson: JsObject = applicationToMongoJson(applicationData.copy(refreshTokensAvailableFor = GrantLength.ONE_MONTH.period), None, Some(1), true)
+    saveApplicationAsMongoJson(rawJson)
+
+    val rawAppWithOldGrantLength = fetchApplicationRawJson(applicationId)
+    validateGrantLength(rawAppWithOldGrantLength, true)
+
+    await(applicationRepository.removeOldGrantLength(applicationId))
+
+    val rawAppWithOldGrantLengthRemoved = fetchApplicationRawJson(applicationId)
+    validateGrantLength(rawAppWithOldGrantLengthRemoved, false)
+  }
+
+  "do nothing when removeOldGrantLength is called if old grantLength attribute does not exist" in new Setup {
+    val rawJson: JsObject = applicationToMongoJson(applicationData.copy(refreshTokensAvailableFor = GrantLength.ONE_MONTH.period), None, None, true)
+    saveApplicationAsMongoJson(rawJson)
+
+    val rawAppWithoutOldGrantLength = fetchApplicationRawJson(applicationId)
+    validateGrantLength(rawAppWithoutOldGrantLength, false)
+
+    await(applicationRepository.removeOldGrantLength(applicationId))
+
+    val rawAppStillWithoutOldGrantLength = fetchApplicationRawJson(applicationId)
+    validateGrantLength(rawAppStillWithoutOldGrantLength, false)
+  }
+
 }

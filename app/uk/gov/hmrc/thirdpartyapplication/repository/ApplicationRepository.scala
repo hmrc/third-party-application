@@ -257,6 +257,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def updateApplicationImportantSubmissionData(applicationId: ApplicationId, importantSubmissionData: ImportantSubmissionData): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("access.importantSubmissionData", Codecs.toBson(importantSubmissionData)))
 
+  def removeOldGrantLength(applicationId: ApplicationId): Future[StoredApplication] =
+    updateApplication(applicationId, Updates.unset("grantLength"))
+
   def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[StoredApplication] =
     updateApplication(applicationId, Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(acceptance)))
 

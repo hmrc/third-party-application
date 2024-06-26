@@ -68,6 +68,7 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
   "process" should {
     "create correct events for a valid request with app" in new Setup {
       ApplicationRepoMock.UpdateGrantLength.thenReturnWhen(app.id, replaceWithGrantLength.period)(newApp)
+      ApplicationRepoMock.RemoveOldGrantLength.thenReturnWhen(app.id)(newApp)
 
       checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
         underTest.process(app, update)

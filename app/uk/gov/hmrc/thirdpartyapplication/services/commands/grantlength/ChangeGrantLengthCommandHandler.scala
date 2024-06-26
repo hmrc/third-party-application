@@ -71,9 +71,10 @@ class ChangeGrantLengthCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: ChangeGrantLength): AppCmdResultT = {
 
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
-      savedApp <- E.liftF(applicationRepository.updateApplicationGrantLength(app.id, cmd.grantLength.period))
-      events    = asEvents(app, cmd)
-    } yield (savedApp, events)
+      valid                <- E.fromEither(validate(app, cmd).toEither)
+      savedApp             <- E.liftF(applicationRepository.updateApplicationGrantLength(app.id, cmd.grantLength.period))
+      savedAppAfterCleanUp <- E.liftF(applicationRepository.removeOldGrantLength(app.id))
+      events                = asEvents(app, cmd)
+    } yield (savedAppAfterCleanUp, events)
   }
 }

@@ -501,6 +501,11 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.updateApplicationImportantSubmissionData(*[ApplicationId], *)).thenReturn(successful(mock[StoredApplication]))
     }
 
+    object RemoveOldGrantLength {
+
+      def thenReturnWhen(applicationId: ApplicationId)(updatedApplicationData: StoredApplication) =
+        when(aMock.removeOldGrantLength(eqTo(applicationId))).thenReturn(successful(updatedApplicationData))
+    }
   }
 
   object ApplicationRepoMock extends BaseApplicationRepoMock {
