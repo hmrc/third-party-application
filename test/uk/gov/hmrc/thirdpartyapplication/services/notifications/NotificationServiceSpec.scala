@@ -693,7 +693,7 @@ class NotificationServiceSpec
     val requesterEmail = loggedInUserAdminCollaborator.emailAddress
     val dueBy          = instant.plus(21, DAYS)
 
-    val app            = applicationData.copy(
+    val app = applicationData.copy(
       state = ApplicationStateExamples.production(requesterEmail.text, requesterName)
     )
 
