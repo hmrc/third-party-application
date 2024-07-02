@@ -102,6 +102,7 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
         case evt: ResponsibleIndividualVerificationRequired         => ResponsibleIndividualVerificationRequiredNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ApplicationApprovalRequestGranted                 => ApplicationApprovalRequestGrantedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail)
         case evt: ApplicationApprovalRequestGrantedWithWarnings     => ApplicationApprovalRequestGrantedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail)
+        case evt: TermsOfUseInvitationSent                          => TermsOfUseInvitationSentNotification.sendAdviceEmail(emailConnector, app, evt)
         case _                                                      => Future.successful(HasSucceeded)
       }
     }

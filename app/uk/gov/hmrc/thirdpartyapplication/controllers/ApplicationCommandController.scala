@@ -68,11 +68,11 @@ class ApplicationCommandController @Inject() (
 
   val E = EitherTHelper.make[CommandHandler.Failures]
 
-  private def fails(applicationId: ApplicationId)(e: CommandHandler.Failures) = {
+  private def fails(applicationId: ApplicationId, cmd: ApplicationCommand)(e: CommandHandler.Failures) = {
 
     val details = e.toList.map(CommandFailures.describe)
 
-    logger.warn(s"Command Process failed for $applicationId because ${details.mkString("[", ",", "]")}")
+    logger.warn(s"Command Process ${cmd.getClass.getSimpleName} failed for $applicationId because ${details.mkString("[", ",", "]")}")
     BadRequest(Json.toJson(e.toList))
   }
 
@@ -83,7 +83,7 @@ class ApplicationCommandController @Inject() (
 
     withJsonBody[ApplicationCommand] { command =>
       applicationCommandDispatcher.dispatch(applicationId, command, Set.empty) // Eventually we want to migrate everything to use the /dispatch endpoint with email list
-        .fold(fails(applicationId), passes(_))
+        .fold(fails(applicationId, command), passes(_))
     }
   }
 
@@ -98,7 +98,10 @@ class ApplicationCommandController @Inject() (
     withJsonBody[DispatchRequest] { dispatchRequest =>
       applicationCommandAuthenticator.authenticateCommand(dispatchRequest.command).flatMap(isAuthorised =>
         if (isAuthorised) {
-          applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(fails(applicationId), passes(_))
+          applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(
+            fails(applicationId, dispatchRequest.command),
+            passes(_)
+          )
         } else successful(unAuth)
       )
     }

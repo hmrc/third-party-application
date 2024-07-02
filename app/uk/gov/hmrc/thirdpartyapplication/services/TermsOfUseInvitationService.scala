@@ -47,6 +47,7 @@ class TermsOfUseInvitationService @Inject() (
   val daysUntilDueWhenCreated = config.daysUntilDueWhenCreated
   val daysUntilDueWhenReset   = config.daysUntilDueWhenReset
 
+  @deprecated
   def createInvitation(application: StoredApplication)(implicit hc: HeaderCarrier): Future[Option[TermsOfUseInvitation]] = {
     logger.info(s"Inviting application(${application.id.value}) to complete the new terms of use")
     val now    = Instant.now(clock).truncatedTo(MILLIS)
