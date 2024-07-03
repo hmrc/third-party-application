@@ -27,7 +27,7 @@ import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
-import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper}
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.GrantApplicationApprovalRequest
@@ -108,8 +108,6 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
   }
 
   def process(originalApp: StoredApplication, cmd: GrantApplicationApprovalRequest): AppCmdResultT = {
-    val ET = EitherTHelper.make[CommandHandler.Failures]
-
     logStartingApprovalRequestProcessing(originalApp.id)
 
     for {
@@ -117,10 +115,10 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
       (submission, importantSubmissionData) = validateResult
       // Set application state to user verification
       updatedApp                            = grantApp(originalApp)
-      savedApp                             <- ET.liftF(applicationRepository.save(updatedApp))
+      savedApp                             <- E.liftF(applicationRepository.save(updatedApp))
       _                                    <- E.liftF(stateHistoryRepository.insert(createStateHistory(savedApp, State.PENDING_GATEKEEPER_APPROVAL, Actors.GatekeeperUser(cmd.gatekeeperUser), cmd.timestamp)))
       updatedSubmission                     = grantSubmission(cmd.gatekeeperUser, cmd.warnings, cmd.escalatedTo)(submission)
-      savedSubmission                      <- ET.liftF(submissionService.store(updatedSubmission))
+      savedSubmission                      <- E.liftF(submissionService.store(updatedSubmission))
       events                                = asEvents(savedApp, cmd, savedSubmission)
       _                                     = logCompletedApprovalRequest(savedApp, savedSubmission)
     } yield (updatedApp, events)

@@ -112,6 +112,7 @@ class GatekeeperController @Inject() (
       }
     }
 
+  @deprecated
   def createInvitation(
       applicationId: ApplicationId
     ) = anyAuthenticatedGatekeeperUserWithProductionApplicationAndNoSubmissionAndNoInvitation()(applicationId) { implicit applicationRequest =>
