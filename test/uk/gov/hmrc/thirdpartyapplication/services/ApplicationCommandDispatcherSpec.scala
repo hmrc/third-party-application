@@ -35,6 +35,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.block.{BlockApplicationCommandHandler, UnblockApplicationCommandHandler}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.delete._
@@ -557,6 +558,64 @@ class ApplicationCommandDispatcherSpec
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[DeleteApplicationByGatekeeperCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
+    }
+
+    "BlockApplication is received" should {
+
+      val cmd = BlockApplication(gatekeeperUser, timestamp)
+      val evt = ApplicationEvents.ApplicationBlocked(
+        EventId.random,
+        applicationId,
+        instant,
+        Actors.GatekeeperUser(gatekeeperUser)
+      )
+
+      "call BlockApplication Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(mockBlockApplicationCommandHandler.process(*[StoredApplication], *[BlockApplication])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
+
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[BlockApplicationCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
+    }
+
+    "UnblockApplication is received" should {
+
+      val cmd = UnblockApplication(gatekeeperUser, timestamp)
+      val evt = ApplicationEvents.ApplicationUnblocked(
+        EventId.random,
+        applicationId,
+        instant,
+        Actors.GatekeeperUser(gatekeeperUser)
+      )
+
+      "call UnblockApplication Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(mockUnblockApplicationCommandHandler.process(*[StoredApplication], *[UnblockApplication])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
+
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[UnblockApplicationCommandHandler]()
       }
 
       "bubble up exception when application fetch fails" in new Setup {
