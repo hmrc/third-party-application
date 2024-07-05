@@ -37,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{
   ThirdPartyDelegatedAuthorityServiceMockModule
 }
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
+import uk.gov.hmrc.thirdpartyapplication.services.commands.block.{BlockApplicationCommandHandler, BlockCommandsProcessor, UnblockApplicationCommandHandler}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.delete._
@@ -111,6 +112,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockChangeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler                                               = mock[ChangeIpAllowlistCommandHandler]
     val mockChangeSandboxApplicationNameCommandHandler: ChangeSandboxApplicationNameCommandHandler                         = mock[ChangeSandboxApplicationNameCommandHandler]
     val mockChangeSandboxApplicationDescriptionCommandHandler: ChangeSandboxApplicationDescriptionCommandHandler           = mock[ChangeSandboxApplicationDescriptionCommandHandler]
+    val mockBlockApplicationCommandHandler: BlockApplicationCommandHandler                                                 = mock[BlockApplicationCommandHandler]
+    val mockUnblockApplicationCommandHandler: UnblockApplicationCommandHandler                                             = mock[UnblockApplicationCommandHandler]
 
     val mockChangeSandboxApplicationPrivacyPolicyUrlCommandHandler: ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler =
       mock[ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler]
@@ -124,6 +127,11 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
 
     val mockRemoveSandboxApplicationTermsAndConditionsUrlCommandHandler: RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler =
       mock[RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler]
+
+    val blockCommandsProcessor = new BlockCommandsProcessor(
+      mockBlockApplicationCommandHandler,
+      mockUnblockApplicationCommandHandler
+    )
 
     val clientSecretCommandsProcessor = new ClientSecretCommandsProcessor(
       mockAddClientSecretCommandHandler,
@@ -214,7 +222,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       rateLimitCommandsProcessor,
       redirectUriCommandsProcessor,
       submissionsCommandsProcessor,
-      subscriptionCommandsProcessor
+      subscriptionCommandsProcessor,
+      blockCommandsProcessor
     )
   }
 }

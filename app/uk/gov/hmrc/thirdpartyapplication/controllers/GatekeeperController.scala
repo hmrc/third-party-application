@@ -65,12 +65,14 @@ class GatekeeperController @Inject() (
       } recover recovery
   }
 
+  @deprecated
   def blockApplication(id: ApplicationId) = requiresAuthentication().async { _ =>
     gatekeeperService.blockApplication(id) map {
       case Blocked => Ok
     } recover recovery
   }
 
+  @deprecated
   def unblockApplication(id: ApplicationId) = requiresAuthentication().async { _ =>
     gatekeeperService.unblockApplication(id) map {
       case Unblocked => Ok

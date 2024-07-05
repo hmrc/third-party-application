@@ -120,6 +120,7 @@ class GatekeeperService @Inject() (
 
   }
 
+  @deprecated
   def blockApplication(applicationId: ApplicationId): Future[Blocked] = {
     def block(application: StoredApplication): StoredApplication = {
       application.copy(blocked = true)
@@ -131,6 +132,7 @@ class GatekeeperService @Inject() (
     } yield Blocked
   }
 
+  @deprecated
   def unblockApplication(applicationId: ApplicationId): Future[Unblocked] = {
     def unblock(application: StoredApplication): StoredApplication = {
       application.copy(blocked = false)
