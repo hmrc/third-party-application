@@ -66,6 +66,10 @@ class UnblockApplicationCommandHandler @Inject() (
       valid <- E.fromEither(validate(app).toEither)
       _     <- E.liftF(applicationRepository.save(unblock(app)))
       events = asEvents(app, cmd)
+      _      = logUnblocked(app)
     } yield (app, events)
   }
+
+  private def logUnblocked(app: StoredApplication) =
+    logger.info(s"Application unblocked - appId: ${app.id}, name: ${app.name}, state: ${app.state.name} ")
 }

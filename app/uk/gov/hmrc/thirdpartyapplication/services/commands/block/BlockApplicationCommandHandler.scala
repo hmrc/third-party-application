@@ -66,6 +66,10 @@ class BlockApplicationCommandHandler @Inject() (
       valid <- E.fromEither(validate(app).toEither)
       _     <- E.liftF(applicationRepository.save(block(app)))
       events = asEvents(app, cmd)
+      _      = logBlocked(app)
     } yield (app, events)
   }
+
+  private def logBlocked(app: StoredApplication) =
+    logger.info(s"Application blocked - appId: ${app.id}, name: ${app.name}, state: ${app.state.name} ")
 }
