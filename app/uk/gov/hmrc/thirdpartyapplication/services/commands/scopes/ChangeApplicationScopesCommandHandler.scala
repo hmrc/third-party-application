@@ -112,7 +112,7 @@ class ChangeApplicationScopesCommandHandler @Inject() (
     applicationData.access.asInstanceOf[Access.Ropc]
 
   private def privilegedOrRopc[T](applicationData: StoredApplication, privilegedFunction: StoredApplication => T, ropcFunction: StoredApplication => T) =
-    (applicationData.access.accessType: @unchecked) match {
+    (applicationData.access.accessType: @unchecked) match { // There is no need to check for AccessType.STANDARD because of validation done earlier
       case AccessType.PRIVILEGED => privilegedFunction(applicationData)
       case AccessType.ROPC       => ropcFunction(applicationData)
     }
