@@ -44,6 +44,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.UpdateRedirectUrisCommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.ChangeApplicationScopesCommandHandler
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
@@ -616,6 +617,38 @@ class ApplicationCommandDispatcherSpec
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[UnblockApplicationCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+    }
+
+    "ChangeApplicationScopes is received" should {
+
+      val oldScopes = Set("scope01", "scope02")
+      val newScopes = Set("scope02", "scope03")
+      val cmd       = ChangeApplicationScopes(gatekeeperUser, newScopes, timestamp)
+      val evt       = ApplicationEvents.ApplicationScopesChanged(
+        EventId.random,
+        applicationId,
+        instant,
+        Actors.GatekeeperUser(gatekeeperUser),
+        oldScopes,
+        newScopes
+      )
+
+      "call ChangeApplicationScopes Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(mockChangeApplicationScopesCommandHandler.process(*[StoredApplication], *[ChangeApplicationScopes])(*)).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
+
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[ChangeApplicationScopesCommandHandler]()
       }
 
       "bubble up exception when application fetch fails" in new Setup {

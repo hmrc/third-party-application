@@ -35,6 +35,7 @@ class AccessService @Inject() (applicationRepository: ApplicationRepository, aud
   def readScopes(applicationId: ApplicationId): Future[ScopeResponse] =
     fetchApp(applicationId) map getScopes map ScopeResponse
 
+  @deprecated
   def updateScopes(applicationId: ApplicationId, scopeRequest: ScopeRequest)(implicit headerCarrier: HeaderCarrier): Future[ScopeResponse] = {
 
     def updateWithScopes(applicationData: StoredApplication, newScopes: Set[String]): StoredApplication = {

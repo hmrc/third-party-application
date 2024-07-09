@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription.NameD
 import uk.gov.hmrc.thirdpartyapplication.services.commands.policy.PolicyCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit.RateLimitCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.RedirectUriCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.ScopesCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission.SubmissionCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription.SubscriptionCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
@@ -60,7 +61,8 @@ class ApplicationCommandDispatcher @Inject() (
     redirectUriCommandsProcessor: RedirectUriCommandsProcessor,
     submissionsCommandsProcessor: SubmissionCommandsProcessor,
     subscriptionCommandsProcessor: SubscriptionCommandsProcessor,
-    blockCommandsProcessor: BlockCommandsProcessor
+    blockCommandsProcessor: BlockCommandsProcessor,
+    scopesCommandsProcessor: ScopesCommandsProcessor
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -96,6 +98,7 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: SubmissionCommand      => submissionsCommandsProcessor.process(app, cmd)
       case cmd: SubscriptionCommand    => subscriptionCommandsProcessor.process(app, cmd)
       case cmd: BlockCommand           => blockCommandsProcessor.process(app, cmd)
+      case cmd: ScopesCommand          => scopesCommandsProcessor.process(app, cmd)
     }
   }
   // scalastyle:on cyclomatic.complexity
