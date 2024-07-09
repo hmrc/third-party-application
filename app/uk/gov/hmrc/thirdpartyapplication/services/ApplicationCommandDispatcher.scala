@@ -29,6 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.block.BlockCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret.ClientSecretCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator.CollaboratorCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.delete.DeleteCommandsProcessor
@@ -58,7 +59,8 @@ class ApplicationCommandDispatcher @Inject() (
     rateLimitCommandsProcessor: RateLimitCommandsProcessor,
     redirectUriCommandsProcessor: RedirectUriCommandsProcessor,
     submissionsCommandsProcessor: SubmissionCommandsProcessor,
-    subscriptionCommandsProcessor: SubscriptionCommandsProcessor
+    subscriptionCommandsProcessor: SubscriptionCommandsProcessor,
+    blockCommandsProcessor: BlockCommandsProcessor
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -93,7 +95,7 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: RedirectCommand        => redirectUriCommandsProcessor.process(app, cmd)
       case cmd: SubmissionCommand      => submissionsCommandsProcessor.process(app, cmd)
       case cmd: SubscriptionCommand    => subscriptionCommandsProcessor.process(app, cmd)
-
+      case cmd: BlockCommand           => blockCommandsProcessor.process(app, cmd)
     }
   }
   // scalastyle:on cyclomatic.complexity
