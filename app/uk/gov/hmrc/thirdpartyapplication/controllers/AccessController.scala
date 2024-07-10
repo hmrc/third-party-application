@@ -44,6 +44,7 @@ class AccessController @Inject() (
     } recover recovery
   }
 
+  @deprecated
   def updateScopes(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) { implicit request =>
     withJsonBody[ScopeRequest] { scopeRequest =>
       accessService.updateScopes(applicationId, scopeRequest) map { scopeResponse =>
