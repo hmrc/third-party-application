@@ -177,6 +177,15 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
     mustBeDefined(std, GenericFailure("App must have a STANDARD access type"))
   }
 
+  def ensurePrivilegedOrROPCAccess(app: StoredApplication): Validated[Failures, Access] = {
+    val access = app.access match {
+      case priv: Access.Privileged => Some(priv)
+      case ropc: Access.Ropc       => Some(ropc)
+      case _                       => None
+    }
+    mustBeDefined(access, GenericFailure("App must have a PRIVILEGED or ROPC access type"))
+  }
+
   def isStandardNewJourneyApp(app: StoredApplication) =
     cond(
       app.access match {

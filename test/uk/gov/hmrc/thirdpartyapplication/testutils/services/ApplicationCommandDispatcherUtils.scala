@@ -47,6 +47,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplicationScopesCommandHandler, ScopesCommandsProcessor}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
@@ -114,6 +115,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockChangeSandboxApplicationDescriptionCommandHandler: ChangeSandboxApplicationDescriptionCommandHandler           = mock[ChangeSandboxApplicationDescriptionCommandHandler]
     val mockBlockApplicationCommandHandler: BlockApplicationCommandHandler                                                 = mock[BlockApplicationCommandHandler]
     val mockUnblockApplicationCommandHandler: UnblockApplicationCommandHandler                                             = mock[UnblockApplicationCommandHandler]
+    val mockChangeApplicationScopesCommandHandler: ChangeApplicationScopesCommandHandler                                   = mock[ChangeApplicationScopesCommandHandler]
 
     val mockChangeSandboxApplicationPrivacyPolicyUrlCommandHandler: ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler =
       mock[ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler]
@@ -131,6 +133,10 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val blockCommandsProcessor = new BlockCommandsProcessor(
       mockBlockApplicationCommandHandler,
       mockUnblockApplicationCommandHandler
+    )
+
+    val scopesCommandsProcessor = new ScopesCommandsProcessor(
+      mockChangeApplicationScopesCommandHandler
     )
 
     val clientSecretCommandsProcessor = new ClientSecretCommandsProcessor(
@@ -223,7 +229,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       redirectUriCommandsProcessor,
       submissionsCommandsProcessor,
       subscriptionCommandsProcessor,
-      blockCommandsProcessor
+      blockCommandsProcessor,
+      scopesCommandsProcessor
     )
   }
 }
