@@ -47,7 +47,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplicationScopesCommandHandler, ScopesCommandsProcessor}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplicationAccessOverridesCommandHandler, ChangeApplicationScopesCommandHandler, ScopesCommandsProcessor}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
@@ -116,6 +116,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockBlockApplicationCommandHandler: BlockApplicationCommandHandler                                                 = mock[BlockApplicationCommandHandler]
     val mockUnblockApplicationCommandHandler: UnblockApplicationCommandHandler                                             = mock[UnblockApplicationCommandHandler]
     val mockChangeApplicationScopesCommandHandler: ChangeApplicationScopesCommandHandler                                   = mock[ChangeApplicationScopesCommandHandler]
+    val mockChangeApplicationAccessOverridesCommandHandler: ChangeApplicationAccessOverridesCommandHandler                 = mock[ChangeApplicationAccessOverridesCommandHandler]
 
     val mockChangeSandboxApplicationPrivacyPolicyUrlCommandHandler: ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler =
       mock[ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler]
@@ -136,7 +137,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     )
 
     val scopesCommandsProcessor = new ScopesCommandsProcessor(
-      mockChangeApplicationScopesCommandHandler
+      mockChangeApplicationScopesCommandHandler,
+      mockChangeApplicationAccessOverridesCommandHandler
     )
 
     val clientSecretCommandsProcessor = new ClientSecretCommandsProcessor(

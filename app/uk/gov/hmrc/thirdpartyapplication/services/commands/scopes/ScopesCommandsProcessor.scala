@@ -26,12 +26,14 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class ScopesCommandsProcessor @Inject() (
-    changeApplicationScopesCommandHandler: ChangeApplicationScopesCommandHandler
+    changeApplicationScopesCommandHandler: ChangeApplicationScopesCommandHandler,
+    changeApplicationAccessOverridesCommandHandler: ChangeApplicationAccessOverridesCommandHandler
   ) {
   import CommandHandler._
   import ApplicationCommands._
 
   def process(app: StoredApplication, command: ScopesCommand)(implicit hc: HeaderCarrier): AppCmdResultT = command match {
-    case cmd: ChangeApplicationScopes => changeApplicationScopesCommandHandler.process(app, cmd)
+    case cmd: ChangeApplicationScopes          => changeApplicationScopesCommandHandler.process(app, cmd)
+    case cmd: ChangeApplicationAccessOverrides => changeApplicationAccessOverridesCommandHandler.process(app, cmd)
   }
 }
