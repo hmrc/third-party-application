@@ -45,7 +45,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.UpdateRedirectUrisCommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.ChangeApplicationScopesCommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplicationAccessOverridesCommandHandler, ChangeApplicationScopesCommandHandler}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
@@ -119,7 +119,11 @@ class ApplicationCommandDispatcherSpec
       mockDeclineApplicationApprovalRequestCommandHandler,
       mockSubscribeToApiCommandHandler,
       mockUnsubscribeFromApiCommandHandler,
-      mockChangeIpAllowlistCommandHandler
+      mockChangeIpAllowlistCommandHandler,
+      mockBlockApplicationCommandHandler,
+      mockUnblockApplicationCommandHandler,
+      mockChangeApplicationScopesCommandHandler,
+      mockChangeApplicationAccessOverridesCommandHandler
     )
 
     def verifyNoneButGivenCmmandHandlerCalled[A <: CommandHandler]()(implicit ct: ClassTag[A]) = {
@@ -682,7 +686,7 @@ class ApplicationCommandDispatcherSpec
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
-        verifyNoneButGivenCmmandHandlerCalled[ChangeApplicationScopesCommandHandler]()
+        verifyNoneButGivenCmmandHandlerCalled[ChangeApplicationAccessOverridesCommandHandler]()
       }
 
       "bubble up exception when application fetch fails" in new Setup {
