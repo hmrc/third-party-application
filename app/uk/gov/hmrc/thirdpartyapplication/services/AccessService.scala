@@ -62,6 +62,7 @@ class AccessService @Inject() (applicationRepository: ApplicationRepository, aud
   def readOverrides(applicationId: ApplicationId): Future[OverridesResponse] =
     fetchApp(applicationId) map getOverrides map OverridesResponse
 
+  @deprecated
   def updateOverrides(applicationId: ApplicationId, overridesRequest: OverridesRequest)(implicit headerCarrier: HeaderCarrier): Future[OverridesResponse] = {
 
     def updateWithOverrides(applicationData: StoredApplication, newOverrides: Set[OverrideFlag]): StoredApplication =
