@@ -59,6 +59,7 @@ class AccessController @Inject() (
     } recover recovery
   }
 
+  @deprecated
   def updateOverrides(applicationId: ApplicationId) = requiresAuthenticationForStandardApplications(applicationId).async(parse.json) { implicit request =>
     withJsonBody[OverridesRequest] { overridesRequest =>
       accessService.updateOverrides(applicationId, overridesRequest) map { overridesResponse =>

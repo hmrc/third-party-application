@@ -28,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, GrantLength, RateLimitTier, RedirectUri, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocations, SubmissionId, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
@@ -44,7 +45,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.UpdateRedirectUrisCommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.ChangeApplicationScopesCommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplicationAccessOverridesCommandHandler, ChangeApplicationScopesCommandHandler}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
@@ -118,7 +119,11 @@ class ApplicationCommandDispatcherSpec
       mockDeclineApplicationApprovalRequestCommandHandler,
       mockSubscribeToApiCommandHandler,
       mockUnsubscribeFromApiCommandHandler,
-      mockChangeIpAllowlistCommandHandler
+      mockChangeIpAllowlistCommandHandler,
+      mockBlockApplicationCommandHandler,
+      mockUnblockApplicationCommandHandler,
+      mockChangeApplicationScopesCommandHandler,
+      mockChangeApplicationAccessOverridesCommandHandler
     )
 
     def verifyNoneButGivenCmmandHandlerCalled[A <: CommandHandler]()(implicit ct: ClassTag[A]) = {
@@ -649,6 +654,39 @@ class ApplicationCommandDispatcherSpec
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[ChangeApplicationScopesCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
+      }
+
+    }
+
+    "ChangeApplicationAccessOverrides is received" should {
+
+      val oldOverrides: Set[OverrideFlag] = Set(OverrideFlag.GrantWithoutConsent(Set("scope01")), OverrideFlag.SuppressIvForOrganisations(Set("scope02")))
+      val newOverrides: Set[OverrideFlag] = Set(OverrideFlag.PersistLogin, OverrideFlag.SuppressIvForAgents(Set("scope03", "scope04")))
+      val cmd                             = ChangeApplicationAccessOverrides(gatekeeperUser, newOverrides, timestamp)
+      val evt                             = ApplicationEvents.ApplicationAccessOverridesChanged(
+        EventId.random,
+        applicationId,
+        instant,
+        Actors.GatekeeperUser(gatekeeperUser),
+        oldOverrides,
+        newOverrides
+      )
+
+      "call ChangeApplicationAccessOverrides Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(mockChangeApplicationAccessOverridesCommandHandler.process(*[StoredApplication], *[ChangeApplicationAccessOverrides])(*)).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
+
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[ChangeApplicationAccessOverridesCommandHandler]()
       }
 
       "bubble up exception when application fetch fails" in new Setup {
