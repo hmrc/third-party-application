@@ -95,6 +95,7 @@ class ApplicationService @Inject() (
     }
   }
 
+  @deprecated
   def update(applicationId: ApplicationId, application: UpdateApplicationRequest)(implicit hc: HeaderCarrier): Future[Application] = {
     updateApp(applicationId)(application) map (app => Application(data = app))
   }
