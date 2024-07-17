@@ -47,8 +47,8 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServ
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationResponse, _}
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
@@ -456,93 +456,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
       verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(*)
-    }
-  }
-
-  "create terms of use invitation" should {
-    "return NOT_FOUND when an application for the given id is not found" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      ApplicationDataServiceMock.FetchApp.thenReturnNone
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe NOT_FOUND
-    }
-
-    "return CREATED when an application exists with no submission and a terms of use invitation is created" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationStateExamples.production("", "")))
-
-      SubmissionsServiceMock.FetchLatest.thenReturnNone()
-
-      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturnNone
-      TermsOfUseInvitationServiceMock.CreateInvitation.thenReturnSuccess(invite)
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe CREATED
-    }
-
-    "return CONFLICT when a terms of use invitation already exists for the application" in new Setup {
-      val dueDateInstant = nowInstant.plus(60, DAYS)
-
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationStateExamples.production("", "")))
-
-      SubmissionsServiceMock.FetchLatest.thenReturnNone()
-
-      val response = TermsOfUseInvitationResponse(
-        applicationId,
-        nowInstant,
-        nowInstant,
-        dueDateInstant,
-        None,
-        EMAIL_SENT
-      )
-
-      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturn(response)
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe CONFLICT
-    }
-
-    "return CONFLICT when an application exists with a submission" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationStateExamples.production("", "")))
-
-      SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.hasCompletelyAnswered)
-
-      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturnNone
-      TermsOfUseInvitationServiceMock.CreateInvitation.thenReturnSuccess(invite)
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe CONFLICT
-    }
-
-    "return INTERNAL_SERVER_ERROR when a terms of use invitation is NOT created" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationStateExamples.production("", "")))
-
-      SubmissionsServiceMock.FetchLatest.thenReturnNone()
-
-      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturnNone
-      TermsOfUseInvitationServiceMock.CreateInvitation.thenFail()
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 

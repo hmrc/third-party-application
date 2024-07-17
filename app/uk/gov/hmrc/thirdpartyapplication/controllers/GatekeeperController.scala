@@ -113,16 +113,4 @@ class GatekeeperController @Inject() (
           .recover(recovery)
       }
     }
-
-  @deprecated
-  def createInvitation(
-      applicationId: ApplicationId
-    ) = anyAuthenticatedGatekeeperUserWithProductionApplicationAndNoSubmissionAndNoInvitation()(applicationId) { implicit applicationRequest =>
-    termsOfUseInvitationService
-      .createInvitation(applicationRequest.application)
-      .map {
-        case Some(invite) => Created
-        case _            => InternalServerError
-      }.recover(recovery)
-  }
 }
