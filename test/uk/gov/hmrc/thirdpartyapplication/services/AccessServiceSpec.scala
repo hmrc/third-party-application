@@ -23,49 +23,14 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesResponse, ScopeResponse}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
 
 class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with FixedClock {
-
-  "Access service update scopes function" should {
-
-    "invoke repository save function with updated privileged application data access scopes" in new ScopeFixture {
-      mockApplicationRepositoryFetchAndSave(privilegedApplicationDataWithScopes(applicationId), Set.empty, scopes1to4)
-      AuditServiceMock.Audit.thenReturnSuccess()
-      await(accessService.updateScopes(applicationId, ScopeRequest(scopes1to4))(hc))
-      ApplicationRepoMock.Save.verifyCalled().access.asInstanceOf[Access.Privileged].scopes shouldBe scopes1to4
-    }
-
-    "invoke repository save function with updated ropc application data access scopes" in new ScopeFixture {
-      mockApplicationRepositoryFetchAndSave(ropcApplicationDataWithScopes(applicationId), Set.empty, scopes1to4)
-      AuditServiceMock.Audit.thenReturnSuccess()
-      await(accessService.updateScopes(applicationId, ScopeRequest(scopes1to4))(hc))
-      ApplicationRepoMock.Save.verifyCalled().access.asInstanceOf[Access.Ropc].scopes shouldBe scopes1to4
-    }
-
-    "invoke audit service for privileged scopes" in new ScopeFixture {
-      mockApplicationRepositoryFetchAndSave(privilegedApplicationDataWithScopes(applicationId), scopes1to3, Set.empty)
-      AuditServiceMock.Audit.thenReturnSuccess()
-      await(accessService.updateScopes(applicationId, ScopeRequest(scopes2to4))(hc))
-      AuditServiceMock.Audit.verifyCalledWith(ScopeRemoved, Map("removedScope" -> scope1), hc)
-      AuditServiceMock.Audit.verifyCalledWith(ScopeAdded, Map("newScope" -> scope4), hc)
-    }
-
-    "invoke audit service for ropc scopes" in new ScopeFixture {
-      mockApplicationRepositoryFetchAndSave(ropcApplicationDataWithScopes(applicationId), scopes1to3, Set.empty)
-      AuditServiceMock.Audit.thenReturnSuccess()
-      await(accessService.updateScopes(applicationId, ScopeRequest(scopes2to4))(hc))
-      AuditServiceMock.Audit.verifyCalledWith(ScopeRemoved, Map("removedScope" -> scope1), hc)
-      AuditServiceMock.Audit.verifyCalledWith(ScopeAdded, Map("newScope" -> scope4), hc)
-    }
-
-  }
 
   "Access service read scopes function" should {
 
@@ -78,7 +43,6 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       ApplicationRepoMock.Fetch.thenReturn(ropcApplicationDataWithScopes(applicationId)(scopes1to4))
       await(accessService.readScopes(applicationId)) shouldBe ScopeResponse(scopes1to4)
     }
-
   }
 
   "Access service read overrides function" should {
@@ -87,58 +51,6 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
       ApplicationRepoMock.Fetch.thenReturn(standardApplicationDataWithOverrides(applicationId, overrides))
       await(accessService.readOverrides(applicationId)) shouldBe OverridesResponse(overrides)
     }
-
-  }
-
-  "Access service update overrides function" should {
-
-    "invoke repository save function with updated application data access overrides" in new OverridesFixture {
-      AuditServiceMock.Audit.thenReturnSuccess()
-      val oldOverrides                 = Set[OverrideFlag](override1)
-      val applicationDataWithOverrides = standardApplicationDataWithOverrides(applicationId, oldOverrides)
-      ApplicationRepoMock.Fetch.thenReturn(applicationDataWithOverrides)
-      ApplicationRepoMock.Save.thenReturn(applicationDataWithOverrides)
-
-      val newOverrides = Set[OverrideFlag](override2, override3, override4)
-      await(accessService.updateOverrides(applicationId, OverridesRequest(newOverrides))(hc))
-
-      val capturedApplicationData = ApplicationRepoMock.Save.verifyCalled()
-      capturedApplicationData.access.asInstanceOf[Access.Standard].overrides shouldBe newOverrides
-    }
-
-    "overwrite the existing overrides with the new ones" in new OverridesFixture {
-      AuditServiceMock.Audit.thenReturnSuccess()
-      val grantWithoutConsent1 = OverrideFlag.GrantWithoutConsent(Set("scope1"))
-      val grantWithoutConsent2 = OverrideFlag.GrantWithoutConsent(Set("scope2"))
-
-      val oldOverrides                 = Set[OverrideFlag](grantWithoutConsent1)
-      val applicationDataWithOverrides = standardApplicationDataWithOverrides(applicationId, oldOverrides)
-
-      ApplicationRepoMock.Fetch.thenReturn(applicationDataWithOverrides)
-      ApplicationRepoMock.Save.thenReturn(applicationDataWithOverrides)
-
-      val newOverrides = Set[OverrideFlag](grantWithoutConsent2)
-      await(accessService.updateOverrides(applicationId, OverridesRequest(newOverrides))(hc))
-
-      val capturedApplicationData = ApplicationRepoMock.Save.verifyCalled()
-      capturedApplicationData.access.asInstanceOf[Access.Standard].overrides shouldBe Set(grantWithoutConsent2)
-    }
-
-    "invoke audit service" in new OverridesFixture {
-      val oldOverrides = Set[OverrideFlag](override1)
-      val newOverrides = Set[OverrideFlag](override2)
-      AuditServiceMock.Audit.thenReturnSuccess()
-
-      val applicationDataWithOverrides = standardApplicationDataWithOverrides(applicationId, oldOverrides)
-      ApplicationRepoMock.Fetch.thenReturn(applicationDataWithOverrides)
-      ApplicationRepoMock.Save.thenReturn(applicationDataWithOverrides)
-
-      await(accessService.updateOverrides(applicationId, OverridesRequest(newOverrides))(hc))
-
-      AuditServiceMock.Audit.verifyCalledWith(OverrideRemoved, Map("removedOverride" -> override1.overrideType.toString), hc)
-      AuditServiceMock.Audit.verifyCalledWith(OverrideAdded, Map("newOverride" -> override2.overrideType.toString), hc)
-    }
-
   }
 
   trait Fixture extends ApplicationRepositoryMockModule with AuditServiceMockModule {

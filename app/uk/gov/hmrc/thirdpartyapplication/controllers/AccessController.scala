@@ -44,27 +44,9 @@ class AccessController @Inject() (
     } recover recovery
   }
 
-  @deprecated
-  def updateScopes(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) { implicit request =>
-    withJsonBody[ScopeRequest] { scopeRequest =>
-      accessService.updateScopes(applicationId, scopeRequest) map { scopeResponse =>
-        Ok(toJson(scopeResponse))
-      } recover recovery
-    }
-  }
-
   def readOverrides(applicationId: ApplicationId) = requiresAuthenticationForStandardApplications(applicationId).async { _ =>
     accessService.readOverrides(applicationId) map { overrideResponse =>
       Ok(toJson(overrideResponse))
     } recover recovery
-  }
-
-  @deprecated
-  def updateOverrides(applicationId: ApplicationId) = requiresAuthenticationForStandardApplications(applicationId).async(parse.json) { implicit request =>
-    withJsonBody[OverridesRequest] { overridesRequest =>
-      accessService.updateOverrides(applicationId, overridesRequest) map { overridesResponse =>
-        Ok(toJson(overridesResponse))
-      } recover recovery
-    }
   }
 }

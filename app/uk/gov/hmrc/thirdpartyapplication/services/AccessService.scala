@@ -17,17 +17,16 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future.{failed, sequence, successful}
+import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.NotFoundException
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesResponse, ScopeResponse}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 
 @Singleton
 class AccessService @Inject() (applicationRepository: ApplicationRepository, auditService: AuditService)(implicit val ec: ExecutionContext) {
@@ -35,48 +34,8 @@ class AccessService @Inject() (applicationRepository: ApplicationRepository, aud
   def readScopes(applicationId: ApplicationId): Future[ScopeResponse] =
     fetchApp(applicationId) map getScopes map ScopeResponse
 
-  @deprecated
-  def updateScopes(applicationId: ApplicationId, scopeRequest: ScopeRequest)(implicit headerCarrier: HeaderCarrier): Future[ScopeResponse] = {
-
-    def updateWithScopes(applicationData: StoredApplication, newScopes: Set[String]): StoredApplication = {
-      val updatedAccess = privilegedOrRopc[Access](
-        applicationData, {
-          getPrivilegedAccess(_).copy(scopes = newScopes)
-        }, {
-          getRopcAccess(_).copy(scopes = newScopes)
-        }
-      )
-      applicationData.copy(access = updatedAccess)
-    }
-
-    for {
-      originalApplicationData  <- fetchApp(applicationId)
-      oldScopes                 = getScopes(originalApplicationData)
-      newScopes                 = scopeRequest.scopes
-      persistedApplicationData <- applicationRepository.save(updateWithScopes(originalApplicationData, newScopes))
-      _                         = sequence(oldScopes diff newScopes map ScopeRemoved.details map (auditService.audit(ScopeRemoved, _)))
-      _                         = sequence(newScopes diff oldScopes map ScopeAdded.details map (auditService.audit(ScopeAdded, _)))
-    } yield ScopeResponse(getScopes(persistedApplicationData))
-  }
-
   def readOverrides(applicationId: ApplicationId): Future[OverridesResponse] =
     fetchApp(applicationId) map getOverrides map OverridesResponse
-
-  @deprecated
-  def updateOverrides(applicationId: ApplicationId, overridesRequest: OverridesRequest)(implicit headerCarrier: HeaderCarrier): Future[OverridesResponse] = {
-
-    def updateWithOverrides(applicationData: StoredApplication, newOverrides: Set[OverrideFlag]): StoredApplication =
-      applicationData.copy(access = getStandardAccess(applicationData).copy(overrides = newOverrides))
-
-    for {
-      originalApplicationData  <- fetchApp(applicationId)
-      oldOverrides              = getOverrides(originalApplicationData)
-      newOverrides              = overridesRequest.overrides
-      persistedApplicationData <- applicationRepository.save(updateWithOverrides(originalApplicationData, newOverrides))
-      _                         = sequence(oldOverrides diff newOverrides map OverrideRemoved.details map (auditService.audit(OverrideRemoved, _)))
-      _                         = sequence(newOverrides diff oldOverrides map OverrideAdded.details map (auditService.audit(OverrideAdded, _)))
-    } yield OverridesResponse(getOverrides(persistedApplicationData))
-  }
 
   private def fetchApp(applicationId: ApplicationId): Future[StoredApplication] =
     applicationRepository.fetch(applicationId).flatMap {

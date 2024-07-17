@@ -44,11 +44,9 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-  private val overrides        = Set[OverrideFlag](OverrideFlag.PersistLogin, OverrideFlag.GrantWithoutConsent(Set("scope1", "scope2")))
-  private val scopes           = Set("scope")
-  private val scopeRequest     = ScopeRequest(scopes)
-  private val overridesRequest = OverridesRequest(overrides)
-  private val applicationId    = ApplicationId.random
+  private val overrides     = Set[OverrideFlag](OverrideFlag.PersistLogin, OverrideFlag.GrantWithoutConsent(Set("scope1", "scope2")))
+  private val scopes        = Set("scope")
+  private val applicationId = ApplicationId.random
 
   implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
@@ -80,37 +78,11 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
     }
   }
 
-  "Access controller update scopes function" should {
-
-    "return http ok status when service update scopes succeeds" in new PrivilegedAndRopcFixture {
-      testWithPrivilegedAndRopc({
-        mockAccessServiceUpdateScopesToReturn(successful(ScopeResponse(scopes)))
-        status(invokeAccessControllerUpdateScopesWith(applicationId, scopeRequest)) shouldBe OK
-      })
-    }
-
-    "return resource as response body when service update scopes succeeds" in new PrivilegedAndRopcFixture {
-      testWithPrivilegedAndRopc({
-        mockAccessServiceUpdateScopesToReturn(successful(ScopeResponse(scopes)))
-        contentAsJson(invokeAccessControllerUpdateScopesWith(applicationId, scopeRequest)) shouldBe Json.toJson(ScopeResponse(scopes))
-      })
-    }
-
-    "return http internal server error status when service update scopes fails" in new PrivilegedAndRopcFixture {
-      testWithPrivilegedAndRopc({
-        mockAccessServiceUpdateScopesToReturn(failed(new RuntimeException("testing testing 123")))
-        status(invokeAccessControllerUpdateScopesWith(applicationId, scopeRequest)) shouldBe INTERNAL_SERVER_ERROR
-      })
-    }
-  }
-
   "Access controller overrides crud functions" should {
 
     "return http forbidden status when application id refers to a non-standard application" in new PrivilegedAndRopcFixture {
       status(invokeAccessControllerReadOverridesWith(applicationId)) shouldBe FORBIDDEN
-      status(invokeAccessControllerUpdateOverridesWith(applicationId, overridesRequest)) shouldBe FORBIDDEN
     }
-
   }
 
   "Access controller read overrides function" should {
@@ -132,28 +104,6 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
       val result = invokeAccessControllerReadOverridesWith(applicationId)
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
-
-  }
-
-  "Access controller update overrides function" should {
-
-    "return http ok status when service update overrides succeeds" in new StandardFixture {
-      mockAccessServiceUpdateOverridesToReturn(successful(OverridesResponse(overrides)))
-      val result = invokeAccessControllerUpdateOverridesWith(applicationId, overridesRequest)
-      status(result) shouldBe OK
-    }
-
-    "return resource as response body when service update overrides succeeds" in new StandardFixture {
-      mockAccessServiceUpdateOverridesToReturn(successful(OverridesResponse(overrides)))
-      val result = invokeAccessControllerUpdateOverridesWith(applicationId, overridesRequest)
-      contentAsJson(result) shouldBe Json.toJson(OverridesResponse(overrides))
-    }
-
-    "return http internal server error status when service update overrides fails" in new StandardFixture {
-      mockAccessServiceUpdateOverridesToReturn(failed(new RuntimeException("testing testing 123")))
-      val result = invokeAccessControllerUpdateOverridesWith(applicationId, overridesRequest)
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
   }
 
   trait Fixture {
@@ -161,14 +111,8 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
     def mockAccessServiceReadScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
       when(mockAccessService.readScopes(*[ApplicationId])).thenReturn(eventualScopeResponse)
 
-    def mockAccessServiceUpdateScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
-      when(mockAccessService.updateScopes(*[ApplicationId], *)(*)).thenReturn(eventualScopeResponse)
-
     def mockAccessServiceReadOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
       when(mockAccessService.readOverrides(*[ApplicationId])).thenReturn(eventualOverridesResponse)
-
-    def mockAccessServiceUpdateOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
-      when(mockAccessService.updateOverrides(*[ApplicationId], any[OverridesRequest])(*)).thenReturn(eventualOverridesResponse)
 
     lazy val accessController = new AccessController(StrideGatekeeperRoleAuthorisationServiceMock.aMock, mockApplicationService, mockAccessService, mockControllerComponents)
 
@@ -177,14 +121,8 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
     def invokeAccessControllerReadScopesWith(applicationId: ApplicationId): Future[Result] =
       accessController.readScopes(applicationId)(fakeRequest)
 
-    def invokeAccessControllerUpdateScopesWith(applicationId: ApplicationId, scopeRequest: ScopeRequest): Future[Result] =
-      accessController.updateScopes(applicationId)(fakeRequest.withBody(Json.toJson(scopeRequest)))
-
     def invokeAccessControllerReadOverridesWith(applicationId: ApplicationId): Future[Result] =
       accessController.readOverrides(applicationId)(fakeRequest)
-
-    def invokeAccessControllerUpdateOverridesWith(applicationId: ApplicationId, overridesRequest: OverridesRequest): Future[Result] =
-      accessController.updateOverrides(applicationId)(fakeRequest.withBody(Json.toJson(overridesRequest)))
   }
 
   trait StandardFixture extends Fixture {
