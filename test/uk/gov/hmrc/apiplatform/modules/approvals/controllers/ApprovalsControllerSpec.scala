@@ -26,7 +26,7 @@ import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.approvals.mocks.{GrantApprovalsServiceMockModule, RequestApprovalsServiceMockModule}
+import uk.gov.hmrc.apiplatform.modules.approvals.mocks.GrantApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.approvals.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -41,15 +41,13 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
   val appId                      = ApplicationId.random
 
   trait Setup
-      extends RequestApprovalsServiceMockModule
-      with GrantApprovalsServiceMockModule
+      extends GrantApprovalsServiceMockModule
       with ApplicationDataServiceMockModule
       with SubmissionsServiceMockModule {
 
     val underTest = new ApprovalsController(
       ApplicationDataServiceMock.aMock,
       SubmissionsServiceMock.aMock,
-      RequestApprovalsServiceMock.aMock,
       GrantApprovalsServiceMock.aMock,
       Helpers.stubControllerComponents()
     )
@@ -62,104 +60,49 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     def hasExtSubmission = SubmissionsServiceMock.FetchLatestExtended.thenReturn(aSubmission.hasCompletelyAnswered.withCompletedProgresss())
   }
 
-  "requestApproval" should {
-    implicit val writes: OWrites[ApprovalsController.RequestApprovalRequest] = Json.writes[ApprovalsController.RequestApprovalRequest]
-    val jsonBody                                                             = Json.toJson(ApprovalsController.RequestApprovalRequest(name, emailAddress))
-    val request                                                              = FakeRequest().withJsonBody(jsonBody)
+  "declineForTouUplift" should {
+    implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
+    val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
+    val request                                                        = FakeRequest().withJsonBody(jsonBody)
+    val application                                                    = anApplicationData(appId, productionState("bob"))
 
-    "return 'not found' error response if application is missing" in new Setup {
-      hasNoApp
-      hasNoSubmission
-
-      val result = underTest.requestApproval(appId)(request)
-
-      status(result) shouldBe NOT_FOUND
-    }
-
-    "return 'no content' success response if request is approved" in new Setup {
+    "return 'no content' success response if successful" in new Setup {
       hasApp
       hasSubmission
-      RequestApprovalsServiceMock.RequestApproval.thenRequestIsApprovedFor(appId, emailAddress)
-      val result = underTest.requestApproval(appId)(request)
-
-      status(result) shouldBe OK
-    }
-
-    "return 'precondition failed' error response if request is not in the correct state" in new Setup {
-      hasApp
-      hasSubmission
-      RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithInvalidStateTransitionErrorFor(appId, emailAddress)
-
-      val result = underTest.requestApproval(appId)(request)
-
-      status(result) shouldBe PRECONDITION_FAILED
-    }
-
-    "return 'not found' error response if submission is missing" in new Setup {
-      hasApp
-      hasNoSubmission
-
-      val result = underTest.requestApproval(appId)(request)
-
-      status(result) shouldBe NOT_FOUND
-    }
-
-    "return 'precondition failed' error response if submission is incomplete" in new Setup {
-      hasApp
-      hasSubmission
-      RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithIncorrectSubmissionErrorFor(appId, emailAddress)
-      val result = underTest.requestApproval(appId)(request)
-
-      status(result) shouldBe PRECONDITION_FAILED
-    }
-
-    "return 'conflict' error response if application with same name already exists" in new Setup {
-      hasApp
-      hasSubmission
-
-      RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithApplicationNameAlreadyExistsErrorFor(appId, emailAddress)
-      val result = underTest.requestApproval(appId)(request)
-
-      status(result) shouldBe CONFLICT
-    }
-
-    "return 'precondition failed' error response if name is illegal" in new Setup {
-      hasApp
-      hasSubmission
-      RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithIllegalNameErrorFor(appId, emailAddress)
-      val result = underTest.requestApproval(appId)(request)
-
-      status(result) shouldBe PRECONDITION_FAILED
-    }
-  }
-
-  "grant" should {
-    implicit val writes: OWrites[ApprovalsController.GrantedRequest] = Json.writes[ApprovalsController.GrantedRequest]
-    val jsonBody                                                     = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", None, None))
-    val request                                                      = FakeRequest().withJsonBody(jsonBody)
-    val application                                                  = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
-
-    "return 'no content' success response if request is declined" in new Setup {
-      hasApp
-      hasSubmission
-      GrantApprovalsServiceMock.Grant.thenReturn(GrantApprovalsService.Actioned(application))
-      val result = underTest.grant(appId)(request)
+      GrantApprovalsServiceMock.DeclineForTouUplift.thenReturn(GrantApprovalsService.Actioned(application))
+      val result = underTest.declineForTouUplift(appId)(request)
 
       status(result) shouldBe OK
     }
   }
 
-  "grant with warnings" should {
-    implicit val writes: OWrites[ApprovalsController.GrantedRequest] = Json.writes[ApprovalsController.GrantedRequest]
-    val jsonBody                                                     = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", Some("This is a warning"), Some("Marty McFly")))
-    val request                                                      = FakeRequest().withJsonBody(jsonBody)
-    val application                                                  = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+  "grantWithWarningsForTouUplift" should {
+    implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
+    val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
+    val request                                                        = FakeRequest().withJsonBody(jsonBody)
+    val application                                                    = anApplicationData(appId, productionState("bob"))
 
-    "return 'no content' success response if request is granted with warnings" in new Setup {
+    "return 'no content' success response if successful" in new Setup {
       hasApp
       hasSubmission
-      GrantApprovalsServiceMock.Grant.thenReturn(GrantApprovalsService.Actioned(application))
-      val result = underTest.grant(appId)(request)
+      GrantApprovalsServiceMock.GrantWithWarningsForTouUplift.thenReturn(GrantApprovalsService.Actioned(application))
+      val result = underTest.grantWithWarningsForTouUplift(appId)(request)
+
+      status(result) shouldBe OK
+    }
+  }
+
+  "resetForTouUplift" should {
+    implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
+    val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
+    val request                                                        = FakeRequest().withJsonBody(jsonBody)
+    val application                                                    = anApplicationData(appId, productionState("bob"))
+
+    "return 'no content' success response if successful" in new Setup {
+      hasApp
+      hasSubmission
+      GrantApprovalsServiceMock.ResetForTouUplift.thenReturn(GrantApprovalsService.Actioned(application))
+      val result = underTest.resetForTouUplift(appId)(request)
 
       status(result) shouldBe OK
     }

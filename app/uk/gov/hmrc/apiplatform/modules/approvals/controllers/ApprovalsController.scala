@@ -25,7 +25,7 @@ import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.{ApprovalsActionBuilders, JsonErrorResponse}
-import uk.gov.hmrc.apiplatform.modules.approvals.services.{GrantApprovalsService, RequestApprovalsService}
+import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.models.Application
@@ -33,27 +33,14 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 
 object ApprovalsController {
-  case class RequestApprovalRequest(requestedByName: String, requestedByEmailAddress: String)
-  implicit val readsRequestApprovalRequest: Reads[RequestApprovalRequest] = Json.reads[RequestApprovalRequest]
-
-  case class DeclinedRequest(gatekeeperUserName: String, reasons: String)
-  implicit val readsDeclinedRequest: Reads[DeclinedRequest] = Json.reads[DeclinedRequest]
-
-  case class GrantedRequest(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])
-  implicit val readsGrantedRequest: Reads[GrantedRequest] = Json.reads[GrantedRequest]
-
   case class TouUpliftRequest(gatekeeperUserName: String, reasons: String)
   implicit val readsTouUpliftRequest: Reads[TouUpliftRequest] = Json.reads[TouUpliftRequest]
-
-  case class TouGrantedRequest(gatekeeperUserName: String, reasons: String, escalatedTo: Option[String])
-  implicit val readsTouGrantedRequest: Reads[TouGrantedRequest] = Json.reads[TouGrantedRequest]
 }
 
 @Singleton
 class ApprovalsController @Inject() (
     val applicationDataService: ApplicationDataService,
     val submissionService: SubmissionsService,
-    requestApprovalsService: RequestApprovalsService,
     grantApprovalService: GrantApprovalsService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
@@ -64,43 +51,6 @@ class ApprovalsController @Inject() (
 
   import ApprovalsController._
 
-  @deprecated
-  def requestApproval(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import RequestApprovalsService._
-
-    withJsonBodyFromAnyContent[RequestApprovalRequest] { requestApprovalRequest =>
-      requestApprovalsService.requestApproval(request.application, request.submission, requestApprovalRequest.requestedByName, requestApprovalRequest.requestedByEmailAddress).map(
-        _ match {
-          case ApprovalAccepted(application)                        => Ok(Json.toJson(Application(application)))
-          case ApprovalRejectedDueToIncorrectSubmissionState(state) =>
-            PreconditionFailed(asJsonError("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId is in an incorrect state of #'$state'"))
-          case ApprovalRejectedDueToDuplicateName(name)             => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name '$name' "))
-          case ApprovalRejectedDueToIllegalName(name)               =>
-            PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name '$name' contains words that are prohibited"))
-          case ApprovalRejectedDueToIncorrectApplicationState       => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'"))
-        }
-      )
-        .recover(recovery)
-    }
-  }
-
-  @deprecated
-  def grant(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import GrantApprovalsService._
-
-    withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest =>
-      grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.warnings, grantedRequest.escalatedTo)
-        .map(_ match {
-          case Actioned(application)                  => Ok(Json.toJson(Application(application)))
-          case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
-          case RejectedDueToIncorrectApplicationState =>
-            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'"))
-          case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
-        })
-    }
-      .recover(recovery)
-  }
-
   def grantWithWarningsForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
     import GrantApprovalsService._
 
@@ -109,24 +59,6 @@ class ApprovalsController @Inject() (
         .map(_ match {
           case Actioned(application)                  => Ok(Json.toJson(Application(application)))
           case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_WARNINGS_STATE", s"Submission for $applicationId was not in a warnings state"))
-          case RejectedDueToIncorrectApplicationState =>
-            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
-          case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
-        })
-    }
-      .recover(recovery)
-  }
-
-  @deprecated
-  def grantForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import GrantApprovalsService._
-
-    withJsonBodyFromAnyContent[TouGrantedRequest] { grantedRequest =>
-      grantApprovalService.grantForTouUplift(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.reasons, grantedRequest.escalatedTo)
-        .map(_ match {
-          case Actioned(application)                  => Ok(Json.toJson(Application(application)))
-          case RejectedDueToIncorrectSubmissionState  =>
-            PreconditionFailed(asJsonError("NOT_IN_GRANTED_WITH_WARNINGS_STATE", s"Submission for $applicationId was not in a granted with warnings state"))
           case RejectedDueToIncorrectApplicationState =>
             PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
           case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))

@@ -18,7 +18,6 @@ package uk.gov.hmrc.apiplatform.modules.approvals.controller
 
 import java.util.UUID
 
-import com.github.tomakehurst.wiremock.client.WireMock._
 import org.scalatest.BeforeAndAfterEach
 
 import play.api.http.Status.{NOT_FOUND, OK}
@@ -63,7 +62,7 @@ class ApprovalsControllerISpec
       .disable(classOf[SchedulerModule])
 
   def grantUrl(id: String) =
-    s"http://localhost:$port/approvals/application/$id/grant"
+    s"http://localhost:$port/approvals/application/$id/grant-with-warn-tou"
 
   val wsClient: WSClient                     = app.injector.instanceOf[WSClient]
   val applicationRepo: ApplicationRepository = app.injector.instanceOf[ApplicationRepository]
@@ -88,16 +87,6 @@ class ApprovalsControllerISpec
       .post(body)
       .futureValue
 
-  def stubEmail(): Unit = {
-    stubFor(
-      post(urlEqualTo("/hmrc/email"))
-        .willReturn(
-          aResponse()
-            .withStatus(OK)
-        )
-    )
-  }
-
   "ApprovalsController" should {
 
     def primeData(appId: ApplicationId): Unit = {
@@ -112,13 +101,13 @@ class ApprovalsControllerISpec
       )
       val application: StoredApplication = anApplicationData(
         appId,
-        pendingGatekeeperApprovalState("bob@fastshow.com"),
+        productionState("bob@fastshow.com"),
         access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
       )
 
       await(applicationRepo.save(application))
       await(submissionRepo.collection
-        .insertOne(submittedSubmission.copy(applicationId = appId))
+        .insertOne(warningsSubmission.copy(applicationId = appId))
         .toFuture())
     }
 
@@ -135,51 +124,14 @@ class ApprovalsControllerISpec
       result.body mustBe s"""{"code":"APPLICATION_NOT_FOUND","message":"Application $randomAppId doesn't exist"}"""
     }
 
-    "parse date as millis from epoch" in {
-      val appId: ApplicationId = ApplicationId(UUID.randomUUID())
-      primeData(appId)
-      stubEmail()
-      val requestBody          = """{"gatekeeperUserName":"Bob Hope","responsibleIndividualVerificationDate": 1651735542391}"""
-
-      val result = callPostEndpoint(
-        grantUrl(appId.value.toString),
-        requestBody,
-        headers = List(CONTENT_TYPE -> "application/json")
-      )
-
-      result.status mustBe OK
-      val response = Json.parse(result.body).validate[Application].asOpt
-      response must not be None
-
-    }
-
-    "parse date as String" in {
-      val appId: ApplicationId = ApplicationId(UUID.randomUUID())
-      primeData(appId)
-      stubEmail()
-      val requestBody          =
-        """{"gatekeeperUserName":"Bob Hope","responsibleIndividualVerificationDate":"2022-03-27T00:00:00.000Z"}"""
-
-      val result   = callPostEndpoint(
-        grantUrl(appId.value.toString),
-        requestBody,
-        headers = List(CONTENT_TYPE -> "application/json")
-      )
-      result.status mustBe OK
-      val response = Json.parse(result.body).validate[Application].asOpt
-      response must not be None
-    }
-
     "return 200 when successful" in {
       val appId: ApplicationId = ApplicationId(UUID.randomUUID())
       primeData(appId)
-      stubEmail()
-      val requestBody          = """{"gatekeeperUserName":"Bob Hope"}"""
+      val requestBody          = """{"gatekeeperUserName":"Bob Hope","reasons":"reasons to be cheerful"}"""
       val result               = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
       result.status mustBe OK
       val response             = Json.parse(result.body).validate[Application].asOpt
       response must not be None
-
     }
   }
 }

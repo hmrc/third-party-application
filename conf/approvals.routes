@@ -1,7 +1,4 @@
-POST          /application/:id/request                     uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.requestApproval(id: ApplicationId)
-POST          /application/:id/grant                       uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.grant(id: ApplicationId)
 POST          /application/:id/grant-with-warn-tou         uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.grantWithWarningsForTouUplift(id: ApplicationId)
-POST          /application/:id/grant-tou                   uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.grantForTouUplift(id: ApplicationId)
 POST          /application/:id/decline-tou                 uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.declineForTouUplift(id: ApplicationId)
 POST          /application/:id/reset-tou                   uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.resetForTouUplift(id: ApplicationId)
 
