@@ -22,12 +22,10 @@ import scala.concurrent.Future.{failed, successful}
 
 import cats.data.OptionT
 import cats.implicits.catsStdInstancesForFuture
-import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.CreateApplicationRequest
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.TermsOfUseAcceptance
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Deleted
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -78,20 +76,6 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
       def verifyCalledWith(applicationId: ApplicationId, request: Option[DeleteApplicationRequest]) = {
         verify(aMock).deleteApplication(eqTo(applicationId), eqTo(request), *)(*)
       }
-    }
-
-    object AddTermsOfUseAcceptance {
-
-      def thenReturn(applicationData: StoredApplication) =
-        when(aMock.addTermsOfUseAcceptance(*[ApplicationId], *[TermsOfUseAcceptance])).thenReturn(successful(applicationData))
-
-      def verifyCalledWith(applicationId: ApplicationId) = {
-        val captor = ArgCaptor[TermsOfUseAcceptance]
-        verify(aMock).addTermsOfUseAcceptance(eqTo(applicationId), captor.capture)
-        captor.value
-      }
-
-      def verifyNeverCalled() = verify(aMock, never).addTermsOfUseAcceptance(*[ApplicationId], *[TermsOfUseAcceptance])
     }
   }
 
