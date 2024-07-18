@@ -85,38 +85,41 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
 
     val mockDeclineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler =
       mock[DeclineResponsibleIndividualDidNotVerifyCommandHandler]
-    val mockSubmitApplicationApprovalRequestCommandHandler: SubmitApplicationApprovalRequestCommandHandler                 = mock[SubmitApplicationApprovalRequestCommandHandler]
-    val mockGrantApplicationApprovalRequestCommandHandler: GrantApplicationApprovalRequestCommandHandler                   = mock[GrantApplicationApprovalRequestCommandHandler]
-    val mockGrantTermsOfUseApprovalCommandHander: GrantTermsOfUseApprovalCommandHandler                                    = mock[GrantTermsOfUseApprovalCommandHandler]
-    val mockSubmitTermsOfUseApprovalCommandHandler: SubmitTermsOfUseApprovalCommandHandler                                 = mock[SubmitTermsOfUseApprovalCommandHandler]
-    val mockSendTermsOfUseInvitationCommandHandler: SendTermsOfUseInvitationCommandHandler                                 = mock[SendTermsOfUseInvitationCommandHandler]
-    val mockDeclineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler               = mock[DeclineApplicationApprovalRequestCommandHandler]
-    val mockDeleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler                   = mock[DeleteApplicationByCollaboratorCommandHandler]
-    val mockDeleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler                       = mock[DeleteApplicationByGatekeeperCommandHandler]
-    val mockDeleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler                                   = mock[DeleteUnusedApplicationCommandHandler]
-    val mockDeleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler     = mock[DeleteProductionCredentialsApplicationCommandHandler]
-    val mockAddCollaboratorCommandHandler: AddCollaboratorCommandHandler                                                   = mock[AddCollaboratorCommandHandler]
-    val mockRemoveCollaboratorCommandHandler: RemoveCollaboratorCommandHandler                                             = mock[RemoveCollaboratorCommandHandler]
-    val mockSubscribeToApiCommandHandler: SubscribeToApiCommandHandler                                                     = mock[SubscribeToApiCommandHandler]
-    val mockUnsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler                                             = mock[UnsubscribeFromApiCommandHandler]
-    val mockUpdateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler                                             = mock[UpdateRedirectUrisCommandHandler]
-    val mockChangeGrantLengthCommandHandler: ChangeGrantLengthCommandHandler                                               = mock[ChangeGrantLengthCommandHandler]
-    val mockChangeRateLimitTierCommandHandler: ChangeRateLimitTierCommandHandler                                           = mock[ChangeRateLimitTierCommandHandler]
-    val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler                   = mock[ChangeProductionApplicationNameCommandHandler]
-    val mockAddClientSecretCommandHandler: AddClientSecretCommandHandler                                                   = mock[AddClientSecretCommandHandler]
-    val mockRemoveClientSecretCommandHandler: RemoveClientSecretCommandHandler                                             = mock[RemoveClientSecretCommandHandler]
-    val mockAddRedirectUriCommandHandler: AddRedirectUriCommandHandler                                                     = mock[AddRedirectUriCommandHandler]
-    val mockChangeRedirectUriCommandHandler: ChangeRedirectUriCommandHandler                                               = mock[ChangeRedirectUriCommandHandler]
-    val mockDeleteRedirectUriCommandHandler: DeleteRedirectUriCommandHandler                                               = mock[DeleteRedirectUriCommandHandler]
-    val mockAllowApplicationAutoDeleteCommandHandler: AllowApplicationAutoDeleteCommandHandler                             = mock[AllowApplicationAutoDeleteCommandHandler]
-    val mockBlockApplicationAutoDeleteCommandHandler: BlockApplicationAutoDeleteCommandHandler                             = mock[BlockApplicationAutoDeleteCommandHandler]
-    val mockChangeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler                                               = mock[ChangeIpAllowlistCommandHandler]
-    val mockChangeSandboxApplicationNameCommandHandler: ChangeSandboxApplicationNameCommandHandler                         = mock[ChangeSandboxApplicationNameCommandHandler]
-    val mockChangeSandboxApplicationDescriptionCommandHandler: ChangeSandboxApplicationDescriptionCommandHandler           = mock[ChangeSandboxApplicationDescriptionCommandHandler]
-    val mockBlockApplicationCommandHandler: BlockApplicationCommandHandler                                                 = mock[BlockApplicationCommandHandler]
-    val mockUnblockApplicationCommandHandler: UnblockApplicationCommandHandler                                             = mock[UnblockApplicationCommandHandler]
-    val mockChangeApplicationScopesCommandHandler: ChangeApplicationScopesCommandHandler                                   = mock[ChangeApplicationScopesCommandHandler]
-    val mockChangeApplicationAccessOverridesCommandHandler: ChangeApplicationAccessOverridesCommandHandler                 = mock[ChangeApplicationAccessOverridesCommandHandler]
+
+    val mockChangeApplicationSellResellOrDistributeCommandHandler: ChangeApplicationSellResellOrDistributeCommandHandler =
+      mock[ChangeApplicationSellResellOrDistributeCommandHandler]
+    val mockSubmitApplicationApprovalRequestCommandHandler: SubmitApplicationApprovalRequestCommandHandler               = mock[SubmitApplicationApprovalRequestCommandHandler]
+    val mockGrantApplicationApprovalRequestCommandHandler: GrantApplicationApprovalRequestCommandHandler                 = mock[GrantApplicationApprovalRequestCommandHandler]
+    val mockGrantTermsOfUseApprovalCommandHander: GrantTermsOfUseApprovalCommandHandler                                  = mock[GrantTermsOfUseApprovalCommandHandler]
+    val mockSubmitTermsOfUseApprovalCommandHandler: SubmitTermsOfUseApprovalCommandHandler                               = mock[SubmitTermsOfUseApprovalCommandHandler]
+    val mockSendTermsOfUseInvitationCommandHandler: SendTermsOfUseInvitationCommandHandler                               = mock[SendTermsOfUseInvitationCommandHandler]
+    val mockDeclineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler             = mock[DeclineApplicationApprovalRequestCommandHandler]
+    val mockDeleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler                 = mock[DeleteApplicationByCollaboratorCommandHandler]
+    val mockDeleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler                     = mock[DeleteApplicationByGatekeeperCommandHandler]
+    val mockDeleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler                                 = mock[DeleteUnusedApplicationCommandHandler]
+    val mockDeleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler   = mock[DeleteProductionCredentialsApplicationCommandHandler]
+    val mockAddCollaboratorCommandHandler: AddCollaboratorCommandHandler                                                 = mock[AddCollaboratorCommandHandler]
+    val mockRemoveCollaboratorCommandHandler: RemoveCollaboratorCommandHandler                                           = mock[RemoveCollaboratorCommandHandler]
+    val mockSubscribeToApiCommandHandler: SubscribeToApiCommandHandler                                                   = mock[SubscribeToApiCommandHandler]
+    val mockUnsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler                                           = mock[UnsubscribeFromApiCommandHandler]
+    val mockUpdateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler                                           = mock[UpdateRedirectUrisCommandHandler]
+    val mockChangeGrantLengthCommandHandler: ChangeGrantLengthCommandHandler                                             = mock[ChangeGrantLengthCommandHandler]
+    val mockChangeRateLimitTierCommandHandler: ChangeRateLimitTierCommandHandler                                         = mock[ChangeRateLimitTierCommandHandler]
+    val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler                 = mock[ChangeProductionApplicationNameCommandHandler]
+    val mockAddClientSecretCommandHandler: AddClientSecretCommandHandler                                                 = mock[AddClientSecretCommandHandler]
+    val mockRemoveClientSecretCommandHandler: RemoveClientSecretCommandHandler                                           = mock[RemoveClientSecretCommandHandler]
+    val mockAddRedirectUriCommandHandler: AddRedirectUriCommandHandler                                                   = mock[AddRedirectUriCommandHandler]
+    val mockChangeRedirectUriCommandHandler: ChangeRedirectUriCommandHandler                                             = mock[ChangeRedirectUriCommandHandler]
+    val mockDeleteRedirectUriCommandHandler: DeleteRedirectUriCommandHandler                                             = mock[DeleteRedirectUriCommandHandler]
+    val mockAllowApplicationAutoDeleteCommandHandler: AllowApplicationAutoDeleteCommandHandler                           = mock[AllowApplicationAutoDeleteCommandHandler]
+    val mockBlockApplicationAutoDeleteCommandHandler: BlockApplicationAutoDeleteCommandHandler                           = mock[BlockApplicationAutoDeleteCommandHandler]
+    val mockChangeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler                                             = mock[ChangeIpAllowlistCommandHandler]
+    val mockChangeSandboxApplicationNameCommandHandler: ChangeSandboxApplicationNameCommandHandler                       = mock[ChangeSandboxApplicationNameCommandHandler]
+    val mockChangeSandboxApplicationDescriptionCommandHandler: ChangeSandboxApplicationDescriptionCommandHandler         = mock[ChangeSandboxApplicationDescriptionCommandHandler]
+    val mockBlockApplicationCommandHandler: BlockApplicationCommandHandler                                               = mock[BlockApplicationCommandHandler]
+    val mockUnblockApplicationCommandHandler: UnblockApplicationCommandHandler                                           = mock[UnblockApplicationCommandHandler]
+    val mockChangeApplicationScopesCommandHandler: ChangeApplicationScopesCommandHandler                                 = mock[ChangeApplicationScopesCommandHandler]
+    val mockChangeApplicationAccessOverridesCommandHandler: ChangeApplicationAccessOverridesCommandHandler               = mock[ChangeApplicationAccessOverridesCommandHandler]
 
     val mockChangeSandboxApplicationPrivacyPolicyUrlCommandHandler: ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler =
       mock[ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler]
@@ -207,7 +210,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockSubmitTermsOfUseApprovalCommandHandler,
       mockGrantApplicationApprovalRequestCommandHandler,
       mockGrantTermsOfUseApprovalCommandHander,
-      mockSendTermsOfUseInvitationCommandHandler
+      mockSendTermsOfUseInvitationCommandHandler,
+      mockChangeApplicationSellResellOrDistributeCommandHandler
     )
 
     val subscriptionCommandsProcessor = new SubscriptionCommandsProcessor(
