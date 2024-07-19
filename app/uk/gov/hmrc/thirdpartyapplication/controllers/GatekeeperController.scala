@@ -24,13 +24,11 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.InvalidStateTransition
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitationActionBuilders
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services._
 
@@ -54,30 +52,6 @@ class GatekeeperController @Inject() (
   private lazy val badResendResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_REQUESTER_VERIFICATION'")
   )
-
-  @deprecated
-  def resendVerification(id: ApplicationId) = requiresAuthentication().async(parse.json) {
-    implicit request =>
-      withJsonBody[ResendVerificationRequest] { resendVerificationPayload =>
-        gatekeeperService.resendVerification(id, resendVerificationPayload.gatekeeperUserId).map(_ => NoContent)
-      } recover {
-        case _: InvalidStateTransition => badResendResponse
-      } recover recovery
-  }
-
-  @deprecated
-  def blockApplication(id: ApplicationId) = requiresAuthentication().async { _ =>
-    gatekeeperService.blockApplication(id) map {
-      case Blocked => Ok
-    } recover recovery
-  }
-
-  @deprecated
-  def unblockApplication(id: ApplicationId) = requiresAuthentication().async { _ =>
-    gatekeeperService.unblockApplication(id) map {
-      case Unblocked => Ok
-    } recover recovery
-  }
 
   def fetchAppsForGatekeeper = anyAuthenticatedUserAction { loggedInRequest =>
     gatekeeperService.fetchNonTestingAppsWithSubmittedDate() map {
@@ -113,16 +87,4 @@ class GatekeeperController @Inject() (
           .recover(recovery)
       }
     }
-
-  @deprecated
-  def createInvitation(
-      applicationId: ApplicationId
-    ) = anyAuthenticatedGatekeeperUserWithProductionApplicationAndNoSubmissionAndNoInvitation()(applicationId) { implicit applicationRequest =>
-    termsOfUseInvitationService
-      .createInvitation(applicationRequest.application)
-      .map {
-        case Some(invite) => Created
-        case _            => InternalServerError
-      }.recover(recovery)
-  }
 }

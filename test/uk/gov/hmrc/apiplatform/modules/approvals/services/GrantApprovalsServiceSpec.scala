@@ -22,18 +22,15 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{ActualAnswersAsText, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
@@ -100,76 +97,6 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       )
   }
 
-  "GrantApprovalsService.grant" should {
-    "grant the specified application" in new Setup {
-
-      ApplicationRepoMock.Save.thenAnswer()
-      StateHistoryRepoMock.Insert.thenAnswer()
-      SubmissionsServiceMock.Store.thenReturn()
-      AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
-      EmailConnectorMock.SendApplicationApprovedAdminConfirmation.thenReturnSuccess()
-
-      val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, None, None))
-
-      result should matchPattern {
-        case GrantApprovalsService.Actioned(app) if (app.state.name == State.PENDING_REQUESTER_VERIFICATION) =>
-      }
-      ApplicationRepoMock.Save.verifyCalled().state.name shouldBe State.PENDING_REQUESTER_VERIFICATION
-      SubmissionsServiceMock.Store.verifyCalledWith().status.isGranted shouldBe true
-      SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
-        case Submission.Status.Granted(_, gatekeeperUserName, _, _) =>
-      }
-
-      val (someQuestionId, expectedAnswer) = submittedSubmission.latestInstance.answersToQuestions.head
-      val someQuestionWording              = QuestionsAndAnswersToMap.stripSpacesAndCapitalise(submittedSubmission.findQuestion(someQuestionId).get.wording.value)
-
-      AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserName
-      AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationApprovalGranted
-      AuditServiceMock.AuditGatekeeperAction.verifyExtras().get("responsibleIndividual.verification.date").value shouldBe fmt.format(acceptanceDate.asLocalDateTime)
-      AuditServiceMock.AuditGatekeeperAction.verifyExtras().get(someQuestionWording).value shouldBe ActualAnswersAsText(expectedAnswer)
-    }
-
-    "grant the specified application with warnings" in new Setup {
-      ApplicationRepoMock.Save.thenAnswer()
-      StateHistoryRepoMock.Insert.thenAnswer()
-      SubmissionsServiceMock.Store.thenReturn()
-      AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
-      EmailConnectorMock.SendApplicationApprovedAdminConfirmation.thenReturnSuccess()
-
-      val warning     = Some("Here are some warnings")
-      val escalatedTo = Some("Marty McFly")
-      val result      = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, warning, escalatedTo))
-
-      result should matchPattern {
-        case GrantApprovalsService.Actioned(app) if (app.state.name == State.PENDING_REQUESTER_VERIFICATION) =>
-      }
-      ApplicationRepoMock.Save.verifyCalled().state.name shouldBe State.PENDING_REQUESTER_VERIFICATION
-      SubmissionsServiceMock.Store.verifyCalledWith().status.isGrantedWithWarnings shouldBe true
-      SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
-        case Submission.Status.GrantedWithWarnings(_, gatekeeperUserName, warning, escalatedTo) =>
-      }
-
-      val (someQuestionId, expectedAnswer) = submittedSubmission.latestInstance.answersToQuestions.head
-      val someQuestionWording              = QuestionsAndAnswersToMap.stripSpacesAndCapitalise(submittedSubmission.findQuestion(someQuestionId).get.wording.value)
-
-      AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserName
-      AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationApprovalGranted
-      AuditServiceMock.AuditGatekeeperAction.verifyExtras().get(someQuestionWording).value shouldBe ActualAnswersAsText(expectedAnswer)
-    }
-
-    "fail to grant the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.grant(anApplicationData(applicationId, testingState()), answeredSubmission, gatekeeperUserName, None, None))
-
-      result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
-    }
-
-    "fail to grant the specified application if the submission is not in the submitted state" in new Setup {
-      val result = await(underTest.grant(applicationPendingGKApproval, answeredSubmission, gatekeeperUserName, None, None))
-
-      result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
-    }
-  }
-
   "GrantApprovalsService.grantWithWarningsForTouUplift" should {
     "grant the specified ToU application with warnings" in new Setup {
 
@@ -198,40 +125,6 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     "fail to grant the specified application if the submission is not in the warnings state" in new Setup {
       val warning = "Here are some warnings"
       val result  = await(underTest.grantWithWarningsForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, warning))
-
-      result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
-    }
-  }
-
-  "GrantApprovalsService.grantForTouUplift" should {
-    val escalatedTo = Some("Marty McFly")
-
-    "grant the specified ToU application" in new Setup {
-
-      SubmissionsServiceMock.Store.thenReturn()
-      ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(applicationProduction)
-      EmailConnectorMock.SendNewTermsOfUseConfirmation.thenReturnSuccess()
-      TermsOfUseInvitationServiceMock.UpdateStatus.thenReturn()
-
-      val result = await(underTest.grantForTouUplift(applicationProduction, grantedWithWarningsSubmission, gatekeeperUserName, reasons, escalatedTo))
-
-      result should matchPattern {
-        case GrantApprovalsService.Actioned(app) =>
-      }
-      SubmissionsServiceMock.Store.verifyCalledWith().status.isGranted shouldBe true
-      SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
-        case Submission.Status.Granted(_, gatekeeperUserName, _, _) =>
-      }
-    }
-
-    "fail to grant the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.grantForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName, reasons, escalatedTo))
-
-      result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
-    }
-
-    "fail to grant the specified application if the submission is not in the granted with warnings state" in new Setup {
-      val result = await(underTest.grantForTouUplift(applicationProduction, answeredSubmission, gatekeeperUserName, reasons, escalatedTo))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
     }

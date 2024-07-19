@@ -37,7 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, GrantLength, InvalidStateTransition, State}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, GrantLength, State}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationServiceMockModule, StrideGatekeeperRoleAuthorisationServiceMockModule}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -47,8 +47,8 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServ
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationResponse, _}
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
@@ -339,93 +339,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
   }
 
-  "resendVerification" should {
-    val gatekeeperUserId          = "big.boss.gatekeeper"
-    val resendVerificationRequest = ResendVerificationRequest(gatekeeperUserId)
-
-    "fails with unauthorised when the user is not authorised" in new Setup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-
-      val result = underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)).withHeaders(authTokenHeader))
-      status(result) shouldBe UNAUTHORIZED
-
-      verifyZeroInteractions(mockGatekeeperService)
-    }
-
-    "successfully resend verification when user is authorised" in new Setup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId)).thenReturn(successful(VerificationResent))
-
-      val result = underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)).withHeaders(authTokenHeader))
-
-      status(result) shouldBe 204
-    }
-
-    "return 404 if the application doesn't exist" in new Setup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId))
-        .thenReturn(failed(new NotFoundException("application doesn't exist")))
-
-      val result = underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)))
-
-      verifyErrorResult(result, 404, ErrorCode.APPLICATION_NOT_FOUND)
-    }
-
-    "fail with 412 (Precondition Failed) when the application is not in the PENDING_REQUESTER_VERIFICATION state" in new Setup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId))
-        .thenReturn(failed(new InvalidStateTransition(State.PENDING_REQUESTER_VERIFICATION, State.PENDING_REQUESTER_VERIFICATION, State.PENDING_REQUESTER_VERIFICATION)))
-
-      val result = underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)))
-
-      verifyErrorResult(result, 412, ErrorCode.INVALID_STATE_TRANSITION)
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId))
-        .thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)))
-
-      verifyErrorResult(result, INTERNAL_SERVER_ERROR, ErrorCode.UNKNOWN_ERROR)
-    }
-  }
-
-  "blockApplication" should {
-    "block the application" in new Setup {
-
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.blockApplication(*[ApplicationId])).thenReturn(successful(Blocked))
-
-      val result = underTest.blockApplication(applicationId)(request)
-
-      status(result) shouldBe OK
-      verify(mockGatekeeperService).blockApplication(applicationId)
-    }
-  }
-
-  "unblockApplication" should {
-    "unblock the application" in new Setup {
-
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.unblockApplication(*[ApplicationId])).thenReturn(successful(Unblocked))
-
-      val result = underTest.unblockApplication(applicationId)(request)
-
-      status(result) shouldBe OK
-      verify(mockGatekeeperService).unblockApplication(applicationId)
-    }
-  }
-
   "strideUserDeleteApplication" should {
     val gatekeeperUserId        = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com".toLaxEmail
@@ -456,93 +369,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
       verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(*)
-    }
-  }
-
-  "create terms of use invitation" should {
-    "return NOT_FOUND when an application for the given id is not found" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      ApplicationDataServiceMock.FetchApp.thenReturnNone
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe NOT_FOUND
-    }
-
-    "return CREATED when an application exists with no submission and a terms of use invitation is created" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationStateExamples.production("", "")))
-
-      SubmissionsServiceMock.FetchLatest.thenReturnNone()
-
-      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturnNone
-      TermsOfUseInvitationServiceMock.CreateInvitation.thenReturnSuccess(invite)
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe CREATED
-    }
-
-    "return CONFLICT when a terms of use invitation already exists for the application" in new Setup {
-      val dueDateInstant = nowInstant.plus(60, DAYS)
-
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationStateExamples.production("", "")))
-
-      SubmissionsServiceMock.FetchLatest.thenReturnNone()
-
-      val response = TermsOfUseInvitationResponse(
-        applicationId,
-        nowInstant,
-        nowInstant,
-        dueDateInstant,
-        None,
-        EMAIL_SENT
-      )
-
-      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturn(response)
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe CONFLICT
-    }
-
-    "return CONFLICT when an application exists with a submission" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationStateExamples.production("", "")))
-
-      SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.hasCompletelyAnswered)
-
-      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturnNone
-      TermsOfUseInvitationServiceMock.CreateInvitation.thenReturnSuccess(invite)
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe CONFLICT
-    }
-
-    "return INTERNAL_SERVER_ERROR when a terms of use invitation is NOT created" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(applicationId, state = ApplicationStateExamples.production("", "")))
-
-      SubmissionsServiceMock.FetchLatest.thenReturnNone()
-
-      TermsOfUseInvitationServiceMock.FetchInvitation.thenReturnNone
-      TermsOfUseInvitationServiceMock.CreateInvitation.thenFail()
-
-      val result = underTest.createInvitation(applicationId)(FakeRequest.apply())
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 

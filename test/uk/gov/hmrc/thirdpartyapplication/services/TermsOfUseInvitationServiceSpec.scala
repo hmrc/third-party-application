@@ -50,25 +50,6 @@ class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
     )
   }
 
-  "create invitation" should {
-    "return success when the terms of use invitiation can be created" in new Setup {
-      EmailConnectorMock.SendNewTermsOfUseInvitation.thenReturnSuccess()
-      TermsOfUseInvitationRepositoryMock.Create.thenReturnSuccess(invite)
-
-      val result = await(underTest.createInvitation(anApplicationData(applicationId)))
-
-      result.isDefined shouldBe true
-    }
-
-    "return failure when the terms of use invitiation cannot be created" in new Setup {
-      TermsOfUseInvitationRepositoryMock.Create.thenReturnFailure()
-
-      val result = await(underTest.createInvitation(anApplicationData(applicationId)))
-
-      result shouldBe None
-    }
-  }
-
   "fetch invitation" should {
     "return an invitation when one is found in the repository" in new Setup {
       TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(invite)

@@ -22,16 +22,10 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.OptionT
-import cats.implicits._
-
-import uk.gov.hmrc.http.HeaderCarrier
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse, TermsOfUseInvitationWithApplicationResponse, TermsOfUseSearch}
 import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
 
@@ -46,26 +40,6 @@ class TermsOfUseInvitationService @Inject() (
 
   val daysUntilDueWhenCreated = config.daysUntilDueWhenCreated
   val daysUntilDueWhenReset   = config.daysUntilDueWhenReset
-
-  @deprecated
-  def createInvitation(application: StoredApplication)(implicit hc: HeaderCarrier): Future[Option[TermsOfUseInvitation]] = {
-    logger.info(s"Inviting application(${application.id.value}) to complete the new terms of use")
-    val now    = Instant.now(clock).truncatedTo(MILLIS)
-    val invite = TermsOfUseInvitation(
-      application.id,
-      now,
-      now,
-      now.plus(daysUntilDueWhenCreated.toMinutes, MINUTES),
-      None,
-      EMAIL_SENT
-    )
-    (
-      for {
-        newInvite <- OptionT(termsOfUseRepository.create(invite))
-        _         <- OptionT.liftF(emailConnector.sendNewTermsOfUseInvitation(newInvite.dueBy, application.name, application.admins.map(_.emailAddress)))
-      } yield newInvite
-    ).value
-  }
 
   def fetchInvitation(applicationId: ApplicationId): Future[Option[TermsOfUseInvitationResponse]] = {
     for {

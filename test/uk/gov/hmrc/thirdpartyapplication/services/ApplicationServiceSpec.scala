@@ -46,7 +46,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequestV2,
   StandardAccessDataToCopy
 }
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, _}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -497,21 +496,6 @@ class ApplicationServiceSpec
       val dbApplication = ApplicationRepoMock.Save.verifyCalled()
       ApiGatewayStoreMock.DeleteApplication.verifyCalled()
       ApplicationRepoMock.HardDelete.verifyCalledWith(dbApplication.id)
-    }
-  }
-
-  "addTermsOfUseAcceptance" should {
-    "update the repository correctly" in new Setup {
-      val termsOfUseAcceptance = TermsOfUseAcceptance(
-        ResponsibleIndividual.build("bob", "bob@example.com"),
-        instant,
-        SubmissionId.random,
-        0
-      )
-      val appData              = anApplicationData(ApplicationId.random)
-      ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(appData)
-      val result               = await(underTest.addTermsOfUseAcceptance(applicationId, termsOfUseAcceptance))
-      result shouldBe appData
     }
   }
 

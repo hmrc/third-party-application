@@ -23,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -88,28 +88,6 @@ class GatekeeperService @Inject() (
     } yield history
   }
 
-  @deprecated
-  def resendVerification(applicationId: ApplicationId, gatekeeperUserId: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-    def rejectIfNotPendingVerification(existing: StoredApplication) = {
-      existing.state.requireState(State.PENDING_REQUESTER_VERIFICATION, State.PENDING_REQUESTER_VERIFICATION)
-      existing
-    }
-
-    def sendEmails(app: StoredApplication) = {
-      val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
-      val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
-      emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(LaxEmailAddress(requesterEmail)))
-    }
-
-    for {
-      app <- fetchApp(applicationId)
-      _    = rejectIfNotPendingVerification(app)
-      _    = auditService.auditGatekeeperAction(gatekeeperUserId, app, ApplicationVerificationResent)
-      _    = recoverAll(sendEmails(app))
-    } yield UpliftApproved
-
-  }
-
   def deleteApplication(applicationId: ApplicationId, request: DeleteApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def audit(app: StoredApplication): Future[AuditResult] = {
       auditService.auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress.text))
@@ -118,30 +96,6 @@ class GatekeeperService @Inject() (
       _ <- applicationService.deleteApplication(applicationId, Some(request), audit)
     } yield Deleted
 
-  }
-
-  @deprecated
-  def blockApplication(applicationId: ApplicationId): Future[Blocked] = {
-    def block(application: StoredApplication): StoredApplication = {
-      application.copy(blocked = true)
-    }
-
-    for {
-      app <- fetchApp(applicationId)
-      _   <- applicationRepository.save(block(app))
-    } yield Blocked
-  }
-
-  @deprecated
-  def unblockApplication(applicationId: ApplicationId): Future[Unblocked] = {
-    def unblock(application: StoredApplication): StoredApplication = {
-      application.copy(blocked = false)
-    }
-
-    for {
-      app <- fetchApp(applicationId)
-      _   <- applicationRepository.save(unblock(app))
-    } yield Unblocked
   }
 
   def fetchAllWithSubscriptions(): Future[List[ApplicationWithSubscriptionsResponse]] = {

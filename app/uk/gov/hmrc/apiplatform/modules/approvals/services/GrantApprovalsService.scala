@@ -16,32 +16,22 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import java.time.format.DateTimeFormatter
 import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper}
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, TermsOfUseAcceptance}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Mark, Submission}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{AuditService, TermsOfUseInvitationService}
 
 object GrantApprovalsService {
@@ -70,119 +60,7 @@ class GrantApprovalsService @Inject() (
     with ApplicationLogger
     with ClockNow {
 
-  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
-
   import GrantApprovalsService._
-
-  @deprecated
-  def grant(
-      originalApp: StoredApplication,
-      submission: Submission,
-      gatekeeperUserName: String,
-      warnings: Option[String],
-      escalatedTo: Option[String]
-    )(implicit hc: HeaderCarrier
-    ): Future[GrantApprovalsService.Result] = {
-    import cats.instances.future.catsStdInstancesForFuture
-
-    def logDone(app: StoredApplication, submission: Submission) =
-      logger.info(s"Granted-02: grant appId:${app.id} ${app.state.name} ${submission.status.getClass.getSimpleName}")
-
-    val ET    = EitherTHelper.make[Result]
-    val appId = originalApp.id
-
-    logger.info(s"Granted-01: grant appId:${appId}")
-    (
-      for {
-        _ <- ET.cond(originalApp.isPendingGatekeeperApproval, (), RejectedDueToIncorrectApplicationState)
-        _ <- ET.cond(submission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
-
-        // Set application state to user verification
-        updatedApp               = grantApp(originalApp)
-        savedApp                <- ET.liftF(applicationRepository.save(updatedApp))
-        importantSubmissionData <- ET.fromOption(savedApp.importantSubmissionData, RejectedDueToIncorrectApplicationData)
-        _                       <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
-        updatedSubmission        = grantSubmission(gatekeeperUserName, warnings, escalatedTo)(submission)
-        savedSubmission         <- ET.liftF(submissionService.store(updatedSubmission))
-        _                       <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, savedSubmission, gatekeeperUserName, warnings, importantSubmissionData, escalatedTo))
-        _                       <- ET.liftF(sendEmails(savedApp))
-        _                        = logDone(savedApp, savedSubmission)
-      } yield Actioned(savedApp)
-    )
-      .fold[Result](identity, identity)
-  }
-
-  private def grantSubmission(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])(submission: Submission) = {
-    warnings.fold(
-      Submission.grant(Instant.now(clock), gatekeeperUserName, None, None)(submission)
-    )(value =>
-      Submission.grantWithWarnings(Instant.now(clock), gatekeeperUserName, value, escalatedTo)(submission)
-    )
-  }
-
-  private def grantApp(application: StoredApplication): StoredApplication = {
-    application.copy(state = application.state.toPendingRequesterVerification(instant()))
-  }
-
-  private val fmt = DateTimeFormatter.ISO_DATE_TIME
-
-  private def auditGrantedApprovalRequest(
-      applicationId: ApplicationId,
-      updatedApp: StoredApplication,
-      submission: Submission,
-      gatekeeperUserName: String,
-      warnings: Option[String],
-      importantSubmissionData: ImportantSubmissionData,
-      escalatedTo: Option[String]
-    )(implicit hc: HeaderCarrier
-    ): Future[AuditResult] = {
-
-    val questionsWithAnswers                                   = QuestionsAndAnswersToMap(submission)
-    val grantedData                                            = Map("status" -> "granted")
-    val warningsData                                           = warnings.fold(Map.empty[String, String])(warning => Map("warnings" -> warning))
-    val escalatedData                                          = escalatedTo.fold(Map.empty[String, String])(escalatedTo => Map("escalatedTo" -> escalatedTo))
-    val submittedOn: Instant                                   = submission.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
-    val grantedOn: Instant                                     = submission.latestInstance.statusHistory.find(s => s.isGrantedWithOrWithoutWarnings).map(_.timestamp).get
-    val responsibleIndividualVerificationDate: Option[Instant] =
-      importantSubmissionData.termsOfUseAcceptances.find(t => (t.submissionId == submission.id && t.submissionInstance == submission.latestInstance.index)).map(_.dateTime)
-
-    val dates = Map(
-      "submission.started.date"   -> fmt.format(submission.startedOn.asLocalDateTime),
-      "submission.submitted.date" -> fmt.format(submittedOn.asLocalDateTime),
-      "submission.granted.date"   -> fmt.format(grantedOn.asLocalDateTime)
-    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> fmt.format(rivd.asLocalDateTime)))
-
-    val markedAnswers = MarkAnswer.markSubmission(submission)
-    val nbrOfFails    = markedAnswers.count(_._2 == Mark.Fail)
-    val nbrOfWarnings = markedAnswers.count(_._2 == Mark.Warn)
-    val counters      = Map(
-      "submission.failures" -> nbrOfFails.toString,
-      "submission.warnings" -> nbrOfWarnings.toString
-    )
-
-    val extraData = questionsWithAnswers ++ grantedData ++ warningsData ++ dates ++ counters ++ escalatedData
-
-    auditService.auditGatekeeperAction(gatekeeperUserName, updatedApp, ApplicationApprovalGranted, extraData)
-  }
-
-  private def writeStateHistory(snapshotApp: StoredApplication, name: String) =
-    insertStateHistory(
-      snapshotApp,
-      State.PENDING_REQUESTER_VERIFICATION,
-      Some(State.PENDING_GATEKEEPER_APPROVAL),
-      Actors.GatekeeperUser(name),
-      (a: StoredApplication) => applicationRepository.save(a)
-    )
-
-  private def sendEmails(app: StoredApplication)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found")).toLaxEmail
-    val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
-    val recipients       = app.admins.map(_.emailAddress).filterNot(email => email == requesterEmail)
-
-    if (recipients.nonEmpty) emailConnector.sendApplicationApprovedNotification(app.name, recipients)
-
-    emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(requesterEmail))
-  }
 
   private def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
     submission.status match {
@@ -216,41 +94,6 @@ class GrantApprovalsService @Inject() (
     )
       .fold[Result](identity, identity)
   }
-
-  @deprecated
-  def grantForTouUplift(
-      originalApp: StoredApplication,
-      submission: Submission,
-      gatekeeperUserName: String,
-      comments: String,
-      escalatedTo: Option[String]
-    )(implicit hc: HeaderCarrier
-    ): Future[GrantApprovalsService.Result] = {
-    import cats.instances.future.catsStdInstancesForFuture
-
-    val ET = EitherTHelper.make[Result]
-    (
-      for {
-        _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
-        _ <- ET.cond((submission.status.isGrantedWithWarnings || submission.status.isFailed), (), RejectedDueToIncorrectSubmissionState)
-
-        updatedSubmission      = Submission.grant(Instant.now(clock), gatekeeperUserName, Some(comments), escalatedTo)(submission)
-        savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
-        _                     <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
-        responsibleIndividual <- ET.fromOption(getResponsibleIndividual(originalApp), RejectedDueToIncorrectApplicationData)
-        acceptance             = TermsOfUseAcceptance(responsibleIndividual, Instant.now(clock), submission.id, submission.latestInstance.index)
-        _                     <- ET.liftF(applicationRepository.addApplicationTermsOfUseAcceptance(originalApp.id, acceptance))
-        _                     <- ET.liftF(emailConnector.sendNewTermsOfUseConfirmation(originalApp.name, originalApp.admins.map(_.emailAddress)))
-      } yield Actioned(originalApp)
-    )
-      .fold[Result](identity, identity)
-  }
-
-  private def getResponsibleIndividual(app: StoredApplication) =
-    app.access match {
-      case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
-      case _                                                                                                   => None
-    }
 
   def declineForTouUplift(
       originalApp: StoredApplication,

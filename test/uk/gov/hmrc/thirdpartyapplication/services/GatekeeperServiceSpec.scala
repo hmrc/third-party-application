@@ -29,10 +29,9 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, Collaborator, InvalidStateTransition, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, Collaborator, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -200,88 +199,6 @@ class GatekeeperServiceSpec
 
       result.size shouldBe 1
       result shouldBe List(ApplicationWithSubscriptionsResponse(appWithSubs))
-    }
-  }
-
-  "resendVerification" should {
-    val applicationId            = ApplicationId.random
-    val upliftRequestedBy        = "email@example.com"
-    val gatekeeperUserId: String = "big.boss.gatekeeper"
-
-    "send an Audit event when a resend verification request is successful" in new Setup {
-      val application = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
-
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
-
-      await(underTest.resendVerification(applicationId, gatekeeperUserId))
-
-      AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserId
-      AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationVerificationResent
-    }
-
-    "fail with InvalidStateTransition when the application is not in PENDING_REQUESTER_VERIFICATION state" in new Setup {
-      val application = anApplicationData(applicationId, pendingGatekeeperApprovalState("test@example.com"))
-
-      ApplicationRepoMock.Fetch.thenReturn(application)
-
-      intercept[InvalidStateTransition] {
-        await(underTest.resendVerification(applicationId, gatekeeperUserId))
-      }
-    }
-
-    "send verification email to requester" in new Setup {
-      AuditServiceMock.AuditWithTags.thenReturnSuccess()
-
-      val application = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
-
-      ApplicationRepoMock.Fetch.thenReturn(application)
-
-      await(underTest.resendVerification(applicationId, gatekeeperUserId))
-
-      verify(mockEmailConnector).sendApplicationApprovedAdminConfirmation(
-        eqTo(application.name),
-        *,
-        eqTo(Set(application.state.requestedByEmailAddress.get.toLaxEmail))
-      )(*)
-    }
-  }
-
-  "blockApplication" should {
-
-    val applicationId      = ApplicationId.random
-    val applicationData    = anApplicationData(applicationId)
-    val updatedApplication = applicationData.copy(blocked = true)
-
-    "set the block flag to true for an application" in new Setup {
-
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.Save.thenReturn(updatedApplication)
-
-      val result = await(underTest.blockApplication(applicationId))
-      result shouldBe Blocked
-
-      ApplicationRepoMock.Fetch.verifyCalledWith(applicationId)
-      ApplicationRepoMock.Save.verifyCalledWith(updatedApplication)
-    }
-  }
-
-  "unblockApplication" should {
-
-    val applicationId      = ApplicationId.random
-    val applicationData    = anApplicationData(applicationId).copy(blocked = true)
-    val updatedApplication = applicationData.copy(blocked = false)
-
-    "set the block flag to false for an application" in new Setup {
-
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.Save.thenReturn(updatedApplication)
-
-      val result = await(underTest.unblockApplication(applicationId))
-      result shouldBe Unblocked
-
-      ApplicationRepoMock.Fetch.verifyCalledWith(applicationId)
-      ApplicationRepoMock.Save.verifyCalledWith(updatedApplication)
     }
   }
 

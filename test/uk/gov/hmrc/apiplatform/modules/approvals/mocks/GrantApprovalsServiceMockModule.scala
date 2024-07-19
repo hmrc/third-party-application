@@ -28,8 +28,16 @@ trait GrantApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchers
   protected trait BaseGrantApprovalsServiceMock {
     def aMock: GrantApprovalsService
 
-    object Grant {
-      def thenReturn(result: GrantApprovalsService.Result) = when(aMock.grant(*, *, *, *, *)(*)).thenReturn(successful(result))
+    object DeclineForTouUplift {
+      def thenReturn(result: GrantApprovalsService.Result) = when(aMock.declineForTouUplift(*, *, *, *)).thenReturn(successful(result))
+    }
+
+    object GrantWithWarningsForTouUplift {
+      def thenReturn(result: GrantApprovalsService.Result) = when(aMock.grantWithWarningsForTouUplift(*, *, *, *)).thenReturn(successful(result))
+    }
+
+    object ResetForTouUplift {
+      def thenReturn(result: GrantApprovalsService.Result) = when(aMock.resetForTouUplift(*, *, *, *)).thenReturn(successful(result))
     }
   }
 
