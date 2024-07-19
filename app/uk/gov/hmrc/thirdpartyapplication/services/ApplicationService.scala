@@ -27,7 +27,7 @@ import scala.util.Failure
 import cats.data.OptionT
 import org.apache.pekko.actor.ActorSystem
 
-import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
@@ -92,11 +92,6 @@ class ApplicationService @Inject() (
           create(application)
         }
     }
-  }
-
-  @deprecated
-  def update(applicationId: ApplicationId, application: UpdateApplicationRequest)(implicit hc: HeaderCarrier): Future[Application] = {
-    updateApp(applicationId)(application) map (app => Application(data = app))
   }
 
   def updateCheck(applicationId: ApplicationId, checkInformation: CheckInformation): Future[Application] = {
@@ -355,36 +350,6 @@ class ApplicationService @Inject() (
         "newApplicationDescription" -> app.description.getOrElse("")
       )
     )
-
-  private def updateApp(applicationId: ApplicationId)(applicationRequest: UpdateApplicationRequest)(implicit hc: HeaderCarrier): Future[StoredApplication] = {
-    logger.info(s"Updating application ${applicationRequest.name}")
-
-    def updatedAccess(existing: StoredApplication): Access =
-      (applicationRequest.access, existing.access) match {
-        case (newAccess: Access.Standard, oldAccess: Access.Standard) => newAccess.copy(overrides = oldAccess.overrides)
-        case _                                                        => applicationRequest.access
-      }
-
-    def updatedApplication(existing: StoredApplication): StoredApplication =
-      existing.copy(
-        name = applicationRequest.name,
-        normalisedName = applicationRequest.name.toLowerCase,
-        description = applicationRequest.description,
-        access = updatedAccess(existing)
-      )
-
-    def checkAccessType(existing: StoredApplication): Unit =
-      if (existing.access.accessType != applicationRequest.access.accessType) {
-        throw new ForbiddenException("Updating the access type of an application is not allowed")
-      }
-
-    for {
-      existing <- fetchApp(applicationId)
-      _         = checkAccessType(existing)
-      savedApp <- applicationRepository.save(updatedApplication(existing))
-      _         = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
-    } yield savedApp
-  }
 
   private def fetchApp(applicationId: ApplicationId) = {
     lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
