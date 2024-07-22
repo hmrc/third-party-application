@@ -405,48 +405,6 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
   Feature("Update an application") {
 
-    Scenario("Update an application") {
-
-      Given("No applications exist")
-      emptyApplicationRepository()
-
-      Given("A third party application")
-      val originalOverrides: Set[OverrideFlag] = Set(
-        OverrideFlag.PersistLogin,
-        OverrideFlag.GrantWithoutConsent(Set("scope")),
-        OverrideFlag.SuppressIvForAgents(Set("scope")),
-        OverrideFlag.SuppressIvForOrganisations(Set("scope")),
-        OverrideFlag.SuppressIvForIndividuals(Set("Scope"))
-      )
-      val application                          = createApplication(access = standardAccess.copy(overrides = originalOverrides))
-
-      When("I request to update the application")
-      val newApplicationName           = "My Renamed Application"
-      val updatedRedirectUris          = List("https://example.com/redirect2", "https://example.com/redirect3").map(RedirectUri.unsafeApply(_))
-      val updatedTermsAndConditionsUrl = Some("http://example.com/terms2")
-      val updatedPrivacyPolicyUrl      = Some("http://example.com/privacy2")
-      val updatedAccess                = Access.Standard(
-        redirectUris = updatedRedirectUris,
-        termsAndConditionsUrl = updatedTermsAndConditionsUrl,
-        privacyPolicyUrl = updatedPrivacyPolicyUrl,
-        overrides = Set.empty
-      )
-      val updatedResponse              = postData(s"/application/${application.id.value}", applicationRequest(name = newApplicationName, access = updatedAccess))
-      updatedResponse.code shouldBe OK
-
-      Then("The application is updated but preserving the original access override flags")
-      val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.name shouldBe newApplicationName
-      fetchedApplication.redirectUris shouldBe updatedRedirectUris
-      fetchedApplication.termsAndConditionsUrl shouldBe updatedTermsAndConditionsUrl
-      fetchedApplication.privacyPolicyUrl shouldBe updatedPrivacyPolicyUrl
-      val fetchedAccess      = fetchedApplication.access.asInstanceOf[Access.Standard]
-      fetchedAccess.redirectUris shouldBe updatedRedirectUris
-      fetchedAccess.termsAndConditionsUrl shouldBe updatedTermsAndConditionsUrl
-      fetchedAccess.privacyPolicyUrl shouldBe updatedPrivacyPolicyUrl
-      fetchedAccess.overrides shouldBe originalOverrides
-    }
-
     Scenario("Add two client secrets then remove the last one") {
 
       Given("No applications exist")

@@ -117,15 +117,6 @@ class ApplicationController @Inject() (
     }
   }
 
-  @deprecated
-  def update(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) { implicit request =>
-    withJsonBody[UpdateApplicationRequest] { application =>
-      applicationService.update(applicationId, application).map { result =>
-        Ok(toJson(result))
-      } recover recovery
-    }
-  }
-
   def updateCheck(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
     implicit request =>
       withJsonBody[CheckInformation] { checkInformation =>

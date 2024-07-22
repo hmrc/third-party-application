@@ -30,7 +30,7 @@ import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
@@ -43,7 +43,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, 
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
@@ -701,100 +701,6 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
       result shouldBe Some(AuditResult.Success)
 
       verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
-    }
-
-    // "applyEvents with a ApplicationDeletedByGatekeeper event" in new Setup {
-
-    //   val event = ApplicationDeletedByGatekeeper(
-    //     EventId.random,
-    //     applicationData.id,
-    //     timestamp,
-    //     gatekeeperActor,
-    //     ClientId.random,
-    //     "wso2name",
-    //     "a reason",
-    //     requesterEmail
-    //   )
-
-    //   val expectedDataEvent = DataEvent(
-    //     auditSource = "third-party-application",
-    //     auditType = AuditAction.ApplicationDeleted.auditType,
-    //     tags = hc.toAuditTags("gatekeeperId", gatekeeperActor.user),
-    //     detail = Map(
-    //       "applicationAdmins"       -> applicationData.admins.map(_.emailAddress).mkString(", "),
-    //       "applicationId"           -> applicationData.id.value.toString,
-    //       "applicationName"         -> applicationData.name,
-    //       "upliftRequestedByEmail"  -> "john.smith@example.com",
-    //       "requestedByEmailAddress" -> requesterEmail
-    //     )
-    //   )
-
-    //   when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
-
-    //   val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(event)))
-
-    //   result shouldBe Some(AuditResult.Success)
-
-    //   verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
-    // }
-
-  }
-
-  "AuditHelper calculateAppChanges" should {
-
-    val id          = ApplicationId.random
-    val admin       = "test@example.com".admin()
-    val tokens      = ApplicationTokens(
-      StoredToken(ClientId("prodId"), "prodToken")
-    )
-    val previousApp = StoredApplication(
-      id = id,
-      name = "app name",
-      normalisedName = "app name",
-      collaborators = Set(admin),
-      wso2ApplicationName = "wso2ApplicationName",
-      tokens = tokens,
-      state = testingState(),
-      createdOn = instant,
-      lastAccess = Some(instant)
-    )
-
-    val updatedApp = previousApp.copy(
-      name = "new name",
-      access = Access.Standard(
-        List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_)),
-        Some("http://new-url.example.com/terms-and-conditions"),
-        Some("http://new-url.example.com/privacy-policy")
-      )
-    )
-
-    val commonAuditData = Map(
-      "applicationId" -> id.value.toString
-    )
-
-    val appNameAudit =
-      AppNameChanged ->
-        (Map("newApplicationName" -> "new name") ++ commonAuditData)
-
-    val appPrivacyAudit =
-      AppPrivacyPolicyUrlChanged ->
-        (Map("newPrivacyPolicyUrl" -> "http://new-url.example.com/privacy-policy") ++ commonAuditData)
-
-    val appTermsAndConditionsUrlAudit =
-      AppTermsAndConditionsUrlChanged ->
-        (Map("newTermsAndConditionsUrl" -> "http://new-url.example.com/terms-and-conditions") ++ commonAuditData)
-
-    "produce the audit events required by an application update" in {
-      AuditHelper.calculateAppChanges(previousApp, updatedApp) shouldEqual
-        Set(appNameAudit, appPrivacyAudit, appTermsAndConditionsUrlAudit)
-    }
-
-    "only produce audit events if the fields have been updated" in {
-      val partiallyUpdatedApp = previousApp.copy(
-        name = updatedApp.name
-      )
-
-      AuditHelper.calculateAppChanges(previousApp, partiallyUpdatedApp) shouldEqual Set(appNameAudit)
     }
   }
 }

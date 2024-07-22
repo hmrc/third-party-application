@@ -30,7 +30,7 @@ import uk.gov.hmrc.play.audit.model.DataEvent
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -461,39 +461,6 @@ object AuditHelper {
       "upliftRequestedByEmail" -> app.state.requestedByEmailAddress.getOrElse("-"),
       "applicationAdmins"      -> app.admins.map(_.emailAddress.text).mkString(", ")
     )
-
-  def calculateAppChanges(previous: StoredApplication, updated: StoredApplication) = {
-    val common = Map("applicationId" -> updated.id.value.toString)
-
-    val genericEvents = Set(calcNameChange(previous, updated))
-
-    val standardEvents = (previous.access, updated.access) match {
-      case (p: Access.Standard, u: Access.Standard) => Set(
-          calcTermsAndConditionsChange(p, u),
-          calcPrivacyPolicyChange(p, u)
-        )
-      case _                                        => Set.empty
-    }
-
-    (standardEvents ++ genericEvents)
-      .flatten
-      .map(auditEvent => (auditEvent._1, auditEvent._2 ++ common))
-  }
-
-  private def when[A](pred: Boolean, ret: => A): Option[A] =
-    if (pred) Some(ret) else None
-
-  private def calcNameChange(a: StoredApplication, b: StoredApplication) =
-    when(a.name != b.name, AppNameChanged -> Map("newApplicationName" -> b.name))
-
-  private def calcTermsAndConditionsChange(a: Access.Standard, b: Access.Standard) =
-    when(
-      a.termsAndConditionsUrl != b.termsAndConditionsUrl,
-      AppTermsAndConditionsUrlChanged -> Map("newTermsAndConditionsUrl" -> b.termsAndConditionsUrl.getOrElse(""))
-    )
-
-  private def calcPrivacyPolicyChange(a: Access.Standard, b: Access.Standard) =
-    when(a.privacyPolicyUrl != b.privacyPolicyUrl, AppPrivacyPolicyUrlChanged -> Map("newPrivacyPolicyUrl" -> b.privacyPolicyUrl.getOrElse("")))
 
   def createExtraDetailsForApplicationApprovalRequestDeclined(app: StoredApplication, submission: Submission, evt: ApplicationApprovalRequestDeclined): Map[String, String] = {
 

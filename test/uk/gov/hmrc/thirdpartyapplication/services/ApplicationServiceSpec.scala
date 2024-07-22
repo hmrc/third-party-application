@@ -28,7 +28,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.mockito.captor.ArgCaptor
 import org.scalatest.BeforeAndAfterAll
 
-import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
@@ -561,70 +561,6 @@ class ApplicationServiceSpec
     }
   }
 
-  "Update" should {
-    val applicationUpdateRequest = anUpdateRequest()
-
-    "update an existing application if an id is provided" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.Save.thenReturn(applicationData)
-
-      await(underTest.update(applicationId, applicationUpdateRequest))
-
-      ApplicationRepoMock.Save.verifyCalled()
-    }
-
-    "update an existing application if an id is provided and name is changed" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.Save.thenReturn(applicationData)
-
-      await(underTest.update(applicationId, applicationUpdateRequest))
-
-      ApplicationRepoMock.Save.verifyCalled()
-    }
-
-    "send an audit event for each type of change" in new SetupForAuditTests {
-      override implicit val hc: HeaderCarrier = hcForLoggedInGatekeeperUser
-
-      val (updatedApplication, updateRedirectUris) = setupAuditTests(Access.Standard())
-      ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccessOn(updateRedirectUris)(updatedApplication)
-
-      val updateAppReq = UpdateApplicationRequest(updatedApplication.name, updatedApplication.access)
-
-      await(underTest.update(applicationId, updateAppReq))
-
-      AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
-      AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
-      AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
-    }
-
-    "not audit TermsAndConditionsUrl or PrivacyPolicyUrl for a privileged app" in new SetupForAuditTests {
-      val (updatedApplication, _) = setupAuditTests(Access.Privileged())
-
-      await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name, access = Access.Privileged())))
-
-      AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
-      ApplicationCommandDispatcherMock.Dispatch.verifyNeverCalled
-    }
-
-    "throw a NotFoundException if application doesn't exist in repository for the given application id" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturnNone()
-
-      intercept[NotFoundException](await(underTest.update(applicationId, applicationUpdateRequest)))
-
-      ApplicationRepoMock.Save.verifyNeverCalled()
-    }
-
-    "throw a ForbiddenException when trying to change the access type of an application" in new Setup {
-
-      val privilegedApplicationUpdateRequest: UpdateApplicationRequest = applicationUpdateRequest.copy(access = Access.Privileged())
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-
-      intercept[ForbiddenException](await(underTest.update(applicationId, privilegedApplicationUpdateRequest)))
-
-      ApplicationRepoMock.Save.verifyNeverCalled()
-    }
-  }
-
   "update approval" should {
     val approvalInformation = CheckInformation(Some(ContactDetails(FullName("Tester"), LaxEmailAddress("test@example.com"), "12345677890")))
 
@@ -1042,14 +978,6 @@ class ApplicationServiceSpec
       makeUpliftRequest(ApiIdentifier.random),
       loggedInUser.text,
       ApplicationId.random
-    )
-  }
-
-  private def anUpdateRequest() = {
-    UpdateApplicationRequest(
-      name = "My Application",
-      access = Access.Standard().copy(redirectUris = List(RedirectUri.unsafeApply("https://example.com/redirect"))),
-      description = Some("Description")
     )
   }
 }
