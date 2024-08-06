@@ -21,7 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.github.tomakehurst.wiremock.client.WireMock._
 
 import play.api.http.Status._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.test.HttpClientV2Support
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
@@ -45,14 +46,12 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
     requestingAdminEmail = "admin@example.com".toLaxEmail
   )
 
-  abstract class Setup(enabled: Boolean = true) {
+  abstract class Setup(enabled: Boolean = true) extends HttpClientV2Support {
     import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
-
-    val http: HttpClient = app.injector.instanceOf[HttpClient]
 
     val config: ApiPlatformEventsConnector.Config = ApiPlatformEventsConnector.Config(wireMockUrl, enabled)
 
-    val underTest = new ApiPlatformEventsConnector(http, config)
+    lazy val underTest = new ApiPlatformEventsConnector(httpClientV2, config)
 
     def apiApplicationEventWillReturnCreated(request: ApplicationEvent) =
       stubFor(

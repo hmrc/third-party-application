@@ -28,15 +28,15 @@ trait WiremockSugar extends BeforeAndAfterEach with BeforeAndAfterAll {
   val stubHost    = "localhost"
   val wireMockUrl = s"http://$stubHost:$stubPort"
 
-  private val wireMockConfiguration: WireMockConfiguration =
+  private lazy val wireMockConfiguration: WireMockConfiguration =
     wireMockConfig().port(stubPort)
 
-  val wireMockServer = new WireMockServer(wireMockConfiguration)
+  lazy val wireMockServer = new WireMockServer(wireMockConfiguration)
 
   override def beforeAll() = {
     super.beforeAll()
-    wireMockServer.start()
     WireMock.configureFor(stubHost, stubPort)
+    wireMockServer.start()
   }
 
   override protected def afterAll(): Unit = {

@@ -21,7 +21,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps, UpstreamErrorResponse}
 
 import uk.gov.hmrc.thirdpartyapplication.models.Totp
 
@@ -30,15 +31,17 @@ object TotpConnector {
 }
 
 @Singleton
-class TotpConnector @Inject() (httpClient: HttpClient, config: TotpConnector.Config)(implicit val ec: ExecutionContext) {
+class TotpConnector @Inject() (httpClient: HttpClientV2, config: TotpConnector.Config)(implicit val ec: ExecutionContext) {
 
   def generateTotp()(implicit hc: HeaderCarrier): Future[Totp] = {
-    val url = s"${config.baseUrl}/time-based-one-time-password/secret"
+    val postUrl = url"${config.baseUrl}/time-based-one-time-password/secret"
 
-    httpClient.POSTEmpty[Totp](url)
+    httpClient
+      .post(postUrl)
+      .execute[Totp]
       .recover {
-        case e: UpstreamErrorResponse => throw new RuntimeException(s"Unexpected response from $url: (${e.statusCode}, ${e.message})")
-        case NonFatal(e)              => throw new RuntimeException(s"Error response from $url: ${e.getMessage}")
+        case e: UpstreamErrorResponse => throw new RuntimeException(s"Unexpected response from $postUrl: (${e.statusCode}, ${e.message})")
+        case NonFatal(e)              => throw new RuntimeException(s"Error response from $postUrl: ${e.getMessage}")
       }
   }
 }

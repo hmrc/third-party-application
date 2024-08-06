@@ -24,7 +24,8 @@ import scala.util.{Failure, Success, Try}
 
 import play.api.libs.json.{Json, OFormat}
 import play.mvc.Http.Status._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -49,7 +50,7 @@ object EmailConnector {
 }
 
 @Singleton
-class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.Config)(implicit val ec: ExecutionContext) extends ApplicationLogger {
+class EmailConnector @Inject() (httpClient: HttpClientV2, config: EmailConnector.Config)(implicit val ec: ExecutionContext) extends ApplicationLogger {
   import EmailConnector._
 
   val serviceUrl      = config.baseUrl
@@ -475,7 +476,10 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
     def makeCall() = {
       import uk.gov.hmrc.http.HttpReads.Implicits._
 
-      httpClient.POST[SendEmailRequest, HttpResponse](url, payload)
+      httpClient
+        .post(url"$url")
+        .withBody(Json.toJson(payload))
+        .execute[HttpResponse]
         .map { response =>
           logger.info(s"Sent '${payload.templateId}' with response: ${response.status}")
           response.status match {

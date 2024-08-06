@@ -21,7 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.github.tomakehurst.wiremock.client.WireMock._
 
 import play.api.http.Status._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.test.HttpClientV2Support
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
@@ -37,10 +38,9 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
   private val hubUrl             = "http://localhost:9685"
   private val environmentName    = "sandbox"
 
-  trait Setup {
-    val http: HttpClient = app.injector.instanceOf[HttpClient]
-    val config           = EmailConnector.Config(wireMockUrl, hubUrl, hubTestTitle, environmentName)
-    val connector        = new EmailConnector(http, config)
+  trait Setup extends HttpClientV2Support {
+    val config    = EmailConnector.Config(wireMockUrl, hubUrl, hubTestTitle, environmentName)
+    val connector = new EmailConnector(httpClientV2, config)
 
     wireMockServer.resetRequests()
 
