@@ -21,11 +21,11 @@ object AppDependencies {
   )
 
   private lazy val testDeps = Seq(
-    "uk.gov.hmrc"           %% "bootstrap-test-play-30"          % bootstrapVersion,
-    "uk.gov.hmrc.mongo"     %% "hmrc-mongo-test-play-30"         % hmrcMongoVersion,
-    "org.scalaj"            %% "scalaj-http"                     % "2.4.2",
-    "org.mockito"           %% "mockito-scala-scalatest"         % "1.17.29",
-    "com.vladsch.flexmark"   % "flexmark-all"                    % "0.62.2",
-    "uk.gov.hmrc"           %% "api-platform-test-common-domain" % commonDomainVersion
+    "uk.gov.hmrc"                   %% "bootstrap-test-play-30"          % bootstrapVersion,
+    "uk.gov.hmrc.mongo"             %% "hmrc-mongo-test-play-30"         % hmrcMongoVersion,
+    "com.softwaremill.sttp.client3" %% "core"                            % "3.9.8",
+    "org.mockito"                   %% "mockito-scala-scalatest"         % "1.17.29",
+    "com.vladsch.flexmark"           % "flexmark-all"                    % "0.62.2",
+    "uk.gov.hmrc"                   %% "api-platform-test-common-domain" % commonDomainVersion
   ).map(_ % "test")
 }
