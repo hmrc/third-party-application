@@ -21,7 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.github.tomakehurst.wiremock.client.WireMock._
 
 import play.api.http.Status._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.test.HttpClientV2Support
 
 import uk.gov.hmrc.thirdpartyapplication.models.Totp
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
@@ -31,13 +32,12 @@ class TotpConnectorSpec extends ConnectorSpec {
   implicit val hc: HeaderCarrier = HeaderCarrier()
   private val baseUrl            = wireMockUrl
 
-  trait Setup {
+  trait Setup extends HttpClientV2Support {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val applicationName: String = "third-party-application"
-    val httpClient              = app.injector.instanceOf[HttpClient]
     val config                  = TotpConnector.Config(baseUrl)
-    val underTest               = new TotpConnector(httpClient, config)
+    val underTest               = new TotpConnector(httpClientV2, config)
   }
 
   "generateTotp" should {

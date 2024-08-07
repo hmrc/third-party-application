@@ -16,11 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
+import java.net.URL
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
+import play.api.libs.json.Json
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -30,7 +33,7 @@ object ApiPlatformEventsConnector {
   case class Config(baseUrl: String, enabled: Boolean)
 }
 
-class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatformEventsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils
+class ApiPlatformEventsConnector @Inject() (http: HttpClientV2, config: ApiPlatformEventsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils
     with ApplicationLogger {
 
   val serviceBaseUrl: String      = s"${config.baseUrl}"
@@ -42,24 +45,25 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
     implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
 
     if (config.enabled) {
-      http.POST[ApplicationEvent, ErrorOr[Unit]](
-        addEventURI(uri),
-        event
-      ).map {
-        case Right(_) =>
-          logger.info(s"calling platform event service for application ${event.applicationId.value}")
-          true
-        case Left(e)  =>
-          logger.warn(s"calling platform event service failed for application ${event.applicationId.value} $e")
-          false
-      }
+      http.post(addEventURI(uri))
+        .withBody(Json.toJson(event))
+        .execute[ErrorOr[Unit]]
+        .map {
+          case Right(_) =>
+            logger.info(s"calling platform event service for application ${event.applicationId.value}")
+            true
+          case Left(e)  =>
+            logger.warn(s"calling platform event service failed for application ${event.applicationId.value} $e")
+            false
+        }
     } else {
       logger.info("call to platform events disabled")
       Future.successful(true)
     }
   }
 
-  private def addEventURI(path: String): String = {
-    serviceBaseUrl + path
+  private def addEventURI(path: String): URL = {
+    val x = s"$serviceBaseUrl$path"
+    url"$x"
   }
 }

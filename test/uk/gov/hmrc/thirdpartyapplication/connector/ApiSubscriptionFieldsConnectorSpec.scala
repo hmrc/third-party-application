@@ -21,7 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.github.tomakehurst.wiremock.client.WireMock._
 
 import play.api.http.Status._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.http.test.HttpClientV2Support
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
 
@@ -31,12 +32,10 @@ class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
   val clientId = ClientId.random
 
-  trait Setup {
-    val http: HttpClient = app.injector.instanceOf[HttpClient]
-
+  trait Setup extends HttpClientV2Support {
     val config: ApiSubscriptionFieldsConnector.Config = ApiSubscriptionFieldsConnector.Config(wireMockUrl)
 
-    val underTest = new ApiSubscriptionFieldsConnector(http, config)
+    val underTest = new ApiSubscriptionFieldsConnector(httpClientV2, config)
 
     def apiSubscriptionFieldsWillReturn(status: Int) =
       stubFor(

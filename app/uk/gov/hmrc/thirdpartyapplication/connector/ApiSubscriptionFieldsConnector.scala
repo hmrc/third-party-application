@@ -21,7 +21,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.Status._
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
@@ -31,10 +32,11 @@ object ApiSubscriptionFieldsConnector {
 }
 
 @Singleton
-class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClient, config: ApiSubscriptionFieldsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils {
+class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config: ApiSubscriptionFieldsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils {
 
   def deleteSubscriptions(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    httpClient.DELETE[ErrorOr[Unit]](s"${config.baseUrl}/field/application/${clientId.value}")
+    httpClient.delete(url"${config.baseUrl}/field/application/${clientId.value}")
+      .execute[ErrorOr[Unit]]
       .map {
         case Right(_)                                        => HasSucceeded
         case Left(UpstreamErrorResponse(_, NOT_FOUND, _, _)) => HasSucceeded

@@ -26,7 +26,8 @@ import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, OK}
 import play.api.libs.json._
-import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.http.test.HttpClientV2Support
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
@@ -41,7 +42,7 @@ class AwsApiGatewayConnectorSpec extends ConnectorSpec {
   implicit val requestIdWrites: Writes[RequestId] =
     (JsPath \ "RequestId").write[String].contramap((r: RequestId) => r.value)
 
-  trait Setup {
+  trait Setup extends HttpClientV2Support {
     SharedMetricRegistries.clear()
     implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
 
@@ -50,11 +51,10 @@ class AwsApiGatewayConnectorSpec extends ConnectorSpec {
 
     val expectedDeleteURL: String = s"/v1/api-keys/$applicationName"
 
-    val http: HttpClient                      = app.injector.instanceOf[HttpClient]
     val awsApiKey: String                     = UUID.randomUUID().toString
     val config: AwsApiGatewayConnector.Config = AwsApiGatewayConnector.Config(wireMockUrl, awsApiKey)
 
-    val underTest: AwsApiGatewayConnector = new AwsApiGatewayConnector(http, config)
+    val underTest: AwsApiGatewayConnector = new AwsApiGatewayConnector(httpClientV2, config)
   }
 
   "createOrUpdateApplication" should {

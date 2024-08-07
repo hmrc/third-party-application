@@ -16,14 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
+import java.net.URL
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
-import play.api.libs.json.{JsPath, OWrites, Reads}
+import play.api.libs.json.{JsPath, Json, OWrites, Reads}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
@@ -46,25 +48,24 @@ object AwsApiGatewayConnector extends ApplicationLogger {
 }
 
 @Singleton
-class AwsApiGatewayConnector @Inject() (http: HttpClient, config: AwsApiGatewayConnector.Config)(implicit val ec: ExecutionContext) {
+class AwsApiGatewayConnector @Inject() (http: HttpClientV2, config: AwsApiGatewayConnector.Config)(implicit val ec: ExecutionContext) {
   import AwsApiGatewayConnector._
 
   val serviceBaseUrl: String = s"${config.baseUrl}/v1/application"
   val awsApiKey: String      = config.awsApiKey
   val apiKeyHeaderName       = "x-api-key"
 
-  private def updateUsagePlanURL(rateLimitTier: RateLimitTier): String = s"${config.baseUrl}/v1/usage-plans/$rateLimitTier/api-keys"
-  private def deleteAPIKeyURL(applicationName: String): String         = s"${config.baseUrl}/v1/api-keys/$applicationName"
+  private def updateUsagePlanURL(rateLimitTier: RateLimitTier): URL = url"${config.baseUrl}/v1/usage-plans/$rateLimitTier/api-keys"
+  private def deleteAPIKeyURL(applicationName: String): URL         = url"${config.baseUrl}/v1/api-keys/$applicationName"
 
   def createOrUpdateApplication(applicationName: String, serverToken: String, usagePlan: RateLimitTier)(hc: HeaderCarrier): Future[HasSucceeded] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey, CONTENT_TYPE -> JSON)
 
-    http.POST[UpdateApplicationUsagePlanRequest, RequestId](
-      updateUsagePlanURL(usagePlan),
-      UpdateApplicationUsagePlanRequest(applicationName, serverToken)
-    )
+    http.post(updateUsagePlanURL(usagePlan))
+      .withBody(Json.toJson(UpdateApplicationUsagePlanRequest(applicationName, serverToken)))
+      .execute[RequestId]
       .map { requestId =>
         logger.info(s"Successfully created or updated application '$applicationName' in AWS API Gateway with request ID ${requestId.value}")
         HasSucceeded
@@ -76,9 +77,11 @@ class AwsApiGatewayConnector @Inject() (http: HttpClient, config: AwsApiGatewayC
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
 
-    http.DELETE[RequestId](deleteAPIKeyURL(applicationName)).map(requestId => {
-      logger.info(s"Successfully deleted application '$applicationName' from AWS API Gateway with request ID ${requestId.value}")
-      HasSucceeded
-    })
+    http.delete(deleteAPIKeyURL(applicationName))
+      .execute[RequestId]
+      .map(requestId => {
+        logger.info(s"Successfully deleted application '$applicationName' from AWS API Gateway with request ID ${requestId.value}")
+        HasSucceeded
+      })
   }
 }

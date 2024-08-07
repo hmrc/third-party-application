@@ -6,7 +6,8 @@ import uk.gov.hmrc.DefaultBuildSettings._
 
 lazy val appName = "third-party-application"
 
-lazy val playSettings: Seq[Setting[_]] = Seq.empty
+Global / bloopAggregateSourceDependencies := true
+Global / bloopExportJarClassifiers := Some(Set("sources"))
 
 ThisBuild / scalaVersion := "2.13.12"
 ThisBuild / majorVersion := 0
@@ -17,15 +18,10 @@ ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(PlayScala, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin)
-  .settings(playSettings: _*)
-  .settings(scalaSettings: _*)
-  .settings(defaultSettings(): _*)
   .settings(ScoverageSettings())
   .settings(
-    name            := appName,
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
-    routesGenerator := InjectedRoutesGenerator,
     scalacOptions   += "-Wconf:src=routes/.*:s",
     routesImport ++= Seq(
       "uk.gov.hmrc.apiplatform.modules.common.domain.models._",
@@ -35,21 +31,13 @@ lazy val microservice = Project(appName, file("."))
     )
   )
   .settings(
-    addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full)
-  )
-  .settings(
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     Test / fork              := false,
     Test / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "test", baseDirectory.value / "shared-test"),
     Test / parallelExecution := false
   )
   .settings(
-    scalacOptions ++= Seq(
-    "-Wconf:cat=unused&src=views/.*\\.scala:s",
-    "-Wconf:cat=unused&src=.*RoutesPrefix\\.scala:s",
-    "-Wconf:cat=unused&src=.*Routes\\.scala:s",
-    "-Wconf:cat=unused&src=.*ReverseRoutes\\.scala:s"
-    )
+    addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full)
   )
 
 lazy val it = (project in file("it"))
@@ -60,8 +48,6 @@ lazy val it = (project in file("it"))
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     DefaultBuildSettings.itSettings()
   )
-
-Global / bloopAggregateSourceDependencies := true
 
 commands ++= Seq(
   Command.command("cleanAll") { state => "clean" :: "it/clean" :: state },
