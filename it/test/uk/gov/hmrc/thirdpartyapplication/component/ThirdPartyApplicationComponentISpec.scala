@@ -20,11 +20,10 @@ import java.util.UUID
 import scala.concurrent.Await.{ready, result}
 import scala.util.Random
 
-import org.scalatest.Inside
-import scalaj.http.{Http, HttpResponse}
+import org.scalatest.{EitherValues, Inside}
+import sttp.client3._
+import sttp.model.{Header, Method, StatusCode}
 
-import play.api.http.HeaderNames.AUTHORIZATION
-import play.api.http.Status._
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{Json, OWrites}
@@ -48,7 +47,7 @@ class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
 }
 
-class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with CollaboratorTestData with Inside with FixedClock {
+class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherValues with CollaboratorTestData with Inside with FixedClock {
 
   val configOverrides = Map[String, Any](
     "microservice.services.api-subscription-fields.port"         -> 19650,
@@ -107,6 +106,13 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
     super.afterEach()
   }
 
+  def http(request: => Request[Either[String, String], Any]): Response[Either[String, String]] = {
+    val httpClient = SimpleHttpClient()
+    val response   = httpClient.send(request)
+    httpClient.close()
+    response
+  }
+
   Feature("Fetch all applications") {
 
     Scenario("Fetch all applications") {
@@ -117,9 +123,11 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val application1: Application = createApplication(awsApiGatewayApplicationName)
 
       When("We fetch all applications")
-      val fetchResponse = Http(s"$serviceUrl/application").asString
-      fetchResponse.code shouldBe OK
-      val result        = Json.parse(fetchResponse.body).as[Seq[Application]]
+      val uri      = s"$serviceUrl/application"
+      val response = http(basicRequest.get(uri"$uri"))
+
+      response.code shouldBe StatusCode.Ok
+      val result = Json.parse(response.body.value).as[Seq[Application]]
 
       Then("The application is returned in the result")
       result.exists(r => r.id == application1.id) shouldBe true
@@ -136,9 +144,10 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val application: Application = createApplication()
 
       When("We fetch the application by its ID")
-      val fetchResponse = Http(s"$serviceUrl/application/${application.id.value}").asString
-      fetchResponse.code shouldBe OK
-      val result        = Json.parse(fetchResponse.body).as[Application]
+      val uri           = s"$serviceUrl/application/${application.id.value}"
+      val fetchResponse = http(basicRequest.get(uri"$uri"))
+      fetchResponse.code shouldBe StatusCode.Ok
+      val result        = Json.parse(fetchResponse.body.value).as[Application]
 
       Then("The application is returned")
       result shouldBe application
@@ -153,9 +162,10 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val application2: Application = createApplication(applicationName2)
 
       When("We fetch the application by the collaborator email address")
-      val fetchResponse = Http(s"$serviceUrl/application?emailAddress=$emailAddress").asString
-      fetchResponse.code shouldBe OK
-      val result        = Json.parse(fetchResponse.body).as[Seq[Application]]
+      val uri           = s"$serviceUrl/application?emailAddress=$emailAddress"
+      val fetchResponse = http(basicRequest.get(uri"$uri"))
+      fetchResponse.code shouldBe StatusCode.Ok
+      val result        = Json.parse(fetchResponse.body.value).as[Seq[Application]]
 
       Then("The applications are returned")
       result should contain theSameElementsAs Seq(application1, application2)
@@ -177,14 +187,15 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
 
       When("We fetch the application credentials")
-      val response = Http(s"$serviceUrl/application/${application.id.value}/credentials").asString
-      response.code shouldBe OK
+      val uri      = s"$serviceUrl/application/${application.id.value}/credentials"
+      val response = http(basicRequest.get(uri"$uri"))
+      response.code shouldBe StatusCode.Ok
 
       Then("The credentials are returned")
       // scalastyle:off magic.number
       val expectedClientSecrets = createdApp.tokens.production.clientSecrets
 
-      val returnedResponse = Json.parse(response.body).as[ApplicationTokenResponse]
+      val returnedResponse = Json.parse(response.body.value).as[ApplicationTokenResponse]
       returnedResponse.clientId should be(application.clientId)
       returnedResponse.accessToken.length should be(32)
 
@@ -220,20 +231,20 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val cmd          = ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, hashedSecret, instant)
 
       val addClientSecretResponse = sendApplicationCommand(cmd, application)
-      addClientSecretResponse.code shouldBe OK
+      addClientSecretResponse.code shouldBe StatusCode.Ok
 
       val createdApplication = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
       val credentials        = createdApplication.tokens.production
 
       When("We attempt to validate the credentials")
       val requestBody        = validationRequest(credentials.clientId, secret)
-      val validationResponse = postData("/application/credentials/validate", requestBody)
+      val validationResponse = sendJsonRequest("/application/credentials/validate", requestBody)
 
       Then("We get a successful response")
-      validationResponse.code shouldBe OK
+      validationResponse.code shouldBe StatusCode.Ok
 
       And("The application is returned")
-      val returnedApplication = Json.parse(validationResponse.body).as[Application]
+      val returnedApplication = Json.parse(validationResponse.body.value).as[Application]
       returnedApplication shouldBe application.copy(lastAccess = returnedApplication.lastAccess)
     }
 
@@ -246,10 +257,10 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       When("We attempt to validate the credentials")
       val requestBody        = validationRequest(ClientId("foo"), "bar")
-      val validationResponse = postData(s"/application/credentials/validate", requestBody)
+      val validationResponse = sendJsonRequest(s"/application/credentials/validate", requestBody)
 
       Then("We get an UNAUTHORIZED response")
-      validationResponse.code shouldBe UNAUTHORIZED
+      validationResponse.code shouldBe StatusCode.Unauthorized
     }
 
     Scenario("Return UNAUTHORIZED if clientSecret is incorrect for valid clientId") {
@@ -263,10 +274,10 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
       When("We attempt to validate the credentials")
       val requestBody        = validationRequest(credentials.clientId, "bar")
-      val validationResponse = postData("/application/credentials/validate", requestBody)
+      val validationResponse = sendJsonRequest("/application/credentials/validate", requestBody)
 
       Then("We get an UNAUTHORIZED response")
-      validationResponse.code shouldBe UNAUTHORIZED
+      validationResponse.code shouldBe StatusCode.Unauthorized
     }
   }
 
@@ -287,12 +298,12 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       totpStub.willReturnTOTP(privilegedApplicationsScenario)
 
       When("We create a privileged application")
-      val createdResponse = postData("/application", applicationRequest(appName, privilegedAccess))
-      createdResponse.code shouldBe CREATED
+      val createdResponse = sendJsonRequest("/application", applicationRequest(appName, privilegedAccess))
+      createdResponse.code shouldBe StatusCode.Created
 
       Then("The application is returned with the Totp Ids and the Totp Secrets")
-      val totpIds     = (Json.parse(createdResponse.body) \ "access" \ "totpIds").as[TotpId]
-      val totpSecrets = (Json.parse(createdResponse.body) \ "totp").as[CreateApplicationResponse.TotpSecret]
+      val totpIds     = (Json.parse(createdResponse.body.value) \ "access" \ "totpIds").as[TotpId]
+      val totpSecrets = (Json.parse(createdResponse.body.value) \ "totp").as[CreateApplicationResponse.TotpSecret]
 
       totpIds match {
         case TotpId("prod-id")    => totpSecrets shouldBe CreateApplicationResponse.TotpSecret("prod-secret")
@@ -331,16 +342,16 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
                                              |  "timestamp": "2020-01-01T12:00:00.000Z"
                                              | }""".stripMargin
 
-      val response = postData(
+      val response = sendJsonRequest(
         s"/application/${application.id.value}/dispatch",
         s"""{
            | "command": $addCollaboratorCommandPayload,
            | "verifiedCollaboratorsToNotify": []
            | }""".stripMargin,
-        method = "PATCH"
+        method = Method.PATCH
       )
-      response.code shouldBe OK
-      val result   = Json.parse(response.body).as[DispatchResult]
+      response.code shouldBe StatusCode.Ok
+      val result   = Json.parse(response.body.value).as[DispatchResult]
 
       Then("The collaborator is added")
       inside(result) {
@@ -379,16 +390,16 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
                               |  "updateType": "removeCollaborator"
                               | }""".stripMargin
 
-      val response = postData(
+      val response = sendJsonRequest(
         s"/application/${application.id.value}/dispatch",
         s"""{
            | "command": $commandPayload,
            | "verifiedCollaboratorsToNotify": []
            | }""".stripMargin,
-        method = "PATCH"
+        method = Method.PATCH
       )
-      response.code shouldBe OK
-      val result   = Json.parse(response.body).as[DispatchResult]
+      response.code shouldBe StatusCode.Ok
+      val result   = Json.parse(response.body.value).as[DispatchResult]
 
       Then("The collaborator is removed")
       inside(result) {
@@ -424,12 +435,13 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
         ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
 
       val cmdResponse = sendApplicationCommand(cmd, application)
-      cmdResponse.code shouldBe OK
+      cmdResponse.code shouldBe StatusCode.Ok
 
       Then("The client secret is added to the production environment of the application")
       apiPlatformEventsStub.verifyClientSecretAddedEventSent()
-      val firstFetchResponse                      = Http(s"$serviceUrl/application/${application.id.value}/credentials").asString
-      val firstResponse: ApplicationTokenResponse = Json.parse(firstFetchResponse.body).as[ApplicationTokenResponse]
+      val uri                                     = s"$serviceUrl/application/${application.id.value}/credentials"
+      val firstFetchResponse                      = http(basicRequest.get(uri"$uri"))
+      val firstResponse: ApplicationTokenResponse = Json.parse(firstFetchResponse.body.value).as[ApplicationTokenResponse]
       val secrets: List[ClientSecretResponse]     = firstResponse.clientSecrets
       secrets should have size 1
 
@@ -437,12 +449,13 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val secondCmd         =
         ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
       val secondCmdResponse = sendApplicationCommand(secondCmd, application)
-      secondCmdResponse.code shouldBe OK
+      secondCmdResponse.code shouldBe StatusCode.Ok
       // check secret was added
 
       Then("The client secret is added to the production environment of the application")
-      val secondFetchResponse                      = Http(s"$serviceUrl/application/${application.id.value}/credentials").asString
-      val secondResponse: ApplicationTokenResponse = Json.parse(secondFetchResponse.body).as[ApplicationTokenResponse]
+      val uri2                                     = s"$serviceUrl/application/${application.id.value}/credentials"
+      val secondFetchResponse                      = http(basicRequest.get(uri"$uri2"))
+      val secondResponse: ApplicationTokenResponse = Json.parse(secondFetchResponse.body.value).as[ApplicationTokenResponse]
       val moreSecrets: List[ClientSecretResponse]  = secondResponse.clientSecrets
 
       moreSecrets should have size 2
@@ -450,7 +463,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       When("I request to remove a production client secret")
       val removeCmd         = ApplicationCommands.RemoveClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), secondCmd.id, instant)
       val removeCmdResponse = sendApplicationCommand(removeCmd, application)
-      removeCmdResponse.code shouldBe OK
+      removeCmdResponse.code shouldBe StatusCode.Ok
 
       apiPlatformEventsStub.verifyClientSecretRemovedEventSent()
     }
@@ -471,16 +484,17 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val application = createApplication()
 
       When("I request to delete the application")
-      val deleteResponse = postData(
+      val deleteResponse = sendJsonRequest(
         path = s"/application/${application.id.value}/delete",
         data = s"""{"gatekeeperUserId": "$gatekeeperUserId", "requestedByEmailAddress": "$emailAddress"}""",
-        extraHeaders = Seq(AUTHORIZATION -> UUID.randomUUID.toString)
+        extraHeaders = Seq(Header.authorization("Bearer", UUID.randomUUID.toString))
       )
-      deleteResponse.code shouldBe NO_CONTENT
+      deleteResponse.code shouldBe StatusCode.NoContent
 
       Then("The application is deleted")
-      val fetchResponse = Http(s"$serviceUrl/application/${application.id.value}").asString
-      fetchResponse.code shouldBe NOT_FOUND
+      val uri           = s"$serviceUrl/application/${application.id.value}"
+      val fetchResponse = http(basicRequest.get(uri"$uri"))
+      fetchResponse.code shouldBe StatusCode.NotFound
     }
 
   }
@@ -499,10 +513,11 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       result(subscriptionExists(application.id, context, version), timeout)
 
       When("I fetch the API subscriptions of the application")
-      val response = Http(s"$serviceUrl/application/${application.id.value}/subscription").asString
+      val uri      = s"$serviceUrl/application/${application.id.value}/subscription"
+      val response = http(basicRequest.get(uri"$uri"))
 
       Then("The API subscription is returned")
-      val actualApiSubscription = Json.parse(response.body).as[Set[ApiIdentifier]]
+      val actualApiSubscription = Json.parse(response.body.value).as[Set[ApiIdentifier]]
       actualApiSubscription shouldBe Set(ApiIdentifier(context, version))
     }
 
@@ -521,13 +536,14 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val subscribeResponse = sendApplicationCommand(cmd, application)
 
       And("The subscription is created")
-      subscribeResponse.code shouldBe OK
+      subscribeResponse.code shouldBe StatusCode.Ok
 
       When("I fetch all API subscriptions")
-      val response = Http(s"$serviceUrl/application/subscriptions").asString
+      val uri      = s"$serviceUrl/application/subscriptions"
+      val response = http(basicRequest.get(uri"$uri"))
 
       Then("The result includes the new subscription")
-      val result = Json.parse(response.body).as[Seq[SubscriptionData]]
+      val result = Json.parse(response.body.value).as[Seq[SubscriptionData]]
       result should have size 1
 
       val subscribedApps = result.head.applications
@@ -550,7 +566,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val response = sendApplicationCommand(cmd, application)
 
       Then("A 200 is returned")
-      response.code shouldBe OK
+      response.code shouldBe StatusCode.Ok
 
       apiPlatformEventsStub.verifyApiSubscribedEventSent()
     }
@@ -574,7 +590,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val response = sendApplicationCommand(cmd, application)
 
       Then("A 200 is returned")
-      response.code shouldBe OK
+      response.code shouldBe StatusCode.Ok
 
       apiPlatformEventsStub.verifyApiUnsubscribedEventSent()
     }
@@ -597,11 +613,11 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       apiPlatformEventsStub.willReceiveChangeGrantLengthEvent()
 
       val subcmd   = ApplicationCommands.ChangeGrantLength("admin@example.com", instant, GrantLength.SIX_MONTHS)
-      val response = sendApplicationCommand(subcmd, application, Seq(AUTHORIZATION -> UUID.randomUUID.toString))
-      response.body.contains("\"newGrantLengthInDays\":180") shouldBe true
+      val response = sendApplicationCommand(subcmd, application, Seq(Header.authorization("Bearer", UUID.randomUUID.toString)))
+      response.body.value.contains("\"newGrantLengthInDays\":180") shouldBe true
 
       Then("A 200 is returned")
-      response.code shouldBe OK
+      response.code shouldBe StatusCode.Ok
 
       apiPlatformEventsStub.verifyGrantLengthChangedEventSent()
     }
@@ -623,11 +639,11 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       Given("I have updated the rate limit to GOLD")
       apiPlatformEventsStub.willReceiveChangeRateLimitEvent()
       val subcmd   = ApplicationCommands.ChangeRateLimitTier("admin@example.com", instant, RateLimitTier.GOLD)
-      val response = sendApplicationCommand(subcmd, application, Seq(AUTHORIZATION -> UUID.randomUUID.toString))
-      response.body.contains("\"rateLimitTier\":\"GOLD\"") shouldBe true
+      val response = sendApplicationCommand(subcmd, application, Seq(Header.authorization("Bearer", UUID.randomUUID.toString)))
+      response.body.value.contains("\"rateLimitTier\":\"GOLD\"") shouldBe true
 
       Then("A 200 is returned")
-      response.code shouldBe OK
+      response.code shouldBe StatusCode.Ok
 
       apiPlatformEventsStub.verifyRatelLimitChangedEventSent()
     }
@@ -640,21 +656,22 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
       val nameToCheck = "my invalid app name HMRC"
 
       val requestBody = Json.obj("applicationName" -> nameToCheck).toString
-      val result      = postData("/application/name/validate", requestBody)
+      val result      = sendJsonRequest("/application/name/validate", requestBody)
 
       Then("The response should be OK")
-      result.code shouldBe OK
+      result.code shouldBe StatusCode.Ok
 
       Then("The response should not contain any errors")
 
-      result.body shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false)).toString
+      result.body.value shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false)).toString
     }
   }
 
   private def fetchApplication(id: ApplicationId): Application = {
-    val fetchedResponse = Http(s"$serviceUrl/application/${id.value.toString}").asString
-    fetchedResponse.code shouldBe OK
-    Json.parse(fetchedResponse.body).as[Application]
+    val uri             = s"$serviceUrl/application/${id.value.toString}"
+    val fetchedResponse = http(basicRequest.get(uri"$uri"))
+    fetchedResponse.code shouldBe StatusCode.Ok
+    Json.parse(fetchedResponse.body.value).as[Application]
   }
 
   private def emptyApplicationRepository() = {
@@ -663,29 +680,30 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
 
   private def createApplication(appName: String = applicationName1, access: Access = standardAccess): Application = {
     awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
-    val createdResponse = postData("/application", applicationRequest(appName, access))
-    createdResponse.code shouldBe CREATED
-    Json.parse(createdResponse.body).as[Application]
+    val createdResponse = sendJsonRequest("/application", applicationRequest(appName, access))
+    createdResponse.code shouldBe StatusCode.Created
+    Json.parse(createdResponse.body.value).as[Application]
   }
 
   private def subscriptionExists(applicationId: ApplicationId, apiContext: ApiContext, apiVersion: ApiVersionNbr) = {
     subscriptionRepository.add(applicationId, new ApiIdentifier(apiContext, apiVersion))
   }
 
-  private def postData(path: String, data: String, method: String = "POST", extraHeaders: Seq[(String, String)] = Seq()): HttpResponse[String] = {
-    val connTimeoutMs = 5000
-    val readTimeoutMs = 10000
-    Http(s"$serviceUrl$path").postData(data).method(method)
-      .header("Content-Type", "application/json")
-      .headers(extraHeaders)
-      .timeout(connTimeoutMs, readTimeoutMs)
-      .asString
+  private def sendJsonRequest(path: String, data: String, extraHeaders: Seq[Header] = Seq.empty[Header], method: Method = Method.POST): Response[Either[String, String]] = {
+    val uri = s"$serviceUrl$path"
+    http(
+      basicRequest
+        .method(method, uri"$uri")
+        .contentType("application/json")
+        .headers(extraHeaders: _*)
+        .body(data)
+    )
   }
 
-  def sendApplicationCommand(cmd: ApplicationCommand, application: Application, extraHeaders: Seq[(String, String)] = Seq()): HttpResponse[String] = {
+  def sendApplicationCommand(cmd: ApplicationCommand, application: Application, extraHeaders: Seq[Header] = Seq()): Response[Either[String, String]] = {
     val request                                   = DispatchRequest(cmd, Set.empty)
     implicit val writer: OWrites[DispatchRequest] = Json.writes[DispatchRequest]
-    postData(s"/application/${application.id.value}/dispatch", Json.toJson(request).toString(), "PATCH", extraHeaders)
+    sendJsonRequest(s"/application/${application.id.value}/dispatch", Json.toJson(request).toString(), extraHeaders, Method.PATCH)
   }
 
   private def applicationRequest(name: String, access: Access) = {
@@ -708,5 +726,4 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with Collabora
        |]
        |}""".stripMargin.replaceAll("\n", "")
   }
-
 }
