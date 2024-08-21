@@ -44,7 +44,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, FixCollaboratorRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, Deleted}
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.db.{PaginatedApplicationData, StoredApplication}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, SubscriptionRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
@@ -260,14 +260,25 @@ class ApplicationService @Inject() (
       .map(application => Application(data = application))
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationResponse] = {
-    applicationRepository.searchApplications("applicationSearch")(applicationSearch).map { data =>
-      PaginatedApplicationResponse(
-        page = applicationSearch.pageNumber,
-        pageSize = applicationSearch.pageSize,
-        total = data.totals.foldLeft(0)(_ + _.total),
-        matching = data.matching.foldLeft(0)(_ + _.total),
-        applications = data.applications.map(application => Application(data = application))
-      )
+
+    def buildApplication(storedApplication: StoredApplication, stateHistory: Option[StateHistory]) = {
+      val partApp = Application(data = storedApplication)
+      partApp.copy(moreApplication = partApp.moreApplication.copy(lastActionActor = stateHistory.map(sh => ActorType.actorType(sh.actor)).getOrElse(ActorType.UNKNOWN)))
+    }
+
+    val applicationsResponse: Future[PaginatedApplicationData] = applicationRepository.searchApplications("applicationSearch")(applicationSearch)
+    val appHistory: Future[List[StateHistory]]                 = {
+      applicationsResponse.map(data => data.applications.map(app => app.id)).flatMap(ar => stateHistoryRepository.fetchDeletedByApplicationIds(ar))
+    }
+
+    applicationsResponse.zipWith(appHistory) {
+      case (data, appHistory) => PaginatedApplicationResponse(
+          page = applicationSearch.pageNumber,
+          pageSize = applicationSearch.pageSize,
+          total = data.totals.foldLeft(0)(_ + _.total),
+          matching = data.matching.foldLeft(0)(_ + _.total),
+          applications = data.applications.map(app => buildApplication(app, appHistory.find(ah => ah.applicationId == app.id)))
+        )
     }
   }
 

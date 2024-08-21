@@ -894,9 +894,12 @@ class ApplicationServiceSpec
 
   "Search" should {
     "return results based on provided ApplicationSearch" in new Setup {
-      val standardApplicationData: StoredApplication   = anApplicationData(ApplicationId.random, access = Access.Standard())
-      val privilegedApplicationData: StoredApplication = anApplicationData(ApplicationId.random, access = Access.Privileged())
-      val ropcApplicationData: StoredApplication       = anApplicationData(ApplicationId.random, access = Access.Ropc())
+      private def aHistory(appId: ApplicationId, state: State = State.DELETED): StateHistory = {
+        StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(State.TESTING), changedAt = instant)
+      }
+      val standardApplicationData: StoredApplication                                         = anApplicationData(ApplicationId.random, access = Access.Standard())
+      val privilegedApplicationData: StoredApplication                                       = anApplicationData(ApplicationId.random, access = Access.Privileged())
+      val ropcApplicationData: StoredApplication                                             = anApplicationData(ApplicationId.random, access = Access.Ropc())
 
       val search = ApplicationSearch(
         pageNumber = 2,
@@ -918,6 +921,8 @@ class ApplicationServiceSpec
           )
         )
       )
+      val histories = List(aHistory(standardApplicationData.id), aHistory(privilegedApplicationData.id), aHistory(ropcApplicationData.id))
+      StateHistoryRepoMock.FetchDeletedByApplicationIds.thenReturnWhen(List(standardApplicationData.id, privilegedApplicationData.id, ropcApplicationData.id))(histories: _*)
 
       val result: PaginatedApplicationResponse = await(underTest.searchApplications(search))
 
