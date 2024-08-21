@@ -894,12 +894,9 @@ class ApplicationServiceSpec
 
   "Search" should {
     "return results based on provided ApplicationSearch" in new Setup {
-      private def aHistory(appId: ApplicationId, state: State = State.DELETED): StateHistory = {
-        StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(State.TESTING), changedAt = instant)
-      }
-      val standardApplicationData: StoredApplication                                         = anApplicationData(ApplicationId.random, access = Access.Standard())
-      val privilegedApplicationData: StoredApplication                                       = anApplicationData(ApplicationId.random, access = Access.Privileged())
-      val ropcApplicationData: StoredApplication                                             = anApplicationData(ApplicationId.random, access = Access.Ropc())
+      val standardApplicationData: StoredApplication   = anApplicationData(ApplicationId.random, access = Access.Standard())
+      val privilegedApplicationData: StoredApplication = anApplicationData(ApplicationId.random, access = Access.Privileged())
+      val ropcApplicationData: StoredApplication       = anApplicationData(ApplicationId.random, access = Access.Ropc())
 
       val search = ApplicationSearch(
         pageNumber = 2,
@@ -984,5 +981,9 @@ class ApplicationServiceSpec
       loggedInUser.text,
       ApplicationId.random
     )
+  }
+
+  private def aHistory(appId: ApplicationId, state: State = State.DELETED): StateHistory = {
+    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(State.TESTING), changedAt = instant)
   }
 }

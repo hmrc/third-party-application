@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import org.mongodb.scala.model.Filters.{and, equal, in}
 import org.mongodb.scala.model.Indexes.{ascending, descending}
-import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions}
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
@@ -95,11 +95,10 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
   }
 
   def fetchDeletedByApplicationIds(applicationIds: List[ApplicationId]): Future[List[StateHistory]] = {
-    val query = Filters.and(
+    collection.find(and(
       in("applicationId", applicationIds.map(i => Codecs.toBson(i)): _*),
       equal("state", Codecs.toBson(State.DELETED.toString))
-    )
-    collection.find(query)
+    ))
       .toFuture()
       .map(x => x.toList)
   }
