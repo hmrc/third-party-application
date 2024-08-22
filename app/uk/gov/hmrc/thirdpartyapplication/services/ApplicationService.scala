@@ -219,12 +219,12 @@ class ApplicationService @Inject() (
     Future.sequence(apps.map(asExtendedResponse))
   }
 
-  def fetchAllForCollaborators(userIds: List[UserId]): Future[Set[Application]] ={
-   Future.sequence(
-     userIds.map(applicationRepository.fetchAllForUserId(_, false).map(_.toSet))
-   ).map(_.foldLeft(Set[StoredApplication]())(_ ++ _)).map {
-     _.map(application => Application(data = application))
-   }
+  def fetchAllForCollaborators(userIds: List[UserId]): Future[Set[Application]] = {
+    Future.sequence(
+      userIds.map(applicationRepository.fetchAllForUserId(_, false).map(_.toSet))
+    ).map(_.foldLeft(Set[StoredApplication]())(_ ++ _)).map {
+      _.map(application => Application(data = application))
+    }
   }
 
   def fetchAllForCollaborator(userId: UserId, includeDeleted: Boolean): Future[List[ExtendedApplicationResponse]] = {

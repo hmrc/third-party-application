@@ -697,16 +697,16 @@ class ApplicationServiceSpec
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
       val result = await(underTest.fetchAllForCollaborators(List(userId)))
-      result shouldBe Set(standardApplicationData,privilegedApplicationData,ropcApplicationData).map(app => Application(data = app))
+      result shouldBe Set(standardApplicationData, privilegedApplicationData, ropcApplicationData).map(app => Application(data = app))
     }
 
     "fetch all applications for two given collaborator user ids" in new Setup {
-      val userId1                                      = UserId.random
-      val userId2                                      = UserId.random
+      val userId1        = UserId.random
+      val userId2        = UserId.random
       val applicationId2 = ApplicationId.random
 
-      val standardApplicationData1: StoredApplication   = anApplicationData(applicationId, access = Access.Standard())
-      val standardApplicationData2: StoredApplication   = anApplicationData(applicationId2, access = Access.Standard())
+      val standardApplicationData1: StoredApplication = anApplicationData(applicationId, access = Access.Standard())
+      val standardApplicationData2: StoredApplication = anApplicationData(applicationId2, access = Access.Standard())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId1, false)(standardApplicationData1)
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId2, false)(standardApplicationData2)
@@ -716,12 +716,12 @@ class ApplicationServiceSpec
     }
 
     "deduplicate applications if more than one user belongs to the same application" in new Setup {
-      val userId1                                      = UserId.random
-      val userId2                                      = UserId.random
+      val userId1        = UserId.random
+      val userId2        = UserId.random
       val applicationId2 = ApplicationId.random
 
-      val standardApplicationData1: StoredApplication   = anApplicationData(applicationId, access = Access.Standard())
-      val standardApplicationData2: StoredApplication   = anApplicationData(applicationId2, access = Access.Standard())
+      val standardApplicationData1: StoredApplication = anApplicationData(applicationId, access = Access.Standard())
+      val standardApplicationData2: StoredApplication = anApplicationData(applicationId2, access = Access.Standard())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId1, false)(standardApplicationData1)
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId2, false)(standardApplicationData1, standardApplicationData2)
