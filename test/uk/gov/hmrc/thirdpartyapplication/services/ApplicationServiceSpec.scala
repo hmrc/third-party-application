@@ -697,7 +697,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
       val result = await(underTest.fetchAllForCollaborators(List(userId)))
-      result shouldBe Set(standardApplicationData, privilegedApplicationData, ropcApplicationData).map(app => Application(data = app))
+      result should contain theSameElementsAs List(standardApplicationData, privilegedApplicationData, ropcApplicationData).map(app => Application(data = app))
     }
 
     "fetch all applications for two given collaborator user ids" in new Setup {
@@ -712,7 +712,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId2, false)(standardApplicationData2)
 
       val result = await(underTest.fetchAllForCollaborators(List(userId1, userId2)))
-      result shouldBe Set(standardApplicationData1, standardApplicationData2).map(app => Application(data = app))
+      result should contain theSameElementsAs List(standardApplicationData1, standardApplicationData2).map(app => Application(data = app))
     }
 
     "deduplicate applications if more than one user belongs to the same application" in new Setup {
@@ -727,7 +727,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId2, false)(standardApplicationData1, standardApplicationData2)
 
       val result = await(underTest.fetchAllForCollaborators(List(userId1, userId2)))
-      result shouldBe Set(standardApplicationData1, standardApplicationData2).map(app => Application(data = app))
+      result should contain theSameElementsAs List(standardApplicationData1, standardApplicationData2).map(app => Application(data = app))
     }
   }
 

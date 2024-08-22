@@ -509,6 +509,35 @@ class ApplicationControllerSpec
     }
   }
 
+  "fetchAllForCollaborators" should {
+    val userId      = UserId.random
+    val requestBody = Json.obj("userIds" -> Json.arr(userId.value.toString()))
+    "succeed with a 200 when applications are found for the collaborator by user ids" in new Setup {
+
+      when(underTest.applicationService.fetchAllForCollaborators(List(userId)))
+        .thenReturn(successful(List(aNewApplicationResponse(access = Access.Standard()))))
+
+      status(underTest.fetchAllForCollaborators()(request.withBody(requestBody))) shouldBe OK
+    }
+
+    "succeed with a 200 when no applications are found for the collaborator by user ids" in new Setup {
+      when(underTest.applicationService.fetchAllForCollaborators(List(userId))).thenReturn(successful(Nil))
+
+      val result = underTest.fetchAllForCollaborators()(request.withBody(requestBody))
+
+      status(result) shouldBe OK
+      contentAsString(result) shouldBe "[]"
+    }
+
+    "fail with a 500 when an exception is thrown" in new Setup {
+      when(underTest.applicationService.fetchAllForCollaborators(List(userId))).thenReturn(failed(new RuntimeException("Expected test failure")))
+
+      val result = underTest.fetchAllForCollaborators()(request.withBody(requestBody))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+  }
+
   "fetchAllForCollaborator" should {
     val userId = UserId.random
 
