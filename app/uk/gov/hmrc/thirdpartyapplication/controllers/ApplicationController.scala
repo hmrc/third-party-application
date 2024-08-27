@@ -264,6 +264,12 @@ class ApplicationController @Inject() (
     ) recover recovery
   }
 
+  def fetchAllForCollaborators(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    withJsonBody[CollaboratorUserIds] { request =>
+      applicationService.fetchAllForCollaborators(request.userIds).map(apps => Ok(toJson(apps))) recover recovery
+    }
+  }
+
   def fetchAllForCollaborator(userId: UserId) = Action.async {
     applicationService.fetchAllForCollaborator(userId, false).map(apps => Ok(toJson(apps))) recover recovery
   }
