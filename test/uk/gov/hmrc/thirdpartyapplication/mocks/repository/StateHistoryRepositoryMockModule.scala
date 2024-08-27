@@ -85,6 +85,12 @@ trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatcher
       def thenFailWith(ex: Exception) =
         when(aMock.fetchByApplicationId(*[ApplicationId])).thenReturn(failed(ex))
     }
+
+    object FetchDeletedByApplicationIds {
+
+      def thenReturnWhen(applicationIds: List[ApplicationId])(values: StateHistory*) =
+        when(aMock.fetchDeletedByApplicationIds(eqTo(applicationIds))).thenReturn(successful(values.toList))
+    }
   }
 
   object StateHistoryRepoMock extends BaseStateHistoryRepoMock {

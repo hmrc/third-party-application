@@ -918,6 +918,8 @@ class ApplicationServiceSpec
           )
         )
       )
+      val histories = List(aHistory(standardApplicationData.id), aHistory(privilegedApplicationData.id), aHistory(ropcApplicationData.id))
+      StateHistoryRepoMock.FetchDeletedByApplicationIds.thenReturnWhen(List(standardApplicationData.id, privilegedApplicationData.id, ropcApplicationData.id))(histories: _*)
 
       val result: PaginatedApplicationResponse = await(underTest.searchApplications(search))
 
@@ -979,5 +981,9 @@ class ApplicationServiceSpec
       loggedInUser.text,
       ApplicationId.random
     )
+  }
+
+  private def aHistory(appId: ApplicationId, state: State = State.DELETED): StateHistory = {
+    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(State.TESTING), changedAt = instant)
   }
 }

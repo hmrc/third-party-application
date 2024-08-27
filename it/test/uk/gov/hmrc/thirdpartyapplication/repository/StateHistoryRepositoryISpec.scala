@@ -192,5 +192,66 @@ class StateHistoryRepositoryISpec
       savedStateHistories shouldBe List(stateHistory)
     }
   }
+  "fetchDeletedByApplicationIds" should {
+    "fetch a single deleted application" in {
+      val requesterEmail = "bill.badger@rupert.com".toLaxEmail
+      val appId          = ApplicationId.random
+      val ts             = instant
+      val actor: Actor   = Actors.AppCollaborator(requesterEmail)
 
+      val stateHistory = StateHistory(appId, State.DELETED, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
+
+      val result = await(repository.insert(stateHistory))
+      result shouldBe stateHistory
+
+      val retrieved = await(repository.fetchDeletedByApplicationIds(List(appId, ApplicationId.random)))
+      retrieved.size shouldBe 1
+      retrieved.head shouldBe stateHistory
+    }
+    "fetch multiple deleted applications" in {
+      val requesterEmail = "bill.badger@rupert.com".toLaxEmail
+      val appId          = ApplicationId.random
+      val appId2         = ApplicationId.random
+      val appId3         = ApplicationId.random
+      val ts             = instant
+      val actor: Actor   = Actors.AppCollaborator(requesterEmail)
+
+      val stateHistory  = StateHistory(appId, State.DELETED, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
+      val stateHistory2 = stateHistory.copy(applicationId = appId2)
+      val stateHistory3 = stateHistory.copy(applicationId = appId3)
+
+      await(repository.insert(stateHistory))
+      await(repository.insert(stateHistory2))
+      await(repository.insert(stateHistory3))
+
+      val retrieved = await(repository.fetchDeletedByApplicationIds(List(appId, appId2, appId3)))
+      retrieved.size shouldBe 3
+      retrieved should contain(stateHistory)
+      retrieved should contain(stateHistory2)
+      retrieved should contain(stateHistory3)
+    }
+
+    "fetch multiple deleted applications and none in other states" in {
+      val requesterEmail = "bill.badger@rupert.com".toLaxEmail
+      val appId          = ApplicationId.random
+      val appId2         = ApplicationId.random
+      val appId3         = ApplicationId.random
+      val ts             = instant
+      val actor: Actor   = Actors.AppCollaborator(requesterEmail)
+
+      val stateHistory  = StateHistory(appId, State.DELETED, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
+      val stateHistory2 = stateHistory.copy(applicationId = appId2)
+      val stateHistory3 = stateHistory.copy(applicationId = appId3, state = State.PENDING_GATEKEEPER_APPROVAL)
+
+      await(repository.insert(stateHistory))
+      await(repository.insert(stateHistory2))
+      await(repository.insert(stateHistory3))
+
+      val retrieved = await(repository.fetchDeletedByApplicationIds(List(appId, appId2, appId3)))
+      retrieved.size shouldBe 2
+      retrieved should contain(stateHistory)
+      retrieved should contain(stateHistory2)
+      retrieved should not contain stateHistory3
+    }
+  }
 }

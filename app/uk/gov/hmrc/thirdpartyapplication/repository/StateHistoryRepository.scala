@@ -20,7 +20,7 @@ import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import org.mongodb.scala.model.Filters.{and, equal}
+import org.mongodb.scala.model.Filters.{and, equal, in}
 import org.mongodb.scala.model.Indexes.{ascending, descending}
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
@@ -90,6 +90,15 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
 
   def fetchByApplicationId(applicationId: ApplicationId): Future[List[StateHistory]] = {
     collection.find(equal("applicationId", Codecs.toBson(applicationId)))
+      .toFuture()
+      .map(x => x.toList)
+  }
+
+  def fetchDeletedByApplicationIds(applicationIds: List[ApplicationId]): Future[List[StateHistory]] = {
+    collection.find(and(
+      in("applicationId", applicationIds.map(i => Codecs.toBson(i)): _*),
+      equal("state", Codecs.toBson(State.DELETED.toString))
+    ))
       .toFuture()
       .map(x => x.toList)
   }
