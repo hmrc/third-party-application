@@ -65,6 +65,14 @@ class ApplicationSearchSpec extends HmrcSpec {
       searchObject.filters should contain(PendingGatekeeperCheck)
     }
 
+    "correctly parse Application Status blocked filter" in {
+      val request = FakeRequest("GET", "/applications?status=BLOCKED")
+
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      searchObject.filters should contain(Blocked)
+    }
+
     "correctly parse Access Type filter" in {
       val request = FakeRequest("GET", "/applications?accessType=PRIVILEGED")
 

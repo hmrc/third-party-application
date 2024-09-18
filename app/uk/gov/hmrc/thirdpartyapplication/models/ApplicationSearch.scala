@@ -120,6 +120,7 @@ case object PendingSubmitterVerification             extends StatusFilter
 case object Active                                   extends StatusFilter
 case object WasDeleted                               extends StatusFilter
 case object ExcludingDeleted                         extends StatusFilter
+case object Blocked                                  extends StatusFilter
 
 case object ApplicationStatusFilter extends StatusFilter {
 
@@ -132,6 +133,7 @@ case object ApplicationStatusFilter extends StatusFilter {
       case "ACTIVE"                                      => Some(Active)
       case "DELETED"                                     => Some(WasDeleted)
       case "EXCLUDING_DELETED"                           => Some(ExcludingDeleted)
+      case "BLOCKED"                                     => Some(Blocked)
       case _                                             => None
     }
   }
