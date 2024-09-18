@@ -24,7 +24,7 @@ import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import com.typesafe.config.ConfigFactory
 import org.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.bson.{BsonArray, BsonInt32, BsonString, Document}
+import org.mongodb.scala.bson.{BsonArray, BsonBoolean, BsonInt32, BsonString, Document}
 import org.mongodb.scala.model
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
@@ -598,9 +598,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   // scalastyle:off cyclomatic.complexity
   private def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter, applicationSearch: ApplicationSearch): Bson = {
 
+    def applicationBlocked(): Bson = matches(equal("blocked", BsonBoolean.apply(true)))
+
     def applicationStatusMatch(states: State*): Bson = in("state.name", states.map(_.toString))
 
-    def applicationStatusNotEqual(state: State): Bson = matches(notEqual("state.name", State.DELETED.toString()))
+    def applicationStatusNotEqual(state: State): Bson = matches(notEqual("state.name", state.toString()))
 
     def accessTypeMatch(accessType: AccessType): Bson = matches(equal("access.accessType", Codecs.toBson(accessType)))
 
@@ -640,6 +642,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       case Active                                   => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
       case WasDeleted                               => applicationStatusMatch(State.DELETED)
       case ExcludingDeleted                         => applicationStatusNotEqual(State.DELETED)
+      case Blocked                                  => applicationBlocked()
 
       // Access Type
       case StandardAccess   => accessTypeMatch(AccessType.STANDARD)
