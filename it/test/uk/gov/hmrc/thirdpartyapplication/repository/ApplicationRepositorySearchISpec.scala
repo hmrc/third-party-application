@@ -273,6 +273,7 @@ class ApplicationRepositorySearchISpec
       result.matching.head.total mustBe 1
       result.applications.size mustBe 1
       result.applications.head.id mustBe ropcApplication.id
+      result.applications.head.blocked mustBe false
     }
 
     "return applications based on blocked filter" in {
@@ -298,6 +299,7 @@ class ApplicationRepositorySearchISpec
       result.matching.head.total mustBe 1
       result.applications.size mustBe 1
       result.applications.head.id mustBe blockedApplication.id
+      result.applications.head.blocked mustBe true
     }
 
     "return applications with no API subscriptions" in {

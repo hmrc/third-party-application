@@ -702,6 +702,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           "refreshTokensAvailableFor",
           "rateLimitTier",
           "environment",
+          "blocked",
           "allowAutoDelete"
         )
       ))
