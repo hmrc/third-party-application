@@ -598,7 +598,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   // scalastyle:off cyclomatic.complexity
   private def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter, applicationSearch: ApplicationSearch): Bson = {
 
-    def applicationBlocked(): Bson = matches(equal("blocked", BsonBoolean.apply(true)))
+    def applicationBlocked(): Bson = matches(and(equal("blocked", BsonBoolean.apply(true)), notEqual("state.name", State.DELETED.toString)))
 
     def applicationStatusMatch(states: State*): Bson = in("state.name", states.map(_.toString))
 
