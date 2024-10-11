@@ -277,16 +277,23 @@ class ApplicationRepositorySearchISpec
     }
 
     "return applications based on blocked filter" in {
-      val standardApplication = anApplicationDataForTest(
+      val standardApplication          = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
       )
-      val blockedApplication  = anApplicationDataForTest(
+      val blockedApplication           = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
       ).copy(blocked = true)
+      val deletedAndBlockedApplication = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId,
+        state = deletedState("Dave")
+      ).copy(blocked = true)
+
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(blockedApplication))
+      await(applicationRepository.save(deletedAndBlockedApplication))
 
       val applicationSearch = new ApplicationSearch(filters = List(Blocked))
 
@@ -294,7 +301,7 @@ class ApplicationRepositorySearchISpec
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
       result.totals.size mustBe 1
-      result.totals.head.total mustBe 2
+      result.totals.head.total mustBe 3
       result.matching.size mustBe 1
       result.matching.head.total mustBe 1
       result.applications.size mustBe 1
