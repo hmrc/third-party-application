@@ -100,9 +100,9 @@ trait ControllerTestData extends CollaboratorTestData with FixedClock {
       app.rateLimitTier,
       app.checkInformation,
       app.blocked,
-      app.trusted,
       UUID.randomUUID().toString,
-      List.empty
+      List.empty,
+      allowAutoDelete = app.moreApplication.allowAutoDelete
     )
   }
 }

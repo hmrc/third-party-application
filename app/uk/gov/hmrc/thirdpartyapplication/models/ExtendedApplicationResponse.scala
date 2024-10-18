@@ -42,10 +42,10 @@ case class ExtendedApplicationResponse(
     rateLimitTier: RateLimitTier = RateLimitTier.BRONZE,
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,
-    trusted: Boolean = false,
     serverToken: String,
     subscriptions: List[ApiIdentifier],
-    ipAllowlist: IpAllowlist = IpAllowlist()
+    ipAllowlist: IpAllowlist = IpAllowlist(),
+    allowAutoDelete: Boolean
   )
 
 object ExtendedApplicationResponse {
@@ -72,7 +72,8 @@ object ExtendedApplicationResponse {
       data.blocked,
       serverToken = data.tokens.production.accessToken,
       subscriptions = subscriptions,
-      ipAllowlist = data.ipAllowlist
+      ipAllowlist = data.ipAllowlist,
+      allowAutoDelete = data.allowAutoDelete
     )
   }
 }
