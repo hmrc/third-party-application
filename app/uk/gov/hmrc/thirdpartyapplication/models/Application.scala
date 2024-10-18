@@ -43,6 +43,7 @@ case class Application(
     rateLimitTier: RateLimitTier = RateLimitTier.BRONZE,
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,
+    trusted: Boolean = false,
     ipAllowlist: IpAllowlist = IpAllowlist(),
     moreApplication: MoreApplication = MoreApplication(true)
   )
