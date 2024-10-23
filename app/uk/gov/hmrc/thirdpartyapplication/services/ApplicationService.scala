@@ -50,6 +50,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, MetricsTimer}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
 
 @Singleton
 class ApplicationService @Inject() (
@@ -119,7 +120,7 @@ class ApplicationService @Inject() (
       auditFunction: StoredApplication => Future[AuditResult]
     )(implicit hc: HeaderCarrier
     ): Future[ApplicationStateChange] = {
-    logger.info(s"Deleting application ${applicationId.value}")
+    logger.info(s"Deleting application ${applicationId}")
 
     def deleteSubscriptions(app: StoredApplication): Future[HasSucceeded] = {
       def deleteSubscription(subscription: ApiIdentifier) = {
@@ -264,9 +265,9 @@ class ApplicationService @Inject() (
   import cats.data.OptionT
   import cats.implicits._
 
-  def fetch(applicationId: ApplicationId): OptionT[Future, Application] =
+  def fetch(applicationId: ApplicationId): OptionT[Future, ApplicationWithCollaborators] =
     OptionT(applicationRepository.fetch(applicationId))
-      .map(application => Application(data = application))
+      .map(application => StoredApplication.asApplication(application))
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationResponse] = {
 
@@ -372,7 +373,7 @@ class ApplicationService @Inject() (
     )
 
   private def fetchApp(applicationId: ApplicationId) = {
-    lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
+    lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId}")
     applicationRepository.fetch(applicationId).flatMap {
       case None      => failed(notFoundException)
       case Some(app) => successful(app)

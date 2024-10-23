@@ -192,7 +192,7 @@ class GatekeeperServiceSpec
     }
 
     "return applications when there are no matching subscriptions" in new Setup {
-      private val appWithSubs: ApplicationWithSubscriptions = ApplicationWithSubscriptions(id = ApplicationId.random, name = "name", lastAccess = None, apiIdentifiers = Set())
+      private val appWithSubs: GatekeeperAppSubsResponse = GatekeeperAppSubsResponse(id = ApplicationId.random, name = "name", lastAccess = None, apiIdentifiers = Set())
       ApplicationRepoMock.GetAppsWithSubscriptions.thenReturn(appWithSubs)
 
       val result: List[ApplicationWithSubscriptionsResponse] = await(underTest.fetchAllWithSubscriptions())

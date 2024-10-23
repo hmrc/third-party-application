@@ -77,7 +77,7 @@ class SubscriptionService @Inject() (
   private def fetchApp(applicationId: ApplicationId) = {
     applicationRepository.fetch(applicationId).flatMap {
       case Some(app) => successful(app)
-      case _         => failed(new NotFoundException(s"Application not found for id: ${applicationId.value}"))
+      case _         => failed(new NotFoundException(s"Application not found for id: ${applicationId}"))
     }
   }
 }

@@ -33,4 +33,4 @@ object ApplicationWithUpliftRequest {
 
 }
 
-case class ApplicationWithUpliftRequest(id: ApplicationId, name: String, submittedOn: Instant, state: State)
+case class ApplicationWithUpliftRequest(id: ApplicationId, name: ApplicationName, submittedOn: Instant, state: State)

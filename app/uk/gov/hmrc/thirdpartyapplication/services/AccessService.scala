@@ -40,7 +40,7 @@ class AccessService @Inject() (applicationRepository: ApplicationRepository, aud
   private def fetchApp(applicationId: ApplicationId): Future[StoredApplication] =
     applicationRepository.fetch(applicationId).flatMap {
       case Some(applicationData) => successful(applicationData)
-      case None                  => failed(new NotFoundException(s"application not found for id: ${applicationId.value}"))
+      case None                  => failed(new NotFoundException(s"application not found for id: ${applicationId}"))
     }
 
   private def getPrivilegedAccess(applicationData: StoredApplication): Access.Privileged =

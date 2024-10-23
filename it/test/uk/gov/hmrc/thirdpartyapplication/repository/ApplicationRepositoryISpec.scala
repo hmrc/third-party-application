@@ -1228,13 +1228,13 @@ class ApplicationRepositoryISpec
       )
 
       val expectedResult = List(
-        ApplicationWithSubscriptions(
+        GatekeeperAppSubsResponse(
           application1.id,
           application1.name,
           application1.lastAccess,
           Set(ApiIdentifier(ApiContext(api1), ApiVersionNbr(api1Version)), ApiIdentifier(ApiContext(api2), ApiVersionNbr(api2Version)))
         ),
-        ApplicationWithSubscriptions(
+        GatekeeperAppSubsResponse(
           application2.id,
           application2.name,
           application2.lastAccess,

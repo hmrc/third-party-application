@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLength
 
 case class StoredApplication(
     id: ApplicationId,
-    name: String,
+    name: ApplicationName,
     normalisedName: String,
     collaborators: Set[Collaborator],
     description: Option[String] = None,
@@ -46,7 +46,7 @@ case class StoredApplication(
     blocked: Boolean = false,
     ipAllowlist: IpAllowlist = IpAllowlist(),
     allowAutoDelete: Boolean = true
-  ) {
+  ) extends HasState {
   lazy val admins = collaborators.filter(_.isAdministrator)
 
   lazy val sellResellOrDistribute = access match {
@@ -58,18 +58,35 @@ case class StoredApplication(
     case Access.Standard(_, _, _, _, _, Some(submissionData)) => Some(submissionData)
     case _                                                    => None
   }
-
-  def isInTesting                                                      = state.isInTesting
-  def isPendingResponsibleIndividualVerification                       = state.isPendingResponsibleIndividualVerification
-  def isPendingGatekeeperApproval                                      = state.isPendingGatekeeperApproval
-  def isPendingRequesterVerification                                   = state.isPendingRequesterVerification
-  def isInPreProductionOrProduction                                    = state.isInPreProductionOrProduction
-  def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification = state.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification
-  def isInProduction                                                   = state.isInProduction
-  def isDeleted                                                        = state.isDeleted
 }
 
 object StoredApplication {
+
+    def asApplication(data: StoredApplication): ApplicationWithCollaborators = {
+      ApplicationWithCollaborators(
+        CoreApplication(
+          data.id,
+          data.tokens.production.clientId,
+          data.wso2ApplicationName,
+          data.name,
+          Environment.unsafeApply(data.environment),
+          data.description,
+          data.createdOn,
+          data.lastAccess,
+          GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
+          data.tokens.production.lastAccessTokenUsage,
+          data.access,
+          data.state,
+          data.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
+          data.checkInformation,
+          data.blocked,
+          ipAllowlist = data.ipAllowlist,
+          allowAutoDelete = data.allowAutoDelete,
+          lastActionActor = ActorType.UNKNOWN
+        ),
+        data.collaborators,
+      )
+  }
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
@@ -101,7 +118,7 @@ object StoredApplication {
 
     StoredApplication(
       ApplicationId.random,
-      name.value,
+      name,
       name.value.toLowerCase,
       collaborators,
       createApplicationRequest.description.filterNot(_ => environment == Environment.PRODUCTION),

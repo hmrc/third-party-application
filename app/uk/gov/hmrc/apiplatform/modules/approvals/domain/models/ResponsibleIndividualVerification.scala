@@ -25,6 +25,7 @@ import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ResponsibleIndividual, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, ResponsibleIndividualVerificationState}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 
 sealed trait ResponsibleIndividualVerification {
   def id: ResponsibleIndividualVerificationId
@@ -58,7 +59,7 @@ case class ResponsibleIndividualToUVerification(
     applicationId: ApplicationId,
     submissionId: SubmissionId,
     submissionInstance: Int,
-    applicationName: String,
+    applicationName: ApplicationName,
     createdOn: Instant = Instant.now(),
     state: ResponsibleIndividualVerificationState = INITIAL
   ) extends ResponsibleIndividualVerification
@@ -68,7 +69,7 @@ case class ResponsibleIndividualTouUpliftVerification(
     applicationId: ApplicationId,
     submissionId: SubmissionId,
     submissionInstance: Int,
-    applicationName: String,
+    applicationName: ApplicationName,
     createdOn: Instant = Instant.now(),
     requestingAdminName: String,
     requestingAdminEmail: LaxEmailAddress,
@@ -80,7 +81,7 @@ case class ResponsibleIndividualUpdateVerification(
     applicationId: ApplicationId,
     submissionId: SubmissionId,
     submissionInstance: Int,
-    applicationName: String,
+    applicationName: ApplicationName,
     createdOn: Instant = Instant.now(),
     responsibleIndividual: ResponsibleIndividual,
     requestingAdminName: String,

@@ -39,10 +39,10 @@ trait JsonErrorResponse {
     )
 
   def applicationNotFound(applicationId: ApplicationId) =
-    NotFound(asBody("APPLICATION_NOT_FOUND", s"Application ${applicationId.value} doesn't exist"))
+    NotFound(asBody("APPLICATION_NOT_FOUND", s"Application ${applicationId} doesn't exist"))
 
   def submissionNotFound(applicationId: ApplicationId) =
-    NotFound(asBody("SUBMISSION_NOT_FOUND", s"No submission found for application ${applicationId.value}"))
+    NotFound(asBody("SUBMISSION_NOT_FOUND", s"No submission found for application ${applicationId}"))
 
   def applicationInIncorrectState(applicationId: ApplicationId, state: String) =
     PreconditionFailed(asBody("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state #'${state}'"))

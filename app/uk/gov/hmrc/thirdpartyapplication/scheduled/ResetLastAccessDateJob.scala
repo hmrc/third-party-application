@@ -31,6 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 
 class ResetLastAccessDateJob @Inject() (
     resetLastAccessDateJobLockService: ResetLastAccessDateJobLockService,
@@ -56,11 +57,11 @@ class ResetLastAccessDateJob @Inject() (
 
   def updateLastAccessDate(earliestLastAccessDate: LocalDate, dryRun: Boolean): StoredApplication => Unit = {
 
-    def updateApplicationRecord(applicationId: ApplicationId, applicationName: String) = {
+    def updateApplicationRecord(applicationId: ApplicationId, applicationName: ApplicationName) = {
       if (dryRun) {
-        logger.info(s"[ResetLastAccessDateJob (Dry Run)]: Application [$applicationName (${applicationId.value})] would have had lastAccess set to [$earliestLastAccessDate]")
+        logger.info(s"[ResetLastAccessDateJob (Dry Run)]: Application [$applicationName (${applicationId})] would have had lastAccess set to [$earliestLastAccessDate]")
       } else {
-        logger.info(s"[ResetLastAccessDateJob]: Setting lastAccess of application [$applicationName (${applicationId.value})] to [$earliestLastAccessDate]")
+        logger.info(s"[ResetLastAccessDateJob]: Setting lastAccess of application [$applicationName (${applicationId})] to [$earliestLastAccessDate]")
         applicationRepository.updateApplication(applicationId, Updates.set("lastAccess", Codecs.toBson(earliestLastAccessDate.asInstant)))
       }
     }

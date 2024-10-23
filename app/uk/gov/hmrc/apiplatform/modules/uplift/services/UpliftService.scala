@@ -55,7 +55,7 @@ class UpliftService @Inject() (
     def findLatestUpliftRequester(applicationId: ApplicationId): Future[String] =
       for {
         history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL)
-        state    = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId.value}"))
+        state    = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId}"))
       } yield state.actor match {
         case Actors.Unknown                => "Unknown"
         case Actors.AppCollaborator(email) => email.text

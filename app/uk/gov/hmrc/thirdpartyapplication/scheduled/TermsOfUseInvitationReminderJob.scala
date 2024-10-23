@@ -37,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationState}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, TermsOfUseInvitationRepository}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 
 @Singleton
 class TermsOfUseInvitationReminderJob @Inject() (
@@ -98,9 +99,9 @@ class TermsOfUseInvitationReminderJob @Inject() (
     (
       for {
         app       <- E.fromOptionF(applicationRepository.fetch(invite.applicationId), s"Couldn't find application with id=${invite.applicationId}")
-        _         <- E.cond(!app.state.isDeleted, (), s"The application ${invite.applicationId} has been deleted")
+        _         <- E.cond(!app.isDeleted, (), s"The application ${invite.applicationId} has been deleted")
         recipients = getRecipients(app)
-        sent      <- E.liftF(emailConnector.sendNewTermsOfUseInvitation(invite.dueBy, app.name, recipients))
+        sent      <- E.liftF(emailConnector.sendNewTermsOfUseInvitation(invite.dueBy, ApplicationName(app.name), recipients))
         _         <- E.liftF(termsOfUseInvitationRepository.updateReminderSent(invite.applicationId))
       } yield HasSucceeded
     ).value

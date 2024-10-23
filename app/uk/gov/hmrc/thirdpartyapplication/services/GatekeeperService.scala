@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.models.db.GatekeeperAppSubsResponse
 
 @Singleton
 class GatekeeperService @Inject() (
@@ -46,9 +47,9 @@ class GatekeeperService @Inject() (
   ) extends ApplicationLogger with ClockNow {
 
   def fetchNonTestingAppsWithSubmittedDate(): Future[List[ApplicationWithUpliftRequest]] = {
-    def appError(applicationId: ApplicationId) = new InconsistentDataState(s"App not found for id: ${applicationId.value}")
+    def appError(applicationId: ApplicationId) = new InconsistentDataState(s"App not found for id: ${applicationId}")
 
-    def historyError(applicationId: ApplicationId) = new InconsistentDataState(s"History not found for id: ${applicationId.value}")
+    def historyError(applicationId: ApplicationId) = new InconsistentDataState(s"History not found for id: ${applicationId}")
 
     def latestUpliftRequestState(histories: List[StateHistory]) = {
       for ((id, history) <- histories.groupBy(_.applicationId))
@@ -98,14 +99,12 @@ class GatekeeperService @Inject() (
 
   }
 
-  def fetchAllWithSubscriptions(): Future[List[ApplicationWithSubscriptionsResponse]] = {
-    applicationRepository.getAppsWithSubscriptions map {
-      _.map(application => ApplicationWithSubscriptionsResponse(application))
-    }
+  def fetchAllWithSubscriptions(): Future[List[GatekeeperAppSubsResponse]] = {
+    applicationRepository.getAppsWithSubscriptions
   }
 
   private def fetchApp(applicationId: ApplicationId): Future[StoredApplication] = {
-    lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
+    lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId}")
     applicationRepository.fetch(applicationId).flatMap {
       case None      => Future.failed(notFoundException)
       case Some(app) => Future.successful(app)

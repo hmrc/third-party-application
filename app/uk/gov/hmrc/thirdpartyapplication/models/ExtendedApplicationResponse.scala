@@ -27,7 +27,7 @@ case class ExtendedApplicationResponse(
     id: ApplicationId,
     clientId: ClientId,
     gatewayId: String,
-    name: String,
+    name: ApplicationName,
     deployedTo: String,
     description: Option[String] = None,
     collaborators: Set[Collaborator],

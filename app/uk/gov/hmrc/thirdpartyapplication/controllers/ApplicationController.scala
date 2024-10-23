@@ -308,7 +308,7 @@ class ApplicationController @Inject() (
     val api = ApiIdentifier(context, version)
     subscriptionService.isSubscribed(applicationId, api) map {
       case true  => Ok(toJson(api)).withHeaders(CACHE_CONTROL -> s"max-age=$subscriptionCacheExpiry")
-      case false => NotFound(JsErrorResponse(SUBSCRIPTION_NOT_FOUND, s"Application ${applicationId.value} is not subscribed to $context $version"))
+      case false => NotFound(JsErrorResponse(SUBSCRIPTION_NOT_FOUND, s"Application ${applicationId} is not subscribed to $context $version"))
     } recover recovery
   }
 
@@ -324,7 +324,7 @@ class ApplicationController @Inject() (
     (
       for {
         app <- ET.fromOptionF(applicationService.fetch(id).value, handleNotFound("No application was found"))
-        _   <- ET.cond(authControlConfig.canDeleteApplications || request.matchesAuthorisationKey || !app.state.isInPreProductionOrProduction, app, badRequest)
+        _   <- ET.cond(authControlConfig.canDeleteApplications || request.matchesAuthorisationKey || !app.isInPreProductionOrProduction, app, badRequest)
         _   <- ET.liftF(applicationService.deleteApplication(id, None, audit))
       } yield NoContent
     )

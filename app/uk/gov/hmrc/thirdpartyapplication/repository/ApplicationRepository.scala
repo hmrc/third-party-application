@@ -119,7 +119,7 @@ object ApplicationRepository {
     // Non-standard format compared to companion object
     val readStoredApplication: Reads[StoredApplication] = (
       (JsPath \ "id").read[ApplicationId] and
-        (JsPath \ "name").read[String] and
+        (JsPath \ "name").read[ApplicationName] and
         (JsPath \ "normalisedName").read[String] and
         (JsPath \ "collaborators").read[Set[Collaborator]] and
         (JsPath \ "description").readNullable[String] and
@@ -143,7 +143,6 @@ object ApplicationRepository {
     implicit val formatStoredApplication: OFormat[StoredApplication] = OFormat(readStoredApplication, Json.writes[StoredApplication])
 
     implicit val formatApplicationWithStateHistory: OFormat[ApplicationWithStateHistory]        = Json.format[ApplicationWithStateHistory]
-    implicit val readsApplicationWithSubscriptions: Reads[ApplicationWithSubscriptions]         = Json.reads[ApplicationWithSubscriptions]
     implicit val readsApplicationWithSubscriptionCount: Reads[ApplicationWithSubscriptionCount] = Json.reads[ApplicationWithSubscriptionCount]
 
     implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
@@ -948,7 +947,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
-  def getAppsWithSubscriptions: Future[List[ApplicationWithSubscriptions]] = {
+  def getAppsWithSubscriptions: Future[List[GatekeeperAppSubsResponse]] = {
+    implicit val readsGatekeeperAppSubsResponse: Reads[GatekeeperAppSubsResponse]         = Json.reads[GatekeeperAppSubsResponse]
+
     timeFuture("Applications with Subscription", "application.repository.getAppsWithSubscriptions") {
       val pipeline = Seq(
         lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis"),
@@ -963,7 +964,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
 
       collection.aggregate[BsonValue](pipeline)
-        .map(Codecs.fromBson[ApplicationWithSubscriptions])
+        .map(Codecs.fromBson[GatekeeperAppSubsResponse])
         .toFuture()
         .map(_.toList)
     }
