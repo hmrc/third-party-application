@@ -23,7 +23,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Environment, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, ValidatedApplicationName}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, State, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationName
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -40,15 +40,15 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val oldName   = app.name
-    val newName   = "New app name"
+    val newName   = ApplicationName("New app name")
     val requester = "requester"
 
     val userId = idOf(anAdminEmail)
 
-    val newApp = app.copy(name = newName, normalisedName = newName.toLowerCase())
+    val newApp = app.copy(name = newName, normalisedName = newName.value.toLowerCase())
 
     val timestamp = FixedClock.instant
-    val update    = ChangeSandboxApplicationName(developerActor, instant, ValidatedApplicationName(newName).get)
+    val update    = ChangeSandboxApplicationName(developerActor, instant, ValidatedApplicationName(newName.value).get)
 
     val underTest = new ChangeSandboxApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
@@ -64,8 +64,8 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            aNewName shouldBe newName
-            anOldName shouldBe oldName
+            aNewName shouldBe newName.value
+            anOldName shouldBe oldName.value
             anOldName should not be aNewName
         }
       }

@@ -948,7 +948,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     )
 
   def getAppsWithSubscriptions: Future[List[GatekeeperAppSubsResponse]] = {
-    implicit val readsGatekeeperAppSubsResponse: Reads[GatekeeperAppSubsResponse]         = Json.reads[GatekeeperAppSubsResponse]
+    implicit val readsGatekeeperAppSubsResponse: Reads[GatekeeperAppSubsResponse] = Json.reads[GatekeeperAppSubsResponse]
 
     timeFuture("Applications with Subscription", "application.repository.getAppsWithSubscriptions") {
       val pipeline = Seq(

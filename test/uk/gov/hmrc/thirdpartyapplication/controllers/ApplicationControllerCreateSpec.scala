@@ -32,7 +32,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, Collaborator, GrantLength, RedirectUri}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
@@ -48,7 +48,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.{Application, _}
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, UpliftRequestSamples}
@@ -57,6 +57,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks
     with UpliftRequestSamples
     with SubmissionsTestData
+    with ApplicationWithCollaboratorsFixtures
     with CollaboratorTestData {
 
   import play.api.test.Helpers
@@ -72,10 +73,9 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "dev@example.com".developer()
   )
 
-  private val standardAccess   =
+  private val myStandardAccess   =
     Access.Standard(List("https://example.com/redirect") map (RedirectUri.unsafeApply(_)), Some("https://example.com/terms"), Some("https://example.com/privacy"))
-  private val privilegedAccess = Access.Privileged(scopes = Set("scope1"))
-  private val ropcAccess       = Access.Ropc()
+  private val myPrivilegedAccess = Access.Privileged(scopes = Set("scope1"))
 
   trait Setup
       extends SubmissionsServiceMockModule
@@ -112,19 +112,19 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   }
 
   "Create" should {
-    val standardApplicationRequest   = aCreateApplicationRequestV2(StandardAccessDataToCopy(standardAccess.redirectUris))
-    val standardApplicationRequestV1 = aCreateApplicationRequestV1(standardAccess)
-    val privilegedApplicationRequest = aCreateApplicationRequestV1(privilegedAccess)
+    val standardApplicationRequest   = aCreateApplicationRequestV2(StandardAccessDataToCopy(myStandardAccess.redirectUris))
+    val standardApplicationRequestV1 = aCreateApplicationRequestV1(myStandardAccess)
+    val privilegedApplicationRequest = aCreateApplicationRequestV1(myPrivilegedAccess)
     val ropcApplicationRequest       = aCreateApplicationRequestV1(ropcAccess)
 
     val standardApplicationResponse   = CreateApplicationResponse(aNewApplicationResponse())
     val totp                          = CreateApplicationResponse.TotpSecret("pTOTP")
-    val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(privilegedAccess), Some(totp))
+    val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(myPrivilegedAccess), Some(totp))
     val ropcApplicationResponse       = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
     "succeed with a 201 (Created) for a valid Access.Standard application request when service responds successfully" in new Setup {
       ApplicationServiceMock.Create.onRequestReturn(standardApplicationRequest)(standardApplicationResponse)
-      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
@@ -136,7 +136,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
     "succeed with a 201 (Created) for a valid Access.Standard application request when service responds successfully to legacy uplift" in new Setup {
       ApplicationServiceMock.Create.onRequestReturn(standardApplicationRequestV1)(standardApplicationResponse)
-      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
 
       val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequestV1)))
 
@@ -147,7 +147,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "succeed with a 201 (Created) for a valid Access.Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
       ApplicationServiceMock.Create.onRequestReturn(privilegedApplicationRequest)(privilegedApplicationResponse)
-      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
@@ -161,7 +161,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "succeed with a 201 (Created) for a valid ROPC application request when gatekeeper is logged in and service responds successfully" in new Setup {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
       ApplicationServiceMock.Create.onRequestReturn(ropcApplicationRequest)(ropcApplicationResponse)
-      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
@@ -177,7 +177,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       val applicationRequestWithOneSubscription = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
 
       ApplicationServiceMock.Create.onRequestReturn(applicationRequestWithOneSubscription)(standardApplicationResponse)
-      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *[ApplicationName], *, *)(*)).thenReturn(successful(
         HasSucceeded
       ))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
@@ -206,7 +206,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
       apis.map(api =>
-        when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
       )
 
       val result = underTest.create()(request.withBody(Json.toJson(applicationRequestWithTwoSubscriptions)))
@@ -366,25 +366,25 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
   }
 
-  private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
-    val grantLength = GrantLength.EIGHTEEN_MONTHS
-    new Application(
-      ApplicationId.random,
-      ClientId("clientId"),
-      "gatewayId",
-      "My Application",
-      environment.toString,
-      Some("Description"),
-      collaborators,
-      instant,
-      Some(instant),
-      grantLength,
-      None,
-      standardAccess.redirectUris,
-      standardAccess.termsAndConditionsUrl,
-      standardAccess.privacyPolicyUrl,
-      access
-    )
+  private def aNewApplicationResponse(access: Access = myStandardAccess, environment: Environment = Environment.PRODUCTION): ApplicationWithCollaborators = {
+    standardApp.withAccess(access).withEnvironment(environment)
+    //   CoreApplication
+    //   ApplicationId.random,
+    //   ClientId("clientId"),
+    //   "gatewayId",
+    //   ApplicationName("My Application"),
+    //   environment.toString,
+    //   Some("Description"),
+    //   collaborators,
+    //   instant,
+    //   Some(instant),
+    //   grantLength,
+    //   None,
+    //   standardAccess.redirectUris,
+    //   standardAccess.termsAndConditionsUrl,
+    //   standardAccess.privacyPolicyUrl,
+    //   access
+    // )
   }
 
   private def aCreateApplicationRequestV1(access: Access) = CreateApplicationRequestV1(

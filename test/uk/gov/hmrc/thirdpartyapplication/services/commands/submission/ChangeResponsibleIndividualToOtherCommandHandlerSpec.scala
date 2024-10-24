@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, State}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations, _}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
@@ -88,7 +88,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       appId,
       submission.id,
       submission.latestInstance.index,
-      "App Name",
+      ApplicationName("App Name"),
       instant,
       ResponsibleIndividualVerificationState.INITIAL
     )
@@ -98,7 +98,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       appId,
       submission.id,
       submission.latestInstance.index,
-      "App Name",
+      ApplicationName("App Name"),
       instant,
       requesterName,
       requesterEmail,
@@ -110,7 +110,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       appId,
       submission.id,
       submission.latestInstance.index,
-      "App Name",
+      ApplicationName("App Name"),
       instant,
       newResponsibleIndividual,
       requesterName,
@@ -317,7 +317,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
         ApplicationId.random,
         submission.id,
         submission.latestInstance.index,
-        "App Name",
+        ApplicationName("App Name"),
         instant,
         ResponsibleIndividualVerificationState.INITIAL
       )

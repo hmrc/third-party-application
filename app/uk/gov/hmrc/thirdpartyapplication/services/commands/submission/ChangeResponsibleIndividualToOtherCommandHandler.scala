@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,6 +24,7 @@ import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
@@ -55,9 +56,9 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     stateHistoryRepository: StateHistoryRepository,
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     submissionsService: SubmissionsService,
-    clock: Clock
+    val clock: Clock
   )(implicit val ec: ExecutionContext
-  ) extends CommandHandler {
+  ) extends CommandHandler with ClockNow {
 
   import CommandHandler._
 
@@ -211,7 +212,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         responsibleIndividual: ResponsibleIndividual
       ): Future[StoredApplication] = {
       if (addTouAcceptance) {
-        val acceptance = TermsOfUseAcceptance(responsibleIndividual, Instant.now(clock), submissionId, submissionInstance)
+        val acceptance = TermsOfUseAcceptance(responsibleIndividual, instant(), submissionId, submissionInstance)
         applicationRepository.addApplicationTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
       } else {
         Future.successful(appWithoutTouAcceptance)

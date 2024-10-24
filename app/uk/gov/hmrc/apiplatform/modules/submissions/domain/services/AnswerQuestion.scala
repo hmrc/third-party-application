@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 import cats.data.NonEmptyList
 
@@ -61,7 +62,7 @@ object AnswerQuestion {
   def updateSubmissionState(answers: Submission.AnswersToQuestions, areQuestionsAnswered: Boolean, submission: Submission): Submission = {
     import Submission._
 
-    val addAnsweringStatus = addStatusHistory(Submission.Status.Answering(Instant.now(), areQuestionsAnswered))
+    val addAnsweringStatus = addStatusHistory(Submission.Status.Answering(Instant.now().truncatedTo(ChronoUnit.MILLIS), areQuestionsAnswered))
     (addAnsweringStatus andThen updateLatestAnswersTo(answers))(submission)
   }
 

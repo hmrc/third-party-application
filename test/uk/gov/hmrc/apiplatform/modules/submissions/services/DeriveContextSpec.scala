@@ -29,8 +29,8 @@ import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftRequestSamples {
 
   val fpContext1 = FraudPrevention.contexts.head
-  val fpSubs     = List(fpContext1.asIdentifier, fpContext1.asIdentifier("2.0"), ApiContext.random.asIdentifier)
-  val nonFpSubs  = List(ApiContext.random.asIdentifier, ApiContext.random.asIdentifier, ApiContext.random.asIdentifier)
+  val fpSubs     = Set(fpContext1.asIdentifier, fpContext1.asIdentifier("2.0"), ApiContext.random.asIdentifier)
+  val nonFpSubs  = Set(ApiContext.random.asIdentifier, ApiContext.random.asIdentifier, ApiContext.random.asIdentifier)
   val newUplift  = "No"
 
   "DeriveContext" when {

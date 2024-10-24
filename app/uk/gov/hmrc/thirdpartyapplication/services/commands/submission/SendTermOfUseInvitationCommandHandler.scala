@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
+import java.time.Clock
 import java.time.temporal.ChronoUnit._
-import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -93,7 +93,7 @@ class SendTermsOfUseInvitationCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: SendTermsOfUseInvitation): AppCmdResultT = {
     def createInvitation(applicationId: ApplicationId): TermsOfUseInvitation = {
       val daysUntilDueWhenCreated = config.daysUntilDueWhenCreated
-      val now                     = Instant.now(clock).truncatedTo(MILLIS)
+      val now                     = instant()
       TermsOfUseInvitation(
         applicationId,
         now,

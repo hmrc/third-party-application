@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{
   ImportantSubmissionData,
   PrivacyPolicyLocations,
@@ -51,7 +52,7 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
 
     val riName         = "bob responsible"
     val riEmail        = "bob.responsible@example.com"
-    val appName        = "my app"
+    val appName        = ApplicationName("my app")
     val requesterName  = "bob requester"
     val requesterEmail = "bob.requester@example.com"
 
@@ -88,7 +89,7 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
 
       await(job.runJob)
 
-      EmailConnectorMock.SendVerifyResponsibleIndividualNotification.verifyCalledWith(riName, riEmail.toLaxEmail, appName, requesterName, verification.id.value)
+      EmailConnectorMock.SendVerifyResponsibleIndividualNotification.verifyCalledWith(riName, riEmail.toLaxEmail, appName.value, requesterName, verification.id.value)
       EmailConnectorMock.SendVerifyResponsibleIndividualReminderToAdmin.verifyCalledWith(riName, requesterEmail.toLaxEmail, appName, requesterName)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
         ResponsibleIndividualVerification.VerificationTypeToU,

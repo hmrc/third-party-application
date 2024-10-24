@@ -25,6 +25,7 @@ import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocations, ResponsibleIndividual, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.INITIAL
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
@@ -45,7 +46,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
     val mockLockKeeper = mock[ResponsibleIndividualUpdateVerificationRemovalJobLockService]
     val riName         = "bob responsible"
     val riEmail        = "bob.responsible@example.com"
-    val appName        = "my app"
+    val appName        = ApplicationName("my app")
     val requesterName  = "bob requester"
     val requesterEmail = "bob.requester@example.com"
 
@@ -87,7 +88,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
         app.id,
         completelyAnswerExtendedSubmission.submission.id,
         0,
-        "my app",
+        ApplicationName("my app"),
         instant,
         ResponsibleIndividual.build("ri name", "ri@example.com"),
         "Mr Admin",

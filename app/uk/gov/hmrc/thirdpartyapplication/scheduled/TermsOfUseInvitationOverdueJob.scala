@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.temporal.ChronoUnit._
 import java.time.{Clock, Instant}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
@@ -28,7 +27,7 @@ import com.google.inject.Singleton
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
-import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationState}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, TermsOfUseInvitationRepository}
@@ -38,10 +37,10 @@ class TermsOfUseInvitationOverdueJob @Inject() (
     termsOfUseInvitationOverdueLockService: TermsOfUseInvitationOverdueJobLockService,
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     applicationRepository: ApplicationRepository,
-    clock: Clock,
+    val clock: Clock,
     jobConfig: TermsOfUseInvitationOverdueJobConfig
   )(implicit val ec: ExecutionContext
-  ) extends ScheduledMongoJob with ApplicationLogger {
+  ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   override def name: String                 = "TermsOfUseInvitationOverdueJob"
   override def interval: FiniteDuration     = jobConfig.interval
@@ -51,7 +50,7 @@ class TermsOfUseInvitationOverdueJob @Inject() (
   implicit val hc: HeaderCarrier            = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val overdueTime: Instant = Instant.now(clock).truncatedTo(MILLIS)
+    val overdueTime: Instant = instant()
     logger.info(s"Set terms of use overdue for invitations having status of EMAIL_SENT or REMINDER_EMAIL_SENT with dueBy earlier than $overdueTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {

@@ -110,7 +110,7 @@ trait ApplicationRepositoryTestData extends ApplicationTestData with Application
 
     StoredApplication(
       id,
-      name,
+      ApplicationName(name),
       name.toLowerCase,
       users,
       Some("description"),

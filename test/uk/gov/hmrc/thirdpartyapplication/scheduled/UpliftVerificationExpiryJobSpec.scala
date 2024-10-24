@@ -30,7 +30,7 @@ import uk.gov.hmrc.mongo.test.MongoSupport
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -160,8 +160,8 @@ class UpliftVerificationExpiryJobSpec
   def anApplicationData(id: ApplicationId, prodClientId: ClientId, state: ApplicationState = testingState()): StoredApplication = {
     StoredApplication(
       id,
-      s"myApp-${id.value}",
-      s"myapp-${id.value}",
+      ApplicationName(s"myApp-${id}"),
+      s"myapp-${id}",
       Set("user@example.com".admin()),
       Some("description"),
       "myapplication",

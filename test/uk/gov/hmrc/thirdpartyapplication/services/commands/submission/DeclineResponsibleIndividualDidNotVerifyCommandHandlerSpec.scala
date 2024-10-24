@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, ApplicationId, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, State}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocations, ResponsibleIndividual, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
@@ -93,7 +93,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       applicationId,
       submission.id,
       submission.latestInstance.index,
-      "App Name",
+      ApplicationName("App Name"),
       instant,
       ResponsibleIndividualVerificationState.INITIAL
     )
@@ -103,7 +103,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       applicationId,
       submission.id,
       submission.latestInstance.index,
-      "App Name",
+      ApplicationName("App Name"),
       instant,
       requesterName,
       requesterEmail,
@@ -115,7 +115,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       applicationId,
       submission.id,
       submission.latestInstance.index,
-      "App Name",
+      ApplicationName("App Name"),
       instant,
       newResponsibleIndividual,
       requesterName,
@@ -285,7 +285,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
         ApplicationId.random,
         submission.id,
         submission.latestInstance.index,
-        "App Name",
+        ApplicationName("App Name"),
         instant,
         ResponsibleIndividualVerificationState.INITIAL
       )

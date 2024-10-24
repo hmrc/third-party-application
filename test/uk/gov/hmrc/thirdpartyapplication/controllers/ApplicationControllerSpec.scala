@@ -38,7 +38,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
@@ -46,6 +45,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models.SubscriptionData
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -57,9 +57,10 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 class ApplicationControllerSpec
     extends ControllerSpec
     with ApplicationStateUtil
-    with ControllerTestData
     with TableDrivenPropertyChecks
     with ApplicationTestData
+    with ApplicationWithCollaboratorsFixtures
+    with ApiIdentifierFixtures
     with FixedClock {
 
   import play.api.test.Helpers._
@@ -119,8 +120,8 @@ class ApplicationControllerSpec
     private def testWithPrivilegedAndRopc(applicationId: ApplicationId, gatekeeperLoggedIn: Boolean, testBlock: => Unit): Unit = {
       when(underTest.applicationService.fetch(applicationId))
         .thenReturn(
-          OptionT.pure[Future](aNewApplicationResponse(privilegedAccess)),
-          OptionT.pure[Future](aNewApplicationResponse(ropcAccess))
+          OptionT.pure[Future](privilegedApp),
+          OptionT.pure[Future](ropcApp)
         )
       testBlock
       testBlock
@@ -130,11 +131,11 @@ class ApplicationControllerSpec
   trait ExtendedResponses {
     self: Setup =>
 
-    val apiIdentifier1                                             = "api1".asIdentifier
-    val apiIdentifier2                                             = "api2".asIdentifier
-    val standardApplicationResponse: ExtendedApplicationResponse   = aNewExtendedApplicationResponse(access = Access.Standard(), subscriptions = List(apiIdentifier1, apiIdentifier2))
-    val privilegedApplicationResponse: ExtendedApplicationResponse = aNewExtendedApplicationResponse(access = Access.Privileged())
-    val ropcApplicationResponse: ExtendedApplicationResponse       = aNewExtendedApplicationResponse(access = Access.Ropc())
+    val apiIdentifier1                                              = "api1".asIdentifier
+    val apiIdentifier2                                              = "api2".asIdentifier
+    val standardApplicationResponse: ApplicationWithSubscriptions   = standardApp.withSubscriptions(Set(apiIdentifier1, apiIdentifier2))
+    val privilegedApplicationResponse: ApplicationWithSubscriptions = privilegedApp.withSubscriptions(Set.empty)
+    val ropcApplicationResponse: ApplicationWithSubscriptions       = ropcApp.withSubscriptions(Set.empty)
   }
 
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
@@ -161,8 +162,8 @@ class ApplicationControllerSpec
     "successfully update approval information for application XYZ" in new Setup {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      when(underTest.applicationService.fetch(eqTo(id))).thenReturn(OptionT.pure[Future](aNewApplicationResponse(appId = id)))
-      when(underTest.applicationService.updateCheck(eqTo(id), eqTo(checkInformation))).thenReturn(successful(aNewApplicationResponse(appId = id)))
+      when(underTest.applicationService.fetch(eqTo(id))).thenReturn(OptionT.pure[Future](standardApp.withId(id)))
+      when(underTest.applicationService.updateCheck(eqTo(id), eqTo(checkInformation))).thenReturn(successful(standardApp.withId(id)))
 
       val jsonBody: JsValue = Json.toJson(checkInformation)
       val result            = underTest.updateCheck(id)(request.withBody(jsonBody))
@@ -175,7 +176,7 @@ class ApplicationControllerSpec
     val applicationId = ApplicationId.random
 
     "succeed with a 200 (ok) if the application exists for the given id" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(standardApp)
 
       val result = underTest.fetch(applicationId)(request)
 
@@ -183,11 +184,11 @@ class ApplicationControllerSpec
     }
 
     "return the grant length formatted as a Period" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(standardApp)
 
       val result = underTest.fetch(applicationId)(request)
 
-      (contentAsJson(result) \ "grantLength").as[String] shouldBe "P547D"
+      (contentAsJson(result) \ "details" \ "grantLength").as[String] shouldBe "P547D"
       status(result) shouldBe OK
     }
 
@@ -257,7 +258,7 @@ class ApplicationControllerSpec
     val payload    = s"""{"clientId":"${validation.clientId.value}", "clientSecret":"${validation.clientSecret}"}"""
 
     "succeed with a 200 (ok) if the credentials are valid for an application" in new Setup {
-      when(mockCredentialService.validateCredentials(validation)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      when(mockCredentialService.validateCredentials(validation)).thenReturn(OptionT.pure[Future](standardApp))
 
       val result = underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
@@ -364,9 +365,9 @@ class ApplicationControllerSpec
 
       val applicationId: ApplicationId = ApplicationId.random
 
-      val applicationResponse: Application                        = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
-      val updatedApplicationResponse: ExtendedApplicationResponse =
-        extendedApplicationResponseFromApplicationResponse(applicationResponse).copy(lastAccess = Some(updatedLastAccessTime))
+      val applicationResponse: ApplicationWithCollaborators        = ApplicationWithCollaboratorsData.standardApp.modify(_.copy(lastAccess = Some(lastAccessTime)))
+      val updatedApplicationResponse: ApplicationWithSubscriptions =
+        applicationResponse.modify(_.copy(lastAccess = Some(updatedLastAccessTime))).withSubscriptions(Set.empty)
     }
 
     def validateResult(result: Future[Result], expectedResponseCode: Int, expectedCacheControlHeader: Option[String], expectedVaryHeader: Option[String]) = {
@@ -376,7 +377,7 @@ class ApplicationControllerSpec
     }
 
     "retrieve by client id" in new Setup {
-      when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(aNewApplicationResponse())))
+      when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(standardApp)))
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}"))
 
@@ -384,7 +385,7 @@ class ApplicationControllerSpec
     }
 
     "retrieve by server token" in new Setup {
-      when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(aNewApplicationResponse())))
+      when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(standardApp)))
 
       private val scenarios =
         Table(
@@ -401,7 +402,7 @@ class ApplicationControllerSpec
     }
 
     "retrieve all" in new Setup {
-      when(underTest.applicationService.fetchAll()).thenReturn(Future(List(aNewApplicationResponse(), aNewApplicationResponse())))
+      when(underTest.applicationService.fetchAll()).thenReturn(Future(List(standardApp, standardApp2)))
 
       private val result = underTest.queryDispatcher()(FakeRequest())
 
@@ -410,7 +411,7 @@ class ApplicationControllerSpec
     }
 
     "retrieve when no subscriptions" in new Setup {
-      when(underTest.applicationService.fetchAllWithNoSubscriptions()).thenReturn(Future(List(aNewApplicationResponse())))
+      when(underTest.applicationService.fetchAllWithNoSubscriptions()).thenReturn(Future(List(standardApp)))
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions=true"))
 
@@ -448,10 +449,10 @@ class ApplicationControllerSpec
         when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
         when(underTest.applicationService.findAndRecordServerTokenUsage(serverToken)).thenReturn(Future(Some(updatedApplicationResponse)))
 
-        val result               = underTest.queryDispatcher()(request.withHeaders(headers: _*))
-        val actualLastAccessTime = (contentAsJson(result) \ "lastAccess").as[Long]
+        val result = underTest.queryDispatcher()(request.withHeaders(headers: _*))
 
-        actualLastAccessTime shouldBe expectedLastAccessTime
+        // TODO - was as[Long] !!!
+        (contentAsJson(result) \ "details" \ "lastAccess").as[Instant].toEpochMilli() shouldBe expectedLastAccessTime
         validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), Some(SERVER_TOKEN_HEADER))
         if (shouldUpdate) {
           verify(underTest.applicationService).findAndRecordServerTokenUsage(eqTo(serverToken))
@@ -479,7 +480,7 @@ class ApplicationControllerSpec
           underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}").withHeaders(headers: _*))
 
         validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), None)
-        (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
+        (contentAsJson(result) \ "details" \ "lastAccess").as[Instant].toEpochMilli() shouldBe expectedLastAccessTime
         if (shouldUpdate) {
           verify(underTest.applicationService).findAndRecordApplicationUsage(eqTo(clientId))
         }
@@ -515,7 +516,7 @@ class ApplicationControllerSpec
     "succeed with a 200 when applications are found for the collaborator by user ids" in new Setup {
 
       when(underTest.applicationService.fetchAllForCollaborators(List(userId)))
-        .thenReturn(successful(List(aNewApplicationResponse(access = Access.Standard()))))
+        .thenReturn(successful(List(standardApp)))
 
       status(underTest.fetchAllForCollaborators()(request.withBody(requestBody))) shouldBe OK
     }
@@ -573,10 +574,10 @@ class ApplicationControllerSpec
       val queryRequest = FakeRequest("GET", s"?subscribesTo=$subscribesTo")
 
       "succeed with a 200 (ok) when applications are found" in new Setup {
-        val standardApplicationResponse: Application   = aNewApplicationResponse(access = Access.Standard())
-        val privilegedApplicationResponse: Application = aNewApplicationResponse(access = Access.Privileged())
-        val ropcApplicationResponse: Application       = aNewApplicationResponse(access = Access.Ropc())
-        val response: List[Application]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
+        val standardApplicationResponse: ApplicationWithCollaborators   = standardApp
+        val privilegedApplicationResponse: ApplicationWithCollaborators = privilegedApp
+        val ropcApplicationResponse: ApplicationWithCollaborators       = ropcApp
+        val response: List[ApplicationWithCollaborators]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
 
         when(underTest.applicationService.fetchAllBySubscription(subscribesTo.asContext)).thenReturn(successful(response))
 
@@ -612,10 +613,10 @@ class ApplicationControllerSpec
       val apiIdentifier = subscribesTo.asIdentifier(version)
 
       "succeed with a 200 (ok) when applications are found" in new Setup {
-        val standardApplicationResponse: Application   = aNewApplicationResponse(access = Access.Standard())
-        val privilegedApplicationResponse: Application = aNewApplicationResponse(access = Access.Privileged())
-        val ropcApplicationResponse: Application       = aNewApplicationResponse(access = Access.Ropc())
-        val response: List[Application]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
+        val standardApplicationResponse: ApplicationWithCollaborators   = standardApp
+        val privilegedApplicationResponse: ApplicationWithCollaborators = privilegedApp
+        val ropcApplicationResponse: ApplicationWithCollaborators       = ropcApp
+        val response: List[ApplicationWithCollaborators]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
 
         when(underTest.applicationService.fetchAllBySubscription(apiIdentifier)).thenReturn(successful(response))
 
@@ -700,7 +701,7 @@ class ApplicationControllerSpec
 
     "succeed with a 200 (ok) when subscriptions are found for the application" in new Setup {
       when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId)))
-        .thenReturn(successful(Set(anAPI())))
+        .thenReturn(successful(Set(apiIdentifierOne)))
 
       val result = underTest.fetchAllSubscriptions(applicationId)(request)
 
@@ -729,10 +730,13 @@ class ApplicationControllerSpec
   }
 
   "fetchAllSubscriptions" should {
+    def aSubcriptionData(id: ApiIdentifier) = {
+      SubscriptionData(id, Set(ApplicationId.random, ApplicationId.random))
+    }
 
     "succeed with a 200 (ok) when subscriptions are found for the application" in new Setup {
 
-      val subscriptionData = List(aSubcriptionData(), aSubcriptionData())
+      val subscriptionData = List(aSubcriptionData(apiIdentifierOne), aSubcriptionData(apiIdentifierTwo))
 
       when(mockSubscriptionService.fetchAllSubscriptions()).thenReturn(successful(subscriptionData))
 
@@ -786,7 +790,7 @@ class ApplicationControllerSpec
   }
 
   "notStrideUserDeleteApplication" should {
-    val application             = aNewApplicationResponse(environment = Environment.SANDBOX, state = ApplicationState(State.PRODUCTION, updatedOn = instant))
+    val application             = standardApp.inSandbox()
     val applicationId           = application.id
     val gatekeeperUserId        = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com".toLaxEmail
@@ -803,7 +807,9 @@ class ApplicationControllerSpec
     }
 
     "succeed when a principal application is in TESTING state is deleted" in new Setup with ProductionAuthSetup {
-      val inTesting   = aNewApplicationResponse(state = ApplicationState(name = State.TESTING, updatedOn = instant), environment = Environment.PRODUCTION)
+      val inTesting = standardApp.withState(appStateTesting)
+      // aNewApplicationResponse(state = ApplicationState(name = State.TESTING, updatedOn = instant), environment = Environment.PRODUCTION)
+
       val inTestingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inTestingId)(inTesting)
@@ -816,7 +822,7 @@ class ApplicationControllerSpec
     }
 
     "succeed when a principal application is in PENDING_GATEKEEPER_APPROVAL state is deleted" in new Setup with ProductionAuthSetup {
-      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant), environment = Environment.PRODUCTION)
+      val inPending   = standardApp.withState(appStatePendingGatekeeperApproval)
       val inPendingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inPendingId)(inPending)
@@ -829,7 +835,7 @@ class ApplicationControllerSpec
     }
 
     "succeed when a principal application is in PENDING_REQUESTER_VERIFICATION state is deleted" in new Setup with ProductionAuthSetup {
-      val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_REQUESTER_VERIFICATION, updatedOn = instant), environment = Environment.PRODUCTION)
+      val inPending   = standardApp.withState(appStatePendingRIVerification)
       val inPendingId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inPendingId)(inPending)
@@ -842,7 +848,7 @@ class ApplicationControllerSpec
     }
 
     "fail when a principal application is in PRODUCTION state is deleted" in new Setup with ProductionAuthSetup {
-      val inProd   = aNewApplicationResponse(state = ApplicationState(name = State.PRODUCTION, updatedOn = instant), environment = Environment.PRODUCTION)
+      val inProd   = standardApp
       val inProdId = application.id
 
       ApplicationServiceMock.Fetch.thenReturnFor(inProdId)(inProd)

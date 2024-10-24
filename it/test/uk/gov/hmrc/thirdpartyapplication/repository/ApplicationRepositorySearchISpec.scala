@@ -954,9 +954,9 @@ class ApplicationRepositorySearchISpec
       result.matching.size mustBe 1
       result.matching.head.total mustBe 3
       result.applications.size mustBe 3
-      result.applications.head.name mustBe firstName
-      result.applications.tail.head.name mustBe lowerCaseName
-      result.applications.last.name mustBe secondName
+      result.applications.head.name.value mustBe firstName
+      result.applications.tail.head.name.value mustBe lowerCaseName
+      result.applications.last.name.value mustBe secondName
     }
 
     "return applications sorted by name descending" in {
@@ -987,8 +987,8 @@ class ApplicationRepositorySearchISpec
       result.matching.size mustBe 1
       result.matching.head.total mustBe 2
       result.applications.size mustBe 2
-      result.applications.head.name mustBe secondName
-      result.applications.last.name mustBe firstName
+      result.applications.head.name.value mustBe secondName
+      result.applications.last.name.value mustBe firstName
     }
 
     "return applications sorted by submitted ascending" in {

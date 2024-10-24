@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{apply => _, _}
@@ -35,7 +35,7 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CheckInformation, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaborators, ApplicationWithSubscriptions, CheckInformation, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -50,7 +50,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, MetricsTimer}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
 
 @Singleton
 class ApplicationService @Inject() (
@@ -95,11 +94,11 @@ class ApplicationService @Inject() (
     }
   }
 
-  def updateCheck(applicationId: ApplicationId, checkInformation: CheckInformation): Future[Application] = {
+  def updateCheck(applicationId: ApplicationId, checkInformation: CheckInformation): Future[ApplicationWithCollaborators] = {
     for {
       existing <- fetchApp(applicationId)
       savedApp <- applicationRepository.save(existing.copy(checkInformation = Some(checkInformation)))
-    } yield Application(data = savedApp)
+    } yield StoredApplication.asApplication(savedApp)
   }
 
   def confirmSetupComplete(applicationId: ApplicationId, requesterEmailAddress: LaxEmailAddress): Future[StoredApplication] = {
@@ -169,39 +168,41 @@ class ApplicationService @Inject() (
     applicationRepository.updateCollaboratorId(applicationId, fixCollaboratorRequest.emailAddress, fixCollaboratorRequest.userId)
   }
 
-  def fetchByClientId(clientId: ClientId): Future[Option[Application]] = {
+  def fetchByClientId(clientId: ClientId): Future[Option[ApplicationWithCollaborators]] = {
     applicationRepository.fetchByClientId(clientId) map {
-      _.map(application => Application(data = application))
+      _.map(application => StoredApplication.asApplication(application))
     }
   }
 
-  def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[ExtendedApplicationResponse]] = {
+  def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[ApplicationWithSubscriptions]] = {
     timeFuture("Service Find And Record Application Usage", "application.service.findAndRecordApplicationUsage") {
       (
         for {
           app           <- OptionT(applicationRepository.findAndRecordApplicationUsage(clientId))
           subscriptions <- OptionT.liftF(subscriptionRepository.getSubscriptions(app.id))
-        } yield ExtendedApplicationResponse(app, subscriptions)
+          result         = StoredApplication.asApplication(app).withSubscriptions(subscriptions.toSet)
+        } yield result
       )
         .value
     }
   }
 
-  def fetchByServerToken(serverToken: String): Future[Option[Application]] = {
+  def fetchByServerToken(serverToken: String): Future[Option[ApplicationWithCollaborators]] = {
     applicationRepository.fetchByServerToken(serverToken) map {
       _.map(application =>
-        Application(data = application)
+        StoredApplication.asApplication(application)
       )
     }
   }
 
-  def findAndRecordServerTokenUsage(serverToken: String): Future[Option[ExtendedApplicationResponse]] = {
+  def findAndRecordServerTokenUsage(serverToken: String): Future[Option[ApplicationWithSubscriptions]] = {
     timeFuture("Service Find And Record Server Token Usage", "application.service.findAndRecordServerTokenUsage") {
       (
         for {
           app           <- OptionT(applicationRepository.findAndRecordServerTokenUsage(serverToken))
           subscriptions <- OptionT.liftF(subscriptionRepository.getSubscriptions(app.id))
-        } yield ExtendedApplicationResponse(app, subscriptions)
+          result         = StoredApplication.asApplication(app).withSubscriptions(subscriptions.toSet)
+        } yield result
       )
         .value
     }
@@ -212,53 +213,53 @@ class ApplicationService @Inject() (
   //   apps.map(Application(data = _))
   // }
 
-  private def asExtendedResponses(apps: List[StoredApplication]): Future[List[ExtendedApplicationResponse]] = {
-    def asExtendedResponse(app: StoredApplication): Future[ExtendedApplicationResponse] = {
-      subscriptionRepository.getSubscriptions(app.id).map(subscriptions => ExtendedApplicationResponse(app, subscriptions))
+  private def asExtendedResponses(apps: List[StoredApplication]): Future[List[ApplicationWithSubscriptions]] = {
+    def asExtendedResponse(app: StoredApplication): Future[ApplicationWithSubscriptions] = {
+      subscriptionRepository.getSubscriptions(app.id).map(subscriptions => StoredApplication.asApplication(app).withSubscriptions(subscriptions.toSet))
     }
 
     Future.sequence(apps.map(asExtendedResponse))
   }
 
-  def fetchAllForCollaborators(userIds: List[UserId]): Future[List[Application]] = {
+  def fetchAllForCollaborators(userIds: List[UserId]): Future[List[ApplicationWithCollaborators]] = {
     Future.sequence(
       userIds.map(applicationRepository.fetchAllForUserId(_, false).map(_.toList))
     ).map(_.foldLeft(List[StoredApplication]())(_ ++ _)).map {
-      _.map(application => Application(data = application))
+      _.map(application => StoredApplication.asApplication(application))
     }
       .map(_.distinct)
   }
 
-  def fetchAllForCollaborator(userId: UserId, includeDeleted: Boolean): Future[List[ExtendedApplicationResponse]] = {
+  def fetchAllForCollaborator(userId: UserId, includeDeleted: Boolean): Future[List[ApplicationWithSubscriptions]] = {
     applicationRepository.fetchAllForUserId(userId, includeDeleted).flatMap(x => asExtendedResponses(x.toList))
   }
 
-  def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[List[ExtendedApplicationResponse]] = {
+  def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[List[ApplicationWithSubscriptions]] = {
     applicationRepository.fetchAllForUserIdAndEnvironment(userId, environment)
       .flatMap(x => asExtendedResponses(x.toList))
   }
 
-  def fetchAll(): Future[List[Application]] = {
+  def fetchAll(): Future[List[ApplicationWithCollaborators]] = {
     applicationRepository.fetchAll().map {
-      _.map(application => Application(data = application))
+      _.map(application => StoredApplication.asApplication(application))
     }
   }
 
-  def fetchAllBySubscription(apiContext: ApiContext): Future[List[Application]] = {
+  def fetchAllBySubscription(apiContext: ApiContext): Future[List[ApplicationWithCollaborators]] = {
     applicationRepository.fetchAllForContext(apiContext) map {
-      _.map(application => Application(data = application))
+      _.map(application => StoredApplication.asApplication(application))
     }
   }
 
-  def fetchAllBySubscription(apiIdentifier: ApiIdentifier): Future[List[Application]] = {
+  def fetchAllBySubscription(apiIdentifier: ApiIdentifier): Future[List[ApplicationWithCollaborators]] = {
     applicationRepository.fetchAllForApiIdentifier(apiIdentifier) map {
-      _.map(application => Application(data = application))
+      _.map(application => StoredApplication.asApplication(application))
     }
   }
 
-  def fetchAllWithNoSubscriptions(): Future[List[Application]] = {
+  def fetchAllWithNoSubscriptions(): Future[List[ApplicationWithCollaborators]] = {
     applicationRepository.fetchAllWithNoSubscriptions() map {
-      _.map(application => Application(data = application))
+      _.map(application => StoredApplication.asApplication(application))
     }
   }
 
@@ -272,8 +273,8 @@ class ApplicationService @Inject() (
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationResponse] = {
 
     def buildApplication(storedApplication: StoredApplication, stateHistory: Option[StateHistory]) = {
-      val partApp = Application(data = storedApplication)
-      partApp.copy(moreApplication = partApp.moreApplication.copy(lastActionActor = stateHistory.map(sh => ActorType.actorType(sh.actor)).getOrElse(ActorType.UNKNOWN)))
+      val partApp = StoredApplication.asApplication(storedApplication)
+      partApp.modify(_.copy(lastActionActor = stateHistory.map(sh => ActorType.actorType(sh.actor)).getOrElse(ActorType.UNKNOWN)))
     }
 
     val applicationsResponse: Future[PaginatedApplicationData] = applicationRepository.searchApplications("applicationSearch")(applicationSearch)
@@ -325,12 +326,12 @@ class ApplicationService @Inject() (
                         }
       totp           <- generateApplicationTotp(createApplicationRequest.accessType)
       modifiedRequest = applyTotpForPrivAppsOnly(totp, createApplicationRequest)
-      appData         = StoredApplication.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), Instant.now(clock))
+      appData         = StoredApplication.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), instant())
       _              <- createInApiGateway(appData)
       _              <- applicationRepository.save(appData)
       _              <- createStateHistory(appData)
       _               = auditAppCreated(appData)
-    } yield CreateApplicationResponse(Application(appData), extractTotpSecret(totp))
+    } yield CreateApplicationResponse(StoredApplication.asApplication(appData), extractTotpSecret(totp))
 
     f andThen {
       case Failure(_) =>
@@ -366,8 +367,8 @@ class ApplicationService @Inject() (
     auditService.audit(
       AppCreated,
       Map(
-        "applicationId"             -> app.id.value.toString,
-        "newApplicationName"        -> app.name,
+        "applicationId"             -> app.id.toString,
+        "newApplicationName"        -> app.name.value,
         "newApplicationDescription" -> app.description.getOrElse("")
       )
     )
@@ -387,7 +388,7 @@ class ApplicationService @Inject() (
       actor: Actor,
       rollback: StoredApplication => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = Instant.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = instant())
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)

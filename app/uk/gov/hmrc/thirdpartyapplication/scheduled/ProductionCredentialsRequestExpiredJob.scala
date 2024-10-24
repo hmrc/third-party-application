@@ -75,7 +75,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
       s"name='${app.state.name}',state.updatedOn='${app.state.updatedOn}}'")
 
     val reasons = s"Delete expired production credentials request, updated on ${app.state.updatedOn}"
-    val request = ApplicationCommands.DeleteProductionCredentialsApplication(name, reasons, Instant.now(clock))
+    val request = ApplicationCommands.DeleteProductionCredentialsApplication(name, reasons, instant())
 
     (for {
       savedApp <- commandDispatcher.dispatch(app.id, request, Set.empty)

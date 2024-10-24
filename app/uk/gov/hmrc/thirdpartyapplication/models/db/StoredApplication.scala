@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
+import java.time.temporal.ChronoUnit
 import java.time.{Instant, Period}
 
 import com.typesafe.config.ConfigFactory
@@ -62,30 +63,30 @@ case class StoredApplication(
 
 object StoredApplication {
 
-    def asApplication(data: StoredApplication): ApplicationWithCollaborators = {
-      ApplicationWithCollaborators(
-        CoreApplication(
-          data.id,
-          data.tokens.production.clientId,
-          data.wso2ApplicationName,
-          data.name,
-          Environment.unsafeApply(data.environment),
-          data.description,
-          data.createdOn,
-          data.lastAccess,
-          GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
-          data.tokens.production.lastAccessTokenUsage,
-          data.access,
-          data.state,
-          data.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
-          data.checkInformation,
-          data.blocked,
-          ipAllowlist = data.ipAllowlist,
-          allowAutoDelete = data.allowAutoDelete,
-          lastActionActor = ActorType.UNKNOWN
-        ),
-        data.collaborators,
-      )
+  def asApplication(data: StoredApplication): ApplicationWithCollaborators = {
+    ApplicationWithCollaborators(
+      CoreApplication(
+        data.id,
+        data.tokens.production.clientId,
+        data.wso2ApplicationName,
+        data.name,
+        Environment.unsafeApply(data.environment),
+        data.description,
+        data.createdOn,
+        data.lastAccess,
+        GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
+        data.tokens.production.lastAccessTokenUsage,
+        data.access,
+        data.state,
+        data.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
+        data.checkInformation,
+        data.blocked,
+        ipAllowlist = data.ipAllowlist,
+        allowAutoDelete = data.allowAutoDelete,
+        lastActionActor = ActorType.UNKNOWN
+      ),
+      data.collaborators
+    )
   }
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
@@ -94,7 +95,7 @@ object StoredApplication {
       createApplicationRequest: CreateApplicationRequest,
       wso2ApplicationName: String,
       environmentToken: StoredToken,
-      createdOn: Instant = Instant.now()
+      createdOn: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
     ): StoredApplication = {
     import createApplicationRequest._
 

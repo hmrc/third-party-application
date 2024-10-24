@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -40,7 +41,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class VerifyResponsibleIndividualCommandHandler @Inject() (
     submissionService: SubmissionsService,
-    responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository
+    responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
+    val clock: Clock
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
@@ -74,7 +76,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = Actors.AppCollaborator(requesterEmail),
-        app.name,
+        app.name.value,
         cmd.requesterName,
         requestingAdminEmail = getRequester(app, cmd.instigator),
         responsibleIndividualName = cmd.riName,

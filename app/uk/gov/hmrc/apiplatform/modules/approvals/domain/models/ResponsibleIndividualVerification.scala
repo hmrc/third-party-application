@@ -23,16 +23,16 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ResponsibleIndividual, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, ResponsibleIndividualVerificationState}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 
 sealed trait ResponsibleIndividualVerification {
   def id: ResponsibleIndividualVerificationId
   def applicationId: ApplicationId
   def submissionId: SubmissionId
   def submissionInstance: Int
-  def applicationName: String
+  def applicationName: ApplicationName
   def createdOn: Instant
   def state: ResponsibleIndividualVerificationState
 }
@@ -60,7 +60,7 @@ case class ResponsibleIndividualToUVerification(
     submissionId: SubmissionId,
     submissionInstance: Int,
     applicationName: ApplicationName,
-    createdOn: Instant = Instant.now(),
+    createdOn: Instant,
     state: ResponsibleIndividualVerificationState = INITIAL
   ) extends ResponsibleIndividualVerification
 
@@ -70,7 +70,7 @@ case class ResponsibleIndividualTouUpliftVerification(
     submissionId: SubmissionId,
     submissionInstance: Int,
     applicationName: ApplicationName,
-    createdOn: Instant = Instant.now(),
+    createdOn: Instant,
     requestingAdminName: String,
     requestingAdminEmail: LaxEmailAddress,
     state: ResponsibleIndividualVerificationState = INITIAL
@@ -82,7 +82,7 @@ case class ResponsibleIndividualUpdateVerification(
     submissionId: SubmissionId,
     submissionInstance: Int,
     applicationName: ApplicationName,
-    createdOn: Instant = Instant.now(),
+    createdOn: Instant,
     responsibleIndividual: ResponsibleIndividual,
     requestingAdminName: String,
     requestingAdminEmail: LaxEmailAddress,

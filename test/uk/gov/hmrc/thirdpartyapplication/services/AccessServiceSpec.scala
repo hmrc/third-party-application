@@ -23,6 +23,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesResponse, ScopeResponse}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
@@ -88,7 +89,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
   private def privilegedApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): StoredApplication =
     StoredApplication(
       applicationId,
-      "name",
+      ApplicationName("name"),
       "normalisedName",
       Set("user@example.com".admin()),
       None,
@@ -105,7 +106,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
   private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): StoredApplication =
     StoredApplication(
       applicationId,
-      "name",
+      ApplicationName("name"),
       "normalisedName",
       Set("user@example.com".admin()),
       None,
@@ -122,7 +123,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
   private def standardApplicationDataWithOverrides(applicationId: ApplicationId, overrides: Set[OverrideFlag]): StoredApplication =
     StoredApplication(
       applicationId,
-      "name",
+      ApplicationName("name"),
       "normalisedName",
       Set("user@example.com".admin()),
       None,

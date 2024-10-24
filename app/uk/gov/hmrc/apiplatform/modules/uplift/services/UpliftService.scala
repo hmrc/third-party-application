@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.uplift.services
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -101,7 +101,7 @@ class UpliftService @Inject() (
       actor: Actor,
       rollback: StoredApplication => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = Instant.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = instant())
 
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>

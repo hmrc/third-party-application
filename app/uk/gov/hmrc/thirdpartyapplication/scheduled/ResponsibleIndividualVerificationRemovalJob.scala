@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import java.time.Clock
 import java.time.temporal.ChronoUnit.SECONDS
-import java.time.{Clock, Instant}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,7 +28,7 @@ import com.google.inject.Singleton
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
@@ -43,7 +43,7 @@ class ResponsibleIndividualVerificationRemovalJob @Inject() (
     val clock: Clock,
     jobConfig: ResponsibleIndividualVerificationRemovalJobConfig
   )(implicit val ec: ExecutionContext
-  ) extends ScheduledMongoJob with ApplicationLogger {
+  ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   override def name: String                 = "ResponsibleIndividualVerificationRemovalJob"
   override def interval: FiniteDuration     = jobConfig.interval
@@ -53,7 +53,7 @@ class ResponsibleIndividualVerificationRemovalJob @Inject() (
   override val lockService: LockService     = responsibleIndividualVerificationRemovalJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val removeIfCreatedBeforeNow                    = Instant.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
+    val removeIfCreatedBeforeNow                    = instant().minus(jobConfig.removalInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
       removalsDue <-
         repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.REMINDERS_SENT, removeIfCreatedBeforeNow)
@@ -69,7 +69,7 @@ class ResponsibleIndividualVerificationRemovalJob @Inject() (
   }
 
   def sendRemovalEmailAndRemoveRecord(verificationDueForRemoval: ResponsibleIndividualVerification) = {
-    val request = DeclineResponsibleIndividualDidNotVerify(verificationDueForRemoval.id.value, Instant.now(clock))
+    val request = DeclineResponsibleIndividualDidNotVerify(verificationDueForRemoval.id.value, instant())
 
     logger.info(s"Responsible individual verification timed out for application ${verificationDueForRemoval.applicationName} (started at ${verificationDueForRemoval.createdOn})")
     (for {

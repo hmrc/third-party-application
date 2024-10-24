@@ -177,29 +177,29 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
         requesterEmail.toLaxEmail
       )
 
-      val tags                       = Map("gatekeeperId" -> gatekeeperUser)
-      val questionsWithAnswers       = QuestionsAndAnswersToMap(declinedSubmission)
-      val declinedData               = Map("status" -> "declined", "reasons" -> reasons)
-      val fmt                        = DateTimeFormatter.ISO_DATE_TIME
-      val submissionPreviousInstance = declinedSubmission.instances.tail.head
-      val submittedOn: Instant       = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
-      val declinedOn: Instant        = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
-      val dates                      = Map(
+      val tags                                   = Map("gatekeeperId" -> gatekeeperUser)
+      val questionsWithAnswers                   = QuestionsAndAnswersToMap(declinedSubmission)
+      val declinedData                           = Map("status" -> "declined", "reasons" -> reasons)
+      val fmt                                    = DateTimeFormatter.ISO_DATE_TIME
+      val submissionPreviousInstance             = declinedSubmission.instances.tail.head
+      val submittedOn: Instant                   = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+      val declinedOn: Instant                    = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
+      val dates                                  = Map(
         "submission.started.date"                 -> fmt.format(declinedSubmission.startedOn.asLocalDateTime),
         "submission.submitted.date"               -> fmt.format(submittedOn.asLocalDateTime),
         "submission.declined.date"                -> fmt.format(declinedOn.asLocalDateTime),
         "responsibleIndividual.verification.date" -> nowAsText
       )
-      val markedAnswers              = MarkAnswer.markSubmission(declinedSubmission)
-      val nbrOfFails                 = markedAnswers.filter(_._2 == Mark.Fail).size
-      val nbrOfWarnings              = markedAnswers.filter(_._2 == Mark.Warn).size
-      val counters                   = Map(
+      val markedAnswers                          = MarkAnswer.markSubmission(declinedSubmission)
+      val nbrOfFails                             = markedAnswers.filter(_._2 == Mark.Fail).size
+      val nbrOfWarnings                          = markedAnswers.filter(_._2 == Mark.Warn).size
+      val counters                               = Map(
         "submission.failures" -> nbrOfFails.toString,
         "submission.warnings" -> nbrOfWarnings.toString
       )
-      val gatekeeperDetails          = Map(
+      val gatekeeperDetails: Map[String, String] = Map(
         "applicationId"          -> appInTesting.id.value.toString,
-        "applicationName"        -> appInTesting.name,
+        "applicationName"        -> appInTesting.name.value,
         "upliftRequestedByEmail" -> appInTesting.state.requestedByEmailAddress.getOrElse("-"),
         "applicationAdmins"      -> appInTesting.admins.map(_.emailAddress.text).mkString(", ")
       )
@@ -271,16 +271,16 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
         "responsibleIndividual.verification.date" -> fmt.format(rivd.asLocalDateTime)
       )
 
-      val markedAnswers     = MarkAnswer.markSubmission(submission)
-      val nbrOfFails        = markedAnswers.filter(_._2 == Mark.Fail).size
-      val nbrOfWarnings     = markedAnswers.filter(_._2 == Mark.Warn).size
-      val counters          = Map(
+      val markedAnswers                          = MarkAnswer.markSubmission(submission)
+      val nbrOfFails                             = markedAnswers.filter(_._2 == Mark.Fail).size
+      val nbrOfWarnings                          = markedAnswers.filter(_._2 == Mark.Warn).size
+      val counters                               = Map(
         "submission.failures" -> nbrOfFails.toString,
         "submission.warnings" -> nbrOfWarnings.toString
       )
-      val gatekeeperDetails = Map(
+      val gatekeeperDetails: Map[String, String] = Map(
         "applicationId"          -> appInGKApproval.id.value.toString,
-        "applicationName"        -> appInGKApproval.name,
+        "applicationName"        -> appInGKApproval.name.value,
         "upliftRequestedByEmail" -> appInGKApproval.state.requestedByEmailAddress.getOrElse("-"),
         "applicationAdmins"      -> appInGKApproval.admins.map(_.emailAddress.text).mkString(", ")
       )

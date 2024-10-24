@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import java.time.temporal.ChronoUnit
-import java.time.temporal.ChronoUnit._
 import java.time.{Clock, Instant}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
@@ -30,14 +29,13 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationState}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, TermsOfUseInvitationRepository}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 
 @Singleton
 class TermsOfUseInvitationReminderJob @Inject() (
@@ -46,10 +44,10 @@ class TermsOfUseInvitationReminderJob @Inject() (
     applicationRepository: ApplicationRepository,
     submissionService: SubmissionsService,
     emailConnector: EmailConnector,
-    clock: Clock,
+    val clock: Clock,
     jobConfig: TermsOfUseInvitationReminderJobConfig
   )(implicit val ec: ExecutionContext
-  ) extends ScheduledMongoJob with ApplicationLogger {
+  ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   val termsOfUseInvitationReminderInterval: FiniteDuration = jobConfig.reminderInterval
   override def name: String                                = "TermsOfUseInvitationReminderJob"
@@ -72,7 +70,7 @@ class TermsOfUseInvitationReminderJob @Inject() (
           subs.exists(sub => inv.applicationId == sub.applicationId && sub.instances.size == 1)
       )
     }
-    val reminderDueTime: Instant                                                                                 = Instant.now(clock).truncatedTo(MILLIS).plus(termsOfUseInvitationReminderInterval.toMinutes, ChronoUnit.MINUTES)
+    val reminderDueTime: Instant                                                                                 = instant().plus(termsOfUseInvitationReminderInterval.toMinutes, ChronoUnit.MINUTES)
     logger.info(s"Send terms of use reminders for invitations having status of EMAIL_SENT with dueBy earlier than $reminderDueTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
@@ -101,7 +99,7 @@ class TermsOfUseInvitationReminderJob @Inject() (
         app       <- E.fromOptionF(applicationRepository.fetch(invite.applicationId), s"Couldn't find application with id=${invite.applicationId}")
         _         <- E.cond(!app.isDeleted, (), s"The application ${invite.applicationId} has been deleted")
         recipients = getRecipients(app)
-        sent      <- E.liftF(emailConnector.sendNewTermsOfUseInvitation(invite.dueBy, ApplicationName(app.name), recipients))
+        sent      <- E.liftF(emailConnector.sendNewTermsOfUseInvitation(invite.dueBy, app.name, recipients))
         _         <- E.liftF(termsOfUseInvitationRepository.updateReminderSent(invite.applicationId))
       } yield HasSucceeded
     ).value

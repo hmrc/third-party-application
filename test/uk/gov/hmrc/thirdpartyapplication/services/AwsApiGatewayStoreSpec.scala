@@ -25,7 +25,7 @@ import org.apache.pekko.actor.ActorSystem
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -46,7 +46,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
     val app = StoredApplication(
       ApplicationId.random,
-      "MyApp",
+      ApplicationName("MyApp"),
       "myapp",
       Set.empty,
       Some("description"),

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -130,9 +130,9 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
 
   private def grantSubmission(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])(submission: Submission) = {
     warnings.fold(
-      Submission.grant(Instant.now(clock), gatekeeperUserName, None, None)(submission)
+      Submission.grant(instant(), gatekeeperUserName, None, None)(submission)
     )(value =>
-      Submission.grantWithWarnings(Instant.now(clock), gatekeeperUserName, value, escalatedTo)(submission)
+      Submission.grantWithWarnings(instant(), gatekeeperUserName, value, escalatedTo)(submission)
     )
   }
 

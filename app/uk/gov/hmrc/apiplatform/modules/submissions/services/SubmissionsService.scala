@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.NonEmptyList
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.common.services.{ClockNow, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
@@ -37,7 +37,7 @@ class SubmissionsService @Inject() (
     contextService: ContextService,
     val clock: Clock
   )(implicit val ec: ExecutionContext
-  ) extends EitherTHelper[String] {
+  ) extends EitherTHelper[String] with ClockNow {
   import cats.instances.future.catsStdInstancesForFuture
 
   private val emptyAnswers = Map.empty[Question.Id, ActualAnswer]
@@ -67,8 +67,8 @@ class SubmissionsService @Inject() (
         allQuestionnaires = groups.flatMap(_.links)
         submissionId      = SubmissionId.random
         context          <- contextService.deriveContext(applicationId)
-        newInstance       = Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(Instant.now(clock), requestedBy)))
-        submission        = Submission(submissionId, applicationId, Instant.now(clock), groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
+        newInstance       = Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(instant(), requestedBy)))
+        submission        = Submission(submissionId, applicationId, instant(), groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
         savedSubmission  <- liftF(submissionsDAO.save(submission))
       } yield savedSubmission
     )
@@ -134,7 +134,7 @@ class SubmissionsService @Inject() (
     (
       for {
         submission       <- fromOptionF(fetchLatest(appId), "submission not found")
-        updatedSubmission = Submission.decline(Instant.now(clock), requestedByEmailAddress, reasons)(submission)
+        updatedSubmission = Submission.decline(instant(), requestedByEmailAddress, reasons)(submission)
         savedSubmission  <- liftF(store(updatedSubmission))
       } yield savedSubmission
     )
@@ -146,7 +146,7 @@ class SubmissionsService @Inject() (
     (
       for {
         submission       <- fromOptionF(fetchLatest(appId), "submission not found")
-        updatedSubmission = Submission.automaticallyMark(Instant.now(clock), requestedByEmailAddress)(submission)
+        updatedSubmission = Submission.automaticallyMark(instant(), requestedByEmailAddress)(submission)
         savedSubmission  <- liftF(store(updatedSubmission))
       } yield savedSubmission
     )

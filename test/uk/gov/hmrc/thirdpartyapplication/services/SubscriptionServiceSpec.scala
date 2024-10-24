@@ -28,7 +28,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, _}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, Collaborator, RateLimitTier}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule}
@@ -53,7 +53,8 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     val underTest = new SubscriptionService(
       mockApplicationRepository,
       mockSubscriptionRepository,
-      ApplicationCommandDispatcherMock.aMock
+      ApplicationCommandDispatcherMock.aMock,
+      clock
     )
     when(mockApplicationRepository.save(*)).thenAnswer((a: StoredApplication) => successful(a))
     when(mockSubscriptionRepository.add(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
@@ -108,7 +109,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
       val applicationData = anApplicationData(applicationId)
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List("context".asIdentifier)))
+      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Set("context".asIdentifier)))
 
       val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
 
@@ -193,7 +194,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     ) = {
     new StoredApplication(
       applicationId,
-      "MyApp",
+      ApplicationName("MyApp"),
       "myapp",
       collaborators,
       Some("description"),

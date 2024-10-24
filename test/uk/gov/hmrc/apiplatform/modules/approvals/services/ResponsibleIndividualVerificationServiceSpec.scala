@@ -20,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, _}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
@@ -39,7 +40,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       with StateHistoryRepositoryMockModule
       with ResponsibleIndividualVerificationRepositoryMockModule {
 
-    val appName                 = "my shiny app"
+    val appName                 = ApplicationName("my shiny app")
     val submissionInstanceIndex = 0
     val responsibleIndividual   = ResponsibleIndividual.build("bob example", "bob@example.com")
     val requestingAdminName     = "Bob Fleming"

@@ -29,6 +29,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ResponsibleIndividual, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
@@ -46,7 +47,7 @@ import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
-  val appName = "my app"
+  val appName = ApplicationName("my app")
   val appId   = ApplicationId.random
   val code    = "12341285217652137257396"
 
@@ -56,7 +57,7 @@ object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
       appId,
       FixedClock.instant,
       Actors.AppCollaborator("requester@example.com".toLaxEmail),
-      appName,
+      appName.value,
       "ms admin",
       "admin@example.com".toLaxEmail,
       "ri name",
@@ -214,7 +215,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ApplicationId.random,
       submissionId,
       submissionIndex,
-      UUID.randomUUID().toString,
+      ApplicationName(UUID.randomUUID().toString),
       createdOn,
       state
     )
@@ -230,7 +231,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ApplicationId.random,
       submissionId,
       submissionIndex,
-      UUID.randomUUID().toString,
+      ApplicationName(UUID.randomUUID().toString),
       createdOn,
       requestingAdminName,
       requestingAdminEmail,
@@ -248,7 +249,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ApplicationId.random,
       submissionId,
       submissionIndex,
-      UUID.randomUUID().toString,
+      ApplicationName(UUID.randomUUID().toString),
       createdOn,
       responsibleIndividual,
       requestingAdminName,

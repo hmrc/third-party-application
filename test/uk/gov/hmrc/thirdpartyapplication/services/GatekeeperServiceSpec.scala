@@ -29,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, Collaborator, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
@@ -68,7 +68,7 @@ class GatekeeperServiceSpec
     ) = {
     StoredApplication(
       applicationId,
-      "MyApp",
+      ApplicationName("MyApp"),
       "myapp",
       collaborators,
       Some("description"),
@@ -105,10 +105,10 @@ class GatekeeperServiceSpec
     )
 
     StateHistoryRepoMock.Insert.thenAnswer()
-    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationDeletedNotification(*, *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
   }
 
   "fetch nonTestingApps with submitted date" should {
@@ -140,7 +140,7 @@ class GatekeeperServiceSpec
 
       val result = await(underTest.fetchAppWithHistory(appId))
 
-      result shouldBe ApplicationWithHistoryResponse(Application(data = app1), history.map(StateHistoryResponse.from))
+      result shouldBe ApplicationWithHistoryResponse(StoredApplication.asApplication(app1), history.map(StateHistoryResponse.from))
     }
 
     "throw not found exception" in new Setup {
@@ -186,19 +186,20 @@ class GatekeeperServiceSpec
     "return no matching applications if application has a subscription" in new Setup {
       ApplicationRepoMock.GetAppsWithSubscriptions.thenReturnNone()
 
-      val result: List[ApplicationWithSubscriptionsResponse] = await(underTest.fetchAllWithSubscriptions())
+      val result: List[GatekeeperAppSubsResponse] = await(underTest.fetchAllWithSubscriptions())
 
       result.size shouldBe 0
     }
 
     "return applications when there are no matching subscriptions" in new Setup {
-      private val appWithSubs: GatekeeperAppSubsResponse = GatekeeperAppSubsResponse(id = ApplicationId.random, name = "name", lastAccess = None, apiIdentifiers = Set())
+      private val appWithSubs: GatekeeperAppSubsResponse =
+        GatekeeperAppSubsResponse(id = ApplicationId.random, name = ApplicationName("name"), lastAccess = None, apiIdentifiers = Set())
       ApplicationRepoMock.GetAppsWithSubscriptions.thenReturn(appWithSubs)
 
-      val result: List[ApplicationWithSubscriptionsResponse] = await(underTest.fetchAllWithSubscriptions())
+      val result: List[GatekeeperAppSubsResponse] = await(underTest.fetchAllWithSubscriptions())
 
       result.size shouldBe 1
-      result shouldBe List(ApplicationWithSubscriptionsResponse(appWithSubs))
+      result shouldBe List(appWithSubs)
     }
   }
 

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
-import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
@@ -39,7 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
 
-class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
+class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData with FixedClock {
 
   trait Setup extends SubmissionsServiceMockModule
       with ApplicationRepositoryMockModule
@@ -57,7 +56,7 @@ class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec 
     val appAdminEmail  = "admin@example.com".toLaxEmail
     val appAdminName   = "Ms Admin"
 
-    val termsOfUseInvitation = TermsOfUseInvitation(applicationId, Instant.now(), Instant.now(), Instant.now(), None, TermsOfUseInvitationState.EMAIL_SENT)
+    val termsOfUseInvitation = TermsOfUseInvitation(applicationId, instant, instant, instant, None, TermsOfUseInvitationState.EMAIL_SENT)
 
     val importantSubmissionData = ImportantSubmissionData(
       None,

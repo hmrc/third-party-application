@@ -27,10 +27,10 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.Applica
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
-class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
+class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec with FixedClock {
 
   trait Setup extends ApplicationRepositoryMockModule {
-    val underTest = new RemoveCollaboratorCommandHandler(ApplicationRepoMock.aMock)
+    val underTest = new RemoveCollaboratorCommandHandler(ApplicationRepoMock.aMock, clock)
 
     val applicationId = ApplicationId.random
     val anAdminEmail  = "admin@example.com".toLaxEmail

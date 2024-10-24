@@ -68,7 +68,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
     val riName  = "Mr Responsible"
     val riEmail = "ri@example.com".toLaxEmail
 
-    val underTest = new VerifyResponsibleIndividualCommandHandler(SubmissionsServiceMock.aMock, ResponsibleIndividualVerificationRepositoryMock.aMock)
+    val underTest = new VerifyResponsibleIndividualCommandHandler(SubmissionsServiceMock.aMock, ResponsibleIndividualVerificationRepositoryMock.aMock, clock)
 
   }
 
@@ -85,7 +85,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
         inside(events.head) {
           case event: ResponsibleIndividualVerificationStarted =>
             event.applicationId shouldBe applicationId
-            event.applicationName shouldBe app.name
+            event.applicationName shouldBe app.name.value
             event.eventDateTime shouldBe ts
             event.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             event.responsibleIndividualName shouldBe riName

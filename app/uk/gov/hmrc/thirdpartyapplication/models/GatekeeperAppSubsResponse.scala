@@ -18,13 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.Instant
 
+import play.api.libs.json.{Json, Writes}
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiIdentifier, ApplicationId}
-import play.api.libs.json.Writes
-import play.api.libs.json.Json
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 
 case class GatekeeperAppSubsResponse(
     id: ApplicationId,
-    name: String,
+    name: ApplicationName,
     lastAccess: Option[Instant],
     apiIdentifiers: Set[ApiIdentifier]
   )

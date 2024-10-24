@@ -21,6 +21,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
@@ -36,8 +37,8 @@ class ApplicationChangedNoValueNotificationSpec extends AsyncHmrcSpec with Appli
     val applicationId         = ApplicationId.random
     val devEmail              = "dev@example.com".toLaxEmail
     val anAdminEmail          = "admin@example.com".toLaxEmail
-    val oldName               = "old app name"
-    val newName               = "new app name"
+    val oldName               = ApplicationName("old app name")
+    val newName               = ApplicationName("new app name")
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
     val testImportantSubmissionData = ImportantSubmissionData(

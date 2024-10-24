@@ -436,7 +436,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendAddedClientSecretNotification.verifyCalledWith(
         requestingAdminEmail,
         obfuscatedSecret,
-        applicationData.name,
+        applicationData.name.value,
         recipients = applicationData.admins.map(_.emailAddress)
       )
     }
@@ -454,7 +454,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendRemovedClientSecretNotification.verifyCalledWith(
         requestingAdminEmail,
         clientSecretName,
-        applicationData.name,
+        applicationData.name.value,
         recipients = applicationData.admins.map(_.emailAddress)
       )
     }

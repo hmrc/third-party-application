@@ -37,7 +37,7 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateUtil with Upli
     val app     =
       StoredApplication(
         ApplicationId.random,
-        "MyApp",
+        ApplicationName("MyApp"),
         "myapp",
         Set.empty,
         None,

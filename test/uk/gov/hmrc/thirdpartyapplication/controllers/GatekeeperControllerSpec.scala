@@ -37,7 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, GrantLength, State}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, ApplicationWithCollaboratorsData, ApplicationWithSubscriptions, State}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationServiceMockModule, StrideGatekeeperRoleAuthorisationServiceMockModule}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -48,7 +48,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
+import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
@@ -284,7 +284,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   "fetchAllAppsWithSubscriptions" should {
     val expected = List(
-      ApplicationWithSubscriptionsResponse(ApplicationId.random, "Application Name", None, Set())
+      GatekeeperAppSubsResponse(ApplicationId.random, ApplicationName("Application Name"), None, Set())
     )
 
     "return app with subs for Stride GK User" in new Setup {
@@ -311,8 +311,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
   }
   "fetchAllForCollaborator" should {
-    val userId                                                   = UserId.random
-    val standardApplicationResponse: ExtendedApplicationResponse = aNewExtendedApplicationResponse(access = Access.Standard())
+    val userId                                                    = UserId.random
+    val standardApplicationResponse: ApplicationWithSubscriptions = aNewExtendedApplicationResponse(access = Access.Standard())
 
     "succeed with a 200 when applications are found for the collaborator by user id" in new Setup {
       when(underTest.applicationService.fetchAllForCollaborator(userId, true))
@@ -377,11 +377,11 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: Instant = instant, state: ApplicationState = testingState()) = {
-    ApplicationWithUpliftRequest(id, "app 1", submittedOn, state.name)
+    ApplicationWithUpliftRequest(id, ApplicationName("app 1"), submittedOn, state.name)
   }
 
   private def anAppResponse(appId: ApplicationId) = {
-    val grantLength = GrantLength.EIGHTEEN_MONTHS
-    new Application(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, instant, Some(instant), grantLength)
+    ApplicationWithCollaboratorsData.standardApp
+    // new Application(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, instant, Some(instant), grantLength)
   }
 }

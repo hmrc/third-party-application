@@ -16,15 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.util.UUID
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, Collaborator, GrantLength, RedirectUri, State}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.{Application, ExtendedApplicationResponse}
 import uk.gov.hmrc.thirdpartyapplication.util.CollaboratorTestData
 
 trait ControllerTestData extends CollaboratorTestData with FixedClock {
@@ -55,54 +52,55 @@ trait ControllerTestData extends CollaboratorTestData with FixedClock {
       environment: Environment = Environment.PRODUCTION,
       appId: ApplicationId = ApplicationId.random,
       state: ApplicationState = ApplicationState(State.TESTING, updatedOn = instant)
-    ) = {
-    val grantLength = GrantLength.EIGHTEEN_MONTHS
-    new Application(
-      appId,
-      ClientId("clientId"),
-      "gatewayId",
-      "My Application",
-      environment.toString,
-      Some("Description"),
-      collaborators,
-      instant,
-      Some(instant),
-      grantLength,
-      None,
-      standardAccess.redirectUris,
-      standardAccess.termsAndConditionsUrl,
-      standardAccess.privacyPolicyUrl,
-      access,
-      state
-    )
+    ): ApplicationWithCollaborators = {
+    ApplicationWithCollaboratorsData.standardApp
+    // new Application(
+    //   appId,
+    //   ClientId("clientId"),
+    //   "gatewayId",
+    //   ApplicationName("My Application"),
+    //   environment.toString,
+    //   Some("Description"),
+    //   collaborators,
+    //   instant,
+    //   Some(instant),
+    //   grantLength,
+    //   None,
+    //   standardAccess.redirectUris,
+    //   standardAccess.termsAndConditionsUrl,
+    //   standardAccess.privacyPolicyUrl,
+    //   access,
+    //   state
+    // )
   }
 
-  def aNewExtendedApplicationResponse(access: Access, environment: Environment = Environment.PRODUCTION, subscriptions: List[ApiIdentifier] = List.empty) =
-    extendedApplicationResponseFromApplicationResponse(aNewApplicationResponse(access, environment)).copy(subscriptions = subscriptions)
+  def aNewExtendedApplicationResponse(access: Access, environment: Environment = Environment.PRODUCTION, subscriptions: List[ApiIdentifier] = List.empty)
+      : ApplicationWithSubscriptions =
+    aNewApplicationResponse(access, environment).withSubscriptions(subscriptions.toSet)
 
-  def extendedApplicationResponseFromApplicationResponse(app: Application) = {
-    new ExtendedApplicationResponse(
-      app.id,
-      app.clientId,
-      app.gatewayId,
-      app.name,
-      app.deployedTo,
-      app.description,
-      app.collaborators,
-      app.createdOn,
-      app.lastAccess,
-      app.grantLength,
-      app.redirectUris,
-      app.termsAndConditionsUrl,
-      app.privacyPolicyUrl,
-      app.access,
-      app.state,
-      app.rateLimitTier,
-      app.checkInformation,
-      app.blocked,
-      UUID.randomUUID().toString,
-      List.empty,
-      allowAutoDelete = app.moreApplication.allowAutoDelete
-    )
-  }
+  // def extendedApplicationResponseFromApplicationResponse(app: Application) = {
+  //   new ExtendedApplicationResponse(
+  //     app.id,
+  //     app.clientId,
+  //     app.gatewayId,
+  //     app.name,
+  //     app.deployedTo,
+  //     app.description,
+  //     app.collaborators,
+  //     app.createdOn,
+  //     app.lastAccess,
+  //     app.grantLength,
+  //     app.redirectUris,
+  //     app.termsAndConditionsUrl,
+  //     app.privacyPolicyUrl,
+  //     app.access,
+  //     app.state,
+  //     app.rateLimitTier,
+  //     app.checkInformation,
+  //     app.blocked,
+  //     UUID.randomUUID().toString,
+  //     List.empty,
+  //     allowAutoDelete = app.moreApplication.allowAutoDelete
+  //   )
+  // }
 }

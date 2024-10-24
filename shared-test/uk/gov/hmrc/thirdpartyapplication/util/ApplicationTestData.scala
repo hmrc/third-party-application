@@ -49,10 +49,10 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
       environment: Environment = Environment.PRODUCTION,
       ipAllowlist: IpAllowlist = IpAllowlist(),
       grantLength: Period = grantLength
-    ) = {
+    ): StoredApplication = {
     StoredApplication(
       applicationId,
-      "MyApp",
+      ApplicationName("MyApp"),
       "myapp",
       collaborators,
       Some("description"),
@@ -67,7 +67,6 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
       environment = environment.toString,
       ipAllowlist = ipAllowlist
     )
-
   }
 
 }

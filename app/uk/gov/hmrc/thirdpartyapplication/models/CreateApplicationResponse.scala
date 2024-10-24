@@ -18,7 +18,9 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import play.api.libs.json.OFormat
 
-case class CreateApplicationResponse(application: Application, totp: Option[CreateApplicationResponse.TotpSecret] = None)
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
+
+case class CreateApplicationResponse(application: ApplicationWithCollaborators, totp: Option[CreateApplicationResponse.TotpSecret] = None)
 
 object CreateApplicationResponse {
   case class TotpSecret(production: String)

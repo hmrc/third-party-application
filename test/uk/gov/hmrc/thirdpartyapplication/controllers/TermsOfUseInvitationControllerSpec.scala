@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.time.Instant
 import java.time.temporal.ChronoUnit._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -39,8 +38,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
 
   trait Setup extends TermsOfUseInvitationServiceMockModule {
     val applicationId = ApplicationId.random
-    val now           = Instant.now().truncatedTo(MILLIS)
-    val dueDate       = now.plus(21, DAYS)
+    val dueDate       = instant.plus(21, DAYS)
 
     lazy val underTest = new TermsOfUseInvitationController(
       TermsOfUseInvitationServiceMock.aMock,
@@ -52,7 +50,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
 
   "fetch invitation" should {
     "return an OK with a terms of use invitation response" in new Setup {
-      val response = TermsOfUseInvitationResponse(applicationId, now, now, dueDate, None, EMAIL_SENT)
+      val response = TermsOfUseInvitationResponse(applicationId, instant, instant, dueDate, None, EMAIL_SENT)
 
       TermsOfUseInvitationServiceMock.FetchInvitation.thenReturn(response)
 
@@ -76,8 +74,8 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
       val invitations = List(
         TermsOfUseInvitationResponse(
           applicationId,
-          now,
-          now,
+          instant,
+          instant,
           dueDate,
           None,
           EMAIL_SENT
@@ -101,8 +99,8 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
       val invitations = List(
         TermsOfUseInvitationWithApplicationResponse(
           applicationId,
-          now,
-          now,
+          instant,
+          instant,
           dueDate,
           None,
           EMAIL_SENT,

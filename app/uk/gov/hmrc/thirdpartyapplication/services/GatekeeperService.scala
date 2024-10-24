@@ -30,10 +30,9 @@ import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, _}
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, StoredApplication}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.models.db.GatekeeperAppSubsResponse
 
 @Singleton
 class GatekeeperService @Inject() (
@@ -72,7 +71,7 @@ class GatekeeperService @Inject() (
       app     <- fetchApp(applicationId)
       history <- stateHistoryRepository.fetchByApplicationId(applicationId)
     } yield {
-      ApplicationWithHistoryResponse(Application(data = app), history.map(StateHistoryResponse.from))
+      ApplicationWithHistoryResponse(StoredApplication.asApplication(app), history.map(StateHistoryResponse.from))
     }
   }
 

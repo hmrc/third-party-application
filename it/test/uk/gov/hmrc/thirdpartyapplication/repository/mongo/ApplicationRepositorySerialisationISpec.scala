@@ -36,7 +36,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, GrantLength, RedirectUri}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ClientSecret, GrantLength, RedirectUri}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
@@ -96,7 +96,7 @@ class ApplicationRepositorySerialisationISpec
 
     val applicationData = StoredApplication(
       applicationId,
-      "appName",
+      ApplicationName("appName"),
       "normalised app name",
       Set(
         "user@example.com".admin()

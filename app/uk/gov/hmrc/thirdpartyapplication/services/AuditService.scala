@@ -267,7 +267,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   private def auditCompletedApprovalRequest(app: StoredApplication, evt: ApplicationApprovalRequestSubmitted)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     E.liftF(audit(
       ApplicationUpliftRequested,
-      AuditHelper.applicationId(app.id) ++ Map("newApplicationName" -> app.name)
+      AuditHelper.applicationId(app.id) ++ Map("newApplicationName" -> app.name.value)
     ))
       .toOption
       .value
@@ -454,10 +454,10 @@ object AuditHelper {
     if (previous.name != updated.name) Map("newApplicationName" -> updated.name)
     else Map.empty
 
-  def gatekeeperActionDetails(app: StoredApplication) =
+  def gatekeeperActionDetails(app: StoredApplication): Map[String, String] =
     Map(
       "applicationId"          -> app.id.value.toString,
-      "applicationName"        -> app.name,
+      "applicationName"        -> app.name.value,
       "upliftRequestedByEmail" -> app.state.requestedByEmailAddress.getOrElse("-"),
       "applicationAdmins"      -> app.admins.map(_.emailAddress.text).mkString(", ")
     )

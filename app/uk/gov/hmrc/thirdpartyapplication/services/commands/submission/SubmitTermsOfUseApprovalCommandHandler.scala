@@ -120,7 +120,7 @@ class SubmitTermsOfUseApprovalCommandHandler @Inject() (
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
           actor = cmd.actor,
-          applicationName = app.name,
+          applicationName = app.name.value,
           requestingAdminName = cmd.requesterName,
           requestingAdminEmail = cmd.requesterEmail,
           responsibleIndividualName = importantSubmissionData.responsibleIndividual.fullName.value,

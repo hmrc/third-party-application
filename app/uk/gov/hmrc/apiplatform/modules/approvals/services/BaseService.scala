@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 
-abstract class BaseService(stateHistoryRepository: StateHistoryRepository, clock: Clock)(implicit ec: ExecutionContext) {
+abstract class BaseService(stateHistoryRepository: StateHistoryRepository, val clock: Clock)(implicit ec: ExecutionContext) extends ClockNow {
 
   def insertStateHistory(
       snapshotApp: StoredApplication,
@@ -34,7 +35,7 @@ abstract class BaseService(stateHistoryRepository: StateHistoryRepository, clock
       actor: Actor,
       rollback: StoredApplication => Any
     ): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = Instant.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = instant())
     stateHistoryRepository.insert(stateHistory)
       .andThen {
         case e: Failure[_] =>

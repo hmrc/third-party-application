@@ -32,7 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, _}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, CheckInformation, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, CheckInformation, Collaborator}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -181,13 +181,13 @@ class SubscriptionRepositoryISpec
 
       val result = await(subscriptionRepository.getSubscriptions(application1))
 
-      result mustBe List(api1, api2)
+      result mustBe Set(api1, api2)
     }
 
     "return empty when the application is not subscribed to any API" in {
       val result = await(subscriptionRepository.getSubscriptions(application1))
 
-      result mustBe List.empty
+      result mustBe Set.empty
     }
   }
 
@@ -378,7 +378,7 @@ class SubscriptionRepositoryISpec
 
     StoredApplication(
       id,
-      name,
+      ApplicationName(name),
       name.toLowerCase,
       collaborators,
       Some("description"),

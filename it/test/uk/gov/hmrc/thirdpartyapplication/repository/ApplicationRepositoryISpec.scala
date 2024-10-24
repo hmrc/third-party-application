@@ -55,7 +55,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
 
   val application = StoredApplication(
     appId,
-    "AppName",
+    ApplicationName("AppName"),
     "appname",
     Set(Collaborators.Administrator(userId, LaxEmailAddress("bob@example.com"))),
     None,
@@ -278,7 +278,7 @@ class ApplicationRepositoryISpec
       val retrieved = await(applicationRepository.fetch(application.id)).get
       retrieved mustBe application
 
-      val updated = retrieved.copy(name = "new name")
+      val updated = retrieved.copy(name = ApplicationName("new name"))
       await(applicationRepository.save(updated))
 
       val newRetrieved = await(applicationRepository.fetch(application.id)).get
@@ -1627,9 +1627,9 @@ class ApplicationRepositoryISpec
           .toFuture()
       )
 
-      val sanitisedApp1Name = sanitiseGrafanaNodeName(application1.name)
-      val sanitisedApp2Name = sanitiseGrafanaNodeName(application2.name)
-      val sanitisedApp3Name = sanitiseGrafanaNodeName(application3.name)
+      val sanitisedApp1Name = sanitiseGrafanaNodeName(application1.name.value)
+      val sanitisedApp2Name = sanitiseGrafanaNodeName(application2.name.value)
+      val sanitisedApp3Name = sanitiseGrafanaNodeName(application3.name.value)
 
       val result =
         await(applicationRepository.getApplicationWithSubscriptionCount())
@@ -2375,14 +2375,14 @@ class ApplicationRepositoryISpec
 
   "handle NameChanged event correctly" in {
     val applicationId = ApplicationId.random
-    val oldName       = "oldName"
+    val oldName       = ApplicationName("oldName")
     val newName       = "newName"
 
     val app = anApplicationData(applicationId).copy(name = oldName)
     await(applicationRepository.save(app))
 
     val appWithUpdatedName = await(applicationRepository.updateApplicationName(applicationId, newName))
-    appWithUpdatedName.name mustBe newName
+    appWithUpdatedName.name.value mustBe newName
     appWithUpdatedName.normalisedName mustBe newName.toLowerCase
 
     await(applicationRepository.hardDelete(applicationId))
@@ -2460,7 +2460,7 @@ class ApplicationRepositoryISpec
       val stateHistory3 = saveHistoryStatePair(app.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(3))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results mustBe List(ApplicationWithStateHistory(app.id, app.name, 2, List(stateHistory1, stateHistory2, stateHistory3)))
+      results mustBe List(ApplicationWithStateHistory(app.id, app.name.value, 2, List(stateHistory1, stateHistory2, stateHistory3)))
     }
 
     "return app state history correctly for old journey app" in {
@@ -2470,7 +2470,7 @@ class ApplicationRepositoryISpec
       val stateHistory3 = saveHistoryStatePair(app.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(3))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results mustBe List(ApplicationWithStateHistory(app.id, app.name, 1, List(stateHistory1, stateHistory2, stateHistory3)))
+      results mustBe List(ApplicationWithStateHistory(app.id, app.name.value, 1, List(stateHistory1, stateHistory2, stateHistory3)))
     }
 
     "return app state histories sorted correctly" in {
@@ -2485,9 +2485,9 @@ class ApplicationRepositoryISpec
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
       results mustBe List(
-        ApplicationWithStateHistory(app1.id, app1.name, 2, List(app1History)),
-        ApplicationWithStateHistory(app3.id, app2.name, 2, List(app3History)),
-        ApplicationWithStateHistory(app2.id, app3.name, 2, List(app2History))
+        ApplicationWithStateHistory(app1.id, app1.name.value, 2, List(app1History)),
+        ApplicationWithStateHistory(app3.id, app2.name.value, 2, List(app3History)),
+        ApplicationWithStateHistory(app2.id, app3.name.value, 2, List(app2History))
       )
     }
 
@@ -2500,7 +2500,7 @@ class ApplicationRepositoryISpec
       saveHistory(sandboxApp.id, None, State.PRODUCTION, Duration.ofHours(1))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results mustBe List(ApplicationWithStateHistory(prodApp.id, prodApp.name, 2, List(stateHistory1, stateHistory2)))
+      results mustBe List(ApplicationWithStateHistory(prodApp.id, prodApp.name.value, 2, List(stateHistory1, stateHistory2)))
     }
 
     "do not return app state history for a deleted app" in {

@@ -16,9 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.time.temporal.ChronoUnit._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
@@ -45,7 +43,7 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
     val mockApplicationRepo   = ApplicationRepoMock.aMock
     val mockSubmissionService = SubmissionsServiceMock.aMock
 
-    val nowInstant = Instant.now(clock).truncatedTo(MILLIS)
+    val nowInstant = instant
     val dueBy      = nowInstant.plus(30, ChronoUnit.DAYS)
 
     val applicationId1 = ApplicationId.random

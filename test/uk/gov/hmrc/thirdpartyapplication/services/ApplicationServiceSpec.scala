@@ -38,7 +38,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
@@ -68,6 +68,7 @@ class ApplicationServiceSpec
     with ApplicationStateUtil
     with ApplicationTestData
     with UpliftRequestSamples
+    with ApplicationWithCollaboratorsFixtures
     with FixedClock {
 
   var actorSystem: Option[ActorSystem] = None
@@ -157,11 +158,11 @@ class ApplicationServiceSpec
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
     StateHistoryRepoMock.Insert.thenAnswer()
-    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationDeletedNotification(*, *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationApprovedNotification(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
 
     UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
     SubmissionsServiceMock.DeleteAll.thenReturn()
@@ -182,7 +183,7 @@ class ApplicationServiceSpec
 
       val existingApplication                   = StoredApplication(
         id = applicationId,
-        name = "app name",
+        name = ApplicationName("app name"),
         normalisedName = "app name",
         collaborators = Set(admin),
         wso2ApplicationName = "wso2ApplicationName",
@@ -194,7 +195,7 @@ class ApplicationServiceSpec
       )
       val newRedirectUris                       = List(RedirectUri.unsafeApply("https://new-url.example.com"))
       val updatedApplication: StoredApplication = existingApplication.copy(
-        name = "new name",
+        name = ApplicationName("new name"),
         normalisedName = "new name",
         access = access match {
           case _: Access.Standard => Access.Standard(
@@ -501,10 +502,10 @@ class ApplicationServiceSpec
 
   "recordApplicationUsage" should {
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
-      val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
-      val clientId                           = applicationData.tokens.production.clientId
+      val subscriptions = Set("myContext".asIdentifier("myVersion"))
+      val clientId      = applicationData.tokens.production.clientId
       ApplicationRepoMock.FindAndRecordApplicationUsage.thenReturnWhen(clientId)(applicationData)
-      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions: _*)
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq: _*)
 
       val result = await(underTest.findAndRecordApplicationUsage(clientId))
 
@@ -548,10 +549,10 @@ class ApplicationServiceSpec
 
   "findAndRecordServerTokenUsage" should {
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
-      val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
-      val serverToken                        = applicationData.tokens.production.accessToken
+      val subscriptions = Set("myContext".asIdentifier("myVersion"))
+      val serverToken   = applicationData.tokens.production.accessToken
       ApplicationRepoMock.FindAndRecordServerTokenUsage.thenReturnWhen(serverToken)(applicationData)
-      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions: _*)
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq: _*)
 
       val result = await(underTest.findAndRecordServerTokenUsage(serverToken))
 
@@ -600,24 +601,28 @@ class ApplicationServiceSpec
 
       val result = await(underTest.fetch(applicationId).value)
 
-      result shouldBe Some(Application(
-        id = applicationId,
-        clientId = productionToken.clientId,
-        gatewayId = data.wso2ApplicationName,
-        name = data.name,
-        deployedTo = data.environment,
-        description = data.description,
-        collaborators = data.collaborators,
-        createdOn = data.createdOn,
-        lastAccess = data.lastAccess,
-        grantLength = GrantLength.EIGHTEEN_MONTHS,
-        lastAccessTokenUsage = productionToken.lastAccessTokenUsage,
-        redirectUris = List.empty,
-        termsAndConditionsUrl = None,
-        privacyPolicyUrl = None,
-        access = data.access,
-        state = data.state,
-        rateLimitTier = RateLimitTier.SILVER
+      result shouldBe Some(ApplicationWithCollaborators(
+        CoreApplication(
+          id = applicationId,
+          clientId = productionToken.clientId,
+          gatewayId = data.wso2ApplicationName,
+          name = data.name,
+          deployedTo = Environment.unsafeApply(data.environment),
+          description = data.description,
+          createdOn = data.createdOn,
+          lastAccess = data.lastAccess,
+          grantLength = GrantLength.EIGHTEEN_MONTHS,
+          lastAccessTokenUsage = productionToken.lastAccessTokenUsage,
+          access = data.access,
+          state = data.state,
+          rateLimitTier = RateLimitTier.SILVER,
+          checkInformation = None,
+          blocked = false,
+          ipAllowlist = IpAllowlist(),
+          allowAutoDelete = true,
+          lastActionActor = ActorType.UNKNOWN
+        ),
+        collaborators = data.collaborators
       ))
     }
   }
@@ -628,7 +633,7 @@ class ApplicationServiceSpec
       val clientId = ClientId("some-client-id")
       ApplicationRepoMock.FetchByClientId.thenReturnNone()
 
-      val result: Option[Application] = await(underTest.fetchByClientId(clientId))
+      val result: Option[ApplicationWithCollaborators] = await(underTest.fetchByClientId(clientId))
 
       result shouldBe None
     }
@@ -636,12 +641,12 @@ class ApplicationServiceSpec
     "return an application when it exists in the repository for the given client id" in new Setup {
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(applicationData.tokens.production.clientId)(applicationData)
 
-      val result: Option[Application] = await(underTest.fetchByClientId(applicationData.tokens.production.clientId))
+      val result: Option[ApplicationWithCollaborators] = await(underTest.fetchByClientId(applicationData.tokens.production.clientId))
 
       result.get.id shouldBe applicationId
-      result.get.deployedTo shouldBe "PRODUCTION"
+      result.get.deployedTo shouldBe Environment.PRODUCTION
       result.get.collaborators shouldBe applicationData.collaborators
-      result.get.createdOn shouldBe applicationData.createdOn
+      result.get.details.createdOn shouldBe applicationData.createdOn
     }
 
   }
@@ -651,7 +656,7 @@ class ApplicationServiceSpec
     "return none when no application exists in the repository for the given server token" in new Setup {
       ApplicationRepoMock.FetchByServerToken.thenReturnNoneWhen(serverToken)
 
-      val result: Option[Application] = await(underTest.fetchByServerToken(serverToken))
+      val result: Option[ApplicationWithCollaborators] = await(underTest.fetchByServerToken(serverToken))
 
       result shouldBe None
     }
@@ -662,11 +667,11 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.FetchByServerToken.thenReturnWhen(serverToken)(applicationData)
 
-      val result: Option[Application] = await(underTest.fetchByServerToken(serverToken))
+      val result: Option[ApplicationWithCollaborators] = await(underTest.fetchByServerToken(serverToken))
 
       result.get.id shouldBe applicationId
       result.get.collaborators shouldBe applicationData.collaborators
-      result.get.createdOn shouldBe applicationData.createdOn
+      result.get.details.createdOn shouldBe applicationData.createdOn
     }
   }
 
@@ -697,7 +702,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
       val result = await(underTest.fetchAllForCollaborators(List(userId)))
-      result should contain theSameElementsAs List(standardApplicationData, privilegedApplicationData, ropcApplicationData).map(app => Application(data = app))
+      result should contain theSameElementsAs List(standardApplicationData, privilegedApplicationData, ropcApplicationData).map(app => StoredApplication.asApplication(app))
     }
 
     "fetch all applications for two given collaborator user ids" in new Setup {
@@ -712,7 +717,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId2, false)(standardApplicationData2)
 
       val result = await(underTest.fetchAllForCollaborators(List(userId1, userId2)))
-      result should contain theSameElementsAs List(standardApplicationData1, standardApplicationData2).map(app => Application(data = app))
+      result should contain theSameElementsAs List(standardApplicationData1, standardApplicationData2).map(app => StoredApplication.asApplication(app))
     }
 
     "deduplicate applications if more than one user belongs to the same application" in new Setup {
@@ -727,7 +732,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId2, false)(standardApplicationData1, standardApplicationData2)
 
       val result = await(underTest.fetchAllForCollaborators(List(userId1, userId2)))
-      result should contain theSameElementsAs List(standardApplicationData1, standardApplicationData2).map(app => Application(data = app))
+      result should contain theSameElementsAs List(standardApplicationData1, standardApplicationData2).map(app => StoredApplication.asApplication(app))
     }
   }
 
@@ -736,17 +741,17 @@ class ApplicationServiceSpec
       val apiContext = "some-context".asContext
 
       ApplicationRepoMock.FetchAllForContent.thenReturnWhen(apiContext)(applicationData)
-      val result: List[Application] = await(underTest.fetchAllBySubscription(apiContext))
+      val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllBySubscription(apiContext))
 
       result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => Application(data = app))
+      result shouldBe List(applicationData).map(app => StoredApplication.asApplication(app))
     }
 
     "return no matching applications for a given subscription to an API context" in new Setup {
       val apiContext = "some-context".asContext
 
       ApplicationRepoMock.FetchAllForContent.thenReturnEmptyWhen(apiContext)
-      val result: List[Application] = await(underTest.fetchAllBySubscription(apiContext))
+      val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllBySubscription(apiContext))
 
       result.size shouldBe 0
     }
@@ -755,10 +760,10 @@ class ApplicationServiceSpec
       val apiIdentifier = "some-context".asIdentifier("some-version")
 
       ApplicationRepoMock.FetchAllForApiIdentifier.thenReturnWhen(apiIdentifier)(applicationData)
-      val result: List[Application] = await(underTest.fetchAllBySubscription(apiIdentifier))
+      val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllBySubscription(apiIdentifier))
 
       result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => Application(data = app))
+      result shouldBe List(applicationData).map(app => StoredApplication.asApplication(app))
     }
 
     "return no matching applications for a given subscription to an API identifier" in new Setup {
@@ -766,7 +771,7 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.FetchAllForApiIdentifier.thenReturnEmptyWhen(apiIdentifier)
 
-      val result: List[Application] = await(underTest.fetchAllBySubscription(apiIdentifier))
+      val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllBySubscription(apiIdentifier))
 
       result.size shouldBe 0
     }
@@ -777,7 +782,7 @@ class ApplicationServiceSpec
     "return no matching applications if application has a subscription" in new Setup {
       ApplicationRepoMock.FetchAllWithNoSubscriptions.thenReturnNone()
 
-      val result: List[Application] = await(underTest.fetchAllWithNoSubscriptions())
+      val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllWithNoSubscriptions())
 
       result.size shouldBe 0
     }
@@ -785,10 +790,10 @@ class ApplicationServiceSpec
     "return applications when there are no matching subscriptions" in new Setup {
       ApplicationRepoMock.FetchAllWithNoSubscriptions.thenReturn(applicationData)
 
-      val result: List[Application] = await(underTest.fetchAllWithNoSubscriptions())
+      val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllWithNoSubscriptions())
 
       result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => Application(data = app))
+      result shouldBe List(applicationData).map(app => StoredApplication.asApplication(app))
     }
   }
 
@@ -995,7 +1000,7 @@ class ApplicationServiceSpec
 
     StoredApplication(
       applicationId,
-      "MyApp",
+      ApplicationName("MyApp"),
       "myapp",
       collaborators,
       Some("description"),

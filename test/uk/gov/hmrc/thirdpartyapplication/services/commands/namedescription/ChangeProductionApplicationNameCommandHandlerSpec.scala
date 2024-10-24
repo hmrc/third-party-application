@@ -23,7 +23,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, ValidatedApplicationName}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, State, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationName
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
@@ -39,16 +39,16 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val oldName        = app.name
-    val newName        = "New app name"
+    val newName        = ApplicationName("New app name")
     val gatekeeperUser = "gkuser"
     val requester      = "requester"
 
     val userId = idOf(anAdminEmail)
 
-    val newApp = app.copy(name = newName, normalisedName = newName.toLowerCase())
+    val newApp = app.copy(name = newName, normalisedName = newName.value.toLowerCase())
 
     val timestamp = FixedClock.instant
-    val update    = ChangeProductionApplicationName(gatekeeperUser, userId, instant, ValidatedApplicationName(newName).get)
+    val update    = ChangeProductionApplicationName(gatekeeperUser, userId, instant, ValidatedApplicationName(newName.value).get)
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
@@ -64,8 +64,8 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            aNewName shouldBe newName
-            anOldName shouldBe oldName
+            aNewName shouldBe newName.value
+            anOldName shouldBe oldName.value
             anOldName should not be aNewName
             requestingAdminEmail shouldBe anAdminEmail
         }

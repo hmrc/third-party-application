@@ -24,6 +24,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocations, ResponsibleIndividual, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.REMINDERS_SENT
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
@@ -45,7 +46,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
 
     val riName         = "bob responsible"
     val riEmail        = "bob.responsible@example.com"
-    val appName        = "my app"
+    val appName        = ApplicationName("my app")
     val requesterName  = "bob requester"
     val requesterEmail = "bob.requester@example.com"
 
