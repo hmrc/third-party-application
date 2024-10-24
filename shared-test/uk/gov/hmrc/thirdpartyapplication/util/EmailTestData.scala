@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddressData
 
 trait EmailTestData {
-  val loggedInUser = "loggedin@example.com".toLaxEmail
-  val devEmail     = "dev@example.com".toLaxEmail
-  val anAdminEmail = "admin@example.com".toLaxEmail
-
+  val devEmail     = LaxEmailAddressData.three
+  val anAdminEmail = LaxEmailAddressData.one
+  val loggedInUser = LaxEmailAddressData.two
 }

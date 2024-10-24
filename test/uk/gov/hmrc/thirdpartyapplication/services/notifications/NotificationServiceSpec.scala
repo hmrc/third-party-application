@@ -49,7 +49,7 @@ class NotificationServiceSpec
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val applicationId         = ApplicationId.random
+    val applicationId         = ApplicationIdData.one
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
     val testImportantSubmissionData = ImportantSubmissionData(
@@ -61,10 +61,7 @@ class NotificationServiceSpec
       List.empty
     )
 
-    val applicationData: StoredApplication = anApplicationData(
-      applicationId,
-      access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
-    )
+    val applicationData: StoredApplication = anApplicationData(applicationId).copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
     val collaboratorEmails = applicationData.collaborators.map(_.emailAddress)
 
@@ -90,7 +87,12 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
 
-      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(anAdminEmail.text, oldAppName, newAppName, collaboratorEmails + responsibleIndividual.emailAddress)
+      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(
+        otherAdminCollaborator.emailAddress.text,
+        oldAppName,
+        newAppName,
+        collaboratorEmails + responsibleIndividual.emailAddress
+      )
     }
 
     "when receive a ProductionAppPrivacyPolicyLocationChanged, call the event handler and return successfully" in new Setup {

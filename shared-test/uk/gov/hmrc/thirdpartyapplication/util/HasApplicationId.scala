@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationIdData
 
 trait HasApplicationId {
-  val applicationId = ApplicationId.random
+  val applicationId = ApplicationIdData.one
 }

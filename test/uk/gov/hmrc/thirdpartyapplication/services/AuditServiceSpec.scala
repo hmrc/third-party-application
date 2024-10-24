@@ -68,10 +68,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     List.empty
   )
 
-  val applicationData: StoredApplication = anApplicationData(
-    applicationId,
-    access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
-  )
+  val applicationData: StoredApplication = anApplicationData().copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
   val instigator                         = applicationData.collaborators.head.userId
 
   def isSameDataEvent(expected: DataEvent) =

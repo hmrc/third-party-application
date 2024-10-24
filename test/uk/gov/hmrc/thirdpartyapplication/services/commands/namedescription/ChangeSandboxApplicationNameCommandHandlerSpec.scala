@@ -43,7 +43,7 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
     val newName   = ApplicationName("New app name")
     val requester = "requester"
 
-    val userId = idOf(anAdminEmail)
+    val userId = adminOne.userId
 
     val newApp = app.copy(name = newName, normalisedName = newName.value.toLowerCase())
 

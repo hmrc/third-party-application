@@ -39,13 +39,11 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId          = ApplicationId.random
-    val submission     = aSubmission
-    val appAdminUserId = UserId.random
-    val appAdminEmail  = "admin@example.com".toLaxEmail
-    val oldRiUserId    = UserId.random
-    val oldRiEmail     = "oldri@example.com".toLaxEmail
-    val oldRiName      = "old ri"
+    val appId       = ApplicationId.random
+    val submission  = aSubmission
+    val oldRiUserId = adminTwo.userId
+    val oldRiEmail  = adminTwo.emailAddress
+    val oldRiName   = "old ri"
 
     val importantSubmissionData = ImportantSubmissionData(
       None,
@@ -57,10 +55,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
     )
 
     val app       = anApplicationData(appId).copy(
-      collaborators = Set(
-        appAdminEmail.admin(appAdminUserId),
-        oldRiEmail.admin(oldRiUserId)
-      ),
+      collaborators = Set(adminOne, adminTwo),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
     val ts        = FixedClock.instant
@@ -68,7 +63,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
     val riEmail   = "ri@example.com".toLaxEmail
     val underTest = new ChangeResponsibleIndividualToSelfCommandHandler(ApplicationRepoMock.aMock, SubmissionsServiceMock.aMock)
 
-    val changeResponsibleIndividualToSelfCommand = ChangeResponsibleIndividualToSelf(appAdminUserId, instant, riName, riEmail)
+    val changeResponsibleIndividualToSelfCommand = ChangeResponsibleIndividualToSelf(adminOne.userId, instant, riName, riEmail)
 
     def checkSuccessResult(expectedActor: Actor, expectedPreviousEmail: LaxEmailAddress, expectedPreviousName: String)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).value
@@ -92,13 +87,13 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
               ) =>
             applicationId shouldBe appId
             eventDateTime shouldBe ts
-            actor shouldBe Actors.AppCollaborator(appAdminEmail)
+            actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             previousResponsibleIndividualName shouldBe oldRiName
             previousResponsibleIndividualEmail shouldBe oldRiEmail
             submissionIndex shouldBe submission.latestInstance.index
             submissionId.value shouldBe submission.id.value
             requestingName shouldBe riName
-            requestingEmail shouldBe appAdminEmail
+            requestingEmail shouldBe adminOne.emailAddress
         }
       }
     }
@@ -115,7 +110,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
     "return an error if no submission is found for the application" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
       checkFailsWith(s"No submission found for application ${app.id.value}") {
-        underTest.process(app, ChangeResponsibleIndividualToSelf(appAdminUserId, instant, riName, riEmail))
+        underTest.process(app, ChangeResponsibleIndividualToSelf(adminOne.userId, instant, riName, riEmail))
       }
     }
 
@@ -123,7 +118,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(nonStandardApp, ChangeResponsibleIndividualToSelf(appAdminUserId, instant, riName, riEmail))
+        underTest.process(nonStandardApp, ChangeResponsibleIndividualToSelf(adminOne.userId, instant, riName, riEmail))
       }
     }
 
@@ -131,7 +126,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
-        underTest.process(oldJourneyApp, ChangeResponsibleIndividualToSelf(appAdminUserId, instant, riName, riEmail))
+        underTest.process(oldJourneyApp, ChangeResponsibleIndividualToSelf(adminOne.userId, instant, riName, riEmail))
       }
     }
 
@@ -139,7 +134,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val notApprovedApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
-        underTest.process(notApprovedApp, ChangeResponsibleIndividualToSelf(appAdminUserId, instant, riName, riEmail))
+        underTest.process(notApprovedApp, ChangeResponsibleIndividualToSelf(adminOne.userId, instant, riName, riEmail))
       }
     }
 

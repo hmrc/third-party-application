@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, Environment}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationIdData, Environment}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
@@ -33,13 +33,12 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new UpdateRedirectUrisCommandHandler(ApplicationRepoMock.aMock)
 
-    val applicationId                      = ApplicationId.random
+    val applicationId                      = ApplicationIdData.one
     val applicationData: StoredApplication = anApplicationData(applicationId)
     val subordinateApp                     = applicationData.copy(environment = Environment.SANDBOX.toString())
 
     val nonStandardAccessApp = applicationData.copy(access = Access.Privileged())
-    val developer            = applicationData.collaborators.head
-    val developerActor       = Actors.AppCollaborator(developer.emailAddress)
+    val developerActor       = Actors.AppCollaborator(developerOne.emailAddress)
 
     val oldRedirectUris = List.empty
     val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_))

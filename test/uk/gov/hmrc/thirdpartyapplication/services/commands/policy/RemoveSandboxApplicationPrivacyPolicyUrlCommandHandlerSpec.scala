@@ -42,7 +42,7 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandlerSpec extends Command
 
     val requester = "requester"
 
-    val userId = idOf(anAdminEmail)
+    val userId = adminOne.userId
 
     val timestamp = FixedClock.instant
     val update    = RemoveSandboxApplicationPrivacyPolicyUrl(developerActor, instant)

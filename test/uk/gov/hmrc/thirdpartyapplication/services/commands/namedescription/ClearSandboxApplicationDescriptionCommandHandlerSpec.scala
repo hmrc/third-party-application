@@ -42,7 +42,7 @@ class ClearSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandle
     val newDescription = "New app name"
     val requester      = "requester"
 
-    val userId = idOf(anAdminEmail)
+    val userId = adminOne.userId
 
     val newApp = app.copy(description = Some(newDescription))
 

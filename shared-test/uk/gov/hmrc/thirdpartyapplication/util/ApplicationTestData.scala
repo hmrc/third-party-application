@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import java.time.Period
-
 import com.github.t3hnar.bcrypt._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
@@ -41,14 +39,14 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
   val grantLength      = GrantLength.EIGHTEEN_MONTHS.period
 
   def anApplicationData(
-      applicationId: ApplicationId,
+      applicationId: ApplicationId = ApplicationIdData.one,
       state: ApplicationState = productionState(requestedByEmail.text),
-      collaborators: Set[Collaborator] = Set(loggedInUserAdminCollaborator, otherAdminCollaborator, developerCollaborator),
-      access: Access = Access.Standard(),
-      rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-      environment: Environment = Environment.PRODUCTION,
-      ipAllowlist: IpAllowlist = IpAllowlist(),
-      grantLength: Period = grantLength
+      collaborators: Set[Collaborator] = Set(loggedInUserAdminCollaborator, otherAdminCollaborator, developerCollaborator)
+      // access: Access = Access.Standard(),
+      // rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
+      // environment: Environment = Environment.PRODUCTION,
+      // ipAllowlist: IpAllowlist = IpAllowlist(),
+      // grantLength: Period = grantLength
     ): StoredApplication = {
     StoredApplication(
       applicationId,
@@ -59,13 +57,13 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
       "aaaaaaaaaa",
       ApplicationTokens(productionToken),
       state,
-      access,
+      access = Access.Standard(),
       instant,
       Some(instant),
       grantLength,
-      rateLimitTier = rateLimitTier,
-      environment = environment.toString,
-      ipAllowlist = ipAllowlist
+      rateLimitTier = Some(RateLimitTier.BRONZE),
+      environment = "PRODUCTION",
+      ipAllowlist = IpAllowlist()
     )
   }
 

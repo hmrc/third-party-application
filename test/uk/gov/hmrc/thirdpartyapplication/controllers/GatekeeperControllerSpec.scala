@@ -36,7 +36,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, ApplicationWithCollaboratorsData, ApplicationWithSubscriptions, State}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationServiceMockModule, StrideGatekeeperRoleAuthorisationServiceMockModule}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -107,8 +106,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     private def testWithPrivilegedAndRopc(applicationId: ApplicationId, gatekeeperLoggedIn: Boolean, testBlock: => Unit): Unit = {
       when(underTest.applicationService.fetch(applicationId))
         .thenReturn(
-          OptionT.pure[Future](aNewApplicationResponse(privilegedAccess)),
-          OptionT.pure[Future](aNewApplicationResponse(ropcAccess))
+          OptionT.pure[Future](privilegedApp),
+          OptionT.pure[Future](ropcApp)
         )
       testBlock
       testBlock
@@ -312,7 +311,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
   "fetchAllForCollaborator" should {
     val userId                                                    = UserId.random
-    val standardApplicationResponse: ApplicationWithSubscriptions = aNewExtendedApplicationResponse(access = Access.Standard())
+    val standardApplicationResponse: ApplicationWithSubscriptions = standardApp.withSubscriptions(Set.empty)
 
     "succeed with a 200 when applications are found for the collaborator by user id" in new Setup {
       when(underTest.applicationService.fetchAllForCollaborator(userId, true))

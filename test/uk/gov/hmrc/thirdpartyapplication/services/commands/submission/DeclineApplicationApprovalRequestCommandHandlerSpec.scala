@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
@@ -41,13 +41,11 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val appId                    = ApplicationId.random
-    val appAdminUserId           = UserId.random
-    val appAdminEmail            = "admin@example.com".toLaxEmail
     val riName                   = "Mr Responsible"
     val riEmail                  = "ri@example.com".toLaxEmail
     val newResponsibleIndividual = ResponsibleIndividual.build("New RI", "new-ri@example")
     val oldRiName                = "old ri"
-    val requesterEmail           = appAdminEmail
+    val requesterEmail           = adminOne.emailAddress
     val requesterName            = "mr admin"
     val gatekeeperUser           = "GateKeeperUser"
     val reasons                  = "reasons description text"
@@ -62,9 +60,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
     )
 
     val applicationData = anApplicationData(appId).copy(
-      collaborators = Set(
-        appAdminEmail.admin(appAdminUserId)
-      ),
+      collaborators = Set(adminOne),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName)
     )

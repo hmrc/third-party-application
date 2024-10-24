@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, Environment}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationIdData}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteProductionCredentialsApplication
@@ -35,12 +35,12 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId                                = ApplicationId.random
+    val appId                                = ApplicationIdData.one
     val appAdminEmail                        = loggedInUser
     val jobId                                = "DeleteUnusedApplicationsJob"
     val actor                                = Actors.ScheduledJob(jobId)
     val reasons                              = "reasons description text"
-    val app                                  = anApplicationData(appId, environment = Environment.SANDBOX, state = ApplicationStateExamples.testing)
+    val app                                  = anApplicationData(appId).copy(environment = "SANDBOX", state = ApplicationStateExamples.testing)
     val ts                                   = FixedClock.instant
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 

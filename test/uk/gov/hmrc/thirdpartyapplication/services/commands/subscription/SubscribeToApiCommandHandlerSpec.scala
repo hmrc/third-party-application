@@ -79,8 +79,8 @@ class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiId
     }
 
     private def testWithPrivilegedAndRopc(applicationId: ApplicationId, testBlock: StoredApplication => Unit): Unit = {
-      testBlock(anApplicationData(applicationId, access = Access.Privileged(scopes = Set("scope1"))))
-      testBlock(anApplicationData(applicationId, access = Access.Ropc()))
+      testBlock(anApplicationData(applicationId).copy(access = Access.Privileged(scopes = Set("scope1"))))
+      testBlock(anApplicationData(applicationId).copy(access = Access.Ropc()))
     }
   }
 

@@ -60,10 +60,12 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
     )
 
     val app             = anApplicationData(
-      ApplicationId.random,
+      ApplicationId.random
+    ).copy(
       access = Access.Standard(importantSubmissionData = Some(importantSubmissionData)),
-      state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail, requesterName)
-    ).copy(name = appName)
+      state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail, requesterName),
+      name = appName
+    )
     val initialDelay    = FiniteDuration(1, MINUTES)
     val interval        = FiniteDuration(1, HOURS)
     val removalInterval = FiniteDuration(20, DAYS)

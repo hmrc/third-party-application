@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-
-
 // case class ExtendedApplicationResponse(
 //     id: ApplicationId,
 //     clientId: ClientId,

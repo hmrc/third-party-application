@@ -20,9 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, Environment, UserId}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByCollaborator
@@ -38,20 +36,14 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
 
     val appId = ApplicationId.random
 
-    val appAdminUserId = UserId.random
-    val appAdminEmail  = "admin@example.com".toLaxEmail
-    val reasons        = "reasons description text"
-    val actor          = Actors.AppCollaborator(appAdminEmail)
+    val reasons = "reasons description text"
+    val actor   = Actors.AppCollaborator(adminOne.emailAddress)
 
-    val app               = anApplicationData(appId, environment = Environment.SANDBOX).copy(collaborators =
-      Set(
-        appAdminEmail.admin(appAdminUserId)
-      )
-    )
-    val ts                = FixedClock.instant
+    val app = anApplicationData(appId).copy(environment = "SANDBOX", collaborators = Set(adminOne))
+
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
 
-    val cmd = DeleteApplicationByCollaborator(appAdminUserId, reasons, instant)
+    val cmd = DeleteApplicationByCollaborator(adminOne.userId, reasons, instant)
 
     val underTest = new DeleteApplicationByCollaboratorCommandHandler(
       authControlConfig,
@@ -79,7 +71,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
             case ApplicationEvents.ApplicationDeleted(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons) =>
               appId shouldBe appId
               actor shouldBe actor
-              eventDateTime shouldBe ts
+              eventDateTime shouldBe instant
               clientId shouldBe app.tokens.production.clientId
               evtReasons shouldBe reasons
               wsoApplicationName shouldBe app.wso2ApplicationName
@@ -87,7 +79,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
             case ApplicationEvents.ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
               appId shouldBe appId
               evtActor shouldBe actor
-              eventDateTime shouldBe ts
+              eventDateTime shouldBe instant
               oldAppState shouldBe app.state.name.toString()
               newAppState shouldBe State.DELETED.toString()
               requestingAdminEmail shouldBe actor.email

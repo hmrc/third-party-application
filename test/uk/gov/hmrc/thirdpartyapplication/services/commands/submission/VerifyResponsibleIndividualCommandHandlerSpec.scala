@@ -39,13 +39,11 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val submission     = aSubmission
-    val appAdminUserId = UserId.random
-    val appAdminEmail  = "admin@example.com".toLaxEmail
-    val appAdminName   = "Ms Admin"
-    val oldRiUserId    = UserId.random
-    val oldRiEmail     = "oldri@example.com".toLaxEmail
-    val oldRiName      = "old ri"
+    val submission   = aSubmission
+    val appAdminName = "Ms Admin"
+    val oldRiUserId  = adminTwo.userId
+    val oldRiEmail   = adminTwo.emailAddress
+    val oldRiName    = "old ri"
 
     val importantSubmissionData = ImportantSubmissionData(
       None,
@@ -58,8 +56,8 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
 
     val app = anApplicationData(applicationId).copy(
       collaborators = Set(
-        appAdminEmail.admin(appAdminUserId),
-        oldRiEmail.admin(oldRiUserId)
+        adminOne,
+        adminTwo
       ),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
@@ -77,7 +75,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
 
-      val result = await(underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, instant, appAdminName, riName, riEmail)).value).value
+      val result = await(underTest.process(app, VerifyResponsibleIndividual(adminOne.userId, instant, appAdminName, riName, riEmail)).value).value
 
       inside(result) { case (app, events) =>
         events should have size 1
@@ -87,12 +85,12 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
             event.applicationId shouldBe applicationId
             event.applicationName shouldBe app.name.value
             event.eventDateTime shouldBe ts
-            event.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+            event.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             event.responsibleIndividualName shouldBe riName
             event.responsibleIndividualEmail shouldBe riEmail
             event.submissionIndex shouldBe submission.latestInstance.index
             event.submissionId.value shouldBe submission.id.value
-            event.requestingAdminEmail shouldBe appAdminEmail
+            event.requestingAdminEmail shouldBe adminOne.emailAddress
             event.requestingAdminName shouldBe appAdminName
         }
       }
@@ -102,7 +100,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
 
       checkFailsWith(s"No submission found for application $applicationId") {
-        underTest.process(app, VerifyResponsibleIndividual(appAdminUserId, instant, appAdminName, riName, riEmail))
+        underTest.process(app, VerifyResponsibleIndividual(adminOne.userId, instant, appAdminName, riName, riEmail))
       }
     }
 
@@ -111,7 +109,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
 
       checkFailsWith("Must be a standard new journey application") {
-        underTest.process(nonStandardApp, VerifyResponsibleIndividual(appAdminUserId, instant, appAdminName, riName, riEmail))
+        underTest.process(nonStandardApp, VerifyResponsibleIndividual(adminOne.userId, instant, appAdminName, riName, riEmail))
       }
     }
 
@@ -120,7 +118,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith("Must be a standard new journey application") {
-        underTest.process(oldJourneyApp, VerifyResponsibleIndividual(appAdminUserId, instant, appAdminName, riName, riEmail))
+        underTest.process(oldJourneyApp, VerifyResponsibleIndividual(adminOne.userId, instant, appAdminName, riName, riEmail))
       }
     }
 
@@ -129,7 +127,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       val notApprovedApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
-        underTest.process(notApprovedApp, VerifyResponsibleIndividual(appAdminUserId, instant, appAdminName, riName, riEmail))
+        underTest.process(notApprovedApp, VerifyResponsibleIndividual(adminOne.userId, instant, appAdminName, riName, riEmail))
       }
     }
 

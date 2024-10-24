@@ -56,9 +56,8 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
       access = Access.Standard(privacyPolicyUrl = Some(oldUrl))
     )
 
-    val userId    = idOf(anAdminEmail)
-    val timestamp = FixedClock.instant
-    val actor     = otherAdminAsActor
+    val userId = otherAdminCollaborator.userId
+    val actor  = otherAdminAsActor
 
     val update = ChangeProductionApplicationPrivacyPolicyLocation(userId, instant, newLocation)
 
@@ -75,7 +74,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
           case ApplicationEvents.ProductionAppPrivacyPolicyLocationChanged(_, appId, eventDateTime, actor, oldLocation, eNewLocation) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
-            eventDateTime shouldBe timestamp
+            eventDateTime shouldBe instant
             oldLocation shouldBe privicyPolicyLocation
             eNewLocation shouldBe newLocation
         }
@@ -93,7 +92,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
           case ApplicationEvents.ProductionLegacyAppPrivacyPolicyLocationChanged(_, appId, eventDateTime, actor, eOldUrl, eNewUrl) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
-            eventDateTime shouldBe timestamp
+            eventDateTime shouldBe instant
             eOldUrl shouldBe oldUrl
             eNewUrl shouldBe newUrl
         }
@@ -117,7 +116,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
 
     "return an error if instigator is not an admin on the application" in new Setup {
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(newJourneyApp, update.copy(instigator = idOf(devEmail)))
+        underTest.process(newJourneyApp, update.copy(instigator = developerOne.userId))
       }
     }
 
@@ -149,7 +148,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
 
     "return an error if instigator is not an admin on the application" in new Setup {
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(oldJourneyApp, update.copy(instigator = idOf(devEmail)))
+        underTest.process(oldJourneyApp, update.copy(instigator = developerOne.userId))
       }
     }
 

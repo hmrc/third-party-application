@@ -41,7 +41,7 @@ class ChangeSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandl
     val newDescription = "New app description"
     val requester      = "requester"
 
-    val userId = idOf(anAdminEmail)
+    val userId = adminOne.userId
 
     val timestamp = FixedClock.instant
     val update    = ApplicationCommands.ChangeSandboxApplicationDescription(developerActor, instant, newDescription)

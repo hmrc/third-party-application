@@ -29,7 +29,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborators, GrantLength}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, Collaborators, GrantLength}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -43,6 +43,7 @@ class ApplicationCommandControllerSpec
     with ControllerTestData
     with TableDrivenPropertyChecks
     with ApplicationTestData
+    with ApplicationWithCollaboratorsFixtures
     with FixedClock {
 
   import play.api.test.Helpers._
@@ -84,7 +85,7 @@ class ApplicationCommandControllerSpec
 
     "dispatch request" should {
       val jsonText =
-        s"""{"command":{"actor":{"actorType":"UNKNOWN"},"collaborator":{"userId":"${developerCollaborator.userId.value}","emailAddress":"dev@example.com","role":"DEVELOPER"},"timestamp":"$nowAsText","updateType":"removeCollaborator"},"verifiedCollaboratorsToNotify":["admin@example.com"]}"""
+        s"""{"command":{"actor":{"actorType":"UNKNOWN"},"collaborator":{"userId":"${developerCollaborator.userId.value}","emailAddress":"${developerCollaborator.emailAddress}","role":"DEVELOPER"},"timestamp":"$nowAsText","updateType":"removeCollaborator"},"verifiedCollaboratorsToNotify":["${adminOne.emailAddress}"]}"""
       val cmd      = RemoveCollaborator(Actors.Unknown, developerCollaborator, instant)
       val req      = ApplicationCommandController.DispatchRequest(cmd, Set(anAdminEmail))
       import cats.syntax.option._

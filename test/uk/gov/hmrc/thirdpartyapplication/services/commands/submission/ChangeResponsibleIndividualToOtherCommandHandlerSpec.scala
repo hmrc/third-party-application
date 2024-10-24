@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, State}
@@ -55,13 +55,11 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
     val appId                    = ApplicationId.random
     val submission               = aSubmission
-    val appAdminUserId           = UserId.random
-    val appAdminEmail            = "admin@example.com".toLaxEmail
     val riName                   = "Mr Responsible"
     val riEmail                  = "ri@example.com".toLaxEmail
     val newResponsibleIndividual = ResponsibleIndividual.build("New RI", "new-ri@example")
     val oldRiName                = "old ri"
-    val requesterEmail           = appAdminEmail
+    val requesterEmail           = adminOne.emailAddress
     val requesterName            = "mr admin"
 
     val importantSubmissionData = ImportantSubmissionData(
@@ -74,9 +72,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
     )
 
     val app  = anApplicationData(appId).copy(
-      collaborators = Set(
-        appAdminEmail.admin(appAdminUserId)
-      ),
+      collaborators = Set(adminOne),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName)
     )
@@ -138,12 +134,12 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
           case riSet: ResponsibleIndividualSet =>
             riSet.applicationId shouldBe appId
             riSet.eventDateTime shouldBe ts
-            riSet.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+            riSet.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             riSet.responsibleIndividualName shouldBe riName
             riSet.responsibleIndividualEmail shouldBe riEmail
             riSet.submissionIndex shouldBe submission.latestInstance.index
             riSet.submissionId.value shouldBe submission.id.value
-            riSet.requestingAdminEmail shouldBe appAdminEmail
+            riSet.requestingAdminEmail shouldBe adminOne.emailAddress
             riSet.code shouldBe code
         }
 
@@ -151,7 +147,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
           case stateEvent: ApplicationStateChanged =>
             stateEvent.applicationId shouldBe appId
             stateEvent.eventDateTime shouldBe ts
-            stateEvent.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+            stateEvent.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             stateEvent.requestingAdminEmail shouldBe requesterEmail
             stateEvent.requestingAdminName shouldBe requesterName
             stateEvent.newAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL.toString()
@@ -171,12 +167,12 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
             case riSet: ResponsibleIndividualSet =>
               riSet.applicationId shouldBe appId
               riSet.eventDateTime shouldBe ts
-              riSet.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+              riSet.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
               riSet.responsibleIndividualName shouldBe riName
               riSet.responsibleIndividualEmail shouldBe riEmail
               riSet.submissionIndex shouldBe submission.latestInstance.index
               riSet.submissionId.value shouldBe submission.id.value
-              riSet.requestingAdminEmail shouldBe appAdminEmail
+              riSet.requestingAdminEmail shouldBe adminOne.emailAddress
               riSet.code shouldBe code
           }
 
@@ -184,7 +180,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
             case passEvent: TermsOfUsePassed =>
               passEvent.applicationId shouldBe appId
               passEvent.eventDateTime shouldBe ts
-              passEvent.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+              passEvent.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
               passEvent.submissionIndex shouldBe submission.latestInstance.index
               passEvent.submissionId.value shouldBe submission.id.value
           }
@@ -197,12 +193,12 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
             case riSet: ResponsibleIndividualSet =>
               riSet.applicationId shouldBe appId
               riSet.eventDateTime shouldBe ts
-              riSet.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+              riSet.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
               riSet.responsibleIndividualName shouldBe riName
               riSet.responsibleIndividualEmail shouldBe riEmail
               riSet.submissionIndex shouldBe submission.latestInstance.index
               riSet.submissionId.value shouldBe submission.id.value
-              riSet.requestingAdminEmail shouldBe appAdminEmail
+              riSet.requestingAdminEmail shouldBe adminOne.emailAddress
               riSet.code shouldBe code
           }
         }
@@ -219,14 +215,14 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
           case riChanged: ResponsibleIndividualChanged =>
             riChanged.applicationId shouldBe appId
             riChanged.eventDateTime shouldBe ts
-            riChanged.actor shouldBe Actors.AppCollaborator(appAdminEmail)
+            riChanged.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             riChanged.newResponsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
             riChanged.newResponsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress
             riChanged.previousResponsibleIndividualName shouldBe riName
             riChanged.previousResponsibleIndividualEmail shouldBe riEmail
             riChanged.submissionIndex shouldBe submission.latestInstance.index
             riChanged.submissionId.value shouldBe submission.id.value
-            riChanged.requestingAdminEmail shouldBe appAdminEmail
+            riChanged.requestingAdminEmail shouldBe adminOne.emailAddress
             riChanged.code shouldBe code
         }
       }

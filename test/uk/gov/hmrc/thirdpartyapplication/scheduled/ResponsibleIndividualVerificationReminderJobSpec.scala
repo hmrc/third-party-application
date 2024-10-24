@@ -66,10 +66,12 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
     )
 
     val app              = anApplicationData(
-      ApplicationId.random,
+      ApplicationId.random
+    ).copy(
       access = Access.Standard(importantSubmissionData = Some(importantSubmissionData)),
-      state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail, requesterName)
-    ).copy(name = appName)
+      state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail, requesterName),
+      name = appName
+    )
     val initialDelay     = FiniteDuration(1, MINUTES)
     val interval         = FiniteDuration(1, HOURS)
     val reminderInterval = FiniteDuration(10, DAYS)

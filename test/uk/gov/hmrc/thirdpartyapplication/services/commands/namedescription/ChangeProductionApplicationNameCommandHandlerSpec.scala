@@ -21,7 +21,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, State, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationName
@@ -43,12 +42,11 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
     val gatekeeperUser = "gkuser"
     val requester      = "requester"
 
-    val userId = idOf(anAdminEmail)
+    val userId = adminOne.userId
 
     val newApp = app.copy(name = newName, normalisedName = newName.value.toLowerCase())
 
-    val timestamp = FixedClock.instant
-    val update    = ChangeProductionApplicationName(gatekeeperUser, userId, instant, ValidatedApplicationName(newName.value).get)
+    val update = ChangeProductionApplicationName(gatekeeperUser, userId, instant, ValidatedApplicationName(newName.value).get)
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
@@ -63,7 +61,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
           case ApplicationEvents.ProductionAppNameChangedEvent(_, appId, eventDateTime, actor, anOldName, aNewName, requestingAdminEmail) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
-            eventDateTime shouldBe timestamp
+            eventDateTime shouldBe instant
             aNewName shouldBe newName.value
             anOldName shouldBe oldName.value
             anOldName should not be aNewName
@@ -104,7 +102,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
 
     "return an error if instigator is not an admin on the application" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val instigatorIsDev = update.copy(instigator = idOf(devEmail))
+      val instigatorIsDev = update.copy(instigator = developerOne.userId)
 
       checkFailsWith("User must be an ADMIN") {
         underTest.process(app, instigatorIsDev)

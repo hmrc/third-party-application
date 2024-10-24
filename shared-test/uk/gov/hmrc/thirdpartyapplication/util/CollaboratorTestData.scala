@@ -19,19 +19,22 @@ package uk.gov.hmrc.thirdpartyapplication.util
 import scala.collection.mutable
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CollaboratorFixtures, Collaborators}
 
-trait CollaboratorTestData extends EmailTestData {
+trait CollaboratorTestData extends EmailTestData with CollaboratorFixtures {
 
   private val idsByEmail = mutable.Map[String, UserId]()
 
-  lazy val loggedInUserAdminCollaborator = loggedInUser.admin()
-  lazy val otherAdminCollaborator        = anAdminEmail.admin()
-  lazy val developerCollaborator         = devEmail.developer()
+  lazy val loggedInUserAdminCollaborator = adminTwo
+  lazy val otherAdminCollaborator        = adminOne
+  lazy val developerCollaborator         = developerOne
 
-  def idOf(email: Any): UserId = email match {
-    case s: String             => idsByEmail.getOrElseUpdate(s, UserId.random)
-    case LaxEmailAddress(text) => idsByEmail.getOrElseUpdate(text, UserId.random)
+  private def idOf(email: Any): UserId = email match {
+    case adminOne.emailAddress     => adminOne.userId
+    case adminTwo.emailAddress     => adminTwo.userId
+    case developerOne.emailAddress => developerOne.userId
+    case s: String                 => idsByEmail.getOrElseUpdate(s, UserId.random)
+    case LaxEmailAddress(text)     => idsByEmail.getOrElseUpdate(text, UserId.random)
   }
 
   import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
@@ -55,10 +58,10 @@ trait CollaboratorTestData extends EmailTestData {
     def admin()     = Collaborators.Administrator(idOf(emailAddress.text), emailAddress)
     def developer() = Collaborators.Developer(idOf(emailAddress.text), emailAddress)
 
-    def admin(userId: UserId) = {
-      idsByEmail.put(emailAddress.text, userId)
-      Collaborators.Administrator(userId, emailAddress)
-    }
+    // def admin(userId: UserId) = {
+    //   idsByEmail.put(emailAddress.text, userId)
+    //   Collaborators.Administrator(userId, emailAddress)
+    // }
 
     def developer(userId: UserId) = {
       idsByEmail.put(emailAddress.text, userId)

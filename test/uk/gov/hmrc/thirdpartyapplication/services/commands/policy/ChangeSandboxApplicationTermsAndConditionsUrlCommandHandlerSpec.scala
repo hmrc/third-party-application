@@ -40,7 +40,7 @@ class ChangeSandboxApplicationTermsnAndConditonsUrlCommandHandlerSpec extends Co
     val app       = subordinateApp.copy(access = Access.Standard(termsAndConditionsUrl = Some(oldValue)))
     val requester = "requester"
 
-    val userId = idOf(anAdminEmail)
+    val userId = adminOne.userId
 
     val timestamp = FixedClock.instant
     val update    = ApplicationCommands.ChangeSandboxApplicationTermsAndConditionsUrl(developerActor, instant, newValue)

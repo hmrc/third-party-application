@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Environment}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.BlockApplicationAutoDelete
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -35,7 +35,7 @@ class BlockApplicationAutoDeleteCommandHandlerSpec extends CommandHandlerBaseSpe
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appWithAutoDeleteAllowed = anApplicationData(applicationId, environment = Environment.SANDBOX)
+    val appWithAutoDeleteAllowed = anApplicationData(applicationId).copy(environment = "SANDBOX")
     val appWithAutoDeleteBlocked = appWithAutoDeleteAllowed.copy(allowAutoDelete = false)
     val timestamp                = FixedClock.instant
 

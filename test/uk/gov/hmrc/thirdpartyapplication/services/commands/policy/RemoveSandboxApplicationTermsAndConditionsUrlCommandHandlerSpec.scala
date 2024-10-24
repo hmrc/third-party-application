@@ -42,7 +42,7 @@ class RemoveSandboxApplicationTermsAndConditionsCommandHandlerSpec extends Comma
 
     val requester = "requester"
 
-    val userId = idOf(anAdminEmail)
+    val userId = adminOne.userId
 
     val timestamp = FixedClock.instant
     val update    = RemoveSandboxApplicationTermsAndConditionsUrl(developerActor, instant)

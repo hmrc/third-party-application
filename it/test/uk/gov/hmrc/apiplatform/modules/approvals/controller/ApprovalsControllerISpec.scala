@@ -100,7 +100,8 @@ class ApprovalsControllerISpec
       )
       val application: StoredApplication = anApplicationData(
         appId,
-        productionState("bob@fastshow.com"),
+        productionState("bob@fastshow.com")
+      ).copy(
         access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
       )
 

@@ -23,7 +23,7 @@ import org.apache.commons.codec.binary.Base64.encodeBase64String
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, Environment}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ApplicationIdData}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteUnusedApplication
@@ -38,10 +38,10 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId: ApplicationId                 = ApplicationId.random
+    val appId: ApplicationId                 = ApplicationIdData.one
     val appAdminEmail                        = loggedInUser
     val actor: Actors.ScheduledJob           = Actors.ScheduledJob("DeleteUnusedApplicationsJob")
-    val app: StoredApplication               = anApplicationData(appId, environment = Environment.SANDBOX)
+    val app: StoredApplication               = anApplicationData(appId).copy(environment = "SANDBOX")
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
     val underTest = new DeleteUnusedApplicationCommandHandler(

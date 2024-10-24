@@ -27,7 +27,7 @@ trait CommandApplicationExamples extends HasApplicationId {
   val devAndAdminCollaborators: Set[Collaborator] =
     Set(
       developerCollaborator,
-      otherAdminCollaborator
+      adminOne
     )
 
   val principalApp   = anApplicationData(applicationId).copy(

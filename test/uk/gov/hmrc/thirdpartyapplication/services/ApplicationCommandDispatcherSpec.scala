@@ -296,7 +296,7 @@ class ApplicationCommandDispatcherSpec
 
       val newUrl      = "http://example.com/new"
       val newLocation = PrivacyPolicyLocations.Url(newUrl)
-      val userId      = idOf(anAdminEmail)
+      val userId      = adminOne.userId
       val timestamp   = instant
       val actor       = otherAdminAsActor
 
@@ -335,7 +335,7 @@ class ApplicationCommandDispatcherSpec
 
       val newUrl      = "http://example.com/new"
       val newLocation = TermsAndConditionsLocations.Url(newUrl)
-      val userId      = idOf(anAdminEmail)
+      val userId      = adminOne.userId
       val timestamp   = instant
       val actor       = otherAdminAsActor
 

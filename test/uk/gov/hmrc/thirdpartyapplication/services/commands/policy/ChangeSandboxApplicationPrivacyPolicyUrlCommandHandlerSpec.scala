@@ -40,7 +40,7 @@ class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandlerSpec extends Command
     val app       = subordinateApp.copy(access = Access.Standard(privacyPolicyUrl = Some(oldValue)))
     val requester = "requester"
 
-    val userId = idOf(anAdminEmail)
+    val userId = adminOne.userId
 
     val timestamp = FixedClock.instant
     val update    = ApplicationCommands.ChangeSandboxApplicationPrivacyPolicyUrl(developerActor, instant, newValue)
