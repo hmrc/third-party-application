@@ -71,20 +71,20 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     )
 
     val applicationPendingGKApproval: StoredApplication = anApplicationData(
-      applicationId,
-      pendingGatekeeperApprovalState("bob@fastshow.com")
+      applicationId
+    ).copy(
+      state = pendingGatekeeperApprovalState("bob@fastshow.com"),
+      access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
-      .copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
     val prodAppId = ApplicationId.random
 
     val applicationProduction: StoredApplication = anApplicationData(
-      prodAppId,
-      productionState("bob@fastshow.com")
+      prodAppId
+    ).copy(
+      state = productionState("bob@fastshow.com"),
+      access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
-      .copy(
-        access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
-      )
 
     val underTest =
       new GrantApprovalsService(
@@ -119,7 +119,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     "fail to grant the specified application if the application is in the incorrect state" in new Setup {
       val warning = "Here are some warnings"
-      val result  = await(underTest.grantWithWarningsForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName, warning))
+      val result  = await(underTest.grantWithWarningsForTouUplift(anApplicationData(applicationId).copy(state = testingState()), warningsSubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
@@ -152,7 +152,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     "fail to decline the specified application if the application is in the incorrect state" in new Setup {
       val warning = "Here are some warnings"
-      val result  = await(underTest.declineForTouUplift(anApplicationData(applicationId, testingState()), failSubmission, gatekeeperUserName, warning))
+      val result  = await(underTest.declineForTouUplift(anApplicationData(applicationId).copy(state = testingState()), failSubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
@@ -186,7 +186,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     "fail to decline the specified application if the application is in the incorrect state" in new Setup {
       val warning = "Here are some warnings"
-      val result  = await(underTest.resetForTouUplift(anApplicationData(applicationId, testingState()), pendingRISubmission, gatekeeperUserName, warning))
+      val result  = await(underTest.resetForTouUplift(anApplicationData().copy(state = testingState()), pendingRISubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }

@@ -29,9 +29,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, CommonApplicationId}
 
-class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with FixedClock {
+class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with FixedClock with CommonApplicationId {
 
   "Access service read scopes function" should {
 
@@ -55,8 +55,6 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
   }
 
   trait Fixture extends ApplicationRepositoryMockModule with AuditServiceMockModule {
-
-    val applicationId = ApplicationId.random
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 

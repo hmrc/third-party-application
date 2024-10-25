@@ -68,6 +68,7 @@ class ApplicationServiceSpec
     with ApplicationStateUtil
     with ApplicationTestData
     with UpliftRequestSamples
+    with ActorTestData
     with ApplicationWithCollaboratorsFixtures
     with FixedClock {
 
@@ -114,7 +115,7 @@ class ApplicationServiceSpec
     val metrics = mock[Metrics]
 
     val hcForLoggedInCollaborator = HeaderCarrier().withExtraHeaders(
-      LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser.text,
+      LOGGED_IN_USER_EMAIL_HEADER -> adminTwo.emailAddress.text,
       LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
     )
 
@@ -243,12 +244,12 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: StoredApplication =
-        anApplicationDataWithCollaboratorWithUserId(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION).copy(description = None)
+        anApplicationDataWithCollaboratorWithUserId(createdApp.application.id).copy(description = None, state = testingState(), collaborators = Set(adminTwo))
 
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(loggedInUser), changedAt = instant))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -272,9 +273,9 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: StoredApplication = anApplicationData(
-        createdApp.application.id,
-        state = testingState()
+        createdApp.application.id
       ).copy(
+        state = testingState(),
         collaborators = Set(loggedInUserAdminCollaborator),
         access = Access.Standard().copy(sellResellOrDistribute = Some(sellResellOrDistribute)),
         description = None
@@ -304,9 +305,12 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: StoredApplication =
-        anApplicationData(createdApp.application.id, state = testingState(), collaborators = Set(loggedInUserAdminCollaborator)).copy(
-          description = None
-        )
+        anApplicationData(createdApp.application.id)
+          .copy(
+            state = testingState(),
+            collaborators = Set(loggedInUserAdminCollaborator),
+            description = None
+          )
 
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
@@ -333,11 +337,12 @@ class ApplicationServiceSpec
 
       val expectedApplicationData: StoredApplication =
         anApplicationData(
-          createdApp.application.id,
+          createdApp.application.id
+        ).copy(
+          state = ApplicationState(State.PRODUCTION, updatedOn = instant),
           collaborators = Set(loggedInUserAdminCollaborator),
-          state = ApplicationState(State.PRODUCTION, updatedOn = instant)
+          environment = "SANDBOX"
         )
-          .copy(environment = "SANDBOX")
 
       createdApp.totp shouldBe None
 
@@ -375,9 +380,9 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: StoredApplication = anApplicationData(
-        createdApp.application.id,
-        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = instant)
+        createdApp.application.id
       ).copy(
+        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(adminTwo.emailAddress.text), updatedOn = instant),
         collaborators = Set(loggedInUserAdminCollaborator),
         access = Access.Privileged(totpIds = Some(TotpId("prodTotpId"))),
         description = None
@@ -410,9 +415,9 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: StoredApplication = anApplicationData(
-        createdApp.application.id,
-        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser.text), updatedOn = instant)
+        createdApp.application.id
       ).copy(
+        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(adminTwo.emailAddress.text), updatedOn = instant),
         collaborators = Set(adminTwo),
         access = Access.Ropc(),
         description = None
@@ -517,7 +522,7 @@ class ApplicationServiceSpec
 
   "confirmSetupComplete" should {
     "update pre-production application state and store state history" in new Setup {
-      val oldApplication     = anApplicationData(applicationId, state = ApplicationStateExamples.preProduction("previous@example.com", "Previous"))
+      val oldApplication     = anApplicationData(applicationId).copy(state = ApplicationStateExamples.preProduction("previous@example.com", "Previous"))
       ApplicationRepoMock.Fetch.thenReturn(oldApplication)
       ApplicationRepoMock.Save.thenAnswer()
       StateHistoryRepoMock.Insert.thenAnswer()
@@ -539,7 +544,7 @@ class ApplicationServiceSpec
     }
 
     "not update application in wrong state" in new Setup {
-      val oldApplication = anApplicationData(applicationId, state = ApplicationStateExamples.pendingGatekeeperApproval("previous@example.com", "Previous"))
+      val oldApplication = anApplicationData(applicationId).copy(state = ApplicationStateExamples.pendingGatekeeperApproval("previous@example.com", "Previous"))
       ApplicationRepoMock.Fetch.thenReturn(oldApplication)
       ApplicationRepoMock.Save.thenAnswer()
 
@@ -985,34 +990,29 @@ class ApplicationServiceSpec
       access,
       Some("description"),
       environment,
-      Set(loggedInUser.admin()),
+      Set(adminTwo),
       None
     )
   }
 
   private def anApplicationDataWithCollaboratorWithUserId(
-      applicationId: ApplicationId,
-      state: ApplicationState,
-      collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
-      access: Access = Access.Standard(),
-      rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-      environment: Environment
+      applicationId: ApplicationId
     ) = {
 
     StoredApplication(
       applicationId,
       ApplicationName("MyApp"),
       "myapp",
-      collaborators,
+      someCollaborators,
       Some("description"),
       "aaaaaaaaaa",
       ApplicationTokens(productionToken),
-      state,
-      access,
+      state = appStateProduction,
+      Access.Standard(),
       instant,
       Some(instant),
-      rateLimitTier = rateLimitTier,
-      environment = environment.toString
+      rateLimitTier = Some(RateLimitTier.BRONZE),
+      environment = "PRODUCTION"
     )
   }
 

@@ -52,7 +52,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
       Helpers.stubControllerComponents()
     )
 
-    def hasApp   = ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(appId, state = ApplicationStateExamples.testing))
+    def hasApp   = ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(appId).copy(state = ApplicationStateExamples.testing))
     def hasNoApp = ApplicationDataServiceMock.FetchApp.thenReturnNone
 
     def hasNoSubmission  = SubmissionsServiceMock.FetchLatest.thenReturnNone()
@@ -64,7 +64,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
     val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
     val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = anApplicationData(appId, productionState("bob"))
+    val application                                                    = anApplicationData(appId) // .copy(state = productionState("bob"))
 
     "return 'no content' success response if successful" in new Setup {
       hasApp
@@ -80,7 +80,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
     val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
     val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = anApplicationData(appId, productionState("bob"))
+    val application                                                    = anApplicationData(appId) // , productionState("bob"))
 
     "return 'no content' success response if successful" in new Setup {
       hasApp
@@ -96,7 +96,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
     val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
     val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = anApplicationData(appId, productionState("bob"))
+    val application                                                    = anApplicationData(appId) // , productionState("bob"))
 
     "return 'no content' success response if successful" in new Setup {
       hasApp

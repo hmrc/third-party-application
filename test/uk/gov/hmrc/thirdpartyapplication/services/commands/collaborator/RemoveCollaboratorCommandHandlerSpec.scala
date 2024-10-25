@@ -48,7 +48,7 @@ class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec with A
       collaborators = Set(adminOne, developerOne)
     )
 
-    val adminsToEmail = Set(anAdminEmail, devEmail)
+    val adminsToEmail = Set(adminOne.emailAddress, developerOne.emailAddress)
 
     val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), developerOne, instant)
 

@@ -21,7 +21,7 @@ import scala.collection.mutable
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CollaboratorFixtures, Collaborators}
 
-trait CollaboratorTestData extends EmailTestData with CollaboratorFixtures {
+trait CollaboratorTestData extends CollaboratorFixtures {
 
   private val idsByEmail = mutable.Map[String, UserId]()
 
@@ -51,21 +51,6 @@ trait CollaboratorTestData extends EmailTestData with CollaboratorFixtures {
     def developer(userId: UserId) = {
       idsByEmail.put(emailAddress, userId)
       Collaborators.Developer(userId, emailAddress.toLaxEmail)
-    }
-  }
-
-  implicit class CollaboratorLaxEmailSyntax(emailAddress: LaxEmailAddress) {
-    def admin()     = Collaborators.Administrator(idOf(emailAddress.text), emailAddress)
-    def developer() = Collaborators.Developer(idOf(emailAddress.text), emailAddress)
-
-    // def admin(userId: UserId) = {
-    //   idsByEmail.put(emailAddress.text, userId)
-    //   Collaborators.Administrator(userId, emailAddress)
-    // }
-
-    def developer(userId: UserId) = {
-      idsByEmail.put(emailAddress.text, userId)
-      Collaborators.Developer(userId, emailAddress)
     }
   }
 }

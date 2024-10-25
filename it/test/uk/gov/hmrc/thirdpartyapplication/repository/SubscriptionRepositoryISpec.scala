@@ -39,7 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
-import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, CommonApplicationId, JavaDateTimeTestUtils, MetricsHelper}
 
 class SubscriptionRepositoryISpec
     extends ServerBaseISpec
@@ -52,6 +52,7 @@ class SubscriptionRepositoryISpec
     with Eventually
     with TableDrivenPropertyChecks
     with ApiIdentifierSyntax
+    with CommonApplicationId
     with FixedClock
     with CollaboratorTestData {
 
@@ -80,7 +81,7 @@ class SubscriptionRepositoryISpec
   "add" should {
 
     "create an entry" in {
-      val applicationId = ApplicationId.random
+
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
 
       val result = await(subscriptionRepository.add(applicationId, apiIdentifier))
@@ -148,7 +149,7 @@ class SubscriptionRepositoryISpec
   "isSubscribed" should {
 
     "return true when the application is subscribed" in {
-      val applicationId = ApplicationId.random
+
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
       await(subscriptionRepository.add(applicationId, apiIdentifier))
 
@@ -158,7 +159,7 @@ class SubscriptionRepositoryISpec
     }
 
     "return false when the application is not subscribed" in {
-      val applicationId = ApplicationId.random
+
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
 
       val isSubscribed = await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier))
@@ -320,7 +321,7 @@ class SubscriptionRepositoryISpec
   }
 
   "handle ApiSubscribed event correctly" in {
-    val applicationId = ApplicationId.random
+
     val apiIdentifier = "some-context".asIdentifier("1.0.0")
 
     val result = await(subscriptionRepository.add(applicationId, apiIdentifier))
@@ -330,7 +331,7 @@ class SubscriptionRepositoryISpec
   }
 
   "handle ApiUnsubscribed event correctly" in {
-    val applicationId = ApplicationId.random
+
     val apiIdentifier = "some-context".asIdentifier("1.0.0")
 
     await(subscriptionRepository.add(applicationId, apiIdentifier))

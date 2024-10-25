@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 
-trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData with ActorTestData with EmailTestData with FixedClock {
+trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData with FixedClock {
 
   def aSecret(secret: String): StoredClientSecret = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = instant)
 
@@ -39,24 +39,17 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
   val grantLength      = GrantLength.EIGHTEEN_MONTHS.period
 
   def anApplicationData(
-      applicationId: ApplicationId = ApplicationIdData.one,
-      state: ApplicationState = productionState(requestedByEmail.text),
-      collaborators: Set[Collaborator] = Set(loggedInUserAdminCollaborator, otherAdminCollaborator, developerCollaborator)
-      // access: Access = Access.Standard(),
-      // rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-      // environment: Environment = Environment.PRODUCTION,
-      // ipAllowlist: IpAllowlist = IpAllowlist(),
-      // grantLength: Period = grantLength
+      applicationId: ApplicationId = ApplicationIdData.one
     ): StoredApplication = {
     StoredApplication(
       applicationId,
       ApplicationName("MyApp"),
       "myapp",
-      collaborators,
+      someCollaborators,
       Some("description"),
       "aaaaaaaaaa",
       ApplicationTokens(productionToken),
-      state,
+      productionState(requestedByEmail.text),
       access = Access.Standard(),
       instant,
       Some(instant),

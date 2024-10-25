@@ -24,7 +24,6 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{contentAsJson, status, stubControllerComponents}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
@@ -37,8 +36,8 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
     with SubmissionsTestData {
 
   trait Setup extends TermsOfUseInvitationServiceMockModule {
-    val applicationId = ApplicationId.random
-    val dueDate       = instant.plus(21, DAYS)
+
+    val dueDate = instant.plus(21, DAYS)
 
     lazy val underTest = new TermsOfUseInvitationController(
       TermsOfUseInvitationServiceMock.aMock,

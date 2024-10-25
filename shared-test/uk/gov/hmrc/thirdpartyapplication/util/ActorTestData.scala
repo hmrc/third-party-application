@@ -17,25 +17,17 @@
 package uk.gov.hmrc.thirdpartyapplication.util
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CollaboratorFixtures
 
-trait ActorTestData extends EmailTestData {
-
-  implicit class ActorStringSyntax(userName: String) {
-    def actor() = Actors.GatekeeperUser(userName)
-  }
+trait ActorTestData extends CollaboratorFixtures {
 
   implicit class ActorLaxEmailSyntax(email: LaxEmailAddress) {
     def actor() = Actors.AppCollaborator(email)
   }
 
-  implicit class ActorCollaboratorSyntax(collaborator: Collaborator) {
-    def actor() = Actors.AppCollaborator(collaborator.emailAddress)
-  }
-
-  val loggedInAsActor   = loggedInUser.actor()
-  val otherAdminAsActor = anAdminEmail.actor()
-  val developerAsActor  = devEmail.actor()
+  val loggedInAsActor   = adminTwo.emailAddress.actor()
+  val otherAdminAsActor = adminOne.emailAddress.actor()
+  val developerAsActor  = developerOne.emailAddress.actor()
 
   val gatekeeperUser = "Bob from SDST"
 

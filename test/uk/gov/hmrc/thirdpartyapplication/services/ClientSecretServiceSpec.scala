@@ -22,14 +22,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.github.t3hnar.bcrypt._
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecretsHashingConfig
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CommonApplicationId}
 
-class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
+class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock with CommonApplicationId {
 
   val myWorkFactor   = 5
   val config: Config = ConfigFactory.empty().withValue("application-domain-lib.client-secrets-hashing.work-factor", ConfigValueFactory.fromAnyRef(myWorkFactor))
@@ -40,10 +39,10 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock {
   }
 
   "clientSecretIsValid" should {
-    val applicationId = ApplicationId.random
-    val fooSecret     = StoredClientSecret(name = "secret-1", createdOn = instant, hashedSecret = "foo".bcrypt(myWorkFactor))
-    val barSecret     = StoredClientSecret(name = "secret-2", createdOn = instant, hashedSecret = "bar".bcrypt(myWorkFactor))
-    val bazSecret     = StoredClientSecret(name = "secret-3", createdOn = instant, hashedSecret = "baz".bcrypt(myWorkFactor))
+
+    val fooSecret = StoredClientSecret(name = "secret-1", createdOn = instant, hashedSecret = "foo".bcrypt(myWorkFactor))
+    val barSecret = StoredClientSecret(name = "secret-2", createdOn = instant, hashedSecret = "bar".bcrypt(myWorkFactor))
+    val bazSecret = StoredClientSecret(name = "secret-3", createdOn = instant, hashedSecret = "baz".bcrypt(myWorkFactor))
 
     "return the ClientSecret that matches the provided secret value" in new Setup {
       val matchingSecret = await(underTest.clientSecretIsValid(applicationId, "bar", Seq(fooSecret, barSecret, bazSecret)))

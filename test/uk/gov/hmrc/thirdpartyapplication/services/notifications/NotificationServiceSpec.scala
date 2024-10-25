@@ -42,6 +42,7 @@ class NotificationServiceSpec
     with BeforeAndAfterAll
     with ApplicationStateUtil
     with ApplicationTestData
+    with ActorTestData
     with CollaboratorTestData
     with UpliftRequestSamples {
 
@@ -111,7 +112,7 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
-        anAdminEmail.text,
+        adminOne.emailAddress.text,
         applicationData.name,
         "privacy policy URL",
         collaboratorEmails + responsibleIndividual.emailAddress
@@ -134,7 +135,7 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
-        anAdminEmail.text,
+        adminOne.emailAddress.text,
         applicationData.name,
         "privacy policy URL",
         collaboratorEmails + responsibleIndividual.emailAddress
@@ -157,7 +158,7 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
-        anAdminEmail.text,
+        adminOne.emailAddress.text,
         applicationData.name,
         "terms and conditions URL",
         collaboratorEmails + responsibleIndividual.emailAddress
@@ -180,7 +181,7 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
-        anAdminEmail.text,
+        adminOne.emailAddress.text,
         applicationData.name,
         "terms and conditions URL",
         collaboratorEmails + responsibleIndividual.emailAddress

@@ -64,7 +64,7 @@ class GatekeeperServiceSpec
   private def anApplicationData(
       applicationId: ApplicationId,
       state: ApplicationState = productionState(requestedByEmail),
-      collaborators: Set[Collaborator] = Set(loggedInUser.admin())
+      collaborators: Set[Collaborator] = Set(adminTwo)
     ) = {
     StoredApplication(
       applicationId,

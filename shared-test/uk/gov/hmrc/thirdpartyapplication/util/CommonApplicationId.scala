@@ -16,10 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddressData
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationIdData
 
-trait EmailTestData {
-  val devEmail     = LaxEmailAddressData.three
-  val anAdminEmail = LaxEmailAddressData.one
-  val loggedInUser = LaxEmailAddressData.two
+trait CommonApplicationId {
+  val applicationId = ApplicationIdData.one
 }

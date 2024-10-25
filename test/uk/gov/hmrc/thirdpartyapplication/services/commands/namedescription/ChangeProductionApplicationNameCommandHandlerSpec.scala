@@ -65,7 +65,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
             aNewName shouldBe newName.value
             anOldName shouldBe oldName.value
             anOldName should not be aNewName
-            requestingAdminEmail shouldBe anAdminEmail
+            requestingAdminEmail shouldBe adminOne.emailAddress
         }
       }
     }

@@ -17,17 +17,17 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 trait CommandActorExamples {
-  self: ApplicationTestData =>
+  self: ApplicationTestData with ActorTestData =>
 
   val gkUserEmail = "admin@gatekeeper"
   val gkUserActor = Actors.GatekeeperUser(gkUserEmail)
 
   val developerUserId = developerOne.userId
-  val developerActor  = Actors.AppCollaborator(devEmail)
+  val developerActor  = Actors.AppCollaborator(developerOne.emailAddress)
 
   val adminUserId = adminOne.userId
-  val adminActor  = otherAdminAsActor
+  val adminActor  = Actors.AppCollaborator(adminOne.emailAddress)
 }

@@ -49,10 +49,12 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplica
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
+import uk.gov.hmrc.thirdpartyapplication.util.ActorTestData
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
     with CommandApplicationExamples
+    with ActorTestData
     with FixedClock {
 
   trait Setup extends CommonSetup {

@@ -36,7 +36,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val appId                                = ApplicationIdData.one
-    val appAdminEmail                        = loggedInUser
+    val appAdminEmail                        = adminTwo.emailAddress
     val jobId                                = "DeleteUnusedApplicationsJob"
     val actor                                = Actors.ScheduledJob(jobId)
     val reasons                              = "reasons description text"

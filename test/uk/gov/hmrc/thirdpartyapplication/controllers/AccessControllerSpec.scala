@@ -36,17 +36,21 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
+import uk.gov.hmrc.thirdpartyapplication.util.CommonApplicationId
 
-class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule
-    with ApplicationWithCollaboratorsFixtures {
+class AccessControllerSpec
+    extends ControllerSpec
+    with StrideGatekeeperRoleAuthorisationServiceMockModule
+    with ApplicationServiceMockModule
+    with ApplicationWithCollaboratorsFixtures
+    with CommonApplicationId {
   import play.api.test.Helpers._
   import play.api.test.Helpers
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-  private val overrides     = Set[OverrideFlag](OverrideFlag.PersistLogin, OverrideFlag.GrantWithoutConsent(Set("scope1", "scope2")))
-  private val scopes        = Set("scope")
-  private val applicationId = ApplicationId.random
+  private val overrides = Set[OverrideFlag](OverrideFlag.PersistLogin, OverrideFlag.GrantWithoutConsent(Set("scope1", "scope2")))
+  private val scopes    = Set("scope")
 
   implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 

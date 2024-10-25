@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{Notification, NotificationStatus, NotificationType}
-import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util.{CommonApplicationId, JavaDateTimeTestUtils, MetricsHelper}
 
 object NotificationRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random
@@ -59,6 +59,7 @@ class NotificationRepositoryISpec
     with ApplicationStateUtil
     with Eventually
     with TableDrivenPropertyChecks
+    with CommonApplicationId
     with OptionValues
     with FixedClock {
 
@@ -113,7 +114,6 @@ class NotificationRepositoryISpec
   "createEntity" should {
 
     "create an entry" in {
-      val applicationId = ApplicationId.random
 
       val result =
         await(notificationRepository.createEntity(Notification(applicationId, instant, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))

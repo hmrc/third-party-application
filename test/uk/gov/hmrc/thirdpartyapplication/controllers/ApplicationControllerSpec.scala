@@ -51,8 +51,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, CommonApplicationId}
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -61,6 +61,7 @@ class ApplicationControllerSpec
     with ApplicationTestData
     with ApplicationWithCollaboratorsFixtures
     with ApiIdentifierFixtures
+    with CommonApplicationId
     with FixedClock {
 
   import play.api.test.Helpers._
@@ -173,7 +174,6 @@ class ApplicationControllerSpec
   }
 
   "fetch application" should {
-    val applicationId = ApplicationId.random
 
     "succeed with a 200 (ok) if the application exists for the given id" in new Setup {
       ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(standardApp)
@@ -210,7 +210,6 @@ class ApplicationControllerSpec
   }
 
   "fetch credentials" should {
-    val applicationId = ApplicationId.random
 
     "succeed with a 200 (ok) when the application exists for the given id" in new Setup {
       when(mockCredentialService.fetchCredentials(applicationId)).thenReturn(successful(Some(credentialServiceResponseToken)))
@@ -689,7 +688,6 @@ class ApplicationControllerSpec
 
   "fetchAllSubscriptions by ID" should {
 
-    val applicationId = ApplicationId.random
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
       when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId)))
         .thenReturn(failed(new NotFoundException("application doesn't exist")))

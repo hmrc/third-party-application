@@ -566,7 +566,6 @@ class ApplicationRepositorySearchISpec
     }
 
     "return applications matching search text in a case-insensitive manner" in {
-      val applicationId = ApplicationId.random
 
       val application            = aNamedApplicationData(
         applicationId,
@@ -874,8 +873,8 @@ class ApplicationRepositorySearchISpec
     }
 
     "return applications that are equal to the specified cutoff date when searching for newer applications" in {
-      val applicationId = ApplicationId.random
-      val cutoffDate    = instant.minus(Duration.ofDays(365))
+
+      val cutoffDate = instant.minus(Duration.ofDays(365))
 
       await(
         applicationRepository.save(

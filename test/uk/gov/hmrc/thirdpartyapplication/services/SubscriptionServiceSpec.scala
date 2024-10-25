@@ -36,9 +36,9 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredToken, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, CommonApplicationId}
 
-class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with CollaboratorTestData {
+class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with CollaboratorTestData with CommonApplicationId {
 
   private val productionToken = StoredToken(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
@@ -64,8 +64,8 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
   private def aSecret(secret: String) = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   "isSubscribed" should {
-    val applicationId = ApplicationId.random
-    val api           = ApiIdentifier.random
+
+    val api = ApiIdentifier.random
 
     "return true when the application is subscribed to a given API version" in new Setup {
       when(mockSubscriptionRepository.isSubscribed(applicationId, api)).thenReturn(successful(true))
@@ -87,13 +87,22 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
   trait Setup extends SetupWithoutHc {
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
-      LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser.text,
+      LOGGED_IN_USER_EMAIL_HEADER -> adminOne.emailAddress.text,
+      LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
+    )
+  }
+
+  trait SetupWithGKUser extends SetupWithoutHc {
+
+    val gkUserEmail = "john.smith@hmrc.co.uk"
+
+    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
+      LOGGED_IN_USER_EMAIL_HEADER -> gkUserEmail,
       LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
     )
   }
 
   "fetchAllSubscriptionsForApplication" should {
-    val applicationId = ApplicationId.random
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
@@ -118,12 +127,12 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
   }
 
   "updateApplicationForApiSubscription" should {
-    val applicationId = ApplicationId.random
+
     val apiIdentifier = ApiIdentifier.random
 
     "return successfully using the correct Actors.AppCollaborator if the collaborator is a member of the application" in new Setup {
       val application = anApplicationData(applicationId)
-      val actor       = Actors.AppCollaborator(loggedInUser)
+      val actor       = Actors.AppCollaborator(adminOne.emailAddress)
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(application)
 
@@ -146,9 +155,9 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
       ApplicationCommandDispatcherMock.Dispatch.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
     }
 
-    "return successfully using a GatekeeperUserCollaborator if the logged in user is not a member of the application" in new Setup {
-      val applicationData = anApplicationData(applicationId, collaborators = Set.empty)
-      val actor           = Actors.GatekeeperUser(loggedInUser.text)
+    "return successfully using a GatekeeperUserCollaborator if the logged in user is not a member of the application" in new SetupWithGKUser {
+      val applicationData = anApplicationData(applicationId)
+      val actor           = Actors.GatekeeperUser(gkUserEmail)
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
 
@@ -189,7 +198,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
   private def anApplicationData(
       applicationId: ApplicationId,
       state: ApplicationState = productionState(requestedByEmail),
-      collaborators: Set[Collaborator] = Set(loggedInUser.admin()),
+      collaborators: Set[Collaborator] = Set(adminOne),
       rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE)
     ) = {
     new StoredApplication(

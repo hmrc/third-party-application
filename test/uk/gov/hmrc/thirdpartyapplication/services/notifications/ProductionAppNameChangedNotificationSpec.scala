@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
@@ -35,8 +34,8 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val applicationId         = ApplicationId.random
-    val devEmail              = "dev@example.com".toLaxEmail
-    val anAdminEmail          = "admin@example.com".toLaxEmail
+    val devEmail              = developerOne.emailAddress
+    val anAdminEmail          = adminOne.emailAddress
     val oldName               = ApplicationName("old app name")
     val newName               = ApplicationName("new app name")
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
@@ -51,10 +50,6 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
     )
 
     val app                  = anApplicationData(applicationId).copy(
-      collaborators = Set(
-        devEmail.developer(),
-        anAdminEmail.admin()
-      ),
       name = oldName,
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
@@ -62,7 +57,7 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
     val gatekeeperUser       = "gkuser"
     val eventId              = EventId.random
     val actor                = Actors.GatekeeperUser(gatekeeperUser)
-    val nameChangeEmailEvent = ApplicationEvents.ProductionAppNameChangedEvent(eventId, applicationId, instant, actor, oldName.value, newName.value, "admin@example.com".toLaxEmail)
+    val nameChangeEmailEvent = ApplicationEvents.ProductionAppNameChangedEvent(eventId, applicationId, instant, actor, oldName.value, newName.value, adminOne.emailAddress)
   }
 
   "sendAdviceEmail" should {
@@ -71,10 +66,10 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
       val result = await(ProductionAppNameChangedNotification.sendAdviceEmail(EmailConnectorMock.aMock, app, nameChangeEmailEvent))
       result shouldBe HasSucceeded
       EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(
-        anAdminEmail.text,
+        adminOne.emailAddress.text,
         oldName.value,
         newName.value,
-        Set(anAdminEmail, devEmail, responsibleIndividual.emailAddress)
+        app.collaborators.map(_.emailAddress) + responsibleIndividual.emailAddress
       )
     }
   }

@@ -18,19 +18,16 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.data.{NonEmptyList, Validated}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClock {
+class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClock with CommonApplicationId {
 
   import CommandHandler._
   import CommandFailures._
-
-  val applicationId = ApplicationId.random
-  val timestamp     = now
 
   // Application with two client secrets
   val applicationData: StoredApplication = anApplicationData(applicationId)
@@ -92,7 +89,7 @@ class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClo
     "fail with CollaboratorHasMismatchOnApp when collaborator is found by id on app but emails are not the same" in {
       val theCollaborator = developerCollaborator
 
-      val app = applicationData.copy(collaborators = Set(theCollaborator.copy(emailAddress = anAdminEmail)))
+      val app = applicationData.copy(collaborators = Set(theCollaborator.copy(emailAddress = adminOne.emailAddress)))
 
       isCollaboratorOnApp(theCollaborator, app) shouldBe Validated.Invalid(NonEmptyList.one(CommandFailures.CollaboratorHasMismatchOnApp))
     }

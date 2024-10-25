@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
@@ -35,8 +34,8 @@ class ApplicationChangedNoValueNotificationSpec extends AsyncHmrcSpec with Appli
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val applicationId         = ApplicationId.random
-    val devEmail              = "dev@example.com".toLaxEmail
-    val anAdminEmail          = "admin@example.com".toLaxEmail
+    val devEmail              = developerOne.emailAddress
+    val anAdminEmail          = adminOne.emailAddress
     val oldName               = ApplicationName("old app name")
     val newName               = ApplicationName("new app name")
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
@@ -51,10 +50,6 @@ class ApplicationChangedNoValueNotificationSpec extends AsyncHmrcSpec with Appli
     )
 
     val app            = anApplicationData(applicationId).copy(
-      collaborators = Set(
-        devEmail.developer(),
-        anAdminEmail.admin()
-      ),
       name = oldName,
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
@@ -71,15 +66,15 @@ class ApplicationChangedNoValueNotificationSpec extends AsyncHmrcSpec with Appli
       val result = await(ApplicationChangedNoValueNotification.sendAdviceEmail(
         EmailConnectorMock.aMock,
         app,
-        "admin@example.com",
+        adminOne.emailAddress.text,
         "privacy policy URL"
       ))
       result shouldBe HasSucceeded
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
-        anAdminEmail.text,
+        adminOne.emailAddress.text,
         app.name,
         "privacy policy URL",
-        Set(anAdminEmail, devEmail, responsibleIndividual.emailAddress)
+        app.collaborators.map(_.emailAddress) + responsibleIndividual.emailAddress
       )
     }
   }
