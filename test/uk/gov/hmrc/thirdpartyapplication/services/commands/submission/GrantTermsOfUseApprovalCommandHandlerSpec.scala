@@ -57,7 +57,7 @@ class GrantTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec w
       List.empty
     )
 
-    val app = anApplicationData(applicationId).copy(
+    val app = anApplicationData().copy(
       state = ApplicationStateExamples.production(appAdminEmail.text, appAdminName),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )

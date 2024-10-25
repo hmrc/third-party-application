@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeApplicationScopes
@@ -45,8 +45,8 @@ class ChangeApplicationScopesCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val oldScopes   = Set("scope01", "scope02", "scope03")
     val privAccess  = Access.Privileged(scopes = oldScopes)
-    val privApp     = anApplicationData(applicationId).copy(access = privAccess)
-    val standardApp = anApplicationData(ApplicationId.random)
+    val privApp     = anApplicationData().copy(access = privAccess)
+    val standardApp = anApplicationData()
 
     val ts = FixedClock.instant
 

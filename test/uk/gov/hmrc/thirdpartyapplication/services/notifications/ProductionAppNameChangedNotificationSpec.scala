@@ -49,7 +49,7 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
       List.empty
     )
 
-    val app                  = anApplicationData(applicationId).copy(
+    val app                  = anApplicationData().copy(
       name = oldName,
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )

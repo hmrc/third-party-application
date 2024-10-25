@@ -20,22 +20,22 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationIdData}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.BlockApplication
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ApplicationBlocked
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
+import uk.gov.hmrc.thirdpartyapplication.util.CommonApplicationId
 
 class BlockApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  trait Setup extends ApplicationRepositoryMockModule {
+  trait Setup extends ApplicationRepositoryMockModule with CommonApplicationId {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId = ApplicationIdData.one
-    val app   = anApplicationData(appId).copy(environment = "SANDBOX")
-    val ts    = FixedClock.instant
+    val app = anApplicationData().copy(environment = "SANDBOX")
+    val ts  = FixedClock.instant
 
     val underTest = new BlockApplicationCommandHandler(
       ApplicationRepoMock.aMock,
@@ -57,7 +57,7 @@ class BlockApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
         inside(events.head) {
           case event: ApplicationBlocked =>
-            event.applicationId shouldBe appId
+            event.applicationId shouldBe applicationId
             event.eventDateTime shouldBe ts
             event.actor shouldBe Actors.GatekeeperUser(gatekeeperUser)
         }

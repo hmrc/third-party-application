@@ -66,7 +66,6 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
     )
 
     val app              = anApplicationData(
-      ApplicationId.random
     ).copy(
       access = Access.Standard(importantSubmissionData = Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail, requesterName),

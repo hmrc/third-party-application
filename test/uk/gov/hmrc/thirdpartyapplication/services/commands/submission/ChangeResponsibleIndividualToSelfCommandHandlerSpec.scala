@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, ApplicationId, LaxEmailAddress, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocations, ResponsibleIndividual, TermsAndConditionsLocations}
@@ -39,7 +39,6 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId       = ApplicationId.random
     val submission  = aSubmission
     val oldRiUserId = adminTwo.userId
     val oldRiEmail  = adminTwo.emailAddress
@@ -54,7 +53,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
       List.empty
     )
 
-    val app       = anApplicationData(appId).copy(
+    val app       = anApplicationData().copy(
       collaborators = Set(adminOne, adminTwo),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
@@ -85,7 +84,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
                 requestingName,
                 requestingEmail
               ) =>
-            applicationId shouldBe appId
+            applicationId shouldBe app.id
             eventDateTime shouldBe ts
             actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             previousResponsibleIndividualName shouldBe oldRiName

@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationIdData}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteProductionCredentialsApplication
@@ -35,12 +35,11 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId                                = ApplicationIdData.one
     val appAdminEmail                        = adminTwo.emailAddress
     val jobId                                = "DeleteUnusedApplicationsJob"
     val actor                                = Actors.ScheduledJob(jobId)
     val reasons                              = "reasons description text"
-    val app                                  = anApplicationData(appId).copy(environment = "SANDBOX", state = ApplicationStateExamples.testing)
+    val app                                  = anApplicationData().copy(environment = "SANDBOX", state = ApplicationStateExamples.testing)
     val ts                                   = FixedClock.instant
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
@@ -70,7 +69,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
         filteredEvents.foreach(event =>
           inside(event) {
             case ApplicationEvents.ProductionCredentialsApplicationDeleted(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons) =>
-              appId shouldBe appId
+              appId shouldBe app.id
               actor shouldBe actor
               eventDateTime shouldBe ts
               clientId shouldBe app.tokens.production.clientId
@@ -78,7 +77,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
               wsoApplicationName shouldBe app.wso2ApplicationName
 
             case ApplicationEvents.ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
-              appId shouldBe appId
+              appId shouldBe app.id
               evtActor shouldBe actor
               eventDateTime shouldBe ts
               oldAppState shouldBe app.state.name.toString

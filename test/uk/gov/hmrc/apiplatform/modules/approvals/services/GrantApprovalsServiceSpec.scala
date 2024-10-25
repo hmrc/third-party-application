@@ -20,7 +20,6 @@ import java.time.format.DateTimeFormatter
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -71,16 +70,14 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     )
 
     val applicationPendingGKApproval: StoredApplication = anApplicationData(
-      applicationId
     ).copy(
       state = pendingGatekeeperApprovalState("bob@fastshow.com"),
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
-    val prodAppId = ApplicationId.random
+    val prodAppId = applicationId
 
     val applicationProduction: StoredApplication = anApplicationData(
-      prodAppId
     ).copy(
       state = productionState("bob@fastshow.com"),
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
@@ -119,7 +116,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     "fail to grant the specified application if the application is in the incorrect state" in new Setup {
       val warning = "Here are some warnings"
-      val result  = await(underTest.grantWithWarningsForTouUplift(anApplicationData(applicationId).copy(state = testingState()), warningsSubmission, gatekeeperUserName, warning))
+      val result  = await(underTest.grantWithWarningsForTouUplift(anApplicationData().copy(state = testingState()), warningsSubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
@@ -152,7 +149,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     "fail to decline the specified application if the application is in the incorrect state" in new Setup {
       val warning = "Here are some warnings"
-      val result  = await(underTest.declineForTouUplift(anApplicationData(applicationId).copy(state = testingState()), failSubmission, gatekeeperUserName, warning))
+      val result  = await(underTest.declineForTouUplift(anApplicationData().copy(state = testingState()), failSubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }

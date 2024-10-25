@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ApplicationIdData}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, State}
@@ -48,12 +48,15 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 
 class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData with FixedClock {
 
-  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationRepositoryMockModule with StateHistoryRepositoryMockModule
-      with TermsOfUseInvitationRepositoryMockModule with SubmissionsServiceMockModule {
+  trait Setup
+      extends ResponsibleIndividualVerificationRepositoryMockModule
+      with ApplicationRepositoryMockModule
+      with StateHistoryRepositoryMockModule
+      with TermsOfUseInvitationRepositoryMockModule
+      with SubmissionsServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId                    = ApplicationId.random
     val submission               = aSubmission
     val riName                   = "Mr Responsible"
     val riEmail                  = "ri@example.com".toLaxEmail
@@ -71,17 +74,16 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       List.empty
     )
 
-    val app  = anApplicationData(appId).copy(
+    val app  = anApplicationData().copy(
       collaborators = Set(adminOne),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName)
     )
-    val ts   = FixedClock.instant
     val code = "3242342387452384623549234"
 
     val riVerificationToU = ResponsibleIndividualToUVerification(
       ResponsibleIndividualVerificationId(code),
-      appId,
+      app.id,
       submission.id,
       submission.latestInstance.index,
       ApplicationName("App Name"),
@@ -91,7 +93,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
     val riVerificationTouUplift = ResponsibleIndividualTouUpliftVerification(
       ResponsibleIndividualVerificationId(code),
-      appId,
+      app.id,
       submission.id,
       submission.latestInstance.index,
       ApplicationName("App Name"),
@@ -103,7 +105,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
     val riVerificationUpdate = ResponsibleIndividualUpdateVerification(
       ResponsibleIndividualVerificationId(code),
-      appId,
+      app.id,
       submission.id,
       submission.latestInstance.index,
       ApplicationName("App Name"),
@@ -132,8 +134,8 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
         events.collect {
           case riSet: ResponsibleIndividualSet =>
-            riSet.applicationId shouldBe appId
-            riSet.eventDateTime shouldBe ts
+            riSet.applicationId shouldBe ApplicationIdData.one
+            riSet.eventDateTime shouldBe instant
             riSet.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             riSet.responsibleIndividualName shouldBe riName
             riSet.responsibleIndividualEmail shouldBe riEmail
@@ -145,8 +147,8 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
         events.collect {
           case stateEvent: ApplicationStateChanged =>
-            stateEvent.applicationId shouldBe appId
-            stateEvent.eventDateTime shouldBe ts
+            stateEvent.applicationId shouldBe ApplicationIdData.one
+            stateEvent.eventDateTime shouldBe instant
             stateEvent.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             stateEvent.requestingAdminEmail shouldBe requesterEmail
             stateEvent.requestingAdminName shouldBe requesterName
@@ -165,8 +167,8 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
           events.collect {
             case riSet: ResponsibleIndividualSet =>
-              riSet.applicationId shouldBe appId
-              riSet.eventDateTime shouldBe ts
+              riSet.applicationId shouldBe ApplicationIdData.one
+              riSet.eventDateTime shouldBe instant
               riSet.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
               riSet.responsibleIndividualName shouldBe riName
               riSet.responsibleIndividualEmail shouldBe riEmail
@@ -178,8 +180,8 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
           events.collect {
             case passEvent: TermsOfUsePassed =>
-              passEvent.applicationId shouldBe appId
-              passEvent.eventDateTime shouldBe ts
+              passEvent.applicationId shouldBe ApplicationIdData.one
+              passEvent.eventDateTime shouldBe instant
               passEvent.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
               passEvent.submissionIndex shouldBe submission.latestInstance.index
               passEvent.submissionId.value shouldBe submission.id.value
@@ -191,8 +193,8 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
           events.collect {
             case riSet: ResponsibleIndividualSet =>
-              riSet.applicationId shouldBe appId
-              riSet.eventDateTime shouldBe ts
+              riSet.applicationId shouldBe ApplicationIdData.one
+              riSet.eventDateTime shouldBe instant
               riSet.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
               riSet.responsibleIndividualName shouldBe riName
               riSet.responsibleIndividualEmail shouldBe riEmail
@@ -213,8 +215,8 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
         events.collect {
           case riChanged: ResponsibleIndividualChanged =>
-            riChanged.applicationId shouldBe appId
-            riChanged.eventDateTime shouldBe ts
+            riChanged.applicationId shouldBe ApplicationIdData.one
+            riChanged.eventDateTime shouldBe instant
             riChanged.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             riChanged.newResponsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
             riChanged.newResponsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress
@@ -231,7 +233,6 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
   "process" should {
     "create correct event for a valid request with a ToU responsibleIndividualVerification and a standard app" in new Setup {
-
       val pendingRIApp = app.copy(state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName))
       ApplicationRepoMock.UpdateApplicationSetResponsibleIndividual.thenReturn(pendingRIApp)
       ApplicationRepoMock.UpdateApplicationState.succeeds()

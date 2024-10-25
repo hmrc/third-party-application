@@ -54,7 +54,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
       List.empty
     )
 
-    val app = anApplicationData(applicationId).copy(
+    val app = anApplicationData().copy(
       state = ApplicationStateExamples.pendingRequesterVerification(appAdminEmail.text, appAdminName, "123456789"),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )

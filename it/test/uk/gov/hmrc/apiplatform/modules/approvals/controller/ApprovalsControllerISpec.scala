@@ -99,15 +99,15 @@ class ApprovalsControllerISpec
         List.empty
       )
       val application: StoredApplication = anApplicationData(
-        appId
       ).copy(
+        id = appId,
         state = productionState("bob@fastshow.com"),
         access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
       )
 
       await(applicationRepo.save(application))
       await(submissionRepo.collection
-        .insertOne(warningsSubmission.copy(applicationId = appId))
+        .insertOne(warningsSubmission.copy(applicationId = application.id))
         .toFuture())
     }
 

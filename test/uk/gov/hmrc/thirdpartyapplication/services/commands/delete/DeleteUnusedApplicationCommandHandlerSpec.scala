@@ -23,7 +23,7 @@ import org.apache.commons.codec.binary.Base64.encodeBase64String
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ApplicationIdData}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteUnusedApplication
@@ -38,10 +38,9 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId: ApplicationId                 = ApplicationIdData.one
     val appAdminEmail                        = adminTwo.emailAddress
     val actor: Actors.ScheduledJob           = Actors.ScheduledJob("DeleteUnusedApplicationsJob")
-    val app: StoredApplication               = anApplicationData(appId).copy(environment = "SANDBOX")
+    val app: StoredApplication               = anApplicationData().copy(environment = "SANDBOX")
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
     val underTest = new DeleteUnusedApplicationCommandHandler(
@@ -68,7 +67,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
         filteredEvents.foreach(event =>
           inside(event) {
             case ApplicationEvents.ApplicationDeleted(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons) =>
-              appId shouldBe appId
+              appId shouldBe app.id
               actor shouldBe actor
               eventDateTime shouldBe ts
               clientId shouldBe app.tokens.production.clientId
@@ -76,7 +75,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
               wsoApplicationName shouldBe app.wso2ApplicationName
 
             case ApplicationEvents.ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
-              appId shouldBe appId
+              appId shouldBe app.id
               evtActor shouldBe actor
               eventDateTime shouldBe ts
               oldAppState shouldBe app.state.name.toString()

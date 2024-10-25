@@ -74,7 +74,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       List.empty
     )
 
-    val app  = anApplicationData(applicationId).copy(
+    val app  = anApplicationData().copy(
       collaborators = Set(adminOne),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName)

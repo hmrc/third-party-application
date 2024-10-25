@@ -33,13 +33,12 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new ChangeRedirectUriCommandHandler(ApplicationRepoMock.aMock)
 
-    val applicationId                   = ApplicationId.random
     val untouchedUri                    = RedirectUri.unsafeApply("https://leavemebe.example.com")
     val toBeReplacedRedirectUri         = RedirectUri.unsafeApply("https://new-url.example.com")
     val replacementUri                  = RedirectUri.unsafeApply("https://new-url.example.com/other-redirect")
     val originalUris                    = List(toBeReplacedRedirectUri, untouchedUri)
     val nonExistantUri                  = RedirectUri.unsafeApply("https://otherurl.com/not-there")
-    val principalApp: StoredApplication = anApplicationData(applicationId).copy(access = Access.Standard(originalUris), collaborators = devAndAdminCollaborators)
+    val principalApp: StoredApplication = anApplicationData().copy(access = Access.Standard(originalUris), collaborators = devAndAdminCollaborators)
     val subordinateApp                  = principalApp.copy(environment = Environment.SANDBOX.toString())
 
     val nonStandardAccessApp = principalApp.copy(access = Access.Privileged())

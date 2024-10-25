@@ -34,7 +34,7 @@ class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec with Co
   trait Setup extends ApplicationRepositoryMockModule {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val anApplication = anApplicationData(applicationId)
+    val anApplication = anApplicationData()
 
     val oldIpAllowList = List(
       CidrBlock("1.0.0.0/24")

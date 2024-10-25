@@ -21,7 +21,6 @@ import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
 import org.scalatest.BeforeAndAfterAll
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
@@ -54,7 +53,6 @@ class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with Befo
     )
 
     val app            = anApplicationData(
-      ApplicationId.random
     ).copy(
       access = Access.Standard(importantSubmissionData = Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail, requesterName),

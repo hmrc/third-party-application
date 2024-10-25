@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeApplicationAccessOverrides
@@ -39,8 +39,8 @@ class ChangeApplicationAccessOverridesCommandHandlerSpec extends CommandHandlerB
 
     val oldOverrides: Set[OverrideFlag] = Set(OverrideFlag.PersistLogin, OverrideFlag.OriginOverride("origin01"))
     val stdAccess                       = Access.Standard(overrides = oldOverrides)
-    val standardApp                     = anApplicationData(applicationId).copy(access = stdAccess)
-    val privApp                         = anApplicationData(ApplicationId.random).copy(access = Access.Privileged())
+    val standardApp                     = anApplicationData().copy(access = stdAccess)
+    val privApp                         = anApplicationData().copy(access = Access.Privileged())
 
     val ts = FixedClock.instant
 

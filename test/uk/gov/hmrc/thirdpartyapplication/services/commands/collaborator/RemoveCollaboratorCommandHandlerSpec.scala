@@ -44,7 +44,7 @@ class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec with A
     val scheduledJobActor = Actors.ScheduledJob(jobId)
     val collaboratorEmail = "newdev@somecompany.com"
 
-    val app = anApplicationData(applicationId).copy(
+    val app = anApplicationData().copy(
       collaborators = Set(adminOne, developerOne)
     )
 

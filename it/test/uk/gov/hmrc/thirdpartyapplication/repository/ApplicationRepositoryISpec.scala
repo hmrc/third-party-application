@@ -2189,7 +2189,7 @@ class ApplicationRepositoryISpec
   }
 
   "handle addCollaborator correctly" in {
-    val app = anApplicationData(applicationId)
+    val app = anApplicationData()
     await(applicationRepository.save(app))
 
     val collaborator          = "email".developer()
@@ -2204,7 +2204,7 @@ class ApplicationRepositoryISpec
 
     val developerCollaborator = "email".developer()
     val adminCollaborator     = "email2".admin()
-    val app                   = anApplicationData(applicationId).copy(collaborators = Set(developerCollaborator, adminCollaborator))
+    val app                   = anApplicationData().copy(collaborators = Set(developerCollaborator, adminCollaborator))
     await(applicationRepository.save(app))
 
     val existingCollaborators = app.collaborators
@@ -2236,7 +2236,7 @@ class ApplicationRepositoryISpec
         )
       )
     )
-    val app         = anApplicationData(applicationId).copy(access = access)
+    val app         = anApplicationData().copy(access = access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateApplicationPrivacyPolicyLocation(applicationId, newLocation))
@@ -2251,7 +2251,7 @@ class ApplicationRepositoryISpec
     val oldUrl = "http://example.com/old"
     val newUrl = "http://example.com/new"
     val access = Access.Standard(List.empty, None, Some(oldUrl), Set.empty, None, None)
-    val app    = anApplicationData(applicationId).copy(access = access)
+    val app    = anApplicationData().copy(access = access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateLegacyPrivacyPolicyUrl(applicationId, Some(newUrl)))
@@ -2276,7 +2276,7 @@ class ApplicationRepositoryISpec
         ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty, oldLocation, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
       )
     )
-    val app         = anApplicationData(applicationId).copy(access = access)
+    val app         = anApplicationData().copy(access = access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateApplicationTermsAndConditionsLocation(applicationId, newLocation))
@@ -2291,7 +2291,7 @@ class ApplicationRepositoryISpec
     val oldUrl = "http://example.com/old"
     val newUrl = "http://example.com/new"
     val access = Access.Standard(List.empty, Some(oldUrl), None, Set.empty, None, None)
-    val app    = anApplicationData(applicationId).copy(access = access)
+    val app    = anApplicationData().copy(access = access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateLegacyTermsAndConditionsUrl(applicationId, Some(newUrl)))
@@ -2302,15 +2302,14 @@ class ApplicationRepositoryISpec
   }
 
   "handle updateApplicationState correctly" in {
-    val applicationId           = ApplicationId.random
     val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
     val importantSubmissionData =
       ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocations.InDesktopSoftware, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
     val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-    val app                     = anApplicationData(applicationId).copy(access = access)
+    val app                     = anApplicationData().copy(access = access)
+    app.state.name mustBe State.PRODUCTION
 
     await(applicationRepository.save(app))
-    app.state.name mustBe State.PRODUCTION
     val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, instant, adminOne.emailAddress.text, adminName))
     appWithUpdatedState.state.name mustBe State.PENDING_GATEKEEPER_APPROVAL
     appWithUpdatedState.state.updatedOn mustBe instant
@@ -2332,7 +2331,7 @@ class ApplicationRepositoryISpec
       List(TermsOfUseAcceptance(oldRi, instant, submissionId, submissionIndex))
     )
     val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-    val app                     = anApplicationData(applicationId).copy(access = access)
+    val app                     = anApplicationData().copy(access = access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedRI =
@@ -2352,11 +2351,10 @@ class ApplicationRepositoryISpec
   }
 
   "handle NameChanged event correctly" in {
-
     val oldName = ApplicationName("oldName")
     val newName = "newName"
 
-    val app = anApplicationData(applicationId).copy(name = oldName)
+    val app = anApplicationData().copy(name = oldName)
     await(applicationRepository.save(app))
 
     val appWithUpdatedName = await(applicationRepository.updateApplicationName(applicationId, newName))
@@ -2367,7 +2365,6 @@ class ApplicationRepositoryISpec
   }
 
   "handle updateApplicationChangeResponsibleIndividual" in {
-    val applicationId           = ApplicationId.random
     val riName                  = "Mr Responsible"
     val riEmail                 = "ri@example.com".toLaxEmail
     val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
@@ -2382,10 +2379,12 @@ class ApplicationRepositoryISpec
       List(TermsOfUseAcceptance(oldRi, instant, submissionId, submissionIndex))
     )
     val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-    val app                     = anApplicationData(applicationId).copy(access = access)
-    await(applicationRepository.save(app))
+    val app                     = anApplicationData().copy(access = access)
+    println(await(applicationRepository.save(app)))
 
     val appWithUpdatedRI = await(applicationRepository.updateApplicationChangeResponsibleIndividual(applicationId, riName, riEmail, instant, submissionId, submissionIndex))
+    println(appWithUpdatedRI)
+
     appWithUpdatedRI.access match {
       case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         importantSubmissionData.responsibleIndividual.fullName.value mustBe riName
@@ -2401,8 +2400,8 @@ class ApplicationRepositoryISpec
 
   "fetchProdAppStateHistories" should {
     def saveApp(state: State, timeOffset: Duration, isNewJourney: Boolean = true, environment: Environment = Environment.PRODUCTION) = {
-      val appId = ApplicationId.random
-      val app   = anApplicationData(appId).copy(
+      val app = anApplicationData().copy(
+        id = ApplicationId.random,
         state = ApplicationState(name = state, updatedOn = instant),
         access = Access.Standard(importantSubmissionData = isNewJourney match {
           case true  => Some(ImportantSubmissionData(

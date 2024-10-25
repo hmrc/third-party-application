@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByCollaborator
@@ -34,12 +34,10 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId = ApplicationId.random
-
     val reasons = "reasons description text"
     val actor   = Actors.AppCollaborator(adminOne.emailAddress)
 
-    val app = anApplicationData(appId).copy(environment = "SANDBOX", collaborators = Set(adminOne))
+    val app = anApplicationData().copy(environment = "SANDBOX", collaborators = Set(adminOne))
 
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
 
@@ -69,7 +67,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
         filteredEvents.foreach(event =>
           inside(event) {
             case ApplicationEvents.ApplicationDeleted(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons) =>
-              appId shouldBe appId
+              appId shouldBe app.id
               actor shouldBe actor
               eventDateTime shouldBe instant
               clientId shouldBe app.tokens.production.clientId
@@ -77,7 +75,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
               wsoApplicationName shouldBe app.wso2ApplicationName
 
             case ApplicationEvents.ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
-              appId shouldBe appId
+              appId shouldBe app.id
               evtActor shouldBe actor
               eventDateTime shouldBe instant
               oldAppState shouldBe app.state.name.toString()

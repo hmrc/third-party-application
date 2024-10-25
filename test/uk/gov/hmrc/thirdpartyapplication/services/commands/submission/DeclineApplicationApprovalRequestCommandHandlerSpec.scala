@@ -20,8 +20,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
@@ -40,7 +40,6 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId                    = ApplicationId.random
     val riName                   = "Mr Responsible"
     val riEmail                  = "ri@example.com".toLaxEmail
     val newResponsibleIndividual = ResponsibleIndividual.build("New RI", "new-ri@example")
@@ -59,7 +58,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
       List.empty
     )
 
-    val applicationData = anApplicationData(appId).copy(
+    val applicationData = anApplicationData().copy(
       collaborators = Set(adminOne),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName)

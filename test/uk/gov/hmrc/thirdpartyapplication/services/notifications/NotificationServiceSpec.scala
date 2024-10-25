@@ -62,7 +62,7 @@ class NotificationServiceSpec
       List.empty
     )
 
-    val applicationData: StoredApplication = anApplicationData(applicationId).copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+    val applicationData: StoredApplication = anApplicationData().copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
     val collaboratorEmails = applicationData.collaborators.map(_.emailAddress)
 

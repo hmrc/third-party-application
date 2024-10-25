@@ -58,7 +58,7 @@ class ApplicationCommandDispatcherSpec
     with FixedClock {
 
   trait Setup extends CommonSetup {
-    val applicationData: StoredApplication = anApplicationData(applicationId)
+    val applicationData: StoredApplication = anApplicationData()
 
     def primeCommonServiceSuccess() = {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)

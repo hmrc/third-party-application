@@ -35,7 +35,7 @@ class BlockApplicationAutoDeleteCommandHandlerSpec extends CommandHandlerBaseSpe
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appWithAutoDeleteAllowed = anApplicationData(applicationId).copy(environment = "SANDBOX")
+    val appWithAutoDeleteAllowed = anApplicationData().copy(environment = "SANDBOX")
     val appWithAutoDeleteBlocked = appWithAutoDeleteAllowed.copy(allowAutoDelete = false)
     val timestamp                = FixedClock.instant
 
@@ -50,7 +50,7 @@ class BlockApplicationAutoDeleteCommandHandlerSpec extends CommandHandlerBaseSpe
 
         inside(event) {
           case ApplicationEvents.BlockApplicationAutoDelete(_, appId, eventDateTime, anActor, reason) =>
-            appId shouldBe applicationId
+            appId shouldBe app.id
             anActor shouldBe expectedActor
             eventDateTime shouldBe timestamp
             reason shouldBe reasons

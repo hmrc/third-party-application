@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
-import com.github.t3hnar.bcrypt._
 import org.mockito.Strictness
 
 import play.api.libs.ws.WSResponse
@@ -27,20 +26,16 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, _}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredToken, _}
+import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, CommonApplicationId}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, CollaboratorTestData, CommonApplicationId}
 
-class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with CollaboratorTestData with CommonApplicationId {
-
-  private val productionToken = StoredToken(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
+class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with CollaboratorTestData with CommonApplicationId with ApplicationTestData {
 
   trait SetupWithoutHc extends AuditServiceMockModule with ApplicationCommandDispatcherMockModule {
 
@@ -61,7 +56,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     when(mockSubscriptionRepository.remove(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
   }
 
-  private def aSecret(secret: String) = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
+  // private def aSecret(secret: String) = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   "isSubscribed" should {
 
@@ -115,7 +110,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     }
 
     "fetch all API subscriptions from api-definition for the given application id when an application exists" in new Setup {
-      val applicationData = anApplicationData(applicationId)
+      val applicationData = anApplicationData()
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Set("context".asIdentifier)))
@@ -131,7 +126,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     val apiIdentifier = ApiIdentifier.random
 
     "return successfully using the correct Actors.AppCollaborator if the collaborator is a member of the application" in new Setup {
-      val application = anApplicationData(applicationId)
+      val application = anApplicationData()
       val actor       = Actors.AppCollaborator(adminOne.emailAddress)
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(application)
@@ -144,7 +139,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
 
     "return successfully using a GatekeeperUserCollaborator if there are no developers in the header carrier" in new SetupWithoutHc {
       implicit val hc: HeaderCarrier = HeaderCarrier()
-      val applicationData            = anApplicationData(applicationId)
+      val applicationData            = anApplicationData()
       val actor                      = Actors.GatekeeperUser("Gatekeeper Admin")
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
@@ -156,7 +151,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     }
 
     "return successfully using a GatekeeperUserCollaborator if the logged in user is not a member of the application" in new SetupWithGKUser {
-      val applicationData = anApplicationData(applicationId)
+      val applicationData = anApplicationData()
       val actor           = Actors.GatekeeperUser(gkUserEmail)
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
@@ -168,7 +163,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     }
 
     "throw an exception if the application has not updated" in new Setup {
-      val applicationData = anApplicationData(applicationId, collaborators = Set.empty)
+      val applicationData = anApplicationData().copy(collaborators = Set.empty)
       val errorMessage    = "Not valid"
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnFailed(errorMessage)
@@ -193,27 +188,5 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     }
   }
 
-  private val requestedByEmail = "john.smith@example.com"
-
-  private def anApplicationData(
-      applicationId: ApplicationId,
-      state: ApplicationState = productionState(requestedByEmail),
-      collaborators: Set[Collaborator] = Set(adminOne),
-      rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE)
-    ) = {
-    new StoredApplication(
-      applicationId,
-      ApplicationName("MyApp"),
-      "myapp",
-      collaborators,
-      Some("description"),
-      "aaaaaaaaaa",
-      ApplicationTokens(productionToken),
-      state,
-      Access.Standard(),
-      instant,
-      Some(instant),
-      rateLimitTier = rateLimitTier
-    )
-  }
+  // private val requestedByEmail = "john.smith@example.com"
 }

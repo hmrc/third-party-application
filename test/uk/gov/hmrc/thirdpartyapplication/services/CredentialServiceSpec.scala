@@ -32,9 +32,9 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.ClientSecretServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, CommonApplicationId}
 
-class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with ApplicationTestData {
+class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with ApplicationTestData with CommonApplicationId {
 
   trait Setup extends ApplicationRepositoryMockModule
       with ClientSecretServiceMockModule {
@@ -54,15 +54,14 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
         override val logger = mockLogger
       }
 
-    val applicationId    = ApplicationId.random
     val anotherAdminUser = "admin@example.com".toLaxEmail
 
-    val applicationData  = anApplicationData(applicationId)
+    val applicationData  = anApplicationData()
     val environmentToken = applicationData.tokens.production
     val firstSecret      = environmentToken.clientSecrets.head
 
     val prodTokenWith5Secrets       = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => StoredClientSecret(v, hashedSecret = "hashed-secret")))
-    val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
+    val applicationDataWith5Secrets = anApplicationData().copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
     val expectedTokenResponse = ApplicationTokenResponse(environmentToken)
   }

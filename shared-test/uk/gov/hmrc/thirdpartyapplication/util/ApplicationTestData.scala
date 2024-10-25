@@ -39,10 +39,9 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
   val grantLength      = GrantLength.EIGHTEEN_MONTHS.period
 
   def anApplicationData(
-      applicationId: ApplicationId = ApplicationIdData.one
     ): StoredApplication = {
     StoredApplication(
-      applicationId,
+      ApplicationIdData.one,
       ApplicationName("MyApp"),
       "myapp",
       someCollaborators,

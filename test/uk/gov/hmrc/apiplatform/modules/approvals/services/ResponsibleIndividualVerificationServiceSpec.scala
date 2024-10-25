@@ -56,7 +56,6 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     )
 
     val application: StoredApplication = anApplicationData(
-      applicationId
     ).copy(
       state = pendingResponsibleIndividualVerificationState("Rick Deckard", "rick@submitter.com"),
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)),

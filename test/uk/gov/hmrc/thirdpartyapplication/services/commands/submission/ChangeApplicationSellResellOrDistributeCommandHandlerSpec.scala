@@ -20,8 +20,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, SellResellOrDistribute}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeApplicationSellResellOrDistribute
@@ -38,8 +38,8 @@ class ChangeApplicationSellResellOrDistributeCommandHandlerSpec extends CommandH
     val appAdminEmail             = "admin@example.com".toLaxEmail
     val oldSellResellOrDistribute = Some(SellResellOrDistribute("No"))
     val stdAccess                 = Access.Standard(sellResellOrDistribute = oldSellResellOrDistribute)
-    val standardApp               = anApplicationData(applicationId).copy(access = stdAccess)
-    val privApp                   = anApplicationData(ApplicationId.random).copy(access = Access.Privileged())
+    val standardApp               = anApplicationData().copy(access = stdAccess)
+    val privApp                   = anApplicationData().copy(access = Access.Privileged())
 
     val ts = FixedClock.instant
 

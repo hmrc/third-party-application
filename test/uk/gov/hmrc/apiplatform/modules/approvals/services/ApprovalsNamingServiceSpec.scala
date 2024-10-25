@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ApplicationIdData}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -84,7 +84,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       }
 
       "block a duplicate app name" in new Setup {
-        ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(ApplicationIdData.one))
+        ApplicationRepoMock.FetchByName.thenReturn(anApplicationData())
         ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
         ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 
@@ -97,7 +97,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       }
 
       "ignore a duplicate app name for local sandbox app" in new Setup {
-        ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(ApplicationIdData.one).copy(environment = "SANDBOX"))
+        ApplicationRepoMock.FetchByName.thenReturn(anApplicationData().copy(environment = "SANDBOX"))
         ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
         ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 
@@ -123,7 +123,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       "Ignore application when checking for duplicates if it is self application" in new Setup {
         ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
 
-        ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = applicationId))
+        ApplicationRepoMock.FetchByName.thenReturn(anApplicationData())
 
         val result = await(underTest.validateApplicationName(ValidatedApplicationName("app name").get, applicationId))
 
