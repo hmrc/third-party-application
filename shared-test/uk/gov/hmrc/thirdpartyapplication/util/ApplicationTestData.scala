@@ -36,7 +36,6 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
 
   val requestedByName  = "john smith"
   val requestedByEmail = "john.smith@example.com".toLaxEmail
-  val grantLength      = GrantLength.EIGHTEEN_MONTHS.period
 
   def anApplicationData(
     ): StoredApplication = {
@@ -52,7 +51,7 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
       access = Access.Standard(),
       instant,
       Some(instant),
-      grantLength,
+      GrantLength.EIGHTEEN_MONTHS.period,
       rateLimitTier = Some(RateLimitTier.BRONZE),
       environment = "PRODUCTION",
       ipAllowlist = IpAllowlist()
