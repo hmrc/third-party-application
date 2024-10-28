@@ -38,7 +38,7 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val originalUris     = List(RedirectUri.unsafeApply(untouchedUri.uri))
     val nonExistantUri   = RedirectUri.unsafeApply("https://otherurl.com/not-there")
 
-    val principalApp: StoredApplication = anApplicationData().copy(access = Access.Standard(originalUris))
+    val principalApp: StoredApplication = anApplicationData.copy(access = Access.Standard(originalUris))
     val subordinateApp                  = principalApp.copy(environment = Environment.SANDBOX.toString())
     val nonStandardAccessApp            = principalApp.copy(access = Access.Privileged())
 
@@ -68,7 +68,7 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     "given a principal application" should {
       "succeed when application is standardAccess" in new Setup {
         val fourUris        = (1 to 4).map(i => RedirectUri.unsafeApply(s"https:/example$i.com")).toList
-        val appWithFourUris = anApplicationData().copy(access = Access.Standard(fourUris))
+        val appWithFourUris = anApplicationData.copy(access = Access.Standard(fourUris))
 
         val expectedUrisAfterChange = fourUris :+ toAddRedirectUri
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(appWithFourUris) // Dont need to test the repo here so just return any app
@@ -86,7 +86,7 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
       "fail when we try to add a sixth URI" in new Setup {
         val fiveUris        = (1 to 5).map(i => RedirectUri.unsafeApply(s"https:/example$i.com")).toList
-        val appWithFiveUris = anApplicationData().copy(access = Access.Standard(fiveUris))
+        val appWithFiveUris = anApplicationData.copy(access = Access.Standard(fiveUris))
         checkFailsWith("Can have at most 5 redirect URIs") {
           val brokenCmd = cmdAsAdmin
           underTest.process(appWithFiveUris, brokenCmd)

@@ -100,7 +100,7 @@ class ApplicationCommandControllerSpec
     "calling update" should {
 
       "return success if application command request is valid" in new Setup {
-        ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(anApplicationData())
+        ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(anApplicationData)
 
         val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody))
 
@@ -156,7 +156,7 @@ class ApplicationCommandControllerSpec
 
       "return success if application command request is valid" in new Setup {
         ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
-        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(anApplicationData())
+        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(anApplicationData)
 
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody))
 
@@ -165,7 +165,7 @@ class ApplicationCommandControllerSpec
 
       "return success if dispatch request is valid" in new Setup {
         ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
-        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(anApplicationData())
+        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(anApplicationData)
 
         val result = underTest.dispatch(applicationId)(request.withBody(Json.toJson(dispatch)))
 

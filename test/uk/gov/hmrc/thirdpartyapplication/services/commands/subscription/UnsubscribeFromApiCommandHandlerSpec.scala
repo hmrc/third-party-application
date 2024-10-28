@@ -79,8 +79,8 @@ class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with A
     }
 
     private def testWithPrivilegedAndRopc(applicationId: ApplicationId, testBlock: StoredApplication => Unit): Unit = {
-      testBlock(anApplicationData().copy(access = Access.Privileged(scopes = Set("scope1"))))
-      testBlock(anApplicationData().copy(access = Access.Ropc()))
+      testBlock(anApplicationData.copy(access = Access.Privileged(scopes = Set("scope1"))))
+      testBlock(anApplicationData.copy(access = Access.Ropc()))
     }
   }
 
@@ -89,7 +89,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with A
       SubscriptionRepoMock.IsSubscribed.isTrue()
       SubscriptionRepoMock.Remove.succeeds()
 
-      val app = anApplicationData()
+      val app = anApplicationData
 
       checkSuccessResult(gatekeeperUserActor) {
         underTest.process(app, unsubscribeFromApi)
@@ -99,7 +99,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with A
     "fail to unsubscribe an API not already subscribed to" in new Setup {
       SubscriptionRepoMock.IsSubscribed.isFalse()
 
-      val app = anApplicationData()
+      val app = anApplicationData
 
       checkFailsWith(CommandFailures.NotSubscribedToApi) {
         underTest.process(app, unsubscribeFromApi)

@@ -110,7 +110,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     }
 
     "fetch all API subscriptions from api-definition for the given application id when an application exists" in new Setup {
-      val applicationData = anApplicationData()
+      val applicationData = anApplicationData
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Set("context".asIdentifier)))
@@ -126,7 +126,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     val apiIdentifier = ApiIdentifier.random
 
     "return successfully using the correct Actors.AppCollaborator if the collaborator is a member of the application" in new Setup {
-      val application = anApplicationData()
+      val application = anApplicationData
       val actor       = Actors.AppCollaborator(adminOne.emailAddress)
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(application)
@@ -139,7 +139,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
 
     "return successfully using a GatekeeperUserCollaborator if there are no developers in the header carrier" in new SetupWithoutHc {
       implicit val hc: HeaderCarrier = HeaderCarrier()
-      val applicationData            = anApplicationData()
+      val applicationData            = anApplicationData
       val actor                      = Actors.GatekeeperUser("Gatekeeper Admin")
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
@@ -151,7 +151,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     }
 
     "return successfully using a GatekeeperUserCollaborator if the logged in user is not a member of the application" in new SetupWithGKUser {
-      val applicationData = anApplicationData()
+      val applicationData = anApplicationData
       val actor           = Actors.GatekeeperUser(gkUserEmail)
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
@@ -163,7 +163,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil wi
     }
 
     "throw an exception if the application has not updated" in new Setup {
-      val applicationData = anApplicationData().copy(collaborators = Set.empty)
+      val applicationData = anApplicationData.copy(collaborators = Set.empty)
       val errorMessage    = "Not valid"
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnFailed(errorMessage)

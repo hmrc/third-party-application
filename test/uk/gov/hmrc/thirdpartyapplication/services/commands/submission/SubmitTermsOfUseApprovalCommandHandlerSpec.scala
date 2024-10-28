@@ -67,7 +67,7 @@ class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec 
       List.empty
     )
 
-    val app = anApplicationData().copy(
+    val app = anApplicationData.copy(
       state = ApplicationStateExamples.production("bob@example.com", "Bob"),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )

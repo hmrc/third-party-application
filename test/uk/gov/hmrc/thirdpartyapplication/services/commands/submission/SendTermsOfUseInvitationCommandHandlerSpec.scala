@@ -49,7 +49,7 @@ class SendTermsOfUseInvitationCommandHandlerSpec extends CommandHandlerBaseSpec 
     val appAdminEmail  = "bob@example.com".toLaxEmail
     val appAdminName   = "Bob"
 
-    val app = anApplicationData().copy(
+    val app = anApplicationData.copy(
       state = ApplicationStateExamples.production(appAdminEmail.text, appAdminName)
     )
 

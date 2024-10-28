@@ -40,7 +40,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
     val newUrl      = "http://example.com/new"
     val newLocation = PrivacyPolicyLocations.Url(newUrl)
 
-    val newJourneyApp = anApplicationData().copy(
+    val newJourneyApp = anApplicationData.copy(
       collaborators = Set(
         developerCollaborator,
         otherAdminCollaborator
@@ -48,7 +48,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
-    val oldJourneyApp = anApplicationData().copy(
+    val oldJourneyApp = anApplicationData.copy(
       collaborators = Set(
         developerCollaborator,
         otherAdminCollaborator

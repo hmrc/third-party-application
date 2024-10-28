@@ -45,8 +45,8 @@ class ChangeApplicationScopesCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val oldScopes   = Set("scope01", "scope02", "scope03")
     val privAccess  = Access.Privileged(scopes = oldScopes)
-    val privApp     = anApplicationData().copy(access = privAccess)
-    val standardApp = anApplicationData()
+    val privApp     = anApplicationData.copy(access = privAccess)
+    val standardApp = anApplicationData
 
     val ts = FixedClock.instant
 

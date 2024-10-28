@@ -98,8 +98,7 @@ class ApprovalsControllerISpec
         PrivacyPolicyLocations.InDesktopSoftware,
         List.empty
       )
-      val application: StoredApplication = anApplicationData(
-      ).copy(
+      val application: StoredApplication = anApplicationData.copy(
         id = appId,
         state = productionState("bob@fastshow.com"),
         access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))

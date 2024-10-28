@@ -35,7 +35,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val reasons                              = "reasons description text"
-    val app                                  = anApplicationData().copy(environment = "SANDBOX")
+    val app                                  = anApplicationData.copy(environment = "SANDBOX")
     val ts                                   = FixedClock.instant
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 

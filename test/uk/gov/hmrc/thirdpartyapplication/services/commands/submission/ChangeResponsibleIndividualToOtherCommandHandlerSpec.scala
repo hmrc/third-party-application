@@ -74,7 +74,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       List.empty
     )
 
-    val app  = anApplicationData().copy(
+    val app  = anApplicationData.copy(
       collaborators = Set(adminOne),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName)

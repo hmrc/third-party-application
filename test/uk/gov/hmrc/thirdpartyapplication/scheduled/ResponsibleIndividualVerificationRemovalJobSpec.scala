@@ -59,8 +59,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       List.empty
     )
 
-    val app             = anApplicationData(
-    ).copy(
+    val app             = anApplicationData.copy(
       access = Access.Standard(importantSubmissionData = Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail, requesterName),
       name = appName

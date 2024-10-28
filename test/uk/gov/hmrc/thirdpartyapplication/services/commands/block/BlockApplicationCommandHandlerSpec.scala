@@ -34,7 +34,7 @@ class BlockApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val app = anApplicationData().copy(environment = "SANDBOX")
+    val app = anApplicationData.copy(environment = "SANDBOX")
     val ts  = FixedClock.instant
 
     val underTest = new BlockApplicationCommandHandler(

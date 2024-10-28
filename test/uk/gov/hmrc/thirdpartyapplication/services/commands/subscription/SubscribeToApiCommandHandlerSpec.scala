@@ -78,8 +78,8 @@ class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiId
     }
 
     private def testWithPrivilegedAndRopc(applicationId: ApplicationId, testBlock: StoredApplication => Unit): Unit = {
-      testBlock(anApplicationData().copy(access = Access.Privileged(scopes = Set("scope1"))))
-      testBlock(anApplicationData().copy(access = Access.Ropc()))
+      testBlock(anApplicationData.copy(access = Access.Privileged(scopes = Set("scope1"))))
+      testBlock(anApplicationData.copy(access = Access.Ropc()))
     }
   }
 
@@ -88,7 +88,7 @@ class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiId
       SubscriptionRepoMock.IsSubscribed.isFalse()
       SubscriptionRepoMock.Add.succeeds()
 
-      val app = anApplicationData()
+      val app = anApplicationData
 
       checkSuccessResult(gatekeeperUserActor) {
         underTest.process(app, subscribeToApi)
@@ -98,7 +98,7 @@ class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiId
     "fail to subscribe to an API already subscribed to" in new Setup {
       SubscriptionRepoMock.IsSubscribed.isTrue()
 
-      val app = anApplicationData()
+      val app = anApplicationData
 
       checkFailsWith("Application MyApp is already subscribed to API some-context v1.1") {
         underTest.process(app, subscribeToApi)

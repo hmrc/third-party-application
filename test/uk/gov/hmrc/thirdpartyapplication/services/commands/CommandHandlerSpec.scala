@@ -30,7 +30,7 @@ class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClo
   import CommandFailures._
 
   // Application with two client secrets
-  val applicationData: StoredApplication = anApplicationData()
+  val applicationData: StoredApplication = anApplicationData
 
   def checkSuccess[T](expected: T)(fn: => Validated[CommandHandler.Failures, T]) = {
     fn shouldBe Validated.Valid(expected)

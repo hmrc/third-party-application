@@ -56,12 +56,12 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
     val anotherAdminUser = "admin@example.com".toLaxEmail
 
-    val applicationData  = anApplicationData()
+    val applicationData  = anApplicationData
     val environmentToken = applicationData.tokens.production
     val firstSecret      = environmentToken.clientSecrets.head
 
     val prodTokenWith5Secrets       = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => StoredClientSecret(v, hashedSecret = "hashed-secret")))
-    val applicationDataWith5Secrets = anApplicationData().copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
+    val applicationDataWith5Secrets = anApplicationData.copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
     val expectedTokenResponse = ApplicationTokenResponse(environmentToken)
   }

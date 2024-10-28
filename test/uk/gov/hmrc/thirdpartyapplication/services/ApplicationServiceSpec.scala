@@ -100,7 +100,7 @@ class ApplicationServiceSpec
       with ApplicationCommandDispatcherMockModule {
 
     val applicationId: ApplicationId       = ApplicationIdData.one
-    val applicationData: StoredApplication = anApplicationData()
+    val applicationData: StoredApplication = anApplicationData
 
     lazy val locked                               = false
     protected val mockitoTimeout                  = 1000
@@ -272,8 +272,7 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: StoredApplication = anApplicationData(
-      ).copy(
+      val expectedApplicationData: StoredApplication = anApplicationData.copy(
         id = createdApp.application.id,
         state = testingState(),
         collaborators = Set(loggedInUserAdminCollaborator),
@@ -305,7 +304,7 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: StoredApplication =
-        anApplicationData().copy(
+        anApplicationData.copy(
           id = createdApp.application.id,
           state = testingState(),
           collaborators = Set(loggedInUserAdminCollaborator),
@@ -336,7 +335,7 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: StoredApplication =
-        anApplicationData().copy(
+        anApplicationData.copy(
           id = createdApp.application.id,
           state = ApplicationState(State.PRODUCTION, updatedOn = instant),
           collaborators = Set(loggedInUserAdminCollaborator),
@@ -378,7 +377,7 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: StoredApplication = anApplicationData().copy(
+      val expectedApplicationData: StoredApplication = anApplicationData.copy(
         id = createdApp.application.id,
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(adminTwo.emailAddress.text), updatedOn = instant),
         collaborators = Set(loggedInUserAdminCollaborator),
@@ -412,7 +411,7 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: StoredApplication = anApplicationData().copy(
+      val expectedApplicationData: StoredApplication = anApplicationData.copy(
         id = createdApp.application.id,
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(adminTwo.emailAddress.text), updatedOn = instant),
         collaborators = Set(adminTwo),
@@ -437,7 +436,7 @@ class ApplicationServiceSpec
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Access.Privileged())
 
-      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name.value)(anApplicationData())
+      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name.value)(anApplicationData)
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
@@ -449,7 +448,7 @@ class ApplicationServiceSpec
     "fail with ApplicationAlreadyExists for ropc application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Access.Ropc())
 
-      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name.value)(anApplicationData())
+      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name.value)(anApplicationData)
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
@@ -519,7 +518,7 @@ class ApplicationServiceSpec
 
   "confirmSetupComplete" should {
     "update pre-production application state and store state history" in new Setup {
-      val oldApplication     = anApplicationData().copy(state = ApplicationStateExamples.preProduction("previous@example.com", "Previous"))
+      val oldApplication     = anApplicationData.copy(state = ApplicationStateExamples.preProduction("previous@example.com", "Previous"))
       ApplicationRepoMock.Fetch.thenReturn(oldApplication)
       ApplicationRepoMock.Save.thenAnswer()
       StateHistoryRepoMock.Insert.thenAnswer()
@@ -541,7 +540,7 @@ class ApplicationServiceSpec
     }
 
     "not update application in wrong state" in new Setup {
-      val oldApplication = anApplicationData().copy(state = ApplicationStateExamples.pendingGatekeeperApproval("previous@example.com", "Previous"))
+      val oldApplication = anApplicationData.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("previous@example.com", "Previous"))
       ApplicationRepoMock.Fetch.thenReturn(oldApplication)
       ApplicationRepoMock.Save.thenAnswer()
 
@@ -598,7 +597,7 @@ class ApplicationServiceSpec
     }
 
     "return an application when it exists in the repository for the given application id" in new Setup {
-      val data: StoredApplication = anApplicationData().copy(rateLimitTier = Some(RateLimitTier.SILVER))
+      val data: StoredApplication = anApplicationData.copy(rateLimitTier = Some(RateLimitTier.SILVER))
 
       ApplicationRepoMock.Fetch.thenReturn(data)
 
@@ -666,7 +665,7 @@ class ApplicationServiceSpec
 
     "return an application when it exists in the repository for the given server token" in new Setup {
 
-      override val applicationData: StoredApplication = anApplicationData().copy(tokens = ApplicationTokens(productionToken))
+      override val applicationData: StoredApplication = anApplicationData.copy(tokens = ApplicationTokens(productionToken))
 
       ApplicationRepoMock.FetchByServerToken.thenReturnWhen(serverToken)(applicationData)
 
@@ -682,9 +681,9 @@ class ApplicationServiceSpec
     "fetch all applications for a given collaborator user id" in new Setup {
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)("api1".asIdentifier, "api2".asIdentifier)
       val userId                                       = UserId.random
-      val standardApplicationData: StoredApplication   = anApplicationData().copy(access = Access.Standard())
-      val privilegedApplicationData: StoredApplication = anApplicationData().copy(access = Access.Privileged())
-      val ropcApplicationData: StoredApplication       = anApplicationData().copy(access = Access.Ropc())
+      val standardApplicationData: StoredApplication   = anApplicationData.copy(access = Access.Standard())
+      val privilegedApplicationData: StoredApplication = anApplicationData.copy(access = Access.Privileged())
+      val ropcApplicationData: StoredApplication       = anApplicationData.copy(access = Access.Ropc())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
@@ -698,9 +697,9 @@ class ApplicationServiceSpec
   "fetchAllForCollaborators" should {
     "fetch all applications for a given collaborator user id" in new Setup {
       val userId                                       = UserId.random
-      val standardApplicationData: StoredApplication   = anApplicationData().copy(access = Access.Standard())
-      val privilegedApplicationData: StoredApplication = anApplicationData().copy(access = Access.Privileged())
-      val ropcApplicationData: StoredApplication       = anApplicationData().copy(access = Access.Ropc())
+      val standardApplicationData: StoredApplication   = anApplicationData.copy(access = Access.Standard())
+      val privilegedApplicationData: StoredApplication = anApplicationData.copy(access = Access.Privileged())
+      val ropcApplicationData: StoredApplication       = anApplicationData.copy(access = Access.Ropc())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
@@ -713,8 +712,8 @@ class ApplicationServiceSpec
       val userId2        = UserId.random
       val applicationId2 = ApplicationId.random
 
-      val standardApplicationData1: StoredApplication = anApplicationData().copy(access = Access.Standard())
-      val standardApplicationData2: StoredApplication = anApplicationData().copy(id = applicationId2, access = Access.Standard())
+      val standardApplicationData1: StoredApplication = anApplicationData.copy(access = Access.Standard())
+      val standardApplicationData2: StoredApplication = anApplicationData.copy(id = applicationId2, access = Access.Standard())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId1, false)(standardApplicationData1)
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId2, false)(standardApplicationData2)
@@ -728,8 +727,8 @@ class ApplicationServiceSpec
       val userId2        = UserId.random
       val applicationId2 = ApplicationId.random
 
-      val standardApplicationData1: StoredApplication = anApplicationData().copy(access = Access.Standard())
-      val standardApplicationData2: StoredApplication = anApplicationData().copy(id = applicationId2, access = Access.Standard())
+      val standardApplicationData1: StoredApplication = anApplicationData.copy(access = Access.Standard())
+      val standardApplicationData2: StoredApplication = anApplicationData.copy(id = applicationId2, access = Access.Standard())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId1, false)(standardApplicationData1)
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId2, false)(standardApplicationData1, standardApplicationData2)
@@ -946,9 +945,9 @@ class ApplicationServiceSpec
 
   "Search" should {
     "return results based on provided ApplicationSearch" in new Setup {
-      val standardApplicationData: StoredApplication   = anApplicationData().copy(id = ApplicationId.random, access = Access.Standard())
-      val privilegedApplicationData: StoredApplication = anApplicationData().copy(id = ApplicationId.random, access = Access.Privileged())
-      val ropcApplicationData: StoredApplication       = anApplicationData().copy(id = ApplicationId.random, access = Access.Ropc())
+      val standardApplicationData: StoredApplication   = anApplicationData.copy(id = ApplicationId.random, access = Access.Standard())
+      val privilegedApplicationData: StoredApplication = anApplicationData.copy(id = ApplicationId.random, access = Access.Privileged())
+      val ropcApplicationData: StoredApplication       = anApplicationData.copy(id = ApplicationId.random, access = Access.Ropc())
 
       val search = ApplicationSearch(
         pageNumber = 2,

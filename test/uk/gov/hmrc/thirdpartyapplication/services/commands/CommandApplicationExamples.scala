@@ -30,7 +30,7 @@ trait CommandApplicationExamples extends CommonApplicationId {
       adminOne
     )
 
-  val principalApp   = anApplicationData().copy(
+  val principalApp   = anApplicationData.copy(
     collaborators = devAndAdminCollaborators
   )
   val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())

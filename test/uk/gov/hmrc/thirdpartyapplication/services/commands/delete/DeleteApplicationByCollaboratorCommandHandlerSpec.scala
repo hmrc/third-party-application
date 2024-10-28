@@ -37,7 +37,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
     val reasons = "reasons description text"
     val actor   = Actors.AppCollaborator(adminOne.emailAddress)
 
-    val app = anApplicationData().copy(environment = "SANDBOX", collaborators = Set(adminOne))
+    val app = anApplicationData.copy(environment = "SANDBOX", collaborators = Set(adminOne))
 
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
 

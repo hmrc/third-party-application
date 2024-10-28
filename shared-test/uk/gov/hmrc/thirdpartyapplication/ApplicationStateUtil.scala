@@ -17,9 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, ApplicationStateFixtures, State}
 
-trait ApplicationStateUtil extends FixedClock {
+trait ApplicationStateUtil extends ApplicationStateFixtures with FixedClock {
   val generatedVerificationCode: String = "verificationCode"
 
   def testingState() = ApplicationState(name = State.TESTING, updatedOn = instant)

@@ -30,7 +30,7 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec with A
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new RemoveClientSecretCommandHandler(ApplicationRepoMock.aMock)
 
-    val principalApp   = anApplicationData().copy(
+    val principalApp   = anApplicationData.copy(
       collaborators = Set(adminOne, developerOne)
     )
     val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())

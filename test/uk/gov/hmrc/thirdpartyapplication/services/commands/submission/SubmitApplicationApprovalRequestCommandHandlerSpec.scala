@@ -67,7 +67,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
       List.empty
     )
 
-    val app = anApplicationData().copy(
+    val app = anApplicationData.copy(
       state = ApplicationStateExamples.testing,
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )

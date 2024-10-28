@@ -54,7 +54,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       List.empty
     )
 
-    val app = anApplicationData().copy(
+    val app = anApplicationData.copy(
       collaborators = Set(
         adminOne,
         adminTwo

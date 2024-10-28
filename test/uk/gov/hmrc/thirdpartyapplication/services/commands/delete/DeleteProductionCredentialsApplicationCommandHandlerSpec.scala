@@ -39,7 +39,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     val jobId                                = "DeleteUnusedApplicationsJob"
     val actor                                = Actors.ScheduledJob(jobId)
     val reasons                              = "reasons description text"
-    val app                                  = anApplicationData().copy(environment = "SANDBOX", state = ApplicationStateExamples.testing)
+    val app                                  = anApplicationData.copy(environment = "SANDBOX", state = ApplicationStateExamples.testing)
     val ts                                   = FixedClock.instant
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 

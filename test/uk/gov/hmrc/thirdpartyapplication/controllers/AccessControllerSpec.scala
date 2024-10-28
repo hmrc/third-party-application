@@ -31,7 +31,7 @@ import play.api.test.FakeRequest
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{GrantLength, _}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -130,40 +130,18 @@ class AccessControllerSpec
   }
 
   trait StandardFixture extends Fixture {
-    val grantLength = GrantLength.EIGHTEEN_MONTHS
-    when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](
-      standardApp
-      // Application(
-      //   applicationId,
-      //   ClientId("clientId"),
-      //   "gatewayId",
-      //   "name",
-      //   "PRODUCTION",
-      //   Some("description"),
-      //   Set.empty,
-      //   instant,
-      //   Some(instant),
-      //   grantLength,
-      //   access = Access.Standard()
-      // )
-    ))
+    when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](standardApp))
   }
 
   trait PrivilegedAndRopcFixture extends Fixture {
-    val grantLength = GrantLength.EIGHTEEN_MONTHS
 
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
-      // val applicationResponse =
-      // ApplicationWithCollaborators(
-      //   CoreApplication(applicationId, ClientId("clientId"), ApplicationName("name"), "gatewayId", "PRODUCTION", None, Set.empty, instant, Some(instant), grantLength)
       when(mockApplicationService.fetch(applicationId)).thenReturn(
         OptionT.pure[Future](
           privilegedApp
-          // applicationResponse(clientId = ClientId("privilegedClientId"), name = "privilegedName", access = Access.Privileged(scopes = Set("scope:privilegedScopeKey")))
         ),
         OptionT.pure[Future](
           ropcApp
-          // applicationResponse.copy(clientId = ClientId("ropcClientId"), name = "ropcName", access = Access.Ropc(Set("scope:ropcScopeKey"))))
         )
       )
       testBlock

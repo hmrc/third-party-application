@@ -73,8 +73,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "dev@example.com".developer()
   )
 
-  private val myStandardAccess   =
-    Access.Standard(List("https://example.com/redirect") map (RedirectUri.unsafeApply(_)), Some("https://example.com/terms"), Some("https://example.com/privacy"))
   private val myPrivilegedAccess = Access.Privileged(scopes = Set("scope1"))
 
   trait Setup
@@ -112,15 +110,15 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   }
 
   "Create" should {
-    val standardApplicationRequest   = aCreateApplicationRequestV2(StandardAccessDataToCopy(myStandardAccess.redirectUris))
-    val standardApplicationRequestV1 = aCreateApplicationRequestV1(myStandardAccess)
+    val standardApplicationRequest   = aCreateApplicationRequestV2(StandardAccessDataToCopy(standardAccessOne.redirectUris))
+    val standardApplicationRequestV1 = aCreateApplicationRequestV1(standardAccessOne)
     val privilegedApplicationRequest = aCreateApplicationRequestV1(myPrivilegedAccess)
     val ropcApplicationRequest       = aCreateApplicationRequestV1(ropcAccess)
 
-    val standardApplicationResponse   = CreateApplicationResponse(aNewApplicationResponse())
+    val standardApplicationResponse   = CreateApplicationResponse(standardApp.withAccess(standardAccessOne))
     val totp                          = CreateApplicationResponse.TotpSecret("pTOTP")
-    val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(myPrivilegedAccess), Some(totp))
-    val ropcApplicationResponse       = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
+    val privilegedApplicationResponse = CreateApplicationResponse(privilegedApp.withAccess(myPrivilegedAccess), Some(totp))
+    val ropcApplicationResponse       = CreateApplicationResponse(ropcApp)
 
     "succeed with a 201 (Created) for a valid Access.Standard application request when service responds successfully" in new Setup {
       ApplicationServiceMock.Create.onRequestReturn(standardApplicationRequest)(standardApplicationResponse)
@@ -364,27 +362,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
-  }
-
-  private def aNewApplicationResponse(access: Access = myStandardAccess, environment: Environment = Environment.PRODUCTION): ApplicationWithCollaborators = {
-    standardApp.withAccess(access).withEnvironment(environment)
-    //   CoreApplication
-    //   ApplicationId.random,
-    //   ClientId("clientId"),
-    //   "gatewayId",
-    //   ApplicationName("My Application"),
-    //   environment.toString,
-    //   Some("Description"),
-    //   collaborators,
-    //   instant,
-    //   Some(instant),
-    //   grantLength,
-    //   None,
-    //   standardAccess.redirectUris,
-    //   standardAccess.termsAndConditionsUrl,
-    //   standardAccess.privacyPolicyUrl,
-    //   access
-    // )
   }
 
   private def aCreateApplicationRequestV1(access: Access) = CreateApplicationRequestV1(

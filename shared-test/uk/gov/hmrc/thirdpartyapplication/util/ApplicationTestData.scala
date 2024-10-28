@@ -37,25 +37,22 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
   val requestedByName  = "john smith"
   val requestedByEmail = "john.smith@example.com".toLaxEmail
 
-  def anApplicationData(
-    ): StoredApplication = {
-    StoredApplication(
-      ApplicationIdData.one,
-      ApplicationName("MyApp"),
-      "myapp",
-      someCollaborators,
-      Some("description"),
-      "aaaaaaaaaa",
-      ApplicationTokens(productionToken),
-      productionState(requestedByEmail.text),
-      access = Access.Standard(),
-      instant,
-      Some(instant),
-      GrantLength.EIGHTEEN_MONTHS.period,
-      rateLimitTier = Some(RateLimitTier.BRONZE),
-      environment = "PRODUCTION",
-      ipAllowlist = IpAllowlist()
-    )
-  }
+  val anApplicationData = StoredApplication(
+    ApplicationIdData.one,
+    ApplicationName("MyApp"),
+    "myapp",
+    someCollaborators,
+    Some("description"),
+    "aaaaaaaaaa",
+    ApplicationTokens(productionToken),
+    productionState(requestedByEmail.text),
+    access = Access.Standard(),
+    instant,
+    Some(instant),
+    GrantLength.EIGHTEEN_MONTHS.period,
+    rateLimitTier = Some(RateLimitTier.BRONZE),
+    environment = "PRODUCTION",
+    ipAllowlist = IpAllowlist()
+  )
 
 }
