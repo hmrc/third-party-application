@@ -18,15 +18,13 @@ package uk.gov.hmrc.thirdpartyapplication.util
 
 import com.github.t3hnar.bcrypt._
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 
-trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData with FixedClock {
+trait ApplicationTestData extends ApplicationWithCollaboratorsFixtures with ApplicationStateUtil with CollaboratorTestData with FixedClock {
 
   def aSecret(secret: String): StoredClientSecret = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = instant)
 
@@ -34,22 +32,19 @@ trait ApplicationTestData extends ApplicationStateUtil with CollaboratorTestData
   val serverTokenLastAccess = instant
   val productionToken       = StoredToken(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
-  val requestedByName  = "john smith"
-  val requestedByEmail = "john.smith@example.com".toLaxEmail
-
   val anApplicationData = StoredApplication(
-    ApplicationIdData.one,
-    ApplicationName("MyApp"),
-    "myapp",
-    someCollaborators,
-    Some("description"),
-    "aaaaaaaaaa",
-    ApplicationTokens(productionToken),
-    productionState(requestedByEmail.text),
-    access = Access.Standard(),
-    instant,
-    Some(instant),
-    GrantLength.EIGHTEEN_MONTHS.period,
+    id = standardApp.id,
+    name = ApplicationName("MyApp"),
+    normalisedName = "myapp",
+    collaborators = standardApp.collaborators,
+    description = standardApp.details.description,
+    wso2ApplicationName = "aaaaaaaaaa",
+    tokens = ApplicationTokens(productionToken),
+    state = appStateProduction,
+    access = standardApp.access,
+    createdOn = instant,
+    lastAccess = Some(instant),
+    refreshTokensAvailableFor = GrantLength.EIGHTEEN_MONTHS.period,
     rateLimitTier = Some(RateLimitTier.BRONZE),
     environment = "PRODUCTION",
     ipAllowlist = IpAllowlist()

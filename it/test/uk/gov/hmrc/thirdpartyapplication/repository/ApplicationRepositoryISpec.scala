@@ -1135,7 +1135,7 @@ class ApplicationRepositoryISpec
       )
       await(applicationRepository.save(application))
       val retrieved   = await(
-        applicationRepository.fetchVerifiableUpliftBy(generatedVerificationCode)
+        applicationRepository.fetchVerifiableUpliftBy(aVerificationCode)
       )
       retrieved mustBe Some(application)
     }
@@ -1147,7 +1147,7 @@ class ApplicationRepositoryISpec
       )
       await(applicationRepository.save(application))
       val retrieved   = await(
-        applicationRepository.fetchVerifiableUpliftBy(generatedVerificationCode)
+        applicationRepository.fetchVerifiableUpliftBy(aVerificationCode)
       )
       retrieved mustBe Some(application)
     }
@@ -1175,7 +1175,7 @@ class ApplicationRepositoryISpec
       await(applicationRepository.delete(application.id, instant))
 
       val retrieved = await(
-        applicationRepository.fetchVerifiableUpliftBy(generatedVerificationCode)
+        applicationRepository.fetchVerifiableUpliftBy(aVerificationCode)
       )
       retrieved mustBe None
     }

@@ -71,7 +71,7 @@ class GatekeeperServiceSpec
       ApplicationName("MyApp"),
       "myapp",
       collaborators,
-      Some("description"),
+      Some(CoreApplicationData.appDescription),
       "aaaaaaaaaa",
       ApplicationTokens(productionToken),
       state,

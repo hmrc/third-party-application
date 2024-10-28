@@ -31,7 +31,7 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, CoreApplicationData}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -101,7 +101,6 @@ class ResetLastAccessDateJobSpec
       retrievedApplications.size should be(3)
       retrievedApplications.foreach(app => {
         app.lastAccess.isDefined should be(true)
-        println(app.lastAccess.get)
         app.lastAccess.get.isBefore(dateToSet.atStartOfDay(ZoneOffset.UTC).toInstant()) should be(false)
       })
     }
@@ -145,7 +144,7 @@ class ResetLastAccessDateJobSpec
       ApplicationName(s"myApp-${id}"),
       s"myapp-${id}",
       Set("user@example.com".admin()),
-      Some("description"),
+      Some(CoreApplicationData.appDescription),
       "myapplication",
       ApplicationTokens(
         StoredToken(ClientId.random, "ccc")

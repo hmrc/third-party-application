@@ -32,7 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, _}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, CheckInformation, Collaborator}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, CheckInformation, Collaborator, CoreApplicationData}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -382,7 +382,7 @@ class SubscriptionRepositoryISpec
       ApplicationName(name),
       name.toLowerCase,
       collaborators,
-      Some("description"),
+      Some(CoreApplicationData.appDescription),
       "myapplication",
       ApplicationTokens(StoredToken(clientId, generateAccessToken)),
       state,

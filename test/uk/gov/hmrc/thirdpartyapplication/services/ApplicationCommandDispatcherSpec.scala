@@ -57,6 +57,9 @@ class ApplicationCommandDispatcherSpec
     with ActorTestData
     with FixedClock {
 
+  val requestedByName  = "john smith"
+  val requestedByEmail = "john.smith@example.com".toLaxEmail
+
   trait Setup extends CommonSetup {
     val applicationData: StoredApplication = anApplicationData
 

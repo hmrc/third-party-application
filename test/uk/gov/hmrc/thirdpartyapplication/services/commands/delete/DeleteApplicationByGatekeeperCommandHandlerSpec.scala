@@ -21,22 +21,25 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, State}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByGatekeeper
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec, DeleteApplicationCommandHandlers}
 
-class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBaseSpec {
+class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBaseSpec with ApplicationStateFixtures {
+
+  val requestedByName  = "john smith"
+  val requestedByEmail = "john.smith@example.com".toLaxEmail
+  val reasons          = "reasons description text"
+  val ts: Instant      = instant
 
   trait Setup extends DeleteApplicationCommandHandlers {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val reasons                              = "reasons description text"
     val app                                  = anApplicationData.copy(environment = "SANDBOX")
-    val ts                                   = FixedClock.instant
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
     val underTest = new DeleteApplicationByGatekeeperCommandHandler(
@@ -85,9 +88,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
     }
   }
 
-  val actor       = gatekeeperActor
-  val reasons     = "reasons description text"
-  val ts: Instant = instant
+  val actor = gatekeeperActor
 
   "DeleteApplicationByGatekeeper" should {
     val cmd = DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, ts)

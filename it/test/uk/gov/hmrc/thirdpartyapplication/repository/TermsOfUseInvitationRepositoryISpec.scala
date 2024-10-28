@@ -33,7 +33,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, Collaborator, GrantLength, IpAllowlist, RateLimitTier}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
@@ -468,7 +468,7 @@ class TermsOfUseInvitationRepositoryISpec
       ApplicationName(name),
       name.toLowerCase(),
       Set(Collaborator(LaxEmailAddress("user@example.com"), Collaborator.Roles.ADMINISTRATOR, UserId.random)),
-      Some("description"),
+      Some(CoreApplicationData.appDescription),
       "myapplication",
       ApplicationTokens(
         StoredToken(ClientId.random, "ccc")

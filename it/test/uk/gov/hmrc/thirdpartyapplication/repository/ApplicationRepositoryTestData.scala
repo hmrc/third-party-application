@@ -113,7 +113,7 @@ trait ApplicationRepositoryTestData extends ApplicationTestData with Application
       ApplicationName(name),
       name.toLowerCase,
       users,
-      Some("description"),
+      Some(CoreApplicationData.appDescription),
       "myapplication",
       ApplicationTokens(
         StoredToken(prodClientId, generateAccessToken, clientSecrets)

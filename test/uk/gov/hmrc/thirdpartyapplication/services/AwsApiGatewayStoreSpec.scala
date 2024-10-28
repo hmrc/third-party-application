@@ -49,7 +49,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       ApplicationName("MyApp"),
       "myapp",
       Set.empty,
-      Some("description"),
+      Some(CoreApplicationData.appDescription),
       applicationName,
       ApplicationTokens(
         StoredToken(ClientId.random, serverToken)

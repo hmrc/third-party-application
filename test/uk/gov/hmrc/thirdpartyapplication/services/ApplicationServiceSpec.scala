@@ -72,6 +72,8 @@ class ApplicationServiceSpec
     with ApplicationWithCollaboratorsFixtures
     with FixedClock {
 
+  val requestedByName                  = "john smith"
+  val requestedByEmail                 = "john.smith@example.com".toLaxEmail
   var actorSystem: Option[ActorSystem] = None
 
   override protected def beforeAll(): Unit = {
@@ -984,7 +986,7 @@ class ApplicationServiceSpec
     CreateApplicationRequestV1(
       ApplicationName("MyApp"),
       access,
-      Some("description"),
+      Some(CoreApplicationData.appDescription),
       environment,
       Set(adminTwo),
       None
@@ -1000,7 +1002,7 @@ class ApplicationServiceSpec
       ApplicationName("MyApp"),
       "myapp",
       someCollaborators,
-      Some("description"),
+      Some(CoreApplicationData.appDescription),
       "aaaaaaaaaa",
       ApplicationTokens(productionToken),
       state = appStateProduction,
@@ -1013,14 +1015,14 @@ class ApplicationServiceSpec
   }
 
   private def aNewV1ApplicationRequest(access: Access = Access.Standard(), environment: Environment = Environment.PRODUCTION) = {
-    CreateApplicationRequestV1(ApplicationName("MyApp"), access, Some("description"), environment, Set(adminTwo), None)
+    CreateApplicationRequestV1(ApplicationName("MyApp"), access, Some(CoreApplicationData.appDescription), environment, Set(adminTwo), None)
   }
 
   private def aNewV2ApplicationRequest(environment: Environment) = {
     CreateApplicationRequestV2(
       ApplicationName("MyApp"),
       StandardAccessDataToCopy(),
-      Some("description"),
+      Some(CoreApplicationData.appDescription),
       environment,
       Set(adminTwo),
       makeUpliftRequest(ApiIdentifier.random),

@@ -20,28 +20,28 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, ApplicationStateFixtures, State}
 
 trait ApplicationStateUtil extends ApplicationStateFixtures with FixedClock {
-  val generatedVerificationCode: String = "verificationCode"
+  val aVerificationCode: String = "verificationCode"
 
   def testingState() = ApplicationState(name = State.TESTING, updatedOn = instant)
 
   def preProductionState(requestedBy: String) = ApplicationState(
     name = State.PRE_PRODUCTION,
     requestedByEmailAddress = Some(requestedBy),
-    verificationCode = Some(generatedVerificationCode),
+    verificationCode = Some(aVerificationCode),
     updatedOn = instant
   )
 
   def productionState(requestedBy: String) = ApplicationState(
     name = State.PRODUCTION,
     requestedByEmailAddress = Some(requestedBy),
-    verificationCode = Some(generatedVerificationCode),
+    verificationCode = Some(aVerificationCode),
     updatedOn = instant
   )
 
   def pendingRequesterVerificationState(requestedBy: String) = ApplicationState(
     name = State.PENDING_REQUESTER_VERIFICATION,
     requestedByEmailAddress = Some(requestedBy),
-    verificationCode = Some(generatedVerificationCode),
+    verificationCode = Some(aVerificationCode),
     updatedOn = instant
   )
 
@@ -57,7 +57,7 @@ trait ApplicationStateUtil extends ApplicationStateFixtures with FixedClock {
     name = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
     requestedByEmailAddress = Some(requestedByEmail),
     requestedByName = Some(requestedBy),
-    verificationCode = Some(generatedVerificationCode),
+    verificationCode = Some(aVerificationCode),
     updatedOn = instant
   )
 
