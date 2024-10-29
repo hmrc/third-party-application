@@ -53,7 +53,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
       List.empty
     )
 
-    val app       = anApplicationData.copy(
+    val app       = storedApp.copy(
       collaborators = Set(adminOne, adminTwo),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )

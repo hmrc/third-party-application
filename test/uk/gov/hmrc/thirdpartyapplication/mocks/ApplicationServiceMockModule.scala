@@ -32,9 +32,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Deleted
 import uk.gov.hmrc.thirdpartyapplication.models.CreateApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with StoredApplicationFixtures {
 
   protected trait BaseApplicationServiceMock {
 

@@ -36,7 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
-import uk.gov.hmrc.thirdpartyapplication.util.CommonApplicationId
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class AccessControllerSpec
     extends ControllerSpec

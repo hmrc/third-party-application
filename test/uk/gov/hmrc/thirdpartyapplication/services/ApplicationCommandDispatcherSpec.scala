@@ -49,7 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplica
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
-import uk.gov.hmrc.thirdpartyapplication.util.ActorTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
@@ -61,7 +61,7 @@ class ApplicationCommandDispatcherSpec
   val requestedByEmail = "john.smith@example.com".toLaxEmail
 
   trait Setup extends CommonSetup {
-    val applicationData: StoredApplication = anApplicationData
+    val applicationData: StoredApplication = storedApp
 
     def primeCommonServiceSuccess() = {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)

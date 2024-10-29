@@ -26,15 +26,14 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 import uk.gov.hmrc.thirdpartyapplication.mocks.ClientSecretServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, CommonApplicationId}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures with ApplicationTestData with CommonApplicationId {
+class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures with CommonApplicationId {
 
   trait Setup extends ApplicationRepositoryMockModule
       with ClientSecretServiceMockModule {
@@ -56,12 +55,12 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures 
 
     val anotherAdminUser = "admin@example.com".toLaxEmail
 
-    val applicationData  = anApplicationData
+    val applicationData  = storedApp
     val environmentToken = applicationData.tokens.production
     val firstSecret      = environmentToken.clientSecrets.head
 
     val prodTokenWith5Secrets       = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => StoredClientSecret(v, hashedSecret = "hashed-secret")))
-    val applicationDataWith5Secrets = anApplicationData.copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
+    val applicationDataWith5Secrets = storedApp.copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
     val expectedTokenResponse = ApplicationTokenResponse(environmentToken)
   }

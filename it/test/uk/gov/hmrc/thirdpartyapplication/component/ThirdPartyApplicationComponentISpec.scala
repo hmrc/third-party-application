@@ -41,7 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, CredentialGenerator}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10

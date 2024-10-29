@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.{SubmissionsDAOMockModule, _}
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, _}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
@@ -38,7 +38,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
       extends SubmissionsDAOMockModule
       with ApplicationRepositoryMockModule
       with ContextServiceMockModule
-      with ApplicationTestData
+      with StoredApplicationFixtures
       with SubmissionsTestData
       with AsIdsHelpers {
     val underTest = new SubmissionsService(new QuestionnaireDAO(), SubmissionsDAOMock.aMock, ContextServiceMock.aMock, clock)

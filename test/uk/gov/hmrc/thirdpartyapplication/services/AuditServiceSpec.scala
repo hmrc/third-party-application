@@ -34,7 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAdd
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, RedirectUri}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvents, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -44,11 +44,15 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
-class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures
-    with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
+class AuditServiceSpec
+    extends AsyncHmrcSpec
+    with CollaboratorTestData
+    with StoredApplicationFixtures
+    with SubmissionsTestData
+    with SubmissionsServiceMockModule {
 
   class Setup {
     val mockAuditConnector = mock[AuditConnector]
@@ -67,7 +71,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures
     List.empty
   )
 
-  val applicationData: StoredApplication = anApplicationData.copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+  val applicationData: StoredApplication = storedApp.copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
   val instigator                         = applicationData.collaborators.head.userId
 
   def isSameDataEvent(expected: DataEvent) =

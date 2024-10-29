@@ -58,7 +58,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
       List.empty
     )
 
-    val applicationData = anApplicationData.copy(
+    val applicationData = storedApp.copy(
       collaborators = Set(adminOne),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName)

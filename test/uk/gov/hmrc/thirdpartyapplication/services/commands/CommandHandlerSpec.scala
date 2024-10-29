@@ -24,13 +24,13 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{Comm
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util._
 
-class CommandHandlerSpec extends HmrcSpec with ApplicationTestData with FixedClock with CommonApplicationId {
+class CommandHandlerSpec extends HmrcSpec with StoredApplicationFixtures with CollaboratorTestData with FixedClock with CommonApplicationId {
 
   import CommandHandler._
   import CommandFailures._
 
   // Application with two client secrets
-  val applicationData: StoredApplication = anApplicationData
+  val applicationData: StoredApplication = storedApp
 
   def checkSuccess[T](expected: T)(fn: => Validated[CommandHandler.Failures, T]) = {
     fn shouldBe Validated.Valid(expected)

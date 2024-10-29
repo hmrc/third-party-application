@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, CommonApplicationId}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with FixedClock with CommonApplicationId {
 

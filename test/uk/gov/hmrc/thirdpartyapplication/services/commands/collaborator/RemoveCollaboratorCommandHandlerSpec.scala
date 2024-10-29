@@ -20,7 +20,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveCollaborator
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
@@ -28,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.Applica
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
-class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec with ApplicationWithCollaboratorsFixtures with FixedClock {
+class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec with ApplicationWithCollaboratorsFixtures {
 
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new RemoveCollaboratorCommandHandler(ApplicationRepoMock.aMock, clock)
@@ -44,7 +43,7 @@ class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec with A
     val scheduledJobActor = Actors.ScheduledJob(jobId)
     val collaboratorEmail = "newdev@somecompany.com"
 
-    val app = anApplicationData.copy(
+    val app = storedApp.copy(
       collaborators = Set(adminOne, developerOne)
     )
 

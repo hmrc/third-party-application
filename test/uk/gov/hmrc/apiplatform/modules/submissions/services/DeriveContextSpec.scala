@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPreven
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftRequestSamples {
 

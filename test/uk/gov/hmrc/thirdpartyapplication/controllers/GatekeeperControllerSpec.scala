@@ -48,10 +48,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateFixtures with ApplicationLogger
-    with ControllerTestData with ApplicationTestData with FixedClock {
+class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
+    with ControllerTestData with StoredApplicationFixtures with FixedClock {
 
   import play.api.test.Helpers._
 

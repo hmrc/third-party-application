@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.connector
 
 import uk.gov.hmrc.thirdpartyapplication.LogSuppressing
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneAppPerSuite}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 abstract class ConnectorSpec
     extends AsyncHmrcSpec

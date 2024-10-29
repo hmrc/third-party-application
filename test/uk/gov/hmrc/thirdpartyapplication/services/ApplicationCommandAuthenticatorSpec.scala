@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideAuthConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationCommandAuthenticatorSpec extends AsyncHmrcSpec with StrideAuthConnectorMockModule with FixedClock with CollaboratorFixtures {
 

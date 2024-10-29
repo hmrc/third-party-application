@@ -27,11 +27,11 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationCommandDispatcherMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateFixtures {
 
-  trait Setup extends ApplicationRepositoryMockModule with ApplicationCommandDispatcherMockModule with ApplicationTestData {
+  trait Setup extends ApplicationRepositoryMockModule with ApplicationCommandDispatcherMockModule with StoredApplicationFixtures {
 
     val mockLockKeeper = mock[ProductionCredentialsRequestExpiredJobLockService]
     val timeNow        = now
@@ -51,7 +51,7 @@ class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with Befo
       List.empty
     )
 
-    val app            = anApplicationData.copy(
+    val app            = storedApp.copy(
       access = Access.Standard(importantSubmissionData = Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail, requesterName),
       name = appName

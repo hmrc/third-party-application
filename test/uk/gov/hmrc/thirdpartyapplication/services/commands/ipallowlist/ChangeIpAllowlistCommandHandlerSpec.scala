@@ -27,14 +27,13 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
-import uk.gov.hmrc.thirdpartyapplication.util._
 
-class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec with CommonApplicationId {
+class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends ApplicationRepositoryMockModule {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val anApplication = anApplicationData
+    val anApplication = storedApp
 
     val oldIpAllowList = List(
       CidrBlock("1.0.0.0/24")

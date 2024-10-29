@@ -21,9 +21,9 @@ import scala.concurrent.Future.successful
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-trait GrantApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+trait GrantApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with StoredApplicationFixtures {
 
   protected trait BaseGrantApprovalsServiceMock {
     def aMock: GrantApprovalsService

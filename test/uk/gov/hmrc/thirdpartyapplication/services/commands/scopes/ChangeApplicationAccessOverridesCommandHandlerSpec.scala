@@ -39,8 +39,8 @@ class ChangeApplicationAccessOverridesCommandHandlerSpec extends CommandHandlerB
 
     val oldOverrides: Set[OverrideFlag] = Set(OverrideFlag.PersistLogin, OverrideFlag.OriginOverride("origin01"))
     val stdAccess                       = Access.Standard(overrides = oldOverrides)
-    val standardApp                     = anApplicationData.copy(access = stdAccess)
-    val privApp                         = anApplicationData.copy(access = Access.Privileged())
+    val standardApp                     = storedApp.copy(access = stdAccess)
+    val privApp                         = storedApp.copy(access = Access.Privileged())
 
     val ts = FixedClock.instant
 

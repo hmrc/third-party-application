@@ -31,12 +31,12 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModu
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateFixtures with FixedClock {
 
   trait Setup extends EmailConnectorMockModule with ApplicationRepositoryMockModule with SubmissionsServiceMockModule
-      with TermsOfUseInvitationRepositoryMockModule with ApplicationTestData with SubmissionsTestData {
+      with TermsOfUseInvitationRepositoryMockModule with StoredApplicationFixtures with SubmissionsTestData {
 
     val mockLockKeeper        = mock[TermsOfUseInvitationReminderJobLockService]
     val mockTermsOfUseRepo    = TermsOfUseInvitationRepositoryMock.aMock
@@ -50,11 +50,11 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
     val applicationId2 = ApplicationId.random
     val applicationId3 = ApplicationId.random
 
-    val application1 = anApplicationData.copy(id = applicationId1)
+    val application1 = storedApp.copy(id = applicationId1)
     val recipients1  = application1.admins.map(_.emailAddress)
-    val application2 = anApplicationData.copy(id = applicationId2)
+    val application2 = storedApp.copy(id = applicationId2)
     val recipients2  = application2.admins.map(_.emailAddress)
-    val application3 = anApplicationData.copy(id = applicationId3)
+    val application3 = storedApp.copy(id = applicationId3)
     val recipients3  = application3.admins.map(_.emailAddress)
 
     val startDate1 = nowInstant.minus(100, ChronoUnit.DAYS)
@@ -153,8 +153,8 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
       TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyNeverCalled()
     }
 
-    "not send email if application record has state of DELETED" in new Setup with ApplicationTestData {
-      val deletedApp   = anApplicationData.copy(state = appStateDeleted)
+    "not send email if application record has state of DELETED" in new Setup with StoredApplicationFixtures {
+      val deletedApp   = storedApp.copy(state = appStateDeleted)
       val touInviteDel = TermsOfUseInvitation(applicationId, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
 
       TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.thenReturn(List(touInviteDel))

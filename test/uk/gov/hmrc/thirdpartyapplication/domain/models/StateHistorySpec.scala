@@ -20,7 +20,7 @@ import java.time.Duration
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
-import uk.gov.hmrc.thirdpartyapplication.util.{ActorTestData, CommonApplicationId}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class StateHistorySpec extends HmrcSpec with ActorTestData with FixedClock with CommonApplicationId {
 

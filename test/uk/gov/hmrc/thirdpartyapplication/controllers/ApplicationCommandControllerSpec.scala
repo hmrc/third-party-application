@@ -29,7 +29,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, ApplicationWithCollaboratorsFixtures, Collaborators, GrantLength}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, Collaborators, GrantLength}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandAuthenticatorMockModule, ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}
@@ -38,10 +38,9 @@ import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationCommandControllerSpec
     extends ControllerSpec
-    with ApplicationStateFixtures
     with ControllerTestData
     with TableDrivenPropertyChecks
-    with ApplicationTestData
+    with StoredApplicationFixtures
     with ActorTestData
     with ApplicationWithCollaboratorsFixtures
     with CommonApplicationId
@@ -99,7 +98,7 @@ class ApplicationCommandControllerSpec
     "calling update" should {
 
       "return success if application command request is valid" in new Setup {
-        ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(anApplicationData)
+        ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(storedApp)
 
         val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody))
 
@@ -155,7 +154,7 @@ class ApplicationCommandControllerSpec
 
       "return success if application command request is valid" in new Setup {
         ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
-        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(anApplicationData)
+        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(storedApp)
 
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody))
 
@@ -164,7 +163,7 @@ class ApplicationCommandControllerSpec
 
       "return success if dispatch request is valid" in new Setup {
         ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
-        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(anApplicationData)
+        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(storedApp)
 
         val result = underTest.dispatch(applicationId)(request.withBody(Json.toJson(dispatch)))
 

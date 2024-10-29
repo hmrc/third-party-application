@@ -35,7 +35,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Applicati
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{Notification, NotificationStatus, NotificationType}
-import uk.gov.hmrc.thirdpartyapplication.util.{CommonApplicationId, JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 object NotificationRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random

@@ -25,9 +25,9 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvents, EventId}
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
+class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with StoredApplicationFixtures with CollaboratorTestData {
 
   trait Setup extends EmailConnectorMockModule {
 
@@ -49,7 +49,7 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
       List.empty
     )
 
-    val app                  = anApplicationData.copy(
+    val app                  = storedApp.copy(
       name = oldName,
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )

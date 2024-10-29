@@ -43,7 +43,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
       with UpliftLinksRepositoryMockModule
       with ApiGatewayStoreMockModule
       with CommonApplicationId
-      with ApplicationTestData {
+      with StoredApplicationFixtures {
 
     val mockAppNamingService: UpliftNamingService = mock[UpliftNamingService]
 
@@ -62,7 +62,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
       ApplicationRepoMock.Save.thenReturn(mock[StoredApplication])
 
       val upliftWasRequested             = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator(upliftRequestedBy), Some(State.TESTING), changedAt = instant)
-      val application: StoredApplication = anApplicationData.copy(state = appStatePendingRequesterVerification)
+      val application: StoredApplication = storedApp.copy(state = appStatePendingRequesterVerification)
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(appStateVerificationCode)(application)
 
@@ -84,7 +84,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
 
     "fail if the application save fails" in new Setup {
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
-      val application: StoredApplication = anApplicationData.copy(state = appStatePendingRequesterVerification)
+      val application: StoredApplication = storedApp.copy(state = appStatePendingRequesterVerification)
       val saveException                  = new RuntimeException("application failed to save")
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(appStateVerificationCode)(application)
@@ -97,7 +97,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
 
     "rollback if saving the state history fails" in new Setup {
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
-      val application: StoredApplication = anApplicationData.copy(state = appStatePendingRequesterVerification)
+      val application: StoredApplication = storedApp.copy(state = appStatePendingRequesterVerification)
       ApplicationRepoMock.Save.thenReturn(mock[StoredApplication])
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(appStateVerificationCode)(application)
       StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))
@@ -110,7 +110,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
     }
 
     "not update the state but result in success of the application when application is already in production state" in new Setup {
-      val application: StoredApplication = anApplicationData.copy(state = appStateProduction)
+      val application: StoredApplication = storedApp.copy(state = appStateProduction)
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(appStateVerificationCode)(application)
 
@@ -120,7 +120,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
     }
 
     "fail when application is in testing state" in new Setup {
-      val application: StoredApplication = anApplicationData.copy(state = appStateTesting)
+      val application: StoredApplication = storedApp.copy(state = appStateTesting)
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(appStateVerificationCode)(application)
 
@@ -130,7 +130,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
     }
 
     "fail when application is in pendingGatekeeperApproval state" in new Setup {
-      val application: StoredApplication = anApplicationData.copy(state = appStatePendingGatekeeperApproval)
+      val application: StoredApplication = storedApp.copy(state = appStatePendingGatekeeperApproval)
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(appStateVerificationCode)(application)
 
@@ -140,7 +140,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
     }
 
     "fail when application is not found by verification code" in new Setup {
-      anApplicationData.copy(state = appStatePendingGatekeeperApproval)
+      storedApp.copy(state = appStatePendingGatekeeperApproval)
 
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnNoneWhen(appStateVerificationCode)
 

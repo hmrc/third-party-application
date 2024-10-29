@@ -39,7 +39,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
     val newUrl      = "http://example.com/new"
     val newLocation = TermsAndConditionsLocations.Url(newUrl)
 
-    val newJourneyApp = anApplicationData.copy(
+    val newJourneyApp = storedApp.copy(
       collaborators = Set(
         developerCollaborator,
         otherAdminCollaborator
@@ -47,7 +47,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
-    val oldJourneyApp = anApplicationData.copy(
+    val oldJourneyApp = storedApp.copy(
       collaborators = Set(
         developerCollaborator,
         otherAdminCollaborator

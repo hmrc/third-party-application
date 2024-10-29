@@ -26,15 +26,14 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ApplicationUnblocked
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
-import uk.gov.hmrc.thirdpartyapplication.util.CommonApplicationId
 
 class UnblockApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  trait Setup extends ApplicationRepositoryMockModule with CommonApplicationId {
+  trait Setup extends ApplicationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val app = anApplicationData.copy(environment = "SANDBOX")
+    val app = storedApp.copy(environment = "SANDBOX")
     val ts  = FixedClock.instant
 
     val underTest = new UnblockApplicationCommandHandler(

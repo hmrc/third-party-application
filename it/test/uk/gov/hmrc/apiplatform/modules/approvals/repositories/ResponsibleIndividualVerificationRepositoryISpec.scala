@@ -45,7 +45,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.util.CommonApplicationId
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock with CommonApplicationId {
   val appName = ApplicationName("my app")

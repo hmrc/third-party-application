@@ -41,13 +41,13 @@ import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSearch, AutoDeleteAllowed, StandardAccess => _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationRepositorySerialisationISpec
     extends ServerBaseISpec
-    with ApplicationTestData
     with JavaDateTimeTestUtils
-    with ApplicationStateFixtures
+    with StoredApplicationFixtures
+    with CollaboratorTestData
     with BeforeAndAfterEach
     with MetricsHelper
     with FixedClock

@@ -26,16 +26,15 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, _}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, CollaboratorTestData, CommonApplicationId}
 
-class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures with CollaboratorTestData with CommonApplicationId with ApplicationTestData {
+class SubscriptionServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with CommonApplicationId with StoredApplicationFixtures {
 
   trait SetupWithoutHc extends AuditServiceMockModule with ApplicationCommandDispatcherMockModule {
 
@@ -110,7 +109,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateFixture
     }
 
     "fetch all API subscriptions from api-definition for the given application id when an application exists" in new Setup {
-      val applicationData = anApplicationData
+      val applicationData = storedApp
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Set("context".asIdentifier)))
@@ -126,7 +125,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateFixture
     val apiIdentifier = ApiIdentifier.random
 
     "return successfully using the correct Actors.AppCollaborator if the collaborator is a member of the application" in new Setup {
-      val application = anApplicationData
+      val application = storedApp
       val actor       = Actors.AppCollaborator(adminOne.emailAddress)
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(application)
@@ -139,7 +138,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateFixture
 
     "return successfully using a GatekeeperUserCollaborator if there are no developers in the header carrier" in new SetupWithoutHc {
       implicit val hc: HeaderCarrier = HeaderCarrier()
-      val applicationData            = anApplicationData
+      val applicationData            = storedApp
       val actor                      = Actors.GatekeeperUser("Gatekeeper Admin")
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
@@ -151,7 +150,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateFixture
     }
 
     "return successfully using a GatekeeperUserCollaborator if the logged in user is not a member of the application" in new SetupWithGKUser {
-      val applicationData = anApplicationData
+      val applicationData = storedApp
       val actor           = Actors.GatekeeperUser(gkUserEmail)
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
@@ -163,7 +162,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateFixture
     }
 
     "throw an exception if the application has not updated" in new Setup {
-      val applicationData = anApplicationData.copy(collaborators = Set.empty)
+      val applicationData = storedApp.copy(collaborators = Set.empty)
       val errorMessage    = "Not valid"
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnFailed(errorMessage)

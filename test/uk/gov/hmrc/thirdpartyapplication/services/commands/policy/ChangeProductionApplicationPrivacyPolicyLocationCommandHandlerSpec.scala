@@ -21,7 +21,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, UserId}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.PrivacyPolicyLocations
@@ -30,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
-class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends CommandHandlerBaseSpec with FixedClock {
+class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends ApplicationRepositoryMockModule {
 
@@ -40,7 +39,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
     val newUrl      = "http://example.com/new"
     val newLocation = PrivacyPolicyLocations.Url(newUrl)
 
-    val newJourneyApp = anApplicationData.copy(
+    val newJourneyApp = storedApp.copy(
       collaborators = Set(
         developerCollaborator,
         otherAdminCollaborator
@@ -48,7 +47,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
-    val oldJourneyApp = anApplicationData.copy(
+    val oldJourneyApp = storedApp.copy(
       collaborators = Set(
         developerCollaborator,
         otherAdminCollaborator

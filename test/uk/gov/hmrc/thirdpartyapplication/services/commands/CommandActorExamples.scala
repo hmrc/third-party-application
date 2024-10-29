@@ -20,7 +20,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 trait CommandActorExamples {
-  self: ApplicationTestData with ActorTestData =>
+  self: ActorTestData =>
 
   val gkUserEmail = "admin@gatekeeper"
   val gkUserActor = Actors.GatekeeperUser(gkUserEmail)

@@ -37,12 +37,12 @@ import uk.gov.hmrc.apiplatform.modules.submissions.repositories.{QuestionnaireDA
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApprovalsControllerISpec
     extends ServerBaseISpec
     with FixedClock
-    with ApplicationTestData
+    with StoredApplicationFixtures
     with SubmissionsTestData
     with BeforeAndAfterEach {
 
@@ -98,7 +98,7 @@ class ApprovalsControllerISpec
         PrivacyPolicyLocations.InDesktopSoftware,
         List.empty
       )
-      val application: StoredApplication = anApplicationData.copy(
+      val application: StoredApplication = storedApp.copy(
         id = appId,
         state = appStateProduction,
         access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))

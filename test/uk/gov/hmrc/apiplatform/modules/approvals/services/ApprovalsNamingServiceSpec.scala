@@ -26,8 +26,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Validated
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationNameValidationConfigMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
@@ -35,7 +35,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       extends AuditServiceMockModule
       with ApplicationRepositoryMockModule
       with ApplicationNameValidationConfigMockModule
-      with ApplicationTestData {
+      with StoredApplicationFixtures {
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
@@ -84,7 +84,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       }
 
       "block a duplicate app name" in new Setup {
-        ApplicationRepoMock.FetchByName.thenReturn(anApplicationData)
+        ApplicationRepoMock.FetchByName.thenReturn(storedApp)
         ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
         ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 
@@ -97,7 +97,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       }
 
       "ignore a duplicate app name for local sandbox app" in new Setup {
-        ApplicationRepoMock.FetchByName.thenReturn(anApplicationData.copy(environment = "SANDBOX"))
+        ApplicationRepoMock.FetchByName.thenReturn(storedApp.copy(environment = "SANDBOX"))
         ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
         ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 
@@ -123,7 +123,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       "Ignore application when checking for duplicates if it is self application" in new Setup {
         ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
 
-        ApplicationRepoMock.FetchByName.thenReturn(anApplicationData)
+        ApplicationRepoMock.FetchByName.thenReturn(storedApp)
 
         val result = await(underTest.validateApplicationName(ValidatedApplicationName("app name").get, applicationId))
 

@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.CommonApplicationId
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec with CommonApplicationId {
 

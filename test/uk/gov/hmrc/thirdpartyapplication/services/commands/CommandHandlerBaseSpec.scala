@@ -21,10 +21,9 @@ import uk.gov.hmrc.thirdpartyapplication.util._
 
 trait CommandHandlerBaseSpec
     extends AsyncHmrcSpec
-    with ApplicationTestData
+    with CommandApplicationExamples
     with CommandActorExamples
-    with ActorTestData
-    with CommandApplicationExamples {
+    with ActorTestData {
 
   def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.AppCmdResultT) = {
     val testThis = await(fn.value).left.value.toList

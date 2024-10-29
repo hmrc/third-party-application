@@ -15,5 +15,3 @@
  */
 
 package uk.gov.hmrc.thirdpartyapplication
-
-

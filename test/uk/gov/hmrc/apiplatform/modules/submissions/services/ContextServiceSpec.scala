@@ -26,17 +26,17 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ContextServiceSpec
     extends AsyncHmrcSpec
     with Inside
     with SubmissionsTestData
-    with ApplicationTestData {
+    with StoredApplicationFixtures {
 
   trait Setup extends ApplicationRepositoryMockModule with SubscriptionRepositoryMockModule {
 
-    val applicationData: StoredApplication = anApplicationData
+    val applicationData: StoredApplication = storedApp
 
     val underTest = new ContextService(ApplicationRepoMock.aMock, SubscriptionRepoMock.aMock)
   }

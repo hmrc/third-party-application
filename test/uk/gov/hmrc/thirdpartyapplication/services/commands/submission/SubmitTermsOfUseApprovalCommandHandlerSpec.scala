@@ -38,7 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
 
-class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData with FixedClock {
+class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
 
   trait Setup extends SubmissionsServiceMockModule
       with ApplicationRepositoryMockModule
@@ -67,7 +67,7 @@ class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec 
       List.empty
     )
 
-    val app = anApplicationData.copy(
+    val app = storedApp.copy(
       state = ApplicationStateExamples.production("bob@example.com", "Bob"),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )

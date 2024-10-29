@@ -29,11 +29,11 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.TermsOfUseInvitationRe
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{EMAIL_SENT, REMINDER_EMAIL_SENT}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseApplication, TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse, TermsOfUseSearch}
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, CommonApplicationId}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec with FixedClock {
 
-  trait Setup extends TermsOfUseInvitationRepositoryMockModule with EmailConnectorMockModule with ApplicationTestData with CommonApplicationId {
+  trait Setup extends TermsOfUseInvitationRepositoryMockModule with EmailConnectorMockModule with StoredApplicationFixtures with CommonApplicationId {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val application   = TermsOfUseApplication(applicationId, ApplicationName("app name"))

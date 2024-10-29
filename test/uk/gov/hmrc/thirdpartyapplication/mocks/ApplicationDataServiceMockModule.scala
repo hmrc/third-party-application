@@ -23,9 +23,9 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-trait ApplicationDataServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+trait ApplicationDataServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with StoredApplicationFixtures {
 
   protected trait BaseApplicationDataServiceMock {
     def aMock: ApplicationDataService
