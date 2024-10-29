@@ -47,8 +47,7 @@ case class StoredApplication(
     blocked: Boolean = false,
     ipAllowlist: IpAllowlist = IpAllowlist(),
     allowAutoDelete: Boolean = true
-  ) extends HasState {
-  lazy val admins = collaborators.filter(_.isAdministrator)
+  ) extends HasState with HasAccess with HasCollaborators {
 
   lazy val sellResellOrDistribute = access match {
     case Access.Standard(_, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
