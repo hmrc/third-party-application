@@ -70,7 +70,7 @@ class UpliftService @Inject() (
 
     def verifyPending(app: StoredApplication) = for {
       _ <- apiGatewayStore.createApplication(app.wso2ApplicationName, app.tokens.production.accessToken)
-      _ <- applicationRepository.save(app.copy(state = app.state.toPreProduction(instant())))
+      _ <- applicationRepository.save(app.withState(app.state.toPreProduction(instant())))
       _ <- insertStateHistory(
              app,
              State.PRE_PRODUCTION,

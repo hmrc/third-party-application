@@ -234,7 +234,7 @@ class ApplicationService @Inject() (
     applicationRepository.fetchAllForUserId(userId, includeDeleted).flatMap(x => asExtendedResponses(x.toList))
   }
 
-  def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[List[ApplicationWithSubscriptions]] = {
+  def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment): Future[List[ApplicationWithSubscriptions]] = {
     applicationRepository.fetchAllForUserIdAndEnvironment(userId, environment)
       .flatMap(x => asExtendedResponses(x.toList))
   }

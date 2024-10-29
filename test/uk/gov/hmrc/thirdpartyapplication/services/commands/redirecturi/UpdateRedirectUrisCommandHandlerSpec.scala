@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationIdData, Environment}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationIdData}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
@@ -35,7 +35,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val applicationId                      = ApplicationIdData.one
     val applicationData: StoredApplication = storedApp
-    val subordinateApp                     = applicationData.copy(environment = Environment.SANDBOX.toString())
+    val subordinateApp                     = applicationData.inSandbox()
 
     val nonStandardAccessApp = applicationData.copy(access = Access.Privileged())
     val developerActor       = Actors.AppCollaborator(developerOne.emailAddress)

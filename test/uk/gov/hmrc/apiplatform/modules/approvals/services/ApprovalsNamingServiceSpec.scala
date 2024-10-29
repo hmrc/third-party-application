@@ -97,7 +97,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       }
 
       "ignore a duplicate app name for local sandbox app" in new Setup {
-        ApplicationRepoMock.FetchByName.thenReturn(storedApp.copy(environment = "SANDBOX"))
+        ApplicationRepoMock.FetchByName.thenReturn(storedApp.inSandbox())
         ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
         ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 

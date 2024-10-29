@@ -340,7 +340,7 @@ class ApplicationServiceSpec
           id = createdApp.application.id,
           state = ApplicationState(State.PRODUCTION, updatedOn = instant),
           collaborators = Set(loggedInUserAdminCollaborator),
-          environment = "SANDBOX"
+          environment = Environment.SANDBOX
         )
 
       createdApp.totp shouldBe None
@@ -610,7 +610,7 @@ class ApplicationServiceSpec
           clientId = productionToken.clientId,
           gatewayId = data.wso2ApplicationName,
           name = data.name,
-          deployedTo = Environment.unsafeApply(data.environment),
+          deployedTo = data.environment,
           description = data.description,
           createdOn = data.createdOn,
           lastAccess = data.lastAccess,
@@ -1009,7 +1009,7 @@ class ApplicationServiceSpec
       instant,
       Some(instant),
       rateLimitTier = Some(RateLimitTier.BRONZE),
-      environment = "PRODUCTION"
+      environment = Environment.PRODUCTION
     )
   }
 

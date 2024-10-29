@@ -39,7 +39,7 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val nonExistantUri   = RedirectUri.unsafeApply("https://otherurl.com/not-there")
 
     val principalApp: StoredApplication = storedApp.copy(access = Access.Standard(originalUris))
-    val subordinateApp                  = principalApp.copy(environment = Environment.SANDBOX.toString())
+    val subordinateApp                  = principalApp.inSandbox()
     val nonStandardAccessApp            = principalApp.copy(access = Access.Privileged())
 
     val developerActor = Actors.AppCollaborator(developerCollaborator.emailAddress)

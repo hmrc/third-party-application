@@ -35,7 +35,7 @@ class AllowApplicationAutoDeleteCommandHandlerSpec extends CommandHandlerBaseSpe
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appWithAutoDeleteAllowed = storedApp.copy(environment = "SANDBOX")
+    val appWithAutoDeleteAllowed = storedApp.inSandbox()
     val appWithAutoDeleteBlocked = appWithAutoDeleteAllowed.copy(allowAutoDelete = false)
     val timestamp                = FixedClock.instant
 

@@ -33,7 +33,7 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec with A
     val principalApp   = storedApp.copy(
       collaborators = Set(adminOne, developerOne)
     )
-    val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())
+    val subordinateApp = principalApp.inSandbox()
 
     val secretValue  = "secret"
     val clientSecret = principalApp.tokens.production.clientSecrets.head

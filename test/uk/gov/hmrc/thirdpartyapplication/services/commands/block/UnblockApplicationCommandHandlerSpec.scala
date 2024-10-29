@@ -33,7 +33,7 @@ class UnblockApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val app = storedApp.copy(environment = "SANDBOX")
+    val app = storedApp.inSandbox()
     val ts  = FixedClock.instant
 
     val underTest = new UnblockApplicationCommandHandler(

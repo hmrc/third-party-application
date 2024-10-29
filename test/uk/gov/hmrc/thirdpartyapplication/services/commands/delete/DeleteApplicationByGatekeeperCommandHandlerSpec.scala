@@ -39,7 +39,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val app                                  = storedApp.copy(environment = "SANDBOX")
+    val app                                  = storedApp.inSandbox()
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")
 
     val underTest = new DeleteApplicationByGatekeeperCommandHandler(

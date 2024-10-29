@@ -42,22 +42,28 @@ case class StoredApplication(
     lastAccess: Option[Instant],
     refreshTokensAvailableFor: Period = Period.ofDays(grantLengthConfig),
     rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-    environment: String = Environment.PRODUCTION.toString,
+    environment: Environment = Environment.PRODUCTION,
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,
     ipAllowlist: IpAllowlist = IpAllowlist(),
     allowAutoDelete: Boolean = true
-  ) extends HasState with HasAccess with HasCollaborators {
+  ) extends HasState with HasAccess with HasCollaborators with HasEnvironment {
+  protected val deployedTo = environment
 
-  lazy val sellResellOrDistribute = access match {
+  def sellResellOrDistribute = access match {
     case Access.Standard(_, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
     case _                                                      => None
   }
 
-  lazy val importantSubmissionData: Option[ImportantSubmissionData] = access match {
+  def importantSubmissionData: Option[ImportantSubmissionData] = access match {
     case Access.Standard(_, _, _, _, _, Some(submissionData)) => Some(submissionData)
     case _                                                    => None
   }
+
+  import monocle.syntax.all._
+  def withState(newState: ApplicationState): StoredApplication = this.focus(_.state).replace(newState)
+  def withAccess(newAccess: Access): StoredApplication         = this.focus(_.access).replace(newAccess)
+
 }
 
 object StoredApplication {
@@ -69,7 +75,7 @@ object StoredApplication {
         data.tokens.production.clientId,
         data.wso2ApplicationName,
         data.name,
-        Environment.unsafeApply(data.environment),
+        data.environment,
         data.description,
         data.createdOn,
         data.lastAccess,
@@ -121,14 +127,14 @@ object StoredApplication {
       name,
       name.value.toLowerCase,
       collaborators,
-      createApplicationRequest.description.filterNot(_ => environment == Environment.PRODUCTION),
+      createApplicationRequest.description.filterNot(_ => environment.isProduction),
       wso2ApplicationName,
       ApplicationTokens(environmentToken),
       applicationState,
       applicationAccess,
       createdOn,
       Some(createdOn),
-      environment = environment.toString,
+      environment = environment,
       checkInformation = checkInfo
     )
   }

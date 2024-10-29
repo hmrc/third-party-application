@@ -133,7 +133,7 @@ object ApplicationRepository {
           .orElse((JsPath \ "grantLength").read[Int].map(periodFromInt(_))))
           or Reads.pure(periodFromInt(grantLengthConfig))) and
         (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
-        (JsPath \ "environment").read[String] and
+        (JsPath \ "environment").read[Environment] and
         (JsPath \ "checkInformation").readNullable[CheckInformation] and
         ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
@@ -484,11 +484,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[Seq[StoredApplication]] = {
+  def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment): Future[Seq[StoredApplication]] = {
     timeFuture("Fetch All Applications for UserId and Environment", "application.repository.fetchAllForUserIdAndEnvironment") {
       val query = and(
         equal("collaborators.userId", Codecs.toBson(userId)),
-        equal("environment", environment),
+        equal("environment", Codecs.toBson(environment)),
         notEqual("state.name", State.DELETED.toString())
       )
 
@@ -536,10 +536,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     collection.find(query).toFuture()
   }
 
-  def fetchAllForEmailAddressAndEnvironment(emailAddress: String, environment: String): Future[Seq[StoredApplication]] = {
+  def fetchAllForEmailAddressAndEnvironment(emailAddress: String, environment: Environment): Future[Seq[StoredApplication]] = {
     val query = and(
       equal("collaborators.emailAddress", emailAddress),
-      equal("environment", environment),
+      equal("environment", Codecs.toBson(environment)),
       notEqual("state.name", State.DELETED.toString())
     )
 

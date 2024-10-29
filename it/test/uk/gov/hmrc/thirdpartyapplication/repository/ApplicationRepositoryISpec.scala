@@ -75,7 +75,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     None,
     GrantLength.EIGHTEEN_MONTHS.period,
     Some(RateLimitTier.BRONZE),
-    "PRODUCTION",
+    Environment.PRODUCTION,
     Some(CheckInformation(
       Some(ContactDetails(FullName("Contact"), LaxEmailAddress("contact@example.com"), "123456789")),
       termsOfUseAgreements = List(
@@ -2005,14 +2005,9 @@ class ApplicationRepositoryISpec
       val userId         = UserId.random
 
       val collaborator     = "user@example.com".admin(userId)
-      val testApplication1 = anApplicationDataForTest(applicationId1)
-        .copy(collaborators = Set(collaborator))
-      val testApplication2 =
-        anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
-          .copy(collaborators = Set(collaborator))
-      val testApplication3 =
-        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = appStateDeleted)
-          .copy(collaborators = Set(collaborator))
+      val testApplication1 = anApplicationDataForTest(applicationId1).withCollaborators(collaborator)
+      val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(collaborator)
+      val testApplication3 = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(collaborator).withState(appStateDeleted)
 
       await(applicationRepository.save(testApplication1))
       await(applicationRepository.save(testApplication2))
@@ -2033,14 +2028,9 @@ class ApplicationRepositoryISpec
       val userId         = UserId.random
 
       val collaborator     = "user@example.com".admin(userId)
-      val testApplication1 = anApplicationDataForTest(applicationId1)
-        .copy(collaborators = Set(collaborator))
-      val testApplication2 =
-        anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
-          .copy(collaborators = Set(collaborator))
-      val testApplication3 =
-        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = appStateDeleted)
-          .copy(collaborators = Set(collaborator))
+      val testApplication1 = anApplicationDataForTest(applicationId1).withCollaborators(collaborator)
+      val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(collaborator)
+      val testApplication3 = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(collaborator).withState(appStateDeleted)
 
       await(applicationRepository.save(testApplication1))
       await(applicationRepository.save(testApplication2))
@@ -2061,20 +2051,13 @@ class ApplicationRepositoryISpec
       val applicationId2 = ApplicationId.random
       val applicationId3 = ApplicationId.random
       val userId         = UserId.random
-      val productionEnv  = Environment.PRODUCTION.toString
+      val productionEnv  = Environment.PRODUCTION
 
       val collaborator = "user@example.com".admin(userId)
 
-      val prodApplication1   = anApplicationDataForTest(applicationId1)
-        .copy(environment = productionEnv, collaborators = Set(collaborator))
-      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = appStateDeleted)
-        .copy(environment = productionEnv, collaborators = Set(collaborator))
-      val sandboxApplication =
-        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"))
-          .copy(
-            environment = Environment.SANDBOX.toString,
-            collaborators = Set(collaborator)
-          )
+      val prodApplication1   = anApplicationDataForTest(applicationId1).withCollaborators(collaborator)
+      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(collaborator).withState(appStateDeleted)
+      val sandboxApplication = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(collaborator).inSandbox()
 
       await(applicationRepository.save(prodApplication1))
       await(applicationRepository.save(prodApplication2))
@@ -2101,20 +2084,13 @@ class ApplicationRepositoryISpec
       val applicationId2 = ApplicationId.random
       val applicationId3 = ApplicationId.random
       val userId         = UserId.random
-      val productionEnv  = Environment.PRODUCTION.toString
+      val productionEnv  = Environment.PRODUCTION
 
       val collaborator: Collaborator = "user@example.com".admin(userId)
 
-      val prodApplication1   = anApplicationDataForTest(applicationId1)
-        .copy(environment = productionEnv, collaborators = Set(collaborator))
-      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = appStateDeleted)
-        .copy(environment = productionEnv, collaborators = Set(collaborator))
-      val sandboxApplication =
-        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"))
-          .copy(
-            environment = Environment.SANDBOX.toString,
-            collaborators = Set(collaborator)
-          )
+      val prodApplication1   = anApplicationDataForTest(applicationId1).copy(environment = productionEnv).withCollaborators(collaborator)
+      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(collaborator).withState(appStateDeleted)
+      val sandboxApplication = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(collaborator).inSandbox()
 
       await(applicationRepository.save(prodApplication1))
       await(applicationRepository.save(prodApplication2))
@@ -2407,7 +2383,7 @@ class ApplicationRepositoryISpec
           case false => None
         }),
         createdOn = instant.plus(timeOffset),
-        environment = environment.toString,
+        environment = environment,
         tokens = ApplicationTokens(StoredToken(ClientId.random, "access token"))
       )
       await(applicationRepository.save(app))

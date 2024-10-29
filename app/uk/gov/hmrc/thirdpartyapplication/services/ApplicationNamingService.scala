@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, Environment}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -51,7 +51,7 @@ abstract class AbstractApplicationNamingService(
     if (nameValidationConfig.validateForDuplicateAppNames) {
       applicationRepository
         .fetchApplicationsByName(applicationName)
-        .map(_.filter(a => Environment.apply(a.environment) == Some(Environment.PRODUCTION))) // Helps with single db environments
+        .map(_.filter(a => a.environment.isProduction)) // Helps with single db environments
         .map(_.filterNot(exclusions).nonEmpty)
     } else {
       successful(false)

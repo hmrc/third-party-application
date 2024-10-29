@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Environment, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
@@ -94,7 +94,7 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandlerSpec extends Command
 
     "return an error if application is not in SANDBOX" in new Setup {
       checkFailsWith("App is not in Sandbox environment") {
-        underTest.process(app.copy(environment = Environment.PRODUCTION.toString), update)
+        underTest.process(app.inProduction(), update)
       }
     }
 

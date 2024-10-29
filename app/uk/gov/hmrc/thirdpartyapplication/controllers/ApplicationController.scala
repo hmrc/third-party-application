@@ -204,7 +204,7 @@ class ApplicationController @Inject() (
 
         ouserId.fold(
           successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"UserId ${rawQueryParameter.head} is not a valid user Id")))
-        )(userId => fetchAllForUserIdAndEnvironment(userId, request.queryString("environment").head))
+        )(userId => fetchAllForUserIdAndEnvironment(userId, Environment.unsafeApply(request.queryString("environment").head)))
       case ("subscribesTo" :: "version" :: _, _) =>
         val context = ApiContext(request.queryString("subscribesTo").head)
         val version = ApiVersionNbr(request.queryString("version").head)
@@ -274,7 +274,7 @@ class ApplicationController @Inject() (
     applicationService.fetchAllForCollaborator(userId, false).map(apps => Ok(toJson(apps))) recover recovery
   }
 
-  private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String) = {
+  private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment) = {
     applicationService.fetchAllForUserIdAndEnvironment(userId, environment).map(apps => Ok(toJson(apps))) recover recovery
   }
 

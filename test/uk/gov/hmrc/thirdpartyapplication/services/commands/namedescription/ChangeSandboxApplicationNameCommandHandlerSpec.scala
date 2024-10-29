@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Environment, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, State, ValidatedApplicationName}
@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 
 class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  val app = subordinateApp.copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+  val app = subordinateApp.withAccess(Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftNamingServiceMockModule {
 
@@ -105,13 +105,13 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
 
       checkFailsWith("App is not in Sandbox environment") {
-        underTest.process(app.copy(environment = Environment.PRODUCTION.toString), update)
+        underTest.process(app.inProduction(), update)
       }
     }
 
     "return an error if application is still in the process of being approved" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val appPendingApproval = app.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
+      val appPendingApproval = app.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
 
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
         underTest.process(appPendingApproval, update)
@@ -120,7 +120,7 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
 
     "return an error if the application already has the specified name" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val appAlreadyHasName = app.copy(name = newName)
+      val appAlreadyHasName = app.withName(newName)
 
       checkFailsWith("App already has that name") {
         underTest.process(appAlreadyHasName, update)

@@ -486,7 +486,7 @@ class ApplicationControllerSpec
     }
 
     val userId      = UserId.random
-    val environment = "PRODUCTION"
+    val environment = Environment.PRODUCTION
 
     "succeed with a 200 when applications are found for the collaborator by userId and environment" in new Setup with ExtendedResponses {
       val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=${userId.toString()}&environment=$environment")

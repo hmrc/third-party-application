@@ -45,7 +45,7 @@ trait ApplicationTestData extends ApplicationWithCollaboratorsFixtures with Coll
     lastAccess = Some(instant),
     refreshTokensAvailableFor = GrantLength.EIGHTEEN_MONTHS.period,
     rateLimitTier = Some(RateLimitTier.BRONZE),
-    environment = "PRODUCTION",
+    environment = Environment.PRODUCTION,
     ipAllowlist = IpAllowlist()
   )
 

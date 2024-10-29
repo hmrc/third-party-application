@@ -121,7 +121,7 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
 
     "not detect duplicate if another app has the same name but is in Sandbox (local)" in new Setup {
       ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
-      ApplicationRepoMock.FetchByName.thenReturn(storedApp.copy(environment = "SANDBOX"))
+      ApplicationRepoMock.FetchByName.thenReturn(storedApp.inSandbox())
       val isDuplicate = await(underTest.isDuplicateName(appName, None))
 
       isDuplicate shouldBe false

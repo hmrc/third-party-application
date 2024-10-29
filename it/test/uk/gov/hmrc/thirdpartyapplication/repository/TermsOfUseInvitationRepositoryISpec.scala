@@ -478,7 +478,7 @@ class TermsOfUseInvitationRepositoryISpec
       Some(instant),
       GrantLength.EIGHTEEN_MONTHS.period,
       Some(RateLimitTier.BRONZE),
-      Environment.PRODUCTION.toString(),
+      Environment.PRODUCTION,
       None,
       false,
       IpAllowlist(),

@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Environment}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
@@ -38,7 +38,7 @@ class DeleteRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val originalUris                    = List(toBeDeletedRedirectUri, toRemainRedirectUri)
     val nonExistantUri                  = RedirectUri.unsafeApply("https://otherurl.com/not-there")
     val principalApp: StoredApplication = storedApp.copy(access = Access.Standard(originalUris), collaborators = devAndAdminCollaborators)
-    val subordinateApp                  = principalApp.copy(environment = Environment.SANDBOX.toString())
+    val subordinateApp                  = principalApp.inSandbox()
 
     val nonStandardAccessApp = principalApp.copy(access = Access.Privileged())
     val developerActor       = Actors.AppCollaborator(developerCollaborator.emailAddress)
