@@ -30,7 +30,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Application
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule}
@@ -41,11 +40,9 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestDa
 class GatekeeperServiceSpec
     extends AsyncHmrcSpec
     with BeforeAndAfterAll
-    with ApplicationStateUtil
     with CollaboratorTestData
+    with ApplicationStateFixtures
     with FixedClock {
-
-  private val requestedByEmail = appStateRequestByEmail
 
   private val bobTheGKUser = Actors.GatekeeperUser("bob")
 
@@ -63,7 +60,7 @@ class GatekeeperServiceSpec
 
   private def anApplicationData(
       applicationId: ApplicationId,
-      state: ApplicationState = productionState(),
+      state: ApplicationState = appStateProduction,
       collaborators: Set[Collaborator] = Set(adminTwo)
     ) = {
     StoredApplication(

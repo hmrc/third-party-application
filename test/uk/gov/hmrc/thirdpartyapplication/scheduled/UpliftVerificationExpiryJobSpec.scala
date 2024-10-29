@@ -29,11 +29,11 @@ import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.test.MongoSupport
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, CoreApplicationData, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, NoMetricsGuiceOneAppPerSuite}
@@ -42,9 +42,10 @@ class UpliftVerificationExpiryJobSpec
     extends AsyncHmrcSpec
     with MongoSupport
     with BeforeAndAfterAll
-    with ApplicationStateUtil
+    with ApplicationStateFixtures
     with NoMetricsGuiceOneAppPerSuite
-    with CollaboratorTestData {
+    with CollaboratorTestData
+    with FixedClock {
 
   final val FixedTimeNow     = instant
   final val expiryTimeInDays = 90
@@ -79,9 +80,9 @@ class UpliftVerificationExpiryJobSpec
 
     "expire all application uplifts having expiry date before the expiry time" in new Setup {
       val app1: StoredApplication =
-        anApplicationData(ApplicationId.random, ClientId("aaa"), pendingRequesterVerificationState().copy(requestedByEmailAddress = Some("requester1@example.com")))
+        anApplicationData(ApplicationId.random, ClientId("aaa"), appStatePendingRequesterVerification.copy(requestedByEmailAddress = Some("requester1@example.com")))
       val app2: StoredApplication =
-        anApplicationData(ApplicationId.random, ClientId("aaa"), pendingRequesterVerificationState().copy(requestedByEmailAddress = Some("requester2@example.com")))
+        anApplicationData(ApplicationId.random, ClientId("aaa"), appStatePendingRequesterVerification.copy(requestedByEmailAddress = Some("requester2@example.com")))
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), any[Instant]))
         .thenReturn(successful(List(app1, app2)))
@@ -95,8 +96,8 @@ class UpliftVerificationExpiryJobSpec
 
       await(underTest.execute)
       verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, instant.minus(JavaTimeDuration.ofDays(expiryTimeInDays)))
-      verify(mockApplicationRepository).save(app1.copy(state = testingState()))
-      verify(mockApplicationRepository).save(app2.copy(state = testingState()))
+      verify(mockApplicationRepository).save(app1.copy(state = appStateTesting))
+      verify(mockApplicationRepository).save(app2.copy(state = appStateTesting))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app1.id,
         State.TESTING,
@@ -159,7 +160,7 @@ class UpliftVerificationExpiryJobSpec
     }
   }
 
-  def anApplicationData(id: ApplicationId, prodClientId: ClientId, state: ApplicationState = testingState()): StoredApplication = {
+  def anApplicationData(id: ApplicationId, prodClientId: ClientId, state: ApplicationState = appStateTesting): StoredApplication = {
     StoredApplication(
       id,
       ApplicationName(s"myApp-${id}"),

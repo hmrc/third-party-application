@@ -22,14 +22,13 @@ import scala.util.Random.nextString
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.SubscriptionData
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredClientSecret, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess => _}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
-trait ApplicationRepositoryTestData extends ApplicationTestData with ApplicationStateUtil {
+trait ApplicationRepositoryTestData extends ApplicationTestData with ApplicationStateFixtures {
 
   lazy val defaultGrantLength = GrantLength.EIGHTEEN_MONTHS.period
   lazy val newGrantLength     = GrantLength.ONE_MONTH.period
@@ -70,7 +69,7 @@ trait ApplicationRepositoryTestData extends ApplicationTestData with Application
   def anApplicationDataForTest(
       id: ApplicationId,
       prodClientId: ClientId = ClientId("aaa"),
-      state: ApplicationState = testingState(),
+      state: ApplicationState = appStateTesting,
       access: Access = Access.Standard(),
       refreshTokensAvailableFor: Period = defaultGrantLength,
       users: Set[Collaborator] = Set(
@@ -99,7 +98,7 @@ trait ApplicationRepositoryTestData extends ApplicationTestData with Application
       id: ApplicationId,
       name: String,
       prodClientId: ClientId = ClientId("aaa"),
-      state: ApplicationState = testingState(),
+      state: ApplicationState = appStateTesting,
       access: Access = Access.Standard(),
       users: Set[Collaborator] = Set("user@example.com".admin()),
       checkInformation: Option[CheckInformation] = None,

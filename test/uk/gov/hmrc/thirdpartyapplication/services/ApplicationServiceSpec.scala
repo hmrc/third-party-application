@@ -39,7 +39,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, _}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
@@ -48,7 +48,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
 }
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateExamples, Deleted}
@@ -65,7 +64,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
     with BeforeAndAfterAll
-    with ApplicationStateUtil
+    with ApplicationStateFixtures
     with ApplicationTestData
     with UpliftRequestSamples
     with ActorTestData
@@ -190,7 +189,7 @@ class ApplicationServiceSpec
         collaborators = Set(adminOne),
         wso2ApplicationName = "wso2ApplicationName",
         tokens = tokens,
-        state = testingState(),
+        state = appStateTesting,
         access = access,
         createdOn = instant,
         lastAccess = Some(instant)
@@ -246,7 +245,7 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: StoredApplication =
-        anApplicationDataWithCollaboratorWithUserId(createdApp.application.id).copy(description = None, state = testingState(), collaborators = Set(adminTwo))
+        anApplicationDataWithCollaboratorWithUserId(createdApp.application.id).copy(description = None, state = appStateTesting, collaborators = Set(adminTwo))
 
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
@@ -276,7 +275,7 @@ class ApplicationServiceSpec
 
       val expectedApplicationData: StoredApplication = anApplicationData.copy(
         id = createdApp.application.id,
-        state = testingState(),
+        state = appStateTesting,
         collaborators = Set(loggedInUserAdminCollaborator),
         access = Access.Standard().copy(sellResellOrDistribute = Some(sellResellOrDistribute)),
         description = None
@@ -308,7 +307,7 @@ class ApplicationServiceSpec
       val expectedApplicationData: StoredApplication =
         anApplicationData.copy(
           id = createdApp.application.id,
-          state = testingState(),
+          state = appStateTesting,
           collaborators = Set(loggedInUserAdminCollaborator),
           description = None
         )

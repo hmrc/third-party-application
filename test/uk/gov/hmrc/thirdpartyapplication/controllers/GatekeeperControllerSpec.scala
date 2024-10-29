@@ -36,11 +36,10 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, ApplicationWithCollaboratorsData, ApplicationWithSubscriptions, State}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationServiceMockModule, StrideGatekeeperRoleAuthorisationServiceMockModule}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule}
@@ -51,7 +50,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, T
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
-class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with ApplicationLogger
+class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateFixtures with ApplicationLogger
     with ControllerTestData with ApplicationTestData with FixedClock {
 
   import play.api.test.Helpers._
@@ -138,7 +137,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      val expected = List(anAppResult(), anAppResult(state = productionState()))
+      val expected = List(anAppResult(), anAppResult(state = appStateProduction))
       when(mockGatekeeperService.fetchNonTestingAppsWithSubmittedDate()).thenReturn(successful(expected))
 
       val result = underTest.fetchAppsForGatekeeper(request)
@@ -149,7 +148,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     "return apps for ldap role" in new Setup {
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      val expected = List(anAppResult(), anAppResult(state = productionState()))
+      val expected = List(anAppResult(), anAppResult(state = appStateProduction))
       when(mockGatekeeperService.fetchNonTestingAppsWithSubmittedDate()).thenReturn(successful(expected))
 
       val result = underTest.fetchAppsForGatekeeper(request)
@@ -375,7 +374,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, instant)
   }
 
-  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: Instant = instant, state: ApplicationState = testingState()) = {
+  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: Instant = instant, state: ApplicationState = appStateTesting) = {
     ApplicationWithUpliftRequest(id, ApplicationName("app 1"), submittedOn, state.name)
   }
 

@@ -32,8 +32,7 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, CoreApplicationData}
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationStateFixtures, CoreApplicationData}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, NoMetricsGuiceOneAppPerSuite}
@@ -42,7 +41,7 @@ class ResetLastAccessDateJobSpec
     extends AsyncHmrcSpec
     with MongoSupport
     with CleanMongoCollectionSupport
-    with ApplicationStateUtil
+    with ApplicationStateFixtures
     with NoMetricsGuiceOneAppPerSuite
     with CollaboratorTestData {
 
@@ -153,7 +152,7 @@ class ResetLastAccessDateJobSpec
       ApplicationTokens(
         StoredToken(ClientId.random, "ccc")
       ),
-      testingState(),
+      appStateTesting,
       Access.Standard(),
       instantTS,
       lastAccess = Some(instantTS)

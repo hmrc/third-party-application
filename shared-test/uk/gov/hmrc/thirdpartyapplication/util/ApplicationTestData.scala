@@ -21,10 +21,9 @@ import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 
-trait ApplicationTestData extends ApplicationWithCollaboratorsFixtures with ApplicationStateUtil with CollaboratorTestData with FixedClock {
+trait ApplicationTestData extends ApplicationWithCollaboratorsFixtures with CollaboratorTestData with FixedClock {
 
   def aSecret(secret: String): StoredClientSecret = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = instant)
 

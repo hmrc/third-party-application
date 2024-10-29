@@ -36,8 +36,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ClientSecret, CoreApplicationData, GrantLength, RedirectUri}
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSearch, AutoDeleteAllowed, StandardAccess => _}
@@ -48,7 +47,7 @@ class ApplicationRepositorySerialisationISpec
     extends ServerBaseISpec
     with ApplicationTestData
     with JavaDateTimeTestUtils
-    with ApplicationStateUtil
+    with ApplicationStateFixtures
     with BeforeAndAfterEach
     with MetricsHelper
     with FixedClock
@@ -106,7 +105,7 @@ class ApplicationRepositorySerialisationISpec
       ApplicationTokens(
         StoredToken(ClientId("aaa"), generateAccessToken, List(aClientSecret()))
       ),
-      testingState(),
+      appStateTesting,
       Access.Standard(),
       instant,
       Some(instant),

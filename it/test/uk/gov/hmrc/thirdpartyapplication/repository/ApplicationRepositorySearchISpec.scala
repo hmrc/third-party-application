@@ -288,7 +288,7 @@ class ApplicationRepositorySearchISpec
       val deletedAndBlockedApplication = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId,
-        state = deletedState()
+        state = appStateDeleted
       ).copy(blocked = true)
 
       await(applicationRepository.save(standardApplication))

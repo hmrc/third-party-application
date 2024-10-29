@@ -27,14 +27,14 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ControllerSpec, ControllerTestData}
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 class UpliftControllerSpec
     extends ControllerSpec
-    with ApplicationStateUtil
+    with ApplicationStateFixtures
     with TableDrivenPropertyChecks
     with UpliftServiceMockModule
     with ControllerTestData

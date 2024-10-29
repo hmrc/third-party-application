@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, State}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineApplicationApprovalRequest
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -34,7 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
-class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
+class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData with ApplicationStateFixtures {
 
   trait Setup extends ApplicationRepositoryMockModule with StateHistoryRepositoryMockModule with SubmissionsServiceMockModule {
 
@@ -121,7 +121,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
     "succeed as gkUserActor" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       SubmissionsServiceMock.DeclineApprovalRequest.succeeds()
-      ApplicationRepoMock.UpdateApplicationState.thenReturn(applicationData.copy(state = testingState()))
+      ApplicationRepoMock.UpdateApplicationState.thenReturn(applicationData.copy(state = appStateTesting))
       StateHistoryRepoMock.Insert.succeeds()
 
       val result = await(underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, instant)).value).value

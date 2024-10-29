@@ -32,8 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, _}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, CheckInformation, Collaborator, CoreApplicationData}
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
@@ -48,7 +47,7 @@ class SubscriptionRepositoryISpec
     with MetricsHelper
     with CleanMongoCollectionSupport
     with BeforeAndAfterAll
-    with ApplicationStateUtil
+    with ApplicationStateFixtures
     with Eventually
     with TableDrivenPropertyChecks
     with ApiIdentifierSyntax
@@ -356,7 +355,7 @@ class SubscriptionRepositoryISpec
   def anApplicationData(
       id: ApplicationId,
       clientId: ClientId = ClientId("aaa"),
-      state: ApplicationState = testingState(),
+      state: ApplicationState = appStateTesting,
       access: Access = Access.Standard(),
       user: List[String] = List("user@example.com"),
       checkInformation: Option[CheckInformation] = None
@@ -369,7 +368,7 @@ class SubscriptionRepositoryISpec
       id: ApplicationId,
       name: String,
       clientId: ClientId = ClientId("aaa"),
-      state: ApplicationState = testingState(),
+      state: ApplicationState = appStateTesting,
       access: Access = Access.Standard(),
       user: List[String] = List("user@example.com"),
       checkInformation: Option[CheckInformation] = None

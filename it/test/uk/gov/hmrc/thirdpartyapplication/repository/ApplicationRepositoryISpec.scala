@@ -315,7 +315,7 @@ class ApplicationRepositoryISpec
           anApplicationDataForTest(
             applicationId,
             ClientId("aaa"),
-            productionState()
+            appStateProduction
           ).copy(
             rateLimitTier = Some(RateLimitTier.BRONZE),
             lastAccess = Some(instant)
@@ -356,7 +356,7 @@ class ApplicationRepositoryISpec
           anApplicationDataForTest(
             applicationId,
             ClientId("aaa"),
-            productionState()
+            appStateProduction
           ).copy(rateLimitTier = None)
         )
       )
@@ -435,7 +435,7 @@ class ApplicationRepositoryISpec
         anApplicationDataForTest(
           applicationId,
           clientId,
-          productionState()
+          appStateProduction
         )
           .copy(lastAccess =
             Some(instant.minus(Duration.ofDays(20)))
@@ -454,7 +454,7 @@ class ApplicationRepositoryISpec
         anApplicationDataForTest(
           applicationId,
           clientId,
-          productionState(),
+          appStateProduction,
           refreshTokensAvailableFor = newGrantLength
         )
           .copy(lastAccess =
@@ -475,7 +475,7 @@ class ApplicationRepositoryISpec
         anApplicationDataForTest(
           applicationId,
           ClientId("aaa"),
-          productionState()
+          appStateProduction
         )
           .copy(lastAccess =
             Some(instant.minus(Duration.ofDays(20)))
@@ -500,7 +500,7 @@ class ApplicationRepositoryISpec
       val application             = anApplicationDataForTest(
         applicationId,
         ClientId("aaa"),
-        productionState()
+        appStateProduction
       )
       val generatedClientSecretId =
         application.tokens.production.clientSecrets.head.id
@@ -539,7 +539,7 @@ class ApplicationRepositoryISpec
       val application             = anApplicationDataForTest(
         applicationId,
         ClientId("aaa"),
-        productionState()
+        appStateProduction
       ).copy(tokens = applicationTokens)
       val generatedClientSecretId =
         application.tokens.production.clientSecrets.head.id
@@ -588,7 +588,7 @@ class ApplicationRepositoryISpec
       val application       = anApplicationDataForTest(
         applicationId,
         ClientId("aaa"),
-        productionState()
+        appStateProduction
       ).copy(tokens = applicationTokens)
 
       await(applicationRepository.save(application))
@@ -620,12 +620,12 @@ class ApplicationRepositoryISpec
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("aaa"),
-        productionState()
+        appStateProduction
       )
       val application2 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("zzz"),
-        productionState()
+        appStateProduction
       )
 
       await(applicationRepository.save(application1))
@@ -646,14 +646,14 @@ class ApplicationRepositoryISpec
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("aaa"),
-        productionState(),
+        appStateProduction,
         access = Access.Standard(),
         grantLength1
       )
       val application2 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("zzz"),
-        productionState(),
+        appStateProduction,
         access = Access.Standard(),
         grantLength2
       )
@@ -680,7 +680,7 @@ class ApplicationRepositoryISpec
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("aaa"),
-        deletedState()
+        appStateDeleted
       )
 
       await(applicationRepository.save(application1))
@@ -701,12 +701,12 @@ class ApplicationRepositoryISpec
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("aaa"),
-        productionState()
+        appStateProduction
       )
       val application2 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("zzz"),
-        productionState()
+        appStateProduction
       )
 
       await(applicationRepository.save(application1))
@@ -725,7 +725,7 @@ class ApplicationRepositoryISpec
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("aaa"),
-        deletedState()
+        appStateDeleted
       )
 
       await(applicationRepository.save(application1))
@@ -753,7 +753,7 @@ class ApplicationRepositoryISpec
       val application3 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId,
-        deletedState()
+        appStateDeleted
       )
 
       await(applicationRepository.save(application1))
@@ -776,22 +776,22 @@ class ApplicationRepositoryISpec
       val application2 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId,
-        state = pendingRequesterVerificationState()
+        state = appStatePendingRequesterVerification
       )
       val application3 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId,
-        state = productionState()
+        state = appStateProduction
       )
       val application4 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId,
-        state = pendingRequesterVerificationState()
+        state = appStatePendingRequesterVerification
       )
       val application5 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId,
-        state = deletedState()
+        state = appStateDeleted
       )
 
       await(applicationRepository.save(application1))
@@ -812,7 +812,7 @@ class ApplicationRepositoryISpec
     "not return Access.Privileged applications" in {
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
-        state = productionState(),
+        state = appStateProduction,
         access = Access.Privileged()
       )
       await(applicationRepository.save(application1))
@@ -822,7 +822,7 @@ class ApplicationRepositoryISpec
     "not return ROPC applications" in {
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
-        state = productionState(),
+        state = appStateProduction,
         access = Access.Ropc()
       )
       await(applicationRepository.save(application1))
@@ -836,7 +836,7 @@ class ApplicationRepositoryISpec
     }
 
     "return empty list when all apps in DELETED state" in {
-      val application1 = anApplicationDataForTest(ApplicationId.random, state = deletedState())
+      val application1 = anApplicationDataForTest(ApplicationId.random, state = appStateDeleted)
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
     }
@@ -876,7 +876,7 @@ class ApplicationRepositoryISpec
       val applicationName           = "appName"
       val applicationNormalisedName = "appname"
 
-      val application = anApplicationDataForTest(id = ApplicationId.random, state = deletedState())
+      val application = anApplicationDataForTest(id = ApplicationId.random, state = appStateDeleted)
         .copy(normalisedName = applicationNormalisedName)
 
       await(applicationRepository.save(application))
@@ -2011,7 +2011,7 @@ class ApplicationRepositoryISpec
         anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
           .copy(collaborators = Set(collaborator))
       val testApplication3 =
-        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = deletedState())
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = appStateDeleted)
           .copy(collaborators = Set(collaborator))
 
       await(applicationRepository.save(testApplication1))
@@ -2039,7 +2039,7 @@ class ApplicationRepositoryISpec
         anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
           .copy(collaborators = Set(collaborator))
       val testApplication3 =
-        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = deletedState())
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = appStateDeleted)
           .copy(collaborators = Set(collaborator))
 
       await(applicationRepository.save(testApplication1))
@@ -2067,7 +2067,7 @@ class ApplicationRepositoryISpec
 
       val prodApplication1   = anApplicationDataForTest(applicationId1)
         .copy(environment = productionEnv, collaborators = Set(collaborator))
-      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = deletedState())
+      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = appStateDeleted)
         .copy(environment = productionEnv, collaborators = Set(collaborator))
       val sandboxApplication =
         anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"))
@@ -2107,7 +2107,7 @@ class ApplicationRepositoryISpec
 
       val prodApplication1   = anApplicationDataForTest(applicationId1)
         .copy(environment = productionEnv, collaborators = Set(collaborator))
-      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = deletedState())
+      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = appStateDeleted)
         .copy(environment = productionEnv, collaborators = Set(collaborator))
       val sandboxApplication =
         anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"))

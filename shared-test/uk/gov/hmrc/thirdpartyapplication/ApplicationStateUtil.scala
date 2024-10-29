@@ -16,21 +16,4 @@
 
 package uk.gov.hmrc.thirdpartyapplication
 
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 
-trait ApplicationStateUtil extends ApplicationStateFixtures with FixedClock {
-  def testingState() = appStateTesting
-
-  def preProductionState() = appStatePreProduction
-
-  def productionState() = appStateProduction
-
-  def pendingRequesterVerificationState() = appStatePendingRequesterVerification
-
-  def pendingGatekeeperApprovalState() = appStatePendingGatekeeperApproval
-
-  def pendingResponsibleIndividualVerificationState() = appStatePendingRIVerification
-
-  def deletedState() = appStateDeleted
-}

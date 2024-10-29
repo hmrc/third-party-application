@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.uplift.services
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationIdData
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationNameValidationConfigMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -29,7 +29,7 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
 
   trait Setup
       extends AuditServiceMockModule
-      with ApplicationStateUtil
+      with ApplicationStateFixtures
       with ApplicationRepositoryMockModule
       with ApplicationNameValidationConfigMockModule
       with ApplicationTestData {
