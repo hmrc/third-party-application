@@ -96,8 +96,8 @@ class UpliftVerificationExpiryJobSpec
 
       await(underTest.execute)
       verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, instant.minus(JavaTimeDuration.ofDays(expiryTimeInDays)))
-      verify(mockApplicationRepository).save(app1.copy(state = appStateTesting))
-      verify(mockApplicationRepository).save(app2.copy(state = appStateTesting))
+      verify(mockApplicationRepository).save(app1.withState(appStateTesting))
+      verify(mockApplicationRepository).save(app2.withState(appStateTesting))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app1.id,
         State.TESTING,

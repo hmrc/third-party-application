@@ -195,7 +195,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
     "return an error if the application is not in TESTING" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       namingServiceReturns(ValidName)
-      val notTestingApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
+      val notTestingApp = app.withState(ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in TESTING state") {
         underTest.process(notTestingApp, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))

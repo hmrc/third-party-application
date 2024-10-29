@@ -125,7 +125,7 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
   }
 
   private def grantApp(application: StoredApplication): StoredApplication = {
-    application.copy(state = application.state.toPendingRequesterVerification(instant()))
+    application.withState(application.state.toPendingRequesterVerification(instant()))
   }
 
   private def grantSubmission(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])(submission: Submission) = {

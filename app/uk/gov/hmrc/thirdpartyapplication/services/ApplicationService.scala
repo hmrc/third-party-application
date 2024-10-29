@@ -106,7 +106,7 @@ class ApplicationService @Inject() (
       app            <- fetchApp(applicationId)
       oldState        = app.state
       newState        = app.state.toProduction(instant())
-      appWithNewState = app.copy(state = newState)
+      appWithNewState = app.withState(newState)
       updatedApp     <- applicationRepository.save(appWithNewState)
       stateHistory    = StateHistory(applicationId, newState.name, Actors.AppCollaborator(requesterEmailAddress), Some(oldState.name), None, app.state.updatedOn)
       _              <- stateHistoryRepository.insert(stateHistory)

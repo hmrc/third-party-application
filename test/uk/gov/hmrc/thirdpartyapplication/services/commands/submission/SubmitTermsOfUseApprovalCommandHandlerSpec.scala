@@ -229,7 +229,7 @@ class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec 
       TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(termsOfUseInvitation)
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
-      val notTestingApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
+      val notTestingApp = app.withState(ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in PRODUCTION state") {
         underTest.process(notTestingApp, SubmitTermsOfUseApproval(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))

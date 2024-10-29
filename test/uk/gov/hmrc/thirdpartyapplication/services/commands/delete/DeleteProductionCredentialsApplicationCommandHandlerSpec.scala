@@ -107,7 +107,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
 
     "return an error when app is NOT in testing state" in new Setup {
       checkFailsWith("App is not in TESTING state") {
-        underTest.process(app.copy(state = app.state.copy(name = State.PRE_PRODUCTION)), cmd)
+        underTest.process(app.withState(app.state.copy(name = State.PRE_PRODUCTION)), cmd)
       }
     }
   }

@@ -229,7 +229,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
       ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
 
-      val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
+      val prodApp = app.withState(ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
       checkSuccessResultUpdate() {
         underTest.process(prodApp, DeclineResponsibleIndividual(code, instant))
@@ -242,7 +242,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       SubmissionsServiceMock.DeclineSubmission.thenReturn(declinedSubmission)
       TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
-      val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
+      val prodApp = app.withState(ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
       checkSuccessResultTouUplift() {
         underTest.process(prodApp, DeclineResponsibleIndividual(code, instant))
@@ -294,7 +294,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
 
     "return an error if the application state is not PendingResponsibleIndividualVerification" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
-      val pendingGKApprovalApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName))
+      val pendingGKApprovalApp = app.withState(ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName))
 
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state") {
         underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividual(code, instant))

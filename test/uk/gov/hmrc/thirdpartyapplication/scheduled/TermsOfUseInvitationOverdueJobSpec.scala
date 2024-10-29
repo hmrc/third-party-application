@@ -106,7 +106,7 @@ class TermsOfUseInvitationOverdueJobSpec extends AsyncHmrcSpec with BeforeAndAft
     }
 
     "not update state if application record has state of DELETED" in new Setup with StoredApplicationFixtures {
-      val deletedApp   = storedApp.copy(state = appStateDeleted)
+      val deletedApp   = storedApp.withState(appStateDeleted)
       val touInviteDel = TermsOfUseInvitation(applicationId, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
 
       TermsOfUseInvitationRepositoryMock.FetchByStatusesBeforeDueBy.thenReturn(List(touInviteDel))

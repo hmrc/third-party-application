@@ -154,7 +154,7 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
     }
 
     "not send email if application record has state of DELETED" in new Setup with StoredApplicationFixtures {
-      val deletedApp   = storedApp.copy(state = appStateDeleted)
+      val deletedApp   = storedApp.withState(appStateDeleted)
       val touInviteDel = TermsOfUseInvitation(applicationId, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
 
       TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.thenReturn(List(touInviteDel))

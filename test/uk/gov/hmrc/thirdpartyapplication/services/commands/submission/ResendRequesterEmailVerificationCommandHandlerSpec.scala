@@ -114,7 +114,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application has no verification code" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val noVerificationCodeApp = app.copy(state = ApplicationState(State.PENDING_REQUESTER_VERIFICATION, Some(appAdminEmail.text), Some(appAdminName), None, instant))
+      val noVerificationCodeApp = app.withState(ApplicationState(State.PENDING_REQUESTER_VERIFICATION, Some(appAdminEmail.text), Some(appAdminName), None, instant))
 
       checkFailsWith("The verificationCode has not been set for this application") {
         underTest.process(noVerificationCodeApp, ResendRequesterEmailVerification(gatekeeperUser, instant))
@@ -123,7 +123,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application is not pending requester verification" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val notApprovedApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
+      val notApprovedApp = app.withState(ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in PENDING_REQUESTER_VERIFICATION state", "The verificationCode has not been set for this application") {
         underTest.process(notApprovedApp, ResendRequesterEmailVerification(gatekeeperUser, instant))

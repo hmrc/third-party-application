@@ -51,7 +51,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtur
       Helpers.stubControllerComponents()
     )
 
-    def hasApp   = ApplicationDataServiceMock.FetchApp.thenReturn(storedApp.copy(state = ApplicationStateExamples.testing))
+    def hasApp   = ApplicationDataServiceMock.FetchApp.thenReturn(storedApp.withState(ApplicationStateExamples.testing))
     def hasNoApp = ApplicationDataServiceMock.FetchApp.thenReturnNone
 
     def hasNoSubmission  = SubmissionsServiceMock.FetchLatest.thenReturnNone()

@@ -156,7 +156,7 @@ class AuditServiceSpec
     val reasons        = "Reasons description text"
     val requesterEmail = "bill.badger@rupert.com"
     val requesterName  = "bill badger"
-    val appInTesting   = applicationData.copy(state = ApplicationStateExamples.testing)
+    val appInTesting   = applicationData.withState(ApplicationStateExamples.testing)
 
     val collaboratorActor          = Actors.AppCollaborator(applicationData.collaborators.head.emailAddress)
     implicit val hc: HeaderCarrier = HeaderCarrier()

@@ -159,7 +159,7 @@ class GrantApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBa
     "return an error if the application is not in PENDING_GATEKEEPER_APPROVAL" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
-      val testingApp = app.copy(state = ApplicationStateExamples.testing)
+      val testingApp = app.withState(ApplicationStateExamples.testing)
 
       checkFailsWith("App is not in PENDING_GATEKEEPER_APPROVAL state", "No requestedBy email found", "No requestedBy name found") {
         underTest.process(testingApp, GrantApplicationApprovalRequest(gkUserEmail, instant, None, None))

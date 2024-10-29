@@ -121,7 +121,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
     "succeed as gkUserActor" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       SubmissionsServiceMock.DeclineApprovalRequest.succeeds()
-      ApplicationRepoMock.UpdateApplicationState.thenReturn(applicationData.copy(state = appStateTesting))
+      ApplicationRepoMock.UpdateApplicationState.thenReturn(applicationData.withState(appStateTesting))
       StateHistoryRepoMock.Insert.succeeds()
 
       val result = await(underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, instant)).value).value
@@ -154,7 +154,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
     "return an error if the application state is not PendingResponsibleIndividualVerification or PendingGatekeeperApproval" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      val pendingGKApprovalApp = applicationData.copy(state = ApplicationStateExamples.pendingRequesterVerification(requesterEmail.text, requesterName, "12345678"))
+      val pendingGKApprovalApp = applicationData.withState(ApplicationStateExamples.pendingRequesterVerification(requesterEmail.text, requesterName, "12345678"))
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state") {
         underTest.process(pendingGKApprovalApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, instant))
       }

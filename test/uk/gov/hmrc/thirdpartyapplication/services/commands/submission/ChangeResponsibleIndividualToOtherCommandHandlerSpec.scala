@@ -232,7 +232,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
   "process" should {
     "create correct event for a valid request with a ToU responsibleIndividualVerification and a standard app" in new Setup {
-      val pendingRIApp = app.copy(state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName))
+      val pendingRIApp = app.withState(ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName))
       ApplicationRepoMock.UpdateApplicationSetResponsibleIndividual.thenReturn(pendingRIApp)
       ApplicationRepoMock.UpdateApplicationState.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
@@ -246,7 +246,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
     "create correct event for a valid request with a Tou Uplift responsibleIndividualVerification, a standard app and a non-passing submission" in new Setup {
 
-      val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
+      val prodApp = app.withState(ApplicationStateExamples.production(requesterEmail.text, requesterName))
       ApplicationRepoMock.UpdateApplicationSetResponsibleIndividual.thenReturn(prodApp)
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationTouUplift)
       SubmissionsServiceMock.MarkSubmission.thenReturn(warningsSubmission)
@@ -260,7 +260,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
     "create correct event for a valid request with a Tou Uplift responsibleIndividualVerification, a standard app and a passing submission" in new Setup {
 
-      val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
+      val prodApp = app.withState(ApplicationStateExamples.production(requesterEmail.text, requesterName))
       ApplicationRepoMock.UpdateApplicationSetResponsibleIndividual.thenReturn(prodApp)
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationTouUplift)
       SubmissionsServiceMock.MarkSubmission.thenReturn(grantedSubmission)
@@ -276,7 +276,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
     "create correct event for a valid request with an update responsibleIndividualVerification and a standard app" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
       ResponsibleIndividualVerificationRepositoryMock.DeleteResponsibleIndividualVerification.thenReturnSuccess()
-      val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
+      val prodApp = app.withState(ApplicationStateExamples.production(requesterEmail.text, requesterName))
       ApplicationRepoMock.UpdateApplicationChangeResponsibleIndividual.thenReturn(prodApp)
 
       checkSuccessResultUpdate() {
@@ -325,7 +325,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
     "return an error if the application state is not PendingResponsibleIndividualVerification" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
-      val pendingGKApprovalApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName))
+      val pendingGKApprovalApp = app.withState(ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName))
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state") {
         underTest.process(pendingGKApprovalApp, ChangeResponsibleIndividualToOther(code, instant))
       }

@@ -110,7 +110,7 @@ class SendTermsOfUseInvitationCommandHandlerSpec extends CommandHandlerBaseSpec 
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
       TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturnNone()
 
-      val testingApp = app.copy(state = ApplicationStateExamples.testing)
+      val testingApp = app.withState(ApplicationStateExamples.testing)
 
       checkFailsWith("App is not in PRODUCTION state") {
         underTest.process(testingApp, SendTermsOfUseInvitation(gkUserEmail, ts))

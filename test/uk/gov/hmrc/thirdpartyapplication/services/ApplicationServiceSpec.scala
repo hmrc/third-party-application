@@ -519,7 +519,7 @@ class ApplicationServiceSpec
 
   "confirmSetupComplete" should {
     "update pre-production application state and store state history" in new Setup {
-      val oldApplication     = storedApp.copy(state = ApplicationStateExamples.preProduction("previous@example.com", "Previous"))
+      val oldApplication     = storedApp.withState(ApplicationStateExamples.preProduction("previous@example.com", "Previous"))
       ApplicationRepoMock.Fetch.thenReturn(oldApplication)
       ApplicationRepoMock.Save.thenAnswer()
       StateHistoryRepoMock.Insert.thenAnswer()
@@ -541,7 +541,7 @@ class ApplicationServiceSpec
     }
 
     "not update application in wrong state" in new Setup {
-      val oldApplication = storedApp.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("previous@example.com", "Previous"))
+      val oldApplication = storedApp.withState(ApplicationStateExamples.pendingGatekeeperApproval("previous@example.com", "Previous"))
       ApplicationRepoMock.Fetch.thenReturn(oldApplication)
       ApplicationRepoMock.Save.thenAnswer()
 

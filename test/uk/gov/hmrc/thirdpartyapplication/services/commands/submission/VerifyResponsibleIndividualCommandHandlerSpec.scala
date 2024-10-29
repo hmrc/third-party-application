@@ -124,7 +124,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
 
     "return an error if the application is not approved" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val notApprovedApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
+      val notApprovedApp = app.withState(ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
         underTest.process(notApprovedApp, VerifyResponsibleIndividual(adminOne.userId, instant, appAdminName, riName, riEmail))

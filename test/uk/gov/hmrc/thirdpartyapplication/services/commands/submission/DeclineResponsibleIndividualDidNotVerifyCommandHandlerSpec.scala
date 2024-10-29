@@ -231,7 +231,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
       ResponsibleIndividualVerificationRepositoryMock.DeleteSubmissionInstance.succeeds()
 
-      val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
+      val prodApp = app.withState(ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
       checkSuccessResultUpdate(Actors.AppCollaborator(adminOne.emailAddress)) {
         underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, instant))
@@ -245,7 +245,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       SubmissionsServiceMock.DeclineSubmission.thenReturn(declinedSubmission)
       TermsOfUseInvitationRepositoryMock.UpdateState.thenReturn()
 
-      val prodApp = app.copy(state = ApplicationStateExamples.production(requesterEmail.text, requesterName))
+      val prodApp = app.withState(ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
       checkSuccessResultTouUplift(Actors.AppCollaborator(adminOne.emailAddress)) {
         underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, instant))
@@ -293,7 +293,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
 
     "return an error if the application state is not PendingResponsibleIndividualVerification" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
-      val pendingGKApprovalApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName))
+      val pendingGKApprovalApp = app.withState(ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName))
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state") {
         underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
