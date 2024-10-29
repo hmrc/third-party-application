@@ -78,8 +78,10 @@ class UpliftVerificationExpiryJobSpec
   "uplift verification expiry job execution" should {
 
     "expire all application uplifts having expiry date before the expiry time" in new Setup {
-      val app1: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"), pendingRequesterVerificationState("requester1@example.com"))
-      val app2: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"), pendingRequesterVerificationState("requester2@example.com"))
+      val app1: StoredApplication =
+        anApplicationData(ApplicationId.random, ClientId("aaa"), pendingRequesterVerificationState().copy(requestedByEmailAddress = Some("requester1@example.com")))
+      val app2: StoredApplication =
+        anApplicationData(ApplicationId.random, ClientId("aaa"), pendingRequesterVerificationState().copy(requestedByEmailAddress = Some("requester2@example.com")))
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), any[Instant]))
         .thenReturn(successful(List(app1, app2)))

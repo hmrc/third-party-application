@@ -17,55 +17,20 @@
 package uk.gov.hmrc.thirdpartyapplication
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, ApplicationStateFixtures, State}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 
 trait ApplicationStateUtil extends ApplicationStateFixtures with FixedClock {
-  val aVerificationCode: String = "verificationCode"
+  def testingState() = appStateTesting
 
-  def testingState() = ApplicationState(name = State.TESTING, updatedOn = instant)
+  def preProductionState() = appStatePreProduction
 
-  def preProductionState(requestedBy: String) = ApplicationState(
-    name = State.PRE_PRODUCTION,
-    requestedByEmailAddress = Some(requestedBy),
-    verificationCode = Some(aVerificationCode),
-    updatedOn = instant
-  )
+  def productionState() = appStateProduction
 
-  def productionState(requestedBy: String) = ApplicationState(
-    name = State.PRODUCTION,
-    requestedByEmailAddress = Some(requestedBy),
-    verificationCode = Some(aVerificationCode),
-    updatedOn = instant
-  )
+  def pendingRequesterVerificationState() = appStatePendingRequesterVerification
 
-  def pendingRequesterVerificationState(requestedBy: String) = ApplicationState(
-    name = State.PENDING_REQUESTER_VERIFICATION,
-    requestedByEmailAddress = Some(requestedBy),
-    verificationCode = Some(aVerificationCode),
-    updatedOn = instant
-  )
+  def pendingGatekeeperApprovalState() = appStatePendingGatekeeperApproval
 
-  def pendingGatekeeperApprovalState(requestedBy: String) = ApplicationState(
-    name = State.PENDING_GATEKEEPER_APPROVAL,
-    requestedByEmailAddress = Some(requestedBy),
-    requestedByName = Some(requestedBy),
-    verificationCode = None,
-    updatedOn = instant
-  )
+  def pendingResponsibleIndividualVerificationState() = appStatePendingRIVerification
 
-  def pendingResponsibleIndividualVerificationState(requestedBy: String, requestedByEmail: String) = ApplicationState(
-    name = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
-    requestedByEmailAddress = Some(requestedByEmail),
-    requestedByName = Some(requestedBy),
-    verificationCode = Some(aVerificationCode),
-    updatedOn = instant
-  )
-
-  def deletedState(requestedBy: String) = ApplicationState(
-    name = State.DELETED,
-    requestedByEmailAddress = Some(requestedBy),
-    requestedByName = Some(requestedBy),
-    verificationCode = None,
-    updatedOn = instant
-  )
+  def deletedState() = appStateDeleted
 }

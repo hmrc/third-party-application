@@ -138,7 +138,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      val expected = List(anAppResult(), anAppResult(state = productionState("user1")))
+      val expected = List(anAppResult(), anAppResult(state = productionState()))
       when(mockGatekeeperService.fetchNonTestingAppsWithSubmittedDate()).thenReturn(successful(expected))
 
       val result = underTest.fetchAppsForGatekeeper(request)
@@ -149,7 +149,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     "return apps for ldap role" in new Setup {
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      val expected = List(anAppResult(), anAppResult(state = productionState("user1")))
+      val expected = List(anAppResult(), anAppResult(state = productionState()))
       when(mockGatekeeperService.fetchNonTestingAppsWithSubmittedDate()).thenReturn(successful(expected))
 
       val result = underTest.fetchAppsForGatekeeper(request)

@@ -70,14 +70,14 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     )
 
     val applicationPendingGKApproval: StoredApplication = anApplicationData.copy(
-      state = pendingGatekeeperApprovalState("bob@fastshow.com"),
+      state = pendingGatekeeperApprovalState(),
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
     val prodAppId = applicationId
 
     val applicationProduction: StoredApplication = anApplicationData.copy(
-      state = productionState("bob@fastshow.com"),
+      state = productionState(),
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 

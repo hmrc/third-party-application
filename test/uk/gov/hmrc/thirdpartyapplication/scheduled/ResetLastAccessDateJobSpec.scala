@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDate, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -88,9 +89,9 @@ class ResetLastAccessDateJobSpec
     "update lastAccess fields in database so that none pre-date the specified date" in new ModifyDatesSetup {
 
       val bulkInsert = List(
-        anApplicationData(localDateTime = dateToSet.minusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant()),
-        anApplicationData(localDateTime = dateToSet.minusDays(2).atStartOfDay(ZoneOffset.UTC).toInstant()),
-        anApplicationData(localDateTime = dateToSet.plusDays(3).atStartOfDay(ZoneOffset.UTC).toInstant())
+        anApplicationData(instantTS = dateToSet.minusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant().truncatedTo(ChronoUnit.MILLIS)),
+        anApplicationData(instantTS = dateToSet.minusDays(2).atStartOfDay(ZoneOffset.UTC).toInstant().truncatedTo(ChronoUnit.MILLIS)),
+        anApplicationData(instantTS = dateToSet.plusDays(3).atStartOfDay(ZoneOffset.UTC).toInstant().truncatedTo(ChronoUnit.MILLIS))
       )
       await(Future.sequence(bulkInsert.map(i => applicationRepository.save(i))))
 
@@ -106,7 +107,7 @@ class ResetLastAccessDateJobSpec
     }
 
     "update lastAccess field on application when it does not have a lastAccessDate" in new ModifyDatesSetup {
-      val applicationData: StoredApplication = anApplicationData(localDateTime = dateToSet.minusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant()).copy(lastAccess = None)
+      val applicationData: StoredApplication = anApplicationData(instantTS = dateToSet.minusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant()).copy(lastAccess = None)
 
       await(applicationRepository.save(applicationData))
       await(underTest.runJob)
@@ -119,9 +120,9 @@ class ResetLastAccessDateJobSpec
     }
 
     "not update the database if dryRun option is specified" in new DryRunSetup {
-      val application1: StoredApplication = anApplicationData(localDateTime = dateToSet.minusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant())
-      val application2: StoredApplication = anApplicationData(localDateTime = dateToSet.minusDays(2).atStartOfDay(ZoneOffset.UTC).toInstant())
-      val application3: StoredApplication = anApplicationData(localDateTime = dateToSet.plusDays(3).atStartOfDay(ZoneOffset.UTC).toInstant())
+      val application1: StoredApplication = anApplicationData(instantTS = dateToSet.minusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant())
+      val application2: StoredApplication = anApplicationData(instantTS = dateToSet.minusDays(2).atStartOfDay(ZoneOffset.UTC).toInstant())
+      val application3: StoredApplication = anApplicationData(instantTS = dateToSet.plusDays(3).atStartOfDay(ZoneOffset.UTC).toInstant())
 
       def inDbList(appId: ApplicationId): Option[StoredApplication] = retrievedApplications.find(_.id == appId)
       def epochMillisInDb(appId: ApplicationId): Option[Long]       = inDbList(appId).flatMap(_.lastAccess).map(_.toEpochMilli())
@@ -138,7 +139,10 @@ class ResetLastAccessDateJobSpec
     }
   }
 
-  def anApplicationData(id: ApplicationId = ApplicationId.random, localDateTime: Instant): StoredApplication = {
+  def anApplicationData(
+      id: ApplicationId = ApplicationId.random,
+      instantTS: Instant
+    ): StoredApplication = {
     StoredApplication(
       id,
       ApplicationName(s"myApp-${id}"),
@@ -151,8 +155,8 @@ class ResetLastAccessDateJobSpec
       ),
       testingState(),
       Access.Standard(),
-      localDateTime,
-      lastAccess = Some(localDateTime)
+      instantTS,
+      lastAccess = Some(instantTS)
     )
   }
 }

@@ -43,7 +43,7 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateUtil with Upli
         None,
         "a",
         ApplicationTokens(StoredToken(ClientId("cid"), "at")),
-        productionState("user1"),
+        productionState(),
         Access.Standard(),
         instant,
         Some(instant)

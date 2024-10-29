@@ -473,7 +473,7 @@ class TermsOfUseInvitationRepositoryISpec
       ApplicationTokens(
         StoredToken(ClientId.random, "ccc")
       ),
-      productionState("ted@example.com"),
+      productionState(),
       Standard(),
       instant,
       Some(instant),

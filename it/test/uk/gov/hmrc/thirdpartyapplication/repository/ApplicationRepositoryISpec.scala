@@ -315,7 +315,7 @@ class ApplicationRepositoryISpec
           anApplicationDataForTest(
             applicationId,
             ClientId("aaa"),
-            productionState("requestorEmail@example.com")
+            productionState()
           ).copy(
             rateLimitTier = Some(RateLimitTier.BRONZE),
             lastAccess = Some(instant)
@@ -356,7 +356,7 @@ class ApplicationRepositoryISpec
           anApplicationDataForTest(
             applicationId,
             ClientId("aaa"),
-            productionState("requestorEmail@example.com")
+            productionState()
           ).copy(rateLimitTier = None)
         )
       )
@@ -435,7 +435,7 @@ class ApplicationRepositoryISpec
         anApplicationDataForTest(
           applicationId,
           clientId,
-          productionState("requestorEmail@example.com")
+          productionState()
         )
           .copy(lastAccess =
             Some(instant.minus(Duration.ofDays(20)))
@@ -454,7 +454,7 @@ class ApplicationRepositoryISpec
         anApplicationDataForTest(
           applicationId,
           clientId,
-          productionState("requestorEmail@example.com"),
+          productionState(),
           refreshTokensAvailableFor = newGrantLength
         )
           .copy(lastAccess =
@@ -475,7 +475,7 @@ class ApplicationRepositoryISpec
         anApplicationDataForTest(
           applicationId,
           ClientId("aaa"),
-          productionState("requestorEmail@example.com")
+          productionState()
         )
           .copy(lastAccess =
             Some(instant.minus(Duration.ofDays(20)))
@@ -500,7 +500,7 @@ class ApplicationRepositoryISpec
       val application             = anApplicationDataForTest(
         applicationId,
         ClientId("aaa"),
-        productionState("requestorEmail@example.com")
+        productionState()
       )
       val generatedClientSecretId =
         application.tokens.production.clientSecrets.head.id
@@ -539,7 +539,7 @@ class ApplicationRepositoryISpec
       val application             = anApplicationDataForTest(
         applicationId,
         ClientId("aaa"),
-        productionState("requestorEmail@example.com")
+        productionState()
       ).copy(tokens = applicationTokens)
       val generatedClientSecretId =
         application.tokens.production.clientSecrets.head.id
@@ -588,7 +588,7 @@ class ApplicationRepositoryISpec
       val application       = anApplicationDataForTest(
         applicationId,
         ClientId("aaa"),
-        productionState("requestorEmail@example.com")
+        productionState()
       ).copy(tokens = applicationTokens)
 
       await(applicationRepository.save(application))
@@ -620,12 +620,12 @@ class ApplicationRepositoryISpec
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("aaa"),
-        productionState("requestorEmail@example.com")
+        productionState()
       )
       val application2 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("zzz"),
-        productionState("requestorEmail@example.com")
+        productionState()
       )
 
       await(applicationRepository.save(application1))
@@ -646,14 +646,14 @@ class ApplicationRepositoryISpec
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("aaa"),
-        productionState("requestorEmail@example.com"),
+        productionState(),
         access = Access.Standard(),
         grantLength1
       )
       val application2 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("zzz"),
-        productionState("requestorEmail@example.com"),
+        productionState(),
         access = Access.Standard(),
         grantLength2
       )
@@ -680,7 +680,7 @@ class ApplicationRepositoryISpec
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("aaa"),
-        deletedState("requestorEmail@example.com")
+        deletedState()
       )
 
       await(applicationRepository.save(application1))
@@ -701,12 +701,12 @@ class ApplicationRepositoryISpec
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("aaa"),
-        productionState("requestorEmail@example.com")
+        productionState()
       )
       val application2 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("zzz"),
-        productionState("requestorEmail@example.com")
+        productionState()
       )
 
       await(applicationRepository.save(application1))
@@ -725,7 +725,7 @@ class ApplicationRepositoryISpec
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
         ClientId("aaa"),
-        deletedState("requestorEmail@example.com")
+        deletedState()
       )
 
       await(applicationRepository.save(application1))
@@ -753,7 +753,7 @@ class ApplicationRepositoryISpec
       val application3 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId,
-        deletedState("requestorEmail@example.com")
+        deletedState()
       )
 
       await(applicationRepository.save(application1))
@@ -776,22 +776,22 @@ class ApplicationRepositoryISpec
       val application2 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId,
-        state = pendingRequesterVerificationState("user1")
+        state = pendingRequesterVerificationState()
       )
       val application3 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId,
-        state = productionState("user2")
+        state = productionState()
       )
       val application4 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId,
-        state = pendingRequesterVerificationState("user2")
+        state = pendingRequesterVerificationState()
       )
       val application5 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId,
-        state = deletedState("user2")
+        state = deletedState()
       )
 
       await(applicationRepository.save(application1))
@@ -812,7 +812,7 @@ class ApplicationRepositoryISpec
     "not return Access.Privileged applications" in {
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
-        state = productionState("gatekeeper"),
+        state = productionState(),
         access = Access.Privileged()
       )
       await(applicationRepository.save(application1))
@@ -822,7 +822,7 @@ class ApplicationRepositoryISpec
     "not return ROPC applications" in {
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
-        state = productionState("gatekeeper"),
+        state = productionState(),
         access = Access.Ropc()
       )
       await(applicationRepository.save(application1))
@@ -836,7 +836,7 @@ class ApplicationRepositoryISpec
     }
 
     "return empty list when all apps in DELETED state" in {
-      val application1 = anApplicationDataForTest(ApplicationId.random, state = deletedState("user2"))
+      val application1 = anApplicationDataForTest(ApplicationId.random, state = deletedState())
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
     }
@@ -876,7 +876,7 @@ class ApplicationRepositoryISpec
       val applicationName           = "appName"
       val applicationNormalisedName = "appname"
 
-      val application = anApplicationDataForTest(id = ApplicationId.random, state = deletedState("user2"))
+      val application = anApplicationDataForTest(id = ApplicationId.random, state = deletedState())
         .copy(normalisedName = applicationNormalisedName)
 
       await(applicationRepository.save(application))
@@ -1131,51 +1131,43 @@ class ApplicationRepositoryISpec
     "retrieve the application with verificationCode when in pendingRequesterVerification state" in {
       val application = anApplicationDataForTest(
         ApplicationId.random,
-        state = pendingRequesterVerificationState("requestorEmail@example.com")
+        state = appStatePendingRequesterVerification
       )
       await(applicationRepository.save(application))
-      val retrieved   = await(
-        applicationRepository.fetchVerifiableUpliftBy(aVerificationCode)
-      )
+      val retrieved   = await(applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode))
       retrieved mustBe Some(application)
     }
 
-    "retrieve the application with verificationCode when in production state" in {
+    "retrieve the application with verificationCode when in pre production state" in {
       val application = anApplicationDataForTest(
         ApplicationId.random,
-        state = productionState("requestorEmail@example.com")
+        state = appStatePreProduction
       )
       await(applicationRepository.save(application))
-      val retrieved   = await(
-        applicationRepository.fetchVerifiableUpliftBy(aVerificationCode)
-      )
+      val retrieved   = await(applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode))
       retrieved mustBe Some(application)
     }
 
     "not retrieve the application with an unknown verificationCode" in {
       val application = anApplicationDataForTest(
         ApplicationId.random,
-        state = pendingRequesterVerificationState("requestorEmail@example.com")
+        state = appStatePendingRequesterVerification
       )
       await(applicationRepository.save(application))
-      val retrieved   = await(
-        applicationRepository.fetchVerifiableUpliftBy(
-          "aDifferentVerificationCode"
-        )
-      )
+      val retrieved   = await(applicationRepository.fetchVerifiableUpliftBy("aDifferentVerificationCode"))
       retrieved mustBe None
     }
 
     "not retrieve the application with verificationCode when in deleted state" in {
       val application = anApplicationDataForTest(
         ApplicationId.random,
-        state = pendingRequesterVerificationState("requestorEmail@example.com")
+        state = appStatePendingRequesterVerification
       )
       await(applicationRepository.save(application))
       await(applicationRepository.delete(application.id, instant))
 
       val retrieved = await(
-        applicationRepository.fetchVerifiableUpliftBy(aVerificationCode)
+        applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode)
       )
       retrieved mustBe None
     }
@@ -2019,7 +2011,7 @@ class ApplicationRepositoryISpec
         anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
           .copy(collaborators = Set(collaborator))
       val testApplication3 =
-        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = deletedState("user1"))
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = deletedState())
           .copy(collaborators = Set(collaborator))
 
       await(applicationRepository.save(testApplication1))
@@ -2047,7 +2039,7 @@ class ApplicationRepositoryISpec
         anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
           .copy(collaborators = Set(collaborator))
       val testApplication3 =
-        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = deletedState("user1"))
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = deletedState())
           .copy(collaborators = Set(collaborator))
 
       await(applicationRepository.save(testApplication1))
@@ -2075,7 +2067,7 @@ class ApplicationRepositoryISpec
 
       val prodApplication1   = anApplicationDataForTest(applicationId1)
         .copy(environment = productionEnv, collaborators = Set(collaborator))
-      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = deletedState("user2"))
+      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = deletedState())
         .copy(environment = productionEnv, collaborators = Set(collaborator))
       val sandboxApplication =
         anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"))
@@ -2115,7 +2107,7 @@ class ApplicationRepositoryISpec
 
       val prodApplication1   = anApplicationDataForTest(applicationId1)
         .copy(environment = productionEnv, collaborators = Set(collaborator))
-      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = deletedState("user"))
+      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = deletedState())
         .copy(environment = productionEnv, collaborators = Set(collaborator))
       val sandboxApplication =
         anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"))

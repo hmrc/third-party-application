@@ -45,7 +45,7 @@ class GatekeeperServiceSpec
     with CollaboratorTestData
     with FixedClock {
 
-  private val requestedByEmail = "john.smith@example.com"
+  private val requestedByEmail = appStateRequestByEmail
 
   private val bobTheGKUser = Actors.GatekeeperUser("bob")
 
@@ -63,7 +63,7 @@ class GatekeeperServiceSpec
 
   private def anApplicationData(
       applicationId: ApplicationId,
-      state: ApplicationState = productionState(requestedByEmail),
+      state: ApplicationState = productionState(),
       collaborators: Set[Collaborator] = Set(adminTwo)
     ) = {
     StoredApplication(
