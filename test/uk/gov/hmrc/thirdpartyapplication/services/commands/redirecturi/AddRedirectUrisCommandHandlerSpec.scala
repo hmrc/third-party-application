@@ -38,9 +38,9 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val originalUris     = List(RedirectUri.unsafeApply(untouchedUri.uri))
     val nonExistantUri   = RedirectUri.unsafeApply("https://otherurl.com/not-there")
 
-    val principalApp: StoredApplication = storedApp.copy(access = Access.Standard(originalUris))
+    val principalApp: StoredApplication = storedApp.withAccess(Access.Standard(originalUris))
     val subordinateApp                  = principalApp.inSandbox()
-    val nonStandardAccessApp            = principalApp.copy(access = Access.Privileged())
+    val nonStandardAccessApp            = principalApp.withAccess(Access.Privileged())
 
     val developerActor = Actors.AppCollaborator(developerCollaborator.emailAddress)
 
@@ -68,7 +68,7 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     "given a principal application" should {
       "succeed when application is standardAccess" in new Setup {
         val fourUris        = (1 to 4).map(i => RedirectUri.unsafeApply(s"https:/example$i.com")).toList
-        val appWithFourUris = storedApp.copy(access = Access.Standard(fourUris))
+        val appWithFourUris = storedApp.withAccess(Access.Standard(fourUris))
 
         val expectedUrisAfterChange = fourUris :+ toAddRedirectUri
         ApplicationRepoMock.UpdateRedirectUris.thenReturn(expectedUrisAfterChange)(appWithFourUris) // Dont need to test the repo here so just return any app
@@ -86,7 +86,7 @@ class AddRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
       "fail when we try to add a sixth URI" in new Setup {
         val fiveUris        = (1 to 5).map(i => RedirectUri.unsafeApply(s"https:/example$i.com")).toList
-        val appWithFiveUris = storedApp.copy(access = Access.Standard(fiveUris))
+        val appWithFiveUris = storedApp.withAccess(Access.Standard(fiveUris))
         checkFailsWith("Can have at most 5 redirect URIs") {
           val brokenCmd = cmdAsAdmin
           underTest.process(appWithFiveUris, brokenCmd)

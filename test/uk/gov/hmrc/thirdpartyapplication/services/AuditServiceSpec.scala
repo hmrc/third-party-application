@@ -71,7 +71,7 @@ class AuditServiceSpec
     List.empty
   )
 
-  val applicationData: StoredApplication = storedApp.copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+  val applicationData: StoredApplication = storedApp.withAccess(Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
   val instigator                         = applicationData.collaborators.head.userId
 
   def isSameDataEvent(expected: DataEvent) =
@@ -216,7 +216,7 @@ class AuditServiceSpec
       SubmissionsServiceMock.FetchLatest.thenReturn(declinedSubmission)
 
       val result = await(auditService.applyEvents(
-        appInTesting.copy(access =
+        appInTesting.withAccess(
           Access.Standard(importantSubmissionData =
             Some(testImportantSubmissionData.copy(termsOfUseAcceptances =
               List(TermsOfUseAcceptance(ResponsibleIndividual(FullName("dave"), LaxEmailAddress("a@b.com")), instant, submissionId, submissionInstance = 0))

@@ -1826,7 +1826,7 @@ class ApplicationRepositoryISpec
         PrivacyPolicyLocations.InDesktopSoftware,
         termsOfUseAcceptances = List()
       )
-      val application             = anApplicationDataForTest(applicationId).copy(access =
+      val application             = anApplicationDataForTest(applicationId).withAccess(
         Access.Standard(importantSubmissionData = Some(importantSubmissionData))
       )
       await(applicationRepository.save(application))
@@ -2204,7 +2204,7 @@ class ApplicationRepositoryISpec
         )
       )
     )
-    val app         = storedApp.copy(access = access)
+    val app         = storedApp.withAccess(access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateApplicationPrivacyPolicyLocation(applicationId, newLocation))
@@ -2219,7 +2219,7 @@ class ApplicationRepositoryISpec
     val oldUrl = "http://example.com/old"
     val newUrl = "http://example.com/new"
     val access = Access.Standard(List.empty, None, Some(oldUrl), Set.empty, None, None)
-    val app    = storedApp.copy(access = access)
+    val app    = storedApp.withAccess(access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateLegacyPrivacyPolicyUrl(applicationId, Some(newUrl)))
@@ -2244,7 +2244,7 @@ class ApplicationRepositoryISpec
         ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty, oldLocation, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
       )
     )
-    val app         = storedApp.copy(access = access)
+    val app         = storedApp.withAccess(access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateApplicationTermsAndConditionsLocation(applicationId, newLocation))
@@ -2259,7 +2259,7 @@ class ApplicationRepositoryISpec
     val oldUrl = "http://example.com/old"
     val newUrl = "http://example.com/new"
     val access = Access.Standard(List.empty, Some(oldUrl), None, Set.empty, None, None)
-    val app    = storedApp.copy(access = access)
+    val app    = storedApp.withAccess(access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateLegacyTermsAndConditionsUrl(applicationId, Some(newUrl)))
@@ -2274,7 +2274,7 @@ class ApplicationRepositoryISpec
     val importantSubmissionData =
       ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocations.InDesktopSoftware, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
     val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-    val app                     = storedApp.copy(access = access)
+    val app                     = storedApp.withAccess(access)
     app.state.name mustBe State.PRODUCTION
 
     await(applicationRepository.save(app))
@@ -2299,7 +2299,7 @@ class ApplicationRepositoryISpec
       List(TermsOfUseAcceptance(oldRi, instant, submissionId, submissionIndex))
     )
     val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-    val app                     = storedApp.copy(access = access)
+    val app                     = storedApp.withAccess(access)
     await(applicationRepository.save(app))
 
     val appWithUpdatedRI =
@@ -2347,7 +2347,7 @@ class ApplicationRepositoryISpec
       List(TermsOfUseAcceptance(oldRi, instant, submissionId, submissionIndex))
     )
     val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
-    val app                     = storedApp.copy(access = access)
+    val app                     = storedApp.withAccess(access)
     println(await(applicationRepository.save(app)))
 
     val appWithUpdatedRI = await(applicationRepository.updateApplicationChangeResponsibleIndividual(applicationId, riName, riEmail, instant, submissionId, submissionIndex))

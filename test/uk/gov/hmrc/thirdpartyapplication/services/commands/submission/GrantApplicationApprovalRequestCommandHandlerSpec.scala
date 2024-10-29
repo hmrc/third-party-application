@@ -139,7 +139,7 @@ class GrantApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBa
     "return an error if important submission data not found" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
-      val nonStandardApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
+      val nonStandardApp = app.withAccess(Access.Standard(List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith(s"No submission or important submission data found for application $applicationId") {
         underTest.process(nonStandardApp, GrantApplicationApprovalRequest(gkUserEmail, instant, None, None))

@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 
 class ClearSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  val app = subordinateApp.copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+  val app = subordinateApp.withAccess(Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
   trait Setup extends ApplicationRepositoryMockModule {
 

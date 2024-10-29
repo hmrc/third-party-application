@@ -37,7 +37,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val applicationData: StoredApplication = storedApp
     val subordinateApp                     = applicationData.inSandbox()
 
-    val nonStandardAccessApp = applicationData.copy(access = Access.Privileged())
+    val nonStandardAccessApp = applicationData.withAccess(Access.Privileged())
     val developerActor       = Actors.AppCollaborator(developerOne.emailAddress)
 
     val oldRedirectUris = List.empty

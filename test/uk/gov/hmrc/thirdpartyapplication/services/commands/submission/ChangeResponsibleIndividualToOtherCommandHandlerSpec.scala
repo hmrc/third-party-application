@@ -293,7 +293,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
     "return an error if the application is non-standard" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
-      val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
+      val nonStandardApp = app.withAccess(Access.Ropc(Set.empty))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
         underTest.process(nonStandardApp, ChangeResponsibleIndividualToOther(code, instant))
       }
@@ -301,7 +301,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
 
     "return an error if the application is old journey" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
-      val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = app.withAccess(Access.Standard(List.empty, None, None, Set.empty, None, None))
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
         underTest.process(oldJourneyApp, ChangeResponsibleIndividualToOther(code, instant))
       }

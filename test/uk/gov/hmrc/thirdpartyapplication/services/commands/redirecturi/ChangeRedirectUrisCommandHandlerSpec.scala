@@ -38,10 +38,10 @@ class ChangeRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val replacementUri                  = RedirectUri.unsafeApply("https://new-url.example.com/other-redirect")
     val originalUris                    = List(toBeReplacedRedirectUri, untouchedUri)
     val nonExistantUri                  = RedirectUri.unsafeApply("https://otherurl.com/not-there")
-    val principalApp: StoredApplication = storedApp.copy(access = Access.Standard(originalUris), collaborators = devAndAdminCollaborators)
+    val principalApp: StoredApplication = storedApp.withAccess(Access.Standard(originalUris)).withCollaborators(devAndAdminCollaborators)
     val subordinateApp                  = principalApp.inSandbox()
 
-    val nonStandardAccessApp = principalApp.copy(access = Access.Privileged())
+    val nonStandardAccessApp = principalApp.withAccess(Access.Privileged())
     val developerActor       = Actors.AppCollaborator(developerCollaborator.emailAddress)
 
     val timestamp  = FixedClock.instant

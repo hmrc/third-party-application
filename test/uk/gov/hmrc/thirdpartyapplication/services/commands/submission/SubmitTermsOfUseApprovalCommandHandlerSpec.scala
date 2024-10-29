@@ -208,7 +208,7 @@ class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec 
       TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(termsOfUseInvitation)
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
-      val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
+      val nonStandardApp = app.withAccess(Access.Ropc(Set.empty))
 
       checkFailsWith("App must have a STANDARD access type") {
         underTest.process(nonStandardApp, SubmitTermsOfUseApproval(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))

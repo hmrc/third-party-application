@@ -38,8 +38,8 @@ class ChangeApplicationSellResellOrDistributeCommandHandlerSpec extends CommandH
     val appAdminEmail             = "admin@example.com".toLaxEmail
     val oldSellResellOrDistribute = Some(SellResellOrDistribute("No"))
     val stdAccess                 = Access.Standard(sellResellOrDistribute = oldSellResellOrDistribute)
-    val standardApp               = storedApp.copy(access = stdAccess)
-    val privApp                   = storedApp.copy(access = Access.Privileged())
+    val standardApp               = storedApp.withAccess(stdAccess)
+    val privApp                   = storedApp.withAccess(Access.Privileged())
 
     val ts = FixedClock.instant
 

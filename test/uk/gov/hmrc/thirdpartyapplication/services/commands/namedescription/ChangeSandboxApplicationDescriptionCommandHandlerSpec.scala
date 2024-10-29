@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 
 class ChangeSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  val app = subordinateApp.copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+  val app = subordinateApp.withAccess(Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
   trait Setup extends ApplicationRepositoryMockModule {
 
@@ -78,7 +78,7 @@ class ChangeSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandl
     }
 
     "create correct events for a valid request with a priv app" in new Setup {
-      val priviledgedApp = app.copy(access = Access.Privileged())
+      val priviledgedApp = app.withAccess(Access.Privileged())
       ApplicationRepoMock.UpdateDescription.succeedsFor(Some(newDescription)) // unmodified
 
       checkSuccessResult(developerActor) {

@@ -37,7 +37,7 @@ class ChangeSandboxApplicationTermsnAndConditonsUrlCommandHandlerSpec extends Co
 
     val oldValue  = "some url"
     val newValue  = "new url"
-    val app       = subordinateApp.copy(access = Access.Standard(termsAndConditionsUrl = Some(oldValue)))
+    val app       = subordinateApp.withAccess(Access.Standard(termsAndConditionsUrl = Some(oldValue)))
     val requester = "requester"
 
     val userId = adminOne.userId
@@ -76,7 +76,7 @@ class ChangeSandboxApplicationTermsnAndConditonsUrlCommandHandlerSpec extends Co
     }
 
     "returns an error if the app is not a STANDARD app" in new Setup {
-      val priviledgedApp = app.copy(access = Access.Privileged())
+      val priviledgedApp = app.withAccess(Access.Privileged())
 
       checkFailsWith("App must have a STANDARD access type") {
         underTest.process(priviledgedApp, update)

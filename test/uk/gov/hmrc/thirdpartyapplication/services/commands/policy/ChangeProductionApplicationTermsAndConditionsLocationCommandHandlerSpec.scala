@@ -127,7 +127,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
     "return an error if application is non-standard" in new Setup {
       checkFailsWith("App must have a STANDARD access type") {
-        underTest.process(newJourneyApp.copy(access = Access.Privileged()), update)
+        underTest.process(newJourneyApp.withAccess(Access.Privileged()), update)
       }
     }
   }
@@ -159,7 +159,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
     "return an error if application is non-standard" in new Setup {
       checkFailsWith("App must have a STANDARD access type") {
-        underTest.process(oldJourneyApp.copy(access = Access.Privileged()), update)
+        underTest.process(oldJourneyApp.withAccess(Access.Privileged()), update)
       }
     }
   }

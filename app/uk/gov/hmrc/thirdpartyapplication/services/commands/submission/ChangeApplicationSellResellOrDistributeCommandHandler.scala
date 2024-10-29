@@ -68,7 +68,7 @@ class ChangeApplicationSellResellOrDistributeCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: ChangeApplicationSellResellOrDistribute): AppCmdResultT = {
 
     def updateWithSellResellOrDistribute(applicationData: StoredApplication, newSellResellOrDistribute: SellResellOrDistribute): StoredApplication =
-      applicationData.copy(access = getStandardAccess(applicationData).copy(sellResellOrDistribute = Some(newSellResellOrDistribute)))
+      applicationData.withAccess(getStandardAccess(applicationData).copy(sellResellOrDistribute = Some(newSellResellOrDistribute)))
 
     for {
       validateResult           <- E.fromValidated(validate(app))

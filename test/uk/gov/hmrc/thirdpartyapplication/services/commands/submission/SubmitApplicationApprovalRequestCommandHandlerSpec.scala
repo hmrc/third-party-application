@@ -167,7 +167,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       namingServiceReturns(ValidName)
-      val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
+      val nonStandardApp = app.withAccess(Access.Ropc(Set.empty))
 
       checkFailsWith("App must have a STANDARD access type") {
         underTest.process(nonStandardApp, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))

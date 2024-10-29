@@ -38,7 +38,7 @@ class RemoveSandboxApplicationTermsAndConditionsCommandHandlerSpec extends Comma
 
     val oldValue = "Old Url"
     val newValue = "New Url"
-    val app      = subordinateApp.copy(access = Access.Standard(termsAndConditionsUrl = Some(oldValue)))
+    val app      = subordinateApp.withAccess(Access.Standard(termsAndConditionsUrl = Some(oldValue)))
 
     val requester = "requester"
 
@@ -77,7 +77,7 @@ class RemoveSandboxApplicationTermsAndConditionsCommandHandlerSpec extends Comma
     }
 
     "create correct events for a valid request with a priv app" in new Setup {
-      val priviledgedApp = app.copy(access = Access.Privileged())
+      val priviledgedApp = app.withAccess(Access.Privileged())
 
       checkFailsWith("App must have a STANDARD access type") {
         underTest.process(priviledgedApp, update)
@@ -107,7 +107,7 @@ class RemoveSandboxApplicationTermsAndConditionsCommandHandlerSpec extends Comma
     }
 
     "return an error if the application already has an empty T&C url" in new Setup {
-      val appWithNoExistingUrl = subordinateApp.copy(access = Access.Standard(termsAndConditionsUrl = None))
+      val appWithNoExistingUrl = subordinateApp.withAccess(Access.Standard(termsAndConditionsUrl = None))
 
       checkFailsWith("Cannot remove a Terms and Conditions URL that is already empty") {
         underTest.process(appWithNoExistingUrl, update)

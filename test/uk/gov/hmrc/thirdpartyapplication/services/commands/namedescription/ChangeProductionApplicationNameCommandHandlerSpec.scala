@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 
 class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  val app = principalApp.copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+  val app = principalApp.withAccess(Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftNamingServiceMockModule {
 
@@ -83,7 +83,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
 
     "create correct events for a valid request with a priv app" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val priviledgedApp = app.copy(access = Access.Privileged())
+      val priviledgedApp = app.withAccess(Access.Privileged())
       ApplicationRepoMock.UpdateApplicationName.thenReturn(priviledgedApp) // unmodified
 
       checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {

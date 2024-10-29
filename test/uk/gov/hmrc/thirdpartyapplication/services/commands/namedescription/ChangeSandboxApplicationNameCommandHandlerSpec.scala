@@ -84,7 +84,7 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
 
     "create correct events for a valid request with a priv app" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val priviledgedApp = app.copy(access = Access.Privileged())
+      val priviledgedApp = app.withAccess(Access.Privileged())
       ApplicationRepoMock.UpdateApplicationName.thenReturn(priviledgedApp) // unmodified
 
       checkSuccessResult(developerActor) {

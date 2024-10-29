@@ -682,9 +682,9 @@ class ApplicationServiceSpec
     "fetch all applications for a given collaborator user id" in new Setup {
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)("api1".asIdentifier, "api2".asIdentifier)
       val userId                                       = UserId.random
-      val standardApplicationData: StoredApplication   = storedApp.copy(access = Access.Standard())
-      val privilegedApplicationData: StoredApplication = storedApp.copy(access = Access.Privileged())
-      val ropcApplicationData: StoredApplication       = storedApp.copy(access = Access.Ropc())
+      val standardApplicationData: StoredApplication   = storedApp.withAccess(Access.Standard())
+      val privilegedApplicationData: StoredApplication = storedApp.withAccess(Access.Privileged())
+      val ropcApplicationData: StoredApplication       = storedApp.withAccess(Access.Ropc())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
@@ -698,9 +698,9 @@ class ApplicationServiceSpec
   "fetchAllForCollaborators" should {
     "fetch all applications for a given collaborator user id" in new Setup {
       val userId                                       = UserId.random
-      val standardApplicationData: StoredApplication   = storedApp.copy(access = Access.Standard())
-      val privilegedApplicationData: StoredApplication = storedApp.copy(access = Access.Privileged())
-      val ropcApplicationData: StoredApplication       = storedApp.copy(access = Access.Ropc())
+      val standardApplicationData: StoredApplication   = storedApp.withAccess(Access.Standard())
+      val privilegedApplicationData: StoredApplication = storedApp.withAccess(Access.Privileged())
+      val ropcApplicationData: StoredApplication       = storedApp.withAccess(Access.Ropc())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
@@ -713,7 +713,7 @@ class ApplicationServiceSpec
       val userId2        = UserId.random
       val applicationId2 = ApplicationId.random
 
-      val standardApplicationData1: StoredApplication = storedApp.copy(access = Access.Standard())
+      val standardApplicationData1: StoredApplication = storedApp.withAccess(Access.Standard())
       val standardApplicationData2: StoredApplication = storedApp.copy(id = applicationId2, access = Access.Standard())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId1, false)(standardApplicationData1)
@@ -728,7 +728,7 @@ class ApplicationServiceSpec
       val userId2        = UserId.random
       val applicationId2 = ApplicationId.random
 
-      val standardApplicationData1: StoredApplication = storedApp.copy(access = Access.Standard())
+      val standardApplicationData1: StoredApplication = storedApp.withAccess(Access.Standard())
       val standardApplicationData2: StoredApplication = storedApp.copy(id = applicationId2, access = Access.Standard())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId1, false)(standardApplicationData1)

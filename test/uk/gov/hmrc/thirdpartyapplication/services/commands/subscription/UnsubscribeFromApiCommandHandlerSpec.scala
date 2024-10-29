@@ -79,8 +79,8 @@ class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with A
     }
 
     private def testWithPrivilegedAndRopc(applicationId: ApplicationId, testBlock: StoredApplication => Unit): Unit = {
-      testBlock(storedApp.copy(access = Access.Privileged(scopes = Set("scope1"))))
-      testBlock(storedApp.copy(access = Access.Ropc()))
+      testBlock(storedApp.withAccess(Access.Privileged(scopes = Set("scope1"))))
+      testBlock(storedApp.withAccess(Access.Ropc()))
     }
   }
 

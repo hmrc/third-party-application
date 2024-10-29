@@ -38,7 +38,7 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandlerSpec extends Command
 
     val oldValue = "Old Url"
     val newValue = "New Url"
-    val app      = subordinateApp.copy(access = Access.Standard(privacyPolicyUrl = Some(oldValue)))
+    val app      = subordinateApp.withAccess(Access.Standard(privacyPolicyUrl = Some(oldValue)))
 
     val requester = "requester"
 
@@ -77,7 +77,7 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandlerSpec extends Command
     }
 
     "create correct events for a valid request with a priv app" in new Setup {
-      val priviledgedApp = app.copy(access = Access.Privileged())
+      val priviledgedApp = app.withAccess(Access.Privileged())
 
       checkFailsWith("App must have a STANDARD access type") {
         underTest.process(priviledgedApp, update)
@@ -107,7 +107,7 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandlerSpec extends Command
     }
 
     "return an error if the application already has an empty Privacy Policy Url" in new Setup {
-      val appWithNoExistingUrl = subordinateApp.copy(access = Access.Standard(privacyPolicyUrl = None))
+      val appWithNoExistingUrl = subordinateApp.withAccess(Access.Standard(privacyPolicyUrl = None))
 
       checkFailsWith("Cannot remove a Privacy Policy URL that is already empty") {
         underTest.process(appWithNoExistingUrl, update)

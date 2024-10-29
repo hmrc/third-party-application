@@ -96,7 +96,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
+      val nonStandardApp = app.withAccess(Access.Ropc(Set.empty))
 
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(nonStandardApp, ResendRequesterEmailVerification(gatekeeperUser, instant))
@@ -105,7 +105,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = app.withAccess(Access.Standard(List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(oldJourneyApp, ResendRequesterEmailVerification(gatekeeperUser, instant))

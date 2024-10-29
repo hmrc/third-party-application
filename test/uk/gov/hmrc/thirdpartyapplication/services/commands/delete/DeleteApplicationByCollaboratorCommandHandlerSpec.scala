@@ -105,7 +105,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
     }
 
     "return an error when app is NOT in testing state" in new Setup {
-      val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
+      val nonStandardApp = app.withAccess(Access.Ropc(Set.empty))
 
       checkFailsWith("App must have a STANDARD access type") {
         underTest.process(nonStandardApp, cmd)
