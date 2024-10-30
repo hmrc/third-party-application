@@ -1574,19 +1574,21 @@ class ApplicationRepositoryISpec
 
       val application1 = aNamedApplicationData(
         id = ApplicationId.random,
-        name = "organisations/trusts",
         prodClientId = generateClientId
       )
+      .withName(ApplicationName("organisations/trusts"))
+
       val application2 = aNamedApplicationData(
         id = ApplicationId.random,
-        name = "application.com",
         prodClientId = generateClientId
       )
+      .withName(ApplicationName("application.com"))
+
       val application3 = aNamedApplicationData(
         id = ApplicationId.random,
-        name = "Get) Vat Done (Fast)",
         prodClientId = generateClientId
       )
+      .withName(ApplicationName("Get) Vat Done (Fast)"))
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))

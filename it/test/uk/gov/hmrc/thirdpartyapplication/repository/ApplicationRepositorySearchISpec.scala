@@ -392,9 +392,10 @@ class ApplicationRepositorySearchISpec
 
       val application            = aNamedApplicationData(
         applicationId,
-        applicationName,
         prodClientId = generateClientId
       )
+      .withName(ApplicationName(applicationName))
+
       val randomOtherApplication = anApplicationDataForTest(
         ApplicationId.random,
         prodClientId = generateClientId
@@ -424,18 +425,20 @@ class ApplicationRepositorySearchISpec
 
       val application              = aNamedApplicationData(
         applicationId,
-        applicationName,
         prodClientId = generateClientId
       )
+      .withName(ApplicationName(applicationName))
+
       val randomOtherApplication   = anApplicationDataForTest(
         ApplicationId.random,
         prodClientId = generateClientId
       )
       val randomDeletedApplication = aNamedApplicationData(
         ApplicationId.random,
-        applicationName,
         prodClientId = generateClientId
       )
+      .withName(ApplicationName(applicationName))
+
       await(applicationRepository.save(randomDeletedApplication))
       await(applicationRepository.delete(randomDeletedApplication.id, instant))
       await(applicationRepository.save(application))
@@ -463,18 +466,20 @@ class ApplicationRepositorySearchISpec
 
       val application              = aNamedApplicationData(
         applicationId,
-        applicationName,
         prodClientId = generateClientId
       )
+      .withName(ApplicationName(applicationName))
+
       val randomOtherApplication   = anApplicationDataForTest(
         ApplicationId.random,
         prodClientId = generateClientId
       )
       val randomDeletedApplication = aNamedApplicationData(
         ApplicationId.random,
-        applicationName,
         prodClientId = generateClientId
       )
+      .withName(ApplicationName(applicationName))
+      
       await(applicationRepository.save(randomDeletedApplication))
       await(applicationRepository.delete(randomDeletedApplication.id, instant))
       await(applicationRepository.save(application))
@@ -505,9 +510,10 @@ class ApplicationRepositorySearchISpec
 
       val application            = aNamedApplicationData(
         applicationId,
-        applicationName,
         prodClientId = clientId
       )
+      .withName(ApplicationName(applicationName))
+
       val randomOtherApplication = anApplicationDataForTest(
         ApplicationId.random,
         prodClientId = generateClientId
@@ -538,16 +544,17 @@ class ApplicationRepositorySearchISpec
       val standardApplication =
         aNamedApplicationData(
           id = ApplicationId.random,
-          applicationName,
           prodClientId = generateClientId
         )
+        .withName(ApplicationName(applicationName))
+
       val ropcApplication     =
         aNamedApplicationData(
           id = ApplicationId.random,
-          applicationName,
-          prodClientId = generateClientId,
-          access = Access.Ropc()
+          prodClientId = generateClientId
         )
+        .withName(ApplicationName(applicationName))
+        .withAccess(Access.Ropc())
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
@@ -572,9 +579,10 @@ class ApplicationRepositorySearchISpec
 
       val application            = aNamedApplicationData(
         applicationId,
-        "TEST APPLICATION",
         prodClientId = generateClientId
       )
+      .withName(ApplicationName("TEST APPLICATION"))
+
       val randomOtherApplication = anApplicationDataForTest(
         ApplicationId.random,
         prodClientId = generateClientId
@@ -927,21 +935,23 @@ class ApplicationRepositorySearchISpec
       val firstApplication     =
         aNamedApplicationData(
           id = ApplicationId.random,
-          name = firstName,
           prodClientId = generateClientId
         )
+        .withName(ApplicationName(firstName))
+
       val secondApplication    =
         aNamedApplicationData(
           id = ApplicationId.random,
-          name = secondName,
           prodClientId = generateClientId
-        )
+          )
+          .withName(ApplicationName(secondName))
+
       val lowerCaseApplication =
         aNamedApplicationData(
           id = ApplicationId.random,
-          name = lowerCaseName,
           prodClientId = generateClientId
         )
+        .withName(ApplicationName(lowerCaseName))
 
       await(applicationRepository.save(secondApplication))
       await(applicationRepository.save(firstApplication))
@@ -967,15 +977,15 @@ class ApplicationRepositorySearchISpec
       val firstApplication  =
         aNamedApplicationData(
           id = ApplicationId.random,
-          name = firstName,
           prodClientId = generateClientId
         )
+        .withName(ApplicationName(firstName))
       val secondApplication =
         aNamedApplicationData(
           id = ApplicationId.random,
-          name = secondName,
           prodClientId = generateClientId
         )
+        .withName(ApplicationName(secondName))
 
       await(applicationRepository.save(firstApplication))
       await(applicationRepository.save(secondApplication))

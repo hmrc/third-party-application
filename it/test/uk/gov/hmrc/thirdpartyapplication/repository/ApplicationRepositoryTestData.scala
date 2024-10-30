@@ -47,7 +47,6 @@ trait ApplicationRepositoryTestData extends StoredApplicationFixtures with Colla
     anApplicationDataForTest(
       id = ApplicationId.random,
       prodClientId = generateClientId,
-      allowAutoDelete = true
     ).withState(
       ApplicationState(
         state,
@@ -69,55 +68,41 @@ trait ApplicationRepositoryTestData extends StoredApplicationFixtures with Colla
   def anApplicationDataForTest(
       id: ApplicationId,
       prodClientId: ClientId = ClientId("aaa"),
-      // checkInformation: Option[CheckInformation] = None,
       clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
-      allowAutoDelete: Boolean = true
     ): StoredApplication = {
 
+    // aNamedApplicationData(
     aNamedApplicationData(
       id,
-      s"myApp-${id.value}",
       prodClientId,
-      appStateTesting,
-      Access.Standard(),
-      Set[Collaborator]("user@example.com".admin()),
-      None,                                          // checkInformation,
       clientSecrets,
-      defaultGrantLength,
-      allowAutoDelete
     )
   }
 
   def aNamedApplicationData(
       id: ApplicationId,
-      name: String,
       prodClientId: ClientId = ClientId("aaa"),
-      state: ApplicationState = appStateTesting,
-      access: Access = Access.Standard(),
-      users: Set[Collaborator] = Set("user@example.com".admin()),
-      checkInformation: Option[CheckInformation] = None,
       clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
-      refreshTokensAvailableFor: Period = defaultGrantLength,
-      allowAutoDelete: Boolean = true
+      // refreshTokensAvailableFor: Period = defaultGrantLength,
     ): StoredApplication = {
 
     StoredApplication(
       id,
-      ApplicationName(name),
-      name.toLowerCase,
-      users,
+      ApplicationName(s"MyApp-$id"),
+      s"MyApp-$id".toLowerCase(),
+      Set("user@example.com".admin()),
       Some(CoreApplicationData.appDescription),
       "myapplication",
       ApplicationTokens(
         StoredToken(prodClientId, generateAccessToken, clientSecrets)
       ),
-      state,
-      access,
+      appStateTesting,
+      Access.Standard(),
       instant,
       Some(instant),
-      refreshTokensAvailableFor = refreshTokensAvailableFor,
-      checkInformation = checkInformation,
-      allowAutoDelete = allowAutoDelete
+      refreshTokensAvailableFor = defaultGrantLength, //refreshTokensAvailableFor,
+      checkInformation = None,
+      allowAutoDelete = true
     )
   }
 
