@@ -1572,23 +1572,23 @@ class ApplicationRepositoryISpec
       val api2Version = "api-2-version-2"
       val api3Version = "api-3-version-3"
 
-      val application1 = aNamedApplicationData(
+      val application1 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
       )
-      .withName(ApplicationName("organisations/trusts"))
+        .withName(ApplicationName("organisations/trusts"))
 
-      val application2 = aNamedApplicationData(
+      val application2 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
       )
-      .withName(ApplicationName("application.com"))
+        .withName(ApplicationName("application.com"))
 
-      val application3 = aNamedApplicationData(
+      val application3 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
       )
-      .withName(ApplicationName("Get) Vat Done (Fast)"))
+        .withName(ApplicationName("Get) Vat Done (Fast)"))
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.{Instant, Period}
+import java.time.Instant
 import scala.util.Random.nextString
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
@@ -46,7 +46,7 @@ trait ApplicationRepositoryTestData extends StoredApplicationFixtures with Colla
     ): StoredApplication =
     anApplicationDataForTest(
       id = ApplicationId.random,
-      prodClientId = generateClientId,
+      prodClientId = generateClientId
     ).withState(
       ApplicationState(
         state,
@@ -68,22 +68,7 @@ trait ApplicationRepositoryTestData extends StoredApplicationFixtures with Colla
   def anApplicationDataForTest(
       id: ApplicationId,
       prodClientId: ClientId = ClientId("aaa"),
-      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
-    ): StoredApplication = {
-
-    // aNamedApplicationData(
-    aNamedApplicationData(
-      id,
-      prodClientId,
-      clientSecrets,
-    )
-  }
-
-  def aNamedApplicationData(
-      id: ApplicationId,
-      prodClientId: ClientId = ClientId("aaa"),
-      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
-      // refreshTokensAvailableFor: Period = defaultGrantLength,
+      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret"))
     ): StoredApplication = {
 
     StoredApplication(
@@ -100,7 +85,7 @@ trait ApplicationRepositoryTestData extends StoredApplicationFixtures with Colla
       Access.Standard(),
       instant,
       Some(instant),
-      refreshTokensAvailableFor = defaultGrantLength, //refreshTokensAvailableFor,
+      refreshTokensAvailableFor = defaultGrantLength,
       checkInformation = None,
       allowAutoDelete = true
     )

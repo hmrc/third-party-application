@@ -361,10 +361,10 @@ class SubscriptionRepositoryISpec
       checkInformation: Option[CheckInformation] = None
     ): StoredApplication = {
 
-    aNamedApplicationData(id, s"myApp-${id.value}", clientId, state, access, user, checkInformation)
+    anApplicationDataForTest(id, s"myApp-${id.value}", clientId, state, access, user, checkInformation)
   }
 
-  def aNamedApplicationData(
+  def anApplicationDataForTest(
       id: ApplicationId,
       name: String,
       clientId: ClientId = ClientId("aaa"),
