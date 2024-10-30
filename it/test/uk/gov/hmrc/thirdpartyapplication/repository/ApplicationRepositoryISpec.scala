@@ -314,12 +314,13 @@ class ApplicationRepositoryISpec
         applicationRepository.save(
           anApplicationDataForTest(
             applicationId,
-            ClientId("aaa"),
-            appStateProduction
-          ).copy(
-            rateLimitTier = Some(RateLimitTier.BRONZE),
-            lastAccess = Some(instant)
+            ClientId("aaa")
           )
+            .withState(appStateProduction)
+            .copy(
+              rateLimitTier = Some(RateLimitTier.BRONZE),
+              lastAccess = Some(instant)
+            )
         )
       )
 
@@ -339,9 +340,10 @@ class ApplicationRepositoryISpec
         applicationRepository.save(
           anApplicationDataForTest(
             applicationId,
-            ClientId("aaa"),
-            refreshTokensAvailableFor = newGrantLength
+            ClientId("aaa")
           )
+            .withState(appStateProduction)
+            .copy(refreshTokensAvailableFor = newGrantLength)
         )
       )
 
@@ -355,9 +357,10 @@ class ApplicationRepositoryISpec
         applicationRepository.save(
           anApplicationDataForTest(
             applicationId,
-            ClientId("aaa"),
-            appStateProduction
-          ).copy(rateLimitTier = None)
+            ClientId("aaa")
+          )
+            .withState(appStateProduction)
+            .copy(rateLimitTier = None)
         )
       )
 
@@ -434,12 +437,10 @@ class ApplicationRepositoryISpec
       val application =
         anApplicationDataForTest(
           applicationId,
-          clientId,
-          appStateProduction
+          clientId
         )
-          .copy(lastAccess =
-            Some(instant.minus(Duration.ofDays(20)))
-          ) // scalastyle:ignore magic.number
+          .withState(appStateProduction)
+          .copy(lastAccess = Some(instant.minus(Duration.ofDays(20)))) // scalastyle:ignore magic.number
 
       await(applicationRepository.save(application))
       val retrieved =
@@ -453,13 +454,11 @@ class ApplicationRepositoryISpec
       val application =
         anApplicationDataForTest(
           applicationId,
-          clientId,
-          appStateProduction,
-          refreshTokensAvailableFor = newGrantLength
+          clientId
         )
-          .copy(lastAccess =
-            Some(instant.minus(Duration.ofDays(20)))
-          ) // scalastyle:ignore magic.number
+          .withState(appStateProduction)
+          .copy(refreshTokensAvailableFor = newGrantLength)
+      // scalastyle:ignore magic.number
 
       await(applicationRepository.save(application))
       val retrieved =
@@ -473,13 +472,10 @@ class ApplicationRepositoryISpec
     "update the lastAccess and lastAccessTokenUsage properties" in {
       val application =
         anApplicationDataForTest(
-          applicationId,
-          ClientId("aaa"),
-          appStateProduction
-        )
-          .copy(lastAccess =
-            Some(instant.minus(Duration.ofDays(20)))
-          ) // scalastyle:ignore magic.number
+          applicationId
+          // ClientId("aaa"),
+        ).withState(appStateProduction)
+          .copy(lastAccess = Some(instant.minus(Duration.ofDays(20)))) // scalastyle:ignore magic.number
 
       application.tokens.production.lastAccessTokenUsage mustBe None
 
@@ -497,11 +493,11 @@ class ApplicationRepositoryISpec
 
   "recordClientSecretUsage" should {
     "create a lastAccess property for client secret if it does not already exist" in {
-      val application             = anApplicationDataForTest(
+      val application = anApplicationDataForTest(
         applicationId,
-        ClientId("aaa"),
-        appStateProduction
-      )
+        ClientId("aaa")
+      ).withState(appStateProduction)
+
       val generatedClientSecretId =
         application.tokens.production.clientSecrets.head.id
 
@@ -538,9 +534,10 @@ class ApplicationRepositoryISpec
 
       val application             = anApplicationDataForTest(
         applicationId,
-        ClientId("aaa"),
-        appStateProduction
-      ).copy(tokens = applicationTokens)
+        ClientId("aaa")
+      )
+        .withState(appStateProduction)
+        .copy(tokens = applicationTokens)
       val generatedClientSecretId =
         application.tokens.production.clientSecrets.head.id
 
@@ -587,9 +584,10 @@ class ApplicationRepositoryISpec
         )
       val application       = anApplicationDataForTest(
         applicationId,
-        ClientId("aaa"),
-        appStateProduction
-      ).copy(tokens = applicationTokens)
+        ClientId("aaa")
+      )
+        .withState(appStateProduction)
+        .copy(tokens = applicationTokens)
 
       await(applicationRepository.save(application))
 
@@ -619,14 +617,15 @@ class ApplicationRepositoryISpec
     "retrieve the application for a given client id when it has a matching client id" in {
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
-        ClientId("aaa"),
-        appStateProduction
+        ClientId("aaa")
       )
+        .withState(appStateProduction)
+
       val application2 = anApplicationDataForTest(
         ApplicationId.random,
-        ClientId("zzz"),
-        appStateProduction
+        ClientId("zzz")
       )
+        .withState(appStateProduction)
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -645,18 +644,17 @@ class ApplicationRepositoryISpec
       val grantLength2 = GrantLength.ONE_YEAR.period
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
-        ClientId("aaa"),
-        appStateProduction,
-        access = Access.Standard(),
-        grantLength1
+        ClientId("aaa")
       )
+        .withState(appStateProduction)
+        .copy(refreshTokensAvailableFor = grantLength1)
+
       val application2 = anApplicationDataForTest(
         ApplicationId.random,
-        ClientId("zzz"),
-        appStateProduction,
-        access = Access.Standard(),
-        grantLength2
+        ClientId("zzz")
       )
+        .withState(appStateProduction)
+        .copy(refreshTokensAvailableFor = grantLength2)
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -679,9 +677,9 @@ class ApplicationRepositoryISpec
     "do not retrieve the application for a given client id when it has a matching client id but is deleted" in {
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
-        ClientId("aaa"),
-        appStateDeleted
+        ClientId("aaa")
       )
+        .withState(appStateDeleted)
 
       await(applicationRepository.save(application1))
 
@@ -700,14 +698,15 @@ class ApplicationRepositoryISpec
     "retrieve the application when it is matched for access token" in {
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
-        ClientId("aaa"),
-        appStateProduction
+        ClientId("aaa")
       )
+        .withState(appStateProduction)
+
       val application2 = anApplicationDataForTest(
         ApplicationId.random,
-        ClientId("zzz"),
-        appStateProduction
+        ClientId("zzz")
       )
+        .withState(appStateProduction)
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -724,9 +723,9 @@ class ApplicationRepositoryISpec
     "do not retrieve the application when it is matched for access token but is deleted" in {
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
-        ClientId("aaa"),
-        appStateDeleted
+        ClientId("aaa")
       )
+        .withState(appStateDeleted)
 
       await(applicationRepository.save(application1))
 
@@ -752,9 +751,9 @@ class ApplicationRepositoryISpec
       )
       val application3 = anApplicationDataForTest(
         id = ApplicationId.random,
-        prodClientId = generateClientId,
-        appStateDeleted
+        prodClientId = generateClientId
       )
+        .withState(appStateDeleted)
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -775,24 +774,27 @@ class ApplicationRepositoryISpec
       )
       val application2 = anApplicationDataForTest(
         id = ApplicationId.random,
-        prodClientId = generateClientId,
-        state = appStatePendingRequesterVerification
+        prodClientId = generateClientId
       )
+        .withState(appStatePendingRequesterVerification)
+
       val application3 = anApplicationDataForTest(
         id = ApplicationId.random,
-        prodClientId = generateClientId,
-        state = appStateProduction
+        prodClientId = generateClientId
       )
+        .withState(appStateProduction)
+
       val application4 = anApplicationDataForTest(
         id = ApplicationId.random,
-        prodClientId = generateClientId,
-        state = appStatePendingRequesterVerification
+        prodClientId = generateClientId
       )
+        .withState(appStatePendingRequesterVerification)
+
       val application5 = anApplicationDataForTest(
         id = ApplicationId.random,
-        prodClientId = generateClientId,
-        state = appStateDeleted
+        prodClientId = generateClientId
       )
+        .withState(appStateDeleted)
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -811,32 +813,36 @@ class ApplicationRepositoryISpec
 
     "not return Access.Privileged applications" in {
       val application1 = anApplicationDataForTest(
-        ApplicationId.random,
-        state = appStateProduction,
-        access = Access.Privileged()
+        ApplicationId.random
       )
+        .withState(appStateProduction)
+        .withAccess(Access.Privileged())
+
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
     }
 
     "not return ROPC applications" in {
       val application1 = anApplicationDataForTest(
-        ApplicationId.random,
-        state = appStateProduction,
-        access = Access.Ropc()
+        ApplicationId.random
       )
+        .withState(appStateProduction)
+        .withAccess(Access.Ropc())
+
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
     }
 
     "return empty list when all apps in TESTING state" in {
       val application1 = anApplicationDataForTest(ApplicationId.random)
+
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
     }
 
     "return empty list when all apps in DELETED state" in {
-      val application1 = anApplicationDataForTest(ApplicationId.random, state = appStateDeleted)
+      val application1 = anApplicationDataForTest(ApplicationId.random).withState(appStateDeleted)
+
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
     }
@@ -876,7 +882,8 @@ class ApplicationRepositoryISpec
       val applicationName           = "appName"
       val applicationNormalisedName = "appname"
 
-      val application = anApplicationDataForTest(id = ApplicationId.random, state = appStateDeleted)
+      val application = anApplicationDataForTest(id = ApplicationId.random)
+        .withState(appStateDeleted)
         .copy(normalisedName = applicationNormalisedName)
 
       await(applicationRepository.save(application))
@@ -909,14 +916,8 @@ class ApplicationRepositoryISpec
     "retrieve the only application with PENDING_REQUESTER_VERIFICATION state that have been updated before the expiryDay" in {
       val applications = Seq(
         createAppWithStatusUpdatedOn(State.TESTING, expiryOnTheDayBefore),
-        createAppWithStatusUpdatedOn(
-          State.PENDING_GATEKEEPER_APPROVAL,
-          expiryOnTheDayBefore
-        ),
-        createAppWithStatusUpdatedOn(
-          State.PENDING_REQUESTER_VERIFICATION,
-          expiryOnTheDayBefore
-        ),
+        createAppWithStatusUpdatedOn(State.PENDING_GATEKEEPER_APPROVAL, expiryOnTheDayBefore),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, expiryOnTheDayBefore),
         createAppWithStatusUpdatedOn(State.PRODUCTION, expiryOnTheDayBefore)
       )
       applications.foreach(application =>
@@ -1022,11 +1023,11 @@ class ApplicationRepositoryISpec
 
     "retrieve the only application with TESTING state that have been updated before the expiryDay" in {
       val applications = Seq(
-        createAppWithStatusUpdatedOn(State.TESTING, currentDate, true),
-        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday, true),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday, true),
-        createAppWithStatusUpdatedOn(State.TESTING, lastWeek, false),
-        createAppWithStatusUpdatedOn(State.TESTING, lastWeek, true)
+        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, lastWeek).copy(allowAutoDelete = false),
+        createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
       )
       applications.foreach(application =>
         await(applicationRepository.save(application))
@@ -1070,11 +1071,11 @@ class ApplicationRepositoryISpec
 
     "retrieve the only application with TESTING state that have been updated before the expiryDay" in {
       val applications = Seq(
-        createAppWithStatusUpdatedOn(State.TESTING, currentDate, true),
-        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday, true),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday, true),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday, false),
-        createAppWithStatusUpdatedOn(State.TESTING, lastWeek, true)
+        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday).copy(allowAutoDelete = false),
+        createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
       )
       applications.foreach(application =>
         await(applicationRepository.save(application))
@@ -1096,13 +1097,13 @@ class ApplicationRepositoryISpec
     }
 
     "retrieve the only application with TESTING state that have been updated before the expiryDay and don't return already notified ones" in {
-      val app4 = createAppWithStatusUpdatedOn(State.TESTING, lastWeek, true)
+      val app4 = createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
 
       val applications = Seq(
-        createAppWithStatusUpdatedOn(State.TESTING, currentDate, true),
-        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday, true),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday, false),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday, true),
+        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday).copy(allowAutoDelete = false),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
         app4
       )
       applications.foreach(application =>
@@ -1130,39 +1131,43 @@ class ApplicationRepositoryISpec
 
     "retrieve the application with verificationCode when in pendingRequesterVerification state" in {
       val application = anApplicationDataForTest(
-        ApplicationId.random,
-        state = appStatePendingRequesterVerification
+        ApplicationId.random
       )
+        .withState(appStatePendingRequesterVerification)
+
       await(applicationRepository.save(application))
-      val retrieved   = await(applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode))
+      val retrieved = await(applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode))
       retrieved mustBe Some(application)
     }
 
     "retrieve the application with verificationCode when in pre production state" in {
       val application = anApplicationDataForTest(
-        ApplicationId.random,
-        state = appStatePreProduction
+        ApplicationId.random
       )
+        .withState(appStatePreProduction)
+
       await(applicationRepository.save(application))
-      val retrieved   = await(applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode))
+      val retrieved = await(applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode))
       retrieved mustBe Some(application)
     }
 
     "not retrieve the application with an unknown verificationCode" in {
       val application = anApplicationDataForTest(
-        ApplicationId.random,
-        state = appStatePendingRequesterVerification
+        ApplicationId.random
       )
+        .withState(appStatePendingRequesterVerification)
+
       await(applicationRepository.save(application))
-      val retrieved   = await(applicationRepository.fetchVerifiableUpliftBy("aDifferentVerificationCode"))
+      val retrieved = await(applicationRepository.fetchVerifiableUpliftBy("aDifferentVerificationCode"))
       retrieved mustBe None
     }
 
     "not retrieve the application with verificationCode when in deleted state" in {
       val application = anApplicationDataForTest(
-        ApplicationId.random,
-        state = appStatePendingRequesterVerification
+        ApplicationId.random
       )
+        .withState(appStatePendingRequesterVerification)
+
       await(applicationRepository.save(application))
       await(applicationRepository.delete(application.id, instant))
 
@@ -2466,11 +2471,11 @@ class ApplicationRepositoryISpec
     val user2 = developerEmail2.developer()
 
     "return only the APIs that the user's apps are subscribed to, without duplicates" in {
-      val app1            = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+      val app1            = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId).withCollaborators(user1)
       await(applicationRepository.save(app1))
-      val app2            = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+      val app2            = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId).withCollaborators(user1)
       await(applicationRepository.save(app2))
-      val someoneElsesApp = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user2))
+      val someoneElsesApp = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId).withCollaborators(user2)
       await(applicationRepository.save(someoneElsesApp))
 
       val helloWorldApi1 = "hello-world".asIdentifier("1.0")
@@ -2490,8 +2495,8 @@ class ApplicationRepositoryISpec
     }
 
     "return empty when the user is not a collaborator of any apps" in {
-      val app1 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user2))
-      val app2 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+      val app1 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId).withCollaborators(user2)
+      val app2 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId).withCollaborators(user1)
 
       await(applicationRepository.save(app1))
       await(applicationRepository.save(app2))
@@ -2506,7 +2511,7 @@ class ApplicationRepositoryISpec
     }
 
     "return empty when the user's apps are not subscribed to any API" in {
-      val app = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+      val app = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId).withCollaborators(user1)
       await(applicationRepository.save(app))
 
       val developerId                = app.collaborators.head.userId

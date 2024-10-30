@@ -98,11 +98,8 @@ class ApprovalsControllerISpec
         PrivacyPolicyLocations.InDesktopSoftware,
         List.empty
       )
-      val application: StoredApplication = storedApp.copy(
-        id = appId,
-        state = appStateProduction,
-        access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
-      )
+      val application: StoredApplication =
+        storedApp.withId(appId).withState(appStateProduction).withAccess(Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
       await(applicationRepo.save(application))
       await(submissionRepo.collection

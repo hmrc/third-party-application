@@ -88,7 +88,8 @@ class ApplicationRepositorySearchISpec
       anApplicationDataForTest(
         id = applicationId,
         prodClientId = generateClientId
-      ).copy(lastAccess = Some(lastAccessDate))
+      )
+        .copy(lastAccess = Some(lastAccessDate))
 
     "correctly include the skip and limit clauses" in {
       val application1 = anApplicationDataForTest(
@@ -186,7 +187,7 @@ class ApplicationRepositorySearchISpec
         prodClientId = generateClientId
       )
       val applicationInProduction =
-        createAppWithStatusUpdatedOn(State.PRODUCTION, instant)
+        createAppWithStatusUpdatedOn(State.PRODUCTION)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationInProduction))
 
@@ -209,7 +210,7 @@ class ApplicationRepositorySearchISpec
         prodClientId = generateClientId
       )
       val applicationDeleted =
-        createAppWithStatusUpdatedOn(State.DELETED, instant)
+        createAppWithStatusUpdatedOn(State.DELETED)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationDeleted))
 
@@ -232,7 +233,7 @@ class ApplicationRepositorySearchISpec
         prodClientId = generateClientId
       )
       val applicationDeleted =
-        createAppWithStatusUpdatedOn(State.DELETED, instant)
+        createAppWithStatusUpdatedOn(State.DELETED)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationDeleted))
 
@@ -256,9 +257,9 @@ class ApplicationRepositorySearchISpec
       )
       val ropcApplication     = anApplicationDataForTest(
         id = ApplicationId.random,
-        prodClientId = generateClientId,
-        access = Access.Ropc()
+        prodClientId = generateClientId
       )
+        .withAccess(Access.Ropc())
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
@@ -277,19 +278,21 @@ class ApplicationRepositorySearchISpec
     }
 
     "return applications based on blocked filter" in {
-      val standardApplication          = anApplicationDataForTest(
+      val standardApplication = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
       )
-      val blockedApplication           = anApplicationDataForTest(
+      val blockedApplication  = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
       ).copy(blocked = true)
+
       val deletedAndBlockedApplication = anApplicationDataForTest(
         id = ApplicationId.random,
-        prodClientId = generateClientId,
-        state = appStateDeleted
-      ).copy(blocked = true)
+        prodClientId = generateClientId
+      )
+        .withState(appStateDeleted)
+        .copy(blocked = true)
 
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(blockedApplication))

@@ -42,20 +42,20 @@ trait ApplicationRepositoryTestData extends StoredApplicationFixtures with Colla
 
   def createAppWithStatusUpdatedOn(
       state: State,
-      updatedOn: Instant,
-      allowAutoDelete: Boolean = true
+      updatedOn: Instant = instant
     ): StoredApplication =
     anApplicationDataForTest(
       id = ApplicationId.random,
       prodClientId = generateClientId,
-      state = ApplicationState(
+      allowAutoDelete = true
+    ).withState(
+      ApplicationState(
         state,
         Some("requestorEmail@example.com"),
         Some("requesterName"),
         Some("aVerificationCode"),
         updatedOn
-      ),
-      allowAutoDelete = allowAutoDelete
+      )
     )
 
   def aSubscriptionData(
@@ -69,13 +69,7 @@ trait ApplicationRepositoryTestData extends StoredApplicationFixtures with Colla
   def anApplicationDataForTest(
       id: ApplicationId,
       prodClientId: ClientId = ClientId("aaa"),
-      state: ApplicationState = appStateTesting,
-      access: Access = Access.Standard(),
-      refreshTokensAvailableFor: Period = defaultGrantLength,
-      users: Set[Collaborator] = Set(
-        "user@example.com".admin()
-      ),
-      checkInformation: Option[CheckInformation] = None,
+      // checkInformation: Option[CheckInformation] = None,
       clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
       allowAutoDelete: Boolean = true
     ): StoredApplication = {
@@ -84,12 +78,12 @@ trait ApplicationRepositoryTestData extends StoredApplicationFixtures with Colla
       id,
       s"myApp-${id.value}",
       prodClientId,
-      state,
-      access,
-      users,
-      checkInformation,
+      appStateTesting,
+      Access.Standard(),
+      Set[Collaborator]("user@example.com".admin()),
+      None,                                          // checkInformation,
       clientSecrets,
-      refreshTokensAvailableFor,
+      defaultGrantLength,
       allowAutoDelete
     )
   }
