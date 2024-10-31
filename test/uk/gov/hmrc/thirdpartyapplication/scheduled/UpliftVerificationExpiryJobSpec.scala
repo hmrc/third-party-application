@@ -45,6 +45,7 @@ class UpliftVerificationExpiryJobSpec
     with ApplicationStateFixtures
     with NoMetricsGuiceOneAppPerSuite
     with CollaboratorTestData
+    with StoredApplicationFixtures
     with FixedClock {
 
   final val FixedTimeNow     = instant
@@ -79,10 +80,8 @@ class UpliftVerificationExpiryJobSpec
   "uplift verification expiry job execution" should {
 
     "expire all application uplifts having expiry date before the expiry time" in new Setup {
-      val app1: StoredApplication =
-        anApplicationData(ApplicationId.random, ClientId("aaa"), appStatePendingRequesterVerification.copy(requestedByEmailAddress = Some("requester1@example.com")))
-      val app2: StoredApplication =
-        anApplicationData(ApplicationId.random, ClientId("aaa"), appStatePendingRequesterVerification.copy(requestedByEmailAddress = Some("requester2@example.com")))
+      val app1: StoredApplication = storedApp.withId(ApplicationId.random).withState(appStatePendingRequesterVerification.copy(requestedByEmailAddress = Some("requester1@example.com")))
+      val app2: StoredApplication = storedApp.withId(ApplicationId.random).withState(appStatePendingRequesterVerification.copy(requestedByEmailAddress = Some("requester2@example.com")))
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), any[Instant]))
         .thenReturn(successful(List(app1, app2)))
@@ -142,8 +141,8 @@ class UpliftVerificationExpiryJobSpec
     }
 
     "handle error on subsequent database call to update an application" in new Setup {
-      val app1: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"))
-      val app2: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app1: StoredApplication = storedApp.withId(ApplicationId.random).withState(appStateTesting)
+      val app2: StoredApplication = storedApp.withId(ApplicationId.random).withState(appStateTesting)
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), *))
         .thenReturn(Future.successful(List(app1, app2)))
@@ -160,21 +159,5 @@ class UpliftVerificationExpiryJobSpec
     }
   }
 
-  def anApplicationData(id: ApplicationId, prodClientId: ClientId, state: ApplicationState = appStateTesting): StoredApplication = {
-    StoredApplication(
-      id,
-      ApplicationName(s"myApp-${id}"),
-      s"myapp-${id}",
-      Set("user@example.com".admin()),
-      Some(CoreApplicationData.appDescription),
-      "myapplication",
-      ApplicationTokens(
-        StoredToken(prodClientId, "ccc")
-      ),
-      state,
-      Access.Standard(),
-      instant,
-      Some(instant)
-    )
-  }
+  // def anApplicationData(id: ApplicationId, prodClientId: ClientId, state: ApplicationState = appStateTesting): StoredApplication = storedApp.withId(id).withState(state)
 }

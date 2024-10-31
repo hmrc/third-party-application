@@ -70,25 +70,11 @@ trait ApplicationRepositoryTestData extends StoredApplicationFixtures with Colla
       prodClientId: ClientId = ClientId("aaa"),
       clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret"))
     ): StoredApplication = {
-
-    StoredApplication(
-      id,
-      ApplicationName(s"MyApp-$id"),
-      s"MyApp-$id".toLowerCase(),
-      Set("user@example.com".admin()),
-      Some(CoreApplicationData.appDescription),
-      "myapplication",
-      ApplicationTokens(
-        StoredToken(prodClientId, generateAccessToken, clientSecrets)
-      ),
-      appStateTesting,
-      Access.Standard(),
-      instant,
-      Some(instant),
-      refreshTokensAvailableFor = defaultGrantLength,
-      checkInformation = None,
-      allowAutoDelete = true
-    )
+    storedApp
+      .withId(id)
+      .withState(appStateTesting)
+      .withName(ApplicationName(s"MyApp-$id"))
+      .copy(tokens = ApplicationTokens(StoredToken(prodClientId, generateAccessToken, clientSecrets)))
   }
 
   def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[Instant] = None, hashedSecret: String = "") =

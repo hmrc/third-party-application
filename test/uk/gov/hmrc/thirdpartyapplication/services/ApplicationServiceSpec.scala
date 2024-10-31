@@ -178,27 +178,15 @@ class ApplicationServiceSpec
   trait SetupForAuditTests extends Setup {
 
     def setupAuditTests(access: Access): (StoredApplication, UpdateRedirectUris) = {
-      val tokens = ApplicationTokens(
-        StoredToken(ClientId("prodId"), "prodToken")
-      )
+      val existingApplication                   = storedApp
 
-      val existingApplication                   = StoredApplication(
-        id = applicationId,
-        name = ApplicationName("app name"),
-        normalisedName = "app name",
-        collaborators = Set(adminOne),
-        wso2ApplicationName = "wso2ApplicationName",
-        tokens = tokens,
-        state = appStateTesting,
-        access = access,
-        createdOn = instant,
-        lastAccess = Some(instant)
-      )
       val newRedirectUris                       = List(RedirectUri.unsafeApply("https://new-url.example.com"))
       val updatedApplication: StoredApplication = existingApplication.copy(
         name = ApplicationName("new name"),
-        normalisedName = "new name",
-        access = access match {
+        normalisedName = "new name"
+      )
+      .withAccess(
+        access match {
           case _: Access.Standard => Access.Standard(
               newRedirectUris,
               Some("https://new-url.example.com/terms-and-conditions"),
@@ -207,6 +195,7 @@ class ApplicationServiceSpec
           case x                  => x
         }
       )
+      
       val updateRedirectUris                    = UpdateRedirectUris(
         actor = gatekeeperActor,
         oldRedirectUris = List.empty,
@@ -244,8 +233,7 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: StoredApplication =
-        anApplicationDataWithCollaboratorWithUserId(createdApp.application.id).copy(description = None, state = appStateTesting, collaborators = Set(adminTwo))
+      val expectedApplicationData: StoredApplication = storedApp.withId(createdApp.application.id).withState(appStateTesting).withCollaborators(adminTwo).copy(description = None)
 
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
@@ -989,27 +977,6 @@ class ApplicationServiceSpec
       environment,
       Set(adminTwo),
       None
-    )
-  }
-
-  private def anApplicationDataWithCollaboratorWithUserId(
-      applicationId: ApplicationId
-    ) = {
-
-    StoredApplication(
-      applicationId,
-      ApplicationName("MyApp"),
-      "myapp",
-      someCollaborators,
-      Some(CoreApplicationData.appDescription),
-      "aaaaaaaaaa",
-      ApplicationTokens(productionToken),
-      state = appStateProduction,
-      Access.Standard(),
-      instant,
-      Some(instant),
-      rateLimitTier = Some(RateLimitTier.BRONZE),
-      environment = Environment.PRODUCTION
     )
   }
 

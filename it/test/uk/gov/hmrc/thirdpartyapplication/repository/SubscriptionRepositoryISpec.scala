@@ -50,6 +50,7 @@ class SubscriptionRepositoryISpec
     with ApplicationStateFixtures
     with Eventually
     with TableDrivenPropertyChecks
+    with StoredApplicationFixtures
     with ApiIdentifierSyntax
     with CommonApplicationId
     with FixedClock
@@ -358,10 +359,9 @@ class SubscriptionRepositoryISpec
       state: ApplicationState = appStateTesting,
       access: Access = Access.Standard(),
       user: List[String] = List("user@example.com"),
-      checkInformation: Option[CheckInformation] = None
     ): StoredApplication = {
 
-    anApplicationDataForTest(id, s"myApp-${id.value}", clientId, state, access, user, checkInformation)
+    anApplicationDataForTest(id, s"myApp-${id.value}", clientId, state, access, user)
   }
 
   def anApplicationDataForTest(
@@ -371,25 +371,17 @@ class SubscriptionRepositoryISpec
       state: ApplicationState = appStateTesting,
       access: Access = Access.Standard(),
       user: List[String] = List("user@example.com"),
-      checkInformation: Option[CheckInformation] = None
     ): StoredApplication = {
 
     val collaborators: Set[Collaborator] = user.map(email => email.admin()).toSet
 
-    StoredApplication(
-      id,
-      ApplicationName(name),
-      name.toLowerCase,
-      collaborators,
-      Some(CoreApplicationData.appDescription),
-      "myapplication",
-      ApplicationTokens(StoredToken(clientId, generateAccessToken)),
-      state,
-      access,
-      instant,
-      Some(instant),
-      checkInformation = checkInformation
-    )
+    storedApp
+    .withId(id)
+    .withName(ApplicationName(name))
+    .withState(state)
+    .withAccess(access)
+    .withCollaborators(collaborators)
+    .copy(tokens = ApplicationTokens(StoredToken(clientId, generateAccessToken)))
   }
 
   private def generateClientId = {

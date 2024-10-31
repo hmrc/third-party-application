@@ -61,6 +61,7 @@ class TermsOfUseInvitationRepositoryISpec
     with CleanMongoCollectionSupport
     with BeforeAndAfterAll
     with ApplicationStateFixtures
+    with StoredApplicationFixtures
     with CommonApplicationId
     with Eventually
     with TableDrivenPropertyChecks
@@ -462,27 +463,6 @@ class TermsOfUseInvitationRepositoryISpec
   }
 
   private def anApplicationData(id: ApplicationId, name: String): StoredApplication = {
-    StoredApplication(
-      id,
-      ApplicationName(name),
-      name.toLowerCase(),
-      Set(Collaborator(LaxEmailAddress("user@example.com"), Collaborator.Roles.ADMINISTRATOR, UserId.random)),
-      Some(CoreApplicationData.appDescription),
-      "myapplication",
-      ApplicationTokens(
-        StoredToken(ClientId.random, "ccc")
-      ),
-      appStateProduction,
-      Standard(),
-      instant,
-      Some(instant),
-      GrantLength.EIGHTEEN_MONTHS.period,
-      Some(RateLimitTier.BRONZE),
-      Environment.PRODUCTION,
-      None,
-      false,
-      IpAllowlist(),
-      true
-    )
+    storedApp.withId(id).withName(ApplicationName(name)).copy(tokens = ApplicationTokens(StoredToken(ClientId.random, "ccc")))
   }
 }

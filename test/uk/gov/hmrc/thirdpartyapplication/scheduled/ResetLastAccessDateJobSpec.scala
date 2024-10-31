@@ -43,6 +43,7 @@ class ResetLastAccessDateJobSpec
     with CleanMongoCollectionSupport
     with ApplicationStateFixtures
     with NoMetricsGuiceOneAppPerSuite
+    with StoredApplicationFixtures
     with CollaboratorTestData {
 
   implicit val m: Materializer                    = app.materializer
@@ -53,6 +54,7 @@ class ResetLastAccessDateJobSpec
   val applicationRepository = new ApplicationRepository(mongoComponent, metrics)
 
   override protected def beforeEach(): Unit = {
+    super.beforeEach()
     await(mongoDatabase.drop().toFuture())
   }
 
@@ -92,6 +94,7 @@ class ResetLastAccessDateJobSpec
         anApplicationData(instantTS = dateToSet.minusDays(2).atStartOfDay(ZoneOffset.UTC).toInstant().truncatedTo(ChronoUnit.MILLIS)),
         anApplicationData(instantTS = dateToSet.plusDays(3).atStartOfDay(ZoneOffset.UTC).toInstant().truncatedTo(ChronoUnit.MILLIS))
       )
+
       await(Future.sequence(bulkInsert.map(i => applicationRepository.save(i))))
 
       await(underTest.runJob)
@@ -99,9 +102,12 @@ class ResetLastAccessDateJobSpec
       val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
 
       retrievedApplications.size should be(3)
+
+      val startOfToday = dateToSet.atStartOfDay(ZoneOffset.UTC).toInstant()
+
       retrievedApplications.foreach(app => {
         app.lastAccess.isDefined should be(true)
-        app.lastAccess.get.isBefore(dateToSet.atStartOfDay(ZoneOffset.UTC).toInstant()) should be(false)
+        app.lastAccess.get.isBefore(startOfToday) should be(false)
       })
     }
 
@@ -141,21 +147,11 @@ class ResetLastAccessDateJobSpec
   def anApplicationData(
       id: ApplicationId = ApplicationId.random,
       instantTS: Instant
-    ): StoredApplication = {
-    StoredApplication(
-      id,
-      ApplicationName(s"myApp-${id}"),
-      s"myapp-${id}",
-      Set("user@example.com".admin()),
-      Some(CoreApplicationData.appDescription),
-      "myapplication",
-      ApplicationTokens(
-        StoredToken(ClientId.random, "ccc")
-      ),
-      appStateTesting,
-      Access.Standard(),
-      instantTS,
-      lastAccess = Some(instantTS)
-    )
-  }
+    ): StoredApplication = 
+    storedApp
+      .withId(ApplicationId.random)
+      .copy(
+        tokens = ApplicationTokens(StoredToken(ClientId.random, "ccc")),
+        lastAccess = Some(instantTS)
+      )
 }

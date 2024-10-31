@@ -79,39 +79,7 @@ class ApplicationRepositorySerialisationISpec
     lazy val defaultGrantLength = 547
     lazy val newGrantLength     = 1000
 
-    private def generateAccessToken = {
-      val lengthOfRandomToken = 5
-      nextString(lengthOfRandomToken)
-    }
-
-    private def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[Instant] = None, hashedSecret: String = "hashed-secret") =
-      StoredClientSecret(
-        id = id,
-        name = name,
-        lastAccess = lastAccess,
-        hashedSecret = hashedSecret,
-        createdOn = instant
-      )
-
-    val applicationData = StoredApplication(
-      applicationId,
-      ApplicationName("appName"),
-      "normalised app name",
-      Set(
-        "user@example.com".admin()
-      ),
-      Some(CoreApplicationData.appDescription),
-      "myapplication",
-      ApplicationTokens(
-        StoredToken(ClientId("aaa"), generateAccessToken, List(aClientSecret()))
-      ),
-      appStateTesting,
-      Access.Standard(),
-      instant,
-      Some(instant),
-      refreshTokensAvailableFor = GrantLength.ONE_YEAR.period,
-      checkInformation = None
-    )
+    val applicationData = storedApp.withId(applicationId).withState(appStateTesting).copy(refreshTokensAvailableFor = GrantLength.ONE_YEAR.period)
 
     def saveApplicationAsMongoJson(applicationAsRawJson: JsObject): InsertOneResult = {
       await(mongoDatabase.getCollection("application").insertOne(Document(applicationAsRawJson.toString())).toFuture())

@@ -30,23 +30,10 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
-class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with UpliftRequestSamples with CollaboratorTestData with utils.FixedClock {
+class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with UpliftRequestSamples with CollaboratorTestData with StoredApplicationFixtures with utils.FixedClock {
 
   "Application with Uplift request" should {
-    val app     =
-      StoredApplication(
-        ApplicationId.random,
-        ApplicationName("MyApp"),
-        "myapp",
-        Set.empty,
-        None,
-        "a",
-        ApplicationTokens(StoredToken(ClientId("cid"), "at")),
-        appStateProduction,
-        Access.Standard(),
-        instant,
-        Some(instant)
-      )
+    val app     = storedApp
     val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator("1".toLaxEmail), changedAt = instant)
 
     "create object" in {

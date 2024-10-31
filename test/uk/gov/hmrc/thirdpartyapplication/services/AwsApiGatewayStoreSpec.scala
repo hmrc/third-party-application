@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.StoredApplicationData.storedApp
 
 class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateFixtures with FixedClock {
 
@@ -41,54 +42,40 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateFixtures
     val mockAwsApiGatewayConnector: AwsApiGatewayConnector = mock[AwsApiGatewayConnector]
     val underTest                                          = new AwsApiGatewayStore(mockAwsApiGatewayConnector)
 
-    val applicationName     = "myapplication"
-    val serverToken: String = nextString(2)
+    val serverToken: String = StoredApplicationData.serverToken
 
-    val app = StoredApplication(
-      ApplicationId.random,
-      ApplicationName("MyApp"),
-      "myapp",
-      Set.empty,
-      Some(CoreApplicationData.appDescription),
-      applicationName,
-      ApplicationTokens(
-        StoredToken(ClientId.random, serverToken)
-      ),
-      appStateTesting,
-      createdOn = instant,
-      lastAccess = Some(instant)
-    )
+    val app = storedApp.copy(wso2ApplicationName = "abc123456")
   }
 
   "createApplication" should {
     "create an application in AWS" in new Setup {
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(eqTo(applicationName), *, eqTo(RateLimitTier.BRONZE))(eqTo(hc)))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(eqTo(app.wso2ApplicationName), *, eqTo(RateLimitTier.BRONZE))(eqTo(hc)))
         .thenReturn(successful(HasSucceeded))
 
-      await(underTest.createApplication(applicationName, serverToken))
+      await(underTest.createApplication(app.wso2ApplicationName, serverToken))
 
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(eqTo(applicationName), *, eqTo(RateLimitTier.BRONZE))(eqTo(hc))
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(eqTo(app.wso2ApplicationName), *, eqTo(RateLimitTier.BRONZE))(eqTo(hc))
     }
   }
 
   "updateApplication" should {
     "update rate limiting tier in AWS" in new Setup {
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(applicationName, serverToken, RateLimitTier.SILVER)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(app.wso2ApplicationName, serverToken, RateLimitTier.SILVER)(hc)).thenReturn(successful(HasSucceeded))
 
       await(underTest.updateApplication(app, RateLimitTier.SILVER))
 
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(applicationName, serverToken, RateLimitTier.SILVER)(hc)
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(app.wso2ApplicationName, serverToken, RateLimitTier.SILVER)(hc)
     }
 
   }
 
   "deleteApplication" should {
     "delete an application in AWS" in new Setup {
-      when(mockAwsApiGatewayConnector.deleteApplication(applicationName)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.deleteApplication(app.wso2ApplicationName)(hc)).thenReturn(successful(HasSucceeded))
 
-      await(underTest.deleteApplication(applicationName))
+      await(underTest.deleteApplication(app.wso2ApplicationName))
 
-      verify(mockAwsApiGatewayConnector).deleteApplication(applicationName)(hc)
+      verify(mockAwsApiGatewayConnector).deleteApplication(app.wso2ApplicationName)(hc)
     }
   }
 }

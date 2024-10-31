@@ -35,7 +35,7 @@ object StoredApplicationData extends FixedClock {
 
   val appName = ApplicationName("MyApp")
 
-  val anApplicationData = StoredApplication(
+  val storedApp = StoredApplication(
     id = ApplicationIdData.one,
     name = appName,
     normalisedName = "myapp",
@@ -59,7 +59,7 @@ trait StoredApplicationFixtures extends CoreApplicationFixtures with FixedClock 
   val serverToken           = StoredApplicationData.serverToken
   val serverTokenLastAccess = StoredApplicationData.serverTokenLastAccess
 
-  val storedApp = StoredApplicationData.anApplicationData
+  val storedApp = StoredApplicationData.storedApp
 
   implicit class StoredApplicationFixtureSyntax(app: StoredApplication) {
     import monocle.syntax.all._

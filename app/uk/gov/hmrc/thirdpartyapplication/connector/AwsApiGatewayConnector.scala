@@ -30,6 +30,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 
 object AwsApiGatewayConnector extends ApplicationLogger {
   case class Config(baseUrl: String, awsApiKey: String)
@@ -58,29 +59,29 @@ class AwsApiGatewayConnector @Inject() (http: HttpClientV2, config: AwsApiGatewa
   private def updateUsagePlanURL(rateLimitTier: RateLimitTier): URL = url"${config.baseUrl}/v1/usage-plans/$rateLimitTier/api-keys"
   private def deleteAPIKeyURL(applicationName: String): URL         = url"${config.baseUrl}/v1/api-keys/$applicationName"
 
-  def createOrUpdateApplication(applicationName: String, serverToken: String, usagePlan: RateLimitTier)(hc: HeaderCarrier): Future[HasSucceeded] = {
+  def createOrUpdateApplication(wso2ApplicationName: String, serverToken: String, usagePlan: RateLimitTier)(hc: HeaderCarrier): Future[HasSucceeded] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey, CONTENT_TYPE -> JSON)
 
     http.post(updateUsagePlanURL(usagePlan))
-      .withBody(Json.toJson(UpdateApplicationUsagePlanRequest(applicationName, serverToken)))
+      .withBody(Json.toJson(UpdateApplicationUsagePlanRequest(wso2ApplicationName, serverToken)))
       .execute[RequestId]
       .map { requestId =>
-        logger.info(s"Successfully created or updated application '$applicationName' in AWS API Gateway with request ID ${requestId.value}")
+        logger.info(s"Successfully created or updated application '$wso2ApplicationName' in AWS API Gateway with request ID ${requestId.value}")
         HasSucceeded
       }
   }
 
-  def deleteApplication(applicationName: String)(hc: HeaderCarrier): Future[HasSucceeded] = {
+  def deleteApplication(wso2ApplicationName: String)(hc: HeaderCarrier): Future[HasSucceeded] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
 
-    http.delete(deleteAPIKeyURL(applicationName))
+    http.delete(deleteAPIKeyURL(wso2ApplicationName))
       .execute[RequestId]
       .map(requestId => {
-        logger.info(s"Successfully deleted application '$applicationName' from AWS API Gateway with request ID ${requestId.value}")
+        logger.info(s"Successfully deleted application '$wso2ApplicationName' from AWS API Gateway with request ID ${requestId.value}")
         HasSucceeded
       })
   }

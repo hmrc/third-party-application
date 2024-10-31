@@ -218,10 +218,12 @@ class ApplicationRepositoryISpec
     await(applicationRepository.collection.drop().toFuture())
     await(subscriptionRepository.collection.drop().toFuture())
     await(notificationRepository.collection.drop().toFuture())
+    await(stateHistoryRepository.collection.drop().toFuture())
 
-    await(applicationRepository.ensureIndexes())
-    await(subscriptionRepository.ensureIndexes())
+    await(stateHistoryRepository.ensureIndexes())
     await(notificationRepository.ensureIndexes())
+    await(subscriptionRepository.ensureIndexes())
+    await(applicationRepository.ensureIndexes())
   }
 
   private def generateClientId = ClientId.random
@@ -760,7 +762,7 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application3))
 
       val retrieved =
-        await(applicationRepository.fetchAllForEmailAddress("user@example.com"))
+        await(applicationRepository.fetchAllForEmailAddress(application1.collaborators.head.emailAddress.text))
 
       retrieved mustBe List(application1, application2)
     }
