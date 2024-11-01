@@ -178,25 +178,25 @@ class ApplicationServiceSpec
   trait SetupForAuditTests extends Setup {
 
     def setupAuditTests(access: Access): (StoredApplication, UpdateRedirectUris) = {
-      val existingApplication                   = storedApp
+      val existingApplication = storedApp
 
       val newRedirectUris                       = List(RedirectUri.unsafeApply("https://new-url.example.com"))
       val updatedApplication: StoredApplication = existingApplication.copy(
         name = ApplicationName("new name"),
         normalisedName = "new name"
       )
-      .withAccess(
-        access match {
-          case _: Access.Standard => Access.Standard(
-              newRedirectUris,
-              Some("https://new-url.example.com/terms-and-conditions"),
-              Some("https://new-url.example.com/privacy-policy")
-            )
-          case x                  => x
-        }
-      )
-      
-      val updateRedirectUris                    = UpdateRedirectUris(
+        .withAccess(
+          access match {
+            case _: Access.Standard => Access.Standard(
+                newRedirectUris,
+                Some("https://new-url.example.com/terms-and-conditions"),
+                Some("https://new-url.example.com/privacy-policy")
+              )
+            case x                  => x
+          }
+        )
+
+      val updateRedirectUris = UpdateRedirectUris(
         actor = gatekeeperActor,
         oldRedirectUris = List.empty,
         newRedirectUris = newRedirectUris,

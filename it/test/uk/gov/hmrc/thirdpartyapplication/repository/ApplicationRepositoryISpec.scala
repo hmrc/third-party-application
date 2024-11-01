@@ -2357,10 +2357,8 @@ class ApplicationRepositoryISpec
     )
     val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = storedApp.withAccess(access)
-    println(await(applicationRepository.save(app)))
 
     val appWithUpdatedRI = await(applicationRepository.updateApplicationChangeResponsibleIndividual(applicationId, riName, riEmail, instant, submissionId, submissionIndex))
-    println(appWithUpdatedRI)
 
     appWithUpdatedRI.access match {
       case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => {

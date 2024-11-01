@@ -243,8 +243,6 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       Then("We get a successful response")
       validationResponse.code shouldBe StatusCode.Ok
 
-      println(validationResponse.body.value)
-
       And("The application is returned")
       val returnedApplication = Json.parse(validationResponse.body.value).as[ApplicationWithCollaborators]
       returnedApplication shouldBe application.modify(_.copy(lastAccess = returnedApplication.details.lastAccess))
@@ -304,7 +302,6 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       createdResponse.code shouldBe StatusCode.Created
 
       Then("The application is returned with the Totp Ids and the Totp Secrets")
-      println(createdResponse.body.value)
       val totpIds     = (Json.parse(createdResponse.body.value) \ "details" \ "access" \ "totpIds").as[TotpId]
       val totpSecrets = (Json.parse(createdResponse.body.value) \ "totp").as[CreateApplicationResponse.TotpSecret]
 

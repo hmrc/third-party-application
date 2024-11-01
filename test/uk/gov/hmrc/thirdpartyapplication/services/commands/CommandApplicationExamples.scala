@@ -31,8 +31,6 @@ trait CommandApplicationExamples extends CommonApplicationId with StoredApplicat
   val principalApp   = storedApp.withCollaborators(devAndAdminCollaborators)
   val subordinateApp = principalApp.inSandbox()
 
-  println(subordinateApp.environment)
-
   val responsibleIndividual      = ResponsibleIndividual.build("bob example", "bob@example.com")
   val privicyPolicyLocation      = PrivacyPolicyLocations.InDesktopSoftware
   val termsAndConditionsLocation = TermsAndConditionsLocations.InDesktopSoftware

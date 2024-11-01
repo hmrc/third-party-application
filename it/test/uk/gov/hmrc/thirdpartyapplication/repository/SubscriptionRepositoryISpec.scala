@@ -358,7 +358,7 @@ class SubscriptionRepositoryISpec
       clientId: ClientId = ClientId("aaa"),
       state: ApplicationState = appStateTesting,
       access: Access = Access.Standard(),
-      user: List[String] = List("user@example.com"),
+      user: List[String] = List("user@example.com")
     ): StoredApplication = {
 
     anApplicationDataForTest(id, s"myApp-${id.value}", clientId, state, access, user)
@@ -370,18 +370,18 @@ class SubscriptionRepositoryISpec
       clientId: ClientId = ClientId("aaa"),
       state: ApplicationState = appStateTesting,
       access: Access = Access.Standard(),
-      user: List[String] = List("user@example.com"),
+      user: List[String] = List("user@example.com")
     ): StoredApplication = {
 
     val collaborators: Set[Collaborator] = user.map(email => email.admin()).toSet
 
     storedApp
-    .withId(id)
-    .withName(ApplicationName(name))
-    .withState(state)
-    .withAccess(access)
-    .withCollaborators(collaborators)
-    .copy(tokens = ApplicationTokens(StoredToken(clientId, generateAccessToken)))
+      .withId(id)
+      .withName(ApplicationName(name))
+      .withState(state)
+      .withAccess(access)
+      .withCollaborators(collaborators)
+      .copy(tokens = ApplicationTokens(StoredToken(clientId, generateAccessToken)))
   }
 
   private def generateClientId = {

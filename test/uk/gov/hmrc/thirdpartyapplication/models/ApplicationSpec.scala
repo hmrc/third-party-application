@@ -27,10 +27,11 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequestV2,
   StandardAccessDataToCopy
 }
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
-class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with UpliftRequestSamples with CollaboratorTestData with StoredApplicationFixtures with utils.FixedClock {
+class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with UpliftRequestSamples with CollaboratorTestData with StoredApplicationFixtures
+    with utils.FixedClock {
 
   "Application with Uplift request" should {
     val app     = storedApp

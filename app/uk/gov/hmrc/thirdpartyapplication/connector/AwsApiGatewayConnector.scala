@@ -30,7 +30,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 
 object AwsApiGatewayConnector extends ApplicationLogger {
   case class Config(baseUrl: String, awsApiKey: String)
