@@ -2357,6 +2357,7 @@ class ApplicationRepositoryISpec
     )
     val access                  = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = storedApp.withAccess(access)
+    await(applicationRepository.save(app))
 
     val appWithUpdatedRI = await(applicationRepository.updateApplicationChangeResponsibleIndividual(applicationId, riName, riEmail, instant, submissionId, submissionIndex))
 
