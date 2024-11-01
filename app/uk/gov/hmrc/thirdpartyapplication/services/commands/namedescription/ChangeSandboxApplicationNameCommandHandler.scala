@@ -73,7 +73,6 @@ class ChangeSandboxApplicationNameCommandHandler @Inject() (
     for {
       nameValidationResult <- E.liftF(namingService.validateApplicationName(cmd.newName, noExclusions))
       valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
-      _                     = println("Got here")
       savedApp             <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName.value))
       events                = asEvents(app, cmd)
     } yield (savedApp, events)
