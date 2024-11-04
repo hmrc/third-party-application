@@ -380,6 +380,5 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
 
   private def anAppResponse(appId: ApplicationId) = {
     ApplicationWithCollaboratorsData.standardApp
-    // new Application(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, instant, Some(instant), grantLength)
   }
 }

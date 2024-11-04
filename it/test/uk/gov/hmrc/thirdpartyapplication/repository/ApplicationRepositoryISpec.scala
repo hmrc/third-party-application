@@ -475,7 +475,6 @@ class ApplicationRepositoryISpec
       val application =
         anApplicationDataForTest(
           applicationId
-          // ClientId("aaa"),
         ).withState(appStateProduction)
           .copy(lastAccess = Some(instant.minus(Duration.ofDays(20)))) // scalastyle:ignore magic.number
 

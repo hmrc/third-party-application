@@ -55,8 +55,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with CollaboratorTestData wi
     when(mockSubscriptionRepository.remove(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
   }
 
-  // private def aSecret(secret: String) = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
-
   "isSubscribed" should {
 
     val api = ApiIdentifier.random

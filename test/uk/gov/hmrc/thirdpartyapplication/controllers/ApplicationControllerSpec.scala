@@ -448,7 +448,6 @@ class ApplicationControllerSpec
 
         val result = underTest.queryDispatcher()(request.withHeaders(headers: _*))
 
-        // TODO - was as[Long] !!!
         (contentAsJson(result) \ "details" \ "lastAccess").as[Instant].toEpochMilli() shouldBe expectedLastAccessTime
         validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), Some(SERVER_TOKEN_HEADER))
         if (shouldUpdate) {
@@ -804,7 +803,6 @@ class ApplicationControllerSpec
 
     "succeed when a principal application is in TESTING state is deleted" in new Setup with ProductionAuthSetup {
       val inTesting = standardApp.withState(appStateTesting)
-      // aNewApplicationResponse(state = ApplicationState(name = State.TESTING, updatedOn = instant), environment = Environment.PRODUCTION)
 
       val inTestingId = application.id
 

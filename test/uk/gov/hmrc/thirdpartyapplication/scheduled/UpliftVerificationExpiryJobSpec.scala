@@ -159,6 +159,4 @@ class UpliftVerificationExpiryJobSpec
         " The next execution of the job will do retry."
     }
   }
-
-  // def anApplicationData(id: ApplicationId, prodClientId: ClientId, state: ApplicationState = appStateTesting): StoredApplication = storedApp.withId(id).withState(state)
 }
