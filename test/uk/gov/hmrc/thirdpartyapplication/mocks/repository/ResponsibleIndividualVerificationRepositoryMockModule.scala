@@ -95,7 +95,8 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
     }
 
     object DeleteAllByApplicationId {
-      def succeeds() = when(aMock.deleteAllByApplicationId(*[ApplicationId])).thenReturn(successful(HasSucceeded))
+      def succeeds()                                     = when(aMock.deleteAllByApplicationId(*[ApplicationId])).thenReturn(successful(HasSucceeded))
+      def verifyCalledWith(applicationId: ApplicationId) = verify(aMock).deleteAllByApplicationId(applicationId)
     }
 
     object ApplyEvents {
