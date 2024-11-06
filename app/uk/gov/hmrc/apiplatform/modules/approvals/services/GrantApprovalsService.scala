@@ -149,11 +149,10 @@ class GrantApprovalsService @Inject() (
     val ET = EitherTHelper.make[Result]
     (
       for {
-        _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
-
-        savedSubmission <- ET.liftF(submissionService.deleteAllAnswersForApplication(originalApp.id))
-        _               <- ET.liftF(responsibleIndividualVerificationRepository.deleteAllByApplicationId(originalApp.id))
-        _               <- ET.liftF(termsOfUseInvitationService.updateResetBackToEmailSent(originalApp.id))
+        _     <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
+        count <- ET.liftF(submissionService.deleteAllAnswersForApplication(originalApp.id))
+        _     <- ET.liftF(responsibleIndividualVerificationRepository.deleteAllByApplicationId(originalApp.id))
+        _     <- ET.liftF(termsOfUseInvitationService.updateResetBackToEmailSent(originalApp.id))
       } yield Actioned(originalApp)
     )
       .fold[Result](identity, identity)
