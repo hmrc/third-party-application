@@ -205,7 +205,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to delete the specified submission if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.deleteTouUplift(anApplicationData(applicationId, testingState()), pendingRISubmission, gatekeeperUserName))
+      val result = await(underTest.deleteTouUplift(applicationProduction.withState(appStateTesting), pendingRISubmission, gatekeeperUserName))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }

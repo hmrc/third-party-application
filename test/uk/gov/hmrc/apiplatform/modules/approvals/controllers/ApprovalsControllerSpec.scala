@@ -95,7 +95,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtur
     implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
     val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
     val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = storedApp // , productionState("bob"))
+    val application                                                    = storedApp
 
     "return 'OK' success response if successful" in new Setup {
       hasApp
@@ -111,7 +111,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtur
     implicit val writes: OWrites[ApprovalsController.TouDeleteRequest] = Json.writes[ApprovalsController.TouDeleteRequest]
     val jsonBody                                                       = Json.toJson(ApprovalsController.TouDeleteRequest("Bob from SDST"))
     val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = anApplicationData(appId, productionState("bob"))
+    val application                                                    = storedApp
 
     "return 'OK' success response if successful" in new Setup {
       hasApp

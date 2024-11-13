@@ -109,7 +109,7 @@ class ApprovalsController @Inject() (
     withJsonBodyFromAnyContent[TouDeleteRequest] { deleteRequest =>
       grantApprovalService.deleteTouUplift(request.application, request.submission, deleteRequest.gatekeeperUserName)
         .map(_ match {
-          case Actioned(application)                  => Ok(Json.toJson(Application(application)))
+          case Actioned(application)                  => Ok(Json.toJson(StoredApplication.asApplication(application)))
           case RejectedDueToIncorrectApplicationState =>
             PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
         })
