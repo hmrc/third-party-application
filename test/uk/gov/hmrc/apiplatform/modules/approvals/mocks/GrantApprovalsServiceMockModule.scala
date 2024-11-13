@@ -39,6 +39,10 @@ trait GrantApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchers
     object ResetForTouUplift {
       def thenReturn(result: GrantApprovalsService.Result) = when(aMock.resetForTouUplift(*, *, *, *)).thenReturn(successful(result))
     }
+
+    object DeleteTouUplift {
+      def thenReturn(result: GrantApprovalsService.Result) = when(aMock.deleteTouUplift(*, *, *)).thenReturn(successful(result))
+    }
   }
 
   object GrantApprovalsServiceMock extends BaseGrantApprovalsServiceMock {

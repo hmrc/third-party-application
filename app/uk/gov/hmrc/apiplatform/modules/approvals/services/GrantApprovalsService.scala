@@ -138,4 +138,23 @@ class GrantApprovalsService @Inject() (
     )
       .fold[Result](identity, identity)
   }
+
+  def deleteTouUplift(
+      originalApp: StoredApplication,
+      submission: Submission,
+      gatekeeperUserName: String
+    ): Future[GrantApprovalsService.Result] = {
+    import cats.instances.future.catsStdInstancesForFuture
+
+    val ET = EitherTHelper.make[Result]
+    (
+      for {
+        _     <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
+        count <- ET.liftF(submissionService.deleteAllAnswersForApplication(originalApp.id))
+        _     <- ET.liftF(responsibleIndividualVerificationRepository.deleteAllByApplicationId(originalApp.id))
+        _     <- ET.liftF(termsOfUseInvitationService.updateResetBackToEmailSent(originalApp.id))
+      } yield Actioned(originalApp)
+    )
+      .fold[Result](identity, identity)
+  }
 }

@@ -65,7 +65,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtur
     val request                                                        = FakeRequest().withJsonBody(jsonBody)
     val application                                                    = storedApp // .copy(state = productionState("bob"))
 
-    "return 'no content' success response if successful" in new Setup {
+    "return 'OK' success response if successful" in new Setup {
       hasApp
       hasSubmission
       GrantApprovalsServiceMock.DeclineForTouUplift.thenReturn(GrantApprovalsService.Actioned(application))
@@ -81,7 +81,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtur
     val request                                                        = FakeRequest().withJsonBody(jsonBody)
     val application                                                    = storedApp // , productionState("bob"))
 
-    "return 'no content' success response if successful" in new Setup {
+    "return 'OK' success response if successful" in new Setup {
       hasApp
       hasSubmission
       GrantApprovalsServiceMock.GrantWithWarningsForTouUplift.thenReturn(GrantApprovalsService.Actioned(application))
@@ -97,11 +97,27 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtur
     val request                                                        = FakeRequest().withJsonBody(jsonBody)
     val application                                                    = storedApp // , productionState("bob"))
 
-    "return 'no content' success response if successful" in new Setup {
+    "return 'OK' success response if successful" in new Setup {
       hasApp
       hasSubmission
       GrantApprovalsServiceMock.ResetForTouUplift.thenReturn(GrantApprovalsService.Actioned(application))
       val result = underTest.resetForTouUplift(appId)(request)
+
+      status(result) shouldBe OK
+    }
+  }
+
+  "deleteTouUplift" should {
+    implicit val writes: OWrites[ApprovalsController.TouDeleteRequest] = Json.writes[ApprovalsController.TouDeleteRequest]
+    val jsonBody                                                       = Json.toJson(ApprovalsController.TouDeleteRequest("Bob from SDST"))
+    val request                                                        = FakeRequest().withJsonBody(jsonBody)
+    val application                                                    = anApplicationData(appId, productionState("bob"))
+
+    "return 'OK' success response if successful" in new Setup {
+      hasApp
+      hasSubmission
+      GrantApprovalsServiceMock.DeleteTouUplift.thenReturn(GrantApprovalsService.Actioned(application))
+      val result = underTest.deleteTouUplift(appId)(request)
 
       status(result) shouldBe OK
     }

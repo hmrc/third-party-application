@@ -186,4 +186,28 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
   }
+
+  "GrantApprovalsService.deleteTouUplift" should {
+    "delete the specified ToU submission" in new Setup {
+
+      SubmissionsServiceMock.DeleteAll.thenReturn()
+      TermsOfUseInvitationServiceMock.UpdateResetBackToEmailSent.thenReturn()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
+
+      val result = await(underTest.deleteTouUplift(applicationProduction, pendingRISubmission, gatekeeperUserName))
+
+      result should matchPattern {
+        case GrantApprovalsService.Actioned(app) =>
+      }
+      SubmissionsServiceMock.DeleteAll.verifyCalledWith(applicationProduction.id)
+      TermsOfUseInvitationServiceMock.UpdateResetBackToEmailSent.verifyCalledWith(applicationProduction.id)
+      ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.verifyCalledWith(applicationProduction.id)
+    }
+
+    "fail to delete the specified submission if the application is in the incorrect state" in new Setup {
+      val result = await(underTest.deleteTouUplift(anApplicationData(applicationId, testingState()), pendingRISubmission, gatekeeperUserName))
+
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
+    }
+  }
 }
