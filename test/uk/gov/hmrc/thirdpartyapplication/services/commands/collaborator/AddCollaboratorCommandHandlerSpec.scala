@@ -38,7 +38,7 @@ class AddCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
     val newCollaboratorEmail = "newdev@somecompany.com"
     val newCollaborator      = newCollaboratorEmail.developer()
 
-    val adminsToEmail = Set(anAdminEmail, devEmail)
+    val adminsToEmail = Set(adminOne.emailAddress, developerOne.emailAddress)
 
     val addCollaboratorAsAdmin = AddCollaborator(adminActor, newCollaborator, instant)
     val addCollaboratorAsDev   = AddCollaborator(developerActor, newCollaborator, instant)

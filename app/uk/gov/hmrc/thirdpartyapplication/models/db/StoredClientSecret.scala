@@ -17,12 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
 
 case class StoredClientSecret(
     name: String,
-    createdOn: Instant = Instant.now(),
+    createdOn: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS),
     lastAccess: Option[Instant] = None,
     id: ClientSecret.Id = ClientSecret.Id.random,
     hashedSecret: String

@@ -31,9 +31,9 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
 import uk.gov.hmrc.thirdpartyapplication.component.stubs.ApiPlatformEventsStub
-import uk.gov.hmrc.thirdpartyapplication.util.WiremockSugar
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar with ApplicationLogger with FixedClock {
+class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar with ApplicationLogger with FixedClock with CommonApplicationId {
 
   val dateTimeFormatterAsUsedByEventLib = new DateTimeFormatterBuilder()
     .appendPattern("uuuu-MM-dd'T'HH:mm:ss.SSS")
@@ -48,7 +48,6 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
 
   trait Setup {
     val inTest          = app.injector.instanceOf[ApiPlatformEventsConnector]
-    val appId           = ApplicationId.random
     val eventId         = EventId.random
     val instantAsString = dateTimeFormatterAsUsedByEventLib.format(instant)
 
@@ -67,13 +66,13 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
     "sending event to api-platform-events" should {
 
       "send correct json for ApiSubscribed" in new Setup {
-        val apiSubscribed = ApiSubscribedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), ApiContext("contextValue"), ApiVersionNbr("1.0"))
+        val apiSubscribed = ApiSubscribedV2(eventId, applicationId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), ApiContext("contextValue"), ApiVersionNbr("1.0"))
 
         val expectedApiSubscribedRequestBody =
           s"""
              |{
              |"id" : "${eventId.value.toString}",
-             |"applicationId" : "${appId.value.toString}",
+             |"applicationId" : "${applicationId.value.toString}",
              |"eventDateTime": "$instantAsString",
              |"actor" : {"email" :"$email",
              |"actorType": "COLLABORATOR"},
@@ -87,13 +86,14 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
 
       "send correct json for ApiUnSubscribed" in new Setup {
 
-        val apiUnSubscribed = ApiUnsubscribedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), ApiContext("contextValue"), ApiVersionNbr("1.0"))
+        val apiUnSubscribed =
+          ApiUnsubscribedV2(eventId, applicationId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), ApiContext("contextValue"), ApiVersionNbr("1.0"))
 
         val expectedApiUnSubscribedRequestBody =
           s"""
              |{
              |"id" : "${eventId.value.toString}",
-             |"applicationId" : "${appId.value.toString}",
+             |"applicationId" : "${applicationId.value.toString}",
              |"eventDateTime": "$instantAsString",
              |"actor" : {"email" :"$email",
              |"actorType": "COLLABORATOR"},
@@ -107,13 +107,13 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
 
       "send correct json for ClientSecretAddedV2" in new Setup {
 
-        val clientSecretAddedV2 = ClientSecretAddedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), "secretName", "secretValue")
+        val clientSecretAddedV2 = ClientSecretAddedV2(eventId, applicationId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), "secretName", "secretValue")
 
         val expectedClientSecretAddedV2RequestBody =
           s"""
              |{
              |"id" : "${eventId.value.toString}",
-             |"applicationId" : "${appId.value.toString}",
+             |"applicationId" : "${applicationId.value.toString}",
              |"eventDateTime": "$instantAsString",
              |"actor" : {"email" :"$email"},
              |"clientSecretId" :"secretName",
@@ -126,13 +126,13 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
 
       "send correct json for ClientSecretRemovedV2" in new Setup {
 
-        val clientSecretAddedV2 = ClientSecretRemovedV2(eventId, appId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), "secretName", "secretValue")
+        val clientSecretAddedV2 = ClientSecretRemovedV2(eventId, applicationId, FixedClock.instant, Actors.AppCollaborator(email.toLaxEmail), "secretName", "secretValue")
 
         val expectedClientSecretAddedV2RequestBody =
           s"""
              |{
              |"id" : "${eventId.value.toString}",
-             |"applicationId" : "${appId.value.toString}",
+             |"applicationId" : "${applicationId.value.toString}",
              |"eventDateTime": "$instantAsString",
              |"actor" : {"email" :"$email"},
              |"clientSecretId" :"secretName",
@@ -146,13 +146,22 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
       "send correct json for ApplicationDeletedByGatekeeper" in new Setup {
         val clientId                       = ClientId.random
         val applicationDeletedByGatekeeper =
-          ApplicationDeletedByGatekeeper(eventId, appId, FixedClock.instant, Actors.GatekeeperUser(userName), clientId, "wso2ApplicationName", "Some reason", email.toLaxEmail)
+          ApplicationDeletedByGatekeeper(
+            eventId,
+            applicationId,
+            FixedClock.instant,
+            Actors.GatekeeperUser(userName),
+            clientId,
+            "wso2ApplicationName",
+            "Some reason",
+            email.toLaxEmail
+          )
 
         val applicationDeletedByGatekeeperRequestBody =
           s"""
              |{
              |"id" : "${eventId.value.toString}",
-             |"applicationId" : "${appId.value.toString}",
+             |"applicationId" : "${applicationId.value.toString}",
              |"eventDateTime": "$instantAsString",
              |"actor" : {"user" :"$userName"},
              |"clientId" : "${clientId.value}",

@@ -34,7 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.models.{Blocked, StandardAccess => _, _}
-import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationRepositorySearchISpec
     extends ServerBaseISpec
@@ -88,7 +88,8 @@ class ApplicationRepositorySearchISpec
       anApplicationDataForTest(
         id = applicationId,
         prodClientId = generateClientId
-      ).copy(lastAccess = Some(lastAccessDate))
+      )
+        .copy(lastAccess = Some(lastAccessDate))
 
     "correctly include the skip and limit clauses" in {
       val application1 = anApplicationDataForTest(
@@ -186,7 +187,7 @@ class ApplicationRepositorySearchISpec
         prodClientId = generateClientId
       )
       val applicationInProduction =
-        createAppWithStatusUpdatedOn(State.PRODUCTION, instant)
+        createAppWithStatusUpdatedOn(State.PRODUCTION)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationInProduction))
 
@@ -209,7 +210,7 @@ class ApplicationRepositorySearchISpec
         prodClientId = generateClientId
       )
       val applicationDeleted =
-        createAppWithStatusUpdatedOn(State.DELETED, instant)
+        createAppWithStatusUpdatedOn(State.DELETED)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationDeleted))
 
@@ -232,7 +233,7 @@ class ApplicationRepositorySearchISpec
         prodClientId = generateClientId
       )
       val applicationDeleted =
-        createAppWithStatusUpdatedOn(State.DELETED, instant)
+        createAppWithStatusUpdatedOn(State.DELETED)
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationDeleted))
 
@@ -256,9 +257,9 @@ class ApplicationRepositorySearchISpec
       )
       val ropcApplication     = anApplicationDataForTest(
         id = ApplicationId.random,
-        prodClientId = generateClientId,
-        access = Access.Ropc()
+        prodClientId = generateClientId
       )
+        .withAccess(Access.Ropc())
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
@@ -277,19 +278,21 @@ class ApplicationRepositorySearchISpec
     }
 
     "return applications based on blocked filter" in {
-      val standardApplication          = anApplicationDataForTest(
+      val standardApplication = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
       )
-      val blockedApplication           = anApplicationDataForTest(
+      val blockedApplication  = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
       ).copy(blocked = true)
+
       val deletedAndBlockedApplication = anApplicationDataForTest(
         id = ApplicationId.random,
-        prodClientId = generateClientId,
-        state = deletedState("Dave")
-      ).copy(blocked = true)
+        prodClientId = generateClientId
+      )
+        .withState(appStateDeleted)
+        .copy(blocked = true)
 
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(blockedApplication))
@@ -387,11 +390,12 @@ class ApplicationRepositorySearchISpec
       val applicationId   = ApplicationId.random
       val applicationName = "Test Application 1"
 
-      val application            = aNamedApplicationData(
+      val application = anApplicationDataForTest(
         applicationId,
-        applicationName,
         prodClientId = generateClientId
       )
+        .withName(ApplicationName(applicationName))
+
       val randomOtherApplication = anApplicationDataForTest(
         ApplicationId.random,
         prodClientId = generateClientId
@@ -419,20 +423,22 @@ class ApplicationRepositorySearchISpec
       val applicationId   = ApplicationId.random
       val applicationName = "Test Application 2"
 
-      val application              = aNamedApplicationData(
+      val application = anApplicationDataForTest(
         applicationId,
-        applicationName,
         prodClientId = generateClientId
       )
+        .withName(ApplicationName(applicationName))
+
       val randomOtherApplication   = anApplicationDataForTest(
         ApplicationId.random,
         prodClientId = generateClientId
       )
-      val randomDeletedApplication = aNamedApplicationData(
+      val randomDeletedApplication = anApplicationDataForTest(
         ApplicationId.random,
-        applicationName,
         prodClientId = generateClientId
       )
+        .withName(ApplicationName(applicationName))
+
       await(applicationRepository.save(randomDeletedApplication))
       await(applicationRepository.delete(randomDeletedApplication.id, instant))
       await(applicationRepository.save(application))
@@ -458,20 +464,22 @@ class ApplicationRepositorySearchISpec
       val applicationId   = ApplicationId.random
       val applicationName = "Test Application 2"
 
-      val application              = aNamedApplicationData(
+      val application = anApplicationDataForTest(
         applicationId,
-        applicationName,
         prodClientId = generateClientId
       )
+        .withName(ApplicationName(applicationName))
+
       val randomOtherApplication   = anApplicationDataForTest(
         ApplicationId.random,
         prodClientId = generateClientId
       )
-      val randomDeletedApplication = aNamedApplicationData(
+      val randomDeletedApplication = anApplicationDataForTest(
         ApplicationId.random,
-        applicationName,
         prodClientId = generateClientId
       )
+        .withName(ApplicationName(applicationName))
+
       await(applicationRepository.save(randomDeletedApplication))
       await(applicationRepository.delete(randomDeletedApplication.id, instant))
       await(applicationRepository.save(application))
@@ -500,11 +508,12 @@ class ApplicationRepositorySearchISpec
       val clientId        = generateClientId
       val applicationName = "Test Application"
 
-      val application            = aNamedApplicationData(
+      val application = anApplicationDataForTest(
         applicationId,
-        applicationName,
         prodClientId = clientId
       )
+        .withName(ApplicationName(applicationName))
+
       val randomOtherApplication = anApplicationDataForTest(
         ApplicationId.random,
         prodClientId = generateClientId
@@ -533,18 +542,19 @@ class ApplicationRepositorySearchISpec
 
       // Applications with the same name, but different access levels
       val standardApplication =
-        aNamedApplicationData(
+        anApplicationDataForTest(
           id = ApplicationId.random,
-          applicationName,
           prodClientId = generateClientId
         )
-      val ropcApplication     =
-        aNamedApplicationData(
+          .withName(ApplicationName(applicationName))
+
+      val ropcApplication =
+        anApplicationDataForTest(
           id = ApplicationId.random,
-          applicationName,
-          prodClientId = generateClientId,
-          access = Access.Ropc()
+          prodClientId = generateClientId
         )
+          .withName(ApplicationName(applicationName))
+          .withAccess(Access.Ropc())
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
@@ -566,13 +576,13 @@ class ApplicationRepositorySearchISpec
     }
 
     "return applications matching search text in a case-insensitive manner" in {
-      val applicationId = ApplicationId.random
 
-      val application            = aNamedApplicationData(
+      val application = anApplicationDataForTest(
         applicationId,
-        "TEST APPLICATION",
         prodClientId = generateClientId
       )
+        .withName(ApplicationName("TEST APPLICATION"))
+
       val randomOtherApplication = anApplicationDataForTest(
         ApplicationId.random,
         prodClientId = generateClientId
@@ -874,8 +884,8 @@ class ApplicationRepositorySearchISpec
     }
 
     "return applications that are equal to the specified cutoff date when searching for newer applications" in {
-      val applicationId = ApplicationId.random
-      val cutoffDate    = instant.minus(Duration.ofDays(365))
+
+      val cutoffDate = instant.minus(Duration.ofDays(365))
 
       await(
         applicationRepository.save(
@@ -922,24 +932,26 @@ class ApplicationRepositorySearchISpec
       val secondName    = "ZZZ third"
       val lowerCaseName = "aaa second"
 
-      val firstApplication     =
-        aNamedApplicationData(
+      val firstApplication =
+        anApplicationDataForTest(
           id = ApplicationId.random,
-          name = firstName,
           prodClientId = generateClientId
         )
-      val secondApplication    =
-        aNamedApplicationData(
+          .withName(ApplicationName(firstName))
+
+      val secondApplication =
+        anApplicationDataForTest(
           id = ApplicationId.random,
-          name = secondName,
           prodClientId = generateClientId
         )
+          .withName(ApplicationName(secondName))
+
       val lowerCaseApplication =
-        aNamedApplicationData(
+        anApplicationDataForTest(
           id = ApplicationId.random,
-          name = lowerCaseName,
           prodClientId = generateClientId
         )
+          .withName(ApplicationName(lowerCaseName))
 
       await(applicationRepository.save(secondApplication))
       await(applicationRepository.save(firstApplication))
@@ -954,26 +966,26 @@ class ApplicationRepositorySearchISpec
       result.matching.size mustBe 1
       result.matching.head.total mustBe 3
       result.applications.size mustBe 3
-      result.applications.head.name mustBe firstName
-      result.applications.tail.head.name mustBe lowerCaseName
-      result.applications.last.name mustBe secondName
+      result.applications.head.name.value mustBe firstName
+      result.applications.tail.head.name.value mustBe lowerCaseName
+      result.applications.last.name.value mustBe secondName
     }
 
     "return applications sorted by name descending" in {
       val firstName         = "AAA first"
       val secondName        = "ZZZ second"
       val firstApplication  =
-        aNamedApplicationData(
+        anApplicationDataForTest(
           id = ApplicationId.random,
-          name = firstName,
           prodClientId = generateClientId
         )
+          .withName(ApplicationName(firstName))
       val secondApplication =
-        aNamedApplicationData(
+        anApplicationDataForTest(
           id = ApplicationId.random,
-          name = secondName,
           prodClientId = generateClientId
         )
+          .withName(ApplicationName(secondName))
 
       await(applicationRepository.save(firstApplication))
       await(applicationRepository.save(secondApplication))
@@ -987,8 +999,8 @@ class ApplicationRepositorySearchISpec
       result.matching.size mustBe 1
       result.matching.head.total mustBe 2
       result.applications.size mustBe 2
-      result.applications.head.name mustBe secondName
-      result.applications.last.name mustBe firstName
+      result.applications.head.name.value mustBe secondName
+      result.applications.last.name.value mustBe firstName
     }
 
     "return applications sorted by submitted ascending" in {

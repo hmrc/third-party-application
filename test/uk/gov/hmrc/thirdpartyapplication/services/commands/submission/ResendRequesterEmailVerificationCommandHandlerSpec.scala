@@ -54,7 +54,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
       List.empty
     )
 
-    val app = anApplicationData(applicationId).copy(
+    val app = storedApp.copy(
       state = ApplicationStateExamples.pendingRequesterVerification(appAdminEmail.text, appAdminName, "123456789"),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
@@ -96,7 +96,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
+      val nonStandardApp = app.withAccess(Access.Ropc(Set.empty))
 
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(nonStandardApp, ResendRequesterEmailVerification(gatekeeperUser, instant))
@@ -105,7 +105,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val oldJourneyApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = app.withAccess(Access.Standard(List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(oldJourneyApp, ResendRequesterEmailVerification(gatekeeperUser, instant))
@@ -114,7 +114,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application has no verification code" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val noVerificationCodeApp = app.copy(state = ApplicationState(State.PENDING_REQUESTER_VERIFICATION, Some(appAdminEmail.text), Some(appAdminName), None, instant))
+      val noVerificationCodeApp = app.withState(ApplicationState(State.PENDING_REQUESTER_VERIFICATION, Some(appAdminEmail.text), Some(appAdminName), None, instant))
 
       checkFailsWith("The verificationCode has not been set for this application") {
         underTest.process(noVerificationCodeApp, ResendRequesterEmailVerification(gatekeeperUser, instant))
@@ -123,7 +123,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application is not pending requester verification" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val notApprovedApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
+      val notApprovedApp = app.withState(ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in PENDING_REQUESTER_VERIFICATION state", "The verificationCode has not been set for this application") {
         underTest.process(notApprovedApp, ResendRequesterEmailVerification(gatekeeperUser, instant))

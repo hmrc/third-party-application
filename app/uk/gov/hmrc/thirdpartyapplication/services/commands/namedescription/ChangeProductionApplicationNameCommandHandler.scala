@@ -50,7 +50,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
     Apply[Validated[Failures, *]].map5(
       isAdminOnApp(cmd.instigator, app),
       isNotInProcessOfBeingApproved(app),
-      cond(app.name != cmd.newName.value, "App already has that name"),
+      cond(app.name.value != cmd.newName.value, "App already has that name"),
       cond(nameValidationResult != DuplicateName, "New name is a duplicate"),
       cond(nameValidationResult != InvalidName, "New name is invalid")
     ) { case _ => app }
@@ -63,7 +63,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
-        oldAppName = app.name,
+        oldAppName = app.name.value,
         newAppName = cmd.newName.value,
         requestingAdminEmail = getRequester(app, cmd.instigator)
       )

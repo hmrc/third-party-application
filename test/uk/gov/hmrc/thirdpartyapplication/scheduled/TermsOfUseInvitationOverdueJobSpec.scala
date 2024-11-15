@@ -16,9 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.time.temporal.ChronoUnit._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{FiniteDuration, HOURS, MINUTES}
 
@@ -26,31 +24,31 @@ import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class TermsOfUseInvitationOverdueJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil with FixedClock {
+class TermsOfUseInvitationOverdueJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateFixtures with FixedClock {
 
-  trait Setup extends ApplicationRepositoryMockModule with TermsOfUseInvitationRepositoryMockModule with ApplicationTestData {
+  trait Setup extends ApplicationRepositoryMockModule with TermsOfUseInvitationRepositoryMockModule with StoredApplicationFixtures with CommonApplicationId {
 
     val mockLockKeeper      = mock[TermsOfUseInvitationOverdueJobLockService]
     val mockTermsOfUseRepo  = TermsOfUseInvitationRepositoryMock.aMock
     val mockApplicationRepo = ApplicationRepoMock.aMock
 
-    val nowInstant = Instant.now(clock).truncatedTo(MILLIS)
+    val nowInstant = instant
 
     val applicationId1 = ApplicationId.random
     val applicationId2 = ApplicationId.random
     val applicationId3 = ApplicationId.random
 
-    val application1 = anApplicationData(applicationId1)
+    val application1 = storedApp.copy(id = applicationId1)
     val recipients1  = application1.admins.map(_.emailAddress)
-    val application2 = anApplicationData(applicationId2)
+    val application2 = storedApp.copy(id = applicationId2)
     val recipients2  = application2.admins.map(_.emailAddress)
-    val application3 = anApplicationData(applicationId3)
+    val application3 = storedApp.copy(id = applicationId3)
     val recipients3  = application3.admins.map(_.emailAddress)
 
     val startDate1 = nowInstant.minus(100, ChronoUnit.DAYS)
@@ -107,10 +105,9 @@ class TermsOfUseInvitationOverdueJobSpec extends AsyncHmrcSpec with BeforeAndAft
       TermsOfUseInvitationRepositoryMock.UpdateState.verifyNeverCalled()
     }
 
-    "not update state if application record has state of DELETED" in new Setup with ApplicationTestData {
-      val deletedAppId1 = ApplicationId.random
-      val deletedApp    = anApplicationData(applicationId = deletedAppId1, state = deletedState("requestedBy@example.com"))
-      val touInviteDel  = TermsOfUseInvitation(deletedAppId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
+    "not update state if application record has state of DELETED" in new Setup with StoredApplicationFixtures {
+      val deletedApp   = storedApp.withState(appStateDeleted)
+      val touInviteDel = TermsOfUseInvitation(applicationId, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
 
       TermsOfUseInvitationRepositoryMock.FetchByStatusesBeforeDueBy.thenReturn(List(touInviteDel))
       ApplicationRepoMock.Fetch.thenReturn(deletedApp)

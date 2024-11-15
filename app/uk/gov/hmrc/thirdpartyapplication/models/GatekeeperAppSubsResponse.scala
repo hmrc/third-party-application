@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.util
+package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import java.time.Instant
 
-trait HasApplicationId {
-  val applicationId = ApplicationId.random
+import play.api.libs.json.{Json, Writes}
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiIdentifier, ApplicationId}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
+
+case class GatekeeperAppSubsResponse(
+    id: ApplicationId,
+    name: ApplicationName,
+    lastAccess: Option[Instant],
+    apiIdentifiers: Set[ApiIdentifier]
+  )
+
+object GatekeeperAppSubsResponse {
+  implicit val writes: Writes[GatekeeperAppSubsResponse] = Json.writes[GatekeeperAppSubsResponse]
 }

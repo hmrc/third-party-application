@@ -33,7 +33,7 @@ object ClientSecretAddedNotification {
       event: ClientSecretAddedV2
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
-    emailConnector.sendAddedClientSecretNotification(event.actor.email, event.clientSecretName, app.name, app.admins.map(_.emailAddress))
+    emailConnector.sendAddedClientSecretNotification(event.actor.email, event.clientSecretName, app.name.value, app.admins.map(_.emailAddress))
   }
 
 }

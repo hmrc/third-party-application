@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator
 
-import java.time.Instant
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -33,7 +33,11 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
-class RemoveCollaboratorCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
+class RemoveCollaboratorCommandHandler @Inject() (
+    applicationRepository: ApplicationRepository,
+    val clock: Clock
+  )(implicit val ec: ExecutionContext
+  ) extends CommandHandler {
 
   import CommandHandler._
 

@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.Clock
 import java.time.temporal.ChronoUnit._
-import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse, TermsOfUseInvitationWithApplicationResponse, TermsOfUseSearch}
@@ -33,10 +33,10 @@ import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationReposito
 class TermsOfUseInvitationService @Inject() (
     termsOfUseRepository: TermsOfUseInvitationRepository,
     emailConnector: EmailConnector,
-    clock: Clock,
+    val clock: Clock,
     config: TermsOfUseInvitationConfig
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger {
+  ) extends ApplicationLogger with ClockNow {
 
   val daysUntilDueWhenCreated = config.daysUntilDueWhenCreated
   val daysUntilDueWhenReset   = config.daysUntilDueWhenReset
@@ -60,7 +60,7 @@ class TermsOfUseInvitationService @Inject() (
   }
 
   def updateResetBackToEmailSent(applicationId: ApplicationId): Future[HasSucceeded] = {
-    val newDueByDate = Instant.now(clock).truncatedTo(MILLIS).plus(daysUntilDueWhenReset.toMinutes, MINUTES)
+    val newDueByDate = instant().plus(daysUntilDueWhenReset.toMinutes, MINUTES)
     termsOfUseRepository.updateResetBackToEmailSent(applicationId, newDueByDate)
   }
 

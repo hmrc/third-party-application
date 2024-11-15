@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models.db
+package uk.gov.hmrc.thirdpartyapplication.util
 
-import java.time.Instant
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationIdData
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiIdentifier, ApplicationId}
-
-case class ApplicationWithSubscriptions(
-    id: ApplicationId,
-    name: String,
-    lastAccess: Option[Instant],
-    apiIdentifiers: Set[ApiIdentifier]
-  )
+trait CommonApplicationId {
+  val applicationId = ApplicationIdData.one
+}

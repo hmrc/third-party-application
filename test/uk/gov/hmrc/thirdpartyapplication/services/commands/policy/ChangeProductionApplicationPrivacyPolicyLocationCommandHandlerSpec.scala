@@ -21,7 +21,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, UserId}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.PrivacyPolicyLocations
@@ -30,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
-class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends CommandHandlerBaseSpec with FixedClock {
+class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends ApplicationRepositoryMockModule {
 
@@ -40,7 +39,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
     val newUrl      = "http://example.com/new"
     val newLocation = PrivacyPolicyLocations.Url(newUrl)
 
-    val newJourneyApp = anApplicationData(applicationId).copy(
+    val newJourneyApp = storedApp.copy(
       collaborators = Set(
         developerCollaborator,
         otherAdminCollaborator
@@ -48,7 +47,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
-    val oldJourneyApp = anApplicationData(applicationId).copy(
+    val oldJourneyApp = storedApp.copy(
       collaborators = Set(
         developerCollaborator,
         otherAdminCollaborator
@@ -56,9 +55,8 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
       access = Access.Standard(privacyPolicyUrl = Some(oldUrl))
     )
 
-    val userId    = idOf(anAdminEmail)
-    val timestamp = FixedClock.instant
-    val actor     = otherAdminAsActor
+    val userId = otherAdminCollaborator.userId
+    val actor  = otherAdminAsActor
 
     val update = ChangeProductionApplicationPrivacyPolicyLocation(userId, instant, newLocation)
 
@@ -75,7 +73,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
           case ApplicationEvents.ProductionAppPrivacyPolicyLocationChanged(_, appId, eventDateTime, actor, oldLocation, eNewLocation) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
-            eventDateTime shouldBe timestamp
+            eventDateTime shouldBe instant
             oldLocation shouldBe privicyPolicyLocation
             eNewLocation shouldBe newLocation
         }
@@ -93,7 +91,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
           case ApplicationEvents.ProductionLegacyAppPrivacyPolicyLocationChanged(_, appId, eventDateTime, actor, eOldUrl, eNewUrl) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
-            eventDateTime shouldBe timestamp
+            eventDateTime shouldBe instant
             eOldUrl shouldBe oldUrl
             eNewUrl shouldBe newUrl
         }
@@ -117,19 +115,19 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
 
     "return an error if instigator is not an admin on the application" in new Setup {
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(newJourneyApp, update.copy(instigator = idOf(devEmail)))
+        underTest.process(newJourneyApp, update.copy(instigator = developerOne.userId))
       }
     }
 
     "return an error if application is still in the process of being approved" in new Setup {
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
-        underTest.process(newJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant)), update)
+        underTest.process(newJourneyApp.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant)), update)
       }
     }
 
     "return an error if application is non-standard" in new Setup {
       checkFailsWith("App must have a STANDARD access type") {
-        underTest.process(newJourneyApp.copy(access = Access.Privileged()), update)
+        underTest.process(newJourneyApp.withAccess(Access.Privileged()), update)
       }
     }
   }
@@ -149,19 +147,19 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
 
     "return an error if instigator is not an admin on the application" in new Setup {
       checkFailsWith("User must be an ADMIN") {
-        underTest.process(oldJourneyApp, update.copy(instigator = idOf(devEmail)))
+        underTest.process(oldJourneyApp, update.copy(instigator = developerOne.userId))
       }
     }
 
     "return an error if application is still in the process of being approved" in new Setup {
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
-        underTest.process(oldJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant)), update)
+        underTest.process(oldJourneyApp.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant)), update)
       }
     }
 
     "return an error if application is non-standard" in new Setup {
       checkFailsWith("App must have a STANDARD access type") {
-        underTest.process(oldJourneyApp.copy(access = Access.Privileged()), update)
+        underTest.process(oldJourneyApp.withAccess(Access.Privileged()), update)
       }
     }
   }

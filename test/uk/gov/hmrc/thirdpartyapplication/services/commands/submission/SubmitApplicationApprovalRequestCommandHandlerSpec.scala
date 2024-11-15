@@ -67,7 +67,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
       List.empty
     )
 
-    val app = anApplicationData(applicationId).copy(
+    val app = storedApp.copy(
       state = ApplicationStateExamples.testing,
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
@@ -167,7 +167,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       namingServiceReturns(ValidName)
-      val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
+      val nonStandardApp = app.withAccess(Access.Ropc(Set.empty))
 
       checkFailsWith("App must have a STANDARD access type") {
         underTest.process(nonStandardApp, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
@@ -195,7 +195,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
     "return an error if the application is not in TESTING" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       namingServiceReturns(ValidName)
-      val notTestingApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
+      val notTestingApp = app.withState(ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in TESTING state") {
         underTest.process(notTestingApp, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))

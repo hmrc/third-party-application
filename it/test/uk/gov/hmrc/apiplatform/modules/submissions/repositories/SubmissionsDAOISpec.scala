@@ -31,12 +31,12 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.Su
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ActualAnswer, Submission}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class SubmissionsDAOISpec
     extends ServerBaseISpec
     with FixedClock
-    with ApplicationTestData
+    with StoredApplicationFixtures
     with SubmissionsTestData
     with BeforeAndAfterEach {
 

@@ -27,22 +27,23 @@ import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborators, GrantLength}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, Collaborators, GrantLength}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandAuthenticatorMockModule, ApplicationCommandDispatcherMockModule, ApplicationServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationCommandControllerSpec
     extends ControllerSpec
-    with ApplicationStateUtil
     with ControllerTestData
     with TableDrivenPropertyChecks
-    with ApplicationTestData
+    with StoredApplicationFixtures
+    with ActorTestData
+    with ApplicationWithCollaboratorsFixtures
+    with CommonApplicationId
     with FixedClock {
 
   import play.api.test.Helpers._
@@ -61,8 +62,6 @@ class ApplicationCommandControllerSpec
       ApplicationServiceMock.aMock,
       Helpers.stubControllerComponents()
     )
-
-    val applicationId = ApplicationId.random
   }
 
   val actor                   = Actors.AppCollaborator("fred@smith.com".toLaxEmail)
@@ -84,9 +83,9 @@ class ApplicationCommandControllerSpec
 
     "dispatch request" should {
       val jsonText =
-        s"""{"command":{"actor":{"actorType":"UNKNOWN"},"collaborator":{"userId":"${developerCollaborator.userId.value}","emailAddress":"dev@example.com","role":"DEVELOPER"},"timestamp":"$nowAsText","updateType":"removeCollaborator"},"verifiedCollaboratorsToNotify":["admin@example.com"]}"""
+        s"""{"command":{"actor":{"actorType":"UNKNOWN"},"collaborator":{"userId":"${developerCollaborator.userId.value}","emailAddress":"${developerCollaborator.emailAddress}","role":"DEVELOPER"},"timestamp":"$nowAsText","updateType":"removeCollaborator"},"verifiedCollaboratorsToNotify":["${adminOne.emailAddress}"]}"""
       val cmd      = RemoveCollaborator(Actors.Unknown, developerCollaborator, instant)
-      val req      = ApplicationCommandController.DispatchRequest(cmd, Set(anAdminEmail))
+      val req      = ApplicationCommandController.DispatchRequest(cmd, Set(adminOne.emailAddress))
       import cats.syntax.option._
 
       "write to json" in {
@@ -99,7 +98,7 @@ class ApplicationCommandControllerSpec
     "calling update" should {
 
       "return success if application command request is valid" in new Setup {
-        ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(anApplicationData(applicationId))
+        ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(storedApp)
 
         val result = underTest.update(applicationId)(request.withBody(validUpdateNameRequestBody))
 
@@ -155,7 +154,7 @@ class ApplicationCommandControllerSpec
 
       "return success if application command request is valid" in new Setup {
         ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
-        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(anApplicationData(applicationId))
+        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(storedApp)
 
         val result = underTest.dispatch(applicationId)(request.withBody(validUpdateNameRequestBody))
 
@@ -164,7 +163,7 @@ class ApplicationCommandControllerSpec
 
       "return success if dispatch request is valid" in new Setup {
         ApplicationCommandAuthenticatorMock.AuthenticateCommand.succeeds()
-        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(anApplicationData(applicationId))
+        ApplicationCommandDispatcherMock.Dispatch.thenReturnCommandSuccess(storedApp)
 
         val result = underTest.dispatch(applicationId)(request.withBody(Json.toJson(dispatch)))
 

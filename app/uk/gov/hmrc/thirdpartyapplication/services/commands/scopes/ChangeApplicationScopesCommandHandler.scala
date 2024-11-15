@@ -82,7 +82,7 @@ class ChangeApplicationScopesCommandHandler @Inject() (
           getRopcAccess(_).copy(scopes = newScopes)
         }
       )
-      applicationData.copy(access = updatedAccess)
+      applicationData.withAccess(updatedAccess)
     }
 
     for {

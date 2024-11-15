@@ -19,26 +19,21 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, ApplicationId}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveCollaborator
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.CollaboratorRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
-class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
+class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec with ApplicationWithCollaboratorsFixtures {
 
   trait Setup extends ApplicationRepositoryMockModule {
-    val underTest = new RemoveCollaboratorCommandHandler(ApplicationRepoMock.aMock)
+    val underTest = new RemoveCollaboratorCommandHandler(ApplicationRepoMock.aMock, clock)
 
-    val applicationId = ApplicationId.random
-    val anAdminEmail  = "admin@example.com".toLaxEmail
-
-    val developerCollaborator = devEmail.developer()
-
-    val adminCollaborator = anAdminEmail.admin()
-    val adminActor        = otherAdminAsActor
+    val applicationId = standardApp.id
+    val adminActor    = otherAdminAsActor
 
     val gkUserEmail  = "admin@gatekeeper"
     val gkUserActor  = Actors.GatekeeperUser(gkUserEmail)
@@ -48,21 +43,13 @@ class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
     val scheduledJobActor = Actors.ScheduledJob(jobId)
     val collaboratorEmail = "newdev@somecompany.com"
 
-    val collaborator = collaboratorEmail.developer()
-
-    val app = anApplicationData(applicationId).copy(
-      collaborators = Set(
-        developerCollaborator,
-        adminCollaborator,
-        collaborator
-      )
+    val app = storedApp.copy(
+      collaborators = Set(adminOne, developerOne)
     )
 
-    val timestamp = FixedClock.instant
+    val adminsToEmail = Set(adminOne.emailAddress, developerOne.emailAddress)
 
-    val adminsToEmail = Set(anAdminEmail, devEmail)
-
-    val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), collaborator, instant)
+    val removeCollaborator = RemoveCollaborator(Actors.AppCollaborator(adminActor.email), developerOne, instant)
 
     def checkSuccessResult(expectedActor: Actor)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
@@ -73,8 +60,8 @@ class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
           case CollaboratorRemovedV2(_, appId, eventDateTime, actor, evtCollaborator) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
-            eventDateTime shouldBe timestamp
-            evtCollaborator shouldBe collaborator
+            eventDateTime shouldBe instant
+            evtCollaborator shouldBe developerOne
         }
       }
     }
@@ -114,7 +101,7 @@ class RemoveCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
     }
 
     "return an error when collaborator is last admin associated with the application" in new Setup {
-      val removeLastAdminCollaboratorCommand = removeCollaborator.copy(collaborator = adminCollaborator)
+      val removeLastAdminCollaboratorCommand = removeCollaborator.copy(collaborator = adminOne)
 
       checkFailsWith(CommandFailures.CannotRemoveLastAdmin) {
         underTest.process(app, removeLastAdminCollaboratorCommand)

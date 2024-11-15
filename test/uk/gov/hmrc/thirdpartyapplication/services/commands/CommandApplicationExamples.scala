@@ -16,24 +16,20 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, HasApplicationId}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-trait CommandApplicationExamples extends HasApplicationId {
-  self: ApplicationTestData =>
+trait CommandApplicationExamples extends CommonApplicationId with StoredApplicationFixtures with CollaboratorTestData {
 
   val devAndAdminCollaborators: Set[Collaborator] =
     Set(
       developerCollaborator,
-      otherAdminCollaborator
+      adminOne
     )
 
-  val principalApp   = anApplicationData(applicationId).copy(
-    collaborators = devAndAdminCollaborators
-  )
-  val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())
+  val principalApp   = storedApp.withCollaborators(devAndAdminCollaborators)
+  val subordinateApp = principalApp.inSandbox()
 
   val responsibleIndividual      = ResponsibleIndividual.build("bob example", "bob@example.com")
   val privicyPolicyLocation      = PrivacyPolicyLocations.InDesktopSoftware

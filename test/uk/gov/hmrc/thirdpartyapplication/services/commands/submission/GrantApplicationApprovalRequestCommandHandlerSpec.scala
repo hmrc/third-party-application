@@ -57,7 +57,7 @@ class GrantApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBa
       List.empty
     )
 
-    val app = anApplicationData(applicationId).copy(
+    val app = storedApp.copy(
       state = ApplicationStateExamples.pendingGatekeeperApproval(appAdminEmail.text, appAdminName),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
@@ -139,7 +139,7 @@ class GrantApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBa
     "return an error if important submission data not found" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
-      val nonStandardApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
+      val nonStandardApp = app.withAccess(Access.Standard(List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith(s"No submission or important submission data found for application $applicationId") {
         underTest.process(nonStandardApp, GrantApplicationApprovalRequest(gkUserEmail, instant, None, None))
@@ -159,7 +159,7 @@ class GrantApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBa
     "return an error if the application is not in PENDING_GATEKEEPER_APPROVAL" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
-      val testingApp = app.copy(state = ApplicationStateExamples.testing)
+      val testingApp = app.withState(ApplicationStateExamples.testing)
 
       checkFailsWith("App is not in PENDING_GATEKEEPER_APPROVAL state", "No requestedBy email found", "No requestedBy name found") {
         underTest.process(testingApp, GrantApplicationApprovalRequest(gkUserEmail, instant, None, None))

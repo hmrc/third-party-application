@@ -240,7 +240,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object GetAppsWithSubscriptions {
 
-      def thenReturn(apps: ApplicationWithSubscriptions*) =
+      def thenReturn(apps: GatekeeperAppSubsResponse*) =
         when(aMock.getAppsWithSubscriptions).thenReturn(successful(apps.toList))
 
       def thenReturnNone() =
@@ -364,7 +364,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def clientSecretNotFound(applicationId: ApplicationId, clientSecretId: ClientSecret.Id) =
         when(aMock.deleteClientSecret(eqTo(applicationId), eqTo(clientSecretId)))
-          .thenThrow(new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [${applicationId.value}]"))
+          .thenThrow(new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [${applicationId}]"))
 
       def verifyNeverCalled() = ApplicationRepoMock.verify(never).deleteClientSecret(*[ApplicationId], *[ClientSecret.Id])
     }

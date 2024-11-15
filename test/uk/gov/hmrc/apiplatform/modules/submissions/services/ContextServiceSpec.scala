@@ -20,25 +20,23 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.scalatest.Inside
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPrevention
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ContextServiceSpec
     extends AsyncHmrcSpec
     with Inside
     with SubmissionsTestData
-    with ApplicationTestData {
+    with StoredApplicationFixtures {
 
   trait Setup extends ApplicationRepositoryMockModule with SubscriptionRepositoryMockModule {
 
-    val applicationId: ApplicationId       = ApplicationId.random
-    val applicationData: StoredApplication = anApplicationData(applicationId)
+    val applicationData: StoredApplication = storedApp
 
     val underTest = new ContextService(ApplicationRepoMock.aMock, SubscriptionRepoMock.aMock)
   }

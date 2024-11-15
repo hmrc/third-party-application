@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
@@ -38,7 +38,7 @@ class ResponsibleIndividualVerificationService @Inject() (
     stateHistoryRepository: StateHistoryRepository,
     clock: Clock
   )(implicit ec: ExecutionContext
-  ) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
+  ) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger with ClockNow {
 
   def createNewToUVerification(applicationData: StoredApplication, submissionId: SubmissionId, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
     val verification = ResponsibleIndividualToUVerification(
@@ -46,7 +46,7 @@ class ResponsibleIndividualVerificationService @Inject() (
       submissionId = submissionId,
       submissionInstance = submissionInstance,
       applicationName = applicationData.name,
-      createdOn = Instant.now(clock)
+      createdOn = instant()
     )
     responsibleIndividualVerificationRepository.save(verification)
   }
@@ -63,7 +63,7 @@ class ResponsibleIndividualVerificationService @Inject() (
       submissionId = submissionId,
       submissionInstance = submissionInstance,
       applicationName = applicationData.name,
-      createdOn = Instant.now(clock),
+      createdOn = instant(),
       requestingAdminName = requestedByName,
       requestingAdminEmail = requestedByEmailAddress
     )

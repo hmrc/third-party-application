@@ -20,34 +20,21 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationStateFixtures, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
   CreateApplicationRequestV2,
   StandardAccessDataToCopy
 }
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
-import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, _}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, StoredToken}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class ApplicationSpec extends utils.HmrcSpec with ApplicationStateUtil with UpliftRequestSamples with CollaboratorTestData {
+class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with UpliftRequestSamples with CollaboratorTestData with StoredApplicationFixtures
+    with utils.FixedClock {
 
   "Application with Uplift request" should {
-    val app     =
-      StoredApplication(
-        ApplicationId.random,
-        "MyApp",
-        "myapp",
-        Set.empty,
-        None,
-        "a",
-        ApplicationTokens(StoredToken(ClientId("cid"), "at")),
-        productionState("user1"),
-        Access.Standard(),
-        instant,
-        Some(instant)
-      )
+    val app     = storedApp
     val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator("1".toLaxEmail), changedAt = instant)
 
     "create object" in {

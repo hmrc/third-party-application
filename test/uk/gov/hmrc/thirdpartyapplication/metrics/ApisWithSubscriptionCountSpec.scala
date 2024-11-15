@@ -21,7 +21,7 @@ import scala.concurrent.Future
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
 

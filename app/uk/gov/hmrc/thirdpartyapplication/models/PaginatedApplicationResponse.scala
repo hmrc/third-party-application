@@ -16,4 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-case class PaginatedApplicationResponse(applications: List[Application], page: Int, pageSize: Int, total: Int, matching: Int)
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
+
+case class PaginatedApplicationResponse(applications: List[ApplicationWithCollaborators], page: Int, pageSize: Int, total: Int, matching: Int)

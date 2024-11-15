@@ -33,6 +33,6 @@ object ClientSecretRemovedNotification {
       event: ClientSecretRemovedV2
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
-    emailConnector.sendRemovedClientSecretNotification(event.actor.email, event.clientSecretName, app.name, app.admins.map(_.emailAddress))
+    emailConnector.sendRemovedClientSecretNotification(event.actor.email, event.clientSecretName, app.name.value, app.admins.map(_.emailAddress))
   }
 }

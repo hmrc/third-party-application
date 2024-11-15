@@ -21,9 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, ValidatedApplicationName}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, State, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationName
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
@@ -32,23 +31,22 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 
 class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  val app = principalApp.copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+  val app = principalApp.withAccess(Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftNamingServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val oldName        = app.name
-    val newName        = "New app name"
+    val newName        = ApplicationName("New app name")
     val gatekeeperUser = "gkuser"
     val requester      = "requester"
 
-    val userId = idOf(anAdminEmail)
+    val userId = adminOne.userId
 
-    val newApp = app.copy(name = newName, normalisedName = newName.toLowerCase())
+    val newApp = app.copy(name = newName, normalisedName = newName.value.toLowerCase())
 
-    val timestamp = FixedClock.instant
-    val update    = ChangeProductionApplicationName(gatekeeperUser, userId, instant, ValidatedApplicationName(newName).get)
+    val update = ChangeProductionApplicationName(gatekeeperUser, userId, instant, ValidatedApplicationName(newName.value).get)
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
@@ -63,11 +61,11 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
           case ApplicationEvents.ProductionAppNameChangedEvent(_, appId, eventDateTime, actor, anOldName, aNewName, requestingAdminEmail) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
-            eventDateTime shouldBe timestamp
-            aNewName shouldBe newName
-            anOldName shouldBe oldName
+            eventDateTime shouldBe instant
+            aNewName shouldBe newName.value
+            anOldName shouldBe oldName.value
             anOldName should not be aNewName
-            requestingAdminEmail shouldBe anAdminEmail
+            requestingAdminEmail shouldBe adminOne.emailAddress
         }
       }
     }
@@ -85,7 +83,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
 
     "create correct events for a valid request with a priv app" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val priviledgedApp = app.copy(access = Access.Privileged())
+      val priviledgedApp = app.withAccess(Access.Privileged())
       ApplicationRepoMock.UpdateApplicationName.thenReturn(priviledgedApp) // unmodified
 
       checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
@@ -104,7 +102,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
 
     "return an error if instigator is not an admin on the application" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val instigatorIsDev = update.copy(instigator = idOf(devEmail))
+      val instigatorIsDev = update.copy(instigator = developerOne.userId)
 
       checkFailsWith("User must be an ADMIN") {
         underTest.process(app, instigatorIsDev)
@@ -113,7 +111,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
 
     "return an error if application is still in the process of being approved" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val appPendingApproval = app.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
+      val appPendingApproval = app.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
 
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
         underTest.process(appPendingApproval, update)

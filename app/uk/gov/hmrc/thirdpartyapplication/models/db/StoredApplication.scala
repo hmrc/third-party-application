@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
+import java.time.temporal.ChronoUnit
 import java.time.{Instant, Period}
 
 import com.typesafe.config.ConfigFactory
@@ -29,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLength
 
 case class StoredApplication(
     id: ApplicationId,
-    name: String,
+    name: ApplicationName,
     normalisedName: String,
     collaborators: Set[Collaborator],
     description: Option[String] = None,
@@ -41,35 +42,57 @@ case class StoredApplication(
     lastAccess: Option[Instant],
     refreshTokensAvailableFor: Period = Period.ofDays(grantLengthConfig),
     rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-    environment: String = Environment.PRODUCTION.toString,
+    environment: Environment = Environment.PRODUCTION,
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,
     ipAllowlist: IpAllowlist = IpAllowlist(),
     allowAutoDelete: Boolean = true
-  ) {
-  lazy val admins = collaborators.filter(_.isAdministrator)
+  ) extends HasState with HasAccess with HasCollaborators with HasEnvironment {
+  protected val deployedTo = environment
 
-  lazy val sellResellOrDistribute = access match {
+  def sellResellOrDistribute = access match {
     case Access.Standard(_, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
     case _                                                      => None
   }
 
-  lazy val importantSubmissionData: Option[ImportantSubmissionData] = access match {
+  def importantSubmissionData: Option[ImportantSubmissionData] = access match {
     case Access.Standard(_, _, _, _, _, Some(submissionData)) => Some(submissionData)
     case _                                                    => None
   }
 
-  def isInTesting                                                      = state.isInTesting
-  def isPendingResponsibleIndividualVerification                       = state.isPendingResponsibleIndividualVerification
-  def isPendingGatekeeperApproval                                      = state.isPendingGatekeeperApproval
-  def isPendingRequesterVerification                                   = state.isPendingRequesterVerification
-  def isInPreProductionOrProduction                                    = state.isInPreProductionOrProduction
-  def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification = state.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification
-  def isInProduction                                                   = state.isInProduction
-  def isDeleted                                                        = state.isDeleted
+  import monocle.syntax.all._
+  def withState(newState: ApplicationState): StoredApplication = this.focus(_.state).replace(newState)
+  def withAccess(newAccess: Access): StoredApplication         = this.focus(_.access).replace(newAccess)
+
 }
 
 object StoredApplication {
+
+  def asApplication(data: StoredApplication): ApplicationWithCollaborators = {
+    ApplicationWithCollaborators(
+      CoreApplication(
+        data.id,
+        data.tokens.production.clientId,
+        data.wso2ApplicationName,
+        data.name,
+        data.environment,
+        data.description,
+        data.createdOn,
+        data.lastAccess,
+        GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
+        data.tokens.production.lastAccessTokenUsage,
+        data.access,
+        data.state,
+        data.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
+        data.checkInformation,
+        data.blocked,
+        ipAllowlist = data.ipAllowlist,
+        allowAutoDelete = data.allowAutoDelete,
+        lastActionActor = ActorType.UNKNOWN
+      ),
+      data.collaborators
+    )
+  }
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
@@ -77,7 +100,7 @@ object StoredApplication {
       createApplicationRequest: CreateApplicationRequest,
       wso2ApplicationName: String,
       environmentToken: StoredToken,
-      createdOn: Instant = Instant.now()
+      createdOn: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
     ): StoredApplication = {
     import createApplicationRequest._
 
@@ -101,17 +124,17 @@ object StoredApplication {
 
     StoredApplication(
       ApplicationId.random,
-      name.value,
+      name,
       name.value.toLowerCase,
       collaborators,
-      createApplicationRequest.description.filterNot(_ => environment == Environment.PRODUCTION),
+      createApplicationRequest.description.filterNot(_ => environment.isProduction),
       wso2ApplicationName,
       ApplicationTokens(environmentToken),
       applicationState,
       applicationAccess,
       createdOn,
       Some(createdOn),
-      environment = environment.toString,
+      environment = environment,
       checkInformation = checkInfo
     )
   }

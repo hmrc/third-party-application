@@ -19,39 +19,31 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
-import com.github.t3hnar.bcrypt._
 import org.mockito.Strictness
 import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, Collaborator, State, StateHistory}
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredToken, _}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
+import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class GatekeeperServiceSpec
     extends AsyncHmrcSpec
     with BeforeAndAfterAll
-    with ApplicationStateUtil
     with CollaboratorTestData
+    with ApplicationStateFixtures
+    with StoredApplicationFixtures
     with FixedClock {
 
-  private val requestedByEmail = "john.smith@example.com"
-
   private val bobTheGKUser = Actors.GatekeeperUser("bob")
-
-  private def aSecret(secret: String) = StoredClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
-
-  private val productionToken = StoredToken(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL): StateHistory = {
     StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(State.TESTING), changedAt = instant)
@@ -59,26 +51,6 @@ class GatekeeperServiceSpec
 
   private def aStateHistoryResponse(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
     StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, instant)
-  }
-
-  private def anApplicationData(
-      applicationId: ApplicationId,
-      state: ApplicationState = productionState(requestedByEmail),
-      collaborators: Set[Collaborator] = Set(loggedInUser.admin())
-    ) = {
-    StoredApplication(
-      applicationId,
-      "MyApp",
-      "myapp",
-      collaborators,
-      Some("description"),
-      "aaaaaaaaaa",
-      ApplicationTokens(productionToken),
-      state,
-      Access.Standard(),
-      instant,
-      Some(instant)
-    )
   }
 
   trait Setup extends AuditServiceMockModule
@@ -90,8 +62,6 @@ class GatekeeperServiceSpec
     val mockEmailConnector     = mock[EmailConnector](withSettings.strictness(Strictness.Lenient))
     val response               = mock[HttpResponse]
     val mockApplicationService = mock[ApplicationService]
-
-    // val applicationResponseCreator = new ApplicationResponseCreator()
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -105,17 +75,17 @@ class GatekeeperServiceSpec
     )
 
     StateHistoryRepoMock.Insert.thenAnswer()
-    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationDeletedNotification(*, *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
   }
 
   "fetch nonTestingApps with submitted date" should {
 
     "return apps" in new Setup {
-      val app1     = anApplicationData(ApplicationId.random)
-      val app2     = anApplicationData(ApplicationId.random)
+      val app1     = storedApp.withId(ApplicationId.random)
+      val app2     = storedApp.withId(ApplicationId.random)
       val history1 = aHistory(app1.id)
       val history2 = aHistory(app2.id)
 
@@ -132,7 +102,7 @@ class GatekeeperServiceSpec
     val appId = ApplicationId.random
 
     "return app" in new Setup {
-      val app1    = anApplicationData(appId)
+      val app1    = storedApp.withId(appId)
       val history = List(aHistory(app1.id), aHistory(app1.id, State.PRODUCTION))
 
       ApplicationRepoMock.Fetch.thenReturn(app1)
@@ -140,7 +110,7 @@ class GatekeeperServiceSpec
 
       val result = await(underTest.fetchAppWithHistory(appId))
 
-      result shouldBe ApplicationWithHistoryResponse(Application(data = app1), history.map(StateHistoryResponse.from))
+      result shouldBe ApplicationWithHistoryResponse(StoredApplication.asApplication(app1), history.map(StateHistoryResponse.from))
     }
 
     "throw not found exception" in new Setup {
@@ -156,7 +126,7 @@ class GatekeeperServiceSpec
     }
 
     "propagate the exception when the history repository fail" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(anApplicationData(appId))
+      ApplicationRepoMock.Fetch.thenReturn(storedApp.withId(appId))
       StateHistoryRepoMock.FetchByApplicationId.thenFailWith(new RuntimeException("Expected test failure"))
 
       intercept[RuntimeException](await(underTest.fetchAppWithHistory(appId)))
@@ -168,7 +138,7 @@ class GatekeeperServiceSpec
     val appId = ApplicationId.random
 
     "return app" in new Setup {
-      val app1              = anApplicationData(appId)
+      val app1              = storedApp.withId(appId)
       val returnedHistories = List(aHistory(app1.id), aHistory(app1.id, State.PRODUCTION))
       val expectedHistories = List(aStateHistoryResponse(app1.id), aStateHistoryResponse(app1.id, State.PRODUCTION))
 
@@ -186,19 +156,20 @@ class GatekeeperServiceSpec
     "return no matching applications if application has a subscription" in new Setup {
       ApplicationRepoMock.GetAppsWithSubscriptions.thenReturnNone()
 
-      val result: List[ApplicationWithSubscriptionsResponse] = await(underTest.fetchAllWithSubscriptions())
+      val result: List[GatekeeperAppSubsResponse] = await(underTest.fetchAllWithSubscriptions())
 
       result.size shouldBe 0
     }
 
     "return applications when there are no matching subscriptions" in new Setup {
-      private val appWithSubs: ApplicationWithSubscriptions = ApplicationWithSubscriptions(id = ApplicationId.random, name = "name", lastAccess = None, apiIdentifiers = Set())
+      private val appWithSubs: GatekeeperAppSubsResponse =
+        GatekeeperAppSubsResponse(id = ApplicationId.random, name = ApplicationName("name"), lastAccess = None, apiIdentifiers = Set())
       ApplicationRepoMock.GetAppsWithSubscriptions.thenReturn(appWithSubs)
 
-      val result: List[ApplicationWithSubscriptionsResponse] = await(underTest.fetchAllWithSubscriptions())
+      val result: List[GatekeeperAppSubsResponse] = await(underTest.fetchAllWithSubscriptions())
 
       result.size shouldBe 1
-      result shouldBe List(ApplicationWithSubscriptionsResponse(appWithSubs))
+      result shouldBe List(appWithSubs)
     }
   }
 

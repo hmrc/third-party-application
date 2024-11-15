@@ -20,10 +20,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Environment, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, ValidatedApplicationName}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, State, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationName
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -33,22 +33,22 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 
 class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  val app = subordinateApp.copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+  val app = subordinateApp.withAccess(Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftNamingServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val oldName   = app.name
-    val newName   = "New app name"
+    val newName   = ApplicationName("New app name")
     val requester = "requester"
 
-    val userId = idOf(anAdminEmail)
+    val userId = adminOne.userId
 
-    val newApp = app.copy(name = newName, normalisedName = newName.toLowerCase())
+    val newApp = app.copy(name = newName, normalisedName = newName.value.toLowerCase())
 
     val timestamp = FixedClock.instant
-    val update    = ChangeSandboxApplicationName(developerActor, instant, ValidatedApplicationName(newName).get)
+    val update    = ChangeSandboxApplicationName(developerActor, instant, ValidatedApplicationName(newName.value).get)
 
     val underTest = new ChangeSandboxApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
@@ -64,8 +64,8 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            aNewName shouldBe newName
-            anOldName shouldBe oldName
+            aNewName shouldBe newName.value
+            anOldName shouldBe oldName.value
             anOldName should not be aNewName
         }
       }
@@ -84,7 +84,7 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
 
     "create correct events for a valid request with a priv app" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val priviledgedApp = app.copy(access = Access.Privileged())
+      val priviledgedApp = app.withAccess(Access.Privileged())
       ApplicationRepoMock.UpdateApplicationName.thenReturn(priviledgedApp) // unmodified
 
       checkSuccessResult(developerActor) {
@@ -105,13 +105,13 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
 
       checkFailsWith("App is not in Sandbox environment") {
-        underTest.process(app.copy(environment = Environment.PRODUCTION.toString), update)
+        underTest.process(app.inProduction(), update)
       }
     }
 
     "return an error if application is still in the process of being approved" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val appPendingApproval = app.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
+      val appPendingApproval = app.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
 
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
         underTest.process(appPendingApproval, update)
@@ -120,7 +120,7 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
 
     "return an error if the application already has the specified name" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val appAlreadyHasName = app.copy(name = newName)
+      val appAlreadyHasName = app.withName(newName)
 
       checkFailsWith("App already has that name") {
         underTest.process(appAlreadyHasName, update)

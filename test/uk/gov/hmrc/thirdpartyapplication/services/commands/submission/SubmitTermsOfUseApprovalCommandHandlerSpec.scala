@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
-import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
@@ -57,7 +56,7 @@ class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec 
     val appAdminEmail  = "admin@example.com".toLaxEmail
     val appAdminName   = "Ms Admin"
 
-    val termsOfUseInvitation = TermsOfUseInvitation(applicationId, Instant.now(), Instant.now(), Instant.now(), None, TermsOfUseInvitationState.EMAIL_SENT)
+    val termsOfUseInvitation = TermsOfUseInvitation(applicationId, instant, instant, instant, None, TermsOfUseInvitationState.EMAIL_SENT)
 
     val importantSubmissionData = ImportantSubmissionData(
       None,
@@ -68,7 +67,7 @@ class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec 
       List.empty
     )
 
-    val app = anApplicationData(applicationId).copy(
+    val app = storedApp.copy(
       state = ApplicationStateExamples.production("bob@example.com", "Bob"),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
@@ -209,7 +208,7 @@ class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec 
       TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(termsOfUseInvitation)
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
-      val nonStandardApp = app.copy(access = Access.Ropc(Set.empty))
+      val nonStandardApp = app.withAccess(Access.Ropc(Set.empty))
 
       checkFailsWith("App must have a STANDARD access type") {
         underTest.process(nonStandardApp, SubmitTermsOfUseApproval(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
@@ -230,7 +229,7 @@ class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec 
       TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturn(termsOfUseInvitation)
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
-      val notTestingApp = app.copy(state = ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
+      val notTestingApp = app.withState(ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in PRODUCTION state") {
         underTest.process(notTestingApp, SubmitTermsOfUseApproval(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))

@@ -18,37 +18,27 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, Environment}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, ClientSecret}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ClientSecretRemovedV2
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
-class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
+class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec with ApplicationWithCollaboratorsFixtures {
 
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new RemoveClientSecretCommandHandler(ApplicationRepoMock.aMock)
 
-    val developerCollaborator = devEmail.developer(developerUserId)
-    val adminCollaborator     = anAdminEmail.admin(adminUserId)
-
-    val applicationId = ApplicationId.random
-
-    val principalApp   = anApplicationData(applicationId).copy(
-      collaborators = Set(
-        developerCollaborator,
-        adminCollaborator
-      )
+    val principalApp   = storedApp.copy(
+      collaborators = Set(adminOne, developerOne)
     )
-    val subordinateApp = principalApp.copy(environment = Environment.SANDBOX.toString())
+    val subordinateApp = principalApp.inSandbox()
 
-    val timestamp    = FixedClock.instant
     val secretValue  = "secret"
     val clientSecret = principalApp.tokens.production.clientSecrets.head
 
-    val removeClientSecretByDev   = RemoveClientSecret(Actors.AppCollaborator(devEmail), clientSecret.id, instant)
+    val removeClientSecretByDev   = RemoveClientSecret(Actors.AppCollaborator(developerOne.emailAddress), clientSecret.id, instant)
     val removeClientSecretByAdmin = RemoveClientSecret(otherAdminAsActor, clientSecret.id, instant)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
@@ -60,7 +50,7 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec {
           case ClientSecretRemovedV2(_, appId, eventDateTime, actor, clientSecretId, clientSecretName) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
-            eventDateTime shouldBe timestamp
+            eventDateTime shouldBe instant
             clientSecretId shouldBe clientSecret.id.value.toString()
             clientSecretName shouldBe clientSecret.name
         }

@@ -23,6 +23,7 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ResponsibleIndividual, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, ResponsibleIndividualVerificationState}
 
@@ -31,7 +32,7 @@ sealed trait ResponsibleIndividualVerification {
   def applicationId: ApplicationId
   def submissionId: SubmissionId
   def submissionInstance: Int
-  def applicationName: String
+  def applicationName: ApplicationName
   def createdOn: Instant
   def state: ResponsibleIndividualVerificationState
 }
@@ -58,8 +59,8 @@ case class ResponsibleIndividualToUVerification(
     applicationId: ApplicationId,
     submissionId: SubmissionId,
     submissionInstance: Int,
-    applicationName: String,
-    createdOn: Instant = Instant.now(),
+    applicationName: ApplicationName,
+    createdOn: Instant,
     state: ResponsibleIndividualVerificationState = INITIAL
   ) extends ResponsibleIndividualVerification
 
@@ -68,8 +69,8 @@ case class ResponsibleIndividualTouUpliftVerification(
     applicationId: ApplicationId,
     submissionId: SubmissionId,
     submissionInstance: Int,
-    applicationName: String,
-    createdOn: Instant = Instant.now(),
+    applicationName: ApplicationName,
+    createdOn: Instant,
     requestingAdminName: String,
     requestingAdminEmail: LaxEmailAddress,
     state: ResponsibleIndividualVerificationState = INITIAL
@@ -80,8 +81,8 @@ case class ResponsibleIndividualUpdateVerification(
     applicationId: ApplicationId,
     submissionId: SubmissionId,
     submissionInstance: Int,
-    applicationName: String,
-    createdOn: Instant = Instant.now(),
+    applicationName: ApplicationName,
+    createdOn: Instant,
     responsibleIndividual: ResponsibleIndividual,
     requestingAdminName: String,
     requestingAdminEmail: LaxEmailAddress,

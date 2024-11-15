@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredToken
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class TokenServiceSpec extends AsyncHmrcSpec {
 

@@ -21,7 +21,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{
   ApplicationRepositoryMockModule,
   NotificationRepositoryMockModule,
@@ -50,11 +49,10 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplicationAccessOverridesCommandHandler, ChangeApplicationScopesCommandHandler, ScopesCommandsProcessor}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
-    with ApplicationStateUtil
-    with ApplicationTestData {
+    with StoredApplicationFixtures {
 
   trait CommonSetup extends AuditServiceMockModule
       with ApplicationRepositoryMockModule

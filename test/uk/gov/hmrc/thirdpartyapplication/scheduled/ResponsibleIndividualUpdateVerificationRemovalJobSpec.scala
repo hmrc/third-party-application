@@ -22,22 +22,21 @@ import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
 import org.scalatest.BeforeAndAfterAll
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocations, ResponsibleIndividual, TermsAndConditionsLocations}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.INITIAL
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineResponsibleIndividualDidNotVerify
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationCommandDispatcherMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil
-    with ApplicationTestData {
+class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll
+    with StoredApplicationFixtures {
 
   trait Setup extends ApplicationCommandDispatcherMockModule with ResponsibleIndividualVerificationRepositoryMockModule
       with SubmissionsTestData {
@@ -45,7 +44,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
     val mockLockKeeper = mock[ResponsibleIndividualUpdateVerificationRemovalJobLockService]
     val riName         = "bob responsible"
     val riEmail        = "bob.responsible@example.com"
-    val appName        = "my app"
+    val appName        = ApplicationName("my app")
     val requesterName  = "bob requester"
     val requesterEmail = "bob.requester@example.com"
 
@@ -58,11 +57,11 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
       List.empty
     )
 
-    val app             = anApplicationData(
-      ApplicationId.random,
+    val app             = storedApp.copy(
       access = Access.Standard(importantSubmissionData = Some(importantSubmissionData)),
-      state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail, requesterName)
-    ).copy(name = appName)
+      state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail, requesterName),
+      name = appName
+    )
     val initialDelay    = FiniteDuration(1, MINUTES)
     val interval        = FiniteDuration(1, HOURS)
     val removalInterval = FiniteDuration(20, DAYS)
@@ -87,7 +86,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
         app.id,
         completelyAnswerExtendedSubmission.submission.id,
         0,
-        "my app",
+        ApplicationName("my app"),
         instant,
         ResponsibleIndividual.build("ri name", "ri@example.com"),
         "Mr Admin",

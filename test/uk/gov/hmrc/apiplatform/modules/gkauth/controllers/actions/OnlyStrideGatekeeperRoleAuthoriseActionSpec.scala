@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.{StrideGatekeeperRoleAuth
 import uk.gov.hmrc.thirdpartyapplication.controllers.OnlyStrideGatekeeperRoleAuthoriseAction
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class OnlyStrideGatekeeperRoleAuthoriseActionSpec extends AsyncHmrcSpec with StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule {
 

@@ -41,15 +41,18 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
-class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
-    with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
+class AuditServiceSpec
+    extends AsyncHmrcSpec
+    with CollaboratorTestData
+    with StoredApplicationFixtures
+    with SubmissionsTestData
+    with SubmissionsServiceMockModule {
 
   class Setup {
     val mockAuditConnector = mock[AuditConnector]
@@ -68,10 +71,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     List.empty
   )
 
-  val applicationData: StoredApplication = anApplicationData(
-    applicationId,
-    access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
-  )
+  val applicationData: StoredApplication = storedApp.withAccess(Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
   val instigator                         = applicationData.collaborators.head.userId
 
   def isSameDataEvent(expected: DataEvent) =
@@ -156,7 +156,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
     val reasons        = "Reasons description text"
     val requesterEmail = "bill.badger@rupert.com"
     val requesterName  = "bill badger"
-    val appInTesting   = applicationData.copy(state = ApplicationStateExamples.testing)
+    val appInTesting   = applicationData.withState(ApplicationStateExamples.testing)
 
     val collaboratorActor          = Actors.AppCollaborator(applicationData.collaborators.head.emailAddress)
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -177,29 +177,29 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
         requesterEmail.toLaxEmail
       )
 
-      val tags                       = Map("gatekeeperId" -> gatekeeperUser)
-      val questionsWithAnswers       = QuestionsAndAnswersToMap(declinedSubmission)
-      val declinedData               = Map("status" -> "declined", "reasons" -> reasons)
-      val fmt                        = DateTimeFormatter.ISO_DATE_TIME
-      val submissionPreviousInstance = declinedSubmission.instances.tail.head
-      val submittedOn: Instant       = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
-      val declinedOn: Instant        = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
-      val dates                      = Map(
+      val tags                                   = Map("gatekeeperId" -> gatekeeperUser)
+      val questionsWithAnswers                   = QuestionsAndAnswersToMap(declinedSubmission)
+      val declinedData                           = Map("status" -> "declined", "reasons" -> reasons)
+      val fmt                                    = DateTimeFormatter.ISO_DATE_TIME
+      val submissionPreviousInstance             = declinedSubmission.instances.tail.head
+      val submittedOn: Instant                   = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+      val declinedOn: Instant                    = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
+      val dates                                  = Map(
         "submission.started.date"                 -> fmt.format(declinedSubmission.startedOn.asLocalDateTime),
         "submission.submitted.date"               -> fmt.format(submittedOn.asLocalDateTime),
         "submission.declined.date"                -> fmt.format(declinedOn.asLocalDateTime),
         "responsibleIndividual.verification.date" -> nowAsText
       )
-      val markedAnswers              = MarkAnswer.markSubmission(declinedSubmission)
-      val nbrOfFails                 = markedAnswers.filter(_._2 == Mark.Fail).size
-      val nbrOfWarnings              = markedAnswers.filter(_._2 == Mark.Warn).size
-      val counters                   = Map(
+      val markedAnswers                          = MarkAnswer.markSubmission(declinedSubmission)
+      val nbrOfFails                             = markedAnswers.filter(_._2 == Mark.Fail).size
+      val nbrOfWarnings                          = markedAnswers.filter(_._2 == Mark.Warn).size
+      val counters                               = Map(
         "submission.failures" -> nbrOfFails.toString,
         "submission.warnings" -> nbrOfWarnings.toString
       )
-      val gatekeeperDetails          = Map(
+      val gatekeeperDetails: Map[String, String] = Map(
         "applicationId"          -> appInTesting.id.value.toString,
-        "applicationName"        -> appInTesting.name,
+        "applicationName"        -> appInTesting.name.value,
         "upliftRequestedByEmail" -> appInTesting.state.requestedByEmailAddress.getOrElse("-"),
         "applicationAdmins"      -> appInTesting.admins.map(_.emailAddress.text).mkString(", ")
       )
@@ -216,7 +216,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
       SubmissionsServiceMock.FetchLatest.thenReturn(declinedSubmission)
 
       val result = await(auditService.applyEvents(
-        appInTesting.copy(access =
+        appInTesting.withAccess(
           Access.Standard(importantSubmissionData =
             Some(testImportantSubmissionData.copy(termsOfUseAcceptances =
               List(TermsOfUseAcceptance(ResponsibleIndividual(FullName("dave"), LaxEmailAddress("a@b.com")), instant, submissionId, submissionInstance = 0))
@@ -271,16 +271,16 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil
         "responsibleIndividual.verification.date" -> fmt.format(rivd.asLocalDateTime)
       )
 
-      val markedAnswers     = MarkAnswer.markSubmission(submission)
-      val nbrOfFails        = markedAnswers.filter(_._2 == Mark.Fail).size
-      val nbrOfWarnings     = markedAnswers.filter(_._2 == Mark.Warn).size
-      val counters          = Map(
+      val markedAnswers                          = MarkAnswer.markSubmission(submission)
+      val nbrOfFails                             = markedAnswers.filter(_._2 == Mark.Fail).size
+      val nbrOfWarnings                          = markedAnswers.filter(_._2 == Mark.Warn).size
+      val counters                               = Map(
         "submission.failures" -> nbrOfFails.toString,
         "submission.warnings" -> nbrOfWarnings.toString
       )
-      val gatekeeperDetails = Map(
+      val gatekeeperDetails: Map[String, String] = Map(
         "applicationId"          -> appInGKApproval.id.value.toString,
-        "applicationName"        -> appInGKApproval.name,
+        "applicationName"        -> appInGKApproval.name.value,
         "upliftRequestedByEmail" -> appInGKApproval.state.requestedByEmailAddress.getOrElse("-"),
         "applicationAdmins"      -> appInGKApproval.admins.map(_.emailAddress.text).mkString(", ")
       )

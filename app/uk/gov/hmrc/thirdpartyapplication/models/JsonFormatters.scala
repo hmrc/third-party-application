@@ -48,10 +48,8 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   implicit val formatApplicationState: OFormat[ApplicationState] = Json.format[ApplicationState]
 
-  implicit val writesGrantLength: Writes[GrantLength]          = implicitly[Writes[Period]].contramap(gl => gl.period)
-  implicit val formatApplicationResponse: OFormat[Application] = Json.format[Application]
+  implicit val writesGrantLength: Writes[GrantLength] = implicitly[Writes[Period]].contramap(gl => gl.period)
 
-  implicit val formatExtendedApplicationResponse: OFormat[ExtendedApplicationResponse]   = Json.format[ExtendedApplicationResponse]
   implicit val formatPaginatedApplicationResponse: OFormat[PaginatedApplicationResponse] = Json.format[PaginatedApplicationResponse]
   implicit val formatUpdateIpAllowlistRequest: OFormat[UpdateIpAllowlistRequest]         = Json.format[UpdateIpAllowlistRequest]
   implicit val formatApplicationWithHistory: OFormat[ApplicationWithHistoryResponse]     = Json.format[ApplicationWithHistoryResponse]
@@ -75,7 +73,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatFixCollaboratorRequest: OFormat[FixCollaboratorRequest]                     = Json.format[FixCollaboratorRequest]
 
   implicit val createApplicationResponseWrites: OWrites[CreateApplicationResponse] = (
-    JsPath.write[Application] and (JsPath \ "totp").write[Option[CreateApplicationResponse.TotpSecret]]
+    JsPath.write[ApplicationWithCollaborators] and (JsPath \ "totp").write[Option[CreateApplicationResponse.TotpSecret]]
   )(unlift(CreateApplicationResponse.unapply))
 }
 

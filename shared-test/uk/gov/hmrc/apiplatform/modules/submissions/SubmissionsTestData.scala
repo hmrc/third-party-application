@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.HasApplicationId
+import uk.gov.hmrc.thirdpartyapplication.util.CommonApplicationId
 
 trait StatusTestDataHelper {
   self: FixedClock =>
@@ -87,7 +87,7 @@ trait ProgressTestDataHelper {
   }
 }
 
-trait SubmissionsTestData extends HasApplicationId with QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper with FixedClock {
+trait SubmissionsTestData extends CommonApplicationId with QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper with FixedClock {
 
   val submissionId = SubmissionId.random
 

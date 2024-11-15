@@ -56,7 +56,7 @@ class UpliftVerificationExpiryJob @Inject() (
     logger.info(s"Set status back to testing for app{id=${app.id.value},name=${app.name},state." +
       s"requestedByEmailAddress='${app.state.requestedByEmailAddress.getOrElse("")}',state.updatedOn='${app.state.updatedOn}}'")
     for {
-      updatedApp <- applicationRepository.save(app.copy(state = app.state.toTesting(instant())))
+      updatedApp <- applicationRepository.save(app.withState(app.state.toTesting(instant())))
       _          <- stateHistoryRepository.insert(StateHistory(
                       app.id,
                       State.TESTING,
@@ -69,7 +69,7 @@ class UpliftVerificationExpiryJob @Inject() (
   }
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val expiredTime: Instant = Instant.now(clock).minus(upliftVerificationValidity.toSeconds, SECONDS)
+    val expiredTime: Instant = instant().minus(upliftVerificationValidity.toSeconds, SECONDS)
     logger.info(s"Move back applications to TESTING having status 'PENDING_REQUESTER_VERIFICATION' with timestamp earlier than $expiredTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {

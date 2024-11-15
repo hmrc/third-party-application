@@ -57,7 +57,7 @@ class GrantTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec w
       List.empty
     )
 
-    val app = anApplicationData(applicationId).copy(
+    val app = storedApp.copy(
       state = ApplicationStateExamples.production(appAdminEmail.text, appAdminName),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
@@ -122,7 +122,7 @@ class GrantTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec w
     "return an error if the application is not in PRODUCTION" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
-      val testingApp = app.copy(state = ApplicationStateExamples.testing)
+      val testingApp = app.withState(ApplicationStateExamples.testing)
 
       checkFailsWith("App is not in PRODUCTION state", "No requestedBy email found") {
         underTest.process(testingApp, GrantTermsOfUseApproval(gkUserEmail, instant, reasons, escalatedTo))
@@ -133,7 +133,7 @@ class GrantTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec w
     "return an error if the unable to get responsibleIndividual" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
-      val testingApp = app.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
+      val testingApp = app.withAccess(Access.Standard(List.empty, None, None, Set.empty, None, None))
       checkFailsWith("The responsible individual has not been set for this application") {
         underTest.process(testingApp, GrantTermsOfUseApproval(gkUserEmail, instant, reasons, escalatedTo))
       }

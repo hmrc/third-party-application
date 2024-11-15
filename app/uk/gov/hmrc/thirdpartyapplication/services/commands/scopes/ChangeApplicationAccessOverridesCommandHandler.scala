@@ -75,7 +75,7 @@ class ChangeApplicationAccessOverridesCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: ChangeApplicationAccessOverrides)(implicit hc: HeaderCarrier): AppCmdResultT = {
 
     def updateWithOverrides(applicationData: StoredApplication, newOverrides: Set[OverrideFlag]): StoredApplication =
-      applicationData.copy(access = getStandardAccess(applicationData).copy(overrides = newOverrides))
+      applicationData.withAccess(getStandardAccess(applicationData).copy(overrides = newOverrides))
 
     for {
       validateResult           <- E.fromValidated(validate(app))

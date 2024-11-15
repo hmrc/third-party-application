@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Environment, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 
 class ChangeSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  val app = subordinateApp.copy(access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+  val app = subordinateApp.withAccess(Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
   trait Setup extends ApplicationRepositoryMockModule {
 
@@ -41,7 +41,7 @@ class ChangeSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandl
     val newDescription = "New app description"
     val requester      = "requester"
 
-    val userId = idOf(anAdminEmail)
+    val userId = adminOne.userId
 
     val timestamp = FixedClock.instant
     val update    = ApplicationCommands.ChangeSandboxApplicationDescription(developerActor, instant, newDescription)
@@ -78,7 +78,7 @@ class ChangeSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandl
     }
 
     "create correct events for a valid request with a priv app" in new Setup {
-      val priviledgedApp = app.copy(access = Access.Privileged())
+      val priviledgedApp = app.withAccess(Access.Privileged())
       ApplicationRepoMock.UpdateDescription.succeedsFor(Some(newDescription)) // unmodified
 
       checkSuccessResult(developerActor) {
@@ -96,12 +96,12 @@ class ChangeSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandl
 
     "return an error if application is not in SANDBOX" in new Setup {
       checkFailsWith("App is not in Sandbox environment") {
-        underTest.process(app.copy(environment = Environment.PRODUCTION.toString), update)
+        underTest.process(app.inProduction(), update)
       }
     }
 
     "return an error if application is still in the process of being approved" in new Setup {
-      val appPendingApproval = app.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
+      val appPendingApproval = app.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
 
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
         underTest.process(appPendingApproval, update)

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.temporal.ChronoUnit.MILLIS
 import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
@@ -36,7 +35,7 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{TermsOfUseInvitationState, _}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
@@ -52,7 +51,7 @@ object TermsOfUseInvitationRepository {
 }
 
 @Singleton
-class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Clock, val metrics: Metrics)(implicit val ec: ExecutionContext)
+class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock: Clock, val metrics: Metrics)(implicit val ec: ExecutionContext)
     extends PlayMongoRepository[TermsOfUseInvitation](
       collectionName = "termsOfUseInvitation",
       mongoComponent = mongo,
@@ -79,7 +78,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
         )
       ),
       replaceIndexes = true
-    ) with ApplicationLogger with MetricsTimer {
+    ) with ApplicationLogger with MetricsTimer with ClockNow {
 
   def create(termsOfUseInvitation: TermsOfUseInvitation): Future[Option[TermsOfUseInvitation]] = {
     collection.find(equal("applicationId", Codecs.toBson(termsOfUseInvitation.applicationId))).headOption().flatMap {
@@ -127,7 +126,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(
       Updates.set("status", Codecs.toBson(newState)),
-      Updates.set("lastUpdated", Instant.now(clock).truncatedTo(MILLIS))
+      Updates.set("lastUpdated", instant())
     )
     collection.updateOne(filter, update)
       .toFuture()
@@ -138,8 +137,8 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(
       Updates.set("status", Codecs.toBson(REMINDER_EMAIL_SENT)),
-      Updates.set("reminderSent", Instant.now(clock).truncatedTo(MILLIS)),
-      Updates.set("lastUpdated", Instant.now(clock).truncatedTo(MILLIS))
+      Updates.set("reminderSent", instant()),
+      Updates.set("lastUpdated", instant())
     )
     collection.updateOne(filter, update)
       .toFuture()
@@ -151,7 +150,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, clock: Cl
     val update = Updates.combine(
       Updates.set("status", Codecs.toBson(EMAIL_SENT)),
       Updates.set("dueBy", newDueBy),
-      Updates.set("lastUpdated", Instant.now(clock).truncatedTo(MILLIS))
+      Updates.set("lastUpdated", instant())
     )
     collection.updateOne(filter, update)
       .toFuture()

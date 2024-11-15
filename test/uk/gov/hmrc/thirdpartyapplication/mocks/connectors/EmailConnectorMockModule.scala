@@ -24,7 +24,7 @@ import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, Collaborator}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
@@ -74,10 +74,10 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
     object SendApplicationApprovedAdminConfirmation {
 
       def thenReturnSuccess() = {
-        when(aMock.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(applicationName: String, code: String, recipients: Set[LaxEmailAddress]): Future[HasSucceeded] = {
+      def verifyCalledWith(applicationName: ApplicationName, code: String, recipients: Set[LaxEmailAddress]): Future[HasSucceeded] = {
         verify.sendApplicationApprovedAdminConfirmation(eqTo(applicationName), eqTo(code), eqTo(recipients))(*)
       }
     }
@@ -85,10 +85,10 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
     object SendApplicationApprovedNotification {
 
       def thenReturnSuccess() = {
-        when(aMock.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendApplicationApprovedNotification(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(applicationName: String, recipients: Set[LaxEmailAddress]): Future[HasSucceeded] = {
+      def verifyCalledWith(applicationName: ApplicationName, recipients: Set[LaxEmailAddress]): Future[HasSucceeded] = {
         verify.sendApplicationApprovedNotification(eqTo(applicationName), eqTo(recipients))(*)
       }
     }
@@ -140,80 +140,81 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
     object SendVerifyResponsibleIndividualReminderToAdmin {
 
       def thenReturnSuccess() = {
-        when(aMock.sendVerifyResponsibleIndividualReminderToAdmin(*, *[LaxEmailAddress], *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendVerifyResponsibleIndividualReminderToAdmin(*, *[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(responsibleIndividualName: String, adminEmailAddress: LaxEmailAddress, applicationName: String, requesterName: String) =
+      def verifyCalledWith(responsibleIndividualName: String, adminEmailAddress: LaxEmailAddress, applicationName: ApplicationName, requesterName: String) =
         verify.sendVerifyResponsibleIndividualReminderToAdmin(eqTo(responsibleIndividualName), eqTo(adminEmailAddress), eqTo(applicationName), eqTo(requesterName))(*)
     }
 
     object SendResponsibleIndividualDidNotVerify {
 
       def thenReturnSuccess() = {
-        when(aMock.sendResponsibleIndividualDidNotVerify(*, *[LaxEmailAddress], *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendResponsibleIndividualDidNotVerify(*, *[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(responsibleIndividualName: String, adminEmailAddress: LaxEmailAddress, applicationName: String, requesterName: String) =
+      def verifyCalledWith(responsibleIndividualName: String, adminEmailAddress: LaxEmailAddress, applicationName: ApplicationName, requesterName: String) =
         verify.sendResponsibleIndividualDidNotVerify(eqTo(responsibleIndividualName), eqTo(adminEmailAddress), eqTo(applicationName), eqTo(requesterName))(*)
     }
 
     object SendResponsibleIndividualDeclined {
 
       def thenReturnSuccess() = {
-        when(aMock.sendResponsibleIndividualDeclined(*, *[LaxEmailAddress], *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendResponsibleIndividualDeclinedOrDidNotVerify(*, *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendResponsibleIndividualDeclined(*, *[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(responsibleIndividualName: String, adminEmailAddress: LaxEmailAddress, applicationName: String, requesterName: String) =
+      def verifyCalledWith(responsibleIndividualName: String, adminEmailAddress: LaxEmailAddress, applicationName: ApplicationName, requesterName: String) =
         verify.sendResponsibleIndividualDeclined(eqTo(responsibleIndividualName), eqTo(adminEmailAddress), eqTo(applicationName), eqTo(requesterName))(*)
     }
 
     object SendResponsibleIndividualDeclinedOrDidNotVerify {
 
       def thenReturnSuccess() = {
-        when(aMock.sendResponsibleIndividualDeclinedOrDidNotVerify(*, *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendResponsibleIndividualDeclinedOrDidNotVerify(*, *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(responsibleIndividualName: String, applicationName: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(responsibleIndividualName: String, applicationName: ApplicationName, recipients: Set[LaxEmailAddress]) =
         verify.sendResponsibleIndividualDeclinedOrDidNotVerify(eqTo(responsibleIndividualName), eqTo(applicationName), eqTo(recipients))(*)
     }
 
     object SendResponsibleIndividualNotChanged {
 
       def thenReturnSuccess() = {
-        when(aMock.sendResponsibleIndividualNotChanged(*, *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendResponsibleIndividualNotChanged(*, *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(responsibleIndividualName: String, applicationName: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(responsibleIndividualName: String, applicationName: ApplicationName, recipients: Set[LaxEmailAddress]) =
         verify.sendResponsibleIndividualNotChanged(eqTo(responsibleIndividualName), eqTo(applicationName), eqTo(recipients))(*)
     }
 
     object SendProductionCredentialsRequestExpiryWarning {
 
       def thenReturnSuccess() = {
-        when(aMock.sendProductionCredentialsRequestExpiryWarning(*, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendProductionCredentialsRequestExpiryWarning(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(applicationName: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(applicationName: ApplicationName, recipients: Set[LaxEmailAddress]) =
         verify.sendProductionCredentialsRequestExpiryWarning(eqTo(applicationName), eqTo(recipients))(*)
     }
 
     object SendProductionCredentialsRequestExpired {
 
       def thenReturnSuccess() = {
-        when(aMock.sendProductionCredentialsRequestExpired(*, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendProductionCredentialsRequestExpired(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(applicationName: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(applicationName: ApplicationName, recipients: Set[LaxEmailAddress]) =
         verify.sendProductionCredentialsRequestExpired(eqTo(applicationName), eqTo(recipients))(*)
     }
 
     object SendApplicationDeletedNotification {
 
       def thenReturnSuccess() = {
-        when(aMock.sendApplicationDeletedNotification(*, *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(applicationName: String, applicationId: ApplicationId, requesterEmail: LaxEmailAddress, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(applicationName: ApplicationName, applicationId: ApplicationId, requesterEmail: LaxEmailAddress, recipients: Set[LaxEmailAddress]) =
         verify.sendApplicationDeletedNotification(eqTo(applicationName), eqTo(applicationId), eqTo(requesterEmail), eqTo(recipients))(*)
     }
 
@@ -232,100 +233,106 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
     object SendChangeOfApplicationDetails {
 
       def thenReturnSuccess() = {
-        when(aMock.sendChangeOfApplicationDetails(*, *, *, *, *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendChangeOfApplicationDetails(*, *[ApplicationName], *, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(requester: String, applicationName: String, fieldName: String, previousValue: String, newValue: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(requester: String, applicationName: ApplicationName, fieldName: String, previousValue: String, newValue: String, recipients: Set[LaxEmailAddress]) =
         verify.sendChangeOfApplicationDetails(eqTo(requester), eqTo(applicationName), eqTo(fieldName), eqTo(previousValue), eqTo(newValue), eqTo(recipients))(*)
 
-      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendChangeOfApplicationDetails(*, *, *, *, *, *)(*)
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendChangeOfApplicationDetails(*, *[ApplicationName], *, *, *, *)(*)
     }
 
     object SendChangeOfApplicationDetailsNoValue {
 
       def thenReturnSuccess() = {
-        when(aMock.sendChangeOfApplicationDetailsNoValue(*, *, *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendChangeOfApplicationDetailsNoValue(*, *[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(requester: String, applicationName: String, fieldName: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(requester: String, applicationName: ApplicationName, fieldName: String, recipients: Set[LaxEmailAddress]) =
         verify.sendChangeOfApplicationDetailsNoValue(eqTo(requester), eqTo(applicationName), eqTo(fieldName), eqTo(recipients))(*)
 
-      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendChangeOfApplicationDetailsNoValue(*, *, *, *)(*)
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendChangeOfApplicationDetailsNoValue(*, *[ApplicationName], *, *)(*)
     }
 
     object SendChangeOfResponsibleIndividual {
 
       def thenReturnSuccess() = {
-        when(aMock.sendChangeOfResponsibleIndividual(*, *, *, *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendChangeOfResponsibleIndividual(*, *[ApplicationName], *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(requester: String, applicationName: String, previousResponsibleIndividual: String, newResponsibleIndividual: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(
+          requester: String,
+          applicationName: ApplicationName,
+          previousResponsibleIndividual: String,
+          newResponsibleIndividual: String,
+          recipients: Set[LaxEmailAddress]
+        ) =
         verify.sendChangeOfResponsibleIndividual(eqTo(requester), eqTo(applicationName), eqTo(previousResponsibleIndividual), eqTo(newResponsibleIndividual), eqTo(recipients))(*)
 
-      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendChangeOfResponsibleIndividual(*, *, *, *, *)(*)
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendChangeOfResponsibleIndividual(*, *[ApplicationName], *, *, *)(*)
     }
 
     object SendCollaboratorAddedNotification {
 
       def thenReturnSuccess() = {
-        when(aMock.sendCollaboratorAddedNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendCollaboratorAddedNotification(*, *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(collaborator: Collaborator, applicationName: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(collaborator: Collaborator, applicationName: ApplicationName, recipients: Set[LaxEmailAddress]) =
         verify.sendCollaboratorAddedNotification(eqTo(collaborator), eqTo(applicationName), eqTo(recipients))(*)
 
-      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendCollaboratorAddedNotification(*, *, *)(*)
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendCollaboratorAddedNotification(*, *[ApplicationName], *)(*)
     }
 
     object SendCollaboratorAddedConfirmation {
 
       def thenReturnSuccess() = {
-        when(aMock.sendCollaboratorAddedConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendCollaboratorAddedConfirmation(*, *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(collaborator: Collaborator, applicationName: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(collaborator: Collaborator, applicationName: ApplicationName, recipients: Set[LaxEmailAddress]) =
         verify.sendCollaboratorAddedConfirmation(eqTo(collaborator), eqTo(applicationName), eqTo(recipients))(*)
 
-      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendCollaboratorAddedConfirmation(*, *, *)(*)
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendCollaboratorAddedConfirmation(*, *[ApplicationName], *)(*)
     }
 
     object SendCollaboratorRemovedNotification {
 
       def thenReturnSuccess() = {
-        when(aMock.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(deletedEmail: LaxEmailAddress, applicationName: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(deletedEmail: LaxEmailAddress, applicationName: ApplicationName, recipients: Set[LaxEmailAddress]) =
         verify.sendRemovedCollaboratorNotification(eqTo(deletedEmail), eqTo(applicationName), eqTo(recipients))(*)
 
-      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendRemovedCollaboratorNotification(*, *, *)(*)
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(*)
     }
 
     object SendCollaboratorRemovedConfirmation {
 
       def thenReturnSuccess() = {
-        when(aMock.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(applicationName: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(applicationName: ApplicationName, recipients: Set[LaxEmailAddress]) =
         verify.sendRemovedCollaboratorConfirmation(eqTo(applicationName), eqTo(recipients))(*)
 
-      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendRemovedCollaboratorConfirmation(*, *)(*)
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)
     }
 
     object SendNewTermsOfUseInvitation {
-      def thenReturnSuccess() = when(aMock.sendNewTermsOfUseInvitation(*[Instant], *, *)(*)).thenReturn(successful(HasSucceeded))
+      def thenReturnSuccess() = when(aMock.sendNewTermsOfUseInvitation(*[Instant], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
 
-      def verifyCalledWith(dueBy: Instant, applicationName: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(dueBy: Instant, applicationName: ApplicationName, recipients: Set[LaxEmailAddress]) =
         verify.sendNewTermsOfUseInvitation(eqTo(dueBy), eqTo(applicationName), eqTo(recipients))(*)
 
-      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendNewTermsOfUseInvitation(*, *, *)(*)
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendNewTermsOfUseInvitation(*, *[ApplicationName], *)(*)
     }
 
     object SendNewTermsOfUseConfirmation {
-      def thenReturnSuccess() = when(aMock.sendNewTermsOfUseConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
+      def thenReturnSuccess() = when(aMock.sendNewTermsOfUseConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
 
-      def verifyCalledWith(applicationName: String, recipients: Set[LaxEmailAddress]) =
+      def verifyCalledWith(applicationName: ApplicationName, recipients: Set[LaxEmailAddress]) =
         verify.sendNewTermsOfUseConfirmation(eqTo(applicationName), eqTo(recipients))(*)
     }
   }

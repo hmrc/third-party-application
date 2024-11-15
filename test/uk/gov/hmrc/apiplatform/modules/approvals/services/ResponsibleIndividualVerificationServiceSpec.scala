@@ -20,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, _}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
@@ -29,17 +30,16 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
+class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures {
 
   trait Setup
-      extends ApplicationTestData
-      with SubmissionsTestData
+      extends SubmissionsTestData
       with StateHistoryRepositoryMockModule
       with ResponsibleIndividualVerificationRepositoryMockModule {
 
-    val appName                 = "my shiny app"
+    val appName                 = ApplicationName("my shiny app")
     val submissionInstanceIndex = 0
     val responsibleIndividual   = ResponsibleIndividual.build("bob example", "bob@example.com")
     val requestingAdminName     = "Bob Fleming"
@@ -54,11 +54,11 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       List.empty
     )
 
-    val application: StoredApplication = anApplicationData(
-      applicationId,
-      pendingResponsibleIndividualVerificationState("Rick Deckard", "rick@submitter.com"),
-      access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
-    ).copy(name = appName)
+    val application: StoredApplication = storedApp.copy(
+      state = appStatePendingRIVerification.copy(requestedByName = Some("Rick Deckard"), requestedByEmailAddress = Some("rick@submitter.com")),
+      access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)),
+      name = appName
+    )
 
     val underTest = new ResponsibleIndividualVerificationService(
       ResponsibleIndividualVerificationRepositoryMock.aMock,

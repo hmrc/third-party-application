@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, _}
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, StoredApplication}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
@@ -46,9 +46,9 @@ class GatekeeperService @Inject() (
   ) extends ApplicationLogger with ClockNow {
 
   def fetchNonTestingAppsWithSubmittedDate(): Future[List[ApplicationWithUpliftRequest]] = {
-    def appError(applicationId: ApplicationId) = new InconsistentDataState(s"App not found for id: ${applicationId.value}")
+    def appError(applicationId: ApplicationId) = new InconsistentDataState(s"App not found for id: ${applicationId}")
 
-    def historyError(applicationId: ApplicationId) = new InconsistentDataState(s"History not found for id: ${applicationId.value}")
+    def historyError(applicationId: ApplicationId) = new InconsistentDataState(s"History not found for id: ${applicationId}")
 
     def latestUpliftRequestState(histories: List[StateHistory]) = {
       for ((id, history) <- histories.groupBy(_.applicationId))
@@ -71,7 +71,7 @@ class GatekeeperService @Inject() (
       app     <- fetchApp(applicationId)
       history <- stateHistoryRepository.fetchByApplicationId(applicationId)
     } yield {
-      ApplicationWithHistoryResponse(Application(data = app), history.map(StateHistoryResponse.from))
+      ApplicationWithHistoryResponse(StoredApplication.asApplication(app), history.map(StateHistoryResponse.from))
     }
   }
 
@@ -98,14 +98,12 @@ class GatekeeperService @Inject() (
 
   }
 
-  def fetchAllWithSubscriptions(): Future[List[ApplicationWithSubscriptionsResponse]] = {
-    applicationRepository.getAppsWithSubscriptions map {
-      _.map(application => ApplicationWithSubscriptionsResponse(application))
-    }
+  def fetchAllWithSubscriptions(): Future[List[GatekeeperAppSubsResponse]] = {
+    applicationRepository.getAppsWithSubscriptions
   }
 
   private def fetchApp(applicationId: ApplicationId): Future[StoredApplication] = {
-    lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
+    lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId}")
     applicationRepository.fetch(applicationId).flatMap {
       case None      => Future.failed(notFoundException)
       case Some(app) => Future.successful(app)

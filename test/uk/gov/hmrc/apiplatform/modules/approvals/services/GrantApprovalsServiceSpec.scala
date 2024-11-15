@@ -20,7 +20,6 @@ import java.time.format.DateTimeFormatter
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -31,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModu
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -42,7 +41,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       with ResponsibleIndividualVerificationRepositoryMockModule
       with SubmissionsServiceMockModule
       with EmailConnectorMockModule
-      with ApplicationTestData
+      with StoredApplicationFixtures
       with SubmissionsTestData {
 
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
@@ -70,17 +69,15 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       List(acceptance)
     )
 
-    val applicationPendingGKApproval: StoredApplication = anApplicationData(
-      applicationId,
-      pendingGatekeeperApprovalState("bob@fastshow.com"),
+    val applicationPendingGKApproval: StoredApplication = storedApp.copy(
+      state = appStatePendingGatekeeperApproval,
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
-    val prodAppId = ApplicationId.random
+    val prodAppId = applicationId
 
-    val applicationProduction: StoredApplication = anApplicationData(
-      prodAppId,
-      productionState("bob@fastshow.com"),
+    val applicationProduction: StoredApplication = storedApp.copy(
+      state = appStateProduction,
       access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
 
@@ -117,7 +114,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     "fail to grant the specified application if the application is in the incorrect state" in new Setup {
       val warning = "Here are some warnings"
-      val result  = await(underTest.grantWithWarningsForTouUplift(anApplicationData(applicationId, testingState()), warningsSubmission, gatekeeperUserName, warning))
+      val result  = await(underTest.grantWithWarningsForTouUplift(storedApp.withState(appStateTesting), warningsSubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
@@ -150,7 +147,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     "fail to decline the specified application if the application is in the incorrect state" in new Setup {
       val warning = "Here are some warnings"
-      val result  = await(underTest.declineForTouUplift(anApplicationData(applicationId, testingState()), failSubmission, gatekeeperUserName, warning))
+      val result  = await(underTest.declineForTouUplift(storedApp.withState(appStateTesting), failSubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
@@ -184,7 +181,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     "fail to decline the specified application if the application is in the incorrect state" in new Setup {
       val warning = "Here are some warnings"
-      val result  = await(underTest.resetForTouUplift(anApplicationData(applicationId, testingState()), pendingRISubmission, gatekeeperUserName, warning))
+      val result  = await(underTest.resetForTouUplift(storedApp.withState(appStateTesting), pendingRISubmission, gatekeeperUserName, warning))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
@@ -208,7 +205,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to delete the specified submission if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.deleteTouUplift(anApplicationData(applicationId, testingState()), pendingRISubmission, gatekeeperUserName))
+      val result = await(underTest.deleteTouUplift(applicationProduction.withState(appStateTesting), pendingRISubmission, gatekeeperUserName))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }

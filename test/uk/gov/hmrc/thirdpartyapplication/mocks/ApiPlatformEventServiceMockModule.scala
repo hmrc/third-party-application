@@ -23,9 +23,9 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.services.ApiPlatformEventService
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with StoredApplicationFixtures {
 
   protected trait BaseApiPlatformEventServiceMockModule {
 

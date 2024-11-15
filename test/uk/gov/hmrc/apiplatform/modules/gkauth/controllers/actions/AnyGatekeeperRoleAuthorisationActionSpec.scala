@@ -32,7 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.{
 }
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class AnyGatekeeperRoleAuthoriseActionSpec extends AsyncHmrcSpec {
 

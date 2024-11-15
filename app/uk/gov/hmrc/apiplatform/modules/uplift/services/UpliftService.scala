@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.uplift.services
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -55,7 +55,7 @@ class UpliftService @Inject() (
     def findLatestUpliftRequester(applicationId: ApplicationId): Future[String] =
       for {
         history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL)
-        state    = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId.value}"))
+        state    = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId}"))
       } yield state.actor match {
         case Actors.Unknown                => "Unknown"
         case Actors.AppCollaborator(email) => email.text
@@ -70,7 +70,7 @@ class UpliftService @Inject() (
 
     def verifyPending(app: StoredApplication) = for {
       _ <- apiGatewayStore.createApplication(app.wso2ApplicationName, app.tokens.production.accessToken)
-      _ <- applicationRepository.save(app.copy(state = app.state.toPreProduction(instant())))
+      _ <- applicationRepository.save(app.withState(app.state.toPreProduction(instant())))
       _ <- insertStateHistory(
              app,
              State.PRE_PRODUCTION,
@@ -101,7 +101,7 @@ class UpliftService @Inject() (
       actor: Actor,
       rollback: StoredApplication => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = Instant.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = instant())
 
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>

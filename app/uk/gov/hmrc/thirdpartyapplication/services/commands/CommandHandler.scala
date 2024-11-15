@@ -22,7 +22,7 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, Environment, LaxEmailAddress, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, State, StateHistory}
@@ -88,7 +88,7 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def isAdminIfInProductionOrGatekeeperActor(actor: Actor, app: StoredApplication): Validated[Failures, Unit] =
     cond(
-      (app.environment == Environment.PRODUCTION.toString && isCollaboratorActorAndAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString) || isGatekeeperUser(actor),
+      (app.environment.isProduction && isCollaboratorActorAndAdmin(actor, app)) || (app.environment.isSandbox) || isGatekeeperUser(actor),
       CommandFailures.GenericFailure("App is in PRODUCTION so User must be an ADMIN or be a Gatekeeper User")
     )
 
@@ -97,7 +97,7 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def isAdminIfInProduction(actor: Actor, app: StoredApplication): Validated[Failures, Unit] =
     cond(
-      (app.environment == Environment.PRODUCTION.toString && isCollaboratorActorAndAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString),
+      (app.isProduction && isCollaboratorActorAndAdmin(actor, app)) || (app.isSandbox),
       GenericFailure("App is in PRODUCTION so User must be an ADMIN")
     )
 
@@ -153,7 +153,7 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def isInSandboxEnvironment(app: StoredApplication) =
     cond(
-      app.environment == Environment.SANDBOX.toString(),
+      app.isSandbox,
       GenericFailure("App is not in Sandbox environment")
     )
 

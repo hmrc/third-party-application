@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Environment, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
@@ -37,10 +37,10 @@ class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandlerSpec extends Command
 
     val oldValue  = "some url"
     val newValue  = "new url"
-    val app       = subordinateApp.copy(access = Access.Standard(privacyPolicyUrl = Some(oldValue)))
+    val app       = subordinateApp.withAccess(Access.Standard(privacyPolicyUrl = Some(oldValue)))
     val requester = "requester"
 
-    val userId = idOf(anAdminEmail)
+    val userId = adminOne.userId
 
     val timestamp = FixedClock.instant
     val update    = ApplicationCommands.ChangeSandboxApplicationPrivacyPolicyUrl(developerActor, instant, newValue)
@@ -76,7 +76,7 @@ class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandlerSpec extends Command
     }
 
     "returns an error if the app is not a STANDARD app" in new Setup {
-      val priviledgedApp = app.copy(access = Access.Privileged())
+      val priviledgedApp = app.withAccess(Access.Privileged())
 
       checkFailsWith("App must have a STANDARD access type") {
         underTest.process(priviledgedApp, update)
@@ -93,12 +93,12 @@ class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandlerSpec extends Command
 
     "return an error if application is not in SANDBOX" in new Setup {
       checkFailsWith("App is not in Sandbox environment") {
-        underTest.process(app.copy(environment = Environment.PRODUCTION.toString), update)
+        underTest.process(app.inProduction(), update)
       }
     }
 
     "return an error if application is still in the process of being approved" in new Setup {
-      val appPendingApproval = app.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
+      val appPendingApproval = app.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
 
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
         underTest.process(appPendingApproval, update)

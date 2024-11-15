@@ -21,25 +21,24 @@ import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
 import org.scalatest.BeforeAndAfterAll
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationStateFixtures}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationCommandDispatcherMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
+class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateFixtures {
 
-  trait Setup extends ApplicationRepositoryMockModule with ApplicationCommandDispatcherMockModule with ApplicationTestData {
+  trait Setup extends ApplicationRepositoryMockModule with ApplicationCommandDispatcherMockModule with StoredApplicationFixtures {
 
     val mockLockKeeper = mock[ProductionCredentialsRequestExpiredJobLockService]
     val timeNow        = now
 
     val riName         = "bob responsible"
     val riEmail        = "bob.responsible@example.com"
-    val appName        = "my app"
+    val appName        = ApplicationName("my app")
     val requesterName  = "bob requester"
     val requesterEmail = "bob.requester@example.com"
 
@@ -52,11 +51,11 @@ class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with Befo
       List.empty
     )
 
-    val app            = anApplicationData(
-      ApplicationId.random,
+    val app            = storedApp.copy(
       access = Access.Standard(importantSubmissionData = Some(importantSubmissionData)),
-      state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail, requesterName)
-    ).copy(name = appName)
+      state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail, requesterName),
+      name = appName
+    )
     val initialDelay   = FiniteDuration(1, MINUTES)
     val interval       = FiniteDuration(1, HOURS)
     val deleteInterval = FiniteDuration(10, DAYS)

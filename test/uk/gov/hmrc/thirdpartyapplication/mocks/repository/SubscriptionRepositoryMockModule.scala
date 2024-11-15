@@ -39,10 +39,10 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
     object Fetch {
 
       def thenReturn(subs: ApiIdentifier*) =
-        when(aMock.getSubscriptions(*[ApplicationId])).thenReturn(successful(subs.toList))
+        when(aMock.getSubscriptions(*[ApplicationId])).thenReturn(successful(subs.toSet))
 
       def thenReturnWhen(id: ApplicationId)(subs: ApiIdentifier*) =
-        when(aMock.getSubscriptions(eqTo(id))).thenReturn(successful(subs.toList))
+        when(aMock.getSubscriptions(eqTo(id))).thenReturn(successful(subs.toSet))
     }
 
     object IsSubscribed {

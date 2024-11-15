@@ -30,18 +30,17 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, _}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, _}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec
     with BeforeAndAfterAll
-    with ApplicationStateUtil
-    with ApplicationTestData
+    with StoredApplicationFixtures
+    with ActorTestData
     with CollaboratorTestData
     with UpliftRequestSamples {
 
@@ -49,7 +48,7 @@ class NotificationServiceSpec
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val applicationId         = ApplicationId.random
+    val applicationId         = ApplicationIdData.one
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
     val testImportantSubmissionData = ImportantSubmissionData(
@@ -61,10 +60,7 @@ class NotificationServiceSpec
       List.empty
     )
 
-    val applicationData: StoredApplication = anApplicationData(
-      applicationId,
-      access = Access.Standard(importantSubmissionData = Some(testImportantSubmissionData))
-    )
+    val applicationData: StoredApplication = storedApp.withAccess(Access.Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
     val collaboratorEmails = applicationData.collaborators.map(_.emailAddress)
 
@@ -90,7 +86,12 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
 
-      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(anAdminEmail.text, oldAppName, newAppName, collaboratorEmails + responsibleIndividual.emailAddress)
+      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(
+        otherAdminCollaborator.emailAddress.text,
+        oldAppName,
+        newAppName,
+        collaboratorEmails + responsibleIndividual.emailAddress
+      )
     }
 
     "when receive a ProductionAppPrivacyPolicyLocationChanged, call the event handler and return successfully" in new Setup {
@@ -109,7 +110,7 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
-        anAdminEmail.text,
+        adminOne.emailAddress.text,
         applicationData.name,
         "privacy policy URL",
         collaboratorEmails + responsibleIndividual.emailAddress
@@ -132,7 +133,7 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
-        anAdminEmail.text,
+        adminOne.emailAddress.text,
         applicationData.name,
         "privacy policy URL",
         collaboratorEmails + responsibleIndividual.emailAddress
@@ -155,7 +156,7 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
-        anAdminEmail.text,
+        adminOne.emailAddress.text,
         applicationData.name,
         "terms and conditions URL",
         collaboratorEmails + responsibleIndividual.emailAddress
@@ -178,7 +179,7 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, NonEmptyList.one(event), Set.empty))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.verifyCalledWith(
-        anAdminEmail.text,
+        adminOne.emailAddress.text,
         applicationData.name,
         "terms and conditions URL",
         collaboratorEmails + responsibleIndividual.emailAddress
@@ -436,7 +437,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendAddedClientSecretNotification.verifyCalledWith(
         requestingAdminEmail,
         obfuscatedSecret,
-        applicationData.name,
+        applicationData.name.value,
         recipients = applicationData.admins.map(_.emailAddress)
       )
     }
@@ -454,7 +455,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendRemovedClientSecretNotification.verifyCalledWith(
         requestingAdminEmail,
         clientSecretName,
-        applicationData.name,
+        applicationData.name.value,
         recipients = applicationData.admins.map(_.emailAddress)
       )
     }

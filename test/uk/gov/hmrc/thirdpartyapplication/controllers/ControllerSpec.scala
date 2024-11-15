@@ -22,7 +22,7 @@ import play.api.mvc.Result
 
 import uk.gov.hmrc.thirdpartyapplication.LogSuppressing
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 abstract class ControllerSpec extends AsyncHmrcSpec
     with LogSuppressing {

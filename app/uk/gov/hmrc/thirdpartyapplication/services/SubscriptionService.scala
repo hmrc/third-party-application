@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.Instant
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,8 +24,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, _}
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, Collaborator}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -36,9 +36,10 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
 class SubscriptionService @Inject() (
     applicationRepository: ApplicationRepository,
     subscriptionRepository: SubscriptionRepository,
-    applicationCommandDispatcher: ApplicationCommandDispatcher
+    applicationCommandDispatcher: ApplicationCommandDispatcher,
+    val clock: Clock
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger with ActorHelper {
+  ) extends ApplicationLogger with ActorHelper with ClockNow {
 
   def searchCollaborators(context: ApiContext, version: ApiVersionNbr, partialEmailMatch: Option[String]): Future[List[String]] = {
     subscriptionRepository.searchCollaborators(context, version, partialEmailMatch)
@@ -59,13 +60,13 @@ class SubscriptionService @Inject() (
 
   def updateApplicationForApiSubscription(
       applicationId: ApplicationId,
-      applicationName: String,
+      applicationName: ApplicationName,
       collaborators: Set[Collaborator],
       api: ApiIdentifier
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     val actor          = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators).getOrElse(Actors.Unknown)
-    val subscribeToApi = ApplicationCommands.SubscribeToApi(actor, api, Instant.now())
+    val subscribeToApi = ApplicationCommands.SubscribeToApi(actor, api, instant())
     applicationCommandDispatcher.dispatch(applicationId, subscribeToApi, Set.empty).value.map {
       case Left(e)  =>
         logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")
@@ -77,7 +78,7 @@ class SubscriptionService @Inject() (
   private def fetchApp(applicationId: ApplicationId) = {
     applicationRepository.fetch(applicationId).flatMap {
       case Some(app) => successful(app)
-      case _         => failed(new NotFoundException(s"Application not found for id: ${applicationId.value}"))
+      case _         => failed(new NotFoundException(s"Application not found for id: ${applicationId}"))
     }
   }
 }

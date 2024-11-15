@@ -28,23 +28,24 @@ import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.test.MongoSupport
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ClientId}
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData, NoMetricsGuiceOneAppPerSuite}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class UpliftVerificationExpiryJobSpec
     extends AsyncHmrcSpec
     with MongoSupport
     with BeforeAndAfterAll
-    with ApplicationStateUtil
+    with ApplicationStateFixtures
     with NoMetricsGuiceOneAppPerSuite
-    with CollaboratorTestData {
+    with CollaboratorTestData
+    with StoredApplicationFixtures
+    with FixedClock {
 
   final val FixedTimeNow     = instant
   final val expiryTimeInDays = 90
@@ -78,8 +79,10 @@ class UpliftVerificationExpiryJobSpec
   "uplift verification expiry job execution" should {
 
     "expire all application uplifts having expiry date before the expiry time" in new Setup {
-      val app1: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"), pendingRequesterVerificationState("requester1@example.com"))
-      val app2: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"), pendingRequesterVerificationState("requester2@example.com"))
+      val app1: StoredApplication =
+        storedApp.withId(ApplicationId.random).withState(appStatePendingRequesterVerification.copy(requestedByEmailAddress = Some("requester1@example.com")))
+      val app2: StoredApplication =
+        storedApp.withId(ApplicationId.random).withState(appStatePendingRequesterVerification.copy(requestedByEmailAddress = Some("requester2@example.com")))
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), any[Instant]))
         .thenReturn(successful(List(app1, app2)))
@@ -93,8 +96,8 @@ class UpliftVerificationExpiryJobSpec
 
       await(underTest.execute)
       verify(mockApplicationRepository).fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, instant.minus(JavaTimeDuration.ofDays(expiryTimeInDays)))
-      verify(mockApplicationRepository).save(app1.copy(state = testingState()))
-      verify(mockApplicationRepository).save(app2.copy(state = testingState()))
+      verify(mockApplicationRepository).save(app1.withState(appStateTesting))
+      verify(mockApplicationRepository).save(app2.withState(appStateTesting))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app1.id,
         State.TESTING,
@@ -139,8 +142,8 @@ class UpliftVerificationExpiryJobSpec
     }
 
     "handle error on subsequent database call to update an application" in new Setup {
-      val app1: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"))
-      val app2: StoredApplication = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app1: StoredApplication = storedApp.withId(ApplicationId.random).withState(appStateTesting)
+      val app2: StoredApplication = storedApp.withId(ApplicationId.random).withState(appStateTesting)
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(State.PENDING_REQUESTER_VERIFICATION), *))
         .thenReturn(Future.successful(List(app1, app2)))
@@ -155,23 +158,5 @@ class UpliftVerificationExpiryJobSpec
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing save db query'." +
         " The next execution of the job will do retry."
     }
-  }
-
-  def anApplicationData(id: ApplicationId, prodClientId: ClientId, state: ApplicationState = testingState()): StoredApplication = {
-    StoredApplication(
-      id,
-      s"myApp-${id.value}",
-      s"myapp-${id.value}",
-      Set("user@example.com".admin()),
-      Some("description"),
-      "myapplication",
-      ApplicationTokens(
-        StoredToken(prodClientId, "ccc")
-      ),
-      state,
-      Access.Standard(),
-      instant,
-      Some(instant)
-    )
   }
 }

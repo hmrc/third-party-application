@@ -16,20 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.{Instant, Period}
+import java.time.Instant
 import scala.util.Random.nextString
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.SubscriptionData
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredClientSecret, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess => _}
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-trait ApplicationRepositoryTestData extends ApplicationTestData with ApplicationStateUtil {
+trait ApplicationRepositoryTestData extends StoredApplicationFixtures with CollaboratorTestData {
 
   lazy val defaultGrantLength = GrantLength.EIGHTEEN_MONTHS.period
   lazy val newGrantLength     = GrantLength.ONE_MONTH.period
@@ -43,20 +41,19 @@ trait ApplicationRepositoryTestData extends ApplicationTestData with Application
 
   def createAppWithStatusUpdatedOn(
       state: State,
-      updatedOn: Instant,
-      allowAutoDelete: Boolean = true
+      updatedOn: Instant = instant
     ): StoredApplication =
     anApplicationDataForTest(
       id = ApplicationId.random,
-      prodClientId = generateClientId,
-      state = ApplicationState(
+      prodClientId = generateClientId
+    ).withState(
+      ApplicationState(
         state,
         Some("requestorEmail@example.com"),
         Some("requesterName"),
         Some("aVerificationCode"),
         updatedOn
-      ),
-      allowAutoDelete = allowAutoDelete
+      )
     )
 
   def aSubscriptionData(
@@ -70,62 +67,13 @@ trait ApplicationRepositoryTestData extends ApplicationTestData with Application
   def anApplicationDataForTest(
       id: ApplicationId,
       prodClientId: ClientId = ClientId("aaa"),
-      state: ApplicationState = testingState(),
-      access: Access = Access.Standard(),
-      refreshTokensAvailableFor: Period = defaultGrantLength,
-      users: Set[Collaborator] = Set(
-        "user@example.com".admin()
-      ),
-      checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
-      allowAutoDelete: Boolean = true
+      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret"))
     ): StoredApplication = {
-
-    aNamedApplicationData(
-      id,
-      s"myApp-${id.value}",
-      prodClientId,
-      state,
-      access,
-      users,
-      checkInformation,
-      clientSecrets,
-      refreshTokensAvailableFor,
-      allowAutoDelete
-    )
-  }
-
-  def aNamedApplicationData(
-      id: ApplicationId,
-      name: String,
-      prodClientId: ClientId = ClientId("aaa"),
-      state: ApplicationState = testingState(),
-      access: Access = Access.Standard(),
-      users: Set[Collaborator] = Set("user@example.com".admin()),
-      checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[StoredClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
-      refreshTokensAvailableFor: Period = defaultGrantLength,
-      allowAutoDelete: Boolean = true
-    ): StoredApplication = {
-
-    StoredApplication(
-      id,
-      name,
-      name.toLowerCase,
-      users,
-      Some("description"),
-      "myapplication",
-      ApplicationTokens(
-        StoredToken(prodClientId, generateAccessToken, clientSecrets)
-      ),
-      state,
-      access,
-      instant,
-      Some(instant),
-      refreshTokensAvailableFor = refreshTokensAvailableFor,
-      checkInformation = checkInformation,
-      allowAutoDelete = allowAutoDelete
-    )
+    storedApp
+      .withId(id)
+      .withState(appStateTesting)
+      .withName(ApplicationName(s"MyApp-$id"))
+      .copy(tokens = ApplicationTokens(StoredToken(prodClientId, generateAccessToken, clientSecrets)))
   }
 
   def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[Instant] = None, hashedSecret: String = "") =

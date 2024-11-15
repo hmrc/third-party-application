@@ -28,7 +28,8 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
-import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.common.utils._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ResponsibleIndividual, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
@@ -44,19 +45,19 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
-  val appName = "my app"
-  val appId   = ApplicationId.random
+object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock with CommonApplicationId {
+  val appName = ApplicationName("my app")
   val code    = "12341285217652137257396"
 
   def buildRiVerificationStartedEvent(submissionId: SubmissionId, submissionIndex: Int) =
     ResponsibleIndividualVerificationStarted(
       EventId.random,
-      appId,
+      applicationId,
       FixedClock.instant,
       Actors.AppCollaborator("requester@example.com".toLaxEmail),
-      appName,
+      appName.value,
       "ms admin",
       "admin@example.com".toLaxEmail,
       "ri name",
@@ -69,7 +70,7 @@ object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
   def buildResponsibleIndividualChangedEvent(submissionId: SubmissionId, submissionIndex: Int) =
     ResponsibleIndividualChanged(
       EventId.random,
-      appId,
+      applicationId,
       FixedClock.instant,
       Actors.AppCollaborator("requester@example.com".toLaxEmail),
       "Mr Previous Ri",
@@ -86,7 +87,7 @@ object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
   def buildResponsibleIndividualDeclinedEvent(submissionId: SubmissionId, submissionIndex: Int) = {
     ResponsibleIndividualDeclined(
       EventId.random,
-      appId,
+      applicationId,
       FixedClock.instant,
       Actors.AppCollaborator("requester@example.com".toLaxEmail),
       "Mr New Ri",
@@ -102,7 +103,7 @@ object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
   def buildResponsibleIndividualDeclinedUpdateEvent(submissionId: SubmissionId, submissionIndex: Int) =
     ResponsibleIndividualDeclinedUpdate(
       EventId.random,
-      appId,
+      applicationId,
       FixedClock.instant,
       Actors.AppCollaborator("requester@example.com".toLaxEmail),
       "Mr New Ri",
@@ -117,7 +118,7 @@ object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
   def buildResponsibleIndividualDidNotVerifyEvent(submissionId: SubmissionId, submissionIndex: Int) =
     ResponsibleIndividualDidNotVerify(
       EventId.random,
-      appId,
+      applicationId,
       FixedClock.instant,
       Actors.AppCollaborator("requester@example.com".toLaxEmail),
       "Mr New Ri",
@@ -132,7 +133,7 @@ object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
   def buildResponsibleIndividualSetEvent(submissionId: SubmissionId, submissionIndex: Int) =
     ResponsibleIndividualSet(
       EventId.random,
-      appId,
+      applicationId,
       FixedClock.instant,
       Actors.AppCollaborator("requester@example.com".toLaxEmail),
       "Mr New Ri",
@@ -145,7 +146,7 @@ object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
     )
 
   def buildRiVerificationToURecord(id: ResponsibleIndividualVerificationId, submissionId: SubmissionId, submissionIndex: Int) =
-    buildRiVerificationToURecordWithAppId(id, appId, submissionId, submissionIndex)
+    buildRiVerificationToURecordWithAppId(id, applicationId, submissionId, submissionIndex)
 
   def buildRiVerificationToURecordWithAppId(id: ResponsibleIndividualVerificationId, applicationId: ApplicationId, submissionId: SubmissionId, submissionIndex: Int) =
     ResponsibleIndividualToUVerification(
@@ -159,7 +160,7 @@ object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock {
     )
 
   def buildRiVerificationRecord(id: ResponsibleIndividualVerificationId, submissionId: SubmissionId, submissionIndex: Int) =
-    buildRiVerificationRecordWithAppId(id, appId, submissionId, submissionIndex)
+    buildRiVerificationRecordWithAppId(id, applicationId, submissionId, submissionIndex)
 
   def buildRiVerificationRecordWithAppId(id: ResponsibleIndividualVerificationId, applicationId: ApplicationId, submissionId: SubmissionId, submissionIndex: Int) =
     ResponsibleIndividualUpdateVerification(
@@ -214,7 +215,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ApplicationId.random,
       submissionId,
       submissionIndex,
-      UUID.randomUUID().toString,
+      ApplicationName(UUID.randomUUID().toString),
       createdOn,
       state
     )
@@ -230,7 +231,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ApplicationId.random,
       submissionId,
       submissionIndex,
-      UUID.randomUUID().toString,
+      ApplicationName(UUID.randomUUID().toString),
       createdOn,
       requestingAdminName,
       requestingAdminEmail,
@@ -248,7 +249,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ApplicationId.random,
       submissionId,
       submissionIndex,
-      UUID.randomUUID().toString,
+      ApplicationName(UUID.randomUUID().toString),
       createdOn,
       responsibleIndividual,
       requestingAdminName,

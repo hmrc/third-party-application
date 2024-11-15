@@ -21,25 +21,24 @@ import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
 import org.scalatest.BeforeAndAfterAll
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, NotificationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{NotificationStatus, NotificationType}
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class ProductionCredentialsRequestExpiryWarningJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
+class ProductionCredentialsRequestExpiryWarningJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with StoredApplicationFixtures {
 
-  trait Setup extends ApplicationRepositoryMockModule with EmailConnectorMockModule with NotificationRepositoryMockModule with ApplicationTestData {
+  trait Setup extends ApplicationRepositoryMockModule with EmailConnectorMockModule with NotificationRepositoryMockModule {
 
     val mockLockKeeper = mock[ProductionCredentialsRequestExpiryWarningJobLockService]
 
     val riName         = "bob responsible"
     val riEmail        = "bob.responsible@example.com"
-    val appName        = "my app"
+    val appName        = ApplicationName("my app")
     val requesterName  = "bob requester"
     val requesterEmail = "bob.requester@example.com"
 
@@ -52,11 +51,11 @@ class ProductionCredentialsRequestExpiryWarningJobSpec extends AsyncHmrcSpec wit
       List.empty
     )
 
-    val app             = anApplicationData(
-      ApplicationId.random,
+    val app             = storedApp.copy(
       access = Access.Standard(importantSubmissionData = Some(importantSubmissionData)),
-      state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail, requesterName)
-    ).copy(name = appName)
+      state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail, requesterName),
+      name = appName
+    )
     val initialDelay    = FiniteDuration(1, MINUTES)
     val interval        = FiniteDuration(1, HOURS)
     val warningInterval = FiniteDuration(10, DAYS)

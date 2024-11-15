@@ -81,7 +81,7 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
       sent <- emailConnector.sendProductionCredentialsRequestExpiryWarning(app.name, recipients)
       _    <- notificationRepository.createEntity(Notification(
                 app.id,
-                Instant.now(clock),
+                instant(),
                 NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING,
                 NotificationStatus.SENT
               ))

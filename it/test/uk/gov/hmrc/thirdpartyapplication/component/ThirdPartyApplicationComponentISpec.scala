@@ -41,7 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, CredentialGenerator}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
@@ -120,14 +120,14 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       emptyApplicationRepository()
 
       Given("A third party application")
-      val application1: Application = createApplication(awsApiGatewayApplicationName)
+      val application1: ApplicationWithCollaborators = createApplication(awsApiGatewayApplicationName)
 
       When("We fetch all applications")
       val uri      = s"$serviceUrl/application"
       val response = http(basicRequest.get(uri"$uri"))
 
       response.code shouldBe StatusCode.Ok
-      val result = Json.parse(response.body.value).as[Seq[Application]]
+      val result = Json.parse(response.body.value).as[Seq[ApplicationWithCollaborators]]
 
       Then("The application is returned in the result")
       result.exists(r => r.id == application1.id) shouldBe true
@@ -141,13 +141,13 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       emptyApplicationRepository()
 
       Given("A third party application")
-      val application: Application = createApplication()
+      val application: ApplicationWithCollaborators = createApplication()
 
       When("We fetch the application by its ID")
       val uri           = s"$serviceUrl/application/${application.id.value}"
       val fetchResponse = http(basicRequest.get(uri"$uri"))
       fetchResponse.code shouldBe StatusCode.Ok
-      val result        = Json.parse(fetchResponse.body.value).as[Application]
+      val result        = Json.parse(fetchResponse.body.value).as[ApplicationWithCollaborators]
 
       Then("The application is returned")
       result shouldBe application
@@ -158,14 +158,14 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       emptyApplicationRepository()
 
       Given("A collaborator has access to two third party applications")
-      val application1: Application = createApplication(applicationName1)
-      val application2: Application = createApplication(applicationName2)
+      val application1: ApplicationWithCollaborators = createApplication(applicationName1)
+      val application2: ApplicationWithCollaborators = createApplication(applicationName2)
 
       When("We fetch the application by the collaborator email address")
       val uri           = s"$serviceUrl/application?emailAddress=$emailAddress"
       val fetchResponse = http(basicRequest.get(uri"$uri"))
       fetchResponse.code shouldBe StatusCode.Ok
-      val result        = Json.parse(fetchResponse.body.value).as[Seq[Application]]
+      val result        = Json.parse(fetchResponse.body.value).as[Seq[ApplicationWithCollaborators]]
 
       Then("The applications are returned")
       result should contain theSameElementsAs Seq(application1, application2)
@@ -179,8 +179,8 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       val appName = "appName"
 
       Given("A third party application")
-      val application: Application = createApplication(appName)
-      val cmd                      =
+      val application: ApplicationWithCollaborators = createApplication(appName)
+      val cmd                                       =
         ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
 
       sendApplicationCommand(cmd, application)
@@ -221,7 +221,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       emptyApplicationRepository()
 
       Given("A third party application")
-      val application: Application = createApplication(awsApiGatewayApplicationName)
+      val application: ApplicationWithCollaborators = createApplication(awsApiGatewayApplicationName)
 
       emailStub.willPostEmailNotification()
 
@@ -244,8 +244,8 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       validationResponse.code shouldBe StatusCode.Ok
 
       And("The application is returned")
-      val returnedApplication = Json.parse(validationResponse.body.value).as[Application]
-      returnedApplication shouldBe application.copy(lastAccess = returnedApplication.lastAccess)
+      val returnedApplication = Json.parse(validationResponse.body.value).as[ApplicationWithCollaborators]
+      returnedApplication shouldBe application.modify(_.copy(lastAccess = returnedApplication.details.lastAccess))
     }
 
     Scenario("Return UNAUTHORIZED if clientId is incorrect") {
@@ -268,9 +268,9 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       emptyApplicationRepository()
 
       Given("A third party application")
-      val application: Application = createApplication(awsApiGatewayApplicationName)
-      val createdApplication       = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
-      val credentials              = createdApplication.tokens.production
+      val application: ApplicationWithCollaborators = createApplication(awsApiGatewayApplicationName)
+      val createdApplication                        = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
+      val credentials                               = createdApplication.tokens.production
 
       When("We attempt to validate the credentials")
       val requestBody        = validationRequest(credentials.clientId, "bar")
@@ -302,7 +302,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       createdResponse.code shouldBe StatusCode.Created
 
       Then("The application is returned with the Totp Ids and the Totp Secrets")
-      val totpIds     = (Json.parse(createdResponse.body.value) \ "access" \ "totpIds").as[TotpId]
+      val totpIds     = (Json.parse(createdResponse.body.value) \ "details" \ "access" \ "totpIds").as[TotpId]
       val totpSecrets = (Json.parse(createdResponse.body.value) \ "totp").as[CreateApplicationResponse.TotpSecret]
 
       totpIds match {
@@ -604,7 +604,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
 
       Given("A third party application")
       val application = createApplication()
-      application.grantLength shouldBe GrantLength.EIGHTEEN_MONTHS
+      application.details.grantLength shouldBe GrantLength.EIGHTEEN_MONTHS
 
       Given("The gatekeeper is logged in")
       authStub.willValidateLoggedInUserHasGatekeeperRole("admin@example.com")
@@ -630,8 +630,8 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       emptyApplicationRepository()
 
       Given("A third party application")
-      val application: Application = createApplication()
-      application.rateLimitTier shouldBe RateLimitTier.BRONZE
+      val application: ApplicationWithCollaborators = createApplication()
+      application.details.rateLimitTier shouldBe RateLimitTier.BRONZE
 
       Given("The gatekeeper is logged in")
       authStub.willValidateLoggedInUserHasGatekeeperRole("admin@example.com")
@@ -667,22 +667,22 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
     }
   }
 
-  private def fetchApplication(id: ApplicationId): Application = {
+  private def fetchApplication(id: ApplicationId): ApplicationWithCollaborators = {
     val uri             = s"$serviceUrl/application/${id.value.toString}"
     val fetchedResponse = http(basicRequest.get(uri"$uri"))
     fetchedResponse.code shouldBe StatusCode.Ok
-    Json.parse(fetchedResponse.body.value).as[Application]
+    Json.parse(fetchedResponse.body.value).as[ApplicationWithCollaborators]
   }
 
   private def emptyApplicationRepository() = {
     ready(applicationRepository.collection.drop().toFuture(), timeout)
   }
 
-  private def createApplication(appName: String = applicationName1, access: Access = standardAccess): Application = {
+  private def createApplication(appName: String = applicationName1, access: Access = standardAccess): ApplicationWithCollaborators = {
     awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
     val createdResponse = sendJsonRequest("/application", applicationRequest(appName, access))
     createdResponse.code shouldBe StatusCode.Created
-    Json.parse(createdResponse.body.value).as[Application]
+    Json.parse(createdResponse.body.value).as[ApplicationWithCollaborators]
   }
 
   private def subscriptionExists(applicationId: ApplicationId, apiContext: ApiContext, apiVersion: ApiVersionNbr) = {
@@ -700,10 +700,10 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
     )
   }
 
-  def sendApplicationCommand(cmd: ApplicationCommand, application: Application, extraHeaders: Seq[Header] = Seq()): Response[Either[String, String]] = {
+  def sendApplicationCommand(cmd: ApplicationCommand, application: ApplicationWithCollaborators, extraHeaders: Seq[Header] = Seq()): Response[Either[String, String]] = {
     val request                                   = DispatchRequest(cmd, Set.empty)
     implicit val writer: OWrites[DispatchRequest] = Json.writes[DispatchRequest]
-    sendJsonRequest(s"/application/${application.id.value}/dispatch", Json.toJson(request).toString(), extraHeaders, Method.PATCH)
+    sendJsonRequest(s"/application/${application.id}/dispatch", Json.toJson(request).toString(), extraHeaders, Method.PATCH)
   }
 
   private def applicationRequest(name: String, access: Access) = {

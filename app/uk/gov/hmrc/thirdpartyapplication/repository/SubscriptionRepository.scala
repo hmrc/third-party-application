@@ -120,11 +120,11 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent, val metrics: Metr
       .map(x => x > 0)
   }
 
-  def getSubscriptions(applicationId: ApplicationId): Future[List[ApiIdentifier]] = {
+  def getSubscriptions(applicationId: ApplicationId): Future[Set[ApiIdentifier]] = {
     timeFuture("Subscriptions For an Application", "subscription.repository.getSubscriptions") {
       collection.find(equal("applications", Codecs.toBson(applicationId)))
         .toFuture()
-        .map(_.map(_.apiIdentifier).toList)
+        .map(_.map(_.apiIdentifier).toSet)
     }
   }
 

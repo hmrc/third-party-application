@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import java.time.Clock
 import java.time.temporal.ChronoUnit.SECONDS
-import java.time.{Clock, Instant}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,13 +30,14 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.{Application, HasSucceeded}
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 @Singleton
@@ -48,7 +49,7 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
     val clock: Clock,
     jobConfig: ResponsibleIndividualVerificationReminderJobConfig
   )(implicit val ec: ExecutionContext
-  ) extends ScheduledMongoJob with ApplicationLogger {
+  ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   override def name: String                 = "ResponsibleIndividualVerificationReminderJob"
   override def interval: FiniteDuration     = jobConfig.interval
@@ -58,7 +59,7 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
   override val lockService: LockService     = responsibleIndividualVerificationReminderJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val remindIfCreatedBeforeNow                    = Instant.now(clock).minus(jobConfig.reminderInterval.toSeconds, SECONDS)
+    val remindIfCreatedBeforeNow                    = instant().minus(jobConfig.reminderInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
       remindersDue <-
         repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.INITIAL, remindIfCreatedBeforeNow)
@@ -82,7 +83,7 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
       _              <- OptionT.liftF(emailConnector.sendVerifyResponsibleIndividualNotification(
                           ri.fullName.value,
                           ri.emailAddress,
-                          app.name,
+                          app.name.value,
                           requesterName,
                           verificationDueForReminder.id.value
                         ))
@@ -91,18 +92,18 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
     } yield HasSucceeded).value
   }
 
-  private def getResponsibleIndividual(app: Application): Option[ResponsibleIndividual] = {
+  private def getResponsibleIndividual(app: ApplicationWithCollaborators): Option[ResponsibleIndividual] = {
     app.access match {
       case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => Some(importantSubmissionData.responsibleIndividual)
       case _                                                             => None
     }
   }
 
-  private def getRequesterName(app: Application): Option[String] = {
+  private def getRequesterName(app: ApplicationWithCollaborators): Option[String] = {
     app.state.requestedByName
   }
 
-  private def getRequesterEmail(app: Application): Option[LaxEmailAddress] = {
+  private def getRequesterEmail(app: ApplicationWithCollaborators): Option[LaxEmailAddress] = {
     app.state.requestedByEmailAddress.map(LaxEmailAddress(_)) // This should be an email address for these operations but this is not provable
   }
 }

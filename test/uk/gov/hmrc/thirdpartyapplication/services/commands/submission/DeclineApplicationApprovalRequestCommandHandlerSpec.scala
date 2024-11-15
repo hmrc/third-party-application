@@ -20,11 +20,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, State}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineApplicationApprovalRequest
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -34,20 +34,17 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
-class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
+class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData with ApplicationStateFixtures {
 
   trait Setup extends ApplicationRepositoryMockModule with StateHistoryRepositoryMockModule with SubmissionsServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId                    = ApplicationId.random
-    val appAdminUserId           = UserId.random
-    val appAdminEmail            = "admin@example.com".toLaxEmail
     val riName                   = "Mr Responsible"
     val riEmail                  = "ri@example.com".toLaxEmail
     val newResponsibleIndividual = ResponsibleIndividual.build("New RI", "new-ri@example")
     val oldRiName                = "old ri"
-    val requesterEmail           = appAdminEmail
+    val requesterEmail           = adminOne.emailAddress
     val requesterName            = "mr admin"
     val gatekeeperUser           = "GateKeeperUser"
     val reasons                  = "reasons description text"
@@ -61,10 +58,8 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
       List.empty
     )
 
-    val applicationData = anApplicationData(appId).copy(
-      collaborators = Set(
-        appAdminEmail.admin(appAdminUserId)
-      ),
+    val applicationData = storedApp.copy(
+      collaborators = Set(adminOne),
       access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName)
     )
@@ -126,7 +121,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
     "succeed as gkUserActor" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       SubmissionsServiceMock.DeclineApprovalRequest.succeeds()
-      ApplicationRepoMock.UpdateApplicationState.thenReturn(applicationData.copy(state = testingState()))
+      ApplicationRepoMock.UpdateApplicationState.thenReturn(applicationData.withState(appStateTesting))
       StateHistoryRepoMock.Insert.succeeds()
 
       val result = await(underTest.process(applicationData, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, instant)).value).value
@@ -143,7 +138,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      val nonStandardApp = applicationData.copy(access = Access.Ropc(Set.empty))
+      val nonStandardApp = applicationData.withAccess(Access.Ropc(Set.empty))
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(nonStandardApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, instant))
       }
@@ -151,7 +146,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      val oldJourneyApp = applicationData.copy(access = Access.Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = applicationData.withAccess(Access.Standard(List.empty, None, None, Set.empty, None, None))
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(oldJourneyApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, instant))
       }
@@ -159,7 +154,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
     "return an error if the application state is not PendingResponsibleIndividualVerification or PendingGatekeeperApproval" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      val pendingGKApprovalApp = applicationData.copy(state = ApplicationStateExamples.pendingRequesterVerification(requesterEmail.text, requesterName, "12345678"))
+      val pendingGKApprovalApp = applicationData.withState(ApplicationStateExamples.pendingRequesterVerification(requesterEmail.text, requesterName, "12345678"))
       checkFailsWith("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state") {
         underTest.process(pendingGKApprovalApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, instant))
       }

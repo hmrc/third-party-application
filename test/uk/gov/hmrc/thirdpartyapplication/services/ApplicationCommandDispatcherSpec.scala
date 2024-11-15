@@ -49,14 +49,19 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplica
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
     with CommandApplicationExamples
+    with ActorTestData
     with FixedClock {
 
+  val requestedByName  = "john smith"
+  val requestedByEmail = "john.smith@example.com".toLaxEmail
+
   trait Setup extends CommonSetup {
-    val applicationData: StoredApplication = anApplicationData(applicationId)
+    val applicationData: StoredApplication = storedApp
 
     def primeCommonServiceSuccess() = {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
@@ -296,7 +301,7 @@ class ApplicationCommandDispatcherSpec
 
       val newUrl      = "http://example.com/new"
       val newLocation = PrivacyPolicyLocations.Url(newUrl)
-      val userId      = idOf(anAdminEmail)
+      val userId      = adminOne.userId
       val timestamp   = instant
       val actor       = otherAdminAsActor
 
@@ -335,7 +340,7 @@ class ApplicationCommandDispatcherSpec
 
       val newUrl      = "http://example.com/new"
       val newLocation = TermsAndConditionsLocations.Url(newUrl)
-      val userId      = idOf(anAdminEmail)
+      val userId      = adminOne.userId
       val timestamp   = instant
       val actor       = otherAdminAsActor
 

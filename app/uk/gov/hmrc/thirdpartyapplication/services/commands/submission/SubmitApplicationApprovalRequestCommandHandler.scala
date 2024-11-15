@@ -25,7 +25,7 @@ import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State, ValidatedApplicationName}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, State, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.services.{ApprovalsNamingService, ResponsibleIndividualVerificationService}
@@ -104,7 +104,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
           actor = cmd.actor,
-          applicationName = app.name,
+          applicationName = app.name.value,
           requestingAdminName = cmd.requesterName,
           requestingAdminEmail = cmd.requesterEmail,
           responsibleIndividualName = importantSubmissionData.responsibleIndividual.fullName.value,
@@ -128,7 +128,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       isRequesterTheResponsibleIndividual = SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission)
       importantSubmissionData             = getImportantSubmissionData(submission, cmd.requesterName, cmd.requesterEmail.text).get // Safe at this point
       newAppState                         = determineNewApplicationState(isRequesterTheResponsibleIndividual, app, cmd)
-      savedApp                           <- E.liftF(applicationRepository.save(deriveNewAppDetails(app, newAppName, importantSubmissionData, newAppState)))
+      savedApp                           <- E.liftF(applicationRepository.save(deriveNewAppDetails(app, ApplicationName(newAppName), importantSubmissionData, newAppState)))
       updatedApp                         <- E.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, cmd.timestamp, cmd.requesterName, cmd.requesterEmail))
       _                                  <- E.liftF(stateHistoryRepository.insert(createStateHistory(updatedApp, State.TESTING, Actors.AppCollaborator(cmd.requesterEmail), cmd.timestamp)))
       updatedSubmission                   = Submission.submit(cmd.timestamp, cmd.requesterEmail.text)(submission)
@@ -165,12 +165,12 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
 
   private def deriveNewAppDetails(
       existing: StoredApplication,
-      applicationName: String,
+      applicationName: ApplicationName,
       importantSubmissionData: ImportantSubmissionData,
       newState: ApplicationState
     ): StoredApplication = existing.copy(
     name = applicationName,
-    normalisedName = applicationName.toLowerCase,
+    normalisedName = applicationName.value.toLowerCase,
     access = updateStandardData(existing.access, importantSubmissionData),
     state = newState
   )

@@ -25,7 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.test.HttpClientV2Support
 
 import uk.gov.hmrc.thirdpartyapplication.models.Totp
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 class TotpConnectorSpec extends ConnectorSpec {
 

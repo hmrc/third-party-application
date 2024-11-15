@@ -16,29 +16,28 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.Instant
 import java.time.temporal.ChronoUnit._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.TermsOfUseInvitationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{EMAIL_SENT, REMINDER_EMAIL_SENT}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseApplication, TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse, TermsOfUseSearch}
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec {
+class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec with FixedClock {
 
-  trait Setup extends TermsOfUseInvitationRepositoryMockModule with EmailConnectorMockModule with ApplicationTestData {
+  trait Setup extends TermsOfUseInvitationRepositoryMockModule with EmailConnectorMockModule with StoredApplicationFixtures with CommonApplicationId {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val applicationId = ApplicationId.random
-    val application   = TermsOfUseApplication(applicationId, "app name")
-    val nowInstant    = Instant.now(clock).truncatedTo(MILLIS)
+    val application   = TermsOfUseApplication(applicationId, ApplicationName("app name"))
+    val nowInstant    = instant
     val invite        = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, EMAIL_SENT)
     val inviteWithApp = TermsOfUseInvitationWithApplication(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, EMAIL_SENT, Set(application))
 

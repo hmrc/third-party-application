@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.time.Instant
 import java.time.temporal.ChronoUnit._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -25,22 +24,20 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{contentAsJson, status, stubControllerComponents}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
 import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationResponse, TermsOfUseInvitationWithApplicationResponse}
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class TermsOfUseInvitationControllerSpec extends ControllerSpec with ApplicationDataServiceMockModule with SubmissionsServiceMockModule with ApplicationTestData
+class TermsOfUseInvitationControllerSpec extends ControllerSpec with ApplicationDataServiceMockModule with SubmissionsServiceMockModule with StoredApplicationFixtures
     with SubmissionsTestData {
 
   trait Setup extends TermsOfUseInvitationServiceMockModule {
-    val applicationId = ApplicationId.random
-    val now           = Instant.now().truncatedTo(MILLIS)
-    val dueDate       = now.plus(21, DAYS)
+
+    val dueDate = instant.plus(21, DAYS)
 
     lazy val underTest = new TermsOfUseInvitationController(
       TermsOfUseInvitationServiceMock.aMock,
@@ -52,7 +49,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
 
   "fetch invitation" should {
     "return an OK with a terms of use invitation response" in new Setup {
-      val response = TermsOfUseInvitationResponse(applicationId, now, now, dueDate, None, EMAIL_SENT)
+      val response = TermsOfUseInvitationResponse(applicationId, instant, instant, dueDate, None, EMAIL_SENT)
 
       TermsOfUseInvitationServiceMock.FetchInvitation.thenReturn(response)
 
@@ -76,8 +73,8 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
       val invitations = List(
         TermsOfUseInvitationResponse(
           applicationId,
-          now,
-          now,
+          instant,
+          instant,
           dueDate,
           None,
           EMAIL_SENT
@@ -101,8 +98,8 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
       val invitations = List(
         TermsOfUseInvitationWithApplicationResponse(
           applicationId,
-          now,
-          now,
+          instant,
+          instant,
           dueDate,
           None,
           EMAIL_SENT,

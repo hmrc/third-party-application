@@ -20,22 +20,21 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesResponse, ScopeResponse}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CollaboratorTestData}
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with FixedClock {
+class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with FixedClock with CommonApplicationId with StoredApplicationFixtures {
 
   "Access service read scopes function" should {
 
     "return privileged scopes when repository save succeeds" in new ScopeFixture {
-      ApplicationRepoMock.Fetch.thenReturn(privilegedApplicationDataWithScopes(applicationId)(scopes1to4))
+      ApplicationRepoMock.Fetch.thenReturn(privilegedApplicationDataWithScopes(scopes1to4))
       await(accessService.readScopes(applicationId)) shouldBe ScopeResponse(scopes1to4)
     }
 
@@ -54,8 +53,6 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
   }
 
   trait Fixture extends ApplicationRepositoryMockModule with AuditServiceMockModule {
-
-    val applicationId = ApplicationId.random
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -85,54 +82,10 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
     val overrides = Set[OverrideFlag](override1, override2, override3, override4)
   }
 
-  private def privilegedApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): StoredApplication =
-    StoredApplication(
-      applicationId,
-      "name",
-      "normalisedName",
-      Set("user@example.com".admin()),
-      None,
-      "wso2ApplicationName",
-      ApplicationTokens(
-        StoredToken(ClientId("a"), "c")
-      ),
-      ApplicationStateExamples.testing,
-      Access.Privileged(None, scopes),
-      instant,
-      Some(instant)
-    )
+  private def privilegedApplicationDataWithScopes(scopes: Set[String]): StoredApplication = storedApp.withAccess(Access.Privileged(None, scopes))
 
-  private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): StoredApplication =
-    StoredApplication(
-      applicationId,
-      "name",
-      "normalisedName",
-      Set("user@example.com".admin()),
-      None,
-      "wso2ApplicationName",
-      ApplicationTokens(
-        StoredToken(ClientId("a"), "c")
-      ),
-      ApplicationStateExamples.testing,
-      Access.Ropc(scopes),
-      instant,
-      Some(instant)
-    )
+  private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): StoredApplication = storedApp.withAccess(Access.Ropc(scopes))
 
   private def standardApplicationDataWithOverrides(applicationId: ApplicationId, overrides: Set[OverrideFlag]): StoredApplication =
-    StoredApplication(
-      applicationId,
-      "name",
-      "normalisedName",
-      Set("user@example.com".admin()),
-      None,
-      "wso2ApplicationName",
-      ApplicationTokens(
-        StoredToken(ClientId("a"), "c")
-      ),
-      ApplicationStateExamples.testing,
-      Access.Standard(redirectUris = List.empty, overrides = overrides),
-      instant,
-      Some(instant)
-    )
+    storedApp.withAccess(Access.Standard(redirectUris = List.empty, overrides = overrides))
 }

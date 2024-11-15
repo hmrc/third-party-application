@@ -50,7 +50,7 @@ class ChangeSandboxApplicationNameCommandHandler @Inject() (
       isInSandboxEnvironment(app),
       isApproved(app),
       isAppActorACollaboratorOnApp(cmd.actor, app),
-      cond(app.name != cmd.newName.value, "App already has that name"),
+      cond(app.name.value != cmd.newName.value, "App already has that name"),
       cond(nameValidationResult != DuplicateName, "New name is a duplicate"),
       cond(nameValidationResult != InvalidName, "New name is invalid")
     ) { case _ => app }
@@ -63,7 +63,7 @@ class ChangeSandboxApplicationNameCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
-        oldName = app.name,
+        oldName = app.name.value,
         newName = cmd.newName.value
       )
     )

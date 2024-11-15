@@ -49,7 +49,7 @@ class SendTermsOfUseInvitationCommandHandlerSpec extends CommandHandlerBaseSpec 
     val appAdminEmail  = "bob@example.com".toLaxEmail
     val appAdminName   = "Bob"
 
-    val app = anApplicationData(applicationId).copy(
+    val app = storedApp.copy(
       state = ApplicationStateExamples.production(appAdminEmail.text, appAdminName)
     )
 
@@ -110,7 +110,7 @@ class SendTermsOfUseInvitationCommandHandlerSpec extends CommandHandlerBaseSpec 
       SubmissionsServiceMock.FetchLatest.thenReturnNone()
       TermsOfUseInvitationRepositoryMock.FetchInvitation.thenReturnNone()
 
-      val testingApp = app.copy(state = ApplicationStateExamples.testing)
+      val testingApp = app.withState(ApplicationStateExamples.testing)
 
       checkFailsWith("App is not in PRODUCTION state") {
         underTest.process(testingApp, SendTermsOfUseInvitation(gkUserEmail, ts))

@@ -31,11 +31,11 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{Notification, NotificationStatus, NotificationType}
-import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 object NotificationRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random
@@ -56,9 +56,10 @@ class NotificationRepositoryISpec
     with MetricsHelper
     with CleanMongoCollectionSupport
     with BeforeAndAfterAll
-    with ApplicationStateUtil
+    with ApplicationStateFixtures
     with Eventually
     with TableDrivenPropertyChecks
+    with CommonApplicationId
     with OptionValues
     with FixedClock {
 
@@ -113,7 +114,6 @@ class NotificationRepositoryISpec
   "createEntity" should {
 
     "create an entry" in {
-      val applicationId = ApplicationId.random
 
       val result =
         await(notificationRepository.createEntity(Notification(applicationId, instant, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))

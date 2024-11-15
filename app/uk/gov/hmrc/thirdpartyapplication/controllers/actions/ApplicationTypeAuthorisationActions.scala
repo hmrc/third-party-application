@@ -88,7 +88,7 @@ trait ApplicationTypeAuthorisationActions {
     final protected def deriveAccessType[A](request: Request[A]): Future[Option[AccessType]] =
       applicationService.fetch(applicationId)
         .map(app => app.access.accessType)
-        .orElse(error(new NotFoundException(s"application ${applicationId.value} doesn't exist")))
+        .orElse(error(new NotFoundException(s"application ${applicationId} doesn't exist")))
         .value
   }
 }

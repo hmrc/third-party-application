@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -100,10 +100,10 @@ class GrantTermsOfUseApprovalCommandHandler @Inject() (
     for {
       validateResult                     <- E.fromValidatedF(validate(originalApp))
       (submission, responsibleIndividual) = validateResult
-      updatedSubmission                   = Submission.grant(Instant.now(clock), cmd.gatekeeperUser, Some(cmd.reasons), cmd.escalatedTo)(submission)
+      updatedSubmission                   = Submission.grant(instant(), cmd.gatekeeperUser, Some(cmd.reasons), cmd.escalatedTo)(submission)
       savedSubmission                    <- E.liftF(submissionService.store(updatedSubmission))
       _                                  <- E.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
-      acceptance                          = TermsOfUseAcceptance(responsibleIndividual, Instant.now(clock), submission.id, submission.latestInstance.index)
+      acceptance                          = TermsOfUseAcceptance(responsibleIndividual, instant(), submission.id, submission.latestInstance.index)
       updatedApp                         <- E.liftF(applicationRepository.addApplicationTermsOfUseAcceptance(originalApp.id, acceptance))
       events                              = asEvents(updatedApp, cmd, savedSubmission)
     } yield (updatedApp, events)

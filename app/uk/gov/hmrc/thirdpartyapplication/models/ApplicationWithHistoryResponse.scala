@@ -16,4 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-case class ApplicationWithHistoryResponse(application: Application, history: List[StateHistoryResponse])
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
+
+case class ApplicationWithHistoryResponse(application: ApplicationWithCollaborators, history: List[StateHistoryResponse])

@@ -25,20 +25,19 @@ import play.api.libs.json.{Json, OWrites}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.GrantApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.approvals.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
-class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
+class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtures with SubmissionsTestData {
   implicit val mat: Materializer = NoMaterializer
   val name                       = "bob example"
   val emailAddress               = "test@example.com"
-  val appId                      = ApplicationId.random
+  val appId                      = applicationId
 
   trait Setup
       extends GrantApprovalsServiceMockModule
@@ -52,7 +51,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
       Helpers.stubControllerComponents()
     )
 
-    def hasApp   = ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(appId, state = ApplicationStateExamples.testing))
+    def hasApp   = ApplicationDataServiceMock.FetchApp.thenReturn(storedApp.withState(ApplicationStateExamples.testing))
     def hasNoApp = ApplicationDataServiceMock.FetchApp.thenReturnNone
 
     def hasNoSubmission  = SubmissionsServiceMock.FetchLatest.thenReturnNone()
@@ -64,7 +63,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
     val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
     val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = anApplicationData(appId, productionState("bob"))
+    val application                                                    = storedApp // .copy(state = productionState("bob"))
 
     "return 'OK' success response if successful" in new Setup {
       hasApp
@@ -80,7 +79,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
     val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
     val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = anApplicationData(appId, productionState("bob"))
+    val application                                                    = storedApp // , productionState("bob"))
 
     "return 'OK' success response if successful" in new Setup {
       hasApp
@@ -96,7 +95,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
     val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
     val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = anApplicationData(appId, productionState("bob"))
+    val application                                                    = storedApp
 
     "return 'OK' success response if successful" in new Setup {
       hasApp
@@ -112,7 +111,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     implicit val writes: OWrites[ApprovalsController.TouDeleteRequest] = Json.writes[ApprovalsController.TouDeleteRequest]
     val jsonBody                                                       = Json.toJson(ApprovalsController.TouDeleteRequest("Bob from SDST"))
     val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = anApplicationData(appId, productionState("bob"))
+    val application                                                    = storedApp
 
     "return 'OK' success response if successful" in new Setup {
       hasApp

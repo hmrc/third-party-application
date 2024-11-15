@@ -25,7 +25,6 @@ import cats.implicits._
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UnsubscribeFromApi
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
@@ -68,7 +67,7 @@ class UnsubscribeFromApiCommandHandler @Inject() (
   }
 
   private def performRoleCheckAsRequired(app: StoredApplication)(implicit hc: HeaderCarrier) = {
-    if (List(AccessType.PRIVILEGED, AccessType.ROPC).contains(app.access.accessType))
+    if (app.isPrivileged || app.isROPC)
       strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole().map(_.isEmpty)
     else
       Future.successful(true)

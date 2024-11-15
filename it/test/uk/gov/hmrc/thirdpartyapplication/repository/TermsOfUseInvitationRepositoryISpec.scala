@@ -32,14 +32,12 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, GrantLength, IpAllowlist, RateLimitTier}
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, _}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util.{JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 object TermsOfUseInvitationRepositoryISpecExample extends FixedClock {
   val appId                = ApplicationId.random
@@ -61,7 +59,9 @@ class TermsOfUseInvitationRepositoryISpec
     with MetricsHelper
     with CleanMongoCollectionSupport
     with BeforeAndAfterAll
-    with ApplicationStateUtil
+    with ApplicationStateFixtures
+    with StoredApplicationFixtures
+    with CommonApplicationId
     with Eventually
     with TableDrivenPropertyChecks
     with FixedClock {
@@ -119,8 +119,8 @@ class TermsOfUseInvitationRepositoryISpec
 
   "create" should {
     "create an entry" in {
-      val applicationId = ApplicationId.random
-      val touInvite     = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
+
+      val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
 
       val result = await(termsOfUseInvitationRepository.create(touInvite))
 
@@ -237,8 +237,8 @@ class TermsOfUseInvitationRepositoryISpec
 
   "updateState" should {
     "update the status of an existing entry" in {
-      val applicationId = ApplicationId.random
-      val touInvite     = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
+
+      val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
 
       await(termsOfUseInvitationRepository.create(touInvite))
       val result = await(termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2))
@@ -251,8 +251,8 @@ class TermsOfUseInvitationRepositoryISpec
 
   "updateReminderSent" should {
     "update the status and reminder sent date of an existing entry" in {
-      val applicationId = ApplicationId.random
-      val touInvite     = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
+
+      val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
 
       await(termsOfUseInvitationRepository.create(touInvite))
       val result = await(termsOfUseInvitationRepository.updateReminderSent(applicationId))
@@ -265,9 +265,9 @@ class TermsOfUseInvitationRepositoryISpec
 
   "updateResetBackToEmailSent" should {
     "update the status and due by date of an existing entry" in {
-      val applicationId = ApplicationId.random
-      val newDueByDate  = instant.plus(30, ChronoUnit.DAYS)
-      val touInvite     = TermsOfUseInvitation(applicationId, instant, instant, instant, None, FAILED)
+
+      val newDueByDate = instant.plus(30, ChronoUnit.DAYS)
+      val touInvite    = TermsOfUseInvitation(applicationId, instant, instant, instant, None, FAILED)
 
       await(termsOfUseInvitationRepository.create(touInvite))
       val result = await(termsOfUseInvitationRepository.updateResetBackToEmailSent(applicationId, newDueByDate))
@@ -280,8 +280,8 @@ class TermsOfUseInvitationRepositoryISpec
 
   "delete" should {
     "delete an entry" in {
-      val applicationId = ApplicationId.random
-      val touInvite     = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
+
+      val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
 
       val result = await(termsOfUseInvitationRepository.create(touInvite))
       result mustBe Some(touInvite)
@@ -293,7 +293,6 @@ class TermsOfUseInvitationRepositoryISpec
     }
 
     "not fail if no record found" in {
-      val applicationId = ApplicationId.random
 
       val delete = await(termsOfUseInvitationRepository.delete(applicationId))
       delete mustBe HasSucceeded
@@ -463,27 +462,6 @@ class TermsOfUseInvitationRepositoryISpec
   }
 
   private def anApplicationData(id: ApplicationId, name: String): StoredApplication = {
-    StoredApplication(
-      id,
-      name,
-      name.toLowerCase(),
-      Set(Collaborator(LaxEmailAddress("user@example.com"), Collaborator.Roles.ADMINISTRATOR, UserId.random)),
-      Some("description"),
-      "myapplication",
-      ApplicationTokens(
-        StoredToken(ClientId.random, "ccc")
-      ),
-      productionState("ted@example.com"),
-      Standard(),
-      instant,
-      Some(instant),
-      GrantLength.EIGHTEEN_MONTHS.period,
-      Some(RateLimitTier.BRONZE),
-      Environment.PRODUCTION.toString(),
-      None,
-      false,
-      IpAllowlist(),
-      true
-    )
+    storedApp.withId(id).withName(ApplicationName(name)).copy(tokens = ApplicationTokens(StoredToken(ClientId.random, "ccc")))
   }
 }

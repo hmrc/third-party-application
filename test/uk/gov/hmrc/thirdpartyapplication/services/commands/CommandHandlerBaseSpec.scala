@@ -17,13 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 trait CommandHandlerBaseSpec
     extends AsyncHmrcSpec
-    with ApplicationTestData
+    with CommandApplicationExamples
     with CommandActorExamples
-    with CommandApplicationExamples {
+    with ActorTestData {
 
   def checkFailsWith(msg: String, msgs: String*)(fn: => CommandHandler.AppCmdResultT) = {
     val testThis = await(fn.value).left.value.toList

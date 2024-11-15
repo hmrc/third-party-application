@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository.mongo
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.Random.nextString
 
 import org.mongodb.scala.Document
 import org.mongodb.scala.bson.BsonDocument
@@ -33,22 +32,20 @@ import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.test.MongoSupport
 import uk.gov.hmrc.utils.ServerBaseISpec
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ClientSecret, GrantLength, RedirectUri}
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSearch, AutoDeleteAllowed, StandardAccess => _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationRepositorySerialisationISpec
     extends ServerBaseISpec
-    with ApplicationTestData
     with JavaDateTimeTestUtils
-    with ApplicationStateUtil
+    with StoredApplicationFixtures
+    with CollaboratorTestData
     with BeforeAndAfterEach
     with MetricsHelper
     with FixedClock
@@ -80,39 +77,7 @@ class ApplicationRepositorySerialisationISpec
     lazy val defaultGrantLength = 547
     lazy val newGrantLength     = 1000
 
-    private def generateAccessToken = {
-      val lengthOfRandomToken = 5
-      nextString(lengthOfRandomToken)
-    }
-
-    private def aClientSecret(id: ClientSecret.Id = ClientSecret.Id.random, name: String = "", lastAccess: Option[Instant] = None, hashedSecret: String = "hashed-secret") =
-      StoredClientSecret(
-        id = id,
-        name = name,
-        lastAccess = lastAccess,
-        hashedSecret = hashedSecret,
-        createdOn = instant
-      )
-
-    val applicationData = StoredApplication(
-      applicationId,
-      "appName",
-      "normalised app name",
-      Set(
-        "user@example.com".admin()
-      ),
-      Some("description"),
-      "myapplication",
-      ApplicationTokens(
-        StoredToken(ClientId("aaa"), generateAccessToken, List(aClientSecret()))
-      ),
-      testingState(),
-      Access.Standard(),
-      instant,
-      Some(instant),
-      refreshTokensAvailableFor = GrantLength.ONE_YEAR.period,
-      checkInformation = None
-    )
+    val applicationData = storedApp.withId(applicationId).withState(appStateTesting).copy(refreshTokensAvailableFor = GrantLength.ONE_YEAR.period)
 
     def saveApplicationAsMongoJson(applicationAsRawJson: JsObject): InsertOneResult = {
       await(mongoDatabase.getCollection("application").insertOne(Document(applicationAsRawJson.toString())).toFuture())
@@ -188,7 +153,7 @@ class ApplicationRepositorySerialisationISpec
 
   "create application with invalid redirect UR in db and test we can read it back " in new Setup {
     val invalidUri        = new RedirectUri("bobbins") // Using new to avoid validation of the apply method
-    val data              = applicationData.copy(access = Access.Standard().copy(redirectUris = List(invalidUri)))
+    val data              = applicationData.withAccess(Access.Standard().copy(redirectUris = List(invalidUri)))
     val rawJson: JsObject = applicationToMongoJson(data, allowAutoDelete = Some(true))
     saveApplicationAsMongoJson(rawJson)
     val result            = await(applicationRepository.fetch(applicationId))

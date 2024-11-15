@@ -32,14 +32,13 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, _}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, CheckInformation, Collaborator}
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
-import uk.gov.hmrc.thirdpartyapplication.util.{CollaboratorTestData, JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class SubscriptionRepositoryISpec
     extends ServerBaseISpec
@@ -48,10 +47,12 @@ class SubscriptionRepositoryISpec
     with MetricsHelper
     with CleanMongoCollectionSupport
     with BeforeAndAfterAll
-    with ApplicationStateUtil
+    with ApplicationStateFixtures
     with Eventually
     with TableDrivenPropertyChecks
+    with StoredApplicationFixtures
     with ApiIdentifierSyntax
+    with CommonApplicationId
     with FixedClock
     with CollaboratorTestData {
 
@@ -80,7 +81,7 @@ class SubscriptionRepositoryISpec
   "add" should {
 
     "create an entry" in {
-      val applicationId = ApplicationId.random
+
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
 
       val result = await(subscriptionRepository.add(applicationId, apiIdentifier))
@@ -148,7 +149,7 @@ class SubscriptionRepositoryISpec
   "isSubscribed" should {
 
     "return true when the application is subscribed" in {
-      val applicationId = ApplicationId.random
+
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
       await(subscriptionRepository.add(applicationId, apiIdentifier))
 
@@ -158,7 +159,7 @@ class SubscriptionRepositoryISpec
     }
 
     "return false when the application is not subscribed" in {
-      val applicationId = ApplicationId.random
+
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
 
       val isSubscribed = await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier))
@@ -181,13 +182,13 @@ class SubscriptionRepositoryISpec
 
       val result = await(subscriptionRepository.getSubscriptions(application1))
 
-      result mustBe List(api1, api2)
+      result mustBe Set(api1, api2)
     }
 
     "return empty when the application is not subscribed to any API" in {
       val result = await(subscriptionRepository.getSubscriptions(application1))
 
-      result mustBe List.empty
+      result mustBe Set.empty
     }
   }
 
@@ -320,7 +321,7 @@ class SubscriptionRepositoryISpec
   }
 
   "handle ApiSubscribed event correctly" in {
-    val applicationId = ApplicationId.random
+
     val apiIdentifier = "some-context".asIdentifier("1.0.0")
 
     val result = await(subscriptionRepository.add(applicationId, apiIdentifier))
@@ -330,7 +331,7 @@ class SubscriptionRepositoryISpec
   }
 
   "handle ApiUnsubscribed event correctly" in {
-    val applicationId = ApplicationId.random
+
     val apiIdentifier = "some-context".asIdentifier("1.0.0")
 
     await(subscriptionRepository.add(applicationId, apiIdentifier))
@@ -355,41 +356,32 @@ class SubscriptionRepositoryISpec
   def anApplicationData(
       id: ApplicationId,
       clientId: ClientId = ClientId("aaa"),
-      state: ApplicationState = testingState(),
+      state: ApplicationState = appStateTesting,
       access: Access = Access.Standard(),
-      user: List[String] = List("user@example.com"),
-      checkInformation: Option[CheckInformation] = None
+      user: List[String] = List("user@example.com")
     ): StoredApplication = {
 
-    aNamedApplicationData(id, s"myApp-${id.value}", clientId, state, access, user, checkInformation)
+    anApplicationDataForTest(id, s"myApp-${id.value}", clientId, state, access, user)
   }
 
-  def aNamedApplicationData(
+  def anApplicationDataForTest(
       id: ApplicationId,
       name: String,
       clientId: ClientId = ClientId("aaa"),
-      state: ApplicationState = testingState(),
+      state: ApplicationState = appStateTesting,
       access: Access = Access.Standard(),
-      user: List[String] = List("user@example.com"),
-      checkInformation: Option[CheckInformation] = None
+      user: List[String] = List("user@example.com")
     ): StoredApplication = {
 
     val collaborators: Set[Collaborator] = user.map(email => email.admin()).toSet
 
-    StoredApplication(
-      id,
-      name,
-      name.toLowerCase,
-      collaborators,
-      Some("description"),
-      "myapplication",
-      ApplicationTokens(StoredToken(clientId, generateAccessToken)),
-      state,
-      access,
-      instant,
-      Some(instant),
-      checkInformation = checkInformation
-    )
+    storedApp
+      .withId(id)
+      .withName(ApplicationName(name))
+      .withState(state)
+      .withAccess(access)
+      .withCollaborators(collaborators)
+      .copy(tokens = ApplicationTokens(StoredToken(clientId, generateAccessToken)))
   }
 
   private def generateClientId = {
