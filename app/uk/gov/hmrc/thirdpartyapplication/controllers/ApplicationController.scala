@@ -234,8 +234,22 @@ class ApplicationController @Inject() (
       .isDefined
   }
 
+  private def asNotFoundOrJson[T](notFoundMessage: String): Option[JsValue] => Result = _.fold(handleNotFound(notFoundMessage))(v => Ok(v))
+
   private def asJsonResult[T](notFoundMessage: String)(maybeApplication: Option[T])(implicit writes: Writes[T]): Result = {
-    maybeApplication.fold(handleNotFound(notFoundMessage))(t => Ok(toJson(t)))
+    val js = maybeApplication.map(Json.toJson[T])
+    asNotFoundOrJson[T](notFoundMessage)(js)
+  }
+
+  private def asJsonResultWithServerToken[T](notFoundMessage: String)(maybeApplication: Option[(T, String)])(implicit writes: Writes[T]): Result = {
+    val js: Option[JsValue] = maybeApplication.map {
+      case (app, serverToken) =>
+        Json.toJson[T](app) match {
+          case o: JsObject => o + ("serverToken" -> JsString(serverToken))
+          case v           => v
+        }
+    }
+    asNotFoundOrJson[T](notFoundMessage)(js)
   }
 
   private def fetchByServerToken(serverToken: String)(implicit hc: HeaderCarrier): Future[Result] = {
@@ -244,7 +258,7 @@ class ApplicationController @Inject() (
     // If request has originated from an API gateway, record usage of the Application
     (
       if (hasGatewayUserAgent) {
-        applicationService.findAndRecordServerTokenUsage(serverToken).map(asJsonResult(notFoundMessage))
+        applicationService.findAndRecordServerTokenUsage(serverToken).map(asJsonResultWithServerToken(notFoundMessage))
       } else {
         applicationService.fetchByServerToken(serverToken).map(asJsonResult(notFoundMessage))
       }
@@ -257,7 +271,7 @@ class ApplicationController @Inject() (
     // If request has originated from an API gateway, record usage of the Application
     (
       if (hasGatewayUserAgent) {
-        applicationService.findAndRecordApplicationUsage(clientId).map(asJsonResult(notFoundMessage))
+        applicationService.findAndRecordApplicationUsage(clientId).map(asJsonResultWithServerToken(notFoundMessage))
       } else {
         applicationService.fetchByClientId(clientId).map(asJsonResult(notFoundMessage))
       }

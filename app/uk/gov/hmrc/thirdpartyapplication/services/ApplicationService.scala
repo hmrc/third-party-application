@@ -174,14 +174,15 @@ class ApplicationService @Inject() (
     }
   }
 
-  def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[ApplicationWithSubscriptions]] = {
+  def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[(ApplicationWithSubscriptions, String)]] = {
     timeFuture("Service Find And Record Application Usage", "application.service.findAndRecordApplicationUsage") {
       (
         for {
           app           <- OptionT(applicationRepository.findAndRecordApplicationUsage(clientId))
+          serverToken    = app.tokens.production.accessToken
           subscriptions <- OptionT.liftF(subscriptionRepository.getSubscriptions(app.id))
           result         = StoredApplication.asApplication(app).withSubscriptions(subscriptions.toSet)
-        } yield result
+        } yield (result, serverToken)
       )
         .value
     }
@@ -195,14 +196,16 @@ class ApplicationService @Inject() (
     }
   }
 
-  def findAndRecordServerTokenUsage(serverToken: String): Future[Option[ApplicationWithSubscriptions]] = {
+  def findAndRecordServerTokenUsage(serverToken: String): Future[Option[(ApplicationWithSubscriptions, String)]] = {
     timeFuture("Service Find And Record Server Token Usage", "application.service.findAndRecordServerTokenUsage") {
       (
         for {
           app           <- OptionT(applicationRepository.findAndRecordServerTokenUsage(serverToken))
+          // these are identical otherwise the find would not work
+          // serverToken    = app.tokens.production.accessToken
           subscriptions <- OptionT.liftF(subscriptionRepository.getSubscriptions(app.id))
           result         = StoredApplication.asApplication(app).withSubscriptions(subscriptions.toSet)
-        } yield result
+        } yield (result, serverToken)
       )
         .value
     }

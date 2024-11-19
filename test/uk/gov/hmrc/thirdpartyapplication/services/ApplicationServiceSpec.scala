@@ -492,16 +492,18 @@ class ApplicationServiceSpec
   }
 
   "recordApplicationUsage" should {
-    "update the Application and return an ExtendedApplicationResponse" in new Setup {
+    "update the Application and return an application with subscriptions and accessToken (serverToken)" in new Setup {
       val subscriptions = Set("myContext".asIdentifier("myVersion"))
       val clientId      = applicationData.tokens.production.clientId
+      val expectedToken = applicationData.tokens.production.accessToken
       ApplicationRepoMock.FindAndRecordApplicationUsage.thenReturnWhen(clientId)(applicationData)
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq: _*)
 
       val result = await(underTest.findAndRecordApplicationUsage(clientId))
 
-      result.value.id shouldBe applicationId
-      result.value.subscriptions shouldBe subscriptions
+      result.value._1.id shouldBe applicationId
+      result.value._1.subscriptions shouldBe subscriptions
+      result.value._2 shouldBe expectedToken
     }
   }
 
@@ -539,7 +541,7 @@ class ApplicationServiceSpec
   }
 
   "findAndRecordServerTokenUsage" should {
-    "update the Application and return an ExtendedApplicationResponse" in new Setup {
+    "update the Application and return an application with subscriptions and server token (accessToken)" in new Setup {
       val subscriptions = Set("myContext".asIdentifier("myVersion"))
       val serverToken   = applicationData.tokens.production.accessToken
       ApplicationRepoMock.FindAndRecordServerTokenUsage.thenReturnWhen(serverToken)(applicationData)
@@ -547,8 +549,9 @@ class ApplicationServiceSpec
 
       val result = await(underTest.findAndRecordServerTokenUsage(serverToken))
 
-      result.value.id shouldBe applicationId
-      result.value.subscriptions shouldBe subscriptions
+      result.value._1.id shouldBe applicationId
+      result.value._1.subscriptions shouldBe subscriptions
+      result.value._2 shouldBe serverToken
       ApplicationRepoMock.FindAndRecordServerTokenUsage.verifyCalledWith(serverToken)
     }
   }
