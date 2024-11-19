@@ -201,8 +201,8 @@ class ApplicationService @Inject() (
       (
         for {
           app           <- OptionT(applicationRepository.findAndRecordServerTokenUsage(serverToken))
-          // these are identical otherwise the find would not work
-          // serverToken    = app.tokens.production.accessToken
+          // Unlike findAndRecordApplicationUsage(clientId), in this method the serverToken is provided as input and is used as a search term for accessToken
+          // so it's not necessary create a variable here, such as serverToken = app.tokens.production.accessToken
           subscriptions <- OptionT.liftF(subscriptionRepository.getSubscriptions(app.id))
           result         = StoredApplication.asApplication(app).withSubscriptions(subscriptions.toSet)
         } yield (result, serverToken)
