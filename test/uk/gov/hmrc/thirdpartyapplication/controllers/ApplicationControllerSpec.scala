@@ -444,7 +444,7 @@ class ApplicationControllerSpec
 
       forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
         when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
-        when(underTest.applicationService.findAndRecordServerTokenUsage(serverToken)).thenReturn(Future(Some(updatedApplicationResponse)))
+        when(underTest.applicationService.findAndRecordServerTokenUsage(serverToken)).thenReturn(Future(Some((updatedApplicationResponse, serverToken))))
 
         val result = underTest.queryDispatcher()(request.withHeaders(headers: _*))
 
@@ -470,7 +470,7 @@ class ApplicationControllerSpec
 
       forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
         when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(applicationResponse)))
-        when(underTest.applicationService.findAndRecordApplicationUsage(clientId)).thenReturn(Future(Some(updatedApplicationResponse)))
+        when(underTest.applicationService.findAndRecordApplicationUsage(clientId)).thenReturn(Future(Some((updatedApplicationResponse, "aServerToken"))))
 
         val result =
           underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}").withHeaders(headers: _*))
@@ -479,6 +479,8 @@ class ApplicationControllerSpec
         (contentAsJson(result) \ "details" \ "lastAccess").as[Instant].toEpochMilli() shouldBe expectedLastAccessTime
         if (shouldUpdate) {
           verify(underTest.applicationService).findAndRecordApplicationUsage(eqTo(clientId))
+        } else {
+          verify(underTest.applicationService).fetchByClientId(eqTo(clientId))
         }
         reset(underTest.applicationService)
       }
