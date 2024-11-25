@@ -301,7 +301,7 @@ object QuestionnaireDAO {
             StatementText("You must also "),
             StatementLink(
               "notify the ICO about personal data breaches (opens in new tab)",
-              "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/personal-data-breaches"
+              "https://ico.org.uk/for-organisations/report-a-breach/personal-data-breach/personal-data-breaches-a-guide/"
             ),
             StatementText(" within 72 hours of becoming aware of it.")
           )
@@ -335,7 +335,7 @@ object QuestionnaireDAO {
               StatementText("your "),
               StatementLink(
                 "lawful basis (opens in new tab)",
-                "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/lawful-basis-for-processing"
+                "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/lawful-basis/a-guide-to-lawful-basis/"
               ),
               StatementText(" for processing personal data")
             )
@@ -354,7 +354,7 @@ object QuestionnaireDAO {
             StatementText("You must encrypt access tokens and personally identifiable data when it is stored and in transit. Read the "),
             StatementLink(
               "UK GDPR guidelines on encryption (opens in new tab)",
-              "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/encryption/encryption-and-data-transfer"
+              "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/a-guide-to-data-security/encryption/"
             ),
             StatementText(".")
           )
@@ -416,7 +416,7 @@ object QuestionnaireDAO {
             StatementText("You must allow customers to change, export or delete their data if they want to. Read the "),
             StatementLink(
               "UK GDPR guidelines on individuals rights (opens in new tab)",
-              "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/individual-rights/"
+              "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/individual-rights/individual-rights/"
             )
           )
         ).some,
@@ -509,12 +509,12 @@ object QuestionnaireDAO {
             StatementText("Learn about "),
             StatementLink(
               "adequacy agreements (opens in new tab)",
-              "https://ico.org.uk/for-organisations/dp-at-the-end-of-the-transition-period/data-protection-and-the-eu-in-detail/adequacy/"
+              "https://ico.org.uk/for-organisations/data-protection-and-the-eu/data-protection-and-the-eu-in-detail/adequacy/"
             ),
             StatementText(" or "),
             StatementLink(
               "check if a country has an adequacy agreement (opens in new tab)",
-              "https://ico.org.uk/for-organisations/dp-at-the-end-of-the-transition-period/data-protection-and-the-eu-in-detail/the-uk-gdpr/international-data-transfers/#:~:text=Andorra%2C%20Argentina%2C%20Canada%20(commercial,a%20finding%20of%20adequacy%20about"
+              "https://ico.org.uk/for-organisations/data-protection-and-the-eu/data-protection-and-the-eu-in-detail/the-uk-gdpr/international-data-transfers/"
             ),
             StatementText(" with the UK.")
           )
@@ -621,7 +621,10 @@ object QuestionnaireDAO {
         statement = Statement(
           CompoundFragment(
             StatementText("Assess your compliance using the "),
-            StatementLink("ICO information security checklist (opens in new tab)", "https://ico.org.uk/for-organisations/sme-web-hub/checklists/data-protection-self-assessment"),
+            StatementLink(
+              "ICO information security checklist (opens in new tab)",
+              "https://ico.org.uk/for-organisations/advice-for-small-organisations/checklists/data-protection-self-assessment/information-security-checklist/"
+            ),
             StatementText(".")
           )
         ).some,
@@ -735,7 +738,10 @@ object QuestionnaireDAO {
         statement = Statement(
           CompoundFragment(
             StatementText("You must not share customers’ personal data without their consent. Read the "),
-            StatementLink("Direct Marketing Guidance (opens in new tab)", "https://ico.org.uk/for-organisations/guide-to-pecr/electronic-and-telephone-marketing/"),
+            StatementLink(
+              "Direct Marketing Guidance (opens in new tab)",
+              "https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/direct-marketing-guidance/"
+            ),
             StatementText(" from the Information Commissioner’s Office.")
           )
         ).some,
