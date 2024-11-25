@@ -16,17 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import play.api.libs.json.OFormat
+import play.api.libs.json.Format
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
 
 case class CreateApplicationResponse(application: ApplicationWithCollaborators, totp: Option[CreateApplicationResponse.TotpSecret] = None)
 
 object CreateApplicationResponse {
-  case class TotpSecret(production: String)
+  case class TotpSecret(value: String) extends AnyVal
 
   object TotpSecret {
     import play.api.libs.json.Json
-    implicit val format: OFormat[TotpSecret] = Json.format[TotpSecret]
+    implicit val format: Format[TotpSecret] = Json.valueFormat[TotpSecret]
   }
 }

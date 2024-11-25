@@ -73,7 +73,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatFixCollaboratorRequest: OFormat[FixCollaboratorRequest]                     = Json.format[FixCollaboratorRequest]
 
   implicit val createApplicationResponseWrites: OWrites[CreateApplicationResponse] = (
-    JsPath.write[ApplicationWithCollaborators] and (JsPath \ "totp").write[Option[CreateApplicationResponse.TotpSecret]]
+    JsPath.write[ApplicationWithCollaborators] and (JsPath \ "totp").writeNullable[CreateApplicationResponse.TotpSecret]
   )(unlift(CreateApplicationResponse.unapply))
 }
 
