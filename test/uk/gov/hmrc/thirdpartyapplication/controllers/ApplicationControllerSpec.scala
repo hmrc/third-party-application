@@ -516,6 +516,14 @@ class ApplicationControllerSpec
       pageSize = Int.MaxValue,
       filters = List.empty
     )
+
+    "succeed with a 200 when applications are found for the collaborator by user ids" in new Setup {
+      when(underTest.applicationService.fetchAllForCollaborators(List(userId), applicationSearch))
+        .thenReturn(successful(List(standardApp)))
+
+      status(underTest.fetchAllForCollaborators()(request.withBody(requestBody))) shouldBe OK
+    }
+
     "succeed with a 200 when applications are found for the collaborator by user ids" in new Setup {
       when(underTest.applicationService.fetchAllForCollaborators(List(userId), applicationSearch))
         .thenReturn(successful(List(standardApp)))

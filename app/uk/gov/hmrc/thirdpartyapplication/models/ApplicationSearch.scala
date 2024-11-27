@@ -76,8 +76,9 @@ object ApplicationSearch {
     def apiVersion     = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").lift(1).map(ApiVersionNbr(_)))
     def sort           = ApplicationSort(queryString.getOrElse("sort", List.empty).headOption)
     def includeDeleted = queryString.getOrElse("includeDeleted", List.empty).headOption.getOrElse("false").toBoolean
+    def user           = queryString.getOrElse("user", List.empty).headOption.flatMap(UserId(_))
 
-    new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort, includeDeleted)
+    new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort, includeDeleted, user)
   }
 }
 
