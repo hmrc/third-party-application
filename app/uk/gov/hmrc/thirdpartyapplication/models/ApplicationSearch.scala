@@ -39,7 +39,8 @@ case class ApplicationSearch(
     apiContext: Option[ApiContext] = None,
     apiVersion: Option[ApiVersionNbr] = None,
     sort: ApplicationSort = SubmittedAscending,
-    includeDeleted: Boolean = false
+    includeDeleted: Boolean = false,
+    userId: Option[UserId] = None
   ) {
   def hasSubscriptionFilter()            = filters.exists(filter => filter.isInstanceOf[APISubscriptionFilter])
   def hasSpecificApiSubscriptionFilter() = filters.exists(filter => filter.isInstanceOf[SpecificAPISubscription.type])
@@ -62,6 +63,7 @@ object ApplicationSearch {
             case "accessType"                     => AccessTypeFilter(value.head)
             case "lastUseBefore" | "lastUseAfter" => LastUseDateFilter(key, value.head)
             case "allowAutoDelete"                => AllowAutoDeleteFilter(value.head)
+            case "user"                           => UserSearchFilter(value.head)
             case _                                => None // ignore anything that isn't a search filter
           }
       }
@@ -241,6 +243,19 @@ object ApplicationSort extends ApplicationSort {
     case Some("LAST_USE_DESC")  => LastUseDateDescending
     case Some("NO_SORT")        => NoSorting
     case _                      => SubmittedAscending
+  }
+}
+
+sealed trait UserSearchFilter     extends ApplicationSearchFilter
+case object ApplicationUserSearch extends UserSearchFilter
+
+case object UserSearchFilter extends UserSearchFilter {
+
+  def apply(value: String): Option[UserSearchFilter] = {
+    value match {
+      case _ if value.nonEmpty => Some(ApplicationUserSearch)
+      case _                   => None
+    }
   }
 }
 

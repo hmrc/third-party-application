@@ -224,9 +224,15 @@ class ApplicationService @Inject() (
     Future.sequence(apps.map(asExtendedResponse))
   }
 
-  def fetchAllForCollaborators(userIds: List[UserId]): Future[List[ApplicationWithCollaborators]] = {
+  def fetchAllForCollaborators(userIds: List[UserId], applicationSearch: ApplicationSearch): Future[List[ApplicationWithCollaborators]] = {
     Future.sequence(
-      userIds.map(applicationRepository.fetchAllForUserId(_, false).map(_.toList))
+      userIds.map { userId =>
+        val appSearch = applicationSearch.copy(
+          filters = applicationSearch.filters :+ ApplicationUserSearch,
+          userId = Some(userId)
+        )
+        applicationRepository.searchApplications("fetchAllForCollaborators")(appSearch).map(_.applications).map(_.toList)
+      }
     ).map(_.foldLeft(List[StoredApplication]())(_ ++ _)).map {
       _.map(application => StoredApplication.asApplication(application))
     }
