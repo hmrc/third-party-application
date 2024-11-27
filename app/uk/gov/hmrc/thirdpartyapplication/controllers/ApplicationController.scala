@@ -279,8 +279,12 @@ class ApplicationController @Inject() (
   }
 
   def fetchAllForCollaborators(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[CollaboratorUserIds] { request =>
-      applicationService.fetchAllForCollaborators(request.userIds).map(apps => Ok(toJson(apps))) recover recovery
+    withJsonBody[CollaboratorUserIds] { userIds =>
+      Try(ApplicationSearch.fromQueryString(request.queryString)) match {
+        case Success(applicationSearch) => applicationService.fetchAllForCollaborators(userIds.userIds, applicationSearch).map(apps => Ok(toJson(apps))) recover recovery
+        case Failure(e)                 => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, e.getMessage)))
+      }
+
     }
   }
 

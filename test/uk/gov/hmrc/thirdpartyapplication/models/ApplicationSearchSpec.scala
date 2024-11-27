@@ -22,6 +22,7 @@ import play.api.test.FakeRequest
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 
 class ApplicationSearchSpec extends HmrcSpec {
 
@@ -196,6 +197,16 @@ class ApplicationSearchSpec extends HmrcSpec {
       searchObject.filters should contain(SpecificAPISubscription)
       searchObject.apiContext shouldBe Some(api.asContext)
       searchObject.apiVersion shouldBe Some(apiVersion.asVersion)
+    }
+
+    "populate user if specific value is provided" in {
+      val user     = UserId.random
+      val request = FakeRequest("GET", s"/applications?user=$user")
+
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      searchObject.userId shouldBe Some(user)
+      searchObject.filters should contain(ApplicationUserSearch)
     }
 
     "populate sort as NameAscending when sort is NAME_ASC" in {
