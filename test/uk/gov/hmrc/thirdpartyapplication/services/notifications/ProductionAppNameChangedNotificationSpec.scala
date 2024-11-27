@@ -57,7 +57,7 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Stored
     val gatekeeperUser       = "gkuser"
     val eventId              = EventId.random
     val actor                = Actors.GatekeeperUser(gatekeeperUser)
-    val nameChangeEmailEvent = ApplicationEvents.ProductionAppNameChangedEvent(eventId, applicationId, instant, actor, oldName.value, newName.value, adminOne.emailAddress)
+    val nameChangeEmailEvent = ApplicationEvents.ProductionAppNameChangedEvent(eventId, applicationId, instant, actor, oldName, newName, adminOne.emailAddress)
   }
 
   "sendAdviceEmail" should {
