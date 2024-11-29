@@ -6,7 +6,7 @@ object AppDependencies {
 
   lazy val bootstrapVersion         = "9.2.0"
   lazy val hmrcMongoVersion         = "1.7.0"
-  lazy val applicationEventVersion  = "0.66.6"
+  lazy val applicationEventVersion  = "0.67.0"
   lazy val appDomainVersion         = "0.62.0"
 
   private lazy val compileDeps      = Seq(
