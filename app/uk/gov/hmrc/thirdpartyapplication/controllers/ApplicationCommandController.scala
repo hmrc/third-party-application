@@ -32,19 +32,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.DispatchRequest
 
 object ApplicationCommandController {
-  case class DispatchRequest(command: ApplicationCommand, verifiedCollaboratorsToNotify: Set[LaxEmailAddress])
-
-  object DispatchRequest {
-
-    val readsDispatchRequest: Reads[DispatchRequest]          = Json.reads[DispatchRequest]
-    val readsCommandAsDispatchRequest: Reads[DispatchRequest] = ApplicationCommand.formatter.map(cmd => DispatchRequest(cmd, Set.empty))
-
-    implicit val readsEitherAsDispatchRequest: Reads[DispatchRequest] = readsDispatchRequest orElse readsCommandAsDispatchRequest
-  }
-
-  case class DispatchResult(applicationResponse: ApplicationWithCollaborators, events: List[ApplicationEvent])
+   case class DispatchResult(applicationResponse: ApplicationWithCollaborators, events: List[ApplicationEvent])
 
   object DispatchResult {
     import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
@@ -55,8 +46,7 @@ object ApplicationCommandController {
 
 @Singleton
 class ApplicationCommandController @Inject() (
-    val applicationCommandDispatcher: ApplicationCommandDispatcher,
-    val applicationCommandAuthenticator: ApplicationCommandAuthenticator,
+    val applicationCommandService: ApplicationCommandService,
     val applicationService: ApplicationService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
@@ -77,16 +67,16 @@ class ApplicationCommandController @Inject() (
     BadRequest(Json.toJson(e.toList))
   }
 
-  def update(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    def passes(result: CommandHandler.Success) = {
-      Ok(Json.toJson(StoredApplication.asApplication(result._1)))
-    }
+  // def update(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+  //   def passes(result: CommandHandler.Success) = {
+  //     Ok(Json.toJson(StoredApplication.asApplication(result._1)))
+  //   }
 
-    withJsonBody[ApplicationCommand] { command =>
-      applicationCommandDispatcher.dispatch(applicationId, command, Set.empty) // Eventually we want to migrate everything to use the /dispatch endpoint with email list
-        .fold(fails(applicationId, command), passes(_))
-    }
-  }
+  //   withJsonBody[ApplicationCommand] { command =>
+  //     applicationCommandDispatcher.dispatch(applicationId, command, Set.empty) // Eventually we want to migrate everything to use the /dispatch endpoint with email list
+  //       .fold(fails(applicationId, command), passes(_))
+  //   }
+  // }
 
   def dispatch(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     def passes(result: CommandHandler.Success) = {
@@ -97,13 +87,17 @@ class ApplicationCommandController @Inject() (
     lazy val unAuth = Unauthorized("Authentication needed for this command")
 
     withJsonBody[DispatchRequest] { dispatchRequest =>
-      applicationCommandAuthenticator.authenticateCommand(dispatchRequest.command).flatMap(isAuthorised =>
-        if (isAuthorised) {
-          applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(
-            fails(applicationId, dispatchRequest.command),
-            passes(_)
-          )
-        } else successful(unAuth)
+      // applicationCommandAuthenticator.authenticateCommand(dispatchRequest.command).flatMap(isAuthorised =>
+      //   if (isAuthorised) {
+      //     applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(
+      //       fails(applicationId, dispatchRequest.command),
+      //       passes(_)
+      //     )
+      //   } else successful(unAuth)
+      // )
+      applicationCommandService.authenticateAndDispatch(applicationId, dispatchRequest).fold(
+        fails(applicationId, dispatchRequest.command),
+        passes(_)
       )
     }
   }
