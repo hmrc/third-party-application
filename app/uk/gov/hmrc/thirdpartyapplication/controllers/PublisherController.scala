@@ -49,7 +49,13 @@ class PublisherController @Inject() (
     val command       = UnsubscribeFromApi(Actors.Process("Publisher"), apiIdentifier, ts)
 
     def deleteSubscriptionFor(applicationId: ApplicationId)(implicit hc: HeaderCarrier): Future[Unit] = {
-      applicationCommandDispatcher.dispatch(applicationId, command, Set.empty).fold(_ => (), _ => ())
+      def logAndReturnUnit(msg: String) = {
+        logger.info(s"deleteSubscribers $msg for app $applicationId for Api context: $context Api Version: $version")
+        ()
+      }
+
+      applicationCommandDispatcher.dispatch(applicationId, command, Set.empty)
+        .fold(_ => logAndReturnUnit("command failed"), _ => logAndReturnUnit("command succeeded"))
     }
 
     (for {
