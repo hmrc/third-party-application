@@ -100,6 +100,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockRemoveCollaboratorCommandHandler: RemoveCollaboratorCommandHandler                                           = mock[RemoveCollaboratorCommandHandler]
     val mockSubscribeToApiCommandHandler: SubscribeToApiCommandHandler                                                   = mock[SubscribeToApiCommandHandler]
     val mockUnsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler                                           = mock[UnsubscribeFromApiCommandHandler]
+    val mockUnsubscribeFromRetiredApiCommandHandler: UnsubscribeFromRetiredApiCommandHandler                             = mock[UnsubscribeFromRetiredApiCommandHandler]
     val mockUpdateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler                                           = mock[UpdateRedirectUrisCommandHandler]
     val mockChangeGrantLengthCommandHandler: ChangeGrantLengthCommandHandler                                             = mock[ChangeGrantLengthCommandHandler]
     val mockChangeRateLimitTierCommandHandler: ChangeRateLimitTierCommandHandler                                         = mock[ChangeRateLimitTierCommandHandler]
@@ -214,7 +215,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
 
     val subscriptionCommandsProcessor = new SubscriptionCommandsProcessor(
       mockSubscribeToApiCommandHandler,
-      mockUnsubscribeFromApiCommandHandler
+      mockUnsubscribeFromApiCommandHandler,
+      mockUnsubscribeFromRetiredApiCommandHandler
     )
 
     val underTest = new ApplicationCommandDispatcher(

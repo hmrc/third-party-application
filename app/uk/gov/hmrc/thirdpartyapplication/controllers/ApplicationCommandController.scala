@@ -71,7 +71,7 @@ class ApplicationCommandController @Inject() (
     if (hasAuthErrors.isEmpty) {
       BadRequest(Json.toJson(e.toList))
     } else {
-      Unauthorized(Json.toJson(e.toList))
+      Unauthorized("Authentication needed for this command")
     }
   }
 
@@ -81,8 +81,6 @@ class ApplicationCommandController @Inject() (
     }
 
     withJsonBody[ApplicationCommand] { command =>
-      // applicationCommandDispatcher.dispatch(applicationId, command, Set.empty) // Eventually we want to migrate everything to use the /dispatch endpoint with email list
-      //   .fold(fails(applicationId, command), passes(_))
       applicationCommandService.authenticateAndDispatch(applicationId, command, Set.empty).fold(
         fails(applicationId, command),
         passes(_)
@@ -96,17 +94,7 @@ class ApplicationCommandController @Inject() (
       Ok(Json.toJson(output))
     }
 
-    lazy val unAuth = Unauthorized("Authentication needed for this command")
-
     withJsonBody[DispatchRequest] { dispatchRequest =>
-      // applicationCommandAuthenticator.authenticateCommand(dispatchRequest.command).flatMap(isAuthorised =>
-      //   if (isAuthorised) {
-      //     applicationCommandDispatcher.dispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(
-      //       fails(applicationId, dispatchRequest.command),
-      //       passes(_)
-      //     )
-      //   } else successful(unAuth)
-      // )
       applicationCommandService.authenticateAndDispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(
         fails(applicationId, dispatchRequest.command),
         passes(_)

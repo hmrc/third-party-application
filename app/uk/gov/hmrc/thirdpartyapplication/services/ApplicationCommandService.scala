@@ -38,19 +38,17 @@ class ApplicationCommandService @Inject() (
   import CommandHandler._
 
   val E = EitherTHelper.make[Failures]
-  // Failures      = NonEmptyList[CommandFailure]
 
   def authenticateAndDispatch(applicationId: ApplicationId, command: ApplicationCommand, collaboratorsToNotify: Set[LaxEmailAddress])(implicit hc: HeaderCarrier)
       : EitherT[Future, Failures, Success] = {
-    // We need to break out isAuthorised so we check Stride if GKUser OR if process we check some other thing
     (for {
       isAuthorised   <- E.liftF(applicationCommandAuthenticator.authenticateCommand(command))
-      dispatchResult <- applicationCommandDispatcher.dispatch(applicationId, command, collaboratorsToNotify)
-      result         <- E.cond(
+      _              <- E.cond(
                           isAuthorised,
-                          dispatchResult,
+                          (),
                           NonEmptyList.one(CommandFailures.InsufficientPrivileges("Not authenticated"))
                         )
-    } yield result)
+      dispatchResult <- applicationCommandDispatcher.dispatch(applicationId, command, collaboratorsToNotify)
+    } yield dispatchResult)
   }
 }
