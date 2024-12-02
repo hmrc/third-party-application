@@ -18,24 +18,22 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future.successful
 
-import play.api.libs.json.{Json, OFormat, Reads}
+import play.api.libs.json.{Json, OFormat}
 import play.api.mvc._
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, CommandFailures}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, CommandFailures, DispatchRequest}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.DispatchRequest
 
 object ApplicationCommandController {
-   case class DispatchResult(applicationResponse: ApplicationWithCollaborators, events: List[ApplicationEvent])
+  case class DispatchResult(applicationResponse: ApplicationWithCollaborators, events: List[ApplicationEvent])
 
   object DispatchResult {
     import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
@@ -60,23 +58,37 @@ class ApplicationCommandController @Inject() (
   val E = EitherTHelper.make[CommandHandler.Failures]
 
   private def fails(applicationId: ApplicationId, cmd: ApplicationCommand)(e: CommandHandler.Failures) = {
-
     val details = e.toList.map(CommandFailures.describe)
-
     logger.warn(s"Command Process ${cmd.getClass.getSimpleName} failed for $applicationId because ${details.mkString("[", ",", "]")}")
-    BadRequest(Json.toJson(e.toList))
+
+    val hasAuthErrors = e.filter(failure =>
+      failure match {
+        case e: CommandFailures.InsufficientPrivileges => true
+        case _                                         => false
+      }
+    )
+
+    if (hasAuthErrors.isEmpty) {
+      BadRequest(Json.toJson(e.toList))
+    } else {
+      Unauthorized(Json.toJson(e.toList))
+    }
   }
 
-  // def update(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-  //   def passes(result: CommandHandler.Success) = {
-  //     Ok(Json.toJson(StoredApplication.asApplication(result._1)))
-  //   }
+  def update(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+    def passes(result: CommandHandler.Success) = {
+      Ok(Json.toJson(StoredApplication.asApplication(result._1)))
+    }
 
-  //   withJsonBody[ApplicationCommand] { command =>
-  //     applicationCommandDispatcher.dispatch(applicationId, command, Set.empty) // Eventually we want to migrate everything to use the /dispatch endpoint with email list
-  //       .fold(fails(applicationId, command), passes(_))
-  //   }
-  // }
+    withJsonBody[ApplicationCommand] { command =>
+      // applicationCommandDispatcher.dispatch(applicationId, command, Set.empty) // Eventually we want to migrate everything to use the /dispatch endpoint with email list
+      //   .fold(fails(applicationId, command), passes(_))
+      applicationCommandService.authenticateAndDispatch(applicationId, command, Set.empty).fold(
+        fails(applicationId, command),
+        passes(_)
+      )
+    }
+  }
 
   def dispatch(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     def passes(result: CommandHandler.Success) = {
@@ -95,7 +107,7 @@ class ApplicationCommandController @Inject() (
       //     )
       //   } else successful(unAuth)
       // )
-      applicationCommandService.authenticateAndDispatch(applicationId, dispatchRequest).fold(
+      applicationCommandService.authenticateAndDispatch(applicationId, dispatchRequest.command, dispatchRequest.verifiedCollaboratorsToNotify).fold(
         fails(applicationId, dispatchRequest.command),
         passes(_)
       )
