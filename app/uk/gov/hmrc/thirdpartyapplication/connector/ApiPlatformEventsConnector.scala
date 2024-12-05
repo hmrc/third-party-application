@@ -17,21 +17,19 @@
 package uk.gov.hmrc.thirdpartyapplication.connector
 
 import java.net.URL
+import java.time.Instant
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import java.time.Instant
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
-import play.api.libs.json.OFormat
 
 case class DisplayEvent(
     applicationId: ApplicationId,

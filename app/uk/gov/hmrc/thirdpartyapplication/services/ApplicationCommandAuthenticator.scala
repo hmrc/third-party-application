@@ -44,6 +44,7 @@ class ApplicationCommandAuthenticator @Inject() (
     if (authControlConfig.enabled) {
       cmd match {
         case gkcmd: ApplicationCommand with GatekeeperMixin => isStrideAuthorised(gkcmd)
+        // TODO case something Process Mixin
         case _                                              => successful(true)
       }
     } else {

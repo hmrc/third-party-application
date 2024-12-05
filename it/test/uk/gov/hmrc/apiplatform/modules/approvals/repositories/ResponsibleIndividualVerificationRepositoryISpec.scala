@@ -57,7 +57,7 @@ object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock with 
       applicationId,
       FixedClock.instant,
       Actors.AppCollaborator("requester@example.com".toLaxEmail),
-      appName.value,
+      appName,
       "ms admin",
       "admin@example.com".toLaxEmail,
       "ri name",
@@ -532,8 +532,8 @@ class ResponsibleIndividualVerificationRepositoryISpec
         applicationId,
         FixedClock.instant,
         Actors.GatekeeperUser("gkuser@example.com"),
-        "app name",
-        "new name",
+        ApplicationName("app name"),
+        ApplicationName("new name"),
         "admin@example.com".toLaxEmail
       )
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded

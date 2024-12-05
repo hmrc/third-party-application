@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
@@ -144,7 +144,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
         inside(events.tail.head) {
           case event: ResponsibleIndividualVerificationRequired =>
             event.applicationId shouldBe applicationId
-            event.applicationName shouldBe "MyApp"
+            event.applicationName shouldBe ApplicationName("MyApp")
             event.eventDateTime shouldBe ts
             event.actor shouldBe Actors.AppCollaborator(appAdminEmail)
             event.submissionIndex shouldBe submission.latestInstance.index

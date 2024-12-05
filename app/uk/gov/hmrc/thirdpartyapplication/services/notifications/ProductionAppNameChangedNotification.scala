@@ -31,7 +31,7 @@ object ProductionAppNameChangedNotification {
 
   def sendAdviceEmail(emailConnector: EmailConnector, app: StoredApplication, event: ProductionAppNameChangedEvent)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
-    emailConnector.sendChangeOfApplicationName(event.requestingAdminEmail.text, event.oldAppName, event.newAppName, recipients)
+    emailConnector.sendChangeOfApplicationName(event.requestingAdminEmail.text, event.oldAppName.value, event.newAppName.value, recipients)
   }
 
   private def getRecipients(app: StoredApplication): Set[LaxEmailAddress] = {

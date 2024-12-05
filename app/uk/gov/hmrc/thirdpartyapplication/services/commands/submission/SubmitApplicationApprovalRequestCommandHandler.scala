@@ -104,7 +104,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
           actor = cmd.actor,
-          applicationName = app.name.value,
+          applicationName = app.name,
           requestingAdminName = cmd.requesterName,
           requestingAdminEmail = cmd.requesterEmail,
           responsibleIndividualName = importantSubmissionData.responsibleIndividual.fullName.value,

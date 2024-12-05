@@ -41,6 +41,7 @@ POST          /gatekeeper/application/:id/delete                     uk.gov.hmrc
 POST          /application/:id/check-information                     uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCheck(id: ApplicationId)
 
 GET           /apis/*context/versions/:version/subscribers           uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscribers(context: ApiContext, version: ApiVersionNbr)
+DELETE        /apis/*context/versions/:version/subscribers           uk.gov.hmrc.thirdpartyapplication.controllers.PublisherController.deleteSubscribers(context: ApiContext, version: ApiVersionNbr)
 GET           /developer/:developerId/subscriptions                  uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscriptionsForDeveloper(developerId: UserId)
 GET           /developer/:userId/applications                        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllForCollaborator(userId: UserId)
 POST          /developer/applications                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllForCollaborators()

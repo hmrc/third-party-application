@@ -30,7 +30,6 @@ import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ResponsibleIndividual, SubmissionId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
@@ -179,7 +178,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       evt.applicationId,
       SubmissionId(evt.submissionId.value),
       evt.submissionIndex,
-      ApplicationName(evt.applicationName),
+      evt.applicationName,
       evt.eventDateTime,
       ResponsibleIndividual.build(evt.responsibleIndividualName, evt.responsibleIndividualEmail.text),
       evt.requestingAdminName,

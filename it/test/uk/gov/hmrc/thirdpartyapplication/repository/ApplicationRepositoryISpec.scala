@@ -172,7 +172,8 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     ),
     "blocked"                   -> JsFalse,
     "ipAllowlist"               -> Json.obj("required" -> JsFalse, "allowlist" -> JsArray.empty),
-    "allowAutoDelete"           -> JsTrue
+    "allowAutoDelete"           -> JsTrue,
+    "deleteRestriction"         -> Json.obj("deleteRestrictionType" -> JsString("NO_RESTRICTION"))
   )
 }
 

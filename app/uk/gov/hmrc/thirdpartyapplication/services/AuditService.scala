@@ -108,7 +108,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
     E.liftF(
       audit(
         AppNameChanged,
-        Map("applicationId" -> app.id.value.toString, "oldApplicationName" -> evt.oldName, "newApplicationName" -> evt.newName)
+        Map("applicationId" -> app.id.value.toString, "oldApplicationName" -> evt.oldName.value, "newApplicationName" -> evt.newName.value)
       )
     )
       .toOption
