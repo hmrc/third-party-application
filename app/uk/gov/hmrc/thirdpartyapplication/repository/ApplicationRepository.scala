@@ -137,7 +137,8 @@ object ApplicationRepository {
         (JsPath \ "checkInformation").readNullable[CheckInformation] and
         ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
-        ((JsPath \ "allowAutoDelete").read[Boolean] or Reads.pure(true))
+        ((JsPath \ "allowAutoDelete").read[Boolean] or Reads.pure(true)) and
+        ((JsPath \ "deleteRestriction").read[DeleteRestriction] or Reads.pure[DeleteRestriction](DeleteRestriction.NoRestriction))
     )(StoredApplication.apply _)
 
     implicit val formatStoredApplication: OFormat[StoredApplication] = OFormat(readStoredApplication, Json.writes[StoredApplication])
