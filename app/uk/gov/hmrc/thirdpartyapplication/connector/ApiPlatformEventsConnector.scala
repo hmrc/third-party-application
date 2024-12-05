@@ -28,6 +28,23 @@ import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import java.time.Instant
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
+import play.api.libs.json.OFormat
+
+case class DisplayEvent(
+    applicationId: ApplicationId,
+    eventDateTime: Instant,
+    actor: Actor,
+    eventTagDescription: String,
+    eventType: String,
+    metaData: List[String]
+  )
+
+object DisplayEvent {
+  implicit val format: OFormat[DisplayEvent] = Json.format[DisplayEvent]
+}
 
 object ApiPlatformEventsConnector {
   case class Config(baseUrl: String, enabled: Boolean)
@@ -45,7 +62,7 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClientV2, config: ApiPlatf
     implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
 
     if (config.enabled) {
-      http.post(addEventURI(uri))
+      http.post(eventURI(uri))
         .withBody(Json.toJson(event))
         .execute[ErrorOr[Unit]]
         .map {
@@ -62,8 +79,24 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClientV2, config: ApiPlatf
     }
   }
 
-  private def addEventURI(path: String): URL = {
+  private def eventURI(path: String): URL = {
     val x = s"$serviceBaseUrl$path"
     url"$x"
+  }
+
+  def query(appId: ApplicationId, tag: Option[String], actorType: Option[String])(implicit hc: HeaderCarrier): Future[List[DisplayEvent]] = {
+    val queryParams =
+      Seq(
+        tag.map(et => "eventTag" -> et),
+        actorType.map(at => "actorType" -> at)
+      ).collect {
+        case Some((a, b)) => a -> b
+      }
+
+    http.get(url"${eventURI(applicationEventUri)}/${appId}?$queryParams").execute[Option[List[DisplayEvent]]]
+      .map {
+        case None           => List.empty
+        case Some(response) => response
+      }
   }
 }
