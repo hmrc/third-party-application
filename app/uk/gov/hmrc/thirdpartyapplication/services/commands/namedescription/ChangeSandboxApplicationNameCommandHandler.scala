@@ -23,6 +23,7 @@ import cats._
 import cats.data._
 import cats.implicits._
 
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationName
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -63,8 +64,8 @@ class ChangeSandboxApplicationNameCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
-        oldName = app.name.value,
-        newName = cmd.newName.value
+        oldName = app.name,
+        newName = ApplicationName(cmd.newName.value)
       )
     )
   }

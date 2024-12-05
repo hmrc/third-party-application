@@ -27,6 +27,7 @@ import uk.gov.hmrc.http.test.HttpClientV2Support
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util._
 
@@ -41,8 +42,8 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with CommonApplicatio
     applicationId,
     eventDateTime = FixedClock.instant,
     actor = Actors.GatekeeperUser("mr gatekeeper"),
-    oldAppName = "old name",
-    newAppName = "new name",
+    oldAppName = ApplicationName("old name"),
+    newAppName = ApplicationName("new name"),
     requestingAdminEmail = "admin@example.com".toLaxEmail
   )
 

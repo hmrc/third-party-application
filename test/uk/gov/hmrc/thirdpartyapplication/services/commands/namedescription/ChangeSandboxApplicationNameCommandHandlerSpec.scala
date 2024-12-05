@@ -64,8 +64,8 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            aNewName shouldBe newName.value
-            anOldName shouldBe oldName.value
+            aNewName shouldBe newName
+            anOldName shouldBe oldName
             anOldName should not be aNewName
         }
       }

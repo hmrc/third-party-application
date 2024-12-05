@@ -27,13 +27,15 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class SubscriptionCommandsProcessor @Inject() (
     subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
-    unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler
+    unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
+    unsubscribeFromRetiredApiCommandHandler: UnsubscribeFromRetiredApiCommandHandler
   ) {
   import CommandHandler._
   import ApplicationCommands._
 
   def process(app: StoredApplication, command: SubscriptionCommand)(implicit hc: HeaderCarrier): AppCmdResultT = command match {
-    case cmd: SubscribeToApi     => subscribeToApiCommandHandler.process(app, cmd)
-    case cmd: UnsubscribeFromApi => unsubscribeFromApiCommandHandler.process(app, cmd)
+    case cmd: SubscribeToApi            => subscribeToApiCommandHandler.process(app, cmd)
+    case cmd: UnsubscribeFromApi        => unsubscribeFromApiCommandHandler.process(app, cmd)
+    case cmd: UnsubscribeFromRetiredApi => unsubscribeFromRetiredApiCommandHandler.process(app, cmd)
   }
 }

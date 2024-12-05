@@ -62,8 +62,8 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe instant
-            aNewName shouldBe newName.value
-            anOldName shouldBe oldName.value
+            aNewName shouldBe newName
+            anOldName shouldBe oldName
             anOldName should not be aNewName
             requestingAdminEmail shouldBe adminOne.emailAddress
         }

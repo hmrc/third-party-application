@@ -27,6 +27,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, _}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -78,8 +79,8 @@ class NotificationServiceSpec
         applicationId,
         instant,
         gatekeeperActor,
-        oldAppName,
-        newAppName,
+        ApplicationName(oldAppName),
+        ApplicationName(newAppName),
         otherAdminCollaborator.emailAddress
       )
 
@@ -193,7 +194,7 @@ class NotificationServiceSpec
         ApplicationId.random,
         instant,
         otherAdminAsActor,
-        "app name",
+        ApplicationName("app name"),
         "admin name",
         "admin@example.com".toLaxEmail,
         "ri name",
@@ -208,7 +209,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendVerifyResponsibleIndividualUpdateNotification.verifyCalledWith(
         event.responsibleIndividualName,
         event.responsibleIndividualEmail,
-        event.applicationName,
+        event.applicationName.value,
         event.requestingAdminName,
         event.verificationId
       )
@@ -221,7 +222,7 @@ class NotificationServiceSpec
         ApplicationId.random,
         instant,
         otherAdminAsActor,
-        "app name",
+        ApplicationName("app name"),
         "admin name",
         "admin@example.com".toLaxEmail,
         "ri name",
@@ -236,7 +237,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendVerifyResponsibleIndividualNotification.verifyCalledWith(
         event.responsibleIndividualName,
         event.responsibleIndividualEmail,
-        event.applicationName,
+        event.applicationName.value,
         event.requestingAdminName,
         event.verificationId
       )

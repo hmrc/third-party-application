@@ -83,7 +83,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
         inside(events.head) {
           case event: ResponsibleIndividualVerificationStarted =>
             event.applicationId shouldBe applicationId
-            event.applicationName shouldBe app.name.value
+            event.applicationName shouldBe app.name
             event.eventDateTime shouldBe ts
             event.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             event.responsibleIndividualName shouldBe riName

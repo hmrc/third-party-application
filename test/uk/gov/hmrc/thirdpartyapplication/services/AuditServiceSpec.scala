@@ -34,7 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAdd
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, RedirectUri}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvents, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -529,8 +529,8 @@ class AuditServiceSpec
         applicationId,
         instant,
         collaboratorActor,
-        oldName = "oldName",
-        newName = "newName"
+        oldName = ApplicationName("oldName"),
+        newName = ApplicationName("newName")
       )
 
       val expectedDataEvent = DataEvent(
