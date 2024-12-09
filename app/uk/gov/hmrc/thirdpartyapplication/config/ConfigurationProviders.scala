@@ -60,7 +60,8 @@ class ConfigurationModule extends Module {
       bind[ClientSecretsHashingConfig].toProvider[ClientSecretsHashingConfigProvider],
       bind[ApplicationNamingService.ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider],
       bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider],
-      bind[TermsOfUseInvitationConfig].toProvider[TermsOfUseInvitationConfigProvider]
+      bind[TermsOfUseInvitationConfig].toProvider[TermsOfUseInvitationConfigProvider],
+      bind[SetDeleteRestrictionJobConfig].toProvider[SetDeleteRestrictionJobConfigProvider]
     )
   }
 }
@@ -376,5 +377,17 @@ class ResetLastAccessDateJobConfigProvider @Inject() (configuration: Configurati
     val noLastAccessDateBeforeAsString = configuration.get[String]("resetLastAccessDateJob.noLastAccessDateBefore")
 
     ResetLastAccessDateJobConfig(LocalDate.parse(noLastAccessDateBeforeAsString), enabled, dryRun)
+  }
+}
+
+@Singleton
+class SetDeleteRestrictionJobConfigProvider @Inject() (configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[SetDeleteRestrictionJobConfig] {
+
+  override def get(): SetDeleteRestrictionJobConfig = {
+    val enabled = configuration.get[Boolean]("setDeleteRestrictionJob.enabled")
+
+    SetDeleteRestrictionJobConfig(enabled)
   }
 }
