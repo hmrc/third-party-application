@@ -44,6 +44,12 @@ object DisplayEvent {
   implicit val format: OFormat[DisplayEvent] = Json.format[DisplayEvent]
 }
 
+case class QueryResponse(events: List[DisplayEvent])
+
+object QueryResponse {
+  implicit val format: OFormat[QueryResponse] = Json.format[QueryResponse]
+}
+
 object ApiPlatformEventsConnector {
   case class Config(baseUrl: String, enabled: Boolean)
 }
@@ -91,10 +97,10 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClientV2, config: ApiPlatf
         case Some((a, b)) => a -> b
       }
 
-    http.get(url"${eventURI(applicationEventUri)}/${appId}?$queryParams").execute[Option[List[DisplayEvent]]]
+    http.get(url"${eventURI(applicationEventUri)}/${appId}?$queryParams").execute[Option[QueryResponse]]
       .map {
         case None           => List.empty
-        case Some(response) => response
+        case Some(response) => response.events
       }
   }
 }

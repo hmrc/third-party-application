@@ -18,12 +18,9 @@ package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 
-import play.api.http.Status.{CREATED, OK}
-import play.api.libs.json.Json
+import play.api.http.Status.CREATED
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
-import uk.gov.hmrc.thirdpartyapplication.connector.DisplayEvent
 
 object ApiPlatformEventsStub extends Stub {
 
@@ -38,17 +35,6 @@ object ApiPlatformEventsStub extends Stub {
         .willReturn(
           aResponse()
             .withStatus(CREATED)
-        )
-    )
-  }
-
-  def willReceiveQuery(applicationId: ApplicationId, eventTag: String, response: Option[List[DisplayEvent]]): Unit = {
-    stub.mock.register(
-      get(urlEqualTo(s"$applicationEventsURL/$applicationId?eventTag=$eventTag"))
-        .willReturn(
-          aResponse()
-            .withStatus(OK)
-            .withBody(Json.toJson(response).toString())
         )
     )
   }

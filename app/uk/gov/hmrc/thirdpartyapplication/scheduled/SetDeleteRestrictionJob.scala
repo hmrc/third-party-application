@@ -30,7 +30,7 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, DeleteRestriction}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiPlatformEventsConnector, DisplayEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -56,8 +56,16 @@ class SetDeleteRestrictionJob @Inject() (
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     logger.info("Running SetDeleteRestrictionJob")
-    applicationRepository.processAll(setDeleteRestriction())
-      .map(_ => RunningOfJobSuccessful)
+
+    val result: Future[RunningOfJobSuccessful.type] = for {
+      applications <- applicationRepository.fetchAll()
+      _             = logger.info(s"Scheduled job $name found ${applications.size} applications")
+      _            <- Future.sequence(applications.map(setDeleteRestriction(_)))
+    } yield RunningOfJobSuccessful
+
+    result.recoverWith {
+      case e: Throwable => Future.failed(RunningOfJobFailed(name, e))
+    }
   }
 
   private def getDoNotDelete(event: Option[DisplayEvent]): DeleteRestriction = {
@@ -77,20 +85,12 @@ class SetDeleteRestrictionJob @Inject() (
     }
   }
 
-  def setDeleteRestriction(): StoredApplication => Unit = {
-
-    def updateApplicationRecord(applicationId: ApplicationId, applicationName: ApplicationName, allowAutoDelete: Boolean) = {
-      logger.info(s"[SetDeleteRestrictionJob]: Setting deleteRestriction of application [$applicationName (${applicationId})]")
-      for {
-        deleteRestriction <- getDeleteRestriction(applicationId, allowAutoDelete)
-        savedApp          <- applicationRepository.updateApplication(applicationId, Updates.set("deleteRestriction", Codecs.toBson(deleteRestriction)))
-        _                  = logger.info(s"[SetDeleteRestrictionJob]: Set deleteRestriction of application [$applicationName (${applicationId})] to [$deleteRestriction]")
-      } yield savedApp
-    }
-
-    application => {
-      updateApplicationRecord(application.id, application.name, application.allowAutoDelete)
-    }
+  private def setDeleteRestriction(app: StoredApplication) = {
+    for {
+      deleteRestriction <- getDeleteRestriction(app.id, app.allowAutoDelete)
+      savedApp          <- applicationRepository.updateApplication(app.id, Updates.set("deleteRestriction", Codecs.toBson(deleteRestriction)))
+      _                  = logger.info(s"[SetDeleteRestrictionJob]: Set deleteRestriction of application [${app.name} (${app.id})] to [$deleteRestriction]")
+    } yield savedApp
   }
 }
 
