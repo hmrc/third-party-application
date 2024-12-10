@@ -6,8 +6,8 @@ object AppDependencies {
 
   lazy val bootstrapVersion         = "9.2.0"
   lazy val hmrcMongoVersion         = "1.7.0"
-  lazy val applicationEventVersion  = "0.68.0"
-  lazy val applicationDomainVersion = "0.64.0"
+  lazy val applicationEventVersion  = "0.69.0"
+  lazy val applicationDomainVersion = "0.65.0"
 
   private lazy val compileDeps = Seq(
     "uk.gov.hmrc"                   %% "bootstrap-backend-play-30"                % bootstrapVersion,
