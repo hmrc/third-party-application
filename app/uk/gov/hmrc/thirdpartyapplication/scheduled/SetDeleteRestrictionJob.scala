@@ -58,7 +58,7 @@ class SetDeleteRestrictionJob @Inject() (
     logger.info("Running SetDeleteRestrictionJob")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
-      applications <- applicationRepository.fetchAll()
+      applications <- applicationRepository.fetchAll(includeDeleted = true)
       _             = logger.info(s"Scheduled job $name found ${applications.size} applications")
       _            <- Future.sequence(applications.map(setDeleteRestriction(_)))
     } yield RunningOfJobSuccessful

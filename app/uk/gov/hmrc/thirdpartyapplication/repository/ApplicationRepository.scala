@@ -749,8 +749,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def fetchAllWithNoSubscriptions(): Future[List[StoredApplication]] =
     searchApplications("fetchAllWithNoSubscriptions")(new ApplicationSearch(filters = List(NoAPISubscriptions))).map(_.applications)
 
-  def fetchAll(): Future[List[StoredApplication]] = {
-    val result = searchApplications("fetchAll")(new ApplicationSearch())
+  def fetchAll(includeDeleted: Boolean = false): Future[List[StoredApplication]] = {
+    val result = searchApplications("fetchAll")(new ApplicationSearch(includeDeleted = includeDeleted))
 
     result.map(_.applications)
   }

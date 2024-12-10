@@ -1327,23 +1327,38 @@ class ApplicationRepositoryISpec
   }
 
   "fetchAll" should {
+    val application1 = anApplicationDataForTest(
+      id = ApplicationId.random,
+      prodClientId = generateClientId
+    )
+    val application2 = anApplicationDataForTest(
+      id = ApplicationId.random,
+      prodClientId = generateClientId
+    )
+    val application3 = createAppWithStatusUpdatedOn(
+      state = State.DELETED
+    )
 
-    "fetch all existing applications" in {
-      val application1 = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      )
-      val application2 = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      )
-
+    "fetch all existing applications - except DELETED apps" in {
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
 
       await(applicationRepository.fetchAll()) mustBe List(
         application1,
         application2
+      )
+    }
+
+    "fetch all existing applications - including DELETED apps" in {
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+
+      await(applicationRepository.fetchAll(includeDeleted = true)) mustBe List(
+        application1,
+        application2,
+        application3
       )
     }
   }
