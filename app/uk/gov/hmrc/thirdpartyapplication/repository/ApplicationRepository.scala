@@ -703,7 +703,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           "rateLimitTier",
           "environment",
           "blocked",
-          "allowAutoDelete"
+          "allowAutoDelete",
+          "deleteRestriction"
         )
       ))
 
