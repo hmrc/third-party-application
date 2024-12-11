@@ -137,7 +137,8 @@ object ApplicationRepository {
         (JsPath \ "checkInformation").readNullable[CheckInformation] and
         ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
-        ((JsPath \ "allowAutoDelete").read[Boolean] or Reads.pure(true))
+        ((JsPath \ "allowAutoDelete").read[Boolean] or Reads.pure(true)) and
+        ((JsPath \ "deleteRestriction").read[DeleteRestriction] or Reads.pure[DeleteRestriction](DeleteRestriction.NoRestriction))
     )(StoredApplication.apply _)
 
     implicit val formatStoredApplication: OFormat[StoredApplication] = OFormat(readStoredApplication, Json.writes[StoredApplication])
@@ -702,7 +703,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           "rateLimitTier",
           "environment",
           "blocked",
-          "allowAutoDelete"
+          "allowAutoDelete",
+          "deleteRestriction"
         )
       ))
 
@@ -747,8 +749,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def fetchAllWithNoSubscriptions(): Future[List[StoredApplication]] =
     searchApplications("fetchAllWithNoSubscriptions")(new ApplicationSearch(filters = List(NoAPISubscriptions))).map(_.applications)
 
-  def fetchAll(): Future[List[StoredApplication]] = {
-    val result = searchApplications("fetchAll")(new ApplicationSearch())
+  def fetchAll(includeDeleted: Boolean = false): Future[List[StoredApplication]] = {
+    val result = searchApplications("fetchAll")(new ApplicationSearch(includeDeleted = includeDeleted))
 
     result.map(_.applications)
   }
