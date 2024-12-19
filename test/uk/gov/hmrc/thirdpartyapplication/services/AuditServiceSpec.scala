@@ -492,6 +492,41 @@ class AuditServiceSpec
       verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
     }
 
+    "applyEvents with a ApplicationDeletedByGatekeeper event" in new Setup {
+
+      val appDeleted = ApplicationEvents.ApplicationDeletedByGatekeeper(
+        EventId.random,
+        applicationId,
+        instant,
+        Actors.GatekeeperUser(gatekeeperUser),
+        clientIdOne,
+        wso2ApplicationName = "wso2",
+        "reasons",
+        adminOne.emailAddress
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = ApplicationDeleted.auditType,
+        tags = hc.toAuditTags(ApplicationDeleted.name, "-") ++ Map("gatekeeperId" -> gatekeeperUser),
+        detail = Map(
+          "applicationId"           -> applicationId.value.toString,
+          "applicationAdmins"       -> applicationData.admins.map(_.emailAddress).mkString(", "),
+          "upliftRequestedByEmail"  -> applicationData.state.requestedByEmailAddress.getOrElse("-"),
+          "applicationName"         -> applicationData.name.value,
+          "requestedByEmailAddress" -> adminOne.emailAddress.text
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(appDeleted)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
     "applyEvents with a RedirectUrisUpdated event" in new Setup {
 
       val redirectUrisUpdated = ApplicationEvents.RedirectUrisUpdatedV2(
