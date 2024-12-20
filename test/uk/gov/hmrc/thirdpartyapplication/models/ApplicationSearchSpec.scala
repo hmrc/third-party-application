@@ -20,9 +20,9 @@ import java.time.{ZoneOffset, ZonedDateTime}
 
 import play.api.test.FakeRequest
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 
 class ApplicationSearchSpec extends HmrcSpec {
 
@@ -200,7 +200,7 @@ class ApplicationSearchSpec extends HmrcSpec {
     }
 
     "populate user if specific value is provided" in {
-      val user     = UserId.random
+      val user    = UserId.random
       val request = FakeRequest("GET", s"/applications?user=$user")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
