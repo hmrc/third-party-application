@@ -26,7 +26,7 @@ import org.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.bson.{BsonArray, BsonBoolean, BsonInt32, BsonString, Document}
 import org.mongodb.scala.model
-import org.mongodb.scala.model.Aggregates.{filter, _}
+import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{excludeId, fields, include}
@@ -651,9 +651,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       // Text Search
       case ApplicationTextSearch => regexTextSearch(List("id", "name", "tokens.production.clientId"), applicationSearch.textToSearch.getOrElse(""))
-
-      // User
-      case ApplicationUserSearch => matches(equal("collaborators.userId", Codecs.toBson(applicationSearch.userId)))
 
       // Last Use Date
       case lastUsedBefore: LastUseBeforeDate => lastUsedBefore.toMongoMatch
