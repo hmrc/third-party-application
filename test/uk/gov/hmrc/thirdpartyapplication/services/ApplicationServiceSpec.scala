@@ -687,35 +687,15 @@ class ApplicationServiceSpec
   }
 
   "fetchAllForCollaborators" should {
-    val applicationSearch = new ApplicationSearch(
-      pageNumber = 2,
-      pageSize = 1,
-      filters = List.empty
-    )
-
     "fetch all applications for a given collaborator user id" in new Setup {
       val userId                                       = UserId.random
       val standardApplicationData: StoredApplication   = storedApp.withAccess(Access.Standard())
       val privilegedApplicationData: StoredApplication = storedApp.withAccess(Access.Privileged())
       val ropcApplicationData: StoredApplication       = storedApp.withAccess(Access.Ropc())
 
-      ApplicationRepoMock.SearchApplications.thenReturn(
-        PaginatedApplicationData(
-          List(
-            standardApplicationData,
-            privilegedApplicationData,
-            ropcApplicationData
-          ),
-          List(
-            PaginationTotal(3)
-          ),
-          List(
-            PaginationTotal(3)
-          )
-        )
-      )
+      ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
-      val result = await(underTest.fetchAllForCollaborators(List(userId), applicationSearch))
+      val result = await(underTest.fetchAllForCollaborators(List(userId)))
       result should contain theSameElementsAs List(standardApplicationData, privilegedApplicationData, ropcApplicationData).map(app => StoredApplication.asApplication(app))
     }
 
@@ -727,22 +707,10 @@ class ApplicationServiceSpec
       val standardApplicationData1: StoredApplication = storedApp.withAccess(Access.Standard())
       val standardApplicationData2: StoredApplication = storedApp.copy(id = applicationId2, access = Access.Standard())
 
-      ApplicationRepoMock.SearchApplications.thenReturn(
-        PaginatedApplicationData(
-          List(
-            standardApplicationData1,
-            standardApplicationData2
-          ),
-          List(
-            PaginationTotal(3)
-          ),
-          List(
-            PaginationTotal(3)
-          )
-        )
-      )
+      ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId1, false)(standardApplicationData1)
+      ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId2, false)(standardApplicationData2)
 
-      val result = await(underTest.fetchAllForCollaborators(List(userId1, userId2), applicationSearch))
+      val result = await(underTest.fetchAllForCollaborators(List(userId1, userId2)))
       result should contain theSameElementsAs List(standardApplicationData1, standardApplicationData2).map(app => StoredApplication.asApplication(app))
     }
 
@@ -754,35 +722,10 @@ class ApplicationServiceSpec
       val standardApplicationData1: StoredApplication = storedApp.withAccess(Access.Standard())
       val standardApplicationData2: StoredApplication = storedApp.copy(id = applicationId2, access = Access.Standard())
 
-      ApplicationRepoMock.SearchApplications.thenReturn(
-        PaginatedApplicationData(
-          List(
-            standardApplicationData1
-          ),
-          List(
-            PaginationTotal(3)
-          ),
-          List(
-            PaginationTotal(3)
-          )
-        )
-      )
-      ApplicationRepoMock.SearchApplications.thenReturn(
-        PaginatedApplicationData(
-          List(
-            standardApplicationData1,
-            standardApplicationData2
-          ),
-          List(
-            PaginationTotal(3)
-          ),
-          List(
-            PaginationTotal(3)
-          )
-        )
-      )
+      ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId1, false)(standardApplicationData1)
+      ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId2, false)(standardApplicationData1, standardApplicationData2)
 
-      val result = await(underTest.fetchAllForCollaborators(List(userId1, userId2), applicationSearch))
+      val result = await(underTest.fetchAllForCollaborators(List(userId1, userId2)))
       result should contain theSameElementsAs List(standardApplicationData1, standardApplicationData2).map(app => StoredApplication.asApplication(app))
     }
   }

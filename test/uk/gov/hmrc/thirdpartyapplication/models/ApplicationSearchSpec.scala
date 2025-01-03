@@ -199,16 +199,6 @@ class ApplicationSearchSpec extends HmrcSpec {
       searchObject.apiVersion shouldBe Some(apiVersion.asVersion)
     }
 
-    "populate user if specific value is provided" in {
-      val user    = UserId.random
-      val request = FakeRequest("GET", s"/applications?user=$user")
-
-      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
-
-      searchObject.userId shouldBe Some(user)
-      searchObject.filters should contain(ApplicationUserSearch)
-    }
-
     "populate sort as NameAscending when sort is NAME_ASC" in {
       val request      = FakeRequest("GET", "/applications?sort=NAME_ASC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)

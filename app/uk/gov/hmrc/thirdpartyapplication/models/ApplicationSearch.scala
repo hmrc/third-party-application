@@ -39,8 +39,7 @@ case class ApplicationSearch(
     apiContext: Option[ApiContext] = None,
     apiVersion: Option[ApiVersionNbr] = None,
     sort: ApplicationSort = SubmittedAscending,
-    includeDeleted: Boolean = false,
-    userId: Option[UserId] = None
+    includeDeleted: Boolean = false
   ) {
   def hasSubscriptionFilter()            = filters.exists(filter => filter.isInstanceOf[APISubscriptionFilter])
   def hasSpecificApiSubscriptionFilter() = filters.exists(filter => filter.isInstanceOf[SpecificAPISubscription.type])
@@ -63,7 +62,6 @@ object ApplicationSearch {
             case "accessType"                     => AccessTypeFilter(value.head)
             case "lastUseBefore" | "lastUseAfter" => LastUseDateFilter(key, value.head)
             case "allowAutoDelete"                => AllowAutoDeleteFilter(value.head)
-            case "user"                           => UserSearchFilter(value.head)
             case _                                => None // ignore anything that isn't a search filter
           }
       }
@@ -76,9 +74,8 @@ object ApplicationSearch {
     def apiVersion     = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").lift(1).map(ApiVersionNbr(_)))
     def sort           = ApplicationSort(queryString.getOrElse("sort", List.empty).headOption)
     def includeDeleted = queryString.getOrElse("includeDeleted", List.empty).headOption.getOrElse("false").toBoolean
-    def user           = queryString.getOrElse("user", List.empty).headOption.flatMap(UserId(_))
 
-    new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort, includeDeleted, user)
+    new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort, includeDeleted)
   }
 }
 
@@ -244,19 +241,6 @@ object ApplicationSort extends ApplicationSort {
     case Some("LAST_USE_DESC")  => LastUseDateDescending
     case Some("NO_SORT")        => NoSorting
     case _                      => SubmittedAscending
-  }
-}
-
-sealed trait UserSearchFilter     extends ApplicationSearchFilter
-case object ApplicationUserSearch extends UserSearchFilter
-
-case object UserSearchFilter extends UserSearchFilter {
-
-  def apply(value: String): Option[UserSearchFilter] = {
-    value match {
-      case _ if value.nonEmpty => Some(ApplicationUserSearch)
-      case _                   => None
-    }
   }
 }
 
