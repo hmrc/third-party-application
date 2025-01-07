@@ -271,6 +271,7 @@ class ApplicationRepositoryISpec
 
       retrieved mustBe application
       retrieved.allowAutoDelete mustBe true
+      retrieved.deleteRestriction mustBe DeleteRestriction.NoRestriction
     }
 
     "update an application" in {
@@ -1009,6 +1010,7 @@ class ApplicationRepositoryISpec
     val yesterday          = currentDate.minus(Duration.ofDays(1))
     val dayBeforeYesterday = currentDate.minus(Duration.ofDays(2))
     val lastWeek           = currentDate.minus(Duration.ofDays(7))
+    val doNotDelete        = DeleteRestriction.DoNotDelete("reason", Actors.GatekeeperUser("gkuser"), instant)
 
     def verifyApplications(
         responseApplications: Seq[StoredApplication],
@@ -1028,7 +1030,7 @@ class ApplicationRepositoryISpec
         createAppWithStatusUpdatedOn(State.TESTING, currentDate),
         createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
         createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, lastWeek).copy(allowAutoDelete = false),
+        createAppWithStatusUpdatedOn(State.TESTING, lastWeek).copy(deleteRestriction = doNotDelete),
         createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
       )
       applications.foreach(application =>
@@ -1057,6 +1059,7 @@ class ApplicationRepositoryISpec
     val yesterday          = currentDate.minus(Duration.ofDays(1))
     val dayBeforeYesterday = currentDate.minus(Duration.ofDays(2))
     val lastWeek           = currentDate.minus(Duration.ofDays(7))
+    val doNotDelete        = DeleteRestriction.DoNotDelete("reason", Actors.GatekeeperUser("gkuser"), instant)
 
     def verifyApplications(
         responseApplications: Seq[StoredApplication],
@@ -1076,7 +1079,7 @@ class ApplicationRepositoryISpec
         createAppWithStatusUpdatedOn(State.TESTING, currentDate),
         createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
         createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday).copy(allowAutoDelete = false),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday).copy(deleteRestriction = doNotDelete),
         createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
       )
       applications.foreach(application =>
@@ -1104,7 +1107,7 @@ class ApplicationRepositoryISpec
       val applications = Seq(
         createAppWithStatusUpdatedOn(State.TESTING, currentDate),
         createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday).copy(allowAutoDelete = false),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday).copy(deleteRestriction = doNotDelete),
         createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
         app4
       )

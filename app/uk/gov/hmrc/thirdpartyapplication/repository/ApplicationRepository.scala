@@ -418,7 +418,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       Seq(
         filter(equal("state.name", state.toString())),
         filter(equal("environment", Codecs.toBson(environment))),
-        filter(notEqual("allowAutoDelete", false)),
+        filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DO_NOT_DELETE.toString())),
         filter(lte("state.updatedOn", updatedBefore))
       )
     ).toFuture()
@@ -437,7 +437,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         Seq(
           filter(equal("state.name", state.toString())),
           filter(equal("environment", Codecs.toBson(environment))),
-          filter(notEqual("allowAutoDelete", false)),
+          filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DO_NOT_DELETE.toString())),
           filter(lte("state.updatedOn", updatedBefore)),
           lookup(from = "notifications", localField = "id", foreignField = "applicationId", as = "matched"),
           filter(size("matched", 0))
