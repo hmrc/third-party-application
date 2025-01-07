@@ -181,6 +181,64 @@ class ApplicationRepositorySearchISpec
       result.applications.head.allowAutoDelete mustBe true
     }
 
+    "return application with no delete restriction" in {
+      val applicationNoRestriction = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      )
+
+      val doNotDelete            = DeleteRestriction.DoNotDelete("reason", Actors.GatekeeperUser("gkuser"), instant)
+      val applicationDoNotDelete = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      ).copy(deleteRestriction = doNotDelete)
+
+      await(applicationRepository.save(applicationNoRestriction))
+      await(applicationRepository.save(applicationDoNotDelete))
+
+      val applicationSearch = new ApplicationSearch(filters = List(NoRestriction))
+
+      val result =
+        await(applicationRepository.searchApplications("testing")(applicationSearch))
+
+      result.totals.size mustBe 1
+      result.totals.head.total mustBe 2
+      result.matching.size mustBe 1
+      result.matching.head.total mustBe 1
+      result.applications.size mustBe 1
+      result.applications.head.id mustBe applicationNoRestriction.id
+      result.applications.head.deleteRestriction mustBe DeleteRestriction.NoRestriction
+    }
+
+    "return application with do not delete restriction" in {
+      val applicationNoRestriction = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      )
+
+      val doNotDelete            = DeleteRestriction.DoNotDelete("reason", Actors.GatekeeperUser("gkuser"), instant)
+      val applicationDoNotDelete = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      ).copy(deleteRestriction = doNotDelete)
+
+      await(applicationRepository.save(applicationNoRestriction))
+      await(applicationRepository.save(applicationDoNotDelete))
+
+      val applicationSearch = new ApplicationSearch(filters = List(DoNotDelete))
+
+      val result =
+        await(applicationRepository.searchApplications("testing")(applicationSearch))
+
+      result.totals.size mustBe 1
+      result.totals.head.total mustBe 2
+      result.matching.size mustBe 1
+      result.matching.head.total mustBe 1
+      result.applications.size mustBe 1
+      result.applications.head.id mustBe applicationDoNotDelete.id
+      result.applications.head.deleteRestriction mustBe doNotDelete
+    }
+
     "return applications based on application state filter Active" in {
       val applicationInTest       = anApplicationDataForTest(
         id = ApplicationId.random,

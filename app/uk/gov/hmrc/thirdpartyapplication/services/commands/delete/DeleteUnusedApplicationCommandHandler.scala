@@ -56,7 +56,7 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
   def base64Decode(stringToDecode: String): Try[String] = Try(new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8))
 
   def matchesAuthorisationKey(cmd: DeleteUnusedApplication) =
-    cond(base64Decode(cmd.authorisationKey).map(_ == authControlConfig.authorisationKey).getOrElse(false), "Cannot delete this applicaton")
+    cond(base64Decode(cmd.authorisationKey).map(_ == authControlConfig.authorisationKey).getOrElse(false), "Cannot delete this application")
 
   private def validate(app: StoredApplication, cmd: DeleteUnusedApplication): Validated[Failures, StoredApplication] = {
     Apply[Validated[Failures, *]]

@@ -111,7 +111,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
     "return an error when auth key doesnt match" in new Setup {
       val cmd = DeleteUnusedApplication("DeleteUnusedApplicationsJob", "notAuthKey", reasons, instant)
 
-      checkFailsWith("Cannot delete this applicaton") {
+      checkFailsWith("Cannot delete this application") {
         underTest.process(app, cmd)
       }
     }

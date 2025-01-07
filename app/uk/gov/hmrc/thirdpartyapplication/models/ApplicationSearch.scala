@@ -62,6 +62,7 @@ object ApplicationSearch {
             case "accessType"                     => AccessTypeFilter(value.head)
             case "lastUseBefore" | "lastUseAfter" => LastUseDateFilter(key, value.head)
             case "allowAutoDelete"                => AllowAutoDeleteFilter(value.head)
+            case "deleteRestriction"              => DeleteRestrictionFilter(value.head)
             case _                                => None // ignore anything that isn't a search filter
           }
       }
@@ -169,6 +170,23 @@ case object AllowAutoDeleteFilter extends AllowAutoDeleteFilter {
       case "true"  => Some(AutoDeleteAllowed)
       case "false" => Some(AutoDeleteBlocked)
       case _       => None
+    }
+  }
+}
+
+sealed trait DeleteRestrictionFilter extends ApplicationSearchFilter
+
+case object NoRestriction extends DeleteRestrictionFilter
+
+case object DoNotDelete extends DeleteRestrictionFilter
+
+case object DeleteRestrictionFilter extends DeleteRestrictionFilter {
+
+  def apply(value: String): Option[DeleteRestrictionFilter] = {
+    value match {
+      case "DO_NOT_DELETE"  => Some(DoNotDelete)
+      case "NO_RESTRICTION" => Some(NoRestriction)
+      case _                => None
     }
   }
 }
