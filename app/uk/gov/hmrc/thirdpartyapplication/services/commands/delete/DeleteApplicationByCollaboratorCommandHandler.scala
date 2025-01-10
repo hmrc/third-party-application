@@ -25,7 +25,7 @@ import cats.data.{NonEmptyList, Validated}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, DeleteRestriction, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByCollaborator
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -53,12 +53,16 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
   private def canDeleteApplicationsOrNotProductionApp(app: StoredApplication) =
     cond(authControlConfig.canDeleteApplications || !app.isInPreProductionOrProduction, "Cannot delete this applicaton")
 
+  private def canDeleteApplication(app: StoredApplication) =
+    cond(app.deleteRestriction == DeleteRestriction.NoRestriction, "This application is delete restricted")
+
   private def validate(app: StoredApplication, cmd: DeleteApplicationByCollaborator): Validated[Failures, Collaborator] = {
-    Apply[Validated[Failures, *]].map3(
+    Apply[Validated[Failures, *]].map4(
       isAdminOnApp(cmd.instigator, app),
       ensureStandardAccess(app),
-      canDeleteApplicationsOrNotProductionApp(app)
-    ) { case (admin, _, _) => admin }
+      canDeleteApplicationsOrNotProductionApp(app),
+      canDeleteApplication(app)
+    ) { case (admin, _, _, _) => admin }
   }
 
   private def asEvents(app: StoredApplication, cmd: DeleteApplicationByCollaborator, instigator: Collaborator, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {

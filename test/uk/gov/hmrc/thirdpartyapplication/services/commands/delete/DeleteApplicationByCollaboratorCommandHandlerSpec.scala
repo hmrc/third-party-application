@@ -22,7 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{DeleteRestriction, State}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByCollaborator
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
@@ -118,6 +118,12 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
       }
     }
 
-  }
+    "return an error when app is delete restricted" in new Setup {
+      val deleteRestrictedApp = app.copy(deleteRestriction = DeleteRestriction.DoNotDelete("reason", Actors.GatekeeperUser("gkuser"), instant))
 
+      checkFailsWith("This application is delete restricted") {
+        underTest.process(deleteRestrictedApp, cmd)
+      }
+    }
+  }
 }
