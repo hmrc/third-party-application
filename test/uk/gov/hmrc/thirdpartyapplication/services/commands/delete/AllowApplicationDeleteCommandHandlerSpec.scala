@@ -51,7 +51,7 @@ class AllowApplicationDeleteCommandHandlerSpec extends CommandHandlerBaseSpec {
         val event = events.head
 
         inside(event) {
-          case ApplicationEvents.AllowApplicationAutoDelete(_, appId, eventDateTime, anActor, reason) =>
+          case ApplicationEvents.AllowApplicationDelete(_, appId, eventDateTime, anActor, reason) =>
             appId shouldBe app.id
             anActor shouldBe expectedActor
             eventDateTime shouldBe timestamp

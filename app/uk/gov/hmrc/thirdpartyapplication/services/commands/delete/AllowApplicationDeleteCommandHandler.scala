@@ -49,7 +49,7 @@ class AllowApplicationDeleteCommandHandler @Inject() (
 
   private def asEvents(app: StoredApplication, cmd: AllowApplicationDelete): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      ApplicationEvents.AllowApplicationAutoDelete(
+      ApplicationEvents.AllowApplicationDelete(
         id = EventId.random,
         applicationId = app.id,
         reasons = cmd.reasons,

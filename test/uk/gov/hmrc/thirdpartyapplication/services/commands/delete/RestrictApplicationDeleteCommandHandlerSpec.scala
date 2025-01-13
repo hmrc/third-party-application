@@ -51,8 +51,7 @@ class RestrictApplicationDeleteCommandHandlerSpec extends CommandHandlerBaseSpec
         val event = events.head
 
         inside(event) {
-          // todo change event
-          case ApplicationEvents.BlockApplicationAutoDelete(_, appId, eventDateTime, anActor, reason) =>
+          case ApplicationEvents.RestrictApplicationDelete(_, appId, eventDateTime, anActor, reason) =>
             appId shouldBe app.id
             anActor shouldBe expectedActor
             eventDateTime shouldBe timestamp
