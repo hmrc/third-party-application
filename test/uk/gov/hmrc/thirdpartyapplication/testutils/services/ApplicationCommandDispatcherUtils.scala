@@ -112,6 +112,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockDeleteRedirectUriCommandHandler: DeleteRedirectUriCommandHandler                                             = mock[DeleteRedirectUriCommandHandler]
     val mockAllowApplicationAutoDeleteCommandHandler: AllowApplicationAutoDeleteCommandHandler                           = mock[AllowApplicationAutoDeleteCommandHandler]
     val mockBlockApplicationAutoDeleteCommandHandler: BlockApplicationAutoDeleteCommandHandler                           = mock[BlockApplicationAutoDeleteCommandHandler]
+    val mockAllowApplicationDeleteCommandHandler: AllowApplicationDeleteCommandHandler                                   = mock[AllowApplicationDeleteCommandHandler]
+    val mockRestrictApplicationDeleteCommandHandler: RestrictApplicationDeleteCommandHandler                             = mock[RestrictApplicationDeleteCommandHandler]
     val mockChangeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler                                             = mock[ChangeIpAllowlistCommandHandler]
     val mockChangeSandboxApplicationNameCommandHandler: ChangeSandboxApplicationNameCommandHandler                       = mock[ChangeSandboxApplicationNameCommandHandler]
     val mockChangeSandboxApplicationDescriptionCommandHandler: ChangeSandboxApplicationDescriptionCommandHandler         = mock[ChangeSandboxApplicationDescriptionCommandHandler]
@@ -157,6 +159,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockDeleteApplicationByGatekeeperCommandHandler,
       mockAllowApplicationAutoDeleteCommandHandler,
       mockBlockApplicationAutoDeleteCommandHandler,
+      mockAllowApplicationDeleteCommandHandler,
+      mockRestrictApplicationDeleteCommandHandler,
       mockDeleteApplicationByCollaboratorCommandHandler,
       mockDeleteUnusedApplicationCommandHandler,
       mockDeleteProductionCredentialsApplicationCommandHandler
