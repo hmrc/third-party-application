@@ -35,7 +35,7 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress, _}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaborators, ApplicationWithSubscriptions, CheckInformation, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -273,7 +273,7 @@ class ApplicationService @Inject() (
     OptionT(applicationRepository.fetch(applicationId))
       .map(application => StoredApplication.asApplication(application))
 
-  def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationResponse] = {
+  def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplications] = {
 
     def buildApplication(storedApplication: StoredApplication, stateHistory: Option[StateHistory]) = {
       val partApp = StoredApplication.asApplication(storedApplication)
@@ -286,7 +286,7 @@ class ApplicationService @Inject() (
     }
 
     applicationsResponse.zipWith(appHistory) {
-      case (data, appHistory) => PaginatedApplicationResponse(
+      case (data, appHistory) => PaginatedApplications(
           page = applicationSearch.pageNumber,
           pageSize = applicationSearch.pageSize,
           total = data.totals.foldLeft(0)(_ + _.total),

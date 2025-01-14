@@ -614,7 +614,8 @@ class ApplicationServiceSpec
           blocked = false,
           ipAllowlist = IpAllowlist(),
           allowAutoDelete = true,
-          lastActionActor = ActorType.UNKNOWN
+          lastActionActor = ActorType.UNKNOWN,
+          DeleteRestriction.NoRestriction
         ),
         collaborators = data.collaborators
       ))
@@ -964,7 +965,7 @@ class ApplicationServiceSpec
       val histories = List(aHistory(standardApplicationData.id), aHistory(privilegedApplicationData.id), aHistory(ropcApplicationData.id))
       StateHistoryRepoMock.FetchDeletedByApplicationIds.thenReturnWhen(List(standardApplicationData.id, privilegedApplicationData.id, ropcApplicationData.id))(histories: _*)
 
-      val result: PaginatedApplicationResponse = await(underTest.searchApplications(search))
+      val result: PaginatedApplications = await(underTest.searchApplications(search))
 
       result.total shouldBe 3
       result.matching shouldBe 3
