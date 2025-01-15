@@ -36,6 +36,8 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType.NO_RESTRICTION
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -308,6 +310,30 @@ class ApplicationRepositoryISpec
       )
 
       updatedApplication.allowAutoDelete mustBe false
+    }
+  }
+
+  "updateDeleteRestriction" should {
+
+    "set the deleteRestriction field on an Application document to do not delete" in {
+      val deleteRestrictionDoNotDelete = DoNotDelete(reasons, Actors.GatekeeperUser("User"), instant)
+
+      val savedApplication = await(
+        applicationRepository.save(
+          anApplicationDataForTest(applicationId)
+        )
+      )
+
+      savedApplication.deleteRestriction.deleteRestrictionType mustBe NO_RESTRICTION
+
+      val updatedApplication = await(
+        applicationRepository.updateDeleteRestriction(
+          applicationId,
+          deleteRestrictionDoNotDelete
+        )
+      )
+
+      updatedApplication.deleteRestriction mustBe deleteRestrictionDoNotDelete
     }
   }
 

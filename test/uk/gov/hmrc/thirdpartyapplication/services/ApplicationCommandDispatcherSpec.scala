@@ -112,6 +112,8 @@ class ApplicationCommandDispatcherSpec
       mockDeleteApplicationByGatekeeperCommandHandler,
       mockAllowApplicationAutoDeleteCommandHandler,
       mockBlockApplicationAutoDeleteCommandHandler,
+      mockAllowApplicationDeleteCommandHandler,
+      mockRestrictApplicationDeleteCommandHandler,
       mockChangeGrantLengthCommandHandler,
       mockChangeRateLimitTierCommandHandler,
       mockChangeProductionApplicationNameCommandHandler,

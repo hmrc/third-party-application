@@ -29,6 +29,8 @@ class DeleteCommandsProcessor @Inject() (
     deleteApplicationByGatekeeperCmdHdlr: DeleteApplicationByGatekeeperCommandHandler,
     allowApplicationAutoDeleteCmdHdlr: AllowApplicationAutoDeleteCommandHandler,
     blockApplicationAutoDeleteCmdHdlr: BlockApplicationAutoDeleteCommandHandler,
+    allowApplicationDeleteCmdHdlr: AllowApplicationDeleteCommandHandler,
+    restrictApplicationDeleteCmdHdlr: RestrictApplicationDeleteCommandHandler,
     deleteApplicationByCollaboratorCmdHdlr: DeleteApplicationByCollaboratorCommandHandler,
     deleteUnusedApplicationCmdHdlr: DeleteUnusedApplicationCommandHandler,
     deleteProductionCredentialsApplicationCmdHdlr: DeleteProductionCredentialsApplicationCommandHandler
@@ -40,6 +42,8 @@ class DeleteCommandsProcessor @Inject() (
     case cmd: DeleteApplicationByGatekeeper          => deleteApplicationByGatekeeperCmdHdlr.process(app, cmd)
     case cmd: AllowApplicationAutoDelete             => allowApplicationAutoDeleteCmdHdlr.process(app, cmd)
     case cmd: BlockApplicationAutoDelete             => blockApplicationAutoDeleteCmdHdlr.process(app, cmd)
+    case cmd: AllowApplicationDelete                 => allowApplicationDeleteCmdHdlr.process(app, cmd)
+    case cmd: RestrictApplicationDelete              => restrictApplicationDeleteCmdHdlr.process(app, cmd)
     case cmd: DeleteUnusedApplication                => deleteUnusedApplicationCmdHdlr.process(app, cmd)
     case cmd: DeleteProductionCredentialsApplication => deleteProductionCredentialsApplicationCmdHdlr.process(app, cmd)
     case cmd: DeleteApplicationByCollaborator        => deleteApplicationByCollaboratorCmdHdlr.process(app, cmd)
