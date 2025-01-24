@@ -27,8 +27,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class DeleteCommandsProcessor @Inject() (
     deleteApplicationByGatekeeperCmdHdlr: DeleteApplicationByGatekeeperCommandHandler,
-    allowApplicationAutoDeleteCmdHdlr: AllowApplicationAutoDeleteCommandHandler,
-    blockApplicationAutoDeleteCmdHdlr: BlockApplicationAutoDeleteCommandHandler,
     allowApplicationDeleteCmdHdlr: AllowApplicationDeleteCommandHandler,
     restrictApplicationDeleteCmdHdlr: RestrictApplicationDeleteCommandHandler,
     deleteApplicationByCollaboratorCmdHdlr: DeleteApplicationByCollaboratorCommandHandler,
@@ -40,8 +38,6 @@ class DeleteCommandsProcessor @Inject() (
 
   def process(app: StoredApplication, command: DeleteCommand)(implicit hc: HeaderCarrier): AppCmdResultT = command match {
     case cmd: DeleteApplicationByGatekeeper          => deleteApplicationByGatekeeperCmdHdlr.process(app, cmd)
-    case cmd: AllowApplicationAutoDelete             => allowApplicationAutoDeleteCmdHdlr.process(app, cmd)
-    case cmd: BlockApplicationAutoDelete             => blockApplicationAutoDeleteCmdHdlr.process(app, cmd)
     case cmd: AllowApplicationDelete                 => allowApplicationDeleteCmdHdlr.process(app, cmd)
     case cmd: RestrictApplicationDelete              => restrictApplicationDeleteCmdHdlr.process(app, cmd)
     case cmd: DeleteUnusedApplication                => deleteUnusedApplicationCmdHdlr.process(app, cmd)
