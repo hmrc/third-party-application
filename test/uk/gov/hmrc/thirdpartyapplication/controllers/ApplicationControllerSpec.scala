@@ -768,7 +768,7 @@ class ApplicationControllerSpec
 
       // scalastyle:off magic.number
       when(underTest.applicationService.searchApplications(any[ApplicationSearch]))
-        .thenReturn(Future(PaginatedApplicationResponse(applications = List.empty, page = 1, pageSize = 100, total = 0, matching = 0)))
+        .thenReturn(Future(PaginatedApplications(applications = List.empty, page = 1, pageSize = 100, total = 0, matching = 0)))
 
       val result = underTest.searchApplications(req)
 

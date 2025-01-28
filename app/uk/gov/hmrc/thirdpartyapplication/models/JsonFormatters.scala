@@ -50,11 +50,10 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   implicit val writesGrantLength: Writes[GrantLength] = implicitly[Writes[Period]].contramap(gl => gl.period)
 
-  implicit val formatPaginatedApplicationResponse: OFormat[PaginatedApplicationResponse] = Json.format[PaginatedApplicationResponse]
-  implicit val formatUpdateIpAllowlistRequest: OFormat[UpdateIpAllowlistRequest]         = Json.format[UpdateIpAllowlistRequest]
-  implicit val formatApplicationWithHistory: OFormat[ApplicationWithHistoryResponse]     = Json.format[ApplicationWithHistoryResponse]
-  implicit val formatClientSecretResponse: OFormat[ClientSecretResponse]                 = Json.format[ClientSecretResponse]
-  implicit val formatApplicationTokensResponse: OFormat[ApplicationTokenResponse]        = Json.format[ApplicationTokenResponse]
+  implicit val formatUpdateIpAllowlistRequest: OFormat[UpdateIpAllowlistRequest]     = Json.format[UpdateIpAllowlistRequest]
+  implicit val formatApplicationWithHistory: OFormat[ApplicationWithHistoryResponse] = Json.format[ApplicationWithHistoryResponse]
+  implicit val formatClientSecretResponse: OFormat[ClientSecretResponse]             = Json.format[ClientSecretResponse]
+  implicit val formatApplicationTokensResponse: OFormat[ApplicationTokenResponse]    = Json.format[ApplicationTokenResponse]
 
   implicit val formatValidationRequest: OFormat[ValidationRequest]                               = Json.format[ValidationRequest]
   implicit val formatApplicationNameValidationRequest: OFormat[ApplicationNameValidationRequest] = Json.format[ApplicationNameValidationRequest]
