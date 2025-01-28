@@ -245,6 +245,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def updateAllowAutoDelete(applicationId: ApplicationId, allowAutoDelete: Boolean): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("allowAutoDelete", Codecs.toBson(allowAutoDelete)))
 
+  def updateDeleteRestriction(applicationId: ApplicationId, deleteRestriction: DeleteRestriction): Future[StoredApplication] =
+    updateApplication(applicationId, Updates.set("deleteRestriction", Codecs.toBson(deleteRestriction)))
+
   def updateApplicationRateLimit(applicationId: ApplicationId, rateLimit: RateLimitTier): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("rateLimitTier", Codecs.toBson(rateLimit)))
 
@@ -418,7 +421,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       Seq(
         filter(equal("state.name", state.toString())),
         filter(equal("environment", Codecs.toBson(environment))),
-        filter(notEqual("allowAutoDelete", false)),
+        filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DO_NOT_DELETE.toString())),
         filter(lte("state.updatedOn", updatedBefore))
       )
     ).toFuture()
@@ -437,7 +440,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         Seq(
           filter(equal("state.name", state.toString())),
           filter(equal("environment", Codecs.toBson(environment))),
-          filter(notEqual("allowAutoDelete", false)),
+          filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DO_NOT_DELETE.toString())),
           filter(lte("state.updatedOn", updatedBefore)),
           lookup(from = "notifications", localField = "id", foreignField = "applicationId", as = "matched"),
           filter(size("matched", 0))
@@ -611,7 +614,14 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         case false => matches(equal("allowAutoDelete", Codecs.toBson(allowAutoDelete)))
         case true  => matches(or(equal("allowAutoDelete", Codecs.toBson(allowAutoDelete)), exists("allowAutoDelete", false)))
       }
+    }
 
+    def deleteRestrictionMatch(restrictionType: DeleteRestrictionType): Bson = {
+      restrictionType match {
+        case DeleteRestrictionType.DO_NOT_DELETE  => matches(equal("deleteRestriction.deleteRestrictionType", Codecs.toBson(restrictionType)))
+        case DeleteRestrictionType.NO_RESTRICTION =>
+          matches(or(equal("deleteRestriction.deleteRestrictionType", Codecs.toBson(restrictionType)), exists("deleteRestriction.deleteRestrictionType", false)))
+      }
     }
 
     def specificAPISubscription(apiContext: ApiContext, apiVersion: Option[ApiVersionNbr]) = {
@@ -659,7 +669,12 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       // Allow Auto Delete
       case AutoDeleteAllowed => allowAutoDeleteMatch(true)
       case AutoDeleteBlocked => allowAutoDeleteMatch(false)
-      case _                 => Document() // Only here to complete the match
+
+      // Delete Restriction
+      case NoRestriction => deleteRestrictionMatch(DeleteRestrictionType.NO_RESTRICTION)
+      case DoNotDelete   => deleteRestrictionMatch(DeleteRestrictionType.DO_NOT_DELETE)
+
+      case _ => Document() // Only here to complete the match
     }
   }
   // scalastyle:on cyclomatic.complexity

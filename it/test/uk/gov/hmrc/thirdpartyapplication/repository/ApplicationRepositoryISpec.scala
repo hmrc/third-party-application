@@ -36,6 +36,8 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType.NO_RESTRICTION
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -271,6 +273,7 @@ class ApplicationRepositoryISpec
 
       retrieved mustBe application
       retrieved.allowAutoDelete mustBe true
+      retrieved.deleteRestriction mustBe DeleteRestriction.NoRestriction
     }
 
     "update an application" in {
@@ -307,6 +310,30 @@ class ApplicationRepositoryISpec
       )
 
       updatedApplication.allowAutoDelete mustBe false
+    }
+  }
+
+  "updateDeleteRestriction" should {
+
+    "set the deleteRestriction field on an Application document to do not delete" in {
+      val deleteRestrictionDoNotDelete = DoNotDelete(reasons, Actors.GatekeeperUser("User"), instant)
+
+      val savedApplication = await(
+        applicationRepository.save(
+          anApplicationDataForTest(applicationId)
+        )
+      )
+
+      savedApplication.deleteRestriction.deleteRestrictionType mustBe NO_RESTRICTION
+
+      val updatedApplication = await(
+        applicationRepository.updateDeleteRestriction(
+          applicationId,
+          deleteRestrictionDoNotDelete
+        )
+      )
+
+      updatedApplication.deleteRestriction mustBe deleteRestrictionDoNotDelete
     }
   }
 
@@ -1009,6 +1036,7 @@ class ApplicationRepositoryISpec
     val yesterday          = currentDate.minus(Duration.ofDays(1))
     val dayBeforeYesterday = currentDate.minus(Duration.ofDays(2))
     val lastWeek           = currentDate.minus(Duration.ofDays(7))
+    val doNotDelete        = DeleteRestriction.DoNotDelete("reason", Actors.GatekeeperUser("gkuser"), instant)
 
     def verifyApplications(
         responseApplications: Seq[StoredApplication],
@@ -1028,7 +1056,7 @@ class ApplicationRepositoryISpec
         createAppWithStatusUpdatedOn(State.TESTING, currentDate),
         createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
         createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, lastWeek).copy(allowAutoDelete = false),
+        createAppWithStatusUpdatedOn(State.TESTING, lastWeek).copy(deleteRestriction = doNotDelete),
         createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
       )
       applications.foreach(application =>
@@ -1057,6 +1085,7 @@ class ApplicationRepositoryISpec
     val yesterday          = currentDate.minus(Duration.ofDays(1))
     val dayBeforeYesterday = currentDate.minus(Duration.ofDays(2))
     val lastWeek           = currentDate.minus(Duration.ofDays(7))
+    val doNotDelete        = DeleteRestriction.DoNotDelete("reason", Actors.GatekeeperUser("gkuser"), instant)
 
     def verifyApplications(
         responseApplications: Seq[StoredApplication],
@@ -1076,7 +1105,7 @@ class ApplicationRepositoryISpec
         createAppWithStatusUpdatedOn(State.TESTING, currentDate),
         createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
         createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday).copy(allowAutoDelete = false),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday).copy(deleteRestriction = doNotDelete),
         createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
       )
       applications.foreach(application =>
@@ -1104,7 +1133,7 @@ class ApplicationRepositoryISpec
       val applications = Seq(
         createAppWithStatusUpdatedOn(State.TESTING, currentDate),
         createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday).copy(allowAutoDelete = false),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday).copy(deleteRestriction = doNotDelete),
         createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
         app4
       )

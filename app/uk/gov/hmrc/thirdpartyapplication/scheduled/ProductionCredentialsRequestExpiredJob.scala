@@ -56,7 +56,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val deleteTime: Instant = instant().minus(Period.ofDays(productionCredentialsRequestDeleteInterval.toDays.toInt))
-    logger.info(s"Delete expired production credentials requests for production applications having status of TESTING with updatedOn earlier than $deleteTime with allowAutoDelete true")
+    logger.info(s"Delete expired production credentials requests for production applications having status of TESTING with updatedOn earlier than $deleteTime with no delete restriction")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
       deleteApps <-

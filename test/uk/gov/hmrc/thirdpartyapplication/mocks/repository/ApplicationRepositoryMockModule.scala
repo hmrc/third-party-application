@@ -379,6 +379,16 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         ApplicationRepoMock.verify.updateAllowAutoDelete(eqTo(applicationId), eqTo(allowAutoDelete))
     }
 
+    object UpdateDeleteRestriction {
+
+      def thenReturnWhen(deleteRestriction: DeleteRestriction)(updatedApplication: StoredApplication) = {
+        when(aMock.updateDeleteRestriction(eqTo(updatedApplication.id), eqTo(deleteRestriction))).thenReturn(successful(updatedApplication))
+      }
+
+      def verifyCalledWith(applicationId: ApplicationId, deleteRestriction: DeleteRestriction) =
+        ApplicationRepoMock.verify.updateDeleteRestriction(eqTo(applicationId), eqTo(deleteRestriction))
+    }
+
     object AddCollaborator {
 
       def succeeds(applicationData: StoredApplication) =

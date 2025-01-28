@@ -615,7 +615,7 @@ class ApplicationServiceSpec
           ipAllowlist = IpAllowlist(),
           allowAutoDelete = true,
           lastActionActor = ActorType.UNKNOWN,
-          DeleteRestriction.NoRestriction
+          deleteRestriction = DeleteRestriction.NoRestriction
         ),
         collaborators = data.collaborators
       ))
