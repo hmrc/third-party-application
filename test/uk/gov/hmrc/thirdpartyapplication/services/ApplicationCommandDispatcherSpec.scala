@@ -110,8 +110,6 @@ class ApplicationCommandDispatcherSpec
       mockChangeSandboxApplicationTermsAndConditionsUrlCommandHandler,
       mockRemoveSandboxApplicationTermsAndConditionsUrlCommandHandler,
       mockDeleteApplicationByGatekeeperCommandHandler,
-      mockAllowApplicationAutoDeleteCommandHandler,
-      mockBlockApplicationAutoDeleteCommandHandler,
       mockAllowApplicationDeleteCommandHandler,
       mockRestrictApplicationDeleteCommandHandler,
       mockChangeGrantLengthCommandHandler,
