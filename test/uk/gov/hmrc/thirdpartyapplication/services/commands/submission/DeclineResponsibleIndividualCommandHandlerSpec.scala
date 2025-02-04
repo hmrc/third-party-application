@@ -76,7 +76,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
 
     val app  = storedApp.copy(
       collaborators = Set(adminOne),
-      access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
+      access = Access.Standard(List.empty, List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingResponsibleIndividualVerification(requesterEmail.text, requesterName)
     )
     val ts   = FixedClock.instant
@@ -268,7 +268,7 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
 
     "return an error if the application is old journey" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
-      val oldJourneyApp = app.withAccess(Access.Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = app.withAccess(Access.Standard(List.empty, List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith("Must be a standard new journey application", "The responsible individual has not been set for this application") {
         underTest.process(oldJourneyApp, DeclineResponsibleIndividual(code, instant))

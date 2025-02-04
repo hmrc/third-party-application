@@ -24,8 +24,8 @@ import cats.data._
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddRedirectUri
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.LoginRedirectUri
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -33,14 +33,14 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
-class AddRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
+class AddLoginRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 
-  private def validate(app: StoredApplication, cmd: AddRedirectUri): Validated[Failures, List[RedirectUri]] = {
+  private def validate(app: StoredApplication, cmd: AddLoginRedirectUri): Validated[Failures, List[LoginRedirectUri]] = {
     val existingRedirects = app.access match {
-      case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris
-      case _                                            => List.empty
+      case Access.Standard(redirectUris, _, _, _, _, _, _) => redirectUris
+      case _                                               => List.empty
     }
 
     val hasFourOrFewerURIs = cond((existingRedirects.size < 5), CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
@@ -52,9 +52,9 @@ class AddRedirectUriCommandHandler @Inject() (applicationRepository: Application
     )((_, _, _) => existingRedirects)
   }
 
-  private def asEvents(app: StoredApplication, cmd: AddRedirectUri): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: AddLoginRedirectUri): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      ApplicationEvents.RedirectUriAdded(
+      ApplicationEvents.LoginRedirectUriAdded(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
@@ -64,11 +64,11 @@ class AddRedirectUriCommandHandler @Inject() (applicationRepository: Application
     )
   }
 
-  def process(app: StoredApplication, cmd: AddRedirectUri): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: AddLoginRedirectUri): AppCmdResultT = {
     for {
       existingUris   <- E.fromEither(validate(app, cmd).toEither)
       urisAfterChange = existingUris :+ cmd.redirectUriToAdd
-      savedApp       <- E.liftF(applicationRepository.updateRedirectUris(app.id, urisAfterChange))
+      savedApp       <- E.liftF(applicationRepository.updateLoginRedirectUris(app.id, urisAfterChange))
       events          = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }

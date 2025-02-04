@@ -46,7 +46,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequestV2,
   StandardAccessDataToCopy
 }
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateLoginRedirectUris
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
@@ -177,10 +177,10 @@ class ApplicationServiceSpec
 
   trait SetupForAuditTests extends Setup {
 
-    def setupAuditTests(access: Access): (StoredApplication, UpdateRedirectUris) = {
+    def setupAuditTests(access: Access): (StoredApplication, UpdateLoginRedirectUris) = {
       val existingApplication = storedApp
 
-      val newRedirectUris                       = List(RedirectUri.unsafeApply("https://new-url.example.com"))
+      val newRedirectUris                       = List(LoginRedirectUri.unsafeApply("https://new-url.example.com"))
       val updatedApplication: StoredApplication = existingApplication.copy(
         name = ApplicationName("new name"),
         normalisedName = "new name"
@@ -189,6 +189,7 @@ class ApplicationServiceSpec
           access match {
             case _: Access.Standard => Access.Standard(
                 newRedirectUris,
+                List.empty,
                 Some("https://new-url.example.com/terms-and-conditions"),
                 Some("https://new-url.example.com/privacy-policy")
               )
@@ -196,7 +197,7 @@ class ApplicationServiceSpec
           }
         )
 
-      val updateRedirectUris = UpdateRedirectUris(
+      val updateLoginRedirectUris = UpdateLoginRedirectUris(
         actor = gatekeeperActor,
         oldRedirectUris = List.empty,
         newRedirectUris = newRedirectUris,
@@ -206,7 +207,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Fetch.thenReturn(existingApplication)
       ApplicationRepoMock.Save.thenReturn(updatedApplication)
 
-      (updatedApplication, updateRedirectUris)
+      (updatedApplication, updateLoginRedirectUris)
     }
   }
 

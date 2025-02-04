@@ -86,7 +86,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
   val version                      = "1.0".asVersion
 
   val standardAccess   = Access.Standard(
-    redirectUris = List(RedirectUri.unsafeApply("https://example.com/redirect")),
+    redirectUris = List(LoginRedirectUri.unsafeApply("https://example.com/redirect")),
     termsAndConditionsUrl = Some("http://example.com/terms"),
     privacyPolicyUrl = Some("http://example.com/privacy"),
     overrides = Set.empty

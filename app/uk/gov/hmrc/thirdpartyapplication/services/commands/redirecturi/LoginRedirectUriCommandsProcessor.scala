@@ -18,24 +18,24 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi
 
 import javax.inject.{Inject, Singleton}
 
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommands, RedirectCommand}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommands, LoginRedirectCommand}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
-class RedirectUriCommandsProcessor @Inject() (
-    addRedirectUriCommandHandle: AddRedirectUriCommandHandler,
-    deleteRedirectUriCmdHdlr: DeleteRedirectUriCommandHandler,
-    changeRedirectUriCmdHdlr: ChangeRedirectUriCommandHandler,
-    updateRedirectUrisCmdHdlr: UpdateRedirectUrisCommandHandler
+class LoginRedirectUriCommandsProcessor @Inject() (
+    addLoginRedirectUriCommandHandle: AddLoginRedirectUriCommandHandler,
+    deleteLoginRedirectUriCmdHdlr: DeleteLoginRedirectUriCommandHandler,
+    changeLoginRedirectUriCmdHdlr: ChangeLoginRedirectUriCommandHandler,
+    updateLoginRedirectUrisCmdHdlr: UpdateLoginRedirectUrisCommandHandler
   ) {
   import CommandHandler._
   import ApplicationCommands._
 
-  def process(app: StoredApplication, command: RedirectCommand): AppCmdResultT = command match {
-    case cmd: AddRedirectUri     => addRedirectUriCommandHandle.process(app, cmd)
-    case cmd: ChangeRedirectUri  => changeRedirectUriCmdHdlr.process(app, cmd)
-    case cmd: DeleteRedirectUri  => deleteRedirectUriCmdHdlr.process(app, cmd)
-    case cmd: UpdateRedirectUris => updateRedirectUrisCmdHdlr.process(app, cmd)
+  def process(app: StoredApplication, command: LoginRedirectCommand): AppCmdResultT = command match {
+    case cmd: AddLoginRedirectUri     => addLoginRedirectUriCommandHandle.process(app, cmd)
+    case cmd: ChangeLoginRedirectUri  => changeLoginRedirectUriCmdHdlr.process(app, cmd)
+    case cmd: DeleteLoginRedirectUri  => deleteLoginRedirectUriCmdHdlr.process(app, cmd)
+    case cmd: UpdateLoginRedirectUris => updateLoginRedirectUrisCmdHdlr.process(app, cmd)
   }
 }

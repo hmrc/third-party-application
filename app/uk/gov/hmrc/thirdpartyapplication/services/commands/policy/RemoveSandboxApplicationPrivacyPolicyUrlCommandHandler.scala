@@ -44,8 +44,8 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
       cmd: RemoveSandboxApplicationPrivacyPolicyUrl
     ): Validated[Failures, String] = {
     val (isStd, privacyPolicyUrl) = app.access match {
-      case Standard(_, _, privacyPolicyUrl, _, _, _) => (true, privacyPolicyUrl)
-      case _                                         => (false, None)
+      case Standard(_, _, _, privacyPolicyUrl, _, _, _) => (true, privacyPolicyUrl)
+      case _                                            => (false, None)
     }
     Apply[Validated[Failures, *]].map4(
       isInSandboxEnvironment(app),

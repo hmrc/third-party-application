@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import scala.concurrent.Future
+import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Reads}
@@ -32,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{InvalidIpAllowlistException, Sc
 trait JsonUtils extends Results with ApplicationLogger {
   self: BackendController =>
 
-  override def withJsonBody[T](f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
+  override def withJsonBody[T](f: T => Future[Result])(implicit request: Request[JsValue], ct: ClassTag[T], reads: Reads[T]): Future[Result] = {
     withJson(request.body)(f)
   }
 

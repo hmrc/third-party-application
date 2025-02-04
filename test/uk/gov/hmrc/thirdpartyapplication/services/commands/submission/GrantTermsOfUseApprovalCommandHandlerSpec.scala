@@ -59,7 +59,7 @@ class GrantTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec w
 
     val app = storedApp.copy(
       state = ApplicationStateExamples.production(appAdminEmail.text, appAdminName),
-      access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+      access = Access.Standard(List.empty, List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
 
     val ts = FixedClock.instant
@@ -133,7 +133,7 @@ class GrantTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec w
     "return an error if the unable to get responsibleIndividual" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
-      val testingApp = app.withAccess(Access.Standard(List.empty, None, None, Set.empty, None, None))
+      val testingApp = app.withAccess(Access.Standard(List.empty, List.empty, None, None, Set.empty, None, None))
       checkFailsWith("The responsible individual has not been set for this application") {
         underTest.process(testingApp, GrantTermsOfUseApproval(gkUserEmail, instant, reasons, escalatedTo))
       }

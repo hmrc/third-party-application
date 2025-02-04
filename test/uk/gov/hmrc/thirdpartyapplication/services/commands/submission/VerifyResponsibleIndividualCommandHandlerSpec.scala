@@ -59,7 +59,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
         adminOne,
         adminTwo
       ),
-      access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+      access = Access.Standard(List.empty, List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
 
     val ts      = FixedClock.instant
@@ -115,7 +115,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val oldJourneyApp = app.withAccess(Access.Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = app.withAccess(Access.Standard(List.empty, List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(oldJourneyApp, VerifyResponsibleIndividual(adminOne.userId, instant, appAdminName, riName, riEmail))

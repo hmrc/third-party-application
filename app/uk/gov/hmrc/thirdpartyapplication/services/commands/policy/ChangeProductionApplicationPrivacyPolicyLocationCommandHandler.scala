@@ -111,9 +111,9 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
     app.access match {
-      case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => processApp(privacyPolicyLocation, app, cmd)
-      case Access.Standard(_, _, maybePrivacyPolicyUrl, _, _, None)                                            => processLegacyApp(maybePrivacyPolicyUrl.getOrElse(""), app, cmd)
-      case _                                                                                                   => processApp(PrivacyPolicyLocations.InDesktopSoftware, app, cmd) // This will not valdate
+      case Access.Standard(_, _, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => processApp(privacyPolicyLocation, app, cmd)
+      case Access.Standard(_, _, _, maybePrivacyPolicyUrl, _, _, None)                                            => processLegacyApp(maybePrivacyPolicyUrl.getOrElse(""), app, cmd)
+      case _                                                                                                      => processApp(PrivacyPolicyLocations.InDesktopSoftware, app, cmd) // This will not valdate
     }
   }
 }

@@ -266,6 +266,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
            |"access" : {
            |  "accessType" : "STANDARD",
            |  "redirectUris" : [],
+           |  "postLogoutRedirectUris": [],
            |  "overrides" : []
            |},
            |"collaborators": [
@@ -292,6 +293,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
               "https://localhost:8080/redirect3", "https://localhost:8080/redirect4",
               "https://localhost:8080/redirect5", "https://localhost:8080/redirect6"
             ],
+            "postLogoutRedirectUris": [],
             "overrides" : []
           },
           "collaborators": [{"emailAddress": "admin@example.com","role": "ADMINISTRATOR", "userId": "${UserId.random.value}"}]
@@ -302,7 +304,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       val result          = underTest.create()(requestWithBody)
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
-      (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: maximum number of redirect URIs exceeded"
+      (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: maximum number of login redirect URIs exceeded"
     }
 
     "fail with a 422 (unprocessable entity) when incomplete json is provided" in new Setup {
@@ -322,6 +324,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
            |"environment": "PRODUCTION",
            |"access" : {
            |  "redirectUris" : [ "https://example.com/redirect" ],
+           |  "postLogoutRedirectUris" : [],
            |  "overrides" : [ ]
            |},
            |"upliftRequest" : {

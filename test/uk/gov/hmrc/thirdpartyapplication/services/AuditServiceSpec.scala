@@ -34,7 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAdd
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, RedirectUri}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, LoginRedirectUri}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvents, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -529,13 +529,13 @@ class AuditServiceSpec
 
     "applyEvents with a RedirectUrisUpdated event" in new Setup {
 
-      val redirectUrisUpdated = ApplicationEvents.RedirectUrisUpdatedV2(
+      val redirectUrisUpdated = ApplicationEvents.LoginRedirectUrisUpdatedV2(
         EventId.random,
         applicationId,
         instant,
         collaboratorActor,
         oldRedirectUris = List.empty,
-        newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_))
+        newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(LoginRedirectUri.unsafeApply(_))
       )
 
       val expectedDataEvent = DataEvent(

@@ -56,7 +56,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
     val app = storedApp.copy(
       state = ApplicationStateExamples.pendingRequesterVerification(appAdminEmail.text, appAdminName, "123456789"),
-      access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+      access = Access.Standard(List.empty, List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
 
     val ts = FixedClock.instant
@@ -105,7 +105,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val oldJourneyApp = app.withAccess(Access.Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = app.withAccess(Access.Standard(List.empty, List.empty, None, None, Set.empty, None, None))
 
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(oldJourneyApp, ResendRequesterEmailVerification(gatekeeperUser, instant))
