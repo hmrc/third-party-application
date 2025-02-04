@@ -90,8 +90,8 @@ class ApplicationRepositorySerialisationISpec
     def validateGrantLength(raw: BsonDocument, required: Boolean): Unit = {
       val path: JsPath = __ \ "grantLength"
       path(Json.parse(raw.toJson)) match {
-        case Seq(x) => if (required) succeed else fail
-        case _      => if (required) fail else succeed
+        case Seq(x) => if (required) succeed else fail()
+        case _      => if (required) fail() else succeed
       }
     }
   }

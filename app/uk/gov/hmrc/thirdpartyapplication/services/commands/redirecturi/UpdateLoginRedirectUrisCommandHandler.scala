@@ -61,7 +61,7 @@ class UpdateLoginRedirectUrisCommandHandler @Inject() (applicationRepository: Ap
   def process(app: StoredApplication, cmd: UpdateLoginRedirectUris): AppCmdResultT = {
     for {
       valid    <- E.fromEither(validate(app, cmd).toEither)
-      savedApp <- E.liftF(applicationRepository.updateRedirectUris(app.id, cmd.newRedirectUris))
+      savedApp <- E.liftF(applicationRepository.updateLoginRedirectUris(app.id, cmd.newRedirectUris))
       events    = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }

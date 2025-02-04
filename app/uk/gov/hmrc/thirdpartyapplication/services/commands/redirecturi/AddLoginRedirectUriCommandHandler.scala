@@ -68,7 +68,7 @@ class AddLoginRedirectUriCommandHandler @Inject() (applicationRepository: Applic
     for {
       existingUris   <- E.fromEither(validate(app, cmd).toEither)
       urisAfterChange = existingUris :+ cmd.redirectUriToAdd
-      savedApp       <- E.liftF(applicationRepository.updateRedirectUris(app.id, urisAfterChange))
+      savedApp       <- E.liftF(applicationRepository.updateLoginRedirectUris(app.id, urisAfterChange))
       events          = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }

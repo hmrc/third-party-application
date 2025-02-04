@@ -441,20 +441,20 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "updateRedirectUris" should {
+  "updateLoginRedirectUris" should {
     "set the redirectUris on an Application document" in {
       await(applicationRepository.save(anApplicationDataForTest(applicationId)))
 
-      val updateRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(LoginRedirectUri.unsafeApply(_))
-      val updatedApplication = await(
-        applicationRepository.updateRedirectUris(
+      val updateLoginRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(LoginRedirectUri.unsafeApply(_))
+      val updatedApplication      = await(
+        applicationRepository.updateLoginRedirectUris(
           applicationId,
-          updateRedirectUris
+          updateLoginRedirectUris
         )
       )
 
       updatedApplication.access match {
-        case access: Access.Standard => access.redirectUris mustBe updateRedirectUris
+        case access: Access.Standard => access.redirectUris mustBe updateLoginRedirectUris
         case _                       => fail("Wrong access - expecting standard")
       }
     }

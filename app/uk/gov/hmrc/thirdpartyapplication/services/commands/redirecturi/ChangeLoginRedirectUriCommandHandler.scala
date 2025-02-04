@@ -75,7 +75,7 @@ class ChangeLoginRedirectUriCommandHandler @Inject() (applicationRepository: App
     for {
       existingUris   <- E.fromEither(validate(app, cmd).toEither)
       urisAfterChange = existingUris.map(uriVal => if (uriVal == cmd.redirectUriToReplace) cmd.redirectUri else uriVal)
-      savedApp       <- E.liftF(applicationRepository.updateRedirectUris(app.id, urisAfterChange))
+      savedApp       <- E.liftF(applicationRepository.updateLoginRedirectUris(app.id, urisAfterChange))
       events          = asEvents(savedApp, cmd)
     } yield (savedApp, events)
   }

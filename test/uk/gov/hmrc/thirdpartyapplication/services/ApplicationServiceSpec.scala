@@ -197,7 +197,7 @@ class ApplicationServiceSpec
           }
         )
 
-      val updateRedirectUris = UpdateLoginRedirectUris(
+      val updateLoginRedirectUris = UpdateLoginRedirectUris(
         actor = gatekeeperActor,
         oldRedirectUris = List.empty,
         newRedirectUris = newRedirectUris,
@@ -207,7 +207,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Fetch.thenReturn(existingApplication)
       ApplicationRepoMock.Save.thenReturn(updatedApplication)
 
-      (updatedApplication, updateRedirectUris)
+      (updatedApplication, updateLoginRedirectUris)
     }
   }
 
