@@ -106,9 +106,9 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
 
   def process(app: StoredApplication, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
     app.access match {
-      case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => processApp(termsAndConditionsLocation, app, cmd)
-      case Access.Standard(_, maybeTermsAndConditionsLocation, _, _, _, None)                                       => processLegacyApp(maybeTermsAndConditionsLocation.getOrElse(""), app, cmd)
-      case _                                                                                                        => processApp(TermsAndConditionsLocations.InDesktopSoftware, app, cmd) // This will not valdate
+      case Access.Standard(_, _, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => processApp(termsAndConditionsLocation, app, cmd)
+      case Access.Standard(_, _, maybeTermsAndConditionsLocation, _, _, _, None)                                       => processLegacyApp(maybeTermsAndConditionsLocation.getOrElse(""), app, cmd)
+      case _                                                                                                           => processApp(TermsAndConditionsLocations.InDesktopSoftware, app, cmd) // This will not valdate
     }
   }
 }

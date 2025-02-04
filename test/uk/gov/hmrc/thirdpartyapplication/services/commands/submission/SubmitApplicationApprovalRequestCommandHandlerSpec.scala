@@ -69,7 +69,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
 
     val app = storedApp.copy(
       state = ApplicationStateExamples.testing,
-      access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+      access = Access.Standard(List.empty, List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
 
     val ts                                                 = FixedClock.instant

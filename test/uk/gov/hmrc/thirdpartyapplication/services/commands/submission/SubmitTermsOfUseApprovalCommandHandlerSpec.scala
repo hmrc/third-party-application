@@ -69,7 +69,7 @@ class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec 
 
     val app = storedApp.copy(
       state = ApplicationStateExamples.production("bob@example.com", "Bob"),
-      access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+      access = Access.Standard(List.empty, List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
 
     val ts = FixedClock.instant

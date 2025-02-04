@@ -48,9 +48,9 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
   private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: StoredApplication) =
     cond(
       app.access match {
-        case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
+        case Access.Standard(_, _, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
           !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || responsibleIndividual.emailAddress != email
-        case _                                                                                                   => true
+        case _                                                                                                      => true
       },
       "The specified individual is already the RI for this application"
     )

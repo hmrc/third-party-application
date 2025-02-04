@@ -38,7 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.ipallowlist.IpAllowLi
 import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription.NameDescriptionCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.policy.PolicyCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit.RateLimitCommandsProcessor
-import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.RedirectUriCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.LoginRedirectUriCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.ScopesCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission.SubmissionCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription.SubscriptionCommandsProcessor
@@ -58,7 +58,7 @@ class ApplicationCommandDispatcher @Inject() (
     nameDescriptionCommandsProcessor: NameDescriptionCommandsProcessor,
     policyCommandsProcessor: PolicyCommandsProcessor,
     rateLimitCommandsProcessor: RateLimitCommandsProcessor,
-    redirectUriCommandsProcessor: RedirectUriCommandsProcessor,
+    loginRedirectUriCommandsProcessor: LoginRedirectUriCommandsProcessor,
     submissionsCommandsProcessor: SubmissionCommandsProcessor,
     subscriptionCommandsProcessor: SubscriptionCommandsProcessor,
     blockCommandsProcessor: BlockCommandsProcessor,
@@ -94,7 +94,7 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: NameDescriptionCommand => nameDescriptionCommandsProcessor.process(app, cmd)
       case cmd: PolicyCommand          => policyCommandsProcessor.process(app, cmd)
       case cmd: RateLimitCommand       => rateLimitCommandsProcessor.process(app, cmd)
-      case cmd: RedirectCommand        => redirectUriCommandsProcessor.process(app, cmd)
+      case cmd: LoginRedirectCommand   => loginRedirectUriCommandsProcessor.process(app, cmd)
       case cmd: SubmissionCommand      => submissionsCommandsProcessor.process(app, cmd)
       case cmd: SubscriptionCommand    => subscriptionCommandsProcessor.process(app, cmd)
       case cmd: BlockCommand           => blockCommandsProcessor.process(app, cmd)

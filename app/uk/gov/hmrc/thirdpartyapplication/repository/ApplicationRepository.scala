@@ -68,11 +68,13 @@ object ApplicationRepository {
 
     // Because the data in the db might be old and not a valid redirect URI we need this
     // to use new to avoid the filter on RedirectUri.apply()
-    private val convertToRedirectUri: List[String] => List[RedirectUri] = items =>
-      items.map(new RedirectUri(_))
+    // TODO - rename
+    private val convertToRedirectUri: List[String] => List[LoginRedirectUri] = items =>
+      items.map(new LoginRedirectUri(_))
 
     implicit val readsStandard: Reads[Access.Standard] = (
-      ((JsPath \ "redirectUris").read[List[String]].map[List[RedirectUri]](convertToRedirectUri)) and
+      ((JsPath \ "redirectUris").read[List[String]].map[List[LoginRedirectUri]](convertToRedirectUri)) and
+        ((JsPath \ "postLogoutRedirectUris").read[List[PostLogoutRedirectUri]] or Reads.pure(List.empty[PostLogoutRedirectUri])) and
         (JsPath \ "termsAndConditionsUrl").readNullable[String] and
         (JsPath \ "privacyPolicyUrl").readNullable[String] and
         (JsPath \ "overrides").read[Set[OverrideFlag]] and
@@ -851,7 +853,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     updateApplication(applicationId, Updates.set("access.privacyPolicyUrl", Codecs.toBson(privacyPolicyUrl.filterNot(_.isBlank()))))
   }
 
-  def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[RedirectUri]) =
+  // TODO - rename
+  def updateRedirectUris(applicationId: ApplicationId, redirectUris: List[LoginRedirectUri]) =
     updateApplication(applicationId, Updates.set("access.redirectUris", Codecs.toBson(redirectUris)))
 
   def updateApplicationName(applicationId: ApplicationId, name: String): Future[StoredApplication] =

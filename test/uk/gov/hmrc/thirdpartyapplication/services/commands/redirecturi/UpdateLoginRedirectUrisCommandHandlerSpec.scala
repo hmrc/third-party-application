@@ -21,17 +21,17 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationIdData}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateRedirectUris
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.RedirectUrisUpdatedV2
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.LoginRedirectUri
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateLoginRedirectUris
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.LoginRedirectUrisUpdatedV2
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
-class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
+class UpdateLoginRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends ApplicationRepositoryMockModule {
-    val underTest = new UpdateRedirectUrisCommandHandler(ApplicationRepoMock.aMock)
+    val underTest = new UpdateLoginRedirectUrisCommandHandler(ApplicationRepoMock.aMock)
 
     val applicationId                      = ApplicationIdData.one
     val applicationData: StoredApplication = storedApp
@@ -40,11 +40,11 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val nonStandardAccessApp = applicationData.withAccess(Access.Privileged())
     val developerActor       = Actors.AppCollaborator(developerOne.emailAddress)
 
-    val oldRedirectUris = List.empty
-    val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(RedirectUri.unsafeApply(_))
+    val oldRedirectUris      = List.empty
+    val newLoginRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect").map(LoginRedirectUri.unsafeApply(_))
 
     val timestamp  = FixedClock.instant
-    val cmdAsGK    = UpdateRedirectUris(gatekeeperActor, oldRedirectUris, newRedirectUris, instant)
+    val cmdAsGK    = UpdateLoginRedirectUris(gatekeeperActor, oldRedirectUris, newLoginRedirectUris, instant)
     val cmdAsAdmin = cmdAsGK.copy(actor = adminActor)
     val cmdAsDev   = cmdAsGK.copy(actor = developerActor)
 
@@ -54,12 +54,12 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
         val event = events.head
 
         inside(event) {
-          case RedirectUrisUpdatedV2(_, appId, eventDateTime, actor, oldUris, newUris) =>
+          case LoginRedirectUrisUpdatedV2(_, appId, eventDateTime, actor, oldUris, newUris) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
             oldUris shouldBe oldRedirectUris
-            newUris shouldBe newRedirectUris
+            newUris shouldBe newLoginRedirectUris
         }
       }
     }
@@ -68,7 +68,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
   "UpdateRedirectUrisCommandHandler" when {
     "given a principal application" should {
       "succeed when application is standardAccess" in new Setup {
-        ApplicationRepoMock.UpdateRedirectUris.thenReturn(newRedirectUris)(applicationData) // Dont need to test the repo here so just return any app
+        ApplicationRepoMock.UpdateLoginRedirectUris.thenReturn(newLoginRedirectUris)(applicationData) // Dont need to test the repo here so just return any app
 
         val result = await(underTest.process(applicationData, cmdAsAdmin).value).value
 
@@ -77,7 +77,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
       }
 
       "succeed when user is gatekeeper" in new Setup {
-        ApplicationRepoMock.UpdateRedirectUris.thenReturn(newRedirectUris)(applicationData) // Dont need to test the repo here so just return any app
+        ApplicationRepoMock.UpdateLoginRedirectUris.thenReturn(newLoginRedirectUris)(applicationData) // Dont need to test the repo here so just return any app
 
         val result = await(underTest.process(applicationData, cmdAsGK).value).value
         inside(result) { case (_, events) =>
@@ -85,12 +85,12 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
           val event = events.head
 
           inside(event) {
-            case RedirectUrisUpdatedV2(_, appId, eventDateTime, actor, oldUris, newUris) =>
+            case LoginRedirectUrisUpdatedV2(_, appId, eventDateTime, actor, oldUris, newUris) =>
               appId shouldBe applicationId
               actor shouldBe gatekeeperActor
               eventDateTime shouldBe timestamp
               oldUris shouldBe oldRedirectUris
-              newUris shouldBe newRedirectUris
+              newUris shouldBe newLoginRedirectUris
           }
         }
       }
@@ -103,7 +103,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
       "fail when we try to add too many redirect URIs" in new Setup {
         checkFailsWith("Can have at most 5 redirect URIs") {
-          val brokenCmd = cmdAsAdmin.copy(newRedirectUris = (1 to 6).toList.map(id => RedirectUri.unsafeApply(s"https://somewhere.com/endpoint$id")))
+          val brokenCmd = cmdAsAdmin.copy(newRedirectUris = (1 to 6).toList.map(id => LoginRedirectUri.unsafeApply(s"https://somewhere.com/endpoint$id")))
           underTest.process(applicationData, brokenCmd)
         }
         ApplicationRepoMock.verifyZeroInteractions()
@@ -119,7 +119,7 @@ class UpdateRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     "given a subordinate application" should {
       "succeed for a developer" in new Setup {
-        ApplicationRepoMock.UpdateRedirectUris.thenReturn(newRedirectUris)(subordinateApp) // Dont need to test the repo here so just return any app
+        ApplicationRepoMock.UpdateLoginRedirectUris.thenReturn(newLoginRedirectUris)(subordinateApp) // Dont need to test the repo here so just return any app
 
         val result = await(underTest.process(subordinateApp, cmdAsDev).value).value
 

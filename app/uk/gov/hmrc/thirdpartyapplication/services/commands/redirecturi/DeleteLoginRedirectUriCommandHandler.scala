@@ -24,8 +24,8 @@ import cats.data._
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeRedirectUri
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.LoginRedirectUri
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteLoginRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -33,48 +33,49 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
-class ChangeRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
+class DeleteLoginRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
-  import cats.syntax.validated._
 
-  private def validate(app: StoredApplication, cmd: ChangeRedirectUri): Validated[Failures, List[RedirectUri]] = {
-    val existingUris = app.access match {
-      case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris
-      case _                                            => List.empty
+  private def validate(app: StoredApplication, cmd: DeleteLoginRedirectUri): Validated[Failures, List[LoginRedirectUri]] = {
+    val existingRedirects = app.access match {
+      case Access.Standard(redirectUris, _, _, _, _, _, _) => redirectUris
+      case _                                               => List.empty
     }
 
-    val standardAccess = ensureStandardAccess(app)
-    val uriExists      =
+    val standardAccess  = ensureStandardAccess(app)
+    val hasRequestedUri =
       if (standardAccess.isValid)
-        cond(existingUris.contains(cmd.redirectUriToReplace), CommandFailures.GenericFailure(s"RedirectUri ${cmd.redirectUriToReplace} does not exist"))
+        cond(
+          (existingRedirects.contains(cmd.redirectUriToDelete)),
+          CommandFailures.GenericFailure(s"RedirectUri ${cmd.redirectUriToDelete} does not exist")
+        )
       else
         ().validNel
 
     Apply[Validated[Failures, *]].map3(
-      standardAccess,
+      ensureStandardAccess(app),
       isAdminIfInProduction(cmd.actor, app),
-      uriExists
-    )((_, _, _) => existingUris)
+      hasRequestedUri
+    )((_, _, _) => existingRedirects)
   }
 
-  private def asEvents(app: StoredApplication, cmd: ChangeRedirectUri): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, cmd: DeleteLoginRedirectUri): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      ApplicationEvents.RedirectUriChanged(
+      ApplicationEvents.LoginRedirectUriDeleted(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
-        oldRedirectUri = cmd.redirectUriToReplace,
-        newRedirectUri = cmd.redirectUri
+        deletedRedirectUri = cmd.redirectUriToDelete
       )
     )
   }
 
-  def process(app: StoredApplication, cmd: ChangeRedirectUri): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: DeleteLoginRedirectUri): AppCmdResultT = {
     for {
       existingUris   <- E.fromEither(validate(app, cmd).toEither)
-      urisAfterChange = existingUris.map(uriVal => if (uriVal == cmd.redirectUriToReplace) cmd.redirectUri else uriVal)
+      urisAfterChange = existingUris.filterNot(_ == cmd.redirectUriToDelete)
       savedApp       <- E.liftF(applicationRepository.updateRedirectUris(app.id, urisAfterChange))
       events          = asEvents(savedApp, cmd)
     } yield (savedApp, events)

@@ -52,13 +52,13 @@ case class StoredApplication(
   protected val deployedTo = environment
 
   def sellResellOrDistribute = access match {
-    case Access.Standard(_, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
-    case _                                                      => None
+    case Access.Standard(_, _, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
+    case _                                                         => None
   }
 
   def importantSubmissionData: Option[ImportantSubmissionData] = access match {
-    case Access.Standard(_, _, _, _, _, Some(submissionData)) => Some(submissionData)
-    case _                                                    => None
+    case Access.Standard(_, _, _, _, _, _, Some(submissionData)) => Some(submissionData)
+    case _                                                       => None
   }
 
   import monocle.syntax.all._

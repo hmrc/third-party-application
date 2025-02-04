@@ -189,8 +189,8 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
   def isStandardNewJourneyApp(app: StoredApplication) =
     cond(
       app.access match {
-        case Access.Standard(_, _, _, _, _, Some(_)) => true
-        case _                                       => false
+        case Access.Standard(_, _, _, _, _, _, Some(_)) => true
+        case _                                          => false
       },
       GenericFailure("Must be a standard new journey application")
     )
@@ -201,8 +201,8 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def getResponsibleIndividual(app: StoredApplication) =
     app.access match {
-      case Access.Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
-      case _                                                                                                   => None
+      case Access.Standard(_, _, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
+      case _                                                                                                      => None
     }
 
   def ensureResponsibleIndividualDefined(app: StoredApplication) =

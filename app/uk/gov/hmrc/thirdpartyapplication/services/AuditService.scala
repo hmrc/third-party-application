@@ -91,7 +91,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       case evt: ApplicationDeletedByGatekeeper                 => auditApplicationDeletedByGatekeeper(app, evt)
       case evt: ApiSubscribedV2                                => auditApiSubscribed(app, evt)
       case evt: ApiUnsubscribedV2                              => auditApiUnsubscribed(app, evt)
-      case evt: RedirectUrisUpdatedV2                          => auditRedirectUrisUpdated(app, evt)
+      case evt: LoginRedirectUrisUpdatedV2                     => auditRedirectUrisUpdated(app, evt)
       case evt: SandboxApplicationNameChanged                  => auditSandboxApplicationNameChangeAction(app, evt)
       case evt: SandboxApplicationPrivacyPolicyUrlChanged      => auditSandboxApplicationPrivacyPolicyUrlChanged(app, evt)
       case evt: SandboxApplicationPrivacyPolicyUrlRemoved      => auditSandboxApplicationPrivacyPolicyUrlRemoved(app, evt)
@@ -247,7 +247,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .toOption
       .value
 
-  private def auditRedirectUrisUpdated(app: StoredApplication, evt: RedirectUrisUpdatedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditRedirectUrisUpdated(app: StoredApplication, evt: LoginRedirectUrisUpdatedV2)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     E.liftF(audit(
       AppRedirectUrisChanged,
       Map("applicationId" -> app.id.value.toString, "newRedirectUris" -> evt.newRedirectUris.mkString(","))

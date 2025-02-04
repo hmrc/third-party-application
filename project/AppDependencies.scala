@@ -4,10 +4,10 @@ import org.apache.ivy.core.module.descriptor.ExcludeRule
 object AppDependencies {
   def apply(): Seq[ModuleID] = compileDeps ++ testDeps
 
-  lazy val bootstrapVersion         = "9.2.0"
-  lazy val hmrcMongoVersion         = "1.7.0"
-  lazy val applicationEventVersion  = "0.73.0"
-  lazy val applicationDomainVersion = "0.70.0"
+  lazy val bootstrapVersion         = "9.7.0"
+  lazy val hmrcMongoVersion         = "2.4.0"
+  lazy val applicationEventVersion  = "0.74.0"
+  lazy val applicationDomainVersion = "0.71.0"
 
   private lazy val compileDeps = Seq(
     "uk.gov.hmrc"                   %% "bootstrap-backend-play-30"                % bootstrapVersion,

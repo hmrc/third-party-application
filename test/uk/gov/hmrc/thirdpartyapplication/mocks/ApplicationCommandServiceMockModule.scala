@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.LoginRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -63,13 +63,13 @@ trait ApplicationCommandServiceMockModule extends MockitoSugar with ArgumentMatc
 
       def thenReturnCommandSuccess(applicationData: StoredApplication) = {
         val dummyEvents                     =
-          NonEmptyList.one(ApplicationEvents.RedirectUrisUpdatedV2(
+          NonEmptyList.one(ApplicationEvents.LoginRedirectUrisUpdatedV2(
             EventId.random,
             ApplicationId.random,
             FixedClock.instant,
             Actors.AppCollaborator("someuser".toLaxEmail),
             List.empty,
-            List(new RedirectUri("new URI"))
+            List(new LoginRedirectUri("new URI"))
           ))
         val success: CommandHandler.Success = (applicationData, dummyEvents)
         when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(E.pure(success))

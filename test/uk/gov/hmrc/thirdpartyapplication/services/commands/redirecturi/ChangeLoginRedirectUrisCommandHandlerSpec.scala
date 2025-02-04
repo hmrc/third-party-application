@@ -21,22 +21,23 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RedirectUri
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteRedirectUri
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.LoginRedirectUri
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeLoginRedirectUri
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
-class DeleteRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
+class ChangeLoginRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends ApplicationRepositoryMockModule {
-    val underTest = new DeleteRedirectUriCommandHandler(ApplicationRepoMock.aMock)
+    val underTest = new ChangeLoginRedirectUriCommandHandler(ApplicationRepoMock.aMock)
 
-    val toBeDeletedRedirectUri          = RedirectUri.unsafeApply("https://new-url.example.com")
-    val toRemainRedirectUri             = RedirectUri.unsafeApply("https://new-url.example.com/other-redirect")
-    val originalUris                    = List(toBeDeletedRedirectUri, toRemainRedirectUri)
-    val nonExistantUri                  = RedirectUri.unsafeApply("https://otherurl.com/not-there")
+    val untouchedUri                    = LoginRedirectUri.unsafeApply("https://leavemebe.example.com")
+    val toBeReplacedRedirectUri         = LoginRedirectUri.unsafeApply("https://new-url.example.com")
+    val replacementUri                  = LoginRedirectUri.unsafeApply("https://new-url.example.com/other-redirect")
+    val originalUris                    = List(toBeReplacedRedirectUri, untouchedUri)
+    val nonExistantUri                  = LoginRedirectUri.unsafeApply("https://otherurl.com/not-there")
     val principalApp: StoredApplication = storedApp.withAccess(Access.Standard(originalUris)).withCollaborators(devAndAdminCollaborators)
     val subordinateApp                  = principalApp.inSandbox()
 
@@ -44,8 +45,8 @@ class DeleteRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val developerActor       = Actors.AppCollaborator(developerCollaborator.emailAddress)
 
     val timestamp  = FixedClock.instant
-    val cmdAsAdmin = DeleteRedirectUri(adminActor, toBeDeletedRedirectUri, instant)
-    val cmdAsDev   = DeleteRedirectUri(developerActor, toBeDeletedRedirectUri, instant)
+    val cmdAsAdmin = ChangeLoginRedirectUri(adminActor, toBeReplacedRedirectUri, replacementUri, instant)
+    val cmdAsDev   = ChangeLoginRedirectUri(developerActor, toBeReplacedRedirectUri, replacementUri, instant)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
       inside(result) { case (app, events) =>
@@ -53,25 +54,26 @@ class DeleteRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
         val event = events.head
 
         inside(event) {
-          case ApplicationEvents.RedirectUriDeleted(_, appId, eventDateTime, actor, deleted) =>
+          case ApplicationEvents.LoginRedirectUriChanged(_, appId, eventDateTime, actor, oldUri, newUri) =>
             appId shouldBe applicationId
             actor shouldBe expectedActor
             eventDateTime shouldBe timestamp
-            deleted shouldBe toBeDeletedRedirectUri
+            oldUri shouldBe toBeReplacedRedirectUri
+            newUri shouldBe replacementUri
         }
       }
     }
   }
 
-  "DeleteRedirectUrisCommandHandler" when {
+  "ChangeRedirectUrisCommandHandler" when {
     "given a principal application" should {
       "succeed when application is standardAccess" in new Setup {
-        ApplicationRepoMock.UpdateRedirectUris.thenReturn(List(toRemainRedirectUri))(principalApp) // Dont need to test the repo here so just return any app
+        val expectedUrisAfterChange = List(replacementUri, untouchedUri)
+        ApplicationRepoMock.UpdateLoginRedirectUris.thenReturn(expectedUrisAfterChange)(principalApp) // Dont need to test the repo here so just return any app
 
         val result = await(underTest.process(principalApp, cmdAsAdmin).value).value
 
         checkSuccessResult(adminActor)(result)
-
       }
 
       "return an error for a non-admin developer" in new Setup {
@@ -80,9 +82,9 @@ class DeleteRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
         }
       }
 
-      "fail when we try to delete non existant URI" in new Setup {
+      "fail when we try to change non existant URI" in new Setup {
         checkFailsWith(s"RedirectUri ${nonExistantUri} does not exist") {
-          val brokenCmd = cmdAsAdmin.copy(redirectUriToDelete = nonExistantUri)
+          val brokenCmd = cmdAsAdmin.copy(redirectUriToReplace = nonExistantUri)
           underTest.process(principalApp, brokenCmd)
         }
         ApplicationRepoMock.verifyZeroInteractions()
@@ -98,7 +100,8 @@ class DeleteRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     "given a subordinate application" should {
       "succeed for a developer" in new Setup {
-        ApplicationRepoMock.UpdateRedirectUris.thenReturn(List(toRemainRedirectUri))(subordinateApp) // Dont need to test the repo here so just return any app
+        val expectedUrisAfterChange = List(replacementUri, untouchedUri)
+        ApplicationRepoMock.UpdateLoginRedirectUris.thenReturn(expectedUrisAfterChange)(subordinateApp) // Dont need to test the repo here so just return any app
 
         val result = await(underTest.process(subordinateApp, cmdAsDev).value).value
 

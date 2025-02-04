@@ -94,8 +94,8 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
 
   private def getResponsibleIndividual(app: ApplicationWithCollaborators): Option[ResponsibleIndividual] = {
     app.access match {
-      case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => Some(importantSubmissionData.responsibleIndividual)
-      case _                                                             => None
+      case Access.Standard(_, _, _, _, _, _, Some(importantSubmissionData)) => Some(importantSubmissionData.responsibleIndividual)
+      case _                                                                => None
     }
   }
 

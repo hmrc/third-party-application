@@ -152,7 +152,7 @@ class ApplicationRepositorySerialisationISpec
   }
 
   "create application with invalid redirect UR in db and test we can read it back " in new Setup {
-    val invalidUri        = new RedirectUri("bobbins") // Using new to avoid validation of the apply method
+    val invalidUri        = new LoginRedirectUri("bobbins") // Using new to avoid validation of the apply method
     val data              = applicationData.withAccess(Access.Standard().copy(redirectUris = List(invalidUri)))
     val rawJson: JsObject = applicationToMongoJson(data, allowAutoDelete = Some(true))
     saveApplicationAsMongoJson(rawJson)
@@ -163,8 +163,8 @@ class ApplicationRepositorySerialisationISpec
         application.id mustBe applicationId
         application.allowAutoDelete mustBe true
         application.access match {
-          case Access.Standard(redirectUris, _, _, _, _, _) => redirectUris.head mustBe invalidUri
-          case _                                            => fail()
+          case Access.Standard(redirectUris, _, _, _, _, _, _) => redirectUris.head mustBe invalidUri
+          case _                                               => fail()
         }
       }
       case None              => fail()

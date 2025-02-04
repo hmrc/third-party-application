@@ -60,7 +60,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
     val applicationData = storedApp.copy(
       collaborators = Set(adminOne),
-      access = Access.Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
+      access = Access.Standard(List.empty, List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationStateExamples.pendingGatekeeperApproval(requesterEmail.text, requesterName)
     )
     val ts              = FixedClock.instant
@@ -146,7 +146,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      val oldJourneyApp = applicationData.withAccess(Access.Standard(List.empty, None, None, Set.empty, None, None))
+      val oldJourneyApp = applicationData.withAccess(Access.Standard(List.empty, List.empty, None, None, Set.empty, None, None))
       checkFailsWith("Must be a standard new journey application") {
         underTest.process(oldJourneyApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, instant))
       }

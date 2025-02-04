@@ -44,7 +44,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.UpdateRedirectUrisCommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.UpdateLoginRedirectUrisCommandHandler
 import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplicationAccessOverridesCommandHandler, ChangeApplicationScopesCommandHandler}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
@@ -92,10 +92,10 @@ class ApplicationCommandDispatcherSpec
       mockDeleteApplicationByCollaboratorCommandHandler,
       mockDeleteUnusedApplicationCommandHandler,
       mockDeleteProductionCredentialsApplicationCommandHandler,
-      mockAddRedirectUriCommandHandler,
-      mockDeleteRedirectUriCommandHandler,
-      mockChangeRedirectUriCommandHandler,
-      mockUpdateRedirectUrisCommandHandler,
+      mockAddLoginRedirectUriCommandHandler,
+      mockDeleteLoginRedirectUriCommandHandler,
+      mockChangeLoginRedirectUriCommandHandler,
+      mockUpdateLoginRedirectUrisCommandHandler,
       mockChangeResponsibleIndividualToSelfCommandHandler,
       mockChangeResponsibleIndividualToOtherCommandHandler,
       mockVerifyResponsibleIndividualCommandHandler,
@@ -830,10 +830,10 @@ class ApplicationCommandDispatcherSpec
     }
 
     "UpdateRedirectUris is received" should {
-      val oldUris = List("https://uri1/a", "https://uri2/a").map(RedirectUri.unsafeApply(_))
-      val newUris = List("https://uri3/a", "https://uri4/a").map(RedirectUri.unsafeApply(_))
-      val cmd     = UpdateRedirectUris(otherAdminAsActor, oldUris, newUris, timestamp)
-      val evt     = ApplicationEvents.RedirectUrisUpdatedV2(
+      val oldUris = List("https://uri1/a", "https://uri2/a").map(LoginRedirectUri.unsafeApply(_))
+      val newUris = List("https://uri3/a", "https://uri4/a").map(LoginRedirectUri.unsafeApply(_))
+      val cmd     = UpdateLoginRedirectUris(otherAdminAsActor, oldUris, newUris, timestamp)
+      val evt     = ApplicationEvents.LoginRedirectUrisUpdatedV2(
         EventId.random,
         applicationId,
         instant,
@@ -845,14 +845,14 @@ class ApplicationCommandDispatcherSpec
       "call UpdateRedirectUris Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockUpdateRedirectUrisCommandHandler.process(*[StoredApplication], *[UpdateRedirectUris])).thenReturn(E.pure((
+        when(mockUpdateLoginRedirectUrisCommandHandler.process(*[StoredApplication], *[UpdateLoginRedirectUris])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
-        verifyNoneButGivenCmmandHandlerCalled[UpdateRedirectUrisCommandHandler]()
+        verifyNoneButGivenCmmandHandlerCalled[UpdateLoginRedirectUrisCommandHandler]()
       }
 
       "bubble up exception when application fetch fails" in new Setup {

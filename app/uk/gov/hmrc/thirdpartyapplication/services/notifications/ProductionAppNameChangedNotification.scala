@@ -40,8 +40,8 @@ object ProductionAppNameChangedNotification {
 
   private def getResponsibleIndividual(app: StoredApplication): Set[LaxEmailAddress] = {
     app.access match {
-      case Access.Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress)
-      case _                                                             => Set()
+      case Access.Standard(_, _, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress)
+      case _                                                                => Set()
     }
   }
 }

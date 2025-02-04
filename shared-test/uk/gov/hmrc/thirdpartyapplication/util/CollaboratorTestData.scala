@@ -35,6 +35,7 @@ trait CollaboratorTestData extends CollaboratorFixtures {
     case developerOne.emailAddress => developerOne.userId
     case s: String                 => idsByEmail.getOrElseUpdate(s, UserId.random)
     case LaxEmailAddress(text)     => idsByEmail.getOrElseUpdate(text, UserId.random)
+    case _                         => throw new IllegalArgumentException("Only strings and lax email addresses are supported")
   }
 
   import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax

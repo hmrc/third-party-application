@@ -101,15 +101,15 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockSubscribeToApiCommandHandler: SubscribeToApiCommandHandler                                                   = mock[SubscribeToApiCommandHandler]
     val mockUnsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler                                           = mock[UnsubscribeFromApiCommandHandler]
     val mockUnsubscribeFromRetiredApiCommandHandler: UnsubscribeFromRetiredApiCommandHandler                             = mock[UnsubscribeFromRetiredApiCommandHandler]
-    val mockUpdateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler                                           = mock[UpdateRedirectUrisCommandHandler]
+    val mockUpdateLoginRedirectUrisCommandHandler: UpdateLoginRedirectUrisCommandHandler                                 = mock[UpdateLoginRedirectUrisCommandHandler]
     val mockChangeGrantLengthCommandHandler: ChangeGrantLengthCommandHandler                                             = mock[ChangeGrantLengthCommandHandler]
     val mockChangeRateLimitTierCommandHandler: ChangeRateLimitTierCommandHandler                                         = mock[ChangeRateLimitTierCommandHandler]
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler                 = mock[ChangeProductionApplicationNameCommandHandler]
     val mockAddClientSecretCommandHandler: AddClientSecretCommandHandler                                                 = mock[AddClientSecretCommandHandler]
     val mockRemoveClientSecretCommandHandler: RemoveClientSecretCommandHandler                                           = mock[RemoveClientSecretCommandHandler]
-    val mockAddRedirectUriCommandHandler: AddRedirectUriCommandHandler                                                   = mock[AddRedirectUriCommandHandler]
-    val mockChangeRedirectUriCommandHandler: ChangeRedirectUriCommandHandler                                             = mock[ChangeRedirectUriCommandHandler]
-    val mockDeleteRedirectUriCommandHandler: DeleteRedirectUriCommandHandler                                             = mock[DeleteRedirectUriCommandHandler]
+    val mockAddLoginRedirectUriCommandHandler: AddLoginRedirectUriCommandHandler                                         = mock[AddLoginRedirectUriCommandHandler]
+    val mockChangeLoginRedirectUriCommandHandler: ChangeLoginRedirectUriCommandHandler                                   = mock[ChangeLoginRedirectUriCommandHandler]
+    val mockDeleteLoginRedirectUriCommandHandler: DeleteLoginRedirectUriCommandHandler                                   = mock[DeleteLoginRedirectUriCommandHandler]
     val mockAllowApplicationDeleteCommandHandler: AllowApplicationDeleteCommandHandler                                   = mock[AllowApplicationDeleteCommandHandler]
     val mockRestrictApplicationDeleteCommandHandler: RestrictApplicationDeleteCommandHandler                             = mock[RestrictApplicationDeleteCommandHandler]
     val mockChangeIpAllowlistCommandHandler: ChangeIpAllowlistCommandHandler                                             = mock[ChangeIpAllowlistCommandHandler]
@@ -190,11 +190,11 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockChangeRateLimitTierCommandHandler
     )
 
-    val redirectUriCommandsProcessor = new RedirectUriCommandsProcessor(
-      mockAddRedirectUriCommandHandler,
-      mockDeleteRedirectUriCommandHandler,
-      mockChangeRedirectUriCommandHandler,
-      mockUpdateRedirectUrisCommandHandler
+    val redirectUriCommandsProcessor = new LoginRedirectUriCommandsProcessor(
+      mockAddLoginRedirectUriCommandHandler,
+      mockDeleteLoginRedirectUriCommandHandler,
+      mockChangeLoginRedirectUriCommandHandler,
+      mockUpdateLoginRedirectUrisCommandHandler
     )
 
     val submissionsCommandsProcessor = new SubmissionCommandsProcessor(
