@@ -38,7 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.ipallowlist.IpAllowLi
 import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription.NameDescriptionCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.policy.PolicyCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit.RateLimitCommandsProcessor
-import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.LoginRedirectUriCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.{LoginRedirectUriCommandsProcessor, PostLogoutRedirectUriCommandsProcessor}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.ScopesCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.submission.SubmissionCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription.SubscriptionCommandsProcessor
@@ -59,6 +59,7 @@ class ApplicationCommandDispatcher @Inject() (
     policyCommandsProcessor: PolicyCommandsProcessor,
     rateLimitCommandsProcessor: RateLimitCommandsProcessor,
     loginRedirectUriCommandsProcessor: LoginRedirectUriCommandsProcessor,
+    postLogoutRedirectUriCommandsProcessor: PostLogoutRedirectUriCommandsProcessor,
     submissionsCommandsProcessor: SubmissionCommandsProcessor,
     subscriptionCommandsProcessor: SubscriptionCommandsProcessor,
     blockCommandsProcessor: BlockCommandsProcessor,
@@ -86,19 +87,20 @@ class ApplicationCommandDispatcher @Inject() (
   // scalastyle:off cyclomatic.complexity
   private def process(app: StoredApplication, command: ApplicationCommand)(implicit hc: HeaderCarrier): AppCmdResultT = {
     command match {
-      case cmd: ClientSecretCommand    => clientSecretCommandsProcessor.process(app, cmd)
-      case cmd: CollaboratorCommand    => collaboratorCommandsProcessor.process(app, cmd)
-      case cmd: DeleteCommand          => deleteCommandsProcessor.process(app, cmd)
-      case cmd: GrantLengthCommand     => grantLengthCommandsProcessor.process(app, cmd)
-      case cmd: IpAllowListCommand     => ipAllowListCommandsProcessor.process(app, cmd)
-      case cmd: NameDescriptionCommand => nameDescriptionCommandsProcessor.process(app, cmd)
-      case cmd: PolicyCommand          => policyCommandsProcessor.process(app, cmd)
-      case cmd: RateLimitCommand       => rateLimitCommandsProcessor.process(app, cmd)
-      case cmd: LoginRedirectCommand   => loginRedirectUriCommandsProcessor.process(app, cmd)
-      case cmd: SubmissionCommand      => submissionsCommandsProcessor.process(app, cmd)
-      case cmd: SubscriptionCommand    => subscriptionCommandsProcessor.process(app, cmd)
-      case cmd: BlockCommand           => blockCommandsProcessor.process(app, cmd)
-      case cmd: ScopesCommand          => scopesCommandsProcessor.process(app, cmd)
+      case cmd: ClientSecretCommand       => clientSecretCommandsProcessor.process(app, cmd)
+      case cmd: CollaboratorCommand       => collaboratorCommandsProcessor.process(app, cmd)
+      case cmd: DeleteCommand             => deleteCommandsProcessor.process(app, cmd)
+      case cmd: GrantLengthCommand        => grantLengthCommandsProcessor.process(app, cmd)
+      case cmd: IpAllowListCommand        => ipAllowListCommandsProcessor.process(app, cmd)
+      case cmd: NameDescriptionCommand    => nameDescriptionCommandsProcessor.process(app, cmd)
+      case cmd: PolicyCommand             => policyCommandsProcessor.process(app, cmd)
+      case cmd: RateLimitCommand          => rateLimitCommandsProcessor.process(app, cmd)
+      case cmd: LoginRedirectCommand      => loginRedirectUriCommandsProcessor.process(app, cmd)
+      case cmd: PostLogoutRedirectCommand => postLogoutRedirectUriCommandsProcessor.process(app, cmd)
+      case cmd: SubmissionCommand         => submissionsCommandsProcessor.process(app, cmd)
+      case cmd: SubscriptionCommand       => subscriptionCommandsProcessor.process(app, cmd)
+      case cmd: BlockCommand              => blockCommandsProcessor.process(app, cmd)
+      case cmd: ScopesCommand             => scopesCommandsProcessor.process(app, cmd)
     }
   }
   // scalastyle:on cyclomatic.complexity
