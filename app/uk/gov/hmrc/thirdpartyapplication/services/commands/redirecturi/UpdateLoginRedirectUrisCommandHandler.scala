@@ -23,6 +23,8 @@ import cats._
 import cats.data._
 import cats.implicits._
 
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.LoginRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateLoginRedirectUris
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
@@ -36,23 +38,23 @@ class UpdateLoginRedirectUrisCommandHandler @Inject() (applicationRepository: Ap
 
   import CommandHandler._
 
-  private def validate(app: StoredApplication, cmd: UpdateLoginRedirectUris): Validated[Failures, Unit] = {
+  private def validate(app: StoredApplication, cmd: UpdateLoginRedirectUris): Validated[Failures, Access.Standard] = {
     val hasFiveOrFewerURIs = cond(cmd.newRedirectUris.size <= 5, CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
     Apply[Validated[Failures, *]].map3(
       ensureStandardAccess(app),
       isAdminIfInProductionOrGatekeeperActor(cmd.actor, app),
       hasFiveOrFewerURIs
-    )((_, _, _) => ())
+    )((s, _, _) => s)
   }
 
-  private def asEvents(app: StoredApplication, cmd: UpdateLoginRedirectUris): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, oldUris: List[LoginRedirectUri], cmd: UpdateLoginRedirectUris): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
       LoginRedirectUrisUpdatedV2(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
-        oldRedirectUris = cmd.oldRedirectUris,
+        oldRedirectUris = oldUris,
         newRedirectUris = cmd.newRedirectUris
       )
     )
@@ -60,9 +62,9 @@ class UpdateLoginRedirectUrisCommandHandler @Inject() (applicationRepository: Ap
 
   def process(app: StoredApplication, cmd: UpdateLoginRedirectUris): AppCmdResultT = {
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
-      savedApp <- E.liftF(applicationRepository.updateLoginRedirectUris(app.id, cmd.newRedirectUris))
-      events    = asEvents(savedApp, cmd)
+      stdAccess <- E.fromEither(validate(app, cmd).toEither)
+      savedApp  <- E.liftF(applicationRepository.updateLoginRedirectUris(app.id, cmd.newRedirectUris))
+      events     = asEvents(savedApp, stdAccess.redirectUris, cmd)
     } yield (savedApp, events)
   }
 }
