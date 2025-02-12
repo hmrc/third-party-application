@@ -349,6 +349,16 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         ApplicationRepoMock.verify.updateLoginRedirectUris(eqTo(applicationId), eqTo(redirectUris))
     }
 
+    object UpdatePostLogoutRedirectUris {
+
+      def thenReturn(redirectUris: List[PostLogoutRedirectUri])(updatedApplication: StoredApplication) = {
+        when(aMock.updatePostLogoutRedirectUris(eqTo(updatedApplication.id), eqTo(redirectUris))).thenReturn(successful(updatedApplication))
+      }
+
+      def verifyCalledWith(applicationId: ApplicationId, redirectUris: List[PostLogoutRedirectUri]) =
+        ApplicationRepoMock.verify.updatePostLogoutRedirectUris(eqTo(applicationId), eqTo(redirectUris))
+    }
+
     object DeleteClientSecret {
 
       def succeeds(application: StoredApplication, clientSecretId: ClientSecret.Id) = {

@@ -102,6 +102,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     val mockUnsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler                                           = mock[UnsubscribeFromApiCommandHandler]
     val mockUnsubscribeFromRetiredApiCommandHandler: UnsubscribeFromRetiredApiCommandHandler                             = mock[UnsubscribeFromRetiredApiCommandHandler]
     val mockUpdateLoginRedirectUrisCommandHandler: UpdateLoginRedirectUrisCommandHandler                                 = mock[UpdateLoginRedirectUrisCommandHandler]
+    val mockUpdatePostLogoutRedirectUrisCommandHandler: UpdatePostLogoutRedirectUrisCommandHandler                       = mock[UpdatePostLogoutRedirectUrisCommandHandler]
     val mockChangeGrantLengthCommandHandler: ChangeGrantLengthCommandHandler                                             = mock[ChangeGrantLengthCommandHandler]
     val mockChangeRateLimitTierCommandHandler: ChangeRateLimitTierCommandHandler                                         = mock[ChangeRateLimitTierCommandHandler]
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler                 = mock[ChangeProductionApplicationNameCommandHandler]
@@ -190,11 +191,15 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockChangeRateLimitTierCommandHandler
     )
 
-    val redirectUriCommandsProcessor = new LoginRedirectUriCommandsProcessor(
+    val loginRedirectUriCommandsProcessor = new LoginRedirectUriCommandsProcessor(
       mockAddLoginRedirectUriCommandHandler,
       mockDeleteLoginRedirectUriCommandHandler,
       mockChangeLoginRedirectUriCommandHandler,
       mockUpdateLoginRedirectUrisCommandHandler
+    )
+
+    val postLogoutRedirectUriCommandsProcessor = new PostLogoutRedirectUriCommandsProcessor(
+      mockUpdatePostLogoutRedirectUrisCommandHandler
     )
 
     val submissionsCommandsProcessor = new SubmissionCommandsProcessor(
@@ -232,7 +237,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       nameDescriptionCommandsProcessor,
       policyCommandsProcessor,
       rateLimitCommandsProcessor,
-      redirectUriCommandsProcessor,
+      loginRedirectUriCommandsProcessor,
+      postLogoutRedirectUriCommandsProcessor,
       submissionsCommandsProcessor,
       subscriptionCommandsProcessor,
       blockCommandsProcessor,

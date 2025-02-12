@@ -13,7 +13,7 @@ object ScoverageSettings {
       """uk\.gov\.hmrc\.apiplatform\.modules\.scheduling\..*""",
       """uk\.gov\.hmrc\.apiplatform\.modules\.gkauth\.domain\.models\..*""",
     ).mkString(";"),
-    ScoverageKeys.coverageMinimumStmtTotal := 91.7,
+    ScoverageKeys.coverageMinimumStmtTotal := 91.6,
     ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true
   )

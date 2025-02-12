@@ -855,6 +855,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def updateLoginRedirectUris(applicationId: ApplicationId, redirectUris: List[LoginRedirectUri]) =
     updateApplication(applicationId, Updates.set("access.redirectUris", Codecs.toBson(redirectUris)))
 
+  def updatePostLogoutRedirectUris(applicationId: ApplicationId, redirectUris: List[PostLogoutRedirectUri]) =
+    updateApplication(applicationId, Updates.set("access.postLogoutRedirectUris", Codecs.toBson(redirectUris)))
+
   def updateApplicationName(applicationId: ApplicationId, name: String): Future[StoredApplication] =
     updateApplication(
       applicationId,

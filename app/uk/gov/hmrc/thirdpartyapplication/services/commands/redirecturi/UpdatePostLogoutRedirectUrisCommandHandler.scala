@@ -24,8 +24,8 @@ import cats.data._
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.LoginRedirectUri
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateLoginRedirectUris
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.PostLogoutRedirectUri
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdatePostLogoutRedirectUris
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
@@ -34,22 +34,22 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
-class UpdateLoginRedirectUrisCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
+class UpdatePostLogoutRedirectUrisCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 
-  private def validate(app: StoredApplication, cmd: UpdateLoginRedirectUris): Validated[Failures, Access.Standard] = {
+  private def validate(app: StoredApplication, cmd: UpdatePostLogoutRedirectUris): Validated[Failures, Access.Standard] = {
     val hasFiveOrFewerURIs = cond(cmd.newRedirectUris.size <= 5, CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
     Apply[Validated[Failures, *]].map3(
       ensureStandardAccess(app),
       isAdminIfInProductionOrGatekeeperActor(cmd.actor, app),
       hasFiveOrFewerURIs
-    )((s, _, _) => s)
+    )((stdAccess, _, _) => stdAccess)
   }
 
-  private def asEvents(app: StoredApplication, oldUris: List[LoginRedirectUri], cmd: UpdateLoginRedirectUris): NonEmptyList[ApplicationEvent] = {
+  private def asEvents(app: StoredApplication, oldUris: List[PostLogoutRedirectUri], cmd: UpdatePostLogoutRedirectUris): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
-      LoginRedirectUrisUpdatedV2(
+      PostLogoutRedirectUrisUpdated(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
@@ -60,11 +60,11 @@ class UpdateLoginRedirectUrisCommandHandler @Inject() (applicationRepository: Ap
     )
   }
 
-  def process(app: StoredApplication, cmd: UpdateLoginRedirectUris): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: UpdatePostLogoutRedirectUris): AppCmdResultT = {
     for {
       stdAccess <- E.fromEither(validate(app, cmd).toEither)
-      savedApp  <- E.liftF(applicationRepository.updateLoginRedirectUris(app.id, cmd.newRedirectUris))
-      events     = asEvents(savedApp, stdAccess.redirectUris, cmd)
+      savedApp  <- E.liftF(applicationRepository.updatePostLogoutRedirectUris(app.id, cmd.newRedirectUris))
+      events     = asEvents(savedApp, stdAccess.postLogoutRedirectUris, cmd)
     } yield (savedApp, events)
   }
 }
