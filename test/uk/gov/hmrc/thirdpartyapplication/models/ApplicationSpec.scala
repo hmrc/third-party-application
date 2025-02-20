@@ -19,12 +19,12 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationStateFixtures, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
   CreateApplicationRequestV2,
+  CreationAccess,
   StandardAccessDataToCopy
 }
 import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, StoredToken}
@@ -52,7 +52,7 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with 
     }
   }
 
-  def createRequestV1(access: Access, environment: Environment) = {
+  def createRequestV1(access: CreationAccess, environment: Environment) = {
     val request: CreateApplicationRequest =
       CreateApplicationRequestV1.create(
         name = ApplicationName("an application"),
@@ -94,7 +94,7 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with 
     }
 
     "be automatically uplifted to PRODUCTION state when the app is for the sandbox environment" in {
-      val actual = createRequestV1(Access.Standard(), Environment.SANDBOX)
+      val actual = createRequestV1(CreationAccess.Standard, Environment.SANDBOX)
       actual.state.name shouldBe State.PRODUCTION
     }
 
@@ -104,17 +104,12 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with 
     }
 
     "defer to PRIVILEGED accessType to determine application state when the app is for the production environment" in {
-      val actual = createRequestV1(Access.Privileged(), Environment.PRODUCTION)
-      actual.state.name shouldBe State.PRODUCTION
-    }
-
-    "defer to ROPC accessType to determine application state when the app is for the production environment" in {
-      val actual = createRequestV1(Access.Ropc(), Environment.PRODUCTION)
+      val actual = createRequestV1(CreationAccess.Privileged, Environment.PRODUCTION)
       actual.state.name shouldBe State.PRODUCTION
     }
 
     "use the same value for createdOn and lastAccess fields" in {
-      val actual = createRequestV1(Access.Standard(), Environment.PRODUCTION)
+      val actual = createRequestV1(CreationAccess.Standard, Environment.PRODUCTION)
       actual.createdOn shouldBe actual.lastAccess.get
     }
   }

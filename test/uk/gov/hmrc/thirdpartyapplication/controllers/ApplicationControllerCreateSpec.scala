@@ -37,6 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
   CreateApplicationRequestV2,
+  CreationAccess,
   StandardAccessDataToCopy
 }
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
@@ -110,14 +111,12 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
   "Create" should {
     val standardApplicationRequest   = aCreateApplicationRequestV2(StandardAccessDataToCopy(standardAccessOne.redirectUris))
-    val standardApplicationRequestV1 = aCreateApplicationRequestV1(standardAccessOne)
-    val privilegedApplicationRequest = aCreateApplicationRequestV1(myPrivilegedAccess)
-    val ropcApplicationRequest       = aCreateApplicationRequestV1(ropcAccess)
+    val standardApplicationRequestV1 = aCreateApplicationRequestV1(CreationAccess.Standard)
+    val privilegedApplicationRequest = aCreateApplicationRequestV1(CreationAccess.Privileged)
 
     val standardApplicationResponse   = CreateApplicationResponse(standardApp.withAccess(standardAccessOne))
     val totp                          = CreateApplicationResponse.TotpSecret("pTOTP")
     val privilegedApplicationResponse = CreateApplicationResponse(privilegedApp.withAccess(myPrivilegedAccess), Some(totp))
-    val ropcApplicationResponse       = CreateApplicationResponse(ropcApp)
 
     "succeed with a 201 (Created) for a valid Access.Standard application request when service responds successfully" in new Setup {
       ApplicationServiceMock.Create.onRequestReturn(standardApplicationRequest)(standardApplicationResponse)
@@ -153,19 +152,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       (contentAsJson(result) \ "totp").as[CreateApplicationResponse.TotpSecret] shouldBe totp
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(privilegedApplicationRequest))(*)
-    }
-
-    "succeed with a 201 (Created) for a valid ROPC application request when gatekeeper is logged in and service responds successfully" in new Setup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-      ApplicationServiceMock.Create.onRequestReturn(ropcApplicationRequest)(ropcApplicationResponse)
-      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
-      UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
-      SubmissionsServiceMock.Create.thenReturn(aSubmission)
-
-      val result = underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest)))
-
-      status(result) shouldBe CREATED
-      verify(underTest.applicationService).create(eqTo(ropcApplicationRequest))(*)
     }
 
     "succeed with a 201 (Created) for a valid Access.Standard application request with one subscription when service responds successfully" in new Setup {
@@ -227,15 +213,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       verify(underTest.applicationService, never).create(any[CreateApplicationRequest])(*)
     }
 
-    "fail with a 401 (Unauthorized) for a valid ROPC application request when gatekeeper is not logged in" in new Setup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-
-      val result = underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest)))
-      status(result) shouldBe UNAUTHORIZED
-
-      verify(underTest.applicationService, never).create(any[CreateApplicationRequest])(*)
-    }
-
     "fail with a 409 (Conflict) for a privileged application when the name already exists for another production application" in new Setup {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
@@ -264,10 +241,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
            |"name" : "My Application",
            |"environment": "PRODUCTION",
            |"access" : {
-           |  "accessType" : "STANDARD",
-           |  "redirectUris" : [],
-           |  "postLogoutRedirectUris": [],
-           |  "overrides" : []
+           |  "accessType" : "STANDARD"
            |},
            |"collaborators": [
            |{"emailAddress": "admin@example.com","role": "ADMINISTRATOR", "userId": "${id.value}"},
@@ -279,32 +253,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
       (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: duplicate email in collaborator"
-    }
-
-    "fail with a 422 (unprocessable entity) when request exceeds maximum number of redirect URIs" in new Setup {
-      val createApplicationRequestJson: String =
-        s"""{
-          "name" : "My Application",
-          "environment": "PRODUCTION",
-          "access": {
-            "accessType": "STANDARD",
-            "redirectUris": [
-              "https://localhost:8080/redirect1", "https://localhost:8080/redirect2",
-              "https://localhost:8080/redirect3", "https://localhost:8080/redirect4",
-              "https://localhost:8080/redirect5", "https://localhost:8080/redirect6"
-            ],
-            "postLogoutRedirectUris": [],
-            "overrides" : []
-          },
-          "collaborators": [{"emailAddress": "admin@example.com","role": "ADMINISTRATOR", "userId": "${UserId.random.value}"}]
-          }"""
-
-      val parsed          = Json.parse(createApplicationRequestJson)
-      val requestWithBody = request.withBody(parsed)
-      val result          = underTest.create()(requestWithBody)
-
-      status(result) shouldBe UNPROCESSABLE_ENTITY
-      (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: maximum number of login redirect URIs exceeded"
     }
 
     "fail with a 422 (unprocessable entity) when incomplete json is provided" in new Setup {
@@ -366,7 +314,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
   }
 
-  private def aCreateApplicationRequestV1(access: Access) = CreateApplicationRequestV1(
+  private def aCreateApplicationRequestV1(access: CreationAccess) = CreateApplicationRequestV1(
     ApplicationName("My Application"),
     access,
     Some("Description"),

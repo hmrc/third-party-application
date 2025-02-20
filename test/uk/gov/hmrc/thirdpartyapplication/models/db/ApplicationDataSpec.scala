@@ -19,12 +19,12 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, GrantLength}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
   CreateApplicationRequestV2,
+  CreationAccess,
   StandardAccessDataToCopy
 }
 import uk.gov.hmrc.thirdpartyapplication.util._
@@ -41,7 +41,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
         val request: CreateApplicationRequest =
           CreateApplicationRequestV1.create(
             name = ApplicationName("bob"),
-            access = Access.Standard(),
+            access = CreationAccess.Standard,
             description = None,
             environment = Environment.PRODUCTION,
             collaborators = Set("jim@example.com".admin()),
@@ -51,29 +51,13 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
         StoredApplication.create(request, "bob", token).checkInformation shouldBe None
       }
 
-      "set the check information for subscriptions when app is created with subs" in {
-        val token = StoredToken(ClientId.random, "st")
-
-        val request: CreateApplicationRequest =
-          CreateApplicationRequestV1.create(
-            name = ApplicationName("bob"),
-            access = Access.Standard(),
-            description = None,
-            environment = Environment.PRODUCTION,
-            collaborators = Set("jim@example.com".admin()),
-            subscriptions = Some(Set("context".asIdentifier))
-          )
-
-        StoredApplication.create(request, "bob", token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
-      }
-
       "ensure correct grant length when app is created" in {
         val token = StoredToken(ClientId.random, "st")
 
         val request: CreateApplicationRequest =
           CreateApplicationRequestV1.create(
             name = ApplicationName("bob"),
-            access = Access.Standard(),
+            access = CreationAccess.Standard,
             description = None,
             environment = Environment.PRODUCTION,
             collaborators = Set("jim@example.com".admin()),
