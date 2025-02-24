@@ -37,7 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSearch, AutoDeleteAllowed, StandardAccess => _}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSearch, StandardAccess => _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util._
 
@@ -96,72 +96,16 @@ class ApplicationRepositorySerialisationISpec
     }
   }
 
-  "repository" should {
-
-    "create application with no allowAutoDelete but read it back as true" in new Setup {
-      val rawJson: JsObject = applicationToMongoJson(applicationData, allowAutoDelete = None)
-      saveApplicationAsMongoJson(rawJson)
-      val result            = await(applicationRepository.fetch(applicationId))
-
-      result match {
-        case Some(application) => {
-          application.id mustBe applicationId
-          application.allowAutoDelete mustBe true
-          application.refreshTokensAvailableFor mustBe GrantLength.ONE_YEAR.period
-        }
-        case None              => fail()
-      }
-
-      val applicationSearch = new ApplicationSearch(filters = List(AutoDeleteAllowed))
-      val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
-
-      appSearchResult.applications.size mustBe 1
-      appSearchResult.applications.head.id mustBe applicationId
-      appSearchResult.applications.head.allowAutoDelete mustBe true
-      appSearchResult.applications.head.refreshTokensAvailableFor mustBe GrantLength.ONE_YEAR.period
-    }
-
-  }
-
-  "create application with allowAutoDelete set to false and read it back correctly" in new Setup {
-    val rawJson: JsObject = applicationToMongoJson(applicationData, allowAutoDelete = Some(false))
-    saveApplicationAsMongoJson(rawJson)
-    val result            = await(applicationRepository.fetch(applicationId))
-
-    result match {
-      case Some(application) => {
-        application.id mustBe applicationId
-        application.allowAutoDelete mustBe false
-      }
-      case None              => fail()
-    }
-  }
-
-  "create application with allowAutoDelete set to true and read it back correctly" in new Setup {
-    val rawJson: JsObject = applicationToMongoJson(applicationData, allowAutoDelete = Some(true))
-    saveApplicationAsMongoJson(rawJson)
-    val result            = await(applicationRepository.fetch(applicationId))
-
-    result match {
-      case Some(application) => {
-        application.id mustBe applicationId
-        application.allowAutoDelete mustBe true
-      }
-      case None              => fail()
-    }
-  }
-
   "create application with invalid redirect UR in db and test we can read it back " in new Setup {
     val invalidUri        = new LoginRedirectUri("bobbins") // Using new to avoid validation of the apply method
     val data              = applicationData.withAccess(Access.Standard().copy(redirectUris = List(invalidUri)))
-    val rawJson: JsObject = applicationToMongoJson(data, allowAutoDelete = Some(true))
+    val rawJson: JsObject = applicationToMongoJson(data)
     saveApplicationAsMongoJson(rawJson)
     val result            = await(applicationRepository.fetch(applicationId))
 
     result match {
       case Some(application) => {
         application.id mustBe applicationId
-        application.allowAutoDelete mustBe true
         application.access match {
           case Access.Standard(redirectUris, _, _, _, _, _, _) => redirectUris.head mustBe invalidUri
           case _                                               => fail()
@@ -172,99 +116,91 @@ class ApplicationRepositorySerialisationISpec
   }
 
   "create application with no grantLength or refreshTokensAvailableFor. refreshTokensAvailableFor is read back as default value " in new Setup {
-    val rawJson: JsObject = applicationToMongoJson(applicationData, None, None, false)
+    val rawJson: JsObject = applicationToMongoJson(applicationData, None, false)
     saveApplicationAsMongoJson(rawJson)
     val result            = await(applicationRepository.fetch(applicationId))
 
     result match {
       case Some(application) => {
         application.id mustBe applicationId
-        application.allowAutoDelete mustBe true
         application.refreshTokensAvailableFor mustBe GrantLength.EIGHTEEN_MONTHS.period
       }
       case None              => fail()
     }
 
-    val applicationSearch = new ApplicationSearch(filters = List(AutoDeleteAllowed))
+    val applicationSearch = new ApplicationSearch(filters = List())
     val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
 
     appSearchResult.applications.size mustBe 1
     appSearchResult.applications.head.id mustBe applicationId
-    appSearchResult.applications.head.allowAutoDelete mustBe true
     appSearchResult.applications.head.refreshTokensAvailableFor mustBe GrantLength.EIGHTEEN_MONTHS.period
   }
 
   "create application with grantLength 1 day but no refreshTokensAvailableFor. refreshTokensAvailableFor is read back as 1 day " in new Setup {
-    val rawJson: JsObject = applicationToMongoJson(applicationData, None, Some(1), false)
+    val rawJson: JsObject = applicationToMongoJson(applicationData, Some(1), false)
     saveApplicationAsMongoJson(rawJson)
     val result            = await(applicationRepository.fetch(applicationId))
 
     result match {
       case Some(application) => {
         application.id mustBe applicationId
-        application.allowAutoDelete mustBe true
         application.refreshTokensAvailableFor mustBe GrantLength.ONE_DAY.period
       }
       case None              => fail()
     }
 
-    val applicationSearch = new ApplicationSearch(filters = List(AutoDeleteAllowed))
+    val applicationSearch = new ApplicationSearch(filters = List())
     val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
 
     appSearchResult.applications.size mustBe 1
     appSearchResult.applications.head.id mustBe applicationId
-    appSearchResult.applications.head.allowAutoDelete mustBe true
     appSearchResult.applications.head.refreshTokensAvailableFor mustBe GrantLength.ONE_DAY.period
   }
 
   "create application with no grantLength but refreshTokensAvailableFor 1 month. refreshTokensAvailableFor is read back as 1 month " in new Setup {
-    val rawJson: JsObject = applicationToMongoJson(applicationData.copy(refreshTokensAvailableFor = GrantLength.ONE_MONTH.period), None, None, true)
+    val rawJson: JsObject = applicationToMongoJson(applicationData.copy(refreshTokensAvailableFor = GrantLength.ONE_MONTH.period), None, true)
     saveApplicationAsMongoJson(rawJson)
     val result            = await(applicationRepository.fetch(applicationId))
 
     result match {
       case Some(application) => {
         application.id mustBe applicationId
-        application.allowAutoDelete mustBe true
         application.refreshTokensAvailableFor mustBe GrantLength.ONE_MONTH.period
       }
       case None              => fail()
     }
 
-    val applicationSearch = new ApplicationSearch(filters = List(AutoDeleteAllowed))
+    val applicationSearch = new ApplicationSearch(filters = List())
     val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
 
     appSearchResult.applications.size mustBe 1
     appSearchResult.applications.head.id mustBe applicationId
-    appSearchResult.applications.head.allowAutoDelete mustBe true
     appSearchResult.applications.head.refreshTokensAvailableFor mustBe GrantLength.ONE_MONTH.period
   }
 
   "create application with grantLength 1 day and refreshTokensAvailableFor 1 month. refreshTokensAvailableFor is read back as 1 month " in new Setup {
-    val rawJson: JsObject = applicationToMongoJson(applicationData.copy(refreshTokensAvailableFor = GrantLength.ONE_MONTH.period), None, Some(1), true)
+    val rawJson: JsObject = applicationToMongoJson(applicationData.copy(refreshTokensAvailableFor = GrantLength.ONE_MONTH.period), Some(1), true)
     saveApplicationAsMongoJson(rawJson)
     val result            = await(applicationRepository.fetch(applicationId))
 
     result match {
       case Some(application) => {
         application.id mustBe applicationId
-        application.allowAutoDelete mustBe true
         application.refreshTokensAvailableFor mustBe GrantLength.ONE_MONTH.period
       }
       case None              => fail()
     }
 
-    val applicationSearch = new ApplicationSearch(filters = List(AutoDeleteAllowed))
+    val applicationSearch = new ApplicationSearch(filters = List())
     val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
 
     appSearchResult.applications.size mustBe 1
     appSearchResult.applications.head.id mustBe applicationId
-    appSearchResult.applications.head.allowAutoDelete mustBe true
     appSearchResult.applications.head.refreshTokensAvailableFor mustBe GrantLength.ONE_MONTH.period
   }
 
   "successfully remove old grantLength attribute when grantLength 1 day and refreshTokensAvailableFor 1 month" in new Setup {
-    val rawJson: JsObject = applicationToMongoJson(applicationData.copy(refreshTokensAvailableFor = GrantLength.ONE_MONTH.period), None, Some(1), true)
+    val rawJson: JsObject = applicationToMongoJson(applicationData.copy(refreshTokensAvailableFor = GrantLength.ONE_MONTH.period), Some(1), true)
     saveApplicationAsMongoJson(rawJson)
 
     val rawAppWithOldGrantLength = fetchApplicationRawJson(applicationId)
@@ -277,7 +213,7 @@ class ApplicationRepositorySerialisationISpec
   }
 
   "do nothing when removeOldGrantLength is called if old grantLength attribute does not exist" in new Setup {
-    val rawJson: JsObject = applicationToMongoJson(applicationData.copy(refreshTokensAvailableFor = GrantLength.ONE_MONTH.period), None, None, true)
+    val rawJson: JsObject = applicationToMongoJson(applicationData.copy(refreshTokensAvailableFor = GrantLength.ONE_MONTH.period), None, true)
     saveApplicationAsMongoJson(rawJson)
 
     val rawAppWithoutOldGrantLength = fetchApplicationRawJson(applicationId)

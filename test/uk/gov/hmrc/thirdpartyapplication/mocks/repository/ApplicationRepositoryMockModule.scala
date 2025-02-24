@@ -379,16 +379,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def verifyNeverCalled() = ApplicationRepoMock.verify(never).deleteClientSecret(*[ApplicationId], *[ClientSecret.Id])
     }
 
-    object UpdateAllowAutoDelete {
-
-      def thenReturnWhen(allowAutoDelete: Boolean)(updatedApplication: StoredApplication) = {
-        when(aMock.updateAllowAutoDelete(eqTo(updatedApplication.id), eqTo(allowAutoDelete))).thenReturn(successful(updatedApplication))
-      }
-
-      def verifyCalledWith(applicationId: ApplicationId, allowAutoDelete: Boolean) =
-        ApplicationRepoMock.verify.updateAllowAutoDelete(eqTo(applicationId), eqTo(allowAutoDelete))
-    }
-
     object UpdateDeleteRestriction {
 
       def thenReturnWhen(deleteRestriction: DeleteRestriction)(updatedApplication: StoredApplication) = {
