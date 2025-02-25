@@ -125,62 +125,6 @@ class ApplicationRepositorySearchISpec
       result.applications.head.id mustBe application2.id // as a result of pageNumber = 2
     }
 
-    "return application blocked from deletion" in {
-      val applicationAllowedToBeDeleted = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      )
-
-      val applicationBlockedFromDeletion = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      ).copy(allowAutoDelete = false)
-
-      await(applicationRepository.save(applicationAllowedToBeDeleted))
-      await(applicationRepository.save(applicationBlockedFromDeletion))
-
-      val applicationSearch = new ApplicationSearch(filters = List(AutoDeleteBlocked))
-
-      val result =
-        await(applicationRepository.searchApplications("testing")(applicationSearch))
-
-      result.totals.size mustBe 1
-      result.totals.head.total mustBe 2
-      result.matching.size mustBe 1
-      result.matching.head.total mustBe 1
-      result.applications.size mustBe 1
-      result.applications.head.id mustBe applicationBlockedFromDeletion.id
-      result.applications.head.allowAutoDelete mustBe false
-    }
-
-    "return application allowed to be deleted" in {
-      val applicationAllowedToBeDeleted = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      )
-
-      val applicationBlockedFromDeletion = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      ).copy(allowAutoDelete = false)
-
-      await(applicationRepository.save(applicationAllowedToBeDeleted))
-      await(applicationRepository.save(applicationBlockedFromDeletion))
-
-      val applicationSearch = new ApplicationSearch(filters = List(AutoDeleteAllowed))
-
-      val result =
-        await(applicationRepository.searchApplications("testing")(applicationSearch))
-
-      result.totals.size mustBe 1
-      result.totals.head.total mustBe 2
-      result.matching.size mustBe 1
-      result.matching.head.total mustBe 1
-      result.applications.size mustBe 1
-      result.applications.head.id mustBe applicationAllowedToBeDeleted.id
-      result.applications.head.allowAutoDelete mustBe true
-    }
-
     "return application with no delete restriction" in {
       val applicationNoRestriction = anApplicationDataForTest(
         id = ApplicationId.random,

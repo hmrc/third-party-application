@@ -138,7 +138,6 @@ object ApplicationRepository {
         (JsPath \ "checkInformation").readNullable[CheckInformation] and
         ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
-        ((JsPath \ "allowAutoDelete").read[Boolean] or Reads.pure(true)) and
         ((JsPath \ "deleteRestriction").read[DeleteRestriction] or Reads.pure[DeleteRestriction](DeleteRestriction.NoRestriction))
     )(StoredApplication.apply _)
 
@@ -242,9 +241,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       case None => collection.insertOne(application).toFuture().map(_ => application)
     }
   }
-
-  def updateAllowAutoDelete(applicationId: ApplicationId, allowAutoDelete: Boolean): Future[StoredApplication] =
-    updateApplication(applicationId, Updates.set("allowAutoDelete", Codecs.toBson(allowAutoDelete)))
 
   def updateDeleteRestriction(applicationId: ApplicationId, deleteRestriction: DeleteRestriction): Future[StoredApplication] =
     updateApplication(applicationId, Updates.set("deleteRestriction", Codecs.toBson(deleteRestriction)))
@@ -610,13 +606,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
     def accessTypeMatch(accessType: AccessType): Bson = matches(equal("access.accessType", Codecs.toBson(accessType)))
 
-    def allowAutoDeleteMatch(allowAutoDelete: Boolean): Bson = {
-      allowAutoDelete match {
-        case false => matches(equal("allowAutoDelete", Codecs.toBson(allowAutoDelete)))
-        case true  => matches(or(equal("allowAutoDelete", Codecs.toBson(allowAutoDelete)), exists("allowAutoDelete", false)))
-      }
-    }
-
     def deleteRestrictionMatch(restrictionType: DeleteRestrictionType): Bson = {
       restrictionType match {
         case DeleteRestrictionType.DO_NOT_DELETE  => matches(equal("deleteRestriction.deleteRestrictionType", Codecs.toBson(restrictionType)))
@@ -667,10 +656,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       case lastUsedBefore: LastUseBeforeDate => lastUsedBefore.toMongoMatch
       case lastUsedAfter: LastUseAfterDate   => lastUsedAfter.toMongoMatch
 
-      // Allow Auto Delete
-      case AutoDeleteAllowed => allowAutoDeleteMatch(true)
-      case AutoDeleteBlocked => allowAutoDeleteMatch(false)
-
       // Delete Restriction
       case NoRestriction => deleteRestrictionMatch(DeleteRestrictionType.NO_RESTRICTION)
       case DoNotDelete   => deleteRestrictionMatch(DeleteRestrictionType.DO_NOT_DELETE)
@@ -719,7 +704,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           "rateLimitTier",
           "environment",
           "blocked",
-          "allowAutoDelete",
           "deleteRestriction"
         )
       ))

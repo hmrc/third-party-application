@@ -175,7 +175,6 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     ),
     "blocked"                   -> JsFalse,
     "ipAllowlist"               -> Json.obj("required" -> JsFalse, "allowlist" -> JsArray.empty),
-    "allowAutoDelete"           -> JsTrue,
     "deleteRestriction"         -> Json.obj("deleteRestrictionType" -> JsString("NO_RESTRICTION"))
   )
 }
@@ -273,7 +272,6 @@ class ApplicationRepositoryISpec
       val retrieved = await(applicationRepository.fetch(application.id)).get
 
       retrieved mustBe application
-      retrieved.allowAutoDelete mustBe true
       retrieved.deleteRestriction mustBe DeleteRestriction.NoRestriction
     }
 
@@ -289,28 +287,6 @@ class ApplicationRepositoryISpec
 
       val newRetrieved = await(applicationRepository.fetch(application.id)).get
       newRetrieved mustBe updated
-    }
-  }
-
-  "updateAllowAutoDelete" should {
-
-    "set the allowAutoDelete field on an Application document to false" in {
-      val savedApplication = await(
-        applicationRepository.save(
-          anApplicationDataForTest(applicationId)
-        )
-      )
-
-      savedApplication.allowAutoDelete mustBe true
-
-      val updatedApplication = await(
-        applicationRepository.updateAllowAutoDelete(
-          applicationId,
-          false
-        )
-      )
-
-      updatedApplication.allowAutoDelete mustBe false
     }
   }
 

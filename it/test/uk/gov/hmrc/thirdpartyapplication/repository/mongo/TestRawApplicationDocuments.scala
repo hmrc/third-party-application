@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository.mongo
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-import play.api.libs.json.{JsBoolean, JsNumber, JsObject, Json}
+import play.api.libs.json.{JsNumber, JsObject, Json}
 
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
@@ -31,31 +31,28 @@ trait TestRawApplicationDocuments {
 
   def applicationToMongoJson(
       application: StoredApplication,
-      allowAutoDelete: Option[Boolean] = None,
       grantLength: Option[Int] = Some(547),
       refreshTokensAvailableFor: Boolean = true
     ): JsObject = {
 
     def addAttributes(json: JsObject): JsObject = {
-      (allowAutoDelete, grantLength, refreshTokensAvailableFor) match {
-        case (Some(aad: Boolean), Some(gl: Int), true)  =>
-          json ++ Json.obj("allowAutoDelete" -> JsBoolean(aad), "grantLength" -> JsNumber(gl), "refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor))
-        case (Some(aad: Boolean), Some(gl: Int), false) =>
-          json ++ Json.obj("allowAutoDelete" -> JsBoolean(aad), "grantLength" -> JsNumber(gl))
-        case (Some(aad: Boolean), None, true)           =>
-          json ++ Json.obj("allowAutoDelete" -> JsBoolean(aad), "refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor))
-        case (None, Some(gl: Int), true)                =>
+      (grantLength, refreshTokensAvailableFor) match {
+        case (Some(gl: Int), true)  =>
+          json ++ Json.obj("grantLength" -> JsNumber(gl), "refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor))
+        case (Some(gl: Int), false) =>
+          json ++ Json.obj("grantLength" -> JsNumber(gl))
+        case (None, true)           =>
+          json ++ Json.obj("refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor))
+        case (Some(gl: Int), true)  =>
           json ++ Json.obj(
             "grantLength"               -> JsNumber(gl),
             "refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor)
           )
-        case (None, None, true)                         =>
+        case (None, true)           =>
           json ++ Json.obj("refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor))
-        case (Some(aad: Boolean), None, false)          =>
-          json ++ Json.obj("allowAutoDelete" -> JsBoolean(aad))
-        case (None, Some(gl: Int), false)               =>
+        case (Some(gl: Int), false) =>
           json ++ Json.obj("grantLength" -> JsNumber(gl))
-        case (None, None, false)                        => json
+        case (None, false)          => json
       }
     }
 

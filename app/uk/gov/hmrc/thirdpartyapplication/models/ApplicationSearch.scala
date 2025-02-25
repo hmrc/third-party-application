@@ -61,7 +61,6 @@ object ApplicationSearch {
             case "status"                         => ApplicationStatusFilter(value.head)
             case "accessType"                     => AccessTypeFilter(value.head)
             case "lastUseBefore" | "lastUseAfter" => LastUseDateFilter(key, value.head)
-            case "allowAutoDelete"                => AllowAutoDeleteFilter(value.head)
             case "deleteRestriction"              => DeleteRestrictionFilter(value.head)
             case _                                => None // ignore anything that isn't a search filter
           }
@@ -153,23 +152,6 @@ case object AccessTypeFilter extends AccessTypeFilter {
       case "ROPC"       => Some(ROPCAccess)
       case "PRIVILEGED" => Some(PrivilegedAccess)
       case _            => None
-    }
-  }
-}
-
-sealed trait AllowAutoDeleteFilter extends ApplicationSearchFilter
-
-case object AutoDeleteAllowed extends AllowAutoDeleteFilter
-
-case object AutoDeleteBlocked extends AllowAutoDeleteFilter
-
-case object AllowAutoDeleteFilter extends AllowAutoDeleteFilter {
-
-  def apply(value: String): Option[AllowAutoDeleteFilter] = {
-    value.toLowerCase match {
-      case "true"  => Some(AutoDeleteAllowed)
-      case "false" => Some(AutoDeleteBlocked)
-      case _       => None
     }
   }
 }
