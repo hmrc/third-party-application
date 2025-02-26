@@ -7,7 +7,7 @@ object AppDependencies {
   lazy val bootstrapVersion         = "9.7.0"
   lazy val hmrcMongoVersion         = "2.4.0"
   lazy val applicationEventVersion  = "0.75.0" // Ensure this version of the application-events library uses the appDomainVersion below
-  lazy val applicationDomainVersion = "0.72.0"
+  lazy val applicationDomainVersion = "0.73.2"
 
   private lazy val compileDeps = Seq(
     "uk.gov.hmrc"                   %% "bootstrap-backend-play-30"                % bootstrapVersion,
@@ -16,7 +16,8 @@ object AppDependencies {
     "com.github.t3hnar"             %% "scala-bcrypt"                             % "4.1",
     "commons-validator"              % "commons-validator"                        % "1.7",
     "uk.gov.hmrc"                   %% "internal-auth-client-play-30"             % "3.0.0",
-    "uk.gov.hmrc"                   %% "api-platform-application-events"          % applicationEventVersion,
+    "uk.gov.hmrc"                   %% "api-platform-application-events"          % applicationEventVersion exclude("uk.gov.hmrc","api-platform-application-domain"),
+    "uk.gov.hmrc"                   %% "api-platform-application-domain"          % applicationDomainVersion,
     "com.iheart"                    %% "ficus"                                    % "1.5.2"
   )
 

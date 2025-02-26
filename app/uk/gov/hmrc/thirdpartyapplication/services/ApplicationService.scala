@@ -297,11 +297,6 @@ class ApplicationService @Inject() (
   }
 
   private def createApp(createApplicationRequest: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
-    // val createApplicationRequest: CreateApplicationRequest = req match {
-    //   case v1: CreateApplicationRequestV1 => v1.normaliseCollaborators
-    //   case v2: CreateApplicationRequestV2 => v2.normaliseCollaborators
-    // }
-
     logger.info(s"Creating application ${createApplicationRequest.name}")
 
     val wso2ApplicationName = credentialGenerator.generate()
@@ -314,26 +309,27 @@ class ApplicationService @Inject() (
       }
     }
 
-    def applyTotpForPrivAppsOnly(totp: Option[Totp], request: CreateApplicationRequest): CreateApplicationRequest = {
-      request match {
-        case v1 @ CreateApplicationRequestV1(_, priv: Access.Privileged, _, _, _, _) => v1.copy(access = priv.copy(totpIds = extractTotpId(totp)))
-        case _                                                                       => request
+    def applyTotpForPrivAppsOnly(totp: Option[Totp], app: StoredApplication): StoredApplication = {
+      val replaceAccess = app.access match {
+        case access: Access.Privileged => access.copy(totpIds = extractTotpId(totp))
+        case access                    => access
       }
+      app.copy(access = replaceAccess)
     }
 
     val f = for {
-      _              <- createApplicationRequest.accessType match {
-                          case AccessType.PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.PRIVILEGED)
-                          case AccessType.ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.ROPC)
-                          case _                     => successful(())
-                        }
-      totp           <- generateApplicationTotp(createApplicationRequest.accessType)
-      modifiedRequest = applyTotpForPrivAppsOnly(totp, createApplicationRequest)
-      appData         = StoredApplication.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), instant())
-      _              <- createInApiGateway(appData)
-      _              <- applicationRepository.save(appData)
-      _              <- createStateHistory(appData)
-      _               = auditAppCreated(appData)
+      _       <- createApplicationRequest.accessType match {
+                   case AccessType.PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.PRIVILEGED)
+                   case AccessType.ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.ROPC)
+                   case _                     => successful(())
+                 }
+      basicApp = StoredApplication.create(createApplicationRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), instant())
+      totp    <- generateApplicationTotp(createApplicationRequest.accessType)
+      appData  = applyTotpForPrivAppsOnly(totp, basicApp)
+      _       <- createInApiGateway(appData)
+      _       <- applicationRepository.save(appData)
+      _       <- createStateHistory(appData)
+      _        = auditAppCreated(appData)
     } yield CreateApplicationResponse(StoredApplication.asApplication(appData), extractTotpSecret(totp))
 
     f andThen {
