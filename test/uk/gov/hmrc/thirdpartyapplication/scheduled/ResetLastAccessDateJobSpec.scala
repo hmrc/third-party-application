@@ -23,6 +23,7 @@ import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
 
 import org.apache.pekko.stream.Materializer
+import org.scalatest.concurrent.Eventually
 
 import play.api.libs.json.Format
 import uk.gov.hmrc.mongo.lock.MongoLockRepository
@@ -43,7 +44,8 @@ class ResetLastAccessDateJobSpec
     with ApplicationStateFixtures
     with NoMetricsGuiceOneAppPerSuite
     with StoredApplicationFixtures
-    with CollaboratorTestData {
+    with CollaboratorTestData
+    with Eventually {
 
   implicit val m: Materializer                    = app.materializer
   implicit val instantFormatters: Format[Instant] = MongoJavatimeFormats.instantFormat
@@ -98,16 +100,18 @@ class ResetLastAccessDateJobSpec
 
       await(underTest.runJob)
 
-      val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
+      eventually {
+        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
 
-      retrievedApplications.size should be(3)
+        retrievedApplications.size should be(3)
 
-      val startOfToday = dateToSet.atStartOfDay(ZoneOffset.UTC).toInstant()
+        val startOfToday = dateToSet.atStartOfDay(ZoneOffset.UTC).toInstant()
 
-      retrievedApplications.foreach(app => {
-        app.lastAccess.isDefined should be(true)
-        app.lastAccess.get.isBefore(startOfToday) should be(false)
-      })
+        retrievedApplications.foreach(app => {
+          app.lastAccess.isDefined should be(true)
+          app.lastAccess.get.isBefore(startOfToday) should be(false)
+        })
+      }
     }
 
     "update lastAccess field on application when it does not have a lastAccessDate" in new ModifyDatesSetup {
@@ -116,11 +120,12 @@ class ResetLastAccessDateJobSpec
       await(applicationRepository.save(applicationData))
       await(underTest.runJob)
 
-      val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
+      eventually {
+        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
 
-      retrievedApplications.size shouldBe 1
-      retrievedApplications.head.lastAccess should not be None
-
+        retrievedApplications.size shouldBe 1
+        retrievedApplications.head.lastAccess should not be None
+      }
     }
 
     "not update the database if dryRun option is specified" in new DryRunSetup {
@@ -128,18 +133,21 @@ class ResetLastAccessDateJobSpec
       val application2: StoredApplication = anApplicationData(instantTS = dateToSet.minusDays(2).atStartOfDay(ZoneOffset.UTC).toInstant())
       val application3: StoredApplication = anApplicationData(instantTS = dateToSet.plusDays(3).atStartOfDay(ZoneOffset.UTC).toInstant())
 
-      def inDbList(appId: ApplicationId): Option[StoredApplication] = retrievedApplications.find(_.id == appId)
-      def epochMillisInDb(appId: ApplicationId): Option[Long]       = inDbList(appId).flatMap(_.lastAccess).map(_.toEpochMilli())
-
       await(Future.sequence(List(application1, application2, application3).map(applicationRepository.save)))
 
       await(underTest.runJob)
 
-      val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
-      retrievedApplications.size should be(3)
-      epochMillisInDb(application1.id) shouldBe application1.lastAccess.map(_.toEpochMilli())
-      epochMillisInDb(application2.id) shouldBe application2.lastAccess.map(_.toEpochMilli())
-      epochMillisInDb(application3.id) shouldBe application3.lastAccess.map(_.toEpochMilli())
+      eventually {
+        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
+
+        def inDbList(appId: ApplicationId): Option[StoredApplication] = retrievedApplications.find(_.id == appId)
+        def epochMillisInDb(appId: ApplicationId): Option[Long]       = inDbList(appId).flatMap(_.lastAccess).map(_.toEpochMilli())
+   
+        retrievedApplications.size should be(3)
+        epochMillisInDb(application1.id) shouldBe application1.lastAccess.map(_.toEpochMilli())
+        epochMillisInDb(application2.id) shouldBe application2.lastAccess.map(_.toEpochMilli())
+        epochMillisInDb(application3.id) shouldBe application3.lastAccess.map(_.toEpochMilli())
+      }
     }
   }
 
