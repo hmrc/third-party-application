@@ -44,6 +44,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
   CreateApplicationRequestV2,
+  CreationAccess,
   StandardAccessDataToCopy
 }
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateLoginRedirectUris
@@ -230,7 +231,7 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequestWithCollaboratorWithUserId(access = Access.Standard(), environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequestWithCollaboratorWithUserId(access = CreationAccess.Standard, environment = Environment.PRODUCTION)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -289,7 +290,7 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Standard(), environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.PRODUCTION)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -320,7 +321,7 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Standard(), environment = Environment.SANDBOX)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.SANDBOX)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -357,7 +358,7 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Privileged())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Privileged)
 
       ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name.value)
 
@@ -391,52 +392,8 @@ class ApplicationServiceSpec
       )
     }
 
-    "create a new ROPC application in Mongo and the API gateway with a Production state" in new Setup {
-      TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
-      ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Access.Ropc())
-
-      ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name.value)
-
-      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
-
-      val expectedApplicationData: StoredApplication = storedApp.copy(
-        id = createdApp.application.id,
-        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(adminTwo.emailAddress.text), updatedOn = instant),
-        collaborators = Set(adminTwo),
-        access = Access.Ropc(),
-        description = None
-      )
-
-      ApiGatewayStoreMock.CreateApplication.verifyCalled()
-      ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = instant))
-      AuditServiceMock.Audit.verifyCalledWith(
-        AppCreated,
-        Map(
-          "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name.value,
-          "newApplicationDescription" -> ""
-        ),
-        hc
-      )
-    }
-
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Access.Privileged())
-
-      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name.value)(storedApp)
-      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
-      UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
-
-      intercept[ApplicationAlreadyExists] {
-        await(underTest.create(applicationRequest)(hc))
-      }
-    }
-
-    "fail with ApplicationAlreadyExists for ropc application when the name already exists for another application not in testing mode" in new Setup {
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Access.Ropc())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(CreationAccess.Privileged)
 
       ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name.value)(storedApp)
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
@@ -973,7 +930,7 @@ class ApplicationServiceSpec
     }
   }
 
-  private def aNewV1ApplicationRequestWithCollaboratorWithUserId(access: Access, environment: Environment) = {
+  private def aNewV1ApplicationRequestWithCollaboratorWithUserId(access: CreationAccess, environment: Environment) = {
     CreateApplicationRequestV1(
       ApplicationName("MyApp"),
       access,
@@ -984,7 +941,7 @@ class ApplicationServiceSpec
     )
   }
 
-  private def aNewV1ApplicationRequest(access: Access = Access.Standard(), environment: Environment = Environment.PRODUCTION) = {
+  private def aNewV1ApplicationRequest(access: CreationAccess = CreationAccess.Standard, environment: Environment = Environment.PRODUCTION) = {
     CreateApplicationRequestV1(ApplicationName("MyApp"), access, Some(CoreApplicationData.appDescription), environment, Set(adminTwo), None)
   }
 

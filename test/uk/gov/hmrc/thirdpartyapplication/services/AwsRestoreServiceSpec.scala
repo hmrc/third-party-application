@@ -25,9 +25,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, Environment}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, RateLimitTier}
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.CreateApplicationRequestV1
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{CreateApplicationRequestV1, CreationAccess}
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -40,9 +39,9 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
 
     def buildApplication(applicationName: String, serverToken: String): StoredApplication = {
       StoredApplication.create(
-        CreateApplicationRequestV1.create(
+        CreateApplicationRequestV1(
           name = ApplicationName(applicationName),
-          access = Access.Standard(),
+          access = CreationAccess.Standard,
           environment = Environment.PRODUCTION,
           collaborators = Set("foo@bar.com".admin()),
           description = None,

@@ -116,10 +116,18 @@ object StoredApplication {
       case x: CreateApplicationRequestV1                                    => None
     }
 
-    val applicationAccess = createApplicationRequest match {
-      case v1: CreateApplicationRequestV1 => v1.access
+    val applicationAccess: Access = createApplicationRequest match {
+      case v1: CreateApplicationRequestV1 => v1.access match {
+          case CreationAccess.Standard   => Access.Standard()
+          case CreationAccess.Privileged => Access.Privileged()
+        }
       case v2: CreateApplicationRequestV2 =>
-        Access.Standard().copy(redirectUris = v2.access.redirectUris, overrides = v2.access.overrides, sellResellOrDistribute = Some(v2.upliftRequest.sellResellOrDistribute))
+        Access.Standard().copy(
+          redirectUris = v2.access.redirectUris,
+          postLogoutRedirectUris = v2.access.postLogoutRedirectUris,
+          overrides = v2.access.overrides,
+          sellResellOrDistribute = Some(v2.upliftRequest.sellResellOrDistribute)
+        )
     }
 
     StoredApplication(
