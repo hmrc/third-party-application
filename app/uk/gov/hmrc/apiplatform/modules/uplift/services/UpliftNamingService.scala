@@ -43,15 +43,13 @@ class UpliftNamingService @Inject() (
 
   import ApplicationNamingService._
 
-  val excludeNothing: ExclusionCondition = (x: StoredApplication) => false
-
   def upliftFilter(selfApplicationId: Option[ApplicationId]): ExclusionCondition =
-    selfApplicationId.fold(excludeNothing)(appId => excludeThisAppId(appId))
+    selfApplicationId.fold(noExclusions)(appId => excludeThisAppId(appId))
 
   def isDuplicateName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[Boolean] =
     isDuplicateName(applicationName, upliftFilter(selfApplicationId))
 
-  def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[ApplicationNameValidationResult] = {
+  def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[OldApplicationNameValidationResult] = {
     ValidatedApplicationName(applicationName) match {
       case Some(validatedAppName) => validateApplicationName(validatedAppName, upliftFilter(selfApplicationId))
       case _                      => Future.successful(InvalidName)

@@ -142,7 +142,7 @@ class ResetLastAccessDateJobSpec
 
         def inDbList(appId: ApplicationId): Option[StoredApplication] = retrievedApplications.find(_.id == appId)
         def epochMillisInDb(appId: ApplicationId): Option[Long]       = inDbList(appId).flatMap(_.lastAccess).map(_.toEpochMilli())
-   
+
         retrievedApplications.size should be(3)
         epochMillisInDb(application1.id) shouldBe application1.lastAccess.map(_.toEpochMilli())
         epochMillisInDb(application2.id) shouldBe application2.lastAccess.map(_.toEpochMilli())

@@ -68,7 +68,7 @@ abstract class AbstractApplicationNamingService(
     !isValid
   }
 
-  def validateApplicationName(applicationName: ValidatedApplicationName, exclusions: ExclusionCondition): Future[ApplicationNameValidationResult] = {
+  def validateApplicationName(applicationName: ValidatedApplicationName, exclusions: ExclusionCondition): Future[OldApplicationNameValidationResult] = {
     for {
       isDuplicate <- isDuplicateName(applicationName.value, exclusions)
       isDenyListed = isDenyListedName(applicationName.value)

@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName}
+import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, InvalidName, OldApplicationNameValidationResult}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -45,7 +45,7 @@ class ChangeSandboxApplicationNameCommandHandler @Inject() (
   private def validate(
       app: StoredApplication,
       cmd: ChangeSandboxApplicationName,
-      nameValidationResult: ApplicationNameValidationResult
+      nameValidationResult: OldApplicationNameValidationResult
     ): Validated[Failures, StoredApplication] = {
     Apply[Validated[Failures, *]].map6(
       isInSandboxEnvironment(app),

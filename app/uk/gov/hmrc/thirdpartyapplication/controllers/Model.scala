@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.Su
 
 case class ValidationRequest(clientId: ClientId, clientSecret: String)
 
-case class ApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[ApplicationId])
+case class OldApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[ApplicationId])
 
 case class ApproveUpliftRequest(gatekeeperUserId: String)
 
