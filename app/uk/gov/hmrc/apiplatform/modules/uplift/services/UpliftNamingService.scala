@@ -51,7 +51,7 @@ class UpliftNamingService @Inject() (
 
   def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[OldApplicationNameValidationResult] = {
     ValidatedApplicationName(applicationName) match {
-      case Some(validatedAppName) => validateApplicationName(validatedAppName, upliftFilter(selfApplicationId))
+      case Some(validatedAppName) => validateApplicationNameWithExclusions(validatedAppName, upliftFilter(selfApplicationId))
       case _                      => Future.successful(InvalidName)
     }
   }

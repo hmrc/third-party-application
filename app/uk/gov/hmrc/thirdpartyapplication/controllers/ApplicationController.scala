@@ -33,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CheckInformation}
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{ApplicationNameValidationRequest}
+//uk.gov.hmrc.apiplatform.modules.applications.core.interface.models
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -156,15 +156,18 @@ class ApplicationController @Inject() (
   def validateApplicationName2: Action[JsValue] = 
     Action.async(parse.json) { implicit request =>
       withJsonBody[ApplicationNameValidationRequest] { applicationNameValidationRequest: ApplicationNameValidationRequest =>
-        applicationNameValidationRequest match {
+        (applicationNameValidationRequest match {
           case ChangeApplicationNameValidationRequest(nameToValidate, appId) => upliftNamingService.validateApplicationName(nameToValidate, Some(appId))
           case NewApplicationNameValidationRequest(nameToValidate) => upliftNamingService.validateApplicationName(nameToValidate, None)
-        }
-        .map(
-          case ValidName     => ApplicationNameValidationResult.ValidateApplicationName
-          case InvalidName   => ApplicationNameValidationResult.ValidateApplicationName
-          case DuplicateName => Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
-        )
+        })
+        .map( x => {
+          val result: ApplicationNameValidationResult = x match {
+            case ValidName     => ApplicationNameValidationResult.ValidApplicationName
+            case InvalidName   => ApplicationNameValidationResult.InvalidApplicationName
+            case DuplicateName => ApplicationNameValidationResult.DuplicateApplicationName
+          }
+          result
+        })
         .map(r => Ok(Json.toJson(r)))
       } recover recovery
     }

@@ -73,7 +73,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: ChangeProductionApplicationName): AppCmdResultT = {
     for {
-      nameValidationResult <- E.liftF(namingService.validateApplicationName(cmd.newName, noExclusions))
+      nameValidationResult <- E.liftF(namingService.validateApplicationNameWithExclusions(cmd.newName, noExclusions))
       valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
       savedApp             <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName.value))
       events                = asEvents(app, cmd)

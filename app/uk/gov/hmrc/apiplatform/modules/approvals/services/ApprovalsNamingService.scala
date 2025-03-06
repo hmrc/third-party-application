@@ -46,12 +46,12 @@ class ApprovalsNamingService @Inject() (
   private def approvalsFilter(appId: ApplicationId): ExclusionCondition = or(excludeThisAppId(appId), excludeInTesting)
 
   def validateApplicationName(applicationName: ValidatedApplicationName, appId: ApplicationId): Future[OldApplicationNameValidationResult] =
-    validateApplicationName(applicationName, approvalsFilter(appId))
+    validateApplicationNameWithExclusions(applicationName, approvalsFilter(appId))
 
   def validateApplicationNameAndAudit(applicationName: ValidatedApplicationName, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier)
       : Future[OldApplicationNameValidationResult] =
     for {
-      validationResult <- validateApplicationName(applicationName, approvalsFilter(appId))
+      validationResult <- validateApplicationNameWithExclusions(applicationName, approvalsFilter(appId))
       _                <- validationResult match {
                             case ValidName     => successful(())
                             case DuplicateName => auditDeniedDueToNaming(applicationName.value, accessType, Some(appId))
