@@ -26,13 +26,13 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessT
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNamingService, AuditService}
+import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNaming, ApplicationNamingService, AuditService}
 
 @Singleton
 class UpliftNamingService @Inject() (
     auditService: AuditService,
     applicationRepository: ApplicationRepository,
-    nameValidationConfig: ApplicationNamingService.ApplicationNameValidationConfig
+    nameValidationConfig: ApplicationNamingService.Config
   )(implicit ec: ExecutionContext
   ) extends AbstractApplicationNamingService(
       auditService,
@@ -40,7 +40,7 @@ class UpliftNamingService @Inject() (
       nameValidationConfig
     ) {
 
-  import ApplicationNamingService._
+  import ApplicationNaming._
 
   def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[OldApplicationNameValidationResult] = {
     def upliftFilter(selfApplicationId: Option[ApplicationId]): ExclusionCondition =

@@ -30,22 +30,24 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
-object ApplicationNamingService {
+object ApplicationNaming {
   type ExclusionCondition = (StoredApplication) => Boolean
-  def noExclusions: ExclusionCondition                           = _ => false
+  val noExclusions: ExclusionCondition                           = _ => false
   def excludeThisAppId(appId: ApplicationId): ExclusionCondition = (x: StoredApplication) => x.id == appId
+}
 
-  case class ApplicationNameValidationConfig(nameDenyList: List[String], validateForDuplicateAppNames: Boolean)
+object ApplicationNamingService {
+  case class Config(nameDenyList: List[String], validateForDuplicateAppNames: Boolean)
 }
 
 abstract class AbstractApplicationNamingService(
     auditService: AuditService,
     applicationRepository: ApplicationRepository,
-    nameValidationConfig: ApplicationNamingService.ApplicationNameValidationConfig
+    nameValidationConfig: ApplicationNamingService.Config
   )(implicit ec: ExecutionContext
   ) {
 
-  import ApplicationNamingService._
+  import ApplicationNaming._
 
   def isDuplicateName(applicationName: String, exclusions: ExclusionCondition): Future[Boolean] = {
     if (nameValidationConfig.validateForDuplicateAppNames) {

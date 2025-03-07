@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, InvalidName, OldApplicationNameValidationResult}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNaming.noExclusions
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton

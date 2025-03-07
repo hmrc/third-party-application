@@ -129,7 +129,7 @@ class ApplicationServiceSpec
     implicit val hc: HeaderCarrier = hcForLoggedInCollaborator
 
     val mockCredentialGenerator: CredentialGenerator = mock[CredentialGenerator]
-    val mockNameValidationConfig                     = mock[ApplicationNamingService.ApplicationNameValidationConfig]
+    val mockNameValidationConfig                     = mock[ApplicationNamingService.Config]
 
     when(mockNameValidationConfig.validateForDuplicateAppNames)
       .thenReturn(true)

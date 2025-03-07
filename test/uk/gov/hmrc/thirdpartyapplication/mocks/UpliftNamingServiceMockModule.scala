@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessT
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, DuplicateName, InvalidName, ValidName}
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.ExclusionCondition
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNaming.ExclusionCondition
 
 trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

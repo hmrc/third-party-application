@@ -22,9 +22,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationIdData
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationNameValidationConfigMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNaming.{excludeThisAppId, noExclusions}
 import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.excludeThisAppId
 
 class UpliftNamingServiceSpec extends AsyncHmrcSpec {
 

@@ -40,6 +40,8 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -52,8 +54,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult._
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -353,7 +353,7 @@ class ApplicationControllerSpec
   }
 
   "validate name2" should {
-   
+
     "Allow a valid app when ChangeApplicationNameValidationRequest sent" in new Setup {
       val applicationName = "my valid app name"
       val appId           = ApplicationId.random
@@ -365,7 +365,7 @@ class ApplicationControllerSpec
       private val result = underTest.validateApplicationName2(request.withBody(Json.parse(payload)))
 
       status(result) shouldBe OK
-      
+
       contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](ValidApplicationName)
 
       verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(Some(appId)))
@@ -383,7 +383,6 @@ class ApplicationControllerSpec
       status(result) shouldBe OK
 
       contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](ValidApplicationName)
-
 
       verify(mockUpliftNamingService).validateApplicationName(*, eqTo(None))
     }
@@ -416,7 +415,7 @@ class ApplicationControllerSpec
 
       status(result) shouldBe OK
 
-       contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](InvalidApplicationName)
+      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](InvalidApplicationName)
 
       verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(Some(appId)))
     }
@@ -432,12 +431,11 @@ class ApplicationControllerSpec
 
       status(result) shouldBe OK
 
-      contentAsJson(result) shouldBe  Json.toJson[ApplicationNameValidationResult](DuplicateApplicationName)
+      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](DuplicateApplicationName)
 
       verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(None))
     }
 
-    
     "Reject an app name as it is a duplicate name when ChangeApplicationNameValidationRequest sent" in new Setup {
       val applicationName = "my duplicate app name"
       val appId           = ApplicationId.random
@@ -450,7 +448,7 @@ class ApplicationControllerSpec
 
       status(result) shouldBe OK
 
-      contentAsJson(result) shouldBe  Json.toJson[ApplicationNameValidationResult](DuplicateApplicationName)
+      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](DuplicateApplicationName)
 
       verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(Some(appId)))
     }

@@ -28,17 +28,17 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Validated
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNamingService, AuditService}
+import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNaming, ApplicationNamingService, AuditService}
 
 @Singleton
 class ApprovalsNamingService @Inject() (
     auditService: AuditService,
     applicationRepository: ApplicationRepository,
-    nameValidationConfig: ApplicationNamingService.ApplicationNameValidationConfig
+    nameValidationConfig: ApplicationNamingService.Config
   )(implicit ec: ExecutionContext
   ) extends AbstractApplicationNamingService(auditService, applicationRepository, nameValidationConfig) {
 
-  import ApplicationNamingService._
+  import ApplicationNaming._
 
   private val excludeInTesting: ExclusionCondition                                 = (x: StoredApplication) => x.isInTesting
   private def or(a: ExclusionCondition, b: ExclusionCondition): ExclusionCondition = (x: StoredApplication) => a(x) || b(x)

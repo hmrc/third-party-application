@@ -32,8 +32,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CheckInformation}
-//uk.gov.hmrc.apiplatform.modules.applications.core.interface.models
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -153,22 +152,22 @@ class ApplicationController @Inject() (
     }
   }
 
-  def validateApplicationName2: Action[JsValue] = 
+  def validateApplicationName2: Action[JsValue] =
     Action.async(parse.json) { implicit request =>
       withJsonBody[ApplicationNameValidationRequest] { applicationNameValidationRequest: ApplicationNameValidationRequest =>
         (applicationNameValidationRequest match {
           case ChangeApplicationNameValidationRequest(nameToValidate, appId) => upliftNamingService.validateApplicationName(nameToValidate, Some(appId))
-          case NewApplicationNameValidationRequest(nameToValidate) => upliftNamingService.validateApplicationName(nameToValidate, None)
+          case NewApplicationNameValidationRequest(nameToValidate)           => upliftNamingService.validateApplicationName(nameToValidate, None)
         })
-        .map( x => {
-          val result: ApplicationNameValidationResult = x match {
-            case ValidName     => ApplicationNameValidationResult.ValidApplicationName
-            case InvalidName   => ApplicationNameValidationResult.InvalidApplicationName
-            case DuplicateName => ApplicationNameValidationResult.DuplicateApplicationName
-          }
-          result
-        })
-        .map(r => Ok(Json.toJson(r)))
+          .map(x => {
+            val result: ApplicationNameValidationResult = x match {
+              case ValidName     => ApplicationNameValidationResult.ValidApplicationName
+              case InvalidName   => ApplicationNameValidationResult.InvalidApplicationName
+              case DuplicateName => ApplicationNameValidationResult.DuplicateApplicationName
+            }
+            result
+          })
+          .map(r => Ok(Json.toJson(r)))
       } recover recovery
     }
 
