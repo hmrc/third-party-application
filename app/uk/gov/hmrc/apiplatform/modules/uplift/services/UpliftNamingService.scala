@@ -25,7 +25,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNamingService, AuditService}
 
@@ -43,26 +42,22 @@ class UpliftNamingService @Inject() (
 
   import ApplicationNamingService._
 
-  def upliftFilter(selfApplicationId: Option[ApplicationId]): ExclusionCondition =
-    selfApplicationId.fold(noExclusions)(appId => excludeThisAppId(appId))
-
-  def isDuplicateName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[Boolean] =
-    isDuplicateName(applicationName, upliftFilter(selfApplicationId))
-
   def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[OldApplicationNameValidationResult] = {
+    def upliftFilter(selfApplicationId: Option[ApplicationId]): ExclusionCondition =
+      selfApplicationId.fold(noExclusions)(appId => excludeThisAppId(appId))
+
     ValidatedApplicationName(applicationName) match {
       case Some(validatedAppName) => validateApplicationNameWithExclusions(validatedAppName, upliftFilter(selfApplicationId))
       case _                      => Future.successful(InvalidName)
     }
   }
 
-  def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[StoredApplication] = None)(implicit hc: HeaderCarrier) = {
-
+  def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType)(implicit hc: HeaderCarrier) = {
     for {
-      duplicate <- isDuplicateName(submittedAppName, existingApp.map(_.id))
+      duplicate <- isDuplicateName(submittedAppName, noExclusions)
       _          =
         if (duplicate) {
-          auditDeniedDueToNaming(submittedAppName, accessType, existingApp.map(_.id))
+          auditDeniedDueToNaming(submittedAppName, accessType, None)
           throw ApplicationAlreadyExists(submittedAppName)
         } else { () }
     } yield ()
