@@ -161,9 +161,9 @@ class ApplicationController @Inject() (
         })
           .map(x => {
             val result: ApplicationNameValidationResult = x match {
-              case ValidName     => ApplicationNameValidationResult.ValidApplicationName
-              case InvalidName   => ApplicationNameValidationResult.InvalidApplicationName
-              case DuplicateName => ApplicationNameValidationResult.DuplicateApplicationName
+              case ValidName     => ApplicationNameValidationResult.Valid
+              case InvalidName   => ApplicationNameValidationResult.Invalid
+              case DuplicateName => ApplicationNameValidationResult.Duplicate
             }
             result
           })

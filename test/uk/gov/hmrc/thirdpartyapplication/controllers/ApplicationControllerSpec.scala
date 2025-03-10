@@ -366,7 +366,7 @@ class ApplicationControllerSpec
 
       status(result) shouldBe OK
 
-      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](ValidApplicationName)
+      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](Valid)
 
       verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(Some(appId)))
     }
@@ -382,7 +382,7 @@ class ApplicationControllerSpec
 
       status(result) shouldBe OK
 
-      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](ValidApplicationName)
+      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](Valid)
 
       verify(mockUpliftNamingService).validateApplicationName(*, eqTo(None))
     }
@@ -398,7 +398,7 @@ class ApplicationControllerSpec
 
       status(result) shouldBe OK
 
-      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](InvalidApplicationName)
+      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](Invalid)
 
       verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(None))
     }
@@ -415,7 +415,7 @@ class ApplicationControllerSpec
 
       status(result) shouldBe OK
 
-      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](InvalidApplicationName)
+      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](Invalid)
 
       verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(Some(appId)))
     }
@@ -431,7 +431,7 @@ class ApplicationControllerSpec
 
       status(result) shouldBe OK
 
-      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](DuplicateApplicationName)
+      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](Duplicate)
 
       verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(None))
     }
@@ -448,7 +448,7 @@ class ApplicationControllerSpec
 
       status(result) shouldBe OK
 
-      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](DuplicateApplicationName)
+      contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](Duplicate)
 
       verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(Some(appId)))
     }
