@@ -43,15 +43,6 @@ trait TestRawApplicationDocuments {
           json ++ Json.obj("grantLength" -> JsNumber(gl))
         case (None, true)           =>
           json ++ Json.obj("refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor))
-        case (Some(gl: Int), true)  =>
-          json ++ Json.obj(
-            "grantLength"               -> JsNumber(gl),
-            "refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor)
-          )
-        case (None, true)           =>
-          json ++ Json.obj("refreshTokensAvailableFor" -> Json.toJson(application.refreshTokensAvailableFor))
-        case (Some(gl: Int), false) =>
-          json ++ Json.obj("grantLength" -> JsNumber(gl))
         case (None, false)          => json
       }
     }

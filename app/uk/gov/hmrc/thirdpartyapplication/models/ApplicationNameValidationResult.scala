@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-sealed trait ApplicationNameValidationResult
+sealed trait OldApplicationNameValidationResult
 
-case object ValidName     extends ApplicationNameValidationResult
-case object InvalidName   extends ApplicationNameValidationResult
-case object DuplicateName extends ApplicationNameValidationResult
+case object ValidName     extends OldApplicationNameValidationResult
+case object InvalidName   extends OldApplicationNameValidationResult
+case object DuplicateName extends OldApplicationNameValidationResult

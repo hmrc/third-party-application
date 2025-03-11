@@ -33,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{CreateApplicationRequest, CreateApplicationRequestV1, CreateApplicationRequestV2}
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -152,12 +152,31 @@ class ApplicationController @Inject() (
     }
   }
 
-  def validateApplicationName: Action[JsValue] =
+  def validateApplicationName2: Action[JsValue] =
     Action.async(parse.json) { implicit request =>
       withJsonBody[ApplicationNameValidationRequest] { applicationNameValidationRequest: ApplicationNameValidationRequest =>
+        (applicationNameValidationRequest match {
+          case ChangeApplicationNameValidationRequest(nameToValidate, appId) => upliftNamingService.validateApplicationName(nameToValidate, Some(appId))
+          case NewApplicationNameValidationRequest(nameToValidate)           => upliftNamingService.validateApplicationName(nameToValidate, None)
+        })
+          .map(x => {
+            val result: ApplicationNameValidationResult = x match {
+              case ValidName     => ApplicationNameValidationResult.Valid
+              case InvalidName   => ApplicationNameValidationResult.Invalid
+              case DuplicateName => ApplicationNameValidationResult.Duplicate
+            }
+            result
+          })
+          .map(r => Ok(Json.toJson(r)))
+      } recover recovery
+    }
+
+  def validateApplicationName: Action[JsValue] =
+    Action.async(parse.json) { implicit request =>
+      withJsonBody[OldApplicationNameValidationRequest] { applicationNameValidationRequest: OldApplicationNameValidationRequest =>
         upliftNamingService
           .validateApplicationName(applicationNameValidationRequest.applicationName, applicationNameValidationRequest.selfApplicationId)
-          .map((result: ApplicationNameValidationResult) => {
+          .map((result: OldApplicationNameValidationResult) => {
 
             val json = result match {
               case ValidName     => Json.obj()

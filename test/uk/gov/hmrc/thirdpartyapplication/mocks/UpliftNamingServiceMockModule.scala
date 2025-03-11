@@ -24,9 +24,8 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, DuplicateName, InvalidName, ValidName}
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.ExclusionCondition
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNaming.ExclusionCondition
 
 trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -42,18 +41,18 @@ trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     object AssertAppHasUniqueNameAndAudit {
 
       def thenSucceeds() = {
-        when(aMock.assertAppHasUniqueNameAndAudit(*, *, *)(*)).thenReturn(successful(()))
+        when(aMock.assertAppHasUniqueNameAndAudit(*, *)(*)).thenReturn(successful(()))
       }
 
       def thenFailsWithApplicationAlreadyExists() = {
-        when(aMock.assertAppHasUniqueNameAndAudit(*, *, *)(*)).thenAnswer((appName: String, _: AccessType, _: Option[StoredApplication]) => failed(ApplicationAlreadyExists(appName)))
+        when(aMock.assertAppHasUniqueNameAndAudit(*, *)(*)).thenAnswer((appName: String, _: AccessType) => failed(ApplicationAlreadyExists(appName)))
       }
     }
 
     object ValidateApplicationName {
-      def succeeds()               = when(aMock.validateApplicationName(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(ValidName))
-      def failsWithDuplicateName() = when(aMock.validateApplicationName(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(DuplicateName))
-      def failsWithInvalidName()   = when(aMock.validateApplicationName(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(InvalidName))
+      def succeeds()               = when(aMock.validateApplicationNameWithExclusions(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(ValidName))
+      def failsWithDuplicateName() = when(aMock.validateApplicationNameWithExclusions(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(DuplicateName))
+      def failsWithInvalidName()   = when(aMock.validateApplicationNameWithExclusions(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(InvalidName))
     }
   }
 

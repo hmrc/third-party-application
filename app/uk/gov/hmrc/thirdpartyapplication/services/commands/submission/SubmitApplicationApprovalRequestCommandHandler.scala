@@ -60,7 +60,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       for {
         submission         <- OptionT(submissionService.fetchLatest(app.id))
         nameFromSubmission <- OptionT.fromOption[Future](SubmissionDataExtracter.getApplicationName(submission))
-        nameValidation     <- OptionT.liftF[Future, ApplicationNameValidationResult](validateApplicationName(nameFromSubmission, app.id))
+        nameValidation     <- OptionT.liftF[Future, OldApplicationNameValidationResult](validateApplicationName(nameFromSubmission, app.id))
       } yield (submission, nameFromSubmission, nameValidation)
     )
       .fold[Validated[Failures, (Submission, String)]](
@@ -156,7 +156,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
   private def logCompletedApprovalRequest(app: StoredApplication): Unit =
     logger.info(s"Approval-02: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name}")
 
-  private def validateApplicationName(appName: String, appId: ApplicationId): Future[ApplicationNameValidationResult] = {
+  private def validateApplicationName(appName: String, appId: ApplicationId): Future[OldApplicationNameValidationResult] = {
     ValidatedApplicationName(appName) match {
       case Some(validatedAppName) => approvalsNamingService.validateApplicationName(validatedAppName, appId)
       case _                      => Future.successful(InvalidName)

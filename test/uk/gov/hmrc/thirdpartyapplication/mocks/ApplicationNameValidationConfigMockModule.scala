@@ -23,7 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 trait ApplicationNameValidationConfigMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   protected trait BaseApplicationNameValidationConfigMock {
-    def aMock: ApplicationNamingService.ApplicationNameValidationConfig
+    def aMock: ApplicationNamingService.Config
 
     object NameDenyList {
 
@@ -43,6 +43,6 @@ trait ApplicationNameValidationConfigMockModule extends MockitoSugar with Argume
   }
 
   object ApplicationNameValidationConfigMock extends BaseApplicationNameValidationConfigMock {
-    val aMock = mock[ApplicationNamingService.ApplicationNameValidationConfig](withSettings.strictness(Strictness.Lenient))
+    val aMock = mock[ApplicationNamingService.Config](withSettings.strictness(Strictness.Lenient))
   }
 }

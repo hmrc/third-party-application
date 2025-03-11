@@ -58,7 +58,7 @@ class ConfigurationModule extends Module {
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ClientSecretsHashingConfig].toProvider[ClientSecretsHashingConfigProvider],
-      bind[ApplicationNamingService.ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider],
+      bind[ApplicationNamingService.Config].toProvider[ApplicationNamingServiceConfigProvider],
       bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider],
       bind[TermsOfUseInvitationConfig].toProvider[TermsOfUseInvitationConfigProvider]
     )
@@ -341,15 +341,15 @@ class ClientSecretsHashingConfigProvider @Inject() (val configuration: Configura
 }
 
 @Singleton
-class ApplicationNameValidationConfigConfigProvider @Inject() (val configuration: Configuration)
+class ApplicationNamingServiceConfigProvider @Inject() (val configuration: Configuration)
     extends ServicesConfig(configuration)
-    with Provider[ApplicationNamingService.ApplicationNameValidationConfig] {
+    with Provider[ApplicationNamingService.Config] {
 
   override def get() = {
     val nameDenyList: List[String]   = ConfigHelper.getConfig("applicationNameDenyList", configuration.getOptional[Seq[String]]).toList
     val validateForDuplicateAppNames = ConfigHelper.getConfig("validateForDuplicateAppNames", configuration.getOptional[Boolean])
 
-    ApplicationNamingService.ApplicationNameValidationConfig(nameDenyList, validateForDuplicateAppNames)
+    ApplicationNamingService.Config(nameDenyList, validateForDuplicateAppNames)
   }
 }
 

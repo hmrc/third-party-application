@@ -38,7 +38,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.AnswerQuestio
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName, ValidName}
+import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, InvalidName, OldApplicationNameValidationResult, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
 
 class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
@@ -75,7 +75,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
     val ts                                                 = FixedClock.instant
     val mockApprovalsNamingService: ApprovalsNamingService = mock[ApprovalsNamingService]
 
-    def namingServiceReturns(result: ApplicationNameValidationResult) =
+    def namingServiceReturns(result: OldApplicationNameValidationResult) =
       when(mockApprovalsNamingService.validateApplicationName(*[ValidatedApplicationName], *[ApplicationId])).thenReturn(successful(result))
 
     val underTest = new SubmitApplicationApprovalRequestCommandHandler(

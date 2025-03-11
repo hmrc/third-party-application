@@ -29,9 +29,9 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName}
+import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, InvalidName, OldApplicationNameValidationResult}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNaming.noExclusions
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
@@ -46,7 +46,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
   private def validate(
       app: StoredApplication,
       cmd: ChangeProductionApplicationName,
-      nameValidationResult: ApplicationNameValidationResult
+      nameValidationResult: OldApplicationNameValidationResult
     ): Validated[Failures, StoredApplication] = {
     Apply[Validated[Failures, *]].map5(
       isAdminOnApp(cmd.instigator, app),
@@ -73,7 +73,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: ChangeProductionApplicationName): AppCmdResultT = {
     for {
-      nameValidationResult <- E.liftF(namingService.validateApplicationName(cmd.newName, noExclusions))
+      nameValidationResult <- E.liftF(namingService.validateApplicationNameWithExclusions(cmd.newName, noExclusions))
       valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
       savedApp             <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName.value))
       events                = asEvents(app, cmd)

@@ -19,6 +19,7 @@ GET           /application/:id/access/overrides                      uk.gov.hmrc
 GET           /application/:id/credentials                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchCredentials(id: ApplicationId)
 POST          /application/credentials/validate                      uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.validateCredentials()
 POST          /application/name/validate                             uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.validateApplicationName()
+POST          /application/name/validate2                            uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.validateApplicationName2()
 
 PUT           /application/:id/collaborator                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fixCollaborator(id: ApplicationId)
 
