@@ -25,11 +25,11 @@ import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationName
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, InvalidName, OldApplicationNameValidationResult}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNaming.noExclusions
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -46,14 +46,14 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
   private def validate(
       app: StoredApplication,
       cmd: ChangeProductionApplicationName,
-      nameValidationResult: OldApplicationNameValidationResult
+      nameValidationResult: ApplicationNameValidationResult
     ): Validated[Failures, StoredApplication] = {
     Apply[Validated[Failures, *]].map5(
       isAdminOnApp(cmd.instigator, app),
       isNotInProcessOfBeingApproved(app),
       cond(app.name.value != cmd.newName.value, "App already has that name"),
-      cond(nameValidationResult != DuplicateName, "New name is a duplicate"),
-      cond(nameValidationResult != InvalidName, "New name is invalid")
+      cond(nameValidationResult != ApplicationNameValidationResult.Duplicate, "New name is a duplicate"),
+      cond(nameValidationResult != ApplicationNameValidationResult.Invalid, "New name is invalid")
     ) { case _ => app }
   }
 

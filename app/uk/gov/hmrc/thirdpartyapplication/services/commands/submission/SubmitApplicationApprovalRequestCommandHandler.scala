@@ -26,6 +26,7 @@ import cats.syntax.validated._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, State, ValidatedApplicationName}
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.services.{ApprovalsNamingService, ResponsibleIndividualVerificationService}
@@ -36,7 +37,6 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -60,7 +60,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       for {
         submission         <- OptionT(submissionService.fetchLatest(app.id))
         nameFromSubmission <- OptionT.fromOption[Future](SubmissionDataExtracter.getApplicationName(submission))
-        nameValidation     <- OptionT.liftF[Future, OldApplicationNameValidationResult](validateApplicationName(nameFromSubmission, app.id))
+        nameValidation     <- OptionT.liftF[Future, ApplicationNameValidationResult](validateApplicationName(nameFromSubmission, app.id))
       } yield (submission, nameFromSubmission, nameValidation)
     )
       .fold[Validated[Failures, (Submission, String)]](
@@ -71,8 +71,8 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
             ensureStandardAccess(app),
             isInTesting(app),
             cond(submission.status.isAnsweredCompletely, "Submission has not been answered completely"),
-            cond(nameValidationResult != DuplicateName, CommandFailures.DuplicateApplicationName(nameFromSubmission)),
-            cond(nameValidationResult != InvalidName, CommandFailures.InvalidApplicationName(nameFromSubmission))
+            cond(nameValidationResult != ApplicationNameValidationResult.Duplicate, CommandFailures.DuplicateApplicationName(nameFromSubmission)),
+            cond(nameValidationResult != ApplicationNameValidationResult.Invalid, CommandFailures.InvalidApplicationName(nameFromSubmission))
           ) { case _ => (submission, nameFromSubmission) }
         }
       }
@@ -156,10 +156,10 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
   private def logCompletedApprovalRequest(app: StoredApplication): Unit =
     logger.info(s"Approval-02: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name}")
 
-  private def validateApplicationName(appName: String, appId: ApplicationId): Future[OldApplicationNameValidationResult] = {
+  private def validateApplicationName(appName: String, appId: ApplicationId): Future[ApplicationNameValidationResult] = {
     ValidatedApplicationName(appName) match {
       case Some(validatedAppName) => approvalsNamingService.validateApplicationName(validatedAppName, appId)
-      case _                      => Future.successful(InvalidName)
+      case _                      => Future.successful(ApplicationNameValidationResult.Invalid)
     }
   }
 

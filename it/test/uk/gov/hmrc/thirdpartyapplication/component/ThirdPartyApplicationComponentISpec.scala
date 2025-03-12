@@ -655,7 +655,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
 
       val nameToCheck = "my invalid app name HMRC"
 
-      val requestBody = Json.obj("applicationName" -> nameToCheck).toString
+      val requestBody = Json.obj("nameToValidate" -> nameToCheck).toString
       val result      = sendJsonRequest("/application/name/validate", requestBody)
 
       Then("The response should be OK")
@@ -663,7 +663,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
 
       Then("The response should not contain any errors")
 
-      result.body.value shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false)).toString
+      result.body.value shouldBe Json.obj("validationResult" -> "INVALID").toString
     }
   }
 

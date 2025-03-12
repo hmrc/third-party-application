@@ -24,6 +24,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNaming, ApplicationNamingService, AuditService}
@@ -42,13 +43,13 @@ class UpliftNamingService @Inject() (
 
   import ApplicationNaming._
 
-  def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[OldApplicationNameValidationResult] = {
+  def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[ApplicationNameValidationResult] = {
     def upliftFilter(selfApplicationId: Option[ApplicationId]): ExclusionCondition =
       selfApplicationId.fold(noExclusions)(appId => excludeThisAppId(appId))
 
     ValidatedApplicationName(applicationName) match {
       case Some(validatedAppName) => validateApplicationNameWithExclusions(validatedAppName, upliftFilter(selfApplicationId))
-      case _                      => Future.successful(InvalidName)
+      case _                      => Future.successful(ApplicationNameValidationResult.Invalid)
     }
   }
 

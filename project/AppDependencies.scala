@@ -4,7 +4,7 @@ import org.apache.ivy.core.module.descriptor.ExcludeRule
 object AppDependencies {
   def apply(): Seq[ModuleID] = compileDeps ++ testDeps
 
-  lazy val bootstrapVersion         = "9.10.0"
+  lazy val bootstrapVersion         = "9.11.0"
   lazy val hmrcMongoVersion         = "2.5.0"
   lazy val applicationEventVersion  = "0.79.0" // Ensure this version of the application-events library uses the appDomainVersion below
   lazy val applicationDomainVersion = "0.75.0"
@@ -15,7 +15,7 @@ object AppDependencies {
     "commons-net"                    % "commons-net"                              % "3.6",
     "com.github.t3hnar"             %% "scala-bcrypt"                             % "4.1",
     "commons-validator"              % "commons-validator"                        % "1.7",
-    "uk.gov.hmrc"                   %% "internal-auth-client-play-30"             % "3.0.0",
+    "uk.gov.hmrc"                   %% "internal-auth-client-play-30"             % "3.1.0",
     "uk.gov.hmrc"                   %% "api-platform-application-events"          % applicationEventVersion exclude("uk.gov.hmrc","api-platform-application-domain"),
     "uk.gov.hmrc"                   %% "api-platform-application-domain"          % applicationDomainVersion,
     "com.iheart"                    %% "ficus"                                    % "1.5.2"

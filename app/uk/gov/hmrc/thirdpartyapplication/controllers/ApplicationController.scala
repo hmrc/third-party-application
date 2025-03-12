@@ -159,14 +159,6 @@ class ApplicationController @Inject() (
           case ChangeApplicationNameValidationRequest(nameToValidate, appId) => upliftNamingService.validateApplicationName(nameToValidate, Some(appId))
           case NewApplicationNameValidationRequest(nameToValidate)           => upliftNamingService.validateApplicationName(nameToValidate, None)
         })
-          .map(x => {
-            val result: ApplicationNameValidationResult = x match {
-              case ValidName     => ApplicationNameValidationResult.Valid
-              case InvalidName   => ApplicationNameValidationResult.Invalid
-              case DuplicateName => ApplicationNameValidationResult.Duplicate
-            }
-            result
-          })
           .map(r => Ok(Json.toJson(r)))
       } recover recovery
     }
