@@ -152,7 +152,7 @@ class ApplicationController @Inject() (
     }
   }
 
-  def validateApplicationName2: Action[JsValue] =
+  def validateApplicationName: Action[JsValue] =
     Action.async(parse.json) { implicit request =>
       withJsonBody[ApplicationNameValidationRequest] { applicationNameValidationRequest: ApplicationNameValidationRequest =>
         (applicationNameValidationRequest match {
@@ -168,25 +168,6 @@ class ApplicationController @Inject() (
             result
           })
           .map(r => Ok(Json.toJson(r)))
-      } recover recovery
-    }
-
-  def validateApplicationName: Action[JsValue] =
-    Action.async(parse.json) { implicit request =>
-      withJsonBody[OldApplicationNameValidationRequest] { applicationNameValidationRequest: OldApplicationNameValidationRequest =>
-        upliftNamingService
-          .validateApplicationName(applicationNameValidationRequest.applicationName, applicationNameValidationRequest.selfApplicationId)
-          .map((result: OldApplicationNameValidationResult) => {
-
-            val json = result match {
-              case ValidName     => Json.obj()
-              case InvalidName   => Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false))
-              case DuplicateName => Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
-            }
-
-            Ok(json)
-          })
-
       } recover recovery
     }
 
