@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Application
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ValidatedApplicationName}
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
@@ -38,7 +39,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.AnswerQuestio
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, InvalidName, OldApplicationNameValidationResult, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
 
 class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBaseSpec with SubmissionsTestData {
@@ -75,7 +75,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
     val ts                                                 = FixedClock.instant
     val mockApprovalsNamingService: ApprovalsNamingService = mock[ApprovalsNamingService]
 
-    def namingServiceReturns(result: OldApplicationNameValidationResult) =
+    def namingServiceReturns(result: ApplicationNameValidationResult) =
       when(mockApprovalsNamingService.validateApplicationName(*[ValidatedApplicationName], *[ApplicationId])).thenReturn(successful(result))
 
     val underTest = new SubmitApplicationApprovalRequestCommandHandler(
@@ -91,7 +91,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
   "process" should {
     "create correct event for a valid request with a standard app and submission where requester is the responsible individual" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      namingServiceReturns(ValidName)
+      namingServiceReturns(ApplicationNameValidationResult.Valid)
       ApplicationRepoMock.Save.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()
       SubmissionsServiceMock.Store.thenReturn()
@@ -117,7 +117,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
 
     "create correct event for a valid request with a standard app and submission where requester is NOT the responsible individual" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submissionRequesterNotRI)
-      namingServiceReturns(ValidName)
+      namingServiceReturns(ApplicationNameValidationResult.Valid)
       ApplicationRepoMock.Save.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()
       SubmissionsServiceMock.Store.thenReturn()
@@ -166,7 +166,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      namingServiceReturns(ValidName)
+      namingServiceReturns(ApplicationNameValidationResult.Valid)
       val nonStandardApp = app.withAccess(Access.Ropc(Set.empty))
 
       checkFailsWith("App must have a STANDARD access type") {
@@ -176,7 +176,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application name is not unique" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      namingServiceReturns(DuplicateName)
+      namingServiceReturns(ApplicationNameValidationResult.Duplicate)
 
       checkFailsWith(CommandFailures.DuplicateApplicationName("some random text")) {
         underTest.process(app, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
@@ -185,7 +185,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application name is invalid" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      namingServiceReturns(InvalidName)
+      namingServiceReturns(ApplicationNameValidationResult.Invalid)
 
       checkFailsWith(CommandFailures.InvalidApplicationName("some random text")) {
         underTest.process(app, SubmitApplicationApprovalRequest(Actors.AppCollaborator(appAdminEmail), instant, appAdminName, appAdminEmail))
@@ -194,7 +194,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application is not in TESTING" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      namingServiceReturns(ValidName)
+      namingServiceReturns(ApplicationNameValidationResult.Valid)
       val notTestingApp = app.withState(ApplicationStateExamples.pendingGatekeeperApproval("someone@example.com", "Someone"))
 
       checkFailsWith("App is not in TESTING state") {

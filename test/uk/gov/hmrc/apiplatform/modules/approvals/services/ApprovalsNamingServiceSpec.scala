@@ -23,9 +23,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationNameValidationConfigMockModule, AuditServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
@@ -53,7 +53,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
         val result = await(underTest.validateApplicationNameAndAudit(ValidatedApplicationName("my application name").get, applicationId, accessType))
 
-        result shouldBe ValidName
+        result shouldBe ApplicationNameValidationResult.Valid
       }
 
       "block a name with HMRC in" in new Setup {
@@ -62,7 +62,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
         val result = await(underTest.validateApplicationName(ValidatedApplicationName("Invalid name HMRC").get, applicationId))
 
-        result shouldBe InvalidName
+        result shouldBe ApplicationNameValidationResult.Invalid
       }
 
       "block a name with multiple denyListed names in" in new Setup {
@@ -71,7 +71,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
         val result = await(underTest.validateApplicationName(ValidatedApplicationName("ValidName InvalidName1 InvalidName2").get, applicationId))
 
-        result shouldBe InvalidName
+        result shouldBe ApplicationNameValidationResult.Invalid
       }
 
       "block an invalid ignoring case" in new Setup {
@@ -80,7 +80,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
         val result = await(underTest.validateApplicationName(ValidatedApplicationName("invalidname").get, applicationId))
 
-        result shouldBe InvalidName
+        result shouldBe ApplicationNameValidationResult.Invalid
       }
 
       "block a duplicate app name" in new Setup {
@@ -91,7 +91,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
         private val duplicateName = "duplicate name"
         val result                = await(underTest.validateApplicationName(ValidatedApplicationName(duplicateName).get, applicationId))
 
-        result shouldBe DuplicateName
+        result shouldBe ApplicationNameValidationResult.Duplicate
 
         ApplicationRepoMock.FetchByName.verifyCalledWith(duplicateName)
       }
@@ -104,7 +104,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
         private val duplicateName = "duplicate name"
         val result                = await(underTest.validateApplicationName(ValidatedApplicationName(duplicateName).get, applicationId))
 
-        result shouldBe ValidName
+        result shouldBe ApplicationNameValidationResult.Valid
 
         ApplicationRepoMock.FetchByName.verifyCalledWith(duplicateName)
       }
@@ -115,7 +115,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
         val result = await(underTest.validateApplicationName(ValidatedApplicationName("app name").get, applicationId))
 
-        result shouldBe ValidName
+        result shouldBe ApplicationNameValidationResult.Valid
 
         ApplicationRepoMock.FetchByName.veryNeverCalled()
       }
@@ -127,7 +127,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
         val result = await(underTest.validateApplicationName(ValidatedApplicationName("app name").get, applicationId))
 
-        result shouldBe ValidName
+        result shouldBe ApplicationNameValidationResult.Valid
       }
     }
   }

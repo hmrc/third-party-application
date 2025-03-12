@@ -23,8 +23,9 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, DuplicateName, InvalidName, ValidName}
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNaming.ExclusionCondition
 
 trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -50,9 +51,15 @@ trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     }
 
     object ValidateApplicationName {
-      def succeeds()               = when(aMock.validateApplicationNameWithExclusions(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(ValidName))
-      def failsWithDuplicateName() = when(aMock.validateApplicationNameWithExclusions(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(DuplicateName))
-      def failsWithInvalidName()   = when(aMock.validateApplicationNameWithExclusions(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(InvalidName))
+
+      def succeeds() =
+        when(aMock.validateApplicationNameWithExclusions(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(ApplicationNameValidationResult.Valid))
+
+      def failsWithDuplicateName() =
+        when(aMock.validateApplicationNameWithExclusions(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(ApplicationNameValidationResult.Duplicate))
+
+      def failsWithInvalidName() =
+        when(aMock.validateApplicationNameWithExclusions(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(ApplicationNameValidationResult.Invalid))
     }
   }
 
