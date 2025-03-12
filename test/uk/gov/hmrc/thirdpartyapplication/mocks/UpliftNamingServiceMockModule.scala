@@ -52,13 +52,13 @@ trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSu
 
     object ValidateApplicationName {
 
-      def succeeds()               =
+      def succeeds() =
         when(aMock.validateApplicationNameWithExclusions(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(ApplicationNameValidationResult.Valid))
 
       def failsWithDuplicateName() =
         when(aMock.validateApplicationNameWithExclusions(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(ApplicationNameValidationResult.Duplicate))
 
-      def failsWithInvalidName()   =
+      def failsWithInvalidName() =
         when(aMock.validateApplicationNameWithExclusions(*[ValidatedApplicationName], *[ExclusionCondition])).thenReturn(successful(ApplicationNameValidationResult.Invalid))
     }
   }
