@@ -200,7 +200,6 @@ class ApplicationServiceSpec
 
       val updateLoginRedirectUris = UpdateLoginRedirectUris(
         actor = gatekeeperActor,
-        oldRedirectUris = List.empty,
         newRedirectUris = newRedirectUris,
         timestamp = instant
       )
