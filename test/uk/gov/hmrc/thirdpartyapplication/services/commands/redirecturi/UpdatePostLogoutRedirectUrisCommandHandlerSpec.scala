@@ -44,7 +44,7 @@ class UpdatePostLogoutRedirectUrisCommandHandlerSpec extends CommandHandlerBaseS
     val newPostLogoutRedirectUris = List("https://new-url.example.com/logout", "https://new-url.example.com/logout-redirect").map(PostLogoutRedirectUri.unsafeApply(_))
 
     val timestamp  = FixedClock.instant
-    val cmdAsGK    = UpdatePostLogoutRedirectUris(gatekeeperActor, oldRedirectUris, newPostLogoutRedirectUris, instant)
+    val cmdAsGK    = UpdatePostLogoutRedirectUris(gatekeeperActor, newPostLogoutRedirectUris, instant)
     val cmdAsAdmin = cmdAsGK.copy(actor = adminActor)
     val cmdAsDev   = cmdAsGK.copy(actor = developerActor)
 

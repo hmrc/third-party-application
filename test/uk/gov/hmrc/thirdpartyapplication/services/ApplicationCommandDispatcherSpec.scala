@@ -832,7 +832,7 @@ class ApplicationCommandDispatcherSpec
     "UpdateRedirectUris is received" should {
       val oldUris = List("https://uri1/a", "https://uri2/a").map(LoginRedirectUri.unsafeApply(_))
       val newUris = List("https://uri3/a", "https://uri4/a").map(LoginRedirectUri.unsafeApply(_))
-      val cmd     = UpdateLoginRedirectUris(otherAdminAsActor, oldUris, newUris, timestamp)
+      val cmd     = UpdateLoginRedirectUris(otherAdminAsActor, newUris, timestamp)
       val evt     = ApplicationEvents.LoginRedirectUrisUpdatedV2(
         EventId.random,
         applicationId,
