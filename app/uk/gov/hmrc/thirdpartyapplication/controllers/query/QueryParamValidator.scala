@@ -78,19 +78,19 @@ object QueryParamValidator {
     }
   }
 
-  object ContextValidator extends QueryParamValidator {
+  object ApiContextValidator extends QueryParamValidator {
     val paramName                                                = "context"
 
-    def validate(values: Seq[String]): ErrorsOr[Param.ContextQP] = {
-      SingleValueExpected(paramName)(values) map { s => Param.ContextQP(ApiContext(s)) }
+    def validate(values: Seq[String]): ErrorsOr[Param.ApiContextQP] = {
+      SingleValueExpected(paramName)(values) map { s => Param.ApiContextQP(ApiContext(s)) }
     }
   }
 
-  object VersionNbrValidator extends QueryParamValidator {
+  object ApiVersionNbrValidator extends QueryParamValidator {
     val paramName                                                   = "versionNbr"
 
-    def validate(values: Seq[String]): ErrorsOr[Param.VersionNbrQP] = {
-      SingleValueExpected(paramName)(values) map { s => Param.VersionNbrQP(ApiVersionNbr(s)) }
+    def validate(values: Seq[String]): ErrorsOr[Param.ApiVersionNbrQP] = {
+      SingleValueExpected(paramName)(values) map { s => Param.ApiVersionNbrQP(ApiVersionNbr(s)) }
     }
   }
 
@@ -121,8 +121,8 @@ object QueryParamValidator {
   private val paramValidators: List[QueryParamValidator] = List(
     QueryParamValidator.ApplicationIdValidator,
     QueryParamValidator.ClientIdValidator,
-    QueryParamValidator.ContextValidator,
-    QueryParamValidator.VersionNbrValidator,
+    QueryParamValidator.ApiContextValidator,
+    QueryParamValidator.ApiVersionNbrValidator,
     QueryParamValidator.NoSubscriptionsValidator,
     QueryParamValidator.PageSizeValidator,
     QueryParamValidator.PageNbrValidator
