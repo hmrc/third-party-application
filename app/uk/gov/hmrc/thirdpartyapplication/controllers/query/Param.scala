@@ -28,14 +28,14 @@ object Param {
   case class ClientIdQP(value: ClientId)            extends Param[ClientId]      { val order = 2; val paramName = "clientId"      }
   case class UserAgentQP(value: String)             extends Param[String] { val order = 3; val paramName = "userAgent"       }
   case class ApplicationIdQP(value: ApplicationId)  extends Param[ApplicationId] { val order = 4; val paramName = "applicationId" }
+  
+  case object NoSubscriptionsQP                 extends Param[Unit]          { val order = 10; val paramName = "noSubscriptions" }
+  case class ApiContextQP(value: ApiContext)       extends Param[ApiContext]    { val order = 11; val paramName = "context"         }
+  case class ApiVersionNbrQP(value: ApiVersionNbr) extends Param[ApiVersionNbr] { val order = 12; val paramName = "versionNbr"      }
 
-  case class ContextQP(value: ApiContext)       extends Param[ApiContext]    { val order = 99; val paramName = "context"         }
-  case class VersionNbrQP(value: ApiVersionNbr) extends Param[ApiVersionNbr] { val order = 99; val paramName = "versionNbr"      }
-  case object NoSubscriptionsQP                 extends Param[Unit]          { val order = 99; val paramName = "noSubscriptions" }
+  case class UserIdQP(value: UserId)           extends Param[UserId]      { val order = 20; val paramName = "userId"      }
+  case class EnvironmentQP(value: Environment) extends Param[Environment] { val order = 21; val paramName = "environment" }
 
-  case class UserIdQP(value: UserId)           extends Param[UserId]      { val order = 99; val paramName = "userId"      }
-  case class EnvironmentQP(value: Environment) extends Param[Environment] { val order = 99; val paramName = "environment" }
-
-  case class PageSizeQP(value: Int) extends Param[Int] { val order = 99; val paramName = "pageSize" }
-  case class PageNbrQP(value: Int)  extends Param[Int] { val order = 99; val paramName = "pageNbr"  }
+  case class PageSizeQP(value: Int) extends Param[Int] { val order = 100; val paramName = "pageSize" }
+  case class PageNbrQP(value: Int)  extends Param[Int] { val order = 101; val paramName = "pageNbr"  }
 }
