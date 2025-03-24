@@ -31,4 +31,8 @@ object HttpHeaders extends HeaderNames {
   val LOGGED_IN_USER_EMAIL_HEADER = "X-email-address"
   val LOGGED_IN_USER_NAME_HEADER  = "X-name"
   val SERVER_TOKEN_HEADER         = "X-server-token"
+
+  // This header is not expected to reach outside but is used to pass information further down the call stack.
+  // TODO - tidy this up to use a better way to decorate calls with the knowledge they came from API Gateway (or not)
+  val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
 }

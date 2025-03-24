@@ -20,6 +20,7 @@ object AppDependencies {
     // Use these during poc stage of development
     // "uk.gov.hmrc"                   %% "api-platform-application-events"          % applicationEventVersion exclude("uk.gov.hmrc","api-platform-application-domain"),
     // "uk.gov.hmrc"                   %% "api-platform-application-domain"          % applicationDomainVersion,
+    "org.typelevel"                 %% "cats-core"                                % "2.13.0",
     "com.iheart"                    %% "ficus"                                    % "1.5.2"
   )
 
