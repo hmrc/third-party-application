@@ -25,7 +25,8 @@ import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.InstantJsonFormatter
-import uk.gov.hmrc.thirdpartyapplication.models.{AccessTypeFilter, ApplicationSort, DeleteRestrictionFilter, StatusFilter}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSort, DeleteRestrictionFilter, StatusFilter}
 
 sealed trait QueryParamValidator {
   def paramName: String
@@ -192,18 +193,17 @@ object QueryParamValidator {
 
   object AccessTypeValidator extends QueryParamValidator {
 
-    def parseText(value: String): ErrorsOr[AccessTypeFilter] = {
-      import AccessTypeFilter._
-
+    def parseText(value: String): ErrorsOr[Option[AccessType]] = {
       value match {
-        case "STANDARD"   => StandardAccess.validNel
-        case "ROPC"       => ROPCAccess.validNel
-        case "PRIVILEGED" => PrivilegedAccess.validNel
-        case "ANY"        => NoFiltering.validNel
-        case _            => s"$value is not a valid sort".invalidNel
+        case "ANY" => None.validNel
+        case text  => AccessType(text).fold[ErrorsOr[Option[AccessType]]](
+            s"$value is not a valid access type".invalidNel
+          )(at =>
+            at.some.validNel
+          )
       }
     }
-    val paramName                                            = "accessType"
+    val paramName                                              = "accessType"
 
     def validate(values: Seq[String]): ErrorsOr[Param.AccessTypeQP] = {
       SingleValueExpected(paramName)(values) andThen parseText map { sort => Param.AccessTypeQP(sort) }

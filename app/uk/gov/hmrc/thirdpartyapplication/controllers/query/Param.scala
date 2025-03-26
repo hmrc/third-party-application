@@ -19,7 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.controllers.query
 import java.time.Instant
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.{AccessTypeFilter, ApplicationSort, DeleteRestrictionFilter, StatusFilter}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSort, DeleteRestrictionFilter, StatusFilter}
 
 sealed trait Param[+P] {
   def order: Int
@@ -45,8 +46,8 @@ object Param {
   case class UserIdQP(value: UserId)           extends Param[UserId]      { val section = 5; val order = 1 }
   case class EnvironmentQP(value: Environment) extends Param[Environment] { val section = 5; val order = 1 }
 
-  case class StatusFilterQP(value: StatusFilter)   extends Param[StatusFilter]     { val section = 5; val order = 1 }
-  case class AccessTypeQP(value: AccessTypeFilter) extends Param[AccessTypeFilter] { val section = 5; val order = 1 }
+  case class StatusFilterQP(value: StatusFilter)     extends Param[StatusFilter]       { val section = 5; val order = 1 }
+  case class AccessTypeQP(value: Option[AccessType]) extends Param[Option[AccessType]] { val section = 5; val order = 1 }
 
   case class SearchTextQP(value: String)                         extends Param[String]                  { val section = 5; val order = 1 }
   case class IncludeDeletedQP(value: Boolean)                    extends Param[Boolean]                 { val section = 5; val order = 1 }
