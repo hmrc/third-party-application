@@ -54,7 +54,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain(OneOrMoreAPISubscriptions)
+      searchObject.filters should contain(APISubscriptionFilter.OneOrMoreAPISubscriptions)
     }
 
     "correctly parse Application Status filter" in {
@@ -62,7 +62,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain(PendingGatekeeperCheck)
+      searchObject.filters should contain(StatusFilter.PendingGatekeeperCheck)
     }
 
     "correctly parse Application Status blocked filter" in {
@@ -70,7 +70,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain(Blocked)
+      searchObject.filters should contain(StatusFilter.Blocked)
     }
 
     "correctly parse Access Type filter" in {
@@ -78,7 +78,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain(PrivilegedAccess)
+      searchObject.filters should contain(AccessTypeFilter.PrivilegedAccess)
     }
 
     "correctly parse lastUseBefore into LastUseBeforeDate filter" in {
@@ -164,8 +164,8 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain(SpecificAPISubscription)
-      searchObject.filters should contain(Created)
+      searchObject.filters should contain(APISubscriptionFilter.SpecificAPISubscription)
+      searchObject.filters should contain(StatusFilter.Created)
     }
 
     "not return a filter where apiSubscription is included with empty string" in {
@@ -183,7 +183,7 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.apiContext shouldBe Some(api.asContext)
-      searchObject.filters should contain(SpecificAPISubscription)
+      searchObject.filters should contain(APISubscriptionFilter.SpecificAPISubscription)
     }
 
     "populate apiContext and apiVersion if specific values are provided" in {
@@ -193,7 +193,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain(SpecificAPISubscription)
+      searchObject.filters should contain(APISubscriptionFilter.SpecificAPISubscription)
       searchObject.apiContext shouldBe Some(api.asContext)
       searchObject.apiVersion shouldBe Some(apiVersion.asVersion)
     }
@@ -202,35 +202,35 @@ class ApplicationSearchSpec extends HmrcSpec {
       val request      = FakeRequest("GET", "/applications?sort=NAME_ASC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.sort shouldBe NameAscending
+      searchObject.sort shouldBe ApplicationSort.NameAscending
     }
 
     "populate sort as NameDescending when sort is NAME_DESC" in {
       val request      = FakeRequest("GET", "/applications?sort=NAME_DESC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.sort shouldBe NameDescending
+      searchObject.sort shouldBe ApplicationSort.NameDescending
     }
 
     "populate sort as SubmittedAscending when sort is SUBMITTED_DESC" in {
       val request      = FakeRequest("GET", "/applications?sort=SUBMITTED_ASC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.sort shouldBe SubmittedAscending
+      searchObject.sort shouldBe ApplicationSort.SubmittedAscending
     }
 
     "populate sort as SubmittedDescending when sort is SUBMITTED_DESC" in {
       val request      = FakeRequest("GET", "/applications?sort=SUBMITTED_DESC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.sort shouldBe SubmittedDescending
+      searchObject.sort shouldBe ApplicationSort.SubmittedDescending
     }
 
     "populate sort as SubmittedAscending when sort is not specified" in {
       val request      = FakeRequest("GET", "/applications")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.sort shouldBe SubmittedAscending
+      searchObject.sort shouldBe ApplicationSort.SubmittedAscending
     }
   }
 }

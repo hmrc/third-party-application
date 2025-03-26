@@ -32,8 +32,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.models.{Blocked, StandardAccess => _, _}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationRepositorySearchISpec
@@ -140,7 +140,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(applicationNoRestriction))
       await(applicationRepository.save(applicationDoNotDelete))
 
-      val applicationSearch = new ApplicationSearch(filters = List(NoRestriction))
+      val applicationSearch = new ApplicationSearch(filters = List(DeleteRestrictionFilter.NoRestriction))
 
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
@@ -169,7 +169,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(applicationNoRestriction))
       await(applicationRepository.save(applicationDoNotDelete))
 
-      val applicationSearch = new ApplicationSearch(filters = List(DoNotDelete))
+      val applicationSearch = new ApplicationSearch(filters = List(DeleteRestrictionFilter.DoNotDelete))
 
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
@@ -193,7 +193,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationInProduction))
 
-      val applicationSearch = new ApplicationSearch(filters = List(Active))
+      val applicationSearch = new ApplicationSearch(filters = List(StatusFilter.Active))
 
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
@@ -216,7 +216,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationDeleted))
 
-      val applicationSearch = new ApplicationSearch(filters = List(WasDeleted), includeDeleted = true)
+      val applicationSearch = new ApplicationSearch(filters = List(StatusFilter.WasDeleted), includeDeleted = true)
 
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
@@ -239,7 +239,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationDeleted))
 
-      val applicationSearch = new ApplicationSearch(filters = List(ExcludingDeleted), includeDeleted = true)
+      val applicationSearch = new ApplicationSearch(filters = List(StatusFilter.ExcludingDeleted), includeDeleted = true)
 
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
@@ -265,7 +265,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = List(ROPCAccess))
+      val applicationSearch = new ApplicationSearch(filters = List(AccessTypeFilter.ROPCAccess))
 
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
@@ -300,7 +300,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(blockedApplication))
       await(applicationRepository.save(deletedAndBlockedApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = List(Blocked))
+      val applicationSearch = new ApplicationSearch(filters = List(StatusFilter.Blocked))
 
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
@@ -338,7 +338,7 @@ class ApplicationRepositorySearchISpec
       )
 
       val applicationSearch =
-        new ApplicationSearch(filters = List(NoAPISubscriptions))
+        new ApplicationSearch(filters = List(APISubscriptionFilter.NoAPISubscriptions))
 
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
@@ -376,7 +376,7 @@ class ApplicationRepositorySearchISpec
       )
 
       val applicationSearch =
-        ApplicationSearch(filters = List(OneOrMoreAPISubscriptions))
+        ApplicationSearch(filters = List(APISubscriptionFilter.OneOrMoreAPISubscriptions))
 
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
@@ -561,7 +561,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(ropcApplication))
 
       val applicationSearch = new ApplicationSearch(
-        filters = List(ROPCAccess),
+        filters = List(AccessTypeFilter.ROPCAccess),
         textToSearch = Some(applicationName)
       )
 
@@ -642,7 +642,7 @@ class ApplicationRepositorySearchISpec
       )
 
       val applicationSearch = new ApplicationSearch(
-        filters = List(SpecificAPISubscription),
+        filters = List(APISubscriptionFilter.SpecificAPISubscription),
         apiContext = Some(expectedAPIContext.asContext),
         apiVersion = None
       )
@@ -694,7 +694,7 @@ class ApplicationRepositorySearchISpec
 
       val applicationSearch =
         new ApplicationSearch(
-          filters = List(SpecificAPISubscription),
+          filters = List(APISubscriptionFilter.SpecificAPISubscription),
           apiContext = Some(apiContext.asContext),
           apiVersion = Some(expectedAPIVersion.asVersion)
         )
@@ -959,7 +959,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(firstApplication))
       await(applicationRepository.save(lowerCaseApplication))
 
-      val applicationSearch = new ApplicationSearch(sort = NameAscending)
+      val applicationSearch = new ApplicationSearch(sort = ApplicationSort.NameAscending)
       val result            =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
@@ -992,7 +992,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(firstApplication))
       await(applicationRepository.save(secondApplication))
 
-      val applicationSearch = new ApplicationSearch(sort = NameDescending)
+      val applicationSearch = new ApplicationSearch(sort = ApplicationSort.NameDescending)
       val result            =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
@@ -1022,7 +1022,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(secondApplication))
       await(applicationRepository.save(firstApplication))
 
-      val applicationSearch = new ApplicationSearch(sort = SubmittedAscending)
+      val applicationSearch = new ApplicationSearch(sort = ApplicationSort.SubmittedAscending)
       val result            =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
@@ -1052,7 +1052,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(firstApplication))
       await(applicationRepository.save(secondApplication))
 
-      val applicationSearch = new ApplicationSearch(sort = SubmittedDescending)
+      val applicationSearch = new ApplicationSearch(sort = ApplicationSort.SubmittedDescending)
       val result            =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
@@ -1080,7 +1080,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(secondApplication))
       await(applicationRepository.save(firstApplication))
 
-      val applicationSearch = new ApplicationSearch(sort = LastUseDateAscending)
+      val applicationSearch = new ApplicationSearch(sort = ApplicationSort.LastUseDateAscending)
       val result            =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
@@ -1109,7 +1109,7 @@ class ApplicationRepositorySearchISpec
       await(applicationRepository.save(firstApplication))
 
       val applicationSearch =
-        new ApplicationSearch(sort = LastUseDateDescending)
+        new ApplicationSearch(sort = ApplicationSort.LastUseDateDescending)
       val result            =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 

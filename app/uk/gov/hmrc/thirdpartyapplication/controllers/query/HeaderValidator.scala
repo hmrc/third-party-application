@@ -41,7 +41,7 @@ private object HeaderValidator {
   }
 
   object ServerTokenHeaderValidator extends HeaderValidator {
-    val headerName                                                   = HttpHeaders.SERVER_TOKEN_HEADER
+    val headerName = HttpHeaders.SERVER_TOKEN_HEADER
 
     def validate(values: Seq[String]): ErrorsOr[Param.ServerTokenQP] = {
       SingleValueExpected(headerName)(values) map { Param.ServerTokenQP(_) }
@@ -49,7 +49,7 @@ private object HeaderValidator {
   }
 
   object InternalUserAgentValidator extends HeaderValidator {
-    val headerName                                                 = HttpHeaders.INTERNAL_USER_AGENT
+    val headerName = HttpHeaders.INTERNAL_USER_AGENT
 
     def validate(values: Seq[String]): ErrorsOr[Param.UserAgentQP] = {
       SingleValueExpected(headerName)(values) map { Param.UserAgentQP(_) }

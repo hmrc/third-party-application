@@ -20,11 +20,13 @@ import cats.data.NonEmptyList
 import org.scalatest.EitherValues
 import org.scalatest.matchers.{MatchResult, Matcher}
 
-import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
+import uk.gov.hmrc.thirdpartyapplication.models.{AccessTypeFilter, ApplicationSort, DeleteRestrictionFilter, StatusFilter}
 
-class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues {
+class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues with FixedClock {
   val appOneParam   = "applicationId"   -> Seq(applicationIdOne.toString)
   val pageSizeParam = "pageSize"        -> Seq("10")
   val noSubsParam   = "noSubscriptions" -> Seq()
@@ -37,17 +39,92 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
       test(Map(appOneParam)).value shouldBe List(ApplicationIdQP(applicationIdOne))
     }
 
+    "extract valid params - clientId" in {
+      test(Map("clientId" -> Seq(clientIdOne.toString))).value shouldBe List(ClientIdQP(clientIdOne))
+    }
+
+    "extract valid params - apiContext" in {
+      test(Map("context" -> Seq("context1"))).value shouldBe List(ApiContextQP(ApiContext("context1")))
+    }
+
+    "extract valid params - apiVersionNbr" in {
+      test(Map("versionNbr" -> Seq("1.0"))).value shouldBe List(ApiVersionNbrQP(ApiVersionNbr("1.0")))
+    }
+
+    "extract valid params - hasSubscriptions" in {
+      test(Map("oneOrMoreSubscriptions" -> Seq())).value shouldBe List(HasSubscriptionsQP)
+    }
+
     "extract valid params - noSubscriptions" in {
       test(Map(noSubsParam)).value shouldBe List(NoSubscriptionsQP)
     }
+
+    "extract valid params - pageSize" in {
+      test(Map("pageSize" -> Seq("10"))).value shouldBe List(PageSizeQP(10))
+    }
+
+    "extract valid params - pageNbr" in {
+      test(Map("pageNbr" -> Seq("3"))).value shouldBe List(PageNbrQP(3))
+    }
+
+    "extract valid params - status filter" in {
+      test(Map("status" -> Seq("CREATED"))).value shouldBe List(StatusFilterQP(StatusFilter.Created))
+      test(Map("status" -> Seq("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION"))).value shouldBe List(StatusFilterQP(StatusFilter.PendingResponsibleIndividualVerification))
+      test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))).value shouldBe List(StatusFilterQP(StatusFilter.PendingGatekeeperCheck))
+      test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))).value shouldBe List(StatusFilterQP(StatusFilter.PendingSubmitterVerification))
+      test(Map("status" -> Seq("ACTIVE"))).value shouldBe List(StatusFilterQP(StatusFilter.Active))
+      test(Map("status" -> Seq("DELETED"))).value shouldBe List(StatusFilterQP(StatusFilter.WasDeleted))
+      test(Map("status" -> Seq("EXCLUDING_DELETED"))).value shouldBe List(StatusFilterQP(StatusFilter.ExcludingDeleted))
+      test(Map("status" -> Seq("BLOCKED"))).value shouldBe List(StatusFilterQP(StatusFilter.Blocked))
+      test(Map("status" -> Seq("ANY"))).value shouldBe List(StatusFilterQP(StatusFilter.NoFiltering))
+    }
+
+    "extract valid params - sort filter" in {
+      test(Map("sort" -> Seq("NO_SORT"))).value shouldBe List(SortQP(ApplicationSort.NoSorting))
+    }
+
+    "extract valid params - accessType filter" in {
+      test(Map("accessType" -> Seq("STANDARD"))).value shouldBe List(AccessTypeQP(AccessTypeFilter.StandardAccess))
+      test(Map("accessType" -> Seq("ROPC"))).value shouldBe List(AccessTypeQP(AccessTypeFilter.ROPCAccess))
+      test(Map("accessType" -> Seq("PRIVILEGED"))).value shouldBe List(AccessTypeQP(AccessTypeFilter.PrivilegedAccess))
+      test(Map("accessType" -> Seq("ANY"))).value shouldBe List(AccessTypeQP(AccessTypeFilter.NoFiltering))
+    }
+
+    "extract valid params - search filter" in {
+      test(Map("search" -> Seq("ANY"))).value shouldBe List(SearchTextQP("ANY"))
+    }
+
+    "extract valid params - include deleted filter" in {
+      test(Map("includeDeleted" -> Seq("true"))).value shouldBe List(IncludeDeletedQP(true))
+      test(Map("includeDeleted" -> Seq("false"))).value shouldBe List(IncludeDeletedQP(false))
+    }
+
+    "extract valid params - delete restriction filter" in {
+      test(Map("deleteRestriction" -> Seq("DO_NOT_DELETE"))).value shouldBe List(DeleteRestrictionQP(DeleteRestrictionFilter.DoNotDelete))
+      test(Map("deleteRestriction" -> Seq("NO_RESTRICTION"))).value shouldBe List(DeleteRestrictionQP(DeleteRestrictionFilter.NoRestriction))
+    }
+
+    "extract valid params - last used before filter" in {
+      test(Map("lastUsedBefore" -> Seq(nowAsText))).value shouldBe List(LastUsedBeforeQP(instant))
+    }
+
+    "extract valid params - last used after filter" in {
+      test(Map("lastUsedAfter" -> Seq(nowAsText))).value shouldBe List(LastUsedAfterQP(instant))
+    }
+
+    // -----
 
     "extract valid params - applicationId, pageSize" in {
       test(Map(appOneParam, pageSizeParam)).value shouldBe List(ApplicationIdQP(applicationIdOne), PageSizeQP(10))
     }
 
+    // -----
+
     "extract valid params regardless of case - applicationId" in {
       test(Map("APPLICATIONID" -> Seq(applicationIdOne.toString()))).value shouldBe List(ApplicationIdQP(applicationIdOne))
     }
+
+    // -----
 
     "error on params with multiple values" in {
       inside(test(Map("applicationId" -> Seq(applicationIdOne.toString(), applicationIdTwo.toString())))) {

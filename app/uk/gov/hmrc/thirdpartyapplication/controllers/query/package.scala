@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import cats.data.ValidatedNel
+import cats.data.{Validated, ValidatedNel}
 
 package object query {
   type ErrorMessage = String
   type ErrorsOr[A]  = ValidatedNel[ErrorMessage, A]
+  type ErrorOr[A]   = Validated[ErrorMessage, A]
 }

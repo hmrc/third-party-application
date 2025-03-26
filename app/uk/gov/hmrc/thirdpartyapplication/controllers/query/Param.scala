@@ -16,26 +16,41 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
+import java.time.Instant
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.{AccessTypeFilter, ApplicationSort, DeleteRestrictionFilter, StatusFilter}
 
 sealed trait Param[+P] {
   def order: Int
-  def paramName: String
+  def section: Int
 }
 
 object Param {
-  case class ServerTokenQP(value: String)           extends Param[String] { val order = 1; val paramName = "serverToken"     }
-  case class ClientIdQP(value: ClientId)            extends Param[ClientId]      { val order = 2; val paramName = "clientId"      }
-  case class UserAgentQP(value: String)             extends Param[String] { val order = 3; val paramName = "userAgent"       }
-  case class ApplicationIdQP(value: ApplicationId)  extends Param[ApplicationId] { val order = 4; val paramName = "applicationId" }
-  
-  case object NoSubscriptionsQP                 extends Param[Unit]          { val order = 10; val paramName = "noSubscriptions" }
-  case class ApiContextQP(value: ApiContext)       extends Param[ApiContext]    { val order = 11; val paramName = "context"         }
-  case class ApiVersionNbrQP(value: ApiVersionNbr) extends Param[ApiVersionNbr] { val order = 12; val paramName = "versionNbr"      }
+  case class ServerTokenQP(value: String)          extends Param[String]        { val section = 1; val order = 1 }
+  case class ClientIdQP(value: ClientId)           extends Param[ClientId]      { val section = 1; val order = 2 }
+  case class UserAgentQP(value: String)            extends Param[String]        { val section = 1; val order = 3 }
+  case class ApplicationIdQP(value: ApplicationId) extends Param[ApplicationId] { val section = 1; val order = 4 }
 
-  case class UserIdQP(value: UserId)           extends Param[UserId]      { val order = 20; val paramName = "userId"      }
-  case class EnvironmentQP(value: Environment) extends Param[Environment] { val order = 21; val paramName = "environment" }
+  case class PageSizeQP(value: Int) extends Param[Int] { val section = 2; val order = 1 }
+  case class PageNbrQP(value: Int)  extends Param[Int] { val section = 2; val order = 2 }
 
-  case class PageSizeQP(value: Int) extends Param[Int] { val order = 100; val paramName = "pageSize" }
-  case class PageNbrQP(value: Int)  extends Param[Int] { val order = 101; val paramName = "pageNbr"  }
+  case class SortQP(value: ApplicationSort) extends Param[ApplicationSort] { val section = 3; val order = 200 }
+
+  case object NoSubscriptionsQP                    extends Param[Unit]          { val section = 4; val order = 1 }
+  case object HasSubscriptionsQP                   extends Param[Unit]          { val section = 4; val order = 2 }
+  case class ApiContextQP(value: ApiContext)       extends Param[ApiContext]    { val section = 4; val order = 3 }
+  case class ApiVersionNbrQP(value: ApiVersionNbr) extends Param[ApiVersionNbr] { val section = 4; val order = 4 }
+
+  case class UserIdQP(value: UserId)           extends Param[UserId]      { val section = 5; val order = 1 }
+  case class EnvironmentQP(value: Environment) extends Param[Environment] { val section = 5; val order = 1 }
+
+  case class StatusFilterQP(value: StatusFilter)   extends Param[StatusFilter]     { val section = 5; val order = 1 }
+  case class AccessTypeQP(value: AccessTypeFilter) extends Param[AccessTypeFilter] { val section = 5; val order = 1 }
+
+  case class SearchTextQP(value: String)                         extends Param[String]                  { val section = 5; val order = 1 }
+  case class IncludeDeletedQP(value: Boolean)                    extends Param[Boolean]                 { val section = 5; val order = 1 }
+  case class DeleteRestrictionQP(value: DeleteRestrictionFilter) extends Param[DeleteRestrictionFilter] { val section = 5; val order = 1 }
+  case class LastUsedBeforeQP(value: Instant)                    extends Param[Instant]                 { val section = 5; val order = 1 }
+  case class LastUsedAfterQP(value: Instant)                     extends Param[Instant]                 { val section = 5; val order = 1 }
 }
