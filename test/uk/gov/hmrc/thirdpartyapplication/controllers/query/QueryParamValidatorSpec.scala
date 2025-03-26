@@ -22,9 +22,10 @@ import org.scalatest.matchers.{MatchResult, Matcher}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
-import uk.gov.hmrc.thirdpartyapplication.models.{AccessTypeFilter, ApplicationSort, DeleteRestrictionFilter, StatusFilter}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSort, DeleteRestrictionFilter, StatusFilter}
 
 class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues with FixedClock {
   val appOneParam   = "applicationId"   -> Seq(applicationIdOne.toString)
@@ -84,10 +85,10 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
     }
 
     "extract valid params - accessType filter" in {
-      test(Map("accessType" -> Seq("STANDARD"))).value shouldBe List(AccessTypeQP(AccessTypeFilter.StandardAccess))
-      test(Map("accessType" -> Seq("ROPC"))).value shouldBe List(AccessTypeQP(AccessTypeFilter.ROPCAccess))
-      test(Map("accessType" -> Seq("PRIVILEGED"))).value shouldBe List(AccessTypeQP(AccessTypeFilter.PrivilegedAccess))
-      test(Map("accessType" -> Seq("ANY"))).value shouldBe List(AccessTypeQP(AccessTypeFilter.NoFiltering))
+      test(Map("accessType" -> Seq("STANDARD"))).value shouldBe List(AccessTypeQP(Some(AccessType.STANDARD)))
+      test(Map("accessType" -> Seq("ROPC"))).value shouldBe List(AccessTypeQP(Some(AccessType.ROPC)))
+      test(Map("accessType" -> Seq("PRIVILEGED"))).value shouldBe List(AccessTypeQP(Some(AccessType.PRIVILEGED)))
+      test(Map("accessType" -> Seq("ANY"))).value shouldBe List(AccessTypeQP(None))
     }
 
     "extract valid params - search filter" in {

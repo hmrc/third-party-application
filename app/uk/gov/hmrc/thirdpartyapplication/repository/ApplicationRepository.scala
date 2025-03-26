@@ -758,7 +758,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     searchApplications("fetchAll")(
       ApplicationSearch(includeDeleted = includeDeleted)
     )
-    .map(_.applications)
+      .map(_.applications)
   }
 
   def processAll(function: StoredApplication => Unit): Future[Unit] = {
