@@ -667,24 +667,26 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     applicationSearchFilter match {
 
       // API Subscriptions
-      case NoAPISubscriptions        => matches(size("subscribedApis", 0))
-      case OneOrMoreAPISubscriptions => matches(Document(s"""{$$expr: {$$gte: [{$$size:"$$subscribedApis"}, 1] }}"""))
-      case SpecificAPISubscription   => specificAPISubscription(applicationSearch.apiContext.get, applicationSearch.apiVersion)
+      case APISubscriptionFilter.NoAPISubscriptions        => matches(size("subscribedApis", 0))
+      case APISubscriptionFilter.OneOrMoreAPISubscriptions => matches(Document(s"""{$$expr: {$$gte: [{$$size:"$$subscribedApis"}, 1] }}"""))
+      case APISubscriptionFilter.SpecificAPISubscription   => specificAPISubscription(applicationSearch.apiContext.get, applicationSearch.apiVersion)
 
       // Application Status
-      case Created                                  => applicationStatusMatch(State.TESTING)
-      case PendingResponsibleIndividualVerification => applicationStatusMatch(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
-      case PendingGatekeeperCheck                   => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
-      case PendingSubmitterVerification             => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
-      case Active                                   => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
-      case WasDeleted                               => applicationStatusMatch(State.DELETED)
-      case ExcludingDeleted                         => applicationStatusNotEqual(State.DELETED)
-      case Blocked                                  => applicationBlocked()
+      case StatusFilter.Created                                  => applicationStatusMatch(State.TESTING)
+      case StatusFilter.PendingResponsibleIndividualVerification => applicationStatusMatch(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
+      case StatusFilter.PendingGatekeeperCheck                   => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
+      case StatusFilter.PendingSubmitterVerification             => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
+      case StatusFilter.Active                                   => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
+      case StatusFilter.WasDeleted                               => applicationStatusMatch(State.DELETED)
+      case StatusFilter.ExcludingDeleted                         => applicationStatusNotEqual(State.DELETED)
+      case StatusFilter.Blocked                                  => applicationBlocked()
+      case StatusFilter.NoFiltering                              => Document()
 
       // Access Type
-      case StandardAccess   => accessTypeMatch(AccessType.STANDARD)
-      case ROPCAccess       => accessTypeMatch(AccessType.ROPC)
-      case PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
+      case AccessTypeFilter.StandardAccess   => accessTypeMatch(AccessType.STANDARD)
+      case AccessTypeFilter.ROPCAccess       => accessTypeMatch(AccessType.ROPC)
+      case AccessTypeFilter.PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
+      case AccessTypeFilter.NoFiltering      => Document()
 
       // Text Search
       case ApplicationTextSearch => regexTextSearch(List("id", "name", "tokens.production.clientId"), applicationSearch.textToSearch.getOrElse(""))
@@ -694,8 +696,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       case lastUsedAfter: LastUseAfterDate   => lastUsedAfter.toMongoMatch
 
       // Delete Restriction
-      case NoRestriction => deleteRestrictionMatch(DeleteRestrictionType.NO_RESTRICTION)
-      case DoNotDelete   => deleteRestrictionMatch(DeleteRestrictionType.DO_NOT_DELETE)
+      case DeleteRestrictionFilter.NoRestriction => deleteRestrictionMatch(DeleteRestrictionType.NO_RESTRICTION)
+      case DeleteRestrictionFilter.DoNotDelete   => deleteRestrictionMatch(DeleteRestrictionType.DO_NOT_DELETE)
 
       case _ => Document() // Only here to complete the match
     }
@@ -703,14 +705,13 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   // scalastyle:on cyclomatic.complexity
 
   private def convertToSortClause(sort: ApplicationSort): List[Bson] = sort match {
-    case NameAscending         => List(Aggregates.sort(Sorts.ascending("normalisedName")))
-    case NameDescending        => List(Aggregates.sort(Sorts.descending("normalisedName")))
-    case SubmittedAscending    => List(Aggregates.sort(Sorts.ascending("createdOn")))
-    case SubmittedDescending   => List(Aggregates.sort(Sorts.descending("createdOn")))
-    case LastUseDateAscending  => List(Aggregates.sort(Sorts.ascending("lastAccess")))
-    case LastUseDateDescending => List(Aggregates.sort(Sorts.descending("lastAccess")))
-    case NoSorting             => List()
-    case _                     => List(Aggregates.sort(Sorts.ascending("normalisedName")))
+    case ApplicationSort.NameAscending         => List(Aggregates.sort(Sorts.ascending("normalisedName")))
+    case ApplicationSort.NameDescending        => List(Aggregates.sort(Sorts.descending("normalisedName")))
+    case ApplicationSort.SubmittedAscending    => List(Aggregates.sort(Sorts.ascending("createdOn")))
+    case ApplicationSort.SubmittedDescending   => List(Aggregates.sort(Sorts.descending("createdOn")))
+    case ApplicationSort.LastUseDateAscending  => List(Aggregates.sort(Sorts.ascending("lastAccess")))
+    case ApplicationSort.LastUseDateDescending => List(Aggregates.sort(Sorts.descending("lastAccess")))
+    case ApplicationSort.NoSorting             => List()
   }
 
   private def regexTextSearch(fields: List[String], searchText: String): Bson = {
@@ -769,7 +770,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def fetchAllForContext(apiContext: ApiContext): Future[List[StoredApplication]] =
     searchApplications("fetchAllForContext")(
       ApplicationSearch(
-        filters = List(SpecificAPISubscription),
+        filters = List(APISubscriptionFilter.SpecificAPISubscription),
         apiContext = Some(apiContext)
       )
     ).map(_.applications)
@@ -777,19 +778,24 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def fetchAllForApiIdentifier(apiIdentifier: ApiIdentifier): Future[List[StoredApplication]] =
     searchApplications("fetchAllForApiIdentifier")(
       ApplicationSearch(
-        filters = List(SpecificAPISubscription),
+        filters = List(APISubscriptionFilter.SpecificAPISubscription),
         apiContext = Some(apiIdentifier.context),
         apiVersion = Some(apiIdentifier.versionNbr)
       )
     ).map(_.applications)
 
   def fetchAllWithNoSubscriptions(): Future[List[StoredApplication]] =
-    searchApplications("fetchAllWithNoSubscriptions")(new ApplicationSearch(filters = List(NoAPISubscriptions))).map(_.applications)
+    searchApplications("fetchAllWithNoSubscriptions")(
+      ApplicationSearch(
+        filters = List(APISubscriptionFilter.NoAPISubscriptions)
+      )
+    ).map(_.applications)
 
   def fetchAll(includeDeleted: Boolean = false): Future[List[StoredApplication]] = {
-    val result = searchApplications("fetchAll")(new ApplicationSearch(includeDeleted = includeDeleted))
-
-    result.map(_.applications)
+    searchApplications("fetchAll")(
+      ApplicationSearch(includeDeleted = includeDeleted)
+    )
+    .map(_.applications)
   }
 
   def processAll(function: StoredApplication => Unit): Future[Unit] = {

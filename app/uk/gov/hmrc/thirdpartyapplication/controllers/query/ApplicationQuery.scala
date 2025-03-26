@@ -17,8 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param.PageSizeQP
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param.PageNbrQP
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param.{PageNbrQP, PageSizeQP, SortQP}
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationSort
 
 // Determine QRY - request => Either[Errors, QRY]
 // Extract queryStrings
@@ -35,7 +35,12 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param.PageNbrQP
 
 // Map Result(s) to appropriate type
 
-trait ApplicationQuery
+sealed trait ApplicationQuery
+sealed trait SingleApplicationQuery extends ApplicationQuery
+
+sealed trait MultipleApplicationQuery extends ApplicationQuery {
+  def sort: ApplicationSort
+}
 
 // Request => Error | ApplicationQuery
 
@@ -44,90 +49,109 @@ object ApplicationQuery {
 
   case class Pagination(pageSize: Int, pageNbr: Int)
 
-
-  trait SingleApplicationQuery extends ApplicationQuery
-
-  case class ById(applicationId: ApplicationId) extends SingleApplicationQuery
-
-  case class ByClientId(clientId: ClientId, recordUsage: Boolean = false) extends SingleApplicationQuery
-  case class ByServerToken(serverToken: String, recordUsage: Boolean)     extends SingleApplicationQuery
-
-  trait MultipleApplicationQuery  extends ApplicationQuery
-  trait OpenEndedApplicationQuery extends MultipleApplicationQuery
-
-  case class UserApplicationQuery(userId: UserId, environment: Environment)  extends OpenEndedApplicationQuery
-  case class ByContext(context: ApiContext)                                  extends OpenEndedApplicationQuery
-  case class ByApiIdentifier(apiIdentifier: ApiIdentifier)                   extends OpenEndedApplicationQuery
-  case object WithNoSubscriptions                                            extends OpenEndedApplicationQuery
-
-  trait PaginatedApplicationQuery extends MultipleApplicationQuery {
-    def pageNbr: Int
-    def pageSize: Int
-  }
+  case class ById(applicationId: ApplicationId)                                                               extends SingleApplicationQuery
+  case class ByClientId(clientId: ClientId, recordUsage: Boolean = false)                                     extends SingleApplicationQuery
+  case class ByServerToken(serverToken: String, recordUsage: Boolean)                                         extends SingleApplicationQuery
+  case class GeneralOpenEndedApplicationQuery(sort: ApplicationSort, params: List[Param[_]])                  extends MultipleApplicationQuery
+  case class PaginatedApplicationQuery(sort: ApplicationSort, pagination: Pagination, params: List[Param[_]]) extends MultipleApplicationQuery
 
   import cats.implicits._
 
-  def asPagination(params: List[Param[_]]): Option[Pagination] = {
-    params match {
-      case PageSizeQP(size) :: PageNbrQP(nbr) :: Nil => Pagination(size, nbr).some
-      case PageSizeQP(size) :: Nil => Pagination(size, 1).some
-      case PageNbrQP(nbr) :: Nil => Pagination(20, nbr).some
-      case _ => None
-    }
-  }
-
-  def extractPagination(params: List[Param[_]]): (Option[ApplicationQuery.Pagination], List[Param[_]]) = {
-    params.partition(p => p.paramName == "pageSize" || p.paramName == "pageNbr")
-    .leftMap(asPagination(_))
-  }
-
-  def constructQueryIfCombinationsAreValid(params: List[Param[_]]): ErrorsOr[ApplicationQuery] = {
+  def checkSubscriptionsParams(params: List[Param[_]]): ErrorOr[Unit] = {
     import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
-    extractPagination(params.sortBy(_.order)) match {
-      case (None, ServerTokenQP(serverToken) :: Nil)                                        => ApplicationQuery.ByServerToken(serverToken, false).validNel
-      case (None, ServerTokenQP(serverToken) :: UserAgentQP(`ApiGatewayUserAgent`) :: Nil)  => ApplicationQuery.ByServerToken(serverToken, true).validNel
-      case (None, ServerTokenQP(serverToken) :: UserAgentQP(_) :: Nil )                     => ApplicationQuery.ByServerToken(serverToken, false).validNel
-      case (None, ServerTokenQP(_) :: _ :: Nil)                                             => "serverToken can only be used with an optional userAgent".invalidNel
-      case (Some(_), ServerTokenQP(_) :: _)                                                 => "pagination not allowed with server token".invalidNel
+    params.filter(_.section == 4).sortBy(_.order) match {
+      case NoSubscriptionsQP :: Nil                                 => ().valid
+      case HasSubscriptionsQP :: Nil                                => ().valid
+      case ApiContextQP(context) :: ApiVersionNbrQP(version) :: Nil => ().valid
+      case ApiContextQP(context) :: Nil                             => ().valid
 
-      case (None, ClientIdQP(clientId) :: Nil)                                              => ApplicationQuery.ByClientId(clientId, false).validNel
-      case (None, ClientIdQP(clientId) :: UserAgentQP(`ApiGatewayUserAgent`) :: Nil)        => ApplicationQuery.ByClientId(clientId, true).validNel
-      case (None, ClientIdQP(clientId) :: UserAgentQP(_) :: Nil)                            => ApplicationQuery.ByClientId(clientId, false).validNel
-      case (None, ClientIdQP(_) :: _ :: Nil)                                                => "clientId can only be used with an optional userAgent".invalidNel
-      case (Some(_), ClientIdQP(_) :: _)                                                    => "pagination not allowed with clientId".invalidNel
+      case NoSubscriptionsQP :: HasSubscriptionsQP :: _ => "cannot query for no subscriptions and then query for subscriptions".invalid
 
-      case (None, ApplicationIdQP(applicationId) :: Nil)                                    => ApplicationQuery.ById(applicationId).validNel
-      case (None, ApplicationIdQP(applicationId) :: _ :: Nil)                               => "applicationId cannot be mixed with any other parameters".invalidNel
-      case (Some(_), ApplicationIdQP(_) :: _)                                               => "pagination not allowed with applicationId".invalidNel
+      case NoSubscriptionsQP :: ApiContextQP(_) :: _    => "cannot query for no subscriptions and then query context".invalid
+      case NoSubscriptionsQP :: ApiVersionNbrQP(_) :: _ => "cannot query for no subscriptions and then query version nbr".invalid
 
-      case (_, NoSubscriptionsQP :: ApiContextQP(_) :: _)                                   => "cannot query for no subscriptions and then query context".invalidNel
-      case (_, NoSubscriptionsQP :: ApiVersionNbrQP(_) :: _)                                => "cannot query for no subscriptions and then query version nbr".invalidNel
-      case (_, ApiVersionNbrQP(_) :: _)                                                     => "cannot query for a version without a context".invalidNel
-      case (maybePagination, NoSubscriptionsQP :: Nil)                                      => ApplicationQuery.WithNoSubscriptions.validNel
-      case (maybePagination, ApiContextQP(context) :: ApiVersionNbrQP(version) :: Nil)      => ApplicationQuery.ByApiIdentifier(ApiIdentifier(context, version)).validNel
-      case (maybePagination, ApiContextQP(context) :: Nil)                                  => ApplicationQuery.ByContext(context).validNel
+      case HasSubscriptionsQP :: ApiContextQP(_) :: _    => "cannot query for any subscriptions and then query context".invalid
+      case HasSubscriptionsQP :: ApiVersionNbrQP(_) :: _ => "cannot query for any subscriptions and then query version nbr".invalid
 
-      case (None, UserIdQP(userId) :: EnvironmentQP(environment) :: Nil)                    => ApplicationQuery.UserApplicationQuery(userId, environment).validNel
-      case (None, UserIdQP(_) :: _ :: Nil)                                                  => "cannot query for userId without environment".invalidNel
-      case (Some(_), UserIdQP(_) :: _ :: Nil)                                               => "pagination not allowed with userId".invalidNel
+      case ApiVersionNbrQP(_) :: _ => "cannot query for a version without a context".invalid
 
-      case (None, _)                                                                        => "query without pagination is prohibited".invalidNel
+      case _ => "Unexpected combination of subscription query parameters".invalid
+    }
+  }
 
-      case (Some(pagination), EnvironmentQP(_) :: Nil)                                      => "cannot query for userId or environment without the other".invalidNel                            // Maybe ok
+  def identifyAnyPagination(allParams: List[Param[_]]): Option[Pagination] = {
+    allParams.filter(_.section == 2) match {
+      case PageSizeQP(size) :: PageNbrQP(nbr) :: Nil => Pagination(size, nbr).some
+      case PageNbrQP(nbr) :: PageSizeQP(size) :: Nil => Pagination(size, nbr).some
+      case PageSizeQP(size) :: Nil                   => Pagination(size, 1).some
+      case PageNbrQP(nbr) :: Nil                     => Pagination(50, nbr).some
+      case _                                         => None
+    }
+  }
 
+  def identifySort(allParams: List[Param[_]]): ApplicationSort = {
+    allParams.filter(_.section == 3) match {
+      case SortQP(sort) :: Nil => sort
+      case _                   => ApplicationSort.SubmittedAscending
+    }
+  }
 
-      case _ => "Bad combination".invalidNel
+  def attemptToConstructQuery(rawQueryParams: Map[String, Seq[String]], rawHeaders: Map[String, Seq[String]]): ErrorsOr[ApplicationQuery] = {
+    def attemptToConstructSingleResultQuery(validParams: List[Param[_]]): ErrorOr[Option[SingleApplicationQuery]] = {
+      import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
+
+      validParams.partition(_.section == 1) match {
+        case (Nil, Nil)               => "undefined queries are not permitted".invalid
+        case (Nil, _)                 => None.valid
+        case (singleQueryParams, Nil) =>
+          singleQueryParams.sortBy(_.order) match {
+            case ServerTokenQP(serverToken) :: Nil                                       => ApplicationQuery.ByServerToken(serverToken, false).some.valid
+            case ServerTokenQP(serverToken) :: UserAgentQP(`ApiGatewayUserAgent`) :: Nil => ApplicationQuery.ByServerToken(serverToken, true).some.valid
+            case ServerTokenQP(serverToken) :: UserAgentQP(_) :: Nil                     => ApplicationQuery.ByServerToken(serverToken, false).some.valid
+            case ServerTokenQP(_) :: _ :: Nil                                            => "serverToken can only be used with an optional userAgent".invalid
+
+            case ClientIdQP(clientId) :: Nil                                       => ApplicationQuery.ByClientId(clientId, false).some.valid
+            case ClientIdQP(clientId) :: UserAgentQP(`ApiGatewayUserAgent`) :: Nil => ApplicationQuery.ByClientId(clientId, true).some.valid
+            case ClientIdQP(clientId) :: UserAgentQP(_) :: Nil                     => ApplicationQuery.ByClientId(clientId, false).some.valid
+            case ClientIdQP(_) :: _ :: Nil                                         => "clientId can only be used with an optional userAgent".invalid
+
+            case ApplicationIdQP(applicationId) :: Nil      => ApplicationQuery.ById(applicationId).some.valid
+            case ApplicationIdQP(applicationId) :: _ :: Nil => "applicationId cannot be mixed with any other parameters".invalid
+            case _                                          => "unexpected match for singe result parameters".invalid
+          }
+        case (_, _)                   => "queries with identifiers cannot be matched with other parameters, sorting or pagination".invalid
+      }
     }
 
-  }
+    def attemptToConstructMultiResultQuery(validParams: List[Param[_]]): ErrorsOr[MultipleApplicationQuery] = {
+      val multiQueryParams = validParams.filter(_.section >= 4)
 
-  def topLevel(rawQueryParams: Map[String, Seq[String]], rawHeaders: Map[String, Seq[String]]): ErrorsOr[ApplicationQuery] = {
+      checkSubscriptionsParams(validParams).toValidatedNel andThen { _: Unit =>
+        val sorting = identifySort(validParams)
+
+        identifyAnyPagination(validParams)
+          .fold[MultipleApplicationQuery](
+            ApplicationQuery.GeneralOpenEndedApplicationQuery(sorting, multiQueryParams)
+          )(pagination =>
+            ApplicationQuery.PaginatedApplicationQuery(sorting, pagination, multiQueryParams)
+          )
+          .validNel
+      }
+    }
+
     val queryParams  = QueryParamValidator.parseParams(rawQueryParams)
     val headerParams = HeaderValidator.parseHeaders(rawHeaders)
+    val allParams    = queryParams <+> headerParams
 
-    val allParams = queryParams <+> headerParams
-    allParams.andThen(constructQueryIfCombinationsAreValid)
+    allParams.andThen { validParams =>
+      attemptToConstructSingleResultQuery(validParams).toValidatedNel andThen { q: Option[SingleApplicationQuery] =>
+        q.fold[ErrorsOr[ApplicationQuery]](
+          attemptToConstructMultiResultQuery(validParams)
+        )(
+          _.validNel
+        )
+      }
+    }
   }
-
 }
