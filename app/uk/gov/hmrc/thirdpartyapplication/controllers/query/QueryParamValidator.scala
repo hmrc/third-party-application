@@ -26,7 +26,6 @@ import cats.implicits._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.InstantJsonFormatter
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSort, DeleteRestrictionFilter, StatusFilter}
 
 sealed trait QueryParamValidator {
   def paramName: String
@@ -144,50 +143,27 @@ object QueryParamValidator {
     }
   }
 
-  object StatusFilterValidator extends QueryParamValidator {
+  private object AppStatusFilterExpected {
+    def apply(value: String): ErrorsOr[AppStatusFilter] = AppStatusFilter(value).toValidNel(s"$value is not a valid status filter")
+  }
 
-    def parseText(value: String): ErrorsOr[StatusFilter] = {
-      import uk.gov.hmrc.thirdpartyapplication.models.StatusFilter._
-      value match {
-        case "CREATED"                                     => Created.validNel
-        case "PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION" => PendingResponsibleIndividualVerification.validNel
-        case "PENDING_GATEKEEPER_CHECK"                    => PendingGatekeeperCheck.validNel
-        case "PENDING_SUBMITTER_VERIFICATION"              => PendingSubmitterVerification.validNel
-        case "ACTIVE"                                      => Active.validNel
-        case "DELETED"                                     => WasDeleted.validNel
-        case "EXCLUDING_DELETED"                           => ExcludingDeleted.validNel
-        case "BLOCKED"                                     => Blocked.validNel
-        case "ANY"                                         => NoFiltering.validNel
-        case _                                             => s"$value is not a valid status filter".invalidNel
-      }
-    }
-
+  object StatusValidator extends QueryParamValidator {
     val paramName = "status"
 
     def validate(values: Seq[String]): ErrorsOr[Param.StatusFilterQP] = {
-      SingleValueExpected(paramName)(values) andThen parseText map { Param.StatusFilterQP(_) }
+      SingleValueExpected(paramName)(values) andThen AppStatusFilterExpected.apply map { Param.StatusFilterQP(_) }
     }
   }
 
-  object SortValidator extends QueryParamValidator {
+  private object SortExpected {
+    def apply(value: String): ErrorsOr[Sorting] = Sorting(value).toValidNel(s"$value is not a valid sort")
+  }
 
-    def parseText(value: String): ErrorsOr[ApplicationSort] = {
-      import ApplicationSort._
-      value match {
-        case "NAME_ASC"       => NameAscending.validNel
-        case "NAME_DESC"      => NameDescending.validNel
-        case "SUBMITTED_ASC"  => SubmittedAscending.validNel
-        case "SUBMITTED_DESC" => SubmittedDescending.validNel
-        case "LAST_USE_ASC"   => LastUseDateAscending.validNel
-        case "LAST_USE_DESC"  => LastUseDateDescending.validNel
-        case "NO_SORT"        => NoSorting.validNel
-        case _                => s"$value is not a valid sort".invalidNel
-      }
-    }
+  object SortValidator extends QueryParamValidator {
     val paramName                                           = "sort"
 
     def validate(values: Seq[String]): ErrorsOr[Param.SortQP] = {
-      SingleValueExpected(paramName)(values) andThen parseText map { sort => Param.SortQP(sort) }
+      SingleValueExpected(paramName)(values) andThen SortExpected.apply map { sort => Param.SortQP(sort) }
     }
   }
 
@@ -226,21 +202,16 @@ object QueryParamValidator {
     }
   }
 
+
+  private object DeleteRestrictionExpected {
+    def apply(value: String): ErrorsOr[DeleteRestrictionFilter] = DeleteRestrictionFilter(value).toValidNel(s"$value is not a valid delete restriction filter")
+  }
+
   object DeleteRestrictionValidator extends QueryParamValidator {
-
-    def parseText(value: String): ErrorsOr[DeleteRestrictionFilter] = {
-      import DeleteRestrictionFilter._
-
-      value match {
-        case "DO_NOT_DELETE"  => DoNotDelete.validNel
-        case "NO_RESTRICTION" => NoRestriction.validNel
-        case _                => s"$value is not a valid delete restriction".invalidNel
-      }
-    }
     val paramName                                                   = "deleteRestriction"
 
     def validate(values: Seq[String]): ErrorsOr[Param.DeleteRestrictionQP] = {
-      SingleValueExpected(paramName)(values) andThen parseText map { sort => Param.DeleteRestrictionQP(sort) }
+      SingleValueExpected(paramName)(values) andThen DeleteRestrictionExpected.apply  map { value => Param.DeleteRestrictionQP(value) }
     }
   }
 
@@ -269,7 +240,7 @@ object QueryParamValidator {
     QueryParamValidator.NoSubscriptionsValidator,
     QueryParamValidator.PageSizeValidator,
     QueryParamValidator.PageNbrValidator,
-    QueryParamValidator.StatusFilterValidator,
+    QueryParamValidator.StatusValidator,
     QueryParamValidator.SortValidator,
     QueryParamValidator.AccessTypeValidator,
     QueryParamValidator.SearchTextValidator,
