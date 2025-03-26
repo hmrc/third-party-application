@@ -20,7 +20,6 @@ import java.time.Instant
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSort, DeleteRestrictionFilter, StatusFilter}
 
 sealed trait Param[+P] {
   def order: Int
@@ -36,7 +35,7 @@ object Param {
   case class PageSizeQP(value: Int) extends Param[Int] { val section = 2; val order = 1 }
   case class PageNbrQP(value: Int)  extends Param[Int] { val section = 2; val order = 2 }
 
-  case class SortQP(value: ApplicationSort) extends Param[ApplicationSort] { val section = 3; val order = 200 }
+  case class SortQP(value: Sorting) extends Param[Sorting] { val section = 3; val order = 200 }
 
   case object NoSubscriptionsQP                    extends Param[Unit]          { val section = 4; val order = 1 }
   case object HasSubscriptionsQP                   extends Param[Unit]          { val section = 4; val order = 2 }
@@ -46,7 +45,7 @@ object Param {
   case class UserIdQP(value: UserId)           extends Param[UserId]      { val section = 5; val order = 1 }
   case class EnvironmentQP(value: Environment) extends Param[Environment] { val section = 5; val order = 1 }
 
-  case class StatusFilterQP(value: StatusFilter)     extends Param[StatusFilter]       { val section = 5; val order = 1 }
+  case class StatusFilterQP(value: AppStatusFilter)     extends Param[AppStatusFilter]       { val section = 5; val order = 1 }
   case class AccessTypeQP(value: Option[AccessType]) extends Param[Option[AccessType]] { val section = 5; val order = 1 }
 
   case class SearchTextQP(value: String)                         extends Param[String]                  { val section = 5; val order = 1 }

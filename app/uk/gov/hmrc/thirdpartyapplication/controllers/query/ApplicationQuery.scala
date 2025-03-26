@@ -18,42 +18,23 @@ package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param.{PageNbrQP, PageSizeQP, SortQP}
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationSort
-
-// Determine QRY - request => Either[Errors, QRY]
-// Extract queryStrings
-// Validate QS for bad parameter names => BadRequest
-// ?? Normalise QS param names
-// Extract headers (INTERNAL_USER_AGENT, SERVER_TOKEN_HEADER)
-// Validate headers - only allowed once each etc
-// Validate QS values (userId, appId etc)
-// Combine into QRY
-// Determine QRY return type
-// Validate QRY for bad combinations => BadRequest
-
-// Run QRY
-
-// Map Result(s) to appropriate type
 
 sealed trait ApplicationQuery
+
 sealed trait SingleApplicationQuery extends ApplicationQuery
 
 sealed trait MultipleApplicationQuery extends ApplicationQuery {
-  def sort: ApplicationSort
+  def sort: Sorting
 }
-
-// Request => Error | ApplicationQuery
 
 object ApplicationQuery {
   val ApiGatewayUserAgent: String = "APIPlatformAuthorizer"
 
-  case class Pagination(pageSize: Int, pageNbr: Int)
-
   case class ById(applicationId: ApplicationId)                                                               extends SingleApplicationQuery
   case class ByClientId(clientId: ClientId, recordUsage: Boolean = false)                                     extends SingleApplicationQuery
   case class ByServerToken(serverToken: String, recordUsage: Boolean)                                         extends SingleApplicationQuery
-  case class GeneralOpenEndedApplicationQuery(sort: ApplicationSort, params: List[Param[_]])                  extends MultipleApplicationQuery
-  case class PaginatedApplicationQuery(sort: ApplicationSort, pagination: Pagination, params: List[Param[_]]) extends MultipleApplicationQuery
+  case class GeneralOpenEndedApplicationQuery(sort: Sorting, params: List[Param[_]])                  extends MultipleApplicationQuery
+  case class PaginatedApplicationQuery(sort: Sorting, pagination: Pagination, params: List[Param[_]]) extends MultipleApplicationQuery
 
   import cats.implicits._
 
@@ -90,10 +71,10 @@ object ApplicationQuery {
     }
   }
 
-  def identifySort(allParams: List[Param[_]]): ApplicationSort = {
+  def identifySort(allParams: List[Param[_]]): Sorting = {
     allParams.filter(_.section == 3) match {
       case SortQP(sort) :: Nil => sort
-      case _                   => ApplicationSort.SubmittedAscending
+      case _                   => Sorting.SubmittedAscending
     }
   }
 
