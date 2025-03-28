@@ -30,9 +30,9 @@ sealed trait MultipleApplicationQuery extends ApplicationQuery {
 object ApplicationQuery {
   val ApiGatewayUserAgent: String = "APIPlatformAuthorizer"
 
-  case class ById(applicationId: ApplicationId)                                                               extends SingleApplicationQuery
-  case class ByClientId(clientId: ClientId, recordUsage: Boolean = false)                                     extends SingleApplicationQuery
-  case class ByServerToken(serverToken: String, recordUsage: Boolean)                                         extends SingleApplicationQuery
+  case class ById(applicationId: ApplicationId)                                                       extends SingleApplicationQuery
+  case class ByClientId(clientId: ClientId, recordUsage: Boolean = false)                             extends SingleApplicationQuery
+  case class ByServerToken(serverToken: String, recordUsage: Boolean)                                 extends SingleApplicationQuery
   case class GeneralOpenEndedApplicationQuery(sort: Sorting, params: List[Param[_]])                  extends MultipleApplicationQuery
   case class PaginatedApplicationQuery(sort: Sorting, pagination: Pagination, params: List[Param[_]]) extends MultipleApplicationQuery
 
