@@ -156,11 +156,11 @@ object QueryParamValidator {
   }
 
   private object SortExpected {
-    def apply(value: String): ErrorsOr[Sorting] = Sorting(value).toValidNel(s"$value is not a valid sort")
+    def apply(value: String): ErrorsOr[Sorting] = Sorting(value).toValidNel(s"$value  is not a valid sort")
   }
 
   object SortValidator extends QueryParamValidator {
-    val paramName                                           = "sort"
+    val paramName = "sort"
 
     def validate(values: Seq[String]): ErrorsOr[Param.SortQP] = {
       SingleValueExpected(paramName)(values) andThen SortExpected.apply map { sort => Param.SortQP(sort) }
@@ -202,16 +202,15 @@ object QueryParamValidator {
     }
   }
 
-
   private object DeleteRestrictionExpected {
     def apply(value: String): ErrorsOr[DeleteRestrictionFilter] = DeleteRestrictionFilter(value).toValidNel(s"$value is not a valid delete restriction filter")
   }
 
   object DeleteRestrictionValidator extends QueryParamValidator {
-    val paramName                                                   = "deleteRestriction"
+    val paramName = "deleteRestriction"
 
     def validate(values: Seq[String]): ErrorsOr[Param.DeleteRestrictionQP] = {
-      SingleValueExpected(paramName)(values) andThen DeleteRestrictionExpected.apply  map { value => Param.DeleteRestrictionQP(value) }
+      SingleValueExpected(paramName)(values) andThen DeleteRestrictionExpected.apply map { value => Param.DeleteRestrictionQP(value) }
     }
   }
 

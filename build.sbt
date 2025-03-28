@@ -37,6 +37,10 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full)
   )
+  .settings(
+    target := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / "coverage" else target.value},
+    coverageDataDir := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / ".." else target.value},
+  )
 
 lazy val it = (project in file("it"))
   .enablePlugins(PlayScala)
@@ -54,5 +58,5 @@ commands ++= Seq(
   Command.command("testAll") { state => "test" :: "it/test" :: state },
   Command.command("run-all-tests") { state => "testAll" :: state },
   Command.command("clean-and-test") { state => "cleanAll" :: "compile" :: "run-all-tests" :: state },
-  Command.command("pre-commit") { state => "cleanAll" :: "fmtAll" :: "fixAll" :: "coverage" :: "testAll" :: "coverageOff" :: "coverageAggregate" :: state }
+  Command.command("pre-commit") { state => "fmtAll" :: "fixAll" :: "coverage" :: "cleanAll" :: "testAll" :: "coverageOff" :: "coverageAggregate" :: state }
 )

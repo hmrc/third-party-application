@@ -25,7 +25,6 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSort, DeleteRestrictionFilter, StatusFilter}
 
 class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues with FixedClock {
   val appOneParam   = "applicationId"   -> Seq(applicationIdOne.toString)
@@ -69,19 +68,19 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
     }
 
     "extract valid params - status filter" in {
-      test(Map("status" -> Seq("CREATED"))).value shouldBe List(StatusFilterQP(StatusFilter.Created))
-      test(Map("status" -> Seq("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION"))).value shouldBe List(StatusFilterQP(StatusFilter.PendingResponsibleIndividualVerification))
-      test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))).value shouldBe List(StatusFilterQP(StatusFilter.PendingGatekeeperCheck))
-      test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))).value shouldBe List(StatusFilterQP(StatusFilter.PendingSubmitterVerification))
-      test(Map("status" -> Seq("ACTIVE"))).value shouldBe List(StatusFilterQP(StatusFilter.Active))
-      test(Map("status" -> Seq("DELETED"))).value shouldBe List(StatusFilterQP(StatusFilter.WasDeleted))
-      test(Map("status" -> Seq("EXCLUDING_DELETED"))).value shouldBe List(StatusFilterQP(StatusFilter.ExcludingDeleted))
-      test(Map("status" -> Seq("BLOCKED"))).value shouldBe List(StatusFilterQP(StatusFilter.Blocked))
-      test(Map("status" -> Seq("ANY"))).value shouldBe List(StatusFilterQP(StatusFilter.NoFiltering))
+      test(Map("status" -> Seq("CREATED"))).value shouldBe List(StatusFilterQP(AppStatusFilter.Created))
+      test(Map("status" -> Seq("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION"))).value shouldBe List(StatusFilterQP(AppStatusFilter.PendingResponsibleIndividualVerification))
+      test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))).value shouldBe List(StatusFilterQP(AppStatusFilter.PendingGatekeeperCheck))
+      test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))).value shouldBe List(StatusFilterQP(AppStatusFilter.PendingSubmitterVerification))
+      test(Map("status" -> Seq("ACTIVE"))).value shouldBe List(StatusFilterQP(AppStatusFilter.Active))
+      test(Map("status" -> Seq("DELETED"))).value shouldBe List(StatusFilterQP(AppStatusFilter.WasDeleted))
+      test(Map("status" -> Seq("EXCLUDING_DELETED"))).value shouldBe List(StatusFilterQP(AppStatusFilter.ExcludingDeleted))
+      test(Map("status" -> Seq("BLOCKED"))).value shouldBe List(StatusFilterQP(AppStatusFilter.Blocked))
+      test(Map("status" -> Seq("ANY"))).value shouldBe List(StatusFilterQP(AppStatusFilter.NoFiltering))
     }
 
     "extract valid params - sort filter" in {
-      test(Map("sort" -> Seq("NO_SORT"))).value shouldBe List(SortQP(ApplicationSort.NoSorting))
+      test(Map("sort" -> Seq("NO_SORT"))).value shouldBe List(SortQP(Sorting.NoSorting))
     }
 
     "extract valid params - accessType filter" in {
