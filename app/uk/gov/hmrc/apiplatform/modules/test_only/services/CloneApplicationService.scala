@@ -24,9 +24,9 @@ import scala.util.control.NonFatal
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
+import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepository
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
-import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepository
 
 @Singleton
 class CloneApplicationService @Inject() (
@@ -39,7 +39,7 @@ class CloneApplicationService @Inject() (
   private val E = EitherTHelper.make[ApplicationId]
 
   def cloneApplication(appId: ApplicationId): Future[Either[ApplicationId, StoredApplication]] = {
-    val newId = ApplicationId.random
+    val newId       = ApplicationId.random
     val newClientId = ClientId.random
 
     def cloneSubs(): Future[_] = {
@@ -54,10 +54,11 @@ class CloneApplicationService @Inject() (
         suffix            = Instant.now().toEpochMilli().toHexString
         newName           = ApplicationName(s"${oldApp.name} clone $suffix")
         newNormalisedName = newName.value.toLowerCase
-        newApp            = oldApp.copy(id = newId, name = newName, normalisedName = newNormalisedName, tokens = oldApp.tokens.copy(production = oldApp.tokens.production.copy(clientId = newClientId)))
-        _            <- E.liftF(testAppRepo.record(newId))
-        insertedApp  <- E.liftF(applicationRepository.save(newApp))
-        insertedSubs <- E.liftF(cloneSubs())
+        newApp            =
+          oldApp.copy(id = newId, name = newName, normalisedName = newNormalisedName, tokens = oldApp.tokens.copy(production = oldApp.tokens.production.copy(clientId = newClientId)))
+        _                <- E.liftF(testAppRepo.record(newId))
+        insertedApp      <- E.liftF(applicationRepository.save(newApp))
+        insertedSubs     <- E.liftF(cloneSubs())
       } yield insertedApp
     )
       .value

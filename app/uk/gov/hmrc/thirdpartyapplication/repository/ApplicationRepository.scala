@@ -238,7 +238,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           replacement = application
         ).toFuture().map(_ => application)
 
-      case None => 
+      case None =>
         collection.insertOne(application).toFuture().map(_ => application)
     }
   }

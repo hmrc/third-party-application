@@ -16,23 +16,23 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant}
-import javax.inject.{Inject,Singleton}
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
-import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import java.time.temporal.ChronoUnit
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepository
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import scala.util.control.NonFatal
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 object TestApplicationsCleanupJob {
   case class Config(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean, expiryDuration: FiniteDuration)
@@ -48,12 +48,12 @@ class TestApplicationsCleanupJob @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ScheduledMongoJob with ClockNow {
 
-  override def name: String                                      = "TestApplicationsCleanupJob"
-  override def interval: FiniteDuration                          = jobConfig.interval
-  override def initialDelay: FiniteDuration                      = jobConfig.initialDelay
-  override val isEnabled: Boolean                                = jobConfig.enabled
-  override val lockService: LockService                          = cleanupLockService
-  implicit val hc: HeaderCarrier                                 = HeaderCarrier()
+  override def name: String                 = "TestApplicationsCleanupJob"
+  override def interval: FiniteDuration     = jobConfig.interval
+  override def initialDelay: FiniteDuration = jobConfig.initialDelay
+  override val isEnabled: Boolean           = jobConfig.enabled
+  override val lockService: LockService     = cleanupLockService
+  implicit val hc: HeaderCarrier            = HeaderCarrier()
 
   logger.info("TestApplicationsCleanupJob ready!!!")
 
@@ -63,7 +63,7 @@ class TestApplicationsCleanupJob @Inject() (
 
     val result: Future[RunningOfJobSuccessful.type] = for {
       idsToRemove <- testAppRepo.findCreatedBefore(timeBeforeWhichAppIsConsideredExpired)
-      _           = logger.info(s"Scheduled job $name found ${idsToRemove.size} test applications")
+      _            = logger.info(s"Scheduled job $name found ${idsToRemove.size} test applications")
       _           <- Future.sequence(idsToRemove.map(deleteExpiredApplication(_)))
     } yield RunningOfJobSuccessful
 
@@ -79,10 +79,9 @@ class TestApplicationsCleanupJob @Inject() (
     (for {
       _ <- applicationService.deleteApplication(appId, None, noAuditing)
       _ <- testAppRepo.delete(appId)
-    } yield HasSucceeded
-    ).recover {
+    } yield HasSucceeded).recover {
       case NonFatal(e) =>
-        logger.info(s"Failed to delete expired test application $appId",e)
+        logger.info(s"Failed to delete expired test application $appId", e)
         HasSucceeded
     }
   }
@@ -95,4 +94,3 @@ class TestApplicationsCleanupJobLockService @Inject() (repository: LockRepositor
   override val lockRepository: LockRepository = repository
   override val ttl: Duration                  = 1.hours
 }
-

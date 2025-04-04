@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.test_only.scheduled
 
 import com.google.inject.AbstractModule
+
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 class TestOnlySchedulerModule extends AbstractModule with ApplicationLogger {

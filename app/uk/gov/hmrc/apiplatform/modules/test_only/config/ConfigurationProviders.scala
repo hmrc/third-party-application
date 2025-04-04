@@ -24,8 +24,9 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.thirdpartyapplication.scheduled.TestApplicationsCleanupJob
+
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.scheduled.TestApplicationsCleanupJob
 
 class ConfigurationModule extends Module with ApplicationLogger {
 

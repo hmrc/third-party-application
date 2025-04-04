@@ -19,9 +19,9 @@ package uk.gov.hmrc.apiplatform.modules.test_only.scheduled
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-
-import play.api.inject.ApplicationLifecycle
 import play.api.Application
+import play.api.inject.ApplicationLifecycle
+
 import uk.gov.hmrc.apiplatform.modules.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 
@@ -37,6 +37,6 @@ class TestOnlyScheduler @Inject() (
     Seq(
       testApplicationsCleanupJob
     )
-    .filter(_.isEnabled)
+      .filter(_.isEnabled)
   }
 }

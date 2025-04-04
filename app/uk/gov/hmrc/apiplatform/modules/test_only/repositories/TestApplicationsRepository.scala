@@ -16,25 +16,25 @@
 
 package uk.gov.hmrc.apiplatform.modules.test_only.repository
 
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import org.bson.conversions.Bson
+import org.mongodb.scala.model.Filters._
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model._
+
+import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
-import java.time.Instant
-import play.api.libs.json.Json
-import org.mongodb.scala.model._
-import org.mongodb.scala.model.Indexes.ascending
-import play.api.libs.json.Format
 import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepository.TestApplicationData
-import org.mongodb.scala.model.Filters._
-import org.bson.conversions.Bson
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object TestApplicationsRepository {
   case class TestApplicationData(id: ApplicationId, createdOn: Instant = Instant.now)
@@ -57,7 +57,7 @@ class TestApplicationsRepository @Inject() (mongo: MongoComponent, val metrics: 
             .name("applicationIdIndex")
             .unique(true)
             .background(true)
-        ),
+        )
       ),
       replaceIndexes = true
     )
