@@ -66,7 +66,7 @@ class Scheduler @Inject() (
       responsibleIndividualUpdateVerificationRemovalJob,
       responsibleIndividualVerificationSetDefaultTypeJob,
       termsOfUseInvitationReminderJob,
-      termsOfUseInvitationOverdueJob
+      termsOfUseInvitationOverdueJob,
     )
       .filter(_.isEnabled) ++ Seq(bcryptPerformanceMeasureJob)
   }
