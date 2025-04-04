@@ -31,7 +31,7 @@ class ConfigurationModule extends Module with ApplicationLogger {
 
   override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
     List(
-      bind[TestApplicationsCleanupJob.Config].toProvider[TestApplicationsCleanupJobConfigProvider],
+      bind[TestApplicationsCleanupJob.Config].toProvider[TestApplicationsCleanupJobConfigProvider]
     )
   }
 }

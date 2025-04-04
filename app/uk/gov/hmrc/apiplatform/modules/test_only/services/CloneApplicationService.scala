@@ -32,7 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepo
 class CloneApplicationService @Inject() (
     applicationRepository: ApplicationRepository,
     subscriptionRepository: SubscriptionRepository,
-    testAppRepo: TestApplicationsRepository,
+    testAppRepo: TestApplicationsRepository
   )(implicit ec: ExecutionContext
   ) {
 
