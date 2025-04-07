@@ -61,7 +61,7 @@ trait JsonUtils extends Results with ApplicationLogger {
       handleException(e)
   }
 
-  private[controllers] def handleNotFound(message: String): Result = {
+  protected[controllers] def handleNotFound(message: String): Result = {
     NotFound(JsErrorResponse(APPLICATION_NOT_FOUND, message))
   }
 
