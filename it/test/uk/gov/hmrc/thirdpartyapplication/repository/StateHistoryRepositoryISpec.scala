@@ -164,9 +164,11 @@ class StateHistoryRepositoryISpec
     "Delete the state histories of the application" in {
 
       val applicationId          = ApplicationId.random
-      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = instant)
+      val stateHistory1          = StateHistory(applicationId, State.TESTING, actor, changedAt = instant)
+      val stateHistory2          = StateHistory(applicationId, State.PRODUCTION, actor, changedAt = instant.plusMillis(1))
       val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = instant)
-      await(repository.insert(stateHistory))
+      await(repository.insert(stateHistory1))
+      await(repository.insert(stateHistory2))
       await(repository.insert(anotherAppStateHistory))
 
       await(repository.deleteByApplicationId(applicationId))
