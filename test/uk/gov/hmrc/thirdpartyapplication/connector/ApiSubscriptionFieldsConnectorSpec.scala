@@ -51,20 +51,20 @@ class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
     "succeed when the remote call returns successfully" in new Setup {
       apiSubscriptionFieldsWillReturn(OK)
 
-      await(underTest.deleteSubscriptions(clientId))
+      await(underTest.delete(clientId))
     }
 
     "succeed when the remote call returns not found" in new Setup {
       apiSubscriptionFieldsWillReturn(NOT_FOUND)
 
-      await(underTest.deleteSubscriptions(clientId))
+      await(underTest.delete(clientId))
     }
 
     "fail when the remote call returns Internal Server Error" in new Setup {
       apiSubscriptionFieldsWillReturn(INTERNAL_SERVER_ERROR)
 
       intercept[UpstreamErrorResponse] {
-        await(underTest.deleteSubscriptions(clientId))
+        await(underTest.delete(clientId))
       }
     }
   }

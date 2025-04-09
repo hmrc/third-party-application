@@ -39,23 +39,23 @@ trait ApiSubscriptionFieldsConnectorMockModule extends MockitoSugar with Argumen
     object DeleteSubscriptions {
 
       def thenReturnHasSucceeded() = {
-        when(aMock.deleteSubscriptions(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.delete(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
       }
 
       def thenReturnHasSucceededWhen(clientId: ClientId) = {
-        when(aMock.deleteSubscriptions(eqTo(clientId))(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.delete(eqTo(clientId))(*)).thenReturn(successful(HasSucceeded))
       }
 
       def thenFail(failsWith: Throwable) = {
-        when(aMock.deleteSubscriptions(*[ClientId])(*)).thenReturn(failed(failsWith))
+        when(aMock.delete(*[ClientId])(*)).thenReturn(failed(failsWith))
       }
 
       def verifyCalledWith(clientId: ClientId) = {
-        ApiSubscriptionFieldsConnectorMock.verify.deleteSubscriptions(eqTo(clientId))(*)
+        ApiSubscriptionFieldsConnectorMock.verify.delete(eqTo(clientId))(*)
       }
 
       def verifyCalled() = {
-        ApiSubscriptionFieldsConnectorMock.verify.deleteSubscriptions(*[ClientId])(*)
+        ApiSubscriptionFieldsConnectorMock.verify.delete(*[ClientId])(*)
       }
 
     }

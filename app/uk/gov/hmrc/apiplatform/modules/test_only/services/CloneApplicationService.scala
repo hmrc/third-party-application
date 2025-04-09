@@ -27,11 +27,22 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Applicati
 import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepository
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.NotificationRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
+import cats.data.OptionT
+import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.SubmissionsDAO
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.thirdpartyapplication.services.AuditHelper.applicationId
 
 @Singleton
 class CloneApplicationService @Inject() (
     applicationRepository: ApplicationRepository,
+    credentialGenerator: CredentialGenerator,
     subscriptionRepository: SubscriptionRepository,
+    notificationRepository: NotificationRepository,
+    termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
+    submissionsDAO: SubmissionsDAO,
     testAppRepo: TestApplicationsRepository
   )(implicit ec: ExecutionContext
   ) {
@@ -48,17 +59,44 @@ class CloneApplicationService @Inject() (
       }
     }
 
+    def cloneNotifications(): Future[_] = {
+      notificationRepository.find(appId).flatMap { notificationsToCopy =>
+        Future.sequence(notificationsToCopy.map(n => notificationRepository.createEntity(n.copy(applicationId = newId))))
+      }
+    }
+
+    def cloneTermsOfUseInvitation(): Future[_] = {
+      OptionT(termsOfUseInvitationRepository.fetch(appId)).flatMap { t => 
+        OptionT(termsOfUseInvitationRepository.create(t.copy(applicationId = newId)))
+      }
+      .value
+    }
+
+    def cloneSubmissions(): Future[_] = {
+      submissionsDAO.fetchAllForApplication(appId).flatMap { submissionsToCopy => 
+        Future.sequence(submissionsToCopy.map { s => 
+          submissionsDAO.save(s.copy(id = SubmissionId.random, applicationId = newId))
+        })
+      }
+    }
+
     (
       for {
         oldApp           <- E.fromOptionF(applicationRepository.fetch(appId), newId)
         suffix            = Instant.now().toEpochMilli().toHexString
         newName           = ApplicationName(s"${oldApp.name} clone $suffix")
         newNormalisedName = newName.value.toLowerCase
+        newGatewayId      = credentialGenerator.generate()
         newApp            =
-          oldApp.copy(id = newId, name = newName, normalisedName = newNormalisedName, tokens = oldApp.tokens.copy(production = oldApp.tokens.production.copy(clientId = newClientId)))
+          oldApp.copy(id = newId, name = newName, normalisedName = newNormalisedName, wso2ApplicationName = newGatewayId, tokens = oldApp.tokens.copy(production = oldApp.tokens.production.copy(clientId = newClientId)))
         _                <- E.liftF(testAppRepo.record(newId))
         insertedApp      <- E.liftF(applicationRepository.save(newApp))
-        insertedSubs     <- E.liftF(cloneSubs())
+        _                <- E.liftF(cloneSubs())
+        // Reintroduce after we have proved out the gatewayId fix
+        //
+        // _                <- E.liftF(cloneNotifications())
+        // _                <- E.liftF(cloneTermsOfUseInvitation())
+        // _                <- E.liftF(cloneSubmissions())
       } yield insertedApp
     )
       .value

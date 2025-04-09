@@ -131,7 +131,7 @@ class ApplicationService @Inject() (
       for {
         subscriptions <- subscriptionRepository.getSubscriptions(applicationId)
         _             <- traverse(subscriptions)(deleteSubscription)
-        _             <- apiSubscriptionFieldsConnector.deleteSubscriptions(app.tokens.production.clientId)
+        _             <- apiSubscriptionFieldsConnector.delete(app.tokens.production.clientId)
       } yield HasSucceeded
     }
 
