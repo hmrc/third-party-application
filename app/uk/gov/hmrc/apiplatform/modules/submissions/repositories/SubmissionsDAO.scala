@@ -61,6 +61,12 @@ class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(im
       .headOption()
   }
 
+  // $COVERAGE-OFF$
+  def fetchAllForApplication(id: ApplicationId): Future[List[Submission]] = {
+    collection.find(equal("applicationId", Codecs.toBson(id))).toFuture().map(_.toList)
+  }
+// $COVERAGE-ON$
+
   def fetch(id: SubmissionId): Future[Option[Submission]] = {
     collection.find(equal("id", Codecs.toBson(id)))
       .headOption()
