@@ -92,11 +92,9 @@ class CloneApplicationService @Inject() (
         _                <- E.liftF(testAppRepo.record(newId))
         insertedApp      <- E.liftF(applicationRepository.save(newApp))
         _                <- E.liftF(cloneSubs())
-        // Reintroduce after we have proved out the gatewayId fix
-        //
-        // _                <- E.liftF(cloneNotifications())
-        // _                <- E.liftF(cloneTermsOfUseInvitation())
-        // _                <- E.liftF(cloneSubmissions())
+        _                <- E.liftF(cloneNotifications())
+        _                <- E.liftF(cloneTermsOfUseInvitation())
+        _                <- E.liftF(cloneSubmissions())
       } yield insertedApp
     )
       .value
