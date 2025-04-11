@@ -21,19 +21,17 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
+import cats.data.OptionT
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.SubmissionsDAO
 import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepository
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.repository.NotificationRepository
-import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
-import cats.data.OptionT
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, SubscriptionRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.SubmissionsDAO
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
-import uk.gov.hmrc.thirdpartyapplication.services.AuditHelper.applicationId
 
 @Singleton
 class CloneApplicationService @Inject() (
@@ -66,15 +64,15 @@ class CloneApplicationService @Inject() (
     }
 
     def cloneTermsOfUseInvitation(): Future[_] = {
-      OptionT(termsOfUseInvitationRepository.fetch(appId)).flatMap { t => 
+      OptionT(termsOfUseInvitationRepository.fetch(appId)).flatMap { t =>
         OptionT(termsOfUseInvitationRepository.create(t.copy(applicationId = newId)))
       }
-      .value
+        .value
     }
 
     def cloneSubmissions(): Future[_] = {
-      submissionsDAO.fetchAllForApplication(appId).flatMap { submissionsToCopy => 
-        Future.sequence(submissionsToCopy.map { s => 
+      submissionsDAO.fetchAllForApplication(appId).flatMap { submissionsToCopy =>
+        Future.sequence(submissionsToCopy.map { s =>
           submissionsDAO.save(s.copy(id = SubmissionId.random, applicationId = newId))
         })
       }
@@ -88,7 +86,13 @@ class CloneApplicationService @Inject() (
         newNormalisedName = newName.value.toLowerCase
         newGatewayId      = credentialGenerator.generate()
         newApp            =
-          oldApp.copy(id = newId, name = newName, normalisedName = newNormalisedName, wso2ApplicationName = newGatewayId, tokens = oldApp.tokens.copy(production = oldApp.tokens.production.copy(clientId = newClientId)))
+          oldApp.copy(
+            id = newId,
+            name = newName,
+            normalisedName = newNormalisedName,
+            wso2ApplicationName = newGatewayId,
+            tokens = oldApp.tokens.copy(production = oldApp.tokens.production.copy(clientId = newClientId))
+          )
         _                <- E.liftF(testAppRepo.record(newId))
         insertedApp      <- E.liftF(applicationRepository.save(newApp))
         _                <- E.liftF(cloneSubs())

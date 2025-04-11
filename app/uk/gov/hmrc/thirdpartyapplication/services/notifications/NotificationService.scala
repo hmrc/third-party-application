@@ -39,6 +39,7 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
       case Actors.AppCollaborator(emailAddress) => emailAddress.text
       case Actors.GatekeeperUser(userId)        => userId
       case Actors.ScheduledJob(jobId)           => jobId
+      case Actors.Process(name)                 => name
       case Actors.Unknown                       => "Unknown"
     }
 
