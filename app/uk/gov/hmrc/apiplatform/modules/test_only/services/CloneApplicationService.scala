@@ -32,6 +32,8 @@ import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepo
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, SubscriptionRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
+import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
+import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
 class CloneApplicationService @Inject() (
@@ -41,13 +43,14 @@ class CloneApplicationService @Inject() (
     notificationRepository: NotificationRepository,
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     submissionsDAO: SubmissionsDAO,
+    subsFieldsConector: ApiSubscriptionFieldsConnector,
     testAppRepo: TestApplicationsRepository
   )(implicit ec: ExecutionContext
   ) {
 
   private val E = EitherTHelper.make[ApplicationId]
 
-  def cloneApplication(appId: ApplicationId): Future[Either[ApplicationId, StoredApplication]] = {
+  def cloneApplication(appId: ApplicationId)(implicit hc: HeaderCarrier): Future[Either[ApplicationId, StoredApplication]] = {
     val newId       = ApplicationId.random
     val newClientId = ClientId.random
 
@@ -78,6 +81,20 @@ class CloneApplicationService @Inject() (
       }
     }
 
+    def cloneSubsFields(oldClientId: ClientId)(implicit hc: HeaderCarrier): Future[_] = {
+      subsFieldsConector.fetchAllForApp(oldClientId).flatMap { subsFields =>
+        Future.sequence(
+          subsFields.flatMap { 
+            case (context, versionsMap) =>
+              versionsMap.map {
+                case (version, fields) =>
+                  subsFieldsConector.saveFieldValues(newClientId, ApiIdentifier(context, version), fields)
+            }
+          }
+        )
+      }
+    }
+
     (
       for {
         oldApp           <- E.fromOptionF(applicationRepository.fetch(appId), newId)
@@ -93,12 +110,13 @@ class CloneApplicationService @Inject() (
             wso2ApplicationName = newGatewayId,
             tokens = oldApp.tokens.copy(production = oldApp.tokens.production.copy(clientId = newClientId))
           )
-        _                <- E.liftF(testAppRepo.record(newId))
-        insertedApp      <- E.liftF(applicationRepository.save(newApp))
-        _                <- E.liftF(cloneSubs())
-        _                <- E.liftF(cloneNotifications())
-        _                <- E.liftF(cloneTermsOfUseInvitation())
-        _                <- E.liftF(cloneSubmissions())
+        _               <- E.liftF(testAppRepo.record(newId))
+        insertedApp     <- E.liftF(applicationRepository.save(newApp))
+        _               <- E.liftF(cloneSubs())
+        _               <- E.liftF(cloneNotifications())
+        _               <- E.liftF(cloneTermsOfUseInvitation())
+        _               <- E.liftF(cloneSubmissions())
+        _               <- E.liftF(cloneSubsFields(oldApp.tokens.production.clientId))
       } yield insertedApp
     )
       .value
