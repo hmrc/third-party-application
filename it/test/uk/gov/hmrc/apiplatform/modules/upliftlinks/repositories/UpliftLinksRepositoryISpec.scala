@@ -66,7 +66,7 @@ class UpliftLinksRepositoryISpec
 
       val resultFind = await(repository.find(productionAppId = productionApplicationId))
 
-      resultFind mustBe Some(sandboxApplicationId)
+      resultFind shouldBe Some(sandboxApplicationId)
     }
   }
 

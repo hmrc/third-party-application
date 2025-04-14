@@ -23,17 +23,18 @@ import scala.util.control.NonFatal
 
 import cats.data.OptionT
 
+import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.SubmissionsDAO
 import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepository
+import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, SubscriptionRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
-import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
 class CloneApplicationService @Inject() (
@@ -84,12 +85,12 @@ class CloneApplicationService @Inject() (
     def cloneSubsFields(oldClientId: ClientId)(implicit hc: HeaderCarrier): Future[_] = {
       subsFieldsConector.fetchAllForApp(oldClientId).flatMap { subsFields =>
         Future.sequence(
-          subsFields.flatMap { 
+          subsFields.flatMap {
             case (context, versionsMap) =>
               versionsMap.map {
                 case (version, fields) =>
-                  subsFieldsConector.saveFieldValues(newClientId, ApiIdentifier(context, version), fields)
-            }
+                  subsFieldsConector.saveFieldValues(newClientId, ApiIdentifier(context, version), fields).map(_ => ())
+              }
           }
         )
       }
@@ -110,13 +111,13 @@ class CloneApplicationService @Inject() (
             wso2ApplicationName = newGatewayId,
             tokens = oldApp.tokens.copy(production = oldApp.tokens.production.copy(clientId = newClientId))
           )
-        _               <- E.liftF(testAppRepo.record(newId))
-        insertedApp     <- E.liftF(applicationRepository.save(newApp))
-        _               <- E.liftF(cloneSubs())
-        _               <- E.liftF(cloneNotifications())
-        _               <- E.liftF(cloneTermsOfUseInvitation())
-        _               <- E.liftF(cloneSubmissions())
-        _               <- E.liftF(cloneSubsFields(oldApp.tokens.production.clientId))
+        _                <- E.liftF(testAppRepo.record(newId))
+        insertedApp      <- E.liftF(applicationRepository.save(newApp))
+        _                <- E.liftF(cloneSubs())
+        _                <- E.liftF(cloneNotifications())
+        _                <- E.liftF(cloneTermsOfUseInvitation())
+        _                <- E.liftF(cloneSubmissions())
+        _                <- E.liftF(cloneSubsFields(oldApp.tokens.production.clientId))
       } yield insertedApp
     )
       .value

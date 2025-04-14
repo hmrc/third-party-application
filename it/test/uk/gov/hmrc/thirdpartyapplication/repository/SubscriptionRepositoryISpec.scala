@@ -86,7 +86,7 @@ class SubscriptionRepositoryISpec
 
       val result = await(subscriptionRepository.add(applicationId, apiIdentifier))
 
-      result mustBe HasSucceeded
+      result shouldBe HasSucceeded
     }
 
     "create multiple subscriptions" in {
@@ -97,7 +97,7 @@ class SubscriptionRepositoryISpec
 
       val result = await(subscriptionRepository.add(application2, apiIdentifier))
 
-      result mustBe HasSucceeded
+      result shouldBe HasSucceeded
     }
   }
 
@@ -111,9 +111,9 @@ class SubscriptionRepositoryISpec
 
       val result = await(subscriptionRepository.remove(application1, apiIdentifier))
 
-      result mustBe HasSucceeded
-      await(subscriptionRepository.isSubscribed(application1, apiIdentifier)) mustBe false
-      await(subscriptionRepository.isSubscribed(application2, apiIdentifier)) mustBe true
+      result shouldBe HasSucceeded
+      await(subscriptionRepository.isSubscribed(application1, apiIdentifier)) shouldBe false
+      await(subscriptionRepository.isSubscribed(application2, apiIdentifier)) shouldBe true
     }
 
     "not fail when deleting a non-existing subscription" in {
@@ -124,8 +124,8 @@ class SubscriptionRepositoryISpec
 
       val result = await(subscriptionRepository.remove(application2, apiIdentifier))
 
-      result mustBe HasSucceeded
-      await(subscriptionRepository.isSubscribed(application1, apiIdentifier)) mustBe true
+      result shouldBe HasSucceeded
+      await(subscriptionRepository.isSubscribed(application1, apiIdentifier)) shouldBe true
     }
   }
 
@@ -139,7 +139,7 @@ class SubscriptionRepositoryISpec
       await(subscriptionRepository.add(application2, apiIdentifierA))
       await(subscriptionRepository.add(application2, apiIdentifierB))
       val retrieved      = await(subscriptionRepository.findAll)
-      retrieved mustBe List(
+      retrieved shouldBe List(
         subscriptionData("some-context-a".asContext, "1.0.0".asVersion, application1, application2),
         subscriptionData("some-context-b".asContext, "1.0.2".asVersion, application2)
       )
@@ -155,7 +155,7 @@ class SubscriptionRepositoryISpec
 
       val isSubscribed = await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier))
 
-      isSubscribed mustBe true
+      isSubscribed shouldBe true
     }
 
     "return false when the application is not subscribed" in {
@@ -164,7 +164,7 @@ class SubscriptionRepositoryISpec
 
       val isSubscribed = await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier))
 
-      isSubscribed mustBe false
+      isSubscribed shouldBe false
     }
   }
 
@@ -182,13 +182,13 @@ class SubscriptionRepositoryISpec
 
       val result = await(subscriptionRepository.getSubscriptions(application1))
 
-      result mustBe Set(api1, api2)
+      result shouldBe Set(api1, api2)
     }
 
     "return empty when the application is not subscribed to any API" in {
       val result = await(subscriptionRepository.getSubscriptions(application1))
 
-      result mustBe Set.empty
+      result shouldBe Set.empty
     }
   }
 
@@ -211,7 +211,7 @@ class SubscriptionRepositoryISpec
 
       val applications: Set[ApplicationId] = await(subscriptionRepository.getSubscribers("some-context".asIdentifier("4.0")))
 
-      applications must have size 0
+      applications should have size 0
     }
 
     "return the IDs of the applications subscribed to the given API" in {
@@ -225,7 +225,7 @@ class SubscriptionRepositoryISpec
 
       forAll(scenarios) { (apiIdentifier, expectedApplications) =>
         val applications: Set[ApplicationId] = await(subscriptionRepository.getSubscribers(apiIdentifier))
-        applications must contain only (expectedApplications: _*)
+        applications should contain only (expectedApplications: _*)
       }
     }
   }
@@ -252,7 +252,7 @@ class SubscriptionRepositoryISpec
       val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.versionNbr, None))
 
       val expectedEmails = (app1.collaborators.map(c => c.emailAddress) ++ app2.collaborators.map(c => c.emailAddress)).map(_.text)
-      result.toSet mustBe expectedEmails
+      result.toSet shouldBe expectedEmails
     }
 
     "filter by collaborators and api version" in {
@@ -272,7 +272,7 @@ class SubscriptionRepositoryISpec
 
       val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.versionNbr, Some(partialEmailToMatch)))
 
-      result.toSet mustBe Set(emailToMatch)
+      result.toSet shouldBe Set(emailToMatch)
     }
   }
 
@@ -316,7 +316,7 @@ class SubscriptionRepositoryISpec
 
       val result = await(subscriptionRepository.getSubscriptionCountByApiCheckingApplicationExists)
 
-      result must contain theSameElementsAs expectedResult
+      result should contain theSameElementsAs expectedResult
     }
   }
 
@@ -326,8 +326,8 @@ class SubscriptionRepositoryISpec
 
     val result = await(subscriptionRepository.add(applicationId, apiIdentifier))
 
-    result mustBe HasSucceeded
-    await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier)) mustBe true
+    result shouldBe HasSucceeded
+    await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier)) shouldBe true
   }
 
   "handle ApiUnsubscribed event correctly" in {
@@ -338,8 +338,8 @@ class SubscriptionRepositoryISpec
 
     val result = await(subscriptionRepository.remove(applicationId, apiIdentifier))
 
-    result mustBe HasSucceeded
-    await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier)) mustBe false
+    result shouldBe HasSucceeded
+    await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier)) shouldBe false
   }
 
   def subscriptionData(apiContext: ApiContext, version: ApiVersionNbr, applicationIds: ApplicationId*): SubscriptionData = {

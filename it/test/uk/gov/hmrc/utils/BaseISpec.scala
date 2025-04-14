@@ -17,8 +17,6 @@
 package uk.gov.hmrc.utils
 
 import org.apache.pekko.stream.Materializer
-import org.scalatest.matchers.must.Matchers
-import org.scalatestplus.play.PlaySpec
 
 import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
@@ -28,7 +26,9 @@ import play.twirl.api.HtmlFormat
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
-abstract class BaseISpec extends PlaySpec with WireMockSupport with Matchers {
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+
+abstract class BaseISpec extends AsyncHmrcSpec with WireMockSupport {
 
   def app: Application
   protected def appBuilder: GuiceApplicationBuilder
