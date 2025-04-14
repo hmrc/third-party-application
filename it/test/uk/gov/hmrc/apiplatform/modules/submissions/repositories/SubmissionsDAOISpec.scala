@@ -60,12 +60,12 @@ class SubmissionsDAOISpec
   "save and retrieved" should {
 
     "not find a record that is not there" in {
-      await(submissionsDao.fetch(SubmissionId.random)) mustBe None
+      await(submissionsDao.fetch(SubmissionId.random)) shouldBe None
     }
 
     "store a record and retrieve it" in {
-      await(submissionsDao.save(aSubmission)) mustBe aSubmission
-      await(submissionsDao.fetch(aSubmission.id)).value mustBe aSubmission
+      await(submissionsDao.save(aSubmission)) shouldBe aSubmission
+      await(submissionsDao.fetch(aSubmission.id)).value shouldBe aSubmission
     }
 
     "not store multiple records of the same submission id" in {
@@ -80,20 +80,20 @@ class SubmissionsDAOISpec
           .countDocuments()
           .toFuture()
           .map(x => x.toInt)
-      ) mustBe 1
+      ) shouldBe 1
     }
   }
 
   "fetchLatest" should {
     "find the only one" in {
       await(submissionsDao.save(aSubmission))
-      await(submissionsDao.fetchLatest(applicationId)).value mustBe aSubmission
+      await(submissionsDao.fetchLatest(applicationId)).value shouldBe aSubmission
     }
 
     "find the latest one" in {
       await(submissionsDao.save(aSubmission))
       await(submissionsDao.save(altSubmission))
-      await(submissionsDao.fetchLatest(applicationId)).value mustBe altSubmission
+      await(submissionsDao.fetchLatest(applicationId)).value shouldBe altSubmission
     }
   }
 
@@ -105,14 +105,14 @@ class SubmissionsDAOISpec
       val newAnswers        = oldAnswers + (questionId -> ActualAnswer.SingleChoiceAnswer("Yes"))
       val updatedSubmission = Submission.updateLatestAnswersTo(newAnswers)(aSubmission)
 
-      await(submissionsDao.update(updatedSubmission)) mustBe updatedSubmission
-      await(submissionsDao.fetchLatest(applicationId)).value mustBe updatedSubmission
+      await(submissionsDao.update(updatedSubmission)) shouldBe updatedSubmission
+      await(submissionsDao.fetchLatest(applicationId)).value shouldBe updatedSubmission
     }
 
     "upsert submission if it doesn't exist " in {
       await(submissionsDao.update(aSubmission))
 
-      await(submissionsDao.fetchLatest(applicationId)).value mustBe aSubmission
+      await(submissionsDao.fetchLatest(applicationId)).value shouldBe aSubmission
     }
   }
 }

@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.{Clock, Duration}
 import scala.util.Random.nextString
 
-import org.mockito.MockitoSugar.{mock, times, verify, verifyNoMoreInteractions}
 import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 
@@ -240,11 +239,11 @@ class ApplicationRepositoryISpec
     import ApplicationRepository.MongoFormats.formatStoredApplication
 
     "write to json" in {
-      Json.toJson(application) mustBe json(true)
+      Json.toJson(application) shouldBe json(true)
     }
 
     "read from json" in {
-      Json.fromJson[StoredApplication](json(false)) mustBe JsSuccess(application)
+      Json.fromJson[StoredApplication](json(false)) shouldBe JsSuccess(application)
     }
   }
 
@@ -259,7 +258,7 @@ class ApplicationRepositoryISpec
     "read existing document from mongo" in {
       saveMongoJson(json(true))
       val result = await(applicationRepository.fetch(applicationId))
-      result.get mustBe application
+      result.get shouldBe application
     }
   }
 
@@ -271,8 +270,8 @@ class ApplicationRepositoryISpec
 
       val retrieved = await(applicationRepository.fetch(application.id)).get
 
-      retrieved mustBe application
-      retrieved.deleteRestriction mustBe DeleteRestriction.NoRestriction
+      retrieved shouldBe application
+      retrieved.deleteRestriction shouldBe DeleteRestriction.NoRestriction
     }
 
     "update an application" in {
@@ -280,13 +279,13 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application))
 
       val retrieved = await(applicationRepository.fetch(application.id)).get
-      retrieved mustBe application
+      retrieved shouldBe application
 
       val updated = retrieved.copy(name = ApplicationName("new name"))
       await(applicationRepository.save(updated))
 
       val newRetrieved = await(applicationRepository.fetch(application.id)).get
-      newRetrieved mustBe updated
+      newRetrieved shouldBe updated
     }
   }
 
@@ -301,7 +300,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      savedApplication.deleteRestriction.deleteRestrictionType mustBe NO_RESTRICTION
+      savedApplication.deleteRestriction.deleteRestrictionType shouldBe NO_RESTRICTION
 
       val updatedApplication = await(
         applicationRepository.updateDeleteRestriction(
@@ -310,7 +309,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      updatedApplication.deleteRestriction mustBe deleteRestrictionDoNotDelete
+      updatedApplication.deleteRestriction shouldBe deleteRestrictionDoNotDelete
     }
   }
 
@@ -339,7 +338,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      updatedApplication.rateLimitTier mustBe Some(updatedRateLimit)
+      updatedApplication.rateLimitTier shouldBe Some(updatedRateLimit)
     }
 
     "set the grant Length field on an Application document" in {
@@ -356,7 +355,7 @@ class ApplicationRepositoryISpec
 
       val newRetrieved = await(applicationRepository.fetch(applicationId)).get
 
-      newRetrieved.refreshTokensAvailableFor mustBe newGrantLength
+      newRetrieved.refreshTokensAvailableFor shouldBe newGrantLength
     }
 
     "set the rateLimitTier field on an Application document where none previously existed" in {
@@ -379,7 +378,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      updatedApplication.rateLimitTier mustBe Some(updatedRateLimit)
+      updatedApplication.rateLimitTier shouldBe Some(updatedRateLimit)
     }
   }
 
@@ -398,7 +397,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      updatedApplication.ipAllowlist mustBe updatedIpAllowlist
+      updatedApplication.ipAllowlist shouldBe updatedIpAllowlist
     }
   }
 
@@ -413,7 +412,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      updatedApplication.refreshTokensAvailableFor mustBe newGrantLength
+      updatedApplication.refreshTokensAvailableFor shouldBe newGrantLength
     }
   }
 
@@ -430,7 +429,7 @@ class ApplicationRepositoryISpec
       )
 
       updatedApplication.access match {
-        case access: Access.Standard => access.redirectUris mustBe updateLoginRedirectUris
+        case access: Access.Standard => access.redirectUris shouldBe updateLoginRedirectUris
         case _                       => fail("Wrong access - expecting standard")
       }
     }
@@ -471,7 +470,7 @@ class ApplicationRepositoryISpec
       val retrieved =
         await(applicationRepository.findAndRecordApplicationUsage(clientId)).get
 
-      retrieved.refreshTokensAvailableFor mustBe newGrantLength
+      retrieved.refreshTokensAvailableFor shouldBe newGrantLength
     }
   }
 
@@ -483,7 +482,7 @@ class ApplicationRepositoryISpec
         ).withState(appStateProduction)
           .copy(lastAccess = Some(instant.minus(Duration.ofDays(20)))) // scalastyle:ignore magic.number
 
-      application.tokens.production.lastAccessTokenUsage mustBe None
+      application.tokens.production.lastAccessTokenUsage shouldBe None
 
       await(applicationRepository.save(application))
       val retrieved =
@@ -516,7 +515,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      application.tokens.production.clientSecrets.head.lastAccess mustBe None // Original object has no value
+      application.tokens.production.clientSecrets.head.lastAccess shouldBe None // Original object has no value
       timestampShouldBeApproximatelyNow(
         retrieved.tokens.production.clientSecrets.head.lastAccess.get,
         clock = clock
@@ -562,7 +561,7 @@ class ApplicationRepositoryISpec
       )
       retrieved.tokens.production.clientSecrets.head.lastAccess.get.isAfter(
         applicationTokens.production.clientSecrets.head.lastAccess.get
-      ) mustBe true
+      ) shouldBe true
     }
 
     "update the correct client secret when there are multiple" in {
@@ -613,7 +612,7 @@ class ApplicationRepositoryISpec
         else
           retrievedClientSecret.lastAccess.get.isBefore(
             testStartTime
-          ) mustBe true
+          ) shouldBe true
       )
     }
   }
@@ -642,7 +641,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      retrieved mustBe Some(application2)
+      retrieved shouldBe Some(application2)
     }
 
     "retrieve the grant length for an application for a given client id when it has a matching client id" in {
@@ -676,8 +675,8 @@ class ApplicationRepositoryISpec
         )
       )
 
-      retrieved1.map(_.refreshTokensAvailableFor) mustBe Some(grantLength1)
-      retrieved2.map(_.refreshTokensAvailableFor) mustBe Some(grantLength2)
+      retrieved1.map(_.refreshTokensAvailableFor) shouldBe Some(grantLength1)
+      retrieved2.map(_.refreshTokensAvailableFor) shouldBe Some(grantLength2)
     }
 
     "do not retrieve the application for a given client id when it has a matching client id but is deleted" in {
@@ -695,7 +694,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      retrieved mustBe None
+      retrieved shouldBe None
     }
   }
 
@@ -723,7 +722,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      retrieved mustBe Some(application2)
+      retrieved shouldBe Some(application2)
     }
 
     "do not retrieve the application when it is matched for access token but is deleted" in {
@@ -741,7 +740,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      retrieved mustBe None
+      retrieved shouldBe None
     }
   }
 
@@ -768,7 +767,7 @@ class ApplicationRepositoryISpec
       val retrieved =
         await(applicationRepository.fetchAllForEmailAddress(application1.collaborators.head.emailAddress.text))
 
-      retrieved mustBe List(application1, application2)
+      retrieved shouldBe List(application1, application2)
     }
   }
 
@@ -810,11 +809,11 @@ class ApplicationRepositoryISpec
 
       val retrieved = await(applicationRepository.fetchStandardNonTestingApps())
 
-      retrieved.toSet mustBe Set(application2, application3, application4)
+      retrieved.toSet shouldBe Set(application2, application3, application4)
     }
 
     "return empty list when no apps are found" in {
-      await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
+      await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
     }
 
     "not return Access.Privileged applications" in {
@@ -825,7 +824,7 @@ class ApplicationRepositoryISpec
         .withAccess(Access.Privileged())
 
       await(applicationRepository.save(application1))
-      await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
+      await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
     }
 
     "not return ROPC applications" in {
@@ -836,21 +835,21 @@ class ApplicationRepositoryISpec
         .withAccess(Access.Ropc())
 
       await(applicationRepository.save(application1))
-      await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
+      await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
     }
 
     "return empty list when all apps in TESTING state" in {
       val application1 = anApplicationDataForTest(ApplicationId.random)
 
       await(applicationRepository.save(application1))
-      await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
+      await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
     }
 
     "return empty list when all apps in DELETED state" in {
       val application1 = anApplicationDataForTest(ApplicationId.random).withState(appStateDeleted)
 
       await(applicationRepository.save(application1))
-      await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
+      await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
     }
   }
 
@@ -867,7 +866,7 @@ class ApplicationRepositoryISpec
       val retrieved =
         await(applicationRepository.fetchApplicationsByName(applicationName))
 
-      retrieved mustBe List(application)
+      retrieved shouldBe List(application)
     }
 
     "dont retrieve the application if it's a non-matching name" in {
@@ -881,7 +880,7 @@ class ApplicationRepositoryISpec
         applicationRepository.fetchApplicationsByName("non-matching-name")
       )
 
-      retrieved mustBe List.empty
+      retrieved shouldBe List.empty
     }
 
     "dont retrieve the application with the matching name if its deleted" in {
@@ -896,7 +895,7 @@ class ApplicationRepositoryISpec
       val retrieved =
         await(applicationRepository.fetchApplicationsByName(applicationName))
 
-      retrieved mustBe List.empty
+      retrieved shouldBe List.empty
     }
   }
 
@@ -911,11 +910,11 @@ class ApplicationRepositoryISpec
         expectedState: State,
         expectedNumber: Int
       ): Unit = {
-      responseApplications.foreach(app => app.state.name mustBe expectedState)
+      responseApplications.foreach(app => app.state.name shouldBe expectedState)
       withClue(
         s"The expected number of applications with state $expectedState is $expectedNumber"
       ) {
-        responseApplications.size mustBe expectedNumber
+        responseApplications.size shouldBe expectedNumber
       }
     }
 
@@ -1020,11 +1019,11 @@ class ApplicationRepositoryISpec
         expectedState: State,
         expectedNumber: Int
       ): Unit = {
-      responseApplications.foreach(app => app.state.name mustBe expectedState)
+      responseApplications.foreach(app => app.state.name shouldBe expectedState)
       withClue(
         s"The expected number of applications with state $expectedState is $expectedNumber"
       ) {
-        responseApplications.size mustBe expectedNumber
+        responseApplications.size shouldBe expectedNumber
       }
     }
 
@@ -1069,11 +1068,11 @@ class ApplicationRepositoryISpec
         expectedState: State,
         expectedNumber: Int
       ): Unit = {
-      responseApplications.foreach(app => app.state.name mustBe expectedState)
+      responseApplications.foreach(app => app.state.name shouldBe expectedState)
       withClue(
         s"The expected number of applications with state $expectedState is $expectedNumber"
       ) {
-        responseApplications.size mustBe expectedNumber
+        responseApplications.size shouldBe expectedNumber
       }
     }
 
@@ -1145,7 +1144,7 @@ class ApplicationRepositoryISpec
 
       await(applicationRepository.save(application))
       val retrieved = await(applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode))
-      retrieved mustBe Some(application)
+      retrieved shouldBe Some(application)
     }
 
     "retrieve the application with verificationCode when in pre production state" in {
@@ -1156,7 +1155,7 @@ class ApplicationRepositoryISpec
 
       await(applicationRepository.save(application))
       val retrieved = await(applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode))
-      retrieved mustBe Some(application)
+      retrieved shouldBe Some(application)
     }
 
     "not retrieve the application with an unknown verificationCode" in {
@@ -1167,7 +1166,7 @@ class ApplicationRepositoryISpec
 
       await(applicationRepository.save(application))
       val retrieved = await(applicationRepository.fetchVerifiableUpliftBy("aDifferentVerificationCode"))
-      retrieved mustBe None
+      retrieved shouldBe None
     }
 
     "not retrieve the application with verificationCode when in deleted state" in {
@@ -1182,7 +1181,7 @@ class ApplicationRepositoryISpec
       val retrieved = await(
         applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode)
       )
-      retrieved mustBe None
+      retrieved shouldBe None
     }
   }
 
@@ -1238,7 +1237,7 @@ class ApplicationRepositoryISpec
 
       val result = await(applicationRepository.getAppsWithSubscriptions)
 
-      result must contain theSameElementsAs expectedResult
+      result should contain theSameElementsAs expectedResult
     }
   }
 
@@ -1249,13 +1248,13 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application))
 
       val retrieved = await(applicationRepository.fetch(application.id)).get
-      retrieved mustBe application
+      retrieved shouldBe application
 
       await(applicationRepository.delete(application.id, instant))
       val result = await(applicationRepository.fetch(application.id))
 
-      result.isDefined mustBe true
-      result.get.state.name mustBe State.DELETED
+      result.isDefined shouldBe true
+      result.get.state.name shouldBe State.DELETED
     }
   }
 
@@ -1266,12 +1265,12 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application))
 
       val retrieved = await(applicationRepository.fetch(application.id)).get
-      retrieved mustBe application
+      retrieved shouldBe application
 
       await(applicationRepository.hardDelete(application.id))
       val result = await(applicationRepository.fetch(application.id))
 
-      result mustBe None
+      result shouldBe None
     }
   }
 
@@ -1302,7 +1301,7 @@ class ApplicationRepositoryISpec
 
       val result = await(applicationRepository.fetch(applicationId))
 
-      result must not be None
+      result should not be None
     }
   }
 
@@ -1328,7 +1327,7 @@ class ApplicationRepositoryISpec
 
       val result = await(applicationRepository.fetchAllWithNoSubscriptions())
 
-      result mustBe List(application2)
+      result shouldBe List(application2)
     }
   }
 
@@ -1350,7 +1349,7 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
 
-      await(applicationRepository.fetchAll()) mustBe List(
+      await(applicationRepository.fetchAll()) shouldBe List(
         application1,
         application2
       )
@@ -1361,7 +1360,7 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
 
-      await(applicationRepository.fetchAll(includeDeleted = true)) mustBe List(
+      await(applicationRepository.fetchAll(includeDeleted = true)) shouldBe List(
         application1,
         application2,
         application3
@@ -1406,7 +1405,7 @@ class ApplicationRepositoryISpec
       val result =
         await(applicationRepository.fetchAllForContext("context".asContext))
 
-      result mustBe List(application1, application2)
+      result shouldBe List(application1, application2)
     }
   }
 
@@ -1457,7 +1456,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      result mustBe List(application2)
+      result shouldBe List(application2)
     }
 
     "fetch multiple applications with the same matching context and versions" in {
@@ -1502,7 +1501,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      result mustBe List(application2, application3)
+      result shouldBe List(application2, application3)
     }
 
     "fetch no applications when the context and version do not match" in {
@@ -1551,7 +1550,7 @@ class ApplicationRepositoryISpec
         applicationRepository.fetchAllForApiIdentifier(nonExistentApiIdentifier)
       )
 
-      result mustBe List.empty
+      result shouldBe List.empty
     }
   }
 
@@ -1642,13 +1641,13 @@ class ApplicationRepositoryISpec
 
       result.get(
         s"applicationsWithSubscriptionCountV1.${sanitisedApp1Name}"
-      ) mustBe Some(2)
+      ) shouldBe Some(2)
       result.get(
         s"applicationsWithSubscriptionCountV1.${sanitisedApp2Name}"
-      ) mustBe Some(1)
+      ) shouldBe Some(1)
       result.get(
         s"applicationsWithSubscriptionCountV1.${sanitisedApp3Name}"
-      ) mustBe None
+      ) shouldBe None
     }
 
     "return Applications when more than 100 results bug" in {
@@ -1672,7 +1671,7 @@ class ApplicationRepositoryISpec
       val result =
         await(applicationRepository.getApplicationWithSubscriptionCount())
 
-      result.keys.count(_ => true) mustBe 200
+      result.keys.count(_ => true) shouldBe 200
     }
   }
 
@@ -1689,8 +1688,8 @@ class ApplicationRepositoryISpec
         applicationRepository.addClientSecret(applicationId, clientSecret)
       )
 
-      savedApplication.tokens.production.clientSecrets must not contain clientSecret
-      updatedApplication.tokens.production.clientSecrets must contain(
+      savedApplication.tokens.production.clientSecrets should not contain clientSecret
+      updatedApplication.tokens.production.clientSecrets should contain(
         clientSecret
       )
     }
@@ -1735,7 +1734,7 @@ class ApplicationRepositoryISpec
       clientSecretWithId(
         updatedApplication,
         clientSecretId
-      ).name mustBe ("new-name")
+      ).name shouldBe ("new-name")
     }
 
     "populate the name where it was Default" in {
@@ -1762,7 +1761,7 @@ class ApplicationRepositoryISpec
       clientSecretWithId(
         updatedApplication,
         clientSecretId
-      ).name mustBe ("new-name")
+      ).name shouldBe ("new-name")
     }
 
     "populate the name where it was a masked String" in {
@@ -1794,7 +1793,7 @@ class ApplicationRepositoryISpec
       clientSecretWithId(
         updatedApplication,
         clientSecretId
-      ).name mustBe ("new-name")
+      ).name shouldBe ("new-name")
     }
 
     "update correct client secret where there are multiple" in {
@@ -1825,10 +1824,10 @@ class ApplicationRepositoryISpec
       clientSecretWithId(
         updatedApplication,
         clientSecretId
-      ).name mustBe ("new-name")
+      ).name shouldBe ("new-name")
       otherClientSecrets(updatedApplication, clientSecretId) foreach {
         otherSecret =>
-          otherSecret.name mustBe ("secret-that-should-not-change")
+          otherSecret.name shouldBe ("secret-that-should-not-change")
       }
     }
   }
@@ -1872,15 +1871,15 @@ class ApplicationRepositoryISpec
         .importantSubmissionData
         .get
         .termsOfUseAcceptances
-      termsOfUseAcceptances.size mustBe 1
+      termsOfUseAcceptances.size shouldBe 1
 
       val termsOfUseAcceptance = termsOfUseAcceptances.head
-      termsOfUseAcceptance.responsibleIndividual mustBe responsibleIndividual
+      termsOfUseAcceptance.responsibleIndividual shouldBe responsibleIndividual
       termsOfUseAcceptance.dateTime
-        .toEpochMilli mustBe acceptanceDate
+        .toEpochMilli shouldBe acceptanceDate
         .toEpochMilli
-      termsOfUseAcceptance.submissionId mustBe submissionId
-      termsOfUseAcceptance.submissionInstance mustBe 0
+      termsOfUseAcceptance.submissionId shouldBe submissionId
+      termsOfUseAcceptance.submissionInstance shouldBe 0
     }
   }
 
@@ -1913,10 +1912,10 @@ class ApplicationRepositoryISpec
       val actualImportantSubmissionData = updatedApplication.access
         .asInstanceOf[Access.Standard]
         .importantSubmissionData
-      actualImportantSubmissionData.isDefined mustBe true
+      actualImportantSubmissionData.isDefined shouldBe true
 
-      actualImportantSubmissionData.get.responsibleIndividual mustBe responsibleIndividual
-      actualImportantSubmissionData.get.organisationUrl mustBe Some(organisationUrl)
+      actualImportantSubmissionData.get.responsibleIndividual shouldBe responsibleIndividual
+      actualImportantSubmissionData.get.organisationUrl shouldBe Some(organisationUrl)
     }
   }
 
@@ -1943,10 +1942,10 @@ class ApplicationRepositoryISpec
         )
       )
 
-      savedApplication.tokens.production.clientSecrets.head.hashedSecret must be(
+      savedApplication.tokens.production.clientSecrets.head.hashedSecret should be(
         "old-hashed-secret"
       )
-      updatedApplication.tokens.production.clientSecrets.head.hashedSecret must be(
+      updatedApplication.tokens.production.clientSecrets.head.hashedSecret should be(
         "new-hashed-secret"
       )
     }
@@ -1979,16 +1978,16 @@ class ApplicationRepositoryISpec
       updatedClientSecrets
         .find(_.id == clientSecret2.id)
         .get
-        .hashedSecret must be("new-hashed-secret-2")
+        .hashedSecret should be("new-hashed-secret-2")
 
       updatedClientSecrets
         .find(_.id == clientSecret1.id)
         .get
-        .hashedSecret must be("old-hashed-secret-1")
+        .hashedSecret should be("old-hashed-secret-1")
       updatedClientSecrets
         .find(_.id == clientSecret3.id)
         .get
-        .hashedSecret must be("old-hashed-secret-3")
+        .hashedSecret should be("old-hashed-secret-3")
     }
   }
 
@@ -2017,11 +2016,11 @@ class ApplicationRepositoryISpec
 
       val updatedClientSecrets =
         updatedApplication.tokens.production.clientSecrets
-      updatedClientSecrets.find(_.id == clientSecret2.id) mustBe (Some(
+      updatedClientSecrets.find(_.id == clientSecret2.id) shouldBe (Some(
         clientSecret2
       ))
-      updatedClientSecrets.find(_.id == clientSecretToRemove.id) mustBe (None)
-      updatedClientSecrets.find(_.id == clientSecret3.id) mustBe (Some(
+      updatedClientSecrets.find(_.id == clientSecretToRemove.id) shouldBe (None)
+      updatedClientSecrets.find(_.id == clientSecret3.id) shouldBe (Some(
         clientSecret3
       ))
     }
@@ -2045,9 +2044,9 @@ class ApplicationRepositoryISpec
 
       val result = await(applicationRepository.fetchAllForUserId(userId, false))
 
-      result.size mustBe 2
+      result.size shouldBe 2
       result.map(
-        _.collaborators.map(collaborator => collaborator.userId mustBe userId)
+        _.collaborators.map(collaborator => collaborator.userId shouldBe userId)
       )
     }
 
@@ -2068,9 +2067,9 @@ class ApplicationRepositoryISpec
 
       val result = await(applicationRepository.fetchAllForUserId(userId, true))
 
-      result.size mustBe 3
+      result.size shouldBe 3
       result.map(
-        _.collaborators.map(collaborator => collaborator.userId mustBe userId)
+        _.collaborators.map(collaborator => collaborator.userId shouldBe userId)
       )
     }
   }
@@ -2100,10 +2099,10 @@ class ApplicationRepositoryISpec
         )
       )
 
-      result.size mustBe 1
-      result.head.environment mustBe productionEnv
+      result.size shouldBe 1
+      result.head.environment shouldBe productionEnv
       result.map(
-        _.collaborators.map(collaborator => collaborator.userId mustBe userId)
+        _.collaborators.map(collaborator => collaborator.userId shouldBe userId)
       )
     }
   }
@@ -2133,11 +2132,11 @@ class ApplicationRepositoryISpec
         )
       )
 
-      result.size mustBe 1
-      result.head.environment mustBe productionEnv
+      result.size shouldBe 1
+      result.head.environment shouldBe productionEnv
       result.map(
         _.collaborators.map(x =>
-          x.emailAddress mustBe collaborator.emailAddress
+          x.emailAddress shouldBe collaborator.emailAddress
         )
       )
     }
@@ -2162,7 +2161,7 @@ class ApplicationRepositoryISpec
       val numberRetrieved =
         await(applicationRepository.documentsWithFieldMissing("description"))
 
-      numberRetrieved mustBe 1
+      numberRetrieved shouldBe 1
     }
   }
 
@@ -2182,7 +2181,7 @@ class ApplicationRepositoryISpec
 
       val numberRetrieved = await(applicationRepository.count)
 
-      numberRetrieved mustBe 2
+      numberRetrieved shouldBe 2
     }
   }
 
@@ -2194,7 +2193,7 @@ class ApplicationRepositoryISpec
     val existingCollaborators = app.collaborators
 
     val appWithNewCollaborator = await(applicationRepository.addCollaborator(applicationId, collaborator))
-    appWithNewCollaborator.collaborators must contain only (existingCollaborators.toList ++ List(collaborator): _*)
+    appWithNewCollaborator.collaborators should contain only (existingCollaborators.toList ++ List(collaborator): _*)
   }
 
   "handle removeCollaborator correctly" in {
@@ -2209,7 +2208,7 @@ class ApplicationRepositoryISpec
     val userIdToDelete        = existingCollaborators.head.userId
 
     val appWithOutDeletedCollaborator = await(applicationRepository.removeCollaborator(applicationId, userIdToDelete))
-    appWithOutDeletedCollaborator.collaborators must contain only (existingCollaborators.toList.filterNot(_.userId == userIdToDelete): _*)
+    appWithOutDeletedCollaborator.collaborators should contain only (existingCollaborators.toList.filterNot(_.userId == userIdToDelete): _*)
   }
 
   "handle ProductionAppPrivacyPolicyLocationChanged correctly" in {
@@ -2240,7 +2239,7 @@ class ApplicationRepositoryISpec
 
     val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateApplicationPrivacyPolicyLocation(applicationId, newLocation))
     appWithUpdatedPrivacyPolicyLocation.access match {
-      case Access.Standard(_, _, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
+      case Access.Standard(_, _, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation shouldBe newLocation
       case _                                                                                                      => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
     }
   }
@@ -2255,7 +2254,7 @@ class ApplicationRepositoryISpec
 
     val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.updateLegacyPrivacyPolicyUrl(applicationId, Some(newUrl)))
     appWithUpdatedPrivacyPolicyLocation.access match {
-      case Access.Standard(_, _, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
+      case Access.Standard(_, _, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl shouldBe newUrl
       case Access.Standard(_, _, _, None, _, _, None)                   => fail("unexpected lack of privacyPolicyUrl")
       case _                                                            => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
     }
@@ -2281,7 +2280,7 @@ class ApplicationRepositoryISpec
 
     val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateApplicationTermsAndConditionsLocation(applicationId, newLocation))
     appWithUpdatedTermsConditionsLocation.access match {
-      case Access.Standard(_, _, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation mustBe newLocation
+      case Access.Standard(_, _, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation shouldBe newLocation
       case _                                                                                                           => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
     }
   }
@@ -2296,7 +2295,7 @@ class ApplicationRepositoryISpec
 
     val appWithUpdatedTermsConditionsLocation = await(applicationRepository.updateLegacyTermsAndConditionsUrl(applicationId, Some(newUrl)))
     appWithUpdatedTermsConditionsLocation.access match {
-      case Access.Standard(_, _, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
+      case Access.Standard(_, _, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl shouldBe newUrl
       case _                                                                 => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
     }
   }
@@ -2307,14 +2306,14 @@ class ApplicationRepositoryISpec
       ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocations.InDesktopSoftware, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
     val access                  = Access.Standard(List.empty, List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = storedApp.withAccess(access)
-    app.state.name mustBe State.PRODUCTION
+    app.state.name shouldBe State.PRODUCTION
 
     await(applicationRepository.save(app))
     val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, instant, adminOne.emailAddress.text, adminName))
-    appWithUpdatedState.state.name mustBe State.PENDING_GATEKEEPER_APPROVAL
-    appWithUpdatedState.state.updatedOn mustBe instant
-    appWithUpdatedState.state.requestedByEmailAddress mustBe Some(adminOne.emailAddress.text)
-    appWithUpdatedState.state.requestedByName mustBe Some(adminName)
+    appWithUpdatedState.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
+    appWithUpdatedState.state.updatedOn shouldBe instant
+    appWithUpdatedState.state.requestedByEmailAddress shouldBe Some(adminOne.emailAddress.text)
+    appWithUpdatedState.state.requestedByName shouldBe Some(adminName)
   }
 
   "handle updateApplicationChangeResponsibleIndividualToSelf correctly" in {
@@ -2339,12 +2338,12 @@ class ApplicationRepositoryISpec
 
     appWithUpdatedRI.access match {
       case Access.Standard(_, _, _, _, _, _, Some(importantSubmissionData)) => {
-        importantSubmissionData.responsibleIndividual.fullName.value mustBe adminName
-        importantSubmissionData.responsibleIndividual.emailAddress mustBe adminOne.emailAddress
-        importantSubmissionData.termsOfUseAcceptances.size mustBe 2
+        importantSubmissionData.responsibleIndividual.fullName.value shouldBe adminName
+        importantSubmissionData.responsibleIndividual.emailAddress shouldBe adminOne.emailAddress
+        importantSubmissionData.termsOfUseAcceptances.size shouldBe 2
         val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
-        latestAcceptance.responsibleIndividual.fullName.value mustBe adminName
-        latestAcceptance.responsibleIndividual.emailAddress mustBe adminOne.emailAddress
+        latestAcceptance.responsibleIndividual.fullName.value shouldBe adminName
+        latestAcceptance.responsibleIndividual.emailAddress shouldBe adminOne.emailAddress
       }
       case _                                                                => fail("unexpected access type: " + appWithUpdatedRI.access)
     }
@@ -2358,8 +2357,8 @@ class ApplicationRepositoryISpec
     await(applicationRepository.save(app))
 
     val appWithUpdatedName = await(applicationRepository.updateApplicationName(applicationId, newName))
-    appWithUpdatedName.name.value mustBe newName
-    appWithUpdatedName.normalisedName mustBe newName.toLowerCase
+    appWithUpdatedName.name.value shouldBe newName
+    appWithUpdatedName.normalisedName shouldBe newName.toLowerCase
 
     await(applicationRepository.hardDelete(applicationId))
   }
@@ -2386,12 +2385,12 @@ class ApplicationRepositoryISpec
 
     appWithUpdatedRI.access match {
       case Access.Standard(_, _, _, _, _, _, Some(importantSubmissionData)) => {
-        importantSubmissionData.responsibleIndividual.fullName.value mustBe riName
-        importantSubmissionData.responsibleIndividual.emailAddress mustBe riEmail
-        importantSubmissionData.termsOfUseAcceptances.size mustBe 2
+        importantSubmissionData.responsibleIndividual.fullName.value shouldBe riName
+        importantSubmissionData.responsibleIndividual.emailAddress shouldBe riEmail
+        importantSubmissionData.termsOfUseAcceptances.size shouldBe 2
         val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
-        latestAcceptance.responsibleIndividual.fullName.value mustBe riName
-        latestAcceptance.responsibleIndividual.emailAddress mustBe riEmail
+        latestAcceptance.responsibleIndividual.fullName.value shouldBe riName
+        latestAcceptance.responsibleIndividual.emailAddress shouldBe riEmail
       }
       case _                                                                => fail("unexpected access type: " + appWithUpdatedRI.access)
     }
@@ -2436,7 +2435,7 @@ class ApplicationRepositoryISpec
       val stateHistory3 = saveHistoryStatePair(app.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(3))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results mustBe List(ApplicationWithStateHistory(app.id, app.name.value, 2, List(stateHistory1, stateHistory2, stateHistory3)))
+      results shouldBe List(ApplicationWithStateHistory(app.id, app.name.value, 2, List(stateHistory1, stateHistory2, stateHistory3)))
     }
 
     "return app state history correctly for old journey app" in {
@@ -2446,7 +2445,7 @@ class ApplicationRepositoryISpec
       val stateHistory3 = saveHistoryStatePair(app.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(3))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results mustBe List(ApplicationWithStateHistory(app.id, app.name.value, 1, List(stateHistory1, stateHistory2, stateHistory3)))
+      results shouldBe List(ApplicationWithStateHistory(app.id, app.name.value, 1, List(stateHistory1, stateHistory2, stateHistory3)))
     }
 
     "return app state histories sorted correctly" in {
@@ -2460,7 +2459,7 @@ class ApplicationRepositoryISpec
       val app3History = saveHistory(app3.id, None, State.TESTING, Duration.ofHours(2))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results mustBe List(
+      results shouldBe List(
         ApplicationWithStateHistory(app1.id, app1.name.value, 2, List(app1History)),
         ApplicationWithStateHistory(app3.id, app2.name.value, 2, List(app3History)),
         ApplicationWithStateHistory(app2.id, app3.name.value, 2, List(app2History))
@@ -2476,7 +2475,7 @@ class ApplicationRepositoryISpec
       saveHistory(sandboxApp.id, None, State.PRODUCTION, Duration.ofHours(1))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results mustBe List(ApplicationWithStateHistory(prodApp.id, prodApp.name.value, 2, List(stateHistory1, stateHistory2)))
+      results shouldBe List(ApplicationWithStateHistory(prodApp.id, prodApp.name.value, 2, List(stateHistory1, stateHistory2)))
     }
 
     "do not return app state history for a deleted app" in {
@@ -2485,7 +2484,7 @@ class ApplicationRepositoryISpec
       saveHistoryStatePair(app.id, State.PENDING_REQUESTER_VERIFICATION, State.DELETED, Duration.ofHours(2))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results mustBe List.empty
+      results shouldBe List.empty
     }
   }
 
@@ -2517,7 +2516,7 @@ class ApplicationRepositoryISpec
 
       val result: Set[ApiIdentifier] = await(applicationRepository.getSubscriptionsForDeveloper(user1.userId))
 
-      result mustBe Set(helloWorldApi1, helloVatApi, helloWorldApi2)
+      result shouldBe Set(helloWorldApi1, helloVatApi, helloWorldApi2)
     }
 
     "return empty when the user is not a collaborator of any apps" in {
@@ -2533,7 +2532,7 @@ class ApplicationRepositoryISpec
       val developerId                = app2.collaborators.head.userId
       val result: Set[ApiIdentifier] = await(applicationRepository.getSubscriptionsForDeveloper(developerId))
 
-      result mustBe Set.empty
+      result shouldBe Set.empty
     }
 
     "return empty when the user's apps are not subscribed to any API" in {
@@ -2543,7 +2542,7 @@ class ApplicationRepositoryISpec
       val developerId                = app.collaborators.head.userId
       val result: Set[ApiIdentifier] = await(applicationRepository.getSubscriptionsForDeveloper(developerId))
 
-      result mustBe Set.empty
+      result shouldBe Set.empty
     }
   }
 }

@@ -105,9 +105,9 @@ class ApplicationRepositorySerialisationISpec
 
     result match {
       case Some(application) => {
-        application.id mustBe applicationId
+        application.id shouldBe applicationId
         application.access match {
-          case Access.Standard(redirectUris, _, _, _, _, _, _) => redirectUris.head mustBe invalidUri
+          case Access.Standard(redirectUris, _, _, _, _, _, _) => redirectUris.head shouldBe invalidUri
           case _                                               => fail()
         }
       }
@@ -122,8 +122,8 @@ class ApplicationRepositorySerialisationISpec
 
     result match {
       case Some(application) => {
-        application.id mustBe applicationId
-        application.refreshTokensAvailableFor mustBe GrantLength.EIGHTEEN_MONTHS.period
+        application.id shouldBe applicationId
+        application.refreshTokensAvailableFor shouldBe GrantLength.EIGHTEEN_MONTHS.period
       }
       case None              => fail()
     }
@@ -131,9 +131,9 @@ class ApplicationRepositorySerialisationISpec
     val applicationSearch = new ApplicationSearch(filters = List())
     val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-    appSearchResult.applications.size mustBe 1
-    appSearchResult.applications.head.id mustBe applicationId
-    appSearchResult.applications.head.refreshTokensAvailableFor mustBe GrantLength.EIGHTEEN_MONTHS.period
+    appSearchResult.applications.size shouldBe 1
+    appSearchResult.applications.head.id shouldBe applicationId
+    appSearchResult.applications.head.refreshTokensAvailableFor shouldBe GrantLength.EIGHTEEN_MONTHS.period
   }
 
   "create application with grantLength 1 day but no refreshTokensAvailableFor. refreshTokensAvailableFor is read back as 1 day " in new Setup {
@@ -143,8 +143,8 @@ class ApplicationRepositorySerialisationISpec
 
     result match {
       case Some(application) => {
-        application.id mustBe applicationId
-        application.refreshTokensAvailableFor mustBe GrantLength.ONE_DAY.period
+        application.id shouldBe applicationId
+        application.refreshTokensAvailableFor shouldBe GrantLength.ONE_DAY.period
       }
       case None              => fail()
     }
@@ -152,9 +152,9 @@ class ApplicationRepositorySerialisationISpec
     val applicationSearch = new ApplicationSearch(filters = List())
     val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-    appSearchResult.applications.size mustBe 1
-    appSearchResult.applications.head.id mustBe applicationId
-    appSearchResult.applications.head.refreshTokensAvailableFor mustBe GrantLength.ONE_DAY.period
+    appSearchResult.applications.size shouldBe 1
+    appSearchResult.applications.head.id shouldBe applicationId
+    appSearchResult.applications.head.refreshTokensAvailableFor shouldBe GrantLength.ONE_DAY.period
   }
 
   "create application with no grantLength but refreshTokensAvailableFor 1 month. refreshTokensAvailableFor is read back as 1 month " in new Setup {
@@ -164,8 +164,8 @@ class ApplicationRepositorySerialisationISpec
 
     result match {
       case Some(application) => {
-        application.id mustBe applicationId
-        application.refreshTokensAvailableFor mustBe GrantLength.ONE_MONTH.period
+        application.id shouldBe applicationId
+        application.refreshTokensAvailableFor shouldBe GrantLength.ONE_MONTH.period
       }
       case None              => fail()
     }
@@ -173,9 +173,9 @@ class ApplicationRepositorySerialisationISpec
     val applicationSearch = new ApplicationSearch(filters = List())
     val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-    appSearchResult.applications.size mustBe 1
-    appSearchResult.applications.head.id mustBe applicationId
-    appSearchResult.applications.head.refreshTokensAvailableFor mustBe GrantLength.ONE_MONTH.period
+    appSearchResult.applications.size shouldBe 1
+    appSearchResult.applications.head.id shouldBe applicationId
+    appSearchResult.applications.head.refreshTokensAvailableFor shouldBe GrantLength.ONE_MONTH.period
   }
 
   "create application with grantLength 1 day and refreshTokensAvailableFor 1 month. refreshTokensAvailableFor is read back as 1 month " in new Setup {
@@ -185,8 +185,8 @@ class ApplicationRepositorySerialisationISpec
 
     result match {
       case Some(application) => {
-        application.id mustBe applicationId
-        application.refreshTokensAvailableFor mustBe GrantLength.ONE_MONTH.period
+        application.id shouldBe applicationId
+        application.refreshTokensAvailableFor shouldBe GrantLength.ONE_MONTH.period
       }
       case None              => fail()
     }
@@ -194,9 +194,9 @@ class ApplicationRepositorySerialisationISpec
     val applicationSearch = new ApplicationSearch(filters = List())
     val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-    appSearchResult.applications.size mustBe 1
-    appSearchResult.applications.head.id mustBe applicationId
-    appSearchResult.applications.head.refreshTokensAvailableFor mustBe GrantLength.ONE_MONTH.period
+    appSearchResult.applications.size shouldBe 1
+    appSearchResult.applications.head.id shouldBe applicationId
+    appSearchResult.applications.head.refreshTokensAvailableFor shouldBe GrantLength.ONE_MONTH.period
   }
 
   "successfully remove old grantLength attribute when grantLength 1 day and refreshTokensAvailableFor 1 month" in new Setup {

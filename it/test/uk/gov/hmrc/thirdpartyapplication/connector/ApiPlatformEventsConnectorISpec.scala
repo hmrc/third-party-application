@@ -58,7 +58,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
       ApiPlatformEventsStub.verifyApplicationEventPostBody(expectedRequestBody)
-      await(inTest.sendApplicationEvent(updateApplicationEvent)) mustBe true
+      await(inTest.sendApplicationEvent(updateApplicationEvent)) shouldBe true
     }
   }
 

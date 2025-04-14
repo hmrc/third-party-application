@@ -17,22 +17,37 @@
 package uk.gov.hmrc.thirdpartyapplication.connector
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.Status._
+import play.api.libs.json._
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, _}
+import uk.gov.hmrc.apiplatform.modules.applications.subscriptions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 object ApiSubscriptionFieldsConnector {
   case class Config(baseUrl: String)
+
+  type FieldErrors = Map[FieldName, String]
+
+  case class SubscriptionFieldsPutRequest(
+      clientId: ClientId,
+      apiContext: ApiContext,
+      apiVersion: ApiVersionNbr,
+      fields: Map[FieldName, FieldValue]
+    )
+
+  implicit val writeSubscriptionFieldsPutRequest: Writes[SubscriptionFieldsPutRequest] = Json.writes[SubscriptionFieldsPutRequest]
 }
 
 @Singleton
 class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config: ApiSubscriptionFieldsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils {
+  import ApiSubscriptionFieldsConnector._
 
   def delete(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     httpClient.delete(url"${config.baseUrl}/field/application/$clientId")
@@ -44,13 +59,38 @@ class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config
       }
   }
 
-  // def fetchAllForApp(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-  //   httpClient.get(url"${config.baseUrl}/field/application/$clientId")
-  //     .execute[ErrorOr[Unit]]
-  //     .map {
-  //       case Right(_)                                        => HasSucceeded
-  //       case Left(UpstreamErrorResponse(_, NOT_FOUND, _, _)) => HasSucceeded
-  //       case Left(err)                                       => throw err
-  //     }
-  // }
+  def fetchAllForApp(clientId: ClientId)(implicit hc: HeaderCarrier): Future[ApiFieldMap[FieldValue]] = {
+    import uk.gov.hmrc.apiplatform.modules.applications.subscriptions.domain.models.Implicits.OverrideForBulkResponse._
+
+    httpClient.get(url"${config.baseUrl}/field/application/$clientId")
+      .execute[Option[ApiFieldMap[FieldValue]]]
+      .map {
+        case Some(map) => map
+        case None      => Map.empty
+      }
+  }
+
+  def urlSubscriptionFieldValues(clientId: ClientId, apiIdentifier: ApiIdentifier) =
+    url"${config.baseUrl}/field/application/${clientId}/context/${apiIdentifier.context}/version/${apiIdentifier.versionNbr}"
+
+  def saveFieldValues(clientId: ClientId, apiIdentifier: ApiIdentifier, fields: Map[FieldName, FieldValue])(implicit hc: HeaderCarrier): Future[Either[FieldErrors, Unit]] = {
+    if (fields.isEmpty) {
+      successful(Right(()))
+    } else {
+      httpClient.put(urlSubscriptionFieldValues(clientId, apiIdentifier))
+        .withBody(Json.toJson(SubscriptionFieldsPutRequest(clientId, apiIdentifier.context, apiIdentifier.versionNbr, fields)))
+        .execute[HttpResponse]
+        .map { response =>
+          response.status match {
+            case BAD_REQUEST  =>
+              Json.parse(response.body).validate[Map[FieldName, String]] match {
+                case s: JsSuccess[Map[FieldName, String]] => Left(s.get)
+                case _                                    => Left(Map.empty)
+              }
+            case OK | CREATED => Right(())
+            case statusCode   => throw UpstreamErrorResponse("Failed to put subscription fields", statusCode)
+          }
+        }
+    }
+  }
 }

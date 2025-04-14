@@ -69,11 +69,11 @@ class NotificationRepositoryISpec
     import NotificationRepository.MongoFormats.formatNotification
 
     "write to json" in {
-      Json.toJson(notification) mustBe json
+      Json.toJson(notification) shouldBe json
     }
 
     "read from json" in {
-      Json.fromJson[Notification](json).get mustBe notification
+      Json.fromJson[Notification](json).get shouldBe notification
     }
   }
 
@@ -88,7 +88,7 @@ class NotificationRepositoryISpec
     "read existing document from mongo" in {
       saveMongoJson(json)
       val result = await(notificationRepository.find(appId))
-      result.head mustBe notification
+      result.head shouldBe notification
     }
   }
 
@@ -118,8 +118,8 @@ class NotificationRepositoryISpec
       val result =
         await(notificationRepository.createEntity(Notification(applicationId, instant, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
 
-      result mustBe true
-      await(notificationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 1
+      result shouldBe true
+      await(notificationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) shouldBe 1
     }
   }
 
@@ -133,15 +133,15 @@ class NotificationRepositoryISpec
 
       val result = await(notificationRepository.deleteAllByApplicationId(applicationId1))
 
-      result mustBe HasSucceeded
-      await(notificationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 1
+      result shouldBe HasSucceeded
+      await(notificationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) shouldBe 1
     }
 
     "not fail when deleting a non-existing record" in {
       val applicationId1 = ApplicationId.random
       val result         = await(notificationRepository.deleteAllByApplicationId(applicationId1))
 
-      result mustBe HasSucceeded
+      result shouldBe HasSucceeded
     }
   }
 }

@@ -116,8 +116,8 @@ class ApprovalsControllerISpec
         headers = List.empty
       )
 
-      result.status mustBe NOT_FOUND
-      result.body mustBe s"""{"code":"APPLICATION_NOT_FOUND","message":"Application $randomAppId doesn't exist"}"""
+      result.status shouldBe NOT_FOUND
+      result.body shouldBe s"""{"code":"APPLICATION_NOT_FOUND","message":"Application $randomAppId doesn't exist"}"""
     }
 
     "return 200 when successful" in {
@@ -125,9 +125,9 @@ class ApprovalsControllerISpec
       primeData(appId)
       val requestBody          = """{"gatekeeperUserName":"Bob Hope","reasons":"reasons to be cheerful"}"""
       val result               = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
-      result.status mustBe OK
+      result.status shouldBe OK
       val response             = Json.parse(result.body).validate[ApplicationWithCollaborators].asOpt
-      response must not be None
+      response should not be None
     }
   }
 }

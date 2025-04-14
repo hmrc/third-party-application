@@ -285,7 +285,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.save(doc))
 
       val allDocs = await(repository.findAll)
-      allDocs mustBe List(doc)
+      allDocs shouldBe List(doc)
     }
 
     "save ToU uplift document to the database" in {
@@ -293,7 +293,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.save(doc))
 
       val allDocs = await(repository.findAll)
-      allDocs mustBe List(doc)
+      allDocs shouldBe List(doc)
     }
 
     "save update document to the database" in {
@@ -301,7 +301,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.save(doc))
 
       val allDocs = await(repository.findAll)
-      allDocs mustBe List(doc)
+      allDocs shouldBe List(doc)
     }
   }
 
@@ -310,7 +310,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       val savedDoc   = buildAndSaveDoc(INITIAL, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
       val fetchedDoc = await(repository.fetch(savedDoc.id))
 
-      Some(savedDoc) mustBe fetchedDoc
+      Some(savedDoc) shouldBe fetchedDoc
     }
   }
 
@@ -319,7 +319,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       val savedDoc = buildAndSaveDoc(INITIAL, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
       await(repository.delete(savedDoc.id))
 
-      await(repository.findAll) mustBe List()
+      await(repository.findAll) shouldBe List()
     }
 
     "remove the record matching the latest submission instance only" in {
@@ -329,7 +329,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       val submissionWithTwoInstances     = Submission.addInstance(answersToQuestions, Submission.Status.Answering(instant, true))(aSubmission.copy(id = submissionId))
       await(repository.delete(submissionWithTwoInstances))
 
-      await(repository.findAll) mustBe List(savedDocForSubmissionInstance0)
+      await(repository.findAll) shouldBe List(savedDocForSubmissionInstance0)
     }
   }
 
@@ -342,7 +342,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
       val results = await(repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, INITIAL, instant.minus(Duration.ofDays(UPDATE_THRESHOLD))))
 
-      results mustBe List(initialWithOldDate)
+      results shouldBe List(initialWithOldDate)
     }
   }
 
@@ -360,7 +360,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         ResponsibleIndividualVerification.VerificationTypeTouUplift
       ))
 
-      results mustBe List(initialWithOldDate)
+      results shouldBe List(initialWithOldDate)
     }
   }
 
@@ -373,7 +373,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.updateState(stateReminderSent.id, REMINDERS_SENT))
 
       val allDocs = await(repository.findAll).toSet
-      allDocs mustBe Set(stateReminderSent, stateInitial.asInstanceOf[ResponsibleIndividualToUVerification].copy(state = REMINDERS_SENT))
+      allDocs shouldBe Set(stateReminderSent, stateInitial.asInstanceOf[ResponsibleIndividualToUVerification].copy(state = REMINDERS_SENT))
     }
   }
 
@@ -388,7 +388,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.updateSetDefaultVerificationType("termsOfUse"))
 
       val allDocs = await(repository.findAll).toSet
-      allDocs mustBe Set(stateReminderSent, stateInitial, updateType)
+      allDocs shouldBe Set(stateReminderSent, stateInitial, updateType)
     }
   }
 
@@ -409,7 +409,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
       await(repository.deleteAllByApplicationId(existingAppId))
 
-      await(repository.findAll).toSet mustBe Set(existingRecordNotMatchingApplication)
+      await(repository.findAll).toSet shouldBe Set(existingRecordNotMatchingApplication)
     }
   }
 
@@ -419,10 +419,10 @@ class ResponsibleIndividualVerificationRepositoryISpec
       val submissionIndex = 1
       val event           = buildRiVerificationStartedEvent(submissionId, submissionIndex)
 
-      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+      await(repository.applyEvents(NonEmptyList.one(event))) shouldBe HasSucceeded
 
       val expectedRecord = buildRiVerificationRecord(ResponsibleIndividualVerificationId(event.verificationId), submissionId, submissionIndex)
-      await(repository.findAll) mustBe List(expectedRecord)
+      await(repository.findAll) shouldBe List(expectedRecord)
     }
 
     "remove old records that match submission when ResponsibleIndividualVerificationStarted event is received" in {
@@ -440,10 +440,10 @@ class ResponsibleIndividualVerificationRepositoryISpec
       val updateTimestamp = instant.plus(Duration.ofHours(1))
       val event           = buildRiVerificationStartedEvent(existingSubmissionId, existingSubmissionIndex).copy(eventDateTime = updateTimestamp)
 
-      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+      await(repository.applyEvents(NonEmptyList.one(event))) shouldBe HasSucceeded
 
       val expectedNewRecord = existingRecordMatchingSubmission.copy(id = ResponsibleIndividualVerificationId(event.verificationId), createdOn = updateTimestamp)
-      await(repository.findAll).toSet mustBe Set(existingRecordNotMatchingSubmissionId, existingRecordNotMatchingSubmissionIndex, expectedNewRecord)
+      await(repository.findAll).toSet shouldBe Set(existingRecordNotMatchingSubmissionId, existingRecordNotMatchingSubmissionIndex, expectedNewRecord)
     }
 
     "handle ResponsibleIndividualChanged event correctly" in {
@@ -457,9 +457,9 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.save(existingRecordMatchingCode))
       await(repository.save(existingRecordNotMatchingCode))
 
-      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+      await(repository.applyEvents(NonEmptyList.one(event))) shouldBe HasSucceeded
 
-      await(repository.findAll) mustBe List(existingRecordNotMatchingCode)
+      await(repository.findAll) shouldBe List(existingRecordNotMatchingCode)
     }
 
     "handle ResponsibleIndividualDeclined event correctly" in {
@@ -473,9 +473,9 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.save(existingRecordMatchingCode))
       await(repository.save(existingRecordNotMatchingCode))
 
-      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+      await(repository.applyEvents(NonEmptyList.one(event))) shouldBe HasSucceeded
 
-      await(repository.findAll) mustBe List(existingRecordNotMatchingCode)
+      await(repository.findAll) shouldBe List(existingRecordNotMatchingCode)
     }
 
     "handle ResponsibleIndividualDeclinedUpdate event correctly" in {
@@ -489,9 +489,9 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.save(existingRecordMatchingCode))
       await(repository.save(existingRecordNotMatchingCode))
 
-      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+      await(repository.applyEvents(NonEmptyList.one(event))) shouldBe HasSucceeded
 
-      await(repository.findAll) mustBe List(existingRecordNotMatchingCode)
+      await(repository.findAll) shouldBe List(existingRecordNotMatchingCode)
     }
 
     "handle ResponsibleIndividualDidNotVerify event correctly" in {
@@ -505,9 +505,9 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.save(existingRecordMatchingCode))
       await(repository.save(existingRecordNotMatchingCode))
 
-      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+      await(repository.applyEvents(NonEmptyList.one(event))) shouldBe HasSucceeded
 
-      await(repository.findAll) mustBe List(existingRecordNotMatchingCode)
+      await(repository.findAll) shouldBe List(existingRecordNotMatchingCode)
     }
 
     "handle ResponsibleIndividualSet event correctly" in {
@@ -521,9 +521,9 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.save(existingRecordMatchingCode))
       await(repository.save(existingRecordNotMatchingCode))
 
-      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+      await(repository.applyEvents(NonEmptyList.one(event))) shouldBe HasSucceeded
 
-      await(repository.findAll) mustBe List(existingRecordNotMatchingCode)
+      await(repository.findAll) shouldBe List(existingRecordNotMatchingCode)
     }
 
     "handle other events correctly" in {
@@ -536,8 +536,8 @@ class ResponsibleIndividualVerificationRepositoryISpec
         ApplicationName("new name"),
         "admin@example.com".toLaxEmail
       )
-      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
-      await(repository.findAll) mustBe List()
+      await(repository.applyEvents(NonEmptyList.one(event))) shouldBe HasSucceeded
+      await(repository.findAll) shouldBe List()
     }
   }
 }

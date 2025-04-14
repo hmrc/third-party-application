@@ -94,11 +94,11 @@ class TermsOfUseInvitationRepositoryISpec
     import TermsOfUseInvitationRepository.MongoFormats.formatTermsOfUseInvitation
 
     "write to json" in {
-      Json.toJson(termsOfUseInvitation) mustBe json
+      Json.toJson(termsOfUseInvitation) shouldBe json
     }
 
     "read from json" in {
-      Json.fromJson[TermsOfUseInvitation](json).get mustBe termsOfUseInvitation
+      Json.fromJson[TermsOfUseInvitation](json).get shouldBe termsOfUseInvitation
     }
   }
 
@@ -113,7 +113,7 @@ class TermsOfUseInvitationRepositoryISpec
     "read existing document from mongo" in {
       saveMongoJson(json)
       val result = await(termsOfUseInvitationRepository.fetch(appId))
-      result.get mustBe termsOfUseInvitation
+      result.get shouldBe termsOfUseInvitation
     }
   }
 
@@ -124,8 +124,8 @@ class TermsOfUseInvitationRepositoryISpec
 
       val result = await(termsOfUseInvitationRepository.create(touInvite))
 
-      result mustBe Some(touInvite)
-      await(termsOfUseInvitationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 1
+      result shouldBe Some(touInvite)
+      await(termsOfUseInvitationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) shouldBe 1
     }
   }
 
@@ -140,7 +140,7 @@ class TermsOfUseInvitationRepositoryISpec
       await(termsOfUseInvitationRepository.create(touInvite2))
       val result = await(termsOfUseInvitationRepository.fetch(applicationId1))
 
-      result mustBe Some(touInvite1)
+      result shouldBe Some(touInvite1)
     }
   }
 
@@ -155,7 +155,7 @@ class TermsOfUseInvitationRepositoryISpec
       await(termsOfUseInvitationRepository.create(touInvite2))
       val result = await(termsOfUseInvitationRepository.fetchAll())
 
-      result.size mustBe 2
+      result.size shouldBe 2
     }
   }
 
@@ -170,8 +170,8 @@ class TermsOfUseInvitationRepositoryISpec
       await(termsOfUseInvitationRepository.create(touInvite2))
       val result = await(termsOfUseInvitationRepository.fetchByStatus(EMAIL_SENT))
 
-      result.size mustBe 1
-      result.head mustBe touInvite1
+      result.size shouldBe 1
+      result.head shouldBe touInvite1
     }
   }
 
@@ -197,8 +197,8 @@ class TermsOfUseInvitationRepositoryISpec
       val findDueBy = Instant.parse("2023-07-03T12:00:00.000Z")
       val result    = await(termsOfUseInvitationRepository.fetchByStatusBeforeDueBy(EMAIL_SENT, findDueBy))
 
-      result.size mustBe 1
-      result mustBe List(touInvite1)
+      result.size shouldBe 1
+      result shouldBe List(touInvite1)
     }
   }
 
@@ -230,8 +230,8 @@ class TermsOfUseInvitationRepositoryISpec
       val findDueBy = Instant.parse("2023-07-03T12:00:00.000Z")
       val result    = await(termsOfUseInvitationRepository.fetchByStatusesBeforeDueBy(findDueBy, EMAIL_SENT, REMINDER_EMAIL_SENT))
 
-      result.size mustBe 2
-      result mustBe List(touInvite1, touInvite2)
+      result.size shouldBe 2
+      result shouldBe List(touInvite1, touInvite2)
     }
   }
 
@@ -242,10 +242,10 @@ class TermsOfUseInvitationRepositoryISpec
 
       await(termsOfUseInvitationRepository.create(touInvite))
       val result = await(termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2))
-      result mustBe HasSucceeded
+      result shouldBe HasSucceeded
 
       val fetch = await(termsOfUseInvitationRepository.fetch(applicationId))
-      fetch mustBe Some(TermsOfUseInvitation(applicationId, instant, instant, instant, None, TERMS_OF_USE_V2))
+      fetch shouldBe Some(TermsOfUseInvitation(applicationId, instant, instant, instant, None, TERMS_OF_USE_V2))
     }
   }
 
@@ -256,10 +256,10 @@ class TermsOfUseInvitationRepositoryISpec
 
       await(termsOfUseInvitationRepository.create(touInvite))
       val result = await(termsOfUseInvitationRepository.updateReminderSent(applicationId))
-      result mustBe HasSucceeded
+      result shouldBe HasSucceeded
 
       val fetch = await(termsOfUseInvitationRepository.fetch(applicationId))
-      fetch mustBe Some(TermsOfUseInvitation(applicationId, instant, instant, instant, Some(instant), REMINDER_EMAIL_SENT))
+      fetch shouldBe Some(TermsOfUseInvitation(applicationId, instant, instant, instant, Some(instant), REMINDER_EMAIL_SENT))
     }
   }
 
@@ -271,10 +271,10 @@ class TermsOfUseInvitationRepositoryISpec
 
       await(termsOfUseInvitationRepository.create(touInvite))
       val result = await(termsOfUseInvitationRepository.updateResetBackToEmailSent(applicationId, newDueByDate))
-      result mustBe HasSucceeded
+      result shouldBe HasSucceeded
 
       val fetch = await(termsOfUseInvitationRepository.fetch(applicationId))
-      fetch mustBe Some(TermsOfUseInvitation(applicationId, instant, instant, newDueByDate, None, EMAIL_SENT))
+      fetch shouldBe Some(TermsOfUseInvitation(applicationId, instant, instant, newDueByDate, None, EMAIL_SENT))
     }
   }
 
@@ -284,20 +284,20 @@ class TermsOfUseInvitationRepositoryISpec
       val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
 
       val result = await(termsOfUseInvitationRepository.create(touInvite))
-      result mustBe Some(touInvite)
+      result shouldBe Some(touInvite)
 
       val delete = await(termsOfUseInvitationRepository.delete(applicationId))
-      delete mustBe HasSucceeded
+      delete shouldBe HasSucceeded
 
-      await(termsOfUseInvitationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 0
+      await(termsOfUseInvitationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) shouldBe 0
     }
 
     "not fail if no record found" in {
 
       val delete = await(termsOfUseInvitationRepository.delete(applicationId))
-      delete mustBe HasSucceeded
+      delete shouldBe HasSucceeded
 
-      await(termsOfUseInvitationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 0
+      await(termsOfUseInvitationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) shouldBe 0
     }
   }
 
@@ -351,8 +351,8 @@ class TermsOfUseInvitationRepositoryISpec
       val searchCriteria = TermsOfUseSearch(filters)
       val result         = await(termsOfUseInvitationRepository.search(searchCriteria))
 
-      result.size mustBe 1
-      result mustBe List(touInviteWithApp1)
+      result.size shouldBe 1
+      result shouldBe List(touInviteWithApp1)
     }
 
     "return expected result of 3 for email sent & reminder email sent status search" in {
@@ -372,8 +372,8 @@ class TermsOfUseInvitationRepositoryISpec
       val searchCriteria = TermsOfUseSearch(filters)
       val result         = await(termsOfUseInvitationRepository.search(searchCriteria))
 
-      result.size mustBe 3
-      result mustBe List(touInviteWithApp1, touInviteWithApp2, touInviteWithApp3)
+      result.size shouldBe 3
+      result shouldBe List(touInviteWithApp1, touInviteWithApp2, touInviteWithApp3)
     }
 
     "return expected result of 5 for all status search" in {
@@ -393,8 +393,8 @@ class TermsOfUseInvitationRepositoryISpec
       val searchCriteria = TermsOfUseSearch(filters)
       val result         = await(termsOfUseInvitationRepository.search(searchCriteria))
 
-      result.size mustBe 5
-      result mustBe List(touInviteWithApp1, touInviteWithApp2, touInviteWithApp3, touInviteWithApp4, touInviteWithApp5)
+      result.size shouldBe 5
+      result shouldBe List(touInviteWithApp1, touInviteWithApp2, touInviteWithApp3, touInviteWithApp4, touInviteWithApp5)
     }
 
     "return expected result of 1 for exact name text search" in {
@@ -414,8 +414,8 @@ class TermsOfUseInvitationRepositoryISpec
       val searchCriteria = TermsOfUseSearch(filters, Some("Pete app name 1"))
       val result         = await(termsOfUseInvitationRepository.search(searchCriteria))
 
-      result.size mustBe 1
-      result mustBe List(touInviteWithApp1)
+      result.size shouldBe 1
+      result shouldBe List(touInviteWithApp1)
     }
 
     "return expected result of 2 for partial name text search" in {
@@ -435,8 +435,8 @@ class TermsOfUseInvitationRepositoryISpec
       val searchCriteria = TermsOfUseSearch(filters, Some("Pete app name"))
       val result         = await(termsOfUseInvitationRepository.search(searchCriteria))
 
-      result.size mustBe 2
-      result mustBe List(touInviteWithApp1, touInviteWithApp2)
+      result.size shouldBe 2
+      result shouldBe List(touInviteWithApp1, touInviteWithApp2)
     }
 
     "return expected result of 1 for partial name text AND status search" in {
@@ -456,8 +456,8 @@ class TermsOfUseInvitationRepositoryISpec
       val searchCriteria = TermsOfUseSearch(filters, Some("Nic"))
       val result         = await(termsOfUseInvitationRepository.search(searchCriteria))
 
-      result.size mustBe 1
-      result mustBe List(touInviteWithApp4)
+      result.size shouldBe 1
+      result shouldBe List(touInviteWithApp4)
     }
   }
 
