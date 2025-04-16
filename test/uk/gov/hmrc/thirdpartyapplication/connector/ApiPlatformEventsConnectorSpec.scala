@@ -24,6 +24,7 @@ import play.api.http.Status._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.test.HttpClientV2Support
 
+import uk.gov.hmrc.apiplatform.modules.common.connectors.ConnectorSpec
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock

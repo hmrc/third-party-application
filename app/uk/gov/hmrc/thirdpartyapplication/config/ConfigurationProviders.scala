@@ -29,6 +29,7 @@ import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecretsHashingConfig
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
