@@ -23,6 +23,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 trait ApiSubscriptionFieldsConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -57,7 +58,20 @@ trait ApiSubscriptionFieldsConnectorMockModule extends MockitoSugar with Argumen
       def verifyCalled() = {
         ApiSubscriptionFieldsConnectorMock.verify.delete(*[ClientId])(*)
       }
+    }
 
+    object BulkFetchFieldDefinitions {
+
+      def willReturnDefinitions(defns: ApiFieldMap[FieldDefinition]) = {
+        when(aMock.fetchAllFieldDefinitions()(*)).thenReturn(successful(defns))
+      }
+    }
+
+    object FetchFieldValues {
+
+      def willReturnFields(values: ApiFieldMap[FieldValue]) = {
+        when(aMock.fetchFieldValues(*[ClientId])(*)).thenReturn(successful(values))
+      }
     }
   }
 
