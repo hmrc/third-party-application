@@ -51,6 +51,26 @@ class SubscriptionFieldsService @Inject() (
     } yield filledFields
   }
 
+  def createFieldValuesForApis(
+      clientId: ClientId,
+      deployedTo: Environment,
+      apiIdentifiers: Set[ApiIdentifier]
+    )(implicit hc: HeaderCarrier
+    ): Future[Either[Map[ApiIdentifier, FieldErrors], Unit]] = {
+
+    import cats._
+    import cats.implicits._
+
+    Future.sequence(
+      apiIdentifiers.toList.map(api =>
+        createFieldValues(clientId, deployedTo, api).map(cfv =>
+          cfv.leftMap(err => Map(api -> err))
+        )
+      )
+    )
+      .map(Monoid.combineAll(_))
+  }
+
   def createFieldValues(
       clientId: ClientId,
       deployedTo: Environment,
