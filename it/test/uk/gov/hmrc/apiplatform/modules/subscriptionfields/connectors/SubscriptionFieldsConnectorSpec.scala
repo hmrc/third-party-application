@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.connector
+package uk.gov.hmrc.apiplatform.modules.subscriptionfields.connectors
 
 import java.net.URLEncoder
 import java.util.UUID
@@ -28,9 +28,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.utils.ServerBaseISpec
 
+import uk.gov.hmrc.apiplatform.modules.common.connectors.WiremockSugar
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.subscriptions.domain.models.{ApiFieldMapFixtures, FieldNameFixtures, FieldValueFixtures, FieldsFixtures}
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector.SubscriptionFieldsPutRequest
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector.SubscriptionFieldsPutRequest
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.{ApiFieldMapFixtures, FieldDefinitionFixtures, FieldNameFixtures, FieldValueFixtures, FieldsFixtures}
 
 class SubscriptionFieldsConnectorSpec
     extends ServerBaseISpec
@@ -39,6 +41,7 @@ class SubscriptionFieldsConnectorSpec
     with FieldsFixtures
     with FieldNameFixtures
     with FieldValueFixtures
+    with FieldDefinitionFixtures
     with ApiFieldMapFixtures {
 
   trait SetupPrincipal {
@@ -46,18 +49,52 @@ class SubscriptionFieldsConnectorSpec
     val clientId                   = ClientId("123")
 
     val httpClient = app.injector.instanceOf[HttpClientV2]
-    val config     = ApiSubscriptionFieldsConnector.Config(wireMockUrl)
+    val config     = uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector.Config(wireMockUrl)
     val connector  = new ApiSubscriptionFieldsConnector(httpClient, config)
     val fieldsId   = UUID.randomUUID()
 
     val bulkSubsOne = Json.parse(
       s"""{"subscriptions":[{"clientId":"123","apiContext":"$apiContextOne","apiVersion":"$apiVersionNbrOne", "fieldsId":"$fieldsId","fields":{"$fieldNameOne":"$fieldValueOne"}}]}"""
     )
+
+    val fieldDefJson =
+      s"""{
+            "name": "${fieldDefnOne.name}",
+            "description": "${fieldDefnOne.description}",
+            "hint": "${fieldDefnOne.hint}",
+            "type": "${fieldDefnOne.`type`}",
+            "shortDescription": "${fieldDefnOne.shortDescription}"
+        }"""
+
+    val bulkSubsDefnOne = Json.parse(
+      s"""{"apis":[{"apiContext":"$apiContextOne","apiVersion":"$apiVersionNbrOne", "fieldDefinitions":[$fieldDefJson]}]}"""
+    )
   }
 
   def encode(in: ApiContext): String = URLEncoder.encode(in.value, "UTF-8")
 
   "SubscriptionFieldsConnector" should {
+    "retrieve all field definitions" in new SetupPrincipal {
+      stubFor(
+        get(urlEqualTo(s"/definition"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withJsonBody(bulkSubsDefnOne)
+          )
+      )
+
+      val expected = Map(
+        apiContextOne -> Map(
+          apiVersionNbrOne -> Map(
+            fieldDefnOne.name -> fieldDefnOne
+          )
+        )
+      )
+
+      await(connector.fetchAllFieldDefinitions()) shouldBe expected
+    }
+
     "retrieve all field values by client id" in new SetupPrincipal {
       stubFor(
         get(urlEqualTo(s"/field/application/${clientId}"))
@@ -74,7 +111,7 @@ class SubscriptionFieldsConnectorSpec
         )
       )
 
-      await(connector.fetchAllForApp(clientId)) shouldBe expected
+      await(connector.fetchFieldValues(clientId)) shouldBe expected
     }
 
     "save field values" should {

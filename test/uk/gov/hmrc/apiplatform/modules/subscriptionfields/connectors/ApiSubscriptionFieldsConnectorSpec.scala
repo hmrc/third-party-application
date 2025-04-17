@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.connector
+package uk.gov.hmrc.apiplatform.modules.subscriptionfields.connectors
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -24,7 +24,9 @@ import play.api.http.Status._
 import uk.gov.hmrc.http.test.HttpClientV2Support
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
+import uk.gov.hmrc.apiplatform.modules.common.connectors.ConnectorSpec
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
 
 class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
@@ -33,7 +35,7 @@ class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
   val clientId = ClientId.random
 
   trait Setup extends HttpClientV2Support {
-    val config: ApiSubscriptionFieldsConnector.Config = ApiSubscriptionFieldsConnector.Config(wireMockUrl)
+    val config: ApiSubscriptionFieldsConnector.Config = uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector.Config(wireMockUrl)
 
     val underTest = new ApiSubscriptionFieldsConnector(httpClientV2, config)
 

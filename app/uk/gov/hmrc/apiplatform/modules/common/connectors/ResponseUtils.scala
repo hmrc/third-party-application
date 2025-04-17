@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.connector
+package uk.gov.hmrc.apiplatform.modules.common.connectors
 
 import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 
