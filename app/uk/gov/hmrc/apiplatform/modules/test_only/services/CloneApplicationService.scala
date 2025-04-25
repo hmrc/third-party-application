@@ -30,8 +30,8 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.SubmissionsDAO
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
 import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepository
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, SubscriptionRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
@@ -83,7 +83,7 @@ class CloneApplicationService @Inject() (
     }
 
     def cloneSubsFields(oldClientId: ClientId)(implicit hc: HeaderCarrier): Future[_] = {
-      subsFieldsConector.fetchAllForApp(oldClientId).flatMap { subsFields =>
+      subsFieldsConector.fetchFieldValues(oldClientId).flatMap { subsFields =>
         Future.sequence(
           subsFields.flatMap {
             case (context, versionsMap) =>

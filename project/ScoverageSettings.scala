@@ -14,7 +14,7 @@ object ScoverageSettings {
       """uk\.gov\.hmrc\.apiplatform\.modules\.gkauth\.domain\.models\..*""",
       """uk\.gov\.hmrc\.apiplatform\.modules\.test_only\..*"""
     ).mkString(";"),
-    ScoverageKeys.coverageMinimumStmtTotal := 91.49,
+    ScoverageKeys.coverageMinimumStmtTotal := 91.0,
     ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true
   )

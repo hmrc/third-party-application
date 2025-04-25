@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.connector
+package uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
@@ -26,8 +26,9 @@ import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 
+import uk.gov.hmrc.apiplatform.modules.common.connectors.ResponseUtils
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, _}
-import uk.gov.hmrc.apiplatform.modules.applications.subscriptions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 object ApiSubscriptionFieldsConnector {
@@ -59,8 +60,14 @@ class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config
       }
   }
 
-  def fetchAllForApp(clientId: ClientId)(implicit hc: HeaderCarrier): Future[ApiFieldMap[FieldValue]] = {
-    import uk.gov.hmrc.apiplatform.modules.applications.subscriptions.domain.models.Implicits.OverrideForBulkResponse._
+  def fetchAllFieldDefinitions()(implicit hc: HeaderCarrier): Future[ApiFieldMap[FieldDefinition]] = {
+    import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.Implicits.OverrideForBulkResponse._
+    httpClient.get(url"${config.baseUrl}/definition")
+      .execute[ApiFieldMap[FieldDefinition]]
+  }
+
+  def fetchFieldValues(clientId: ClientId)(implicit hc: HeaderCarrier): Future[ApiFieldMap[FieldValue]] = {
+    import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.Implicits.OverrideForBulkResponse._
 
     httpClient.get(url"${config.baseUrl}/field/application/$clientId")
       .execute[Option[ApiFieldMap[FieldValue]]]

@@ -24,6 +24,7 @@ import play.api.http.Status._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.test.HttpClientV2Support
 
+import uk.gov.hmrc.apiplatform.modules.common.connectors.ConnectorSpec
 import uk.gov.hmrc.thirdpartyapplication.models.Totp
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
