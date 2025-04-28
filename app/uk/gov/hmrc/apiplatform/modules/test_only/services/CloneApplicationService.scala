@@ -55,9 +55,9 @@ class CloneApplicationService @Inject() (
     val newId       = ApplicationId.random
     val newClientId = ClientId.random
 
-    def cloneSubs(): Future[_] = {
+    def cloneSubs(): Future[Set[ApiIdentifier]] = {
       subscriptionRepository.getSubscriptions(appId).flatMap { subsToCopy =>
-        Future.sequence(subsToCopy.map(s => subscriptionRepository.add(newId, s)))
+        Future.sequence(subsToCopy.map(s => subscriptionRepository.add(newId, s))).map(_ => subsToCopy)
       }
     }
 
@@ -82,14 +82,19 @@ class CloneApplicationService @Inject() (
       }
     }
 
-    def cloneSubsFields(oldClientId: ClientId)(implicit hc: HeaderCarrier): Future[_] = {
+    def cloneSubsFields(oldClientId: ClientId, subs: Set[ApiIdentifier])(implicit hc: HeaderCarrier): Future[_] = {
       subsFieldsConector.fetchFieldValues(oldClientId).flatMap { subsFields =>
         Future.sequence(
           subsFields.flatMap {
             case (context, versionsMap) =>
               versionsMap.map {
                 case (version, fields) =>
-                  subsFieldsConector.saveFieldValues(newClientId, ApiIdentifier(context, version), fields).map(_ => ())
+                  if(subs.contains(ApiIdentifier(context, version))) {
+                    subsFieldsConector.saveFieldValues(newClientId, ApiIdentifier(context, version), fields).map(_ => ())
+                  }
+                  else {
+                    Future.successful(Right((())))
+                  }
               }
           }
         )
@@ -113,11 +118,11 @@ class CloneApplicationService @Inject() (
           )
         _                <- E.liftF(testAppRepo.record(newId))
         insertedApp      <- E.liftF(applicationRepository.save(newApp))
-        _                <- E.liftF(cloneSubs())
+        subs             <- E.liftF(cloneSubs())
         _                <- E.liftF(cloneNotifications())
         _                <- E.liftF(cloneTermsOfUseInvitation())
         _                <- E.liftF(cloneSubmissions())
-        _                <- E.liftF(cloneSubsFields(oldApp.tokens.production.clientId))
+        _                <- E.liftF(cloneSubsFields(oldApp.tokens.production.clientId, subs))
       } yield insertedApp
     )
       .value
