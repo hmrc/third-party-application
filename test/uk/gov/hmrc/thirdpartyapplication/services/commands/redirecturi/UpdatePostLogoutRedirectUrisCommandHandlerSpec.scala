@@ -65,7 +65,7 @@ class UpdatePostLogoutRedirectUrisCommandHandlerSpec extends CommandHandlerBaseS
     }
   }
 
-  "UpdateRedirectUrisCommandHandler" when {
+  "UpdatePostLogoutRedirectUrisCommandHandler" when {
     "given a principal application" should {
       "succeed when application is standardAccess" in new Setup {
         ApplicationRepoMock.UpdatePostLogoutRedirectUris.thenReturn(newPostLogoutRedirectUris)(applicationData) // Dont need to test the repo here so just return any app
@@ -102,8 +102,8 @@ class UpdatePostLogoutRedirectUrisCommandHandlerSpec extends CommandHandlerBaseS
       }
 
       "fail when we try to add too many redirect URIs" in new Setup {
-        checkFailsWith("Can have at most 5 redirect URIs") {
-          val brokenCmd = cmdAsAdmin.copy(newRedirectUris = (1 to 6).toList.map(id => PostLogoutRedirectUri.unsafeApply(s"https://somewhere.com/endpoint$id")))
+        checkFailsWith("Can have at most 6 redirect URIs") {
+          val brokenCmd = cmdAsAdmin.copy(newRedirectUris = (1 to 7).toList.map(id => PostLogoutRedirectUri.unsafeApply(s"https://somewhere.com/endpoint$id")))
           underTest.process(applicationData, brokenCmd)
         }
         ApplicationRepoMock.verifyZeroInteractions()
