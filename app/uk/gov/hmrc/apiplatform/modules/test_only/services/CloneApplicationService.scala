@@ -89,10 +89,9 @@ class CloneApplicationService @Inject() (
             case (context, versionsMap) =>
               versionsMap.map {
                 case (version, fields) =>
-                  if(subs.contains(ApiIdentifier(context, version))) {
+                  if (subs.contains(ApiIdentifier(context, version))) {
                     subsFieldsConector.saveFieldValues(newClientId, ApiIdentifier(context, version), fields).map(_ => ())
-                  }
-                  else {
+                  } else {
                     Future.successful(Right((())))
                   }
               }

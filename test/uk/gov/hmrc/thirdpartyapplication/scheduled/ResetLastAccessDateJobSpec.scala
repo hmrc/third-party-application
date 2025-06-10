@@ -32,6 +32,7 @@ import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientId}
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -52,7 +53,7 @@ class ResetLastAccessDateJobSpec
   implicit val dateFormatters: Format[LocalDate]  = MongoJavatimeFormats.localDateFormat
   implicit val metrics: Metrics                   = app.injector.instanceOf[Metrics]
 
-  val applicationRepository = new ApplicationRepository(mongoComponent, metrics)
+  val applicationRepository = new ApplicationRepository(mongoComponent, metrics, FixedClock.clock)
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()

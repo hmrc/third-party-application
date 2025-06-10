@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.{Instant, Period}
+import java.time.{Clock, Instant, Period}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import com.typesafe.config.ConfigFactory
 import org.bson.BsonValue
-import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.bson.{BsonArray, BsonBoolean, BsonInt32, BsonString, Document}
+import org.bson.conversions.Bson
+import org.mongodb.scala.bson._
 import org.mongodb.scala.model
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
@@ -40,7 +40,7 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
@@ -151,7 +151,7 @@ object ApplicationRepository {
 }
 
 @Singleton
-class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metrics)(implicit val ec: ExecutionContext)
+class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metrics, val clock: Clock)(implicit val ec: ExecutionContext)
     extends PlayMongoRepository[StoredApplication](
       collectionName = "application",
       mongoComponent = mongo,
@@ -225,7 +225,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         Codecs.playFormatCodec(LaxEmailAddress.format)
       )
     ) with MetricsTimer
-    with ApplicationLogger {
+    with ApplicationLogger
+    with ClockNow {
 
   import ApplicationRepository.MongoFormats._
 
@@ -264,17 +265,69 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[StoredApplication] =
     updateApplication(applicationId, Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(acceptance)))
 
+  /*
+  [
+    {
+      $set: {
+        "lastAccess": {
+          $cond: {
+            if: {
+              $gt: [ {
+                $dateDiff: {
+                  startDate: "$lastAccess",
+                  endDate: ISODate("2025-03-01T14:49:28.805Z"),
+                  unit: "day"
+                }
+              },
+              0
+              ]
+            },
+            then: "$currentDate",
+            else: "$lastAccess"
+          }
+        }
+      }
+    }
+  ]
+   */
+
   def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[StoredApplication]] = {
     timeFuture("Find and Record Application Usage", "application.repository.findAndRecordApplicationUsage") {
+      val aggregateUpdate = {
+        Seq(BsonDocument(
+          s"""{
+            $$set: { 
+              "lastAccess": {
+                $$cond: {
+                  if: {
+                    $$gt: [
+                      {
+                        $$dateDiff: {
+                          startDate: "$$lastAccess",
+                          endDate: ISODate("${instant().toString}"),
+                          unit: "day"
+                        }
+                      },
+                      0
+                    ]
+                  }
+                  then: ISODate("${instant().toString}"),
+                  else: "$$lastAccess"
+                }
+              }
+            } 
+          }"""
+        ))
+      }
+
       val query = and(
         equal("tokens.production.clientId", Codecs.toBson(clientId)),
         notEqual("state.name", State.DELETED.toString())
       )
-      collection.findOneAndUpdate(
-        filter = query,
-        update = Updates.currentDate("lastAccess"),
-        options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
-      ).headOption()
+
+      val options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
+
+      collection.findOneAndUpdate(query, aggregateUpdate, options).headOption()
     }
   }
 
@@ -549,11 +602,19 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   }
 
   def fetchProdAppStateHistories(): Future[Seq[ApplicationWithStateHistory]] = {
+    def conditional[T](condition: Document, trueValue: Int, falseValue: Int): Bson = {
+      Document("$cond" -> BsonArray(
+        condition,
+        BsonInt32(trueValue),
+        BsonInt32(falseValue)
+      ))
+    }
+
     timeFuture("Fetch Production Application State Histories", "application.repository.fetchProdAppStateHistories") {
       val pipeline: Seq[Bson] = Seq(
         matches(equal("environment", Codecs.toBson(Environment.PRODUCTION.toString()))),
         matches(notEqual("state.name", State.DELETED.toString())),
-        addFields(Field("version", cond(Document("$not" -> BsonString("$access.importantSubmissionData")), 1, 2))),
+        addFields(Field("version", conditional(Document("$not" -> BsonString("$access.importantSubmissionData")), 1, 2))),
         lookup(from = "stateHistory", localField = "id", foreignField = "applicationId", as = "states"),
         sort(ascending("createdOn", "states.changedAt"))
       )
@@ -573,14 +634,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       runAggregationQuery(filters, pagination, sort, applicationSearch.hasSubscriptionFilter(), applicationSearch.hasSpecificApiSubscriptionFilter())
     }
-  }
-
-  private def cond[T](condition: Document, trueValue: Int, falseValue: Int): Bson = {
-    Document("$cond" -> BsonArray(
-      condition,
-      BsonInt32(trueValue),
-      BsonInt32(falseValue)
-    ))
   }
 
   private def deletedFilter(applicationSearch: ApplicationSearch): List[Bson] = {
