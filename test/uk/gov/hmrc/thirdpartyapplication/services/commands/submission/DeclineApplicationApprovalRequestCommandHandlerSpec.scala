@@ -67,7 +67,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
     val underTest       = new DeclineApplicationApprovalRequestCommandHandler(ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
 
     def checkSuccessResult()(result: CommandHandler.Success) = {
-      inside(result) { case (app, events) =>
+      inside(result) { case (returnedApp, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
             case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ApplicationApprovalRequestDeclined => true
@@ -91,7 +91,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
                   requestingAdminName,
                   requestingAdminEmail
                 ) =>
-              appId shouldBe app.id
+              appId shouldBe returnedApp.id
               actor shouldBe Actors.GatekeeperUser(gatekeeperUser)
               eventDateTime shouldBe ts
               decliningUserName shouldBe gatekeeperUser
@@ -103,7 +103,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
               requestingAdminName shouldBe requesterName
 
             case ApplicationEvents.ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
-              appId shouldBe app.id
+              appId shouldBe returnedApp.id
               evtActor shouldBe Actors.GatekeeperUser(gatekeeperUser)
               eventDateTime shouldBe ts
               oldAppState shouldBe applicationData.state.name.toString()

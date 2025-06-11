@@ -28,7 +28,6 @@ import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.{ApprovalsA
 import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 

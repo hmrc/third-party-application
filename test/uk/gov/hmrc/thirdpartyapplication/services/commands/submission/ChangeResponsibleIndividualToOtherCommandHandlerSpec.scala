@@ -128,7 +128,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
     def checkSuccessResultToU()(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (app, events) =>
+      inside(testMe) { case (returnedApp, events) =>
         events should have size 2
 
         events.collect {
@@ -161,7 +161,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       val testMe = await(fn.value).value
 
       if (isPassed) {
-        inside(testMe) { case (app, events) =>
+        inside(testMe) { case (returnedApp, events) =>
           events should have size 2
 
           events.collect {
@@ -187,7 +187,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
           }
         }
       } else {
-        inside(testMe) { case (app, events) =>
+        inside(testMe) { case (returnedApp, events) =>
           events should have size 1
 
           events.collect {
@@ -209,7 +209,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
     def checkSuccessResultUpdate()(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (app, events) =>
+      inside(testMe) { case (returnedApp, events) =>
         events should have size 1
 
         events.collect {

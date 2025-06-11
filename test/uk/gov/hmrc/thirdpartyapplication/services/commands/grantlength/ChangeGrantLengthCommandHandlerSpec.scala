@@ -49,7 +49,7 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (app, events) =>
+      inside(testMe) { case (returnedApp, events) =>
         events should have size 1
         val event = events.head
 
