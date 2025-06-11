@@ -222,7 +222,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       ),
       replaceIndexes = true,
       extraCodecs = Seq(
-        Codecs.playFormatCodec(LaxEmailAddress.format)
+        Codecs.playFormatCodec(LaxEmailAddress.format),
+        Codecs.playFormatCodec(ClientId.format)
       )
     ) with MetricsTimer
     with ApplicationLogger
@@ -265,63 +266,37 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[StoredApplication] =
     updateApplication(applicationId, Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(acceptance)))
 
-  /*
-  [
-    {
-      $set: {
-        "lastAccess": {
-          $cond: {
-            if: {
-              $gt: [ {
-                $dateDiff: {
-                  startDate: "$lastAccess",
-                  endDate: ISODate("2025-03-01T14:49:28.805Z"),
-                  unit: "day"
-                }
-              },
-              0
-              ]
-            },
-            then: "$currentDate",
-            else: "$lastAccess"
-          }
-        }
-      }
-    }
-  ]
-   */
-
   def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[StoredApplication]] = {
+    // For startDate calculation, ifNull provides a default date when lastAccess is not yet set, for example a new application
     timeFuture("Find and Record Application Usage", "application.repository.findAndRecordApplicationUsage") {
-      val aggregateUpdate = {
-        Seq(BsonDocument(
-          s"""{
-            $$set: { 
-              "lastAccess": {
-                $$cond: {
-                  if: {
-                    $$gt: [
-                      {
-                        $$dateDiff: {
-                          startDate: "$$lastAccess",
-                          endDate: ISODate("${instant().toString}"),
-                          unit: "day"
-                        }
-                      },
-                      0
-                    ]
-                  }
-                  then: ISODate("${instant().toString}"),
-                  else: "$$lastAccess"
+      val timeOfAccess    = instant().toString
+      val aggregateUpdate = Seq(BsonDocument(
+        s"""{
+          $$set: { 
+            "lastAccess": {
+              $$cond: {
+                if: {
+                  $$gt: [
+                    {
+                      $$dateDiff: {
+                        startDate: { $$ifNull: [ "$$lastAccess", ISODate("1970-01-01T00:00:00.000Z") ] },
+                        endDate: ISODate("$timeOfAccess"),
+                        unit: "day"
+                      }
+                    },
+                    0
+                  ]
                 }
+                then: ISODate("$timeOfAccess"),
+                else: "$$lastAccess"
               }
-            } 
-          }"""
-        ))
-      }
+            }
+          } 
+        }"""
+      ))
 
       val query = and(
-        equal("tokens.production.clientId", Codecs.toBson(clientId)),
+        equal("tokens.production.clientId", clientId),
         notEqual("state.name", State.DELETED.toString())
       )
 
@@ -503,7 +478,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def fetchByClientId(clientId: ClientId): Future[Option[StoredApplication]] = {
     timeFuture("Fetch Application by ClientId", "application.repository.fetchByClientId") {
       val query = and(
-        equal("tokens.production.clientId", Codecs.toBson(clientId)),
+        equal("tokens.production.clientId", clientId),
         notEqual("state.name", State.DELETED.toString())
       )
 
