@@ -50,7 +50,7 @@ class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiId
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).value
 
-      inside(testThis) { case (app, events) =>
+      inside(testThis) { case (returnedApp, events) =>
         events should have size 1
         val event = events.head
 

@@ -49,7 +49,7 @@ class AddLoginRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {
     val cmdAsDev   = AddLoginRedirectUri(developerActor, toAddRedirectUri, instant)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
-      inside(result) { case (app, events) =>
+      inside(result) { case (returnedApp, events) =>
         events should have size 1
         val event = events.head
 

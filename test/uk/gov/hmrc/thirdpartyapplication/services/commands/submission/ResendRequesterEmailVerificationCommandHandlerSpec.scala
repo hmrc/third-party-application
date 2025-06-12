@@ -70,7 +70,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
       val result = await(underTest.process(app, ResendRequesterEmailVerification(gatekeeperUser, instant)).value).value
 
-      inside(result) { case (app, events) =>
+      inside(result) { case (returnedApp, events) =>
         events should have size 1
 
         inside(events.head) {

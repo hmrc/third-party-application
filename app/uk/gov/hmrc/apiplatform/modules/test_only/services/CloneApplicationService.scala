@@ -44,7 +44,7 @@ class CloneApplicationService @Inject() (
     notificationRepository: NotificationRepository,
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     submissionsDAO: SubmissionsDAO,
-    subsFieldsConector: ApiSubscriptionFieldsConnector,
+    subsFieldsConnector: ApiSubscriptionFieldsConnector,
     testAppRepo: TestApplicationsRepository
   )(implicit ec: ExecutionContext
   ) {
@@ -83,16 +83,15 @@ class CloneApplicationService @Inject() (
     }
 
     def cloneSubsFields(oldClientId: ClientId, subs: Set[ApiIdentifier])(implicit hc: HeaderCarrier): Future[_] = {
-      subsFieldsConector.fetchFieldValues(oldClientId).flatMap { subsFields =>
+      subsFieldsConnector.fetchFieldValues(oldClientId).flatMap { subsFields =>
         Future.sequence(
           subsFields.flatMap {
             case (context, versionsMap) =>
               versionsMap.map {
                 case (version, fields) =>
-                  if(subs.contains(ApiIdentifier(context, version))) {
-                    subsFieldsConector.saveFieldValues(newClientId, ApiIdentifier(context, version), fields).map(_ => ())
-                  }
-                  else {
+                  if (subs.contains(ApiIdentifier(context, version))) {
+                    subsFieldsConnector.saveFieldValues(newClientId, ApiIdentifier(context, version), fields).map(_ => ())
+                  } else {
                     Future.successful(Right((())))
                   }
               }

@@ -108,7 +108,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       }
       SubmissionsServiceMock.Store.verifyCalledWith().status.isGrantedWithWarnings shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
-        case Submission.Status.GrantedWithWarnings(_, gatekeeperUserName, warning, None) =>
+        case Submission.Status.GrantedWithWarnings(_, `gatekeeperUserName`, warning, None) =>
       }
     }
 
@@ -141,7 +141,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       }
       SubmissionsServiceMock.Store.verifyCalledWith().status.isAnswering shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
-        case Submission.Status.Answering(_, gatekeeperUserName) =>
+        case Submission.Status.Answering(_, true) =>
       }
     }
 
@@ -175,7 +175,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       }
       SubmissionsServiceMock.Store.verifyCalledWith().status.isAnswering shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
-        case Submission.Status.Answering(_, gatekeeperUserName) =>
+        case Submission.Status.Answering(_, true) =>
       }
     }
 

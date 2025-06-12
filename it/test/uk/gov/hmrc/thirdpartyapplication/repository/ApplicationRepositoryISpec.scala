@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.time.{Clock, Duration}
+import java.time.temporal.ChronoUnit
+import java.time.{Clock, Duration, Instant}
 import scala.util.Random.nextString
 
 import org.mongodb.scala.model.{Filters, Updates}
@@ -436,41 +437,38 @@ class ApplicationRepositoryISpec
   }
 
   "recordApplicationUsage" should {
+    def createApplicationWithLastAccess(lastAccess: Option[Instant]) = {
 
-    "update the lastAccess property" in {
-      val clientId = ClientId("aaa")
-
-      val application =
-        anApplicationDataForTest(
-          applicationId,
-          clientId
-        )
-          .withState(appStateProduction)
-          .copy(lastAccess = Some(instant.minus(Duration.ofDays(20)))) // scalastyle:ignore magic.number
+      val application = anApplicationDataForTest(applicationId, clientIdOne)
+        .withState(appStateProduction)
+        .copy(lastAccess = lastAccess)
 
       await(applicationRepository.save(application))
-      val retrieved =
-        await(applicationRepository.findAndRecordApplicationUsage(clientId)).get
+    }
+
+    "do not update the lastAccess property if it is today" in {
+      val midnightToday = instant.truncatedTo(ChronoUnit.DAYS)
+      createApplicationWithLastAccess(Some(midnightToday))
+
+      val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
+
+      retrieved.lastAccess.get shouldBe midnightToday
+    }
+
+    "update the lastAccess property if it is before today" in {
+      createApplicationWithLastAccess(Some(instant.minus(Duration.ofDays(20)))) // scalastyle:ignore magic.number
+
+      val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
 
       timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
     }
 
-    "update the grantLength property" in {
-      val clientId    = ClientId("aaa")
-      val application =
-        anApplicationDataForTest(
-          applicationId,
-          clientId
-        )
-          .withState(appStateProduction)
-          .copy(refreshTokensAvailableFor = newGrantLength)
-      // scalastyle:ignore magic.number
+    "update the lastAccess property if it is missing" in {
+      createApplicationWithLastAccess(None)
 
-      await(applicationRepository.save(application))
-      val retrieved =
-        await(applicationRepository.findAndRecordApplicationUsage(clientId)).get
+      val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
 
-      retrieved.refreshTokensAvailableFor shouldBe newGrantLength
+      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
     }
   }
 

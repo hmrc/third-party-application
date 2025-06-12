@@ -46,13 +46,13 @@ class AllowApplicationDeleteCommandHandlerSpec extends CommandHandlerBaseSpec {
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (app, events) =>
+      inside(testMe) { case (returnedApp, events) =>
         events should have size 1
         val event = events.head
 
         inside(event) {
           case ApplicationEvents.AllowApplicationDelete(_, appId, eventDateTime, anActor, reason) =>
-            appId shouldBe app.id
+            appId shouldBe returnedApp.id
             anActor shouldBe expectedActor
             eventDateTime shouldBe timestamp
             reason shouldBe reasons
