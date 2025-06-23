@@ -437,26 +437,41 @@ class ApplicationRepositoryISpec
   }
 
   "recordApplicationUsage" should {
-    def createApplicationWithLastAccess(lastAccess: Option[Instant]) = {
+    def minutesAgo(minutes: Int) = instant.minus(Duration.ofMinutes(minutes))
+
+    def createApplication(createdOn: Instant, lastAccess: Option[Instant]) = {
 
       val application = anApplicationDataForTest(applicationId, clientIdOne)
         .withState(appStateProduction)
+        .copy(createdOn = createdOn)
         .copy(lastAccess = lastAccess)
 
       await(applicationRepository.save(application))
     }
 
-    "do not update the lastAccess property if it is today" in {
+    "do not update the lastAccess property if it is today, and different to the createdOn date" in {
       val midnightToday = instant.truncatedTo(ChronoUnit.DAYS)
-      createApplicationWithLastAccess(Some(midnightToday))
+      val yesterday = midnightToday.minus(Duration.ofHours(1))
+      createApplication(createdOn = yesterday, lastAccess = Some(midnightToday))
 
       val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
 
       retrieved.lastAccess.get shouldBe midnightToday
     }
 
+    "update the lastAccess property if it is today, and the same as the createdOn date" in {
+      val aMinuteAgo = instant.minus(Duration.ofMinutes(1))
+      createApplication(createdOn = aMinuteAgo, lastAccess = Some(aMinuteAgo))
+
+      val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
+
+      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
+    }
+
     "update the lastAccess property if it is before today" in {
-      createApplicationWithLastAccess(Some(instant.minus(Duration.ofDays(20)))) // scalastyle:ignore magic.number
+      val aDayAgo = instant.minus(Duration.ofDays(1))
+      val aWeekAgo = instant.minus(Duration.ofDays(7))
+      createApplication(createdOn = aWeekAgo, lastAccess = Some(aDayAgo))
 
       val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
 
@@ -464,7 +479,7 @@ class ApplicationRepositoryISpec
     }
 
     "update the lastAccess property if it is missing" in {
-      createApplicationWithLastAccess(None)
+      createApplication(createdOn = instant, lastAccess = None)
 
       val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
 

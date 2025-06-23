@@ -267,24 +267,32 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     updateApplication(applicationId, Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(acceptance)))
 
   def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[StoredApplication]] = {
-    // For startDate calculation, ifNull provides a default date when lastAccess is not yet set, for example a new application
+    // For startDate calculation, ifNull provides a default date when lastAccess is not yet set
     timeFuture("Find and Record Application Usage", "application.repository.findAndRecordApplicationUsage") {
       val timeOfAccess    = instant().toString
+      // lastAccess is set to the same as createdOn when a new application is created
       val aggregateUpdate = Seq(BsonDocument(
         s"""{
           $$set: { 
             "lastAccess": {
               $$cond: {
                 if: {
-                  $$gt: [
+                  $$or: [
                     {
-                      $$dateDiff: {
-                        startDate: { $$ifNull: [ "$$lastAccess", ISODate("1970-01-01T00:00:00.000Z") ] },
-                        endDate: ISODate("$timeOfAccess"),
-                        unit: "day"
-                      }
+                      $$eq: [ "$$lastAccess", "$$createdOn" ]
                     },
-                    0
+                    {
+                      $$gt: [
+                        {
+                          $$dateDiff: {
+                            startDate: { $$ifNull: [ "$$lastAccess", ISODate("1970-01-01T00:00:00.000Z") ] },
+                            endDate: ISODate("$timeOfAccess"),
+                            unit: "day"
+                          }
+                        },
+                        0
+                      ]
+                    }
                   ]
                 }
                 then: ISODate("$timeOfAccess"),
