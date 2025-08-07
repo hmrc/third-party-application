@@ -27,23 +27,32 @@ sealed trait Param[+P] {
 }
 
 object Param {
+
   case class ServerTokenQP(value: String)          extends Param[String]        { val section = 1; val order = 1 }
   case class ClientIdQP(value: ClientId)           extends Param[ClientId]      { val section = 1; val order = 2 }
   case class UserAgentQP(value: String)            extends Param[String]        { val section = 1; val order = 3 }
   case class ApplicationIdQP(value: ApplicationId) extends Param[ApplicationId] { val section = 1; val order = 4 }
 
+
   case class PageSizeQP(value: Int) extends Param[Int] { val section = 2; val order = 1 }
   case class PageNbrQP(value: Int)  extends Param[Int] { val section = 2; val order = 2 }
 
+
   case class SortQP(value: Sorting) extends Param[Sorting] { val section = 3; val order = 200 }
 
-  case object NoSubscriptionsQP                    extends Param[Unit]          { val section = 4; val order = 1 }
-  case object HasSubscriptionsQP                   extends Param[Unit]          { val section = 4; val order = 2 }
-  case class ApiContextQP(value: ApiContext)       extends Param[ApiContext]    { val section = 4; val order = 3 }
-  case class ApiVersionNbrQP(value: ApiVersionNbr) extends Param[ApiVersionNbr] { val section = 4; val order = 4 }
+
+  sealed trait SubscriptionQP[T] extends Param[T]
+
+  case object NoSubscriptionsQP                    extends SubscriptionQP[Unit]          { val section = 4; val order = 1 }
+  case object HasSubscriptionsQP                   extends SubscriptionQP[Unit]          { val section = 4; val order = 2 }
+  case class ApiContextQP(value: ApiContext)       extends SubscriptionQP[ApiContext]    { val section = 4; val order = 3 }
+  case class ApiVersionNbrQP(value: ApiVersionNbr) extends SubscriptionQP[ApiVersionNbr] { val section = 4; val order = 4 }
+
 
   case class UserIdQP(value: UserId)           extends Param[UserId]      { val section = 5; val order = 1 }
+  
   case class EnvironmentQP(value: Environment) extends Param[Environment] { val section = 5; val order = 1 }
+
 
   case class StatusFilterQP(value: AppStatusFilter)  extends Param[AppStatusFilter]    { val section = 5; val order = 1 }
   case class AccessTypeQP(value: Option[AccessType]) extends Param[Option[AccessType]] { val section = 5; val order = 1 }

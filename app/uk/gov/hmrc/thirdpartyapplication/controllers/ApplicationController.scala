@@ -134,6 +134,7 @@ class ApplicationController @Inject() (
     handleOption(credentialService.fetchCredentials(applicationId))
   }
 
+// TODO remove
   def fixCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[FixCollaboratorRequest] { fixCollaboratorRequest =>
       applicationService.fixCollaborator(applicationId, fixCollaboratorRequest).map {

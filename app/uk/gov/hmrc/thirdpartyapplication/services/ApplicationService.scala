@@ -165,6 +165,7 @@ class ApplicationService @Inject() (
     }
   }
 
+// TODO - remove
   def fixCollaborator(applicationId: ApplicationId, fixCollaboratorRequest: FixCollaboratorRequest): Future[Option[StoredApplication]] = {
     applicationRepository.updateCollaboratorId(applicationId, fixCollaboratorRequest.emailAddress, fixCollaboratorRequest.userId)
   }

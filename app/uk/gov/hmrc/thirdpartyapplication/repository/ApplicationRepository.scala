@@ -47,6 +47,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
+import com.rabbitmq.client.impl.AMQChannel
 
 object ApplicationRepository {
 
@@ -1018,4 +1019,31 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
+
+import uk.gov.hmrc.thirdpartyapplication.controllers.query._
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery._
+
+  // So simple that we don't need to do anything other than use existing methods.  These could be done via conversion to AggregateQuery components at a later date.
+  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Option[StoredApplication]] = {
+    qry match {
+      case ApplicationQuery.ById(applicationId)               => fetch(applicationId)
+      case ApplicationQuery.ByClientId(clientId, false)       => fetchByClientId(clientId)
+      case ApplicationQuery.ByClientId(clientId, true)        => findAndRecordApplicationUsage(clientId)
+      case ApplicationQuery.ByServerToken(serverToken, false) => fetchByServerToken(serverToken)
+      case ApplicationQuery.ByServerToken(serverToken, true)  => findAndRecordServerTokenUsage(serverToken)
+    }
+  }
+
+  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[StoredApplication]] = {
+    val filters = ApplicationQueryConverter.convertToFilter(qry.params)
+    val sort    = ApplicationQueryConverter.convertToSort(qry.sort)
+
+    val pagination = List(skip(0), limit(Int.MaxValue))
+    
+    runAggregationQuery(filters, pagination, sort, ApplicationQueryConverter.hasAnySubscriptionFilter(qry.params), ApplicationQueryConverter.hasSpecificSubscriptionFilter(qry.params)).map(_.applications)
+  }
+
+  def fetchByPaginatedApplicationQuery(qry: PaginatedApplicationQuery): Future[PaginatedApplicationData] = {
+    ???
+  }
 }

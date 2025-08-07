@@ -57,7 +57,7 @@ object ApplicationQuery {
 
       case ApiVersionNbrQP(_) :: _ => "cannot query for a version without a context".invalid
 
-      case _ => "Unexpected combination of subscription query parameters".invalid
+      case _ => ().valid // "Unexpected combination of subscription query parameters".invalid
     }
   }
 
@@ -123,9 +123,9 @@ object ApplicationQuery {
 
     val queryParams  = QueryParamValidator.parseParams(rawQueryParams)
     val headerParams = HeaderValidator.parseHeaders(rawHeaders)
-    val allParams    = queryParams <+> headerParams
+    val allParams    = queryParams combine headerParams
 
-    allParams.andThen { validParams =>
+    allParams.andThen( validParams => {
       attemptToConstructSingleResultQuery(validParams).toValidatedNel andThen { q: Option[SingleApplicationQuery] =>
         q.fold[ErrorsOr[ApplicationQuery]](
           attemptToConstructMultiResultQuery(validParams)
@@ -133,6 +133,6 @@ object ApplicationQuery {
           _.validNel
         )
       }
-    }
+    })
   }
 }

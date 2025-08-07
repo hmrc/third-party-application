@@ -38,6 +38,7 @@ object QueryParamValidator {
 
     def apply(paramName: String)(values: Seq[String]): ErrorsOr[String] =
       values.toList match {
+        case Nil           => s"$paramName requires a single value".invalidNel
         case single :: Nil => single.validNel
         case _             => s"Multiple $paramName query parameters are not permitted".invalidNel
       }
@@ -166,7 +167,20 @@ object QueryParamValidator {
       SingleValueExpected(paramName)(values) andThen SortExpected.apply map { sort => Param.SortQP(sort) }
     }
   }
+  
+  private object UserIdExpected {
+    def apply(paramName: String)(value: String): ErrorsOr[UserId] = UserId.apply(value).toValidNel(s"$value is not a valid user id")
+  }
 
+
+  object UserIdValidator extends QueryParamValidator {
+    val paramName = "userId"
+
+    def validate(values: Seq[String]): ErrorsOr[Param.UserIdQP] = {
+      SingleValueExpected(paramName)(values) andThen UserIdExpected(paramName) map { Param.UserIdQP(_) }
+    }
+  }
+  
   object AccessTypeValidator extends QueryParamValidator {
 
     def parseText(value: String): ErrorsOr[Option[AccessType]] = {
@@ -214,6 +228,18 @@ object QueryParamValidator {
     }
   }
 
+  private object EnvironmentExpected {
+    def apply(value: String): ErrorsOr[Environment] = Environment.apply(value).toValidNel(s"$value is not a valid environment")
+
+  }
+  object EnvironmentValidator extends QueryParamValidator {
+    val paramName = "environment"
+
+    def validate(values: Seq[String]): ErrorsOr[Param.EnvironmentQP] = {
+      SingleValueExpected(paramName)(values) andThen EnvironmentExpected.apply map { value => Param.EnvironmentQP(value) }
+    }
+  }
+
   object LastUseBeforeValidator extends QueryParamValidator {
     val paramName = "lastUsedBefore"
 
@@ -231,22 +257,24 @@ object QueryParamValidator {
   }
 
   private val paramValidators: List[QueryParamValidator] = List(
-    QueryParamValidator.ApplicationIdValidator,
-    QueryParamValidator.ClientIdValidator,
+    QueryParamValidator.AccessTypeValidator,
     QueryParamValidator.ApiContextValidator,
     QueryParamValidator.ApiVersionNbrValidator,
+    QueryParamValidator.ApplicationIdValidator,
+    QueryParamValidator.ClientIdValidator,
+    QueryParamValidator.DeleteRestrictionValidator,
+    QueryParamValidator.EnvironmentValidator,
     QueryParamValidator.HasSubscriptionsValidator,
+    QueryParamValidator.IncludeDeletedValidator,
+    QueryParamValidator.LastUseBeforeValidator,
+    QueryParamValidator.LastUseAfterValidator,
     QueryParamValidator.NoSubscriptionsValidator,
     QueryParamValidator.PageSizeValidator,
     QueryParamValidator.PageNbrValidator,
     QueryParamValidator.StatusValidator,
     QueryParamValidator.SortValidator,
-    QueryParamValidator.AccessTypeValidator,
     QueryParamValidator.SearchTextValidator,
-    QueryParamValidator.IncludeDeletedValidator,
-    QueryParamValidator.DeleteRestrictionValidator,
-    QueryParamValidator.LastUseBeforeValidator,
-    QueryParamValidator.LastUseAfterValidator
+    QueryParamValidator.UserIdValidator
   )
 
   private val validatorLookup: Map[String, QueryParamValidator] = paramValidators.map(pv => pv.paramName.toLowerCase -> pv).toMap
@@ -255,7 +283,7 @@ object QueryParamValidator {
     val paramValidations = rawQueryParams.map {
       case (k, vs) =>
         val validator = validatorLookup.get(k.toLowerCase).toValidNel(s"$k is not a valid query parameter")
-        validator.andThen(_.validate(vs))
+        validator.andThen(_.validate(vs.filterNot(_.isBlank())))
     }
 
     val z: ValidatedNel[ErrorMessage, List[Param[_]]] = List.empty.validNel
