@@ -25,6 +25,8 @@ import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model._
 import org.mongodb.scala.bson.collection.immutable.Document
 import uk.gov.hmrc.mongo.play.json.Codecs
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.DeleteRestrictionFilter.DoNotDelete
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.DeleteRestrictionFilter.NoRestriction
 
 object ApplicationQueryConverter {
 
@@ -64,8 +66,19 @@ object ApplicationQueryConverter {
     )
   }
 
+  def asDeleteRestrictionFilters(implicit params: List[Param[_]]): List[Bson] = {
+    first[DeleteRestrictionQP].fold( List.empty[Bson] )( deleteRestrictionQp => {
+      val deleteRestrictionValue = deleteRestrictionQp.value match {
+        case DoNotDelete => "DO_NOT_DELETE"
+        case NoRestriction => "NO_RESTRICTION"
+      }
+
+      List(Aggregates.filter(equal("deleteRestriction.deleteRestrictionType", Codecs.toBson(deleteRestrictionValue))))
+    })
+  }
+
   def convertToFilter(implicit params: List[Param[_]]): List[Bson] = {
-    asSubscriptionFilters ++ asUserFilters ++ asEnvironmentFilters
+    asSubscriptionFilters ++ asUserFilters ++ asEnvironmentFilters ++ asDeleteRestrictionFilters
   }
 
   def convertToSort(sort: Sorting): List[Bson] = sort match {
