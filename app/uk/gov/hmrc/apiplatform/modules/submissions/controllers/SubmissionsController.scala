@@ -67,6 +67,10 @@ class SubmissionsController @Inject() (
     service.fetch(id).map(_.fold(failed)(success))
   }
 
+  def fetchOrganisationIdentifiers() = Action.async { _ =>
+    service.fetchOrganisationIdentifiers().map(result => Ok(Json.toJson(result)))
+  }
+
   def fetchLatest(applicationId: ApplicationId) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
 

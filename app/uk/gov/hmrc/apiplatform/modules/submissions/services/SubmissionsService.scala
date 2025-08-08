@@ -75,6 +75,14 @@ class SubmissionsService @Inject() (
       .value
   }
 
+  def fetchOrganisationIdentifiers(): Future[Map[String, Int]] = {
+    submissionsDAO.fetchLatestSubmissionForAll()
+      .map(_.map(sub => sub.latestInstance.answersToQuestions.get(QuestionnaireDAO.Questionnaires.OrganisationDetails.question2.id))
+        .filter(_.isDefined).map {
+          case Some(ActualAnswer.SingleChoiceAnswer(value)) => value
+        }.groupMapReduce(identity)(_ => 1)(_ + _))
+  }
+
   def fetchLatest(applicationId: ApplicationId): Future[Option[Submission]] = {
     submissionsDAO.fetchLatest(applicationId)
   }

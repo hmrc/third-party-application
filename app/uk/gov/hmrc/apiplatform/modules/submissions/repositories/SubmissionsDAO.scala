@@ -19,6 +19,8 @@ package uk.gov.hmrc.apiplatform.modules.submissions.repositories
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import org.mongodb.scala.model.Accumulators
+import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Sorts.descending
 
@@ -59,6 +61,23 @@ class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(im
       .find(equal("applicationId", Codecs.toBson(id)))
       .sort(descending("startedOn"))
       .headOption()
+  }
+
+  def fetchLatestSubmissionForAll(): Future[List[Submission]] = {
+    collection.aggregate[Submission](Seq(
+      // $group – keep only the top document per applicationId
+      group(
+        "$applicationId",
+        Accumulators.top(
+          fieldName = "latestDoc",
+          sortBy = descending("startedOn"),
+          outExpression = Codecs.toBson("$$ROOT")
+        )
+      ),
+      // $replaceRoot – flatten the wrapped document
+      replaceRoot("$latestDoc")
+    ))
+      .toFuture().map(_.toList)
   }
 
   // $COVERAGE-OFF$

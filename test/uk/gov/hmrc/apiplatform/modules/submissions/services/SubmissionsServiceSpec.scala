@@ -84,6 +84,13 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         }
       }
     }
+    "fetchAllOrgIdentifiers" should {
+      "fetch all " in new Setup {
+        SubmissionsDAOMock.FetchOrganisationIdentifiers.thenReturn(answeredSubmission, answeredSubmission, answeredSubmission)
+        val result = await(underTest.fetchOrganisationIdentifiers())
+        result shouldBe Map("Unique Taxpayer Reference (UTR)" -> 3)
+      }
+    }
 
     "fetchLatest" should {
       "fetch latest submission for an application id" in new Setup {

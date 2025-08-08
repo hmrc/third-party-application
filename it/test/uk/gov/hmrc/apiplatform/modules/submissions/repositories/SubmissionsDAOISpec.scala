@@ -95,6 +95,14 @@ class SubmissionsDAOISpec
       await(submissionsDao.save(altSubmission))
       await(submissionsDao.fetchLatest(applicationId)).value shouldBe altSubmission
     }
+
+    "find the latest ones for all applications" in {
+      val otherAppSubmission = altSubmission.copy(id = submissionIdFour, applicationId = applicationIdTwo)
+      await(submissionsDao.save(aSubmission))
+      await(submissionsDao.save(altSubmission))
+      await(submissionsDao.save(otherAppSubmission))
+      await(submissionsDao.fetchLatestSubmissionForAll()) should contain allOf (otherAppSubmission, altSubmission)
+    }
   }
 
   "update" should {
