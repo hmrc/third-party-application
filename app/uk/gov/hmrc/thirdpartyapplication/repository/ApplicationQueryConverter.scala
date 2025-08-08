@@ -27,12 +27,17 @@ import org.mongodb.scala.bson.collection.immutable.Document
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.DeleteRestrictionFilter.DoNotDelete
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.DeleteRestrictionFilter.NoRestriction
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 
 object ApplicationQueryConverter {
 
   def first[T <: Param[_]](implicit params: List[Param[_]], ct: ClassTag[T]): Option[T] = params.collect {
     case qp : T => qp
   }.headOption
+
+  def onFirst[T <: Param[_]](fn: (T) => List[Bson])(implicit params: List[Param[_]], ct: ClassTag[T]): List[Bson] = params.collect {
+    case qp : T => qp
+  }.headOption.fold(List.empty[Bson])(fn)
 
   def asSubscriptionFilters(implicit params: List[Param[_]]): List[Bson] = {
     if(first[NoSubscriptionsQP.type].isDefined)
@@ -54,20 +59,18 @@ object ApplicationQueryConverter {
     }
   }   
 
-  def asUserFilters(implicit params: List[Param[_]]): List[Bson] = {
-    first[UserIdQP].fold( List.empty[Bson] )( userIdQp =>
+  def asUserFilters(implicit params: List[Param[_]]): List[Bson] =
+    onFirst[UserIdQP]( userIdQp =>
       List(Aggregates.filter(equal("collaborators.userId", Codecs.toBson(userIdQp.value))))
     )
-  }
 
-  def asEnvironmentFilters(implicit params: List[Param[_]]): List[Bson] = {
-    first[EnvironmentQP].fold( List.empty[Bson] )( environmentQp =>
+  def asEnvironmentFilters(implicit params: List[Param[_]]): List[Bson] =
+    onFirst[EnvironmentQP]( environmentQp =>
       List(Aggregates.filter(equal("environment", Codecs.toBson(environmentQp.value))))
     )
-  }
 
-  def asDeleteRestrictionFilters(implicit params: List[Param[_]]): List[Bson] = {
-    first[DeleteRestrictionQP].fold( List.empty[Bson] )( deleteRestrictionQp => {
+  def asDeleteRestrictionFilters(implicit params: List[Param[_]]): List[Bson] =
+    onFirst[DeleteRestrictionQP]( deleteRestrictionQp => {
       val deleteRestrictionValue = deleteRestrictionQp.value match {
         case DoNotDelete => "DO_NOT_DELETE"
         case NoRestriction => "NO_RESTRICTION"
@@ -75,10 +78,24 @@ object ApplicationQueryConverter {
 
       List(Aggregates.filter(equal("deleteRestriction.deleteRestrictionType", Codecs.toBson(deleteRestrictionValue))))
     })
-  }
+
+  def asIncludeDeletedAppsFilters(implicit params: List[Param[_]]): List[Bson] =
+    onFirst[IncludeDeletedQP](includeDeletedAppsQP => {
+      if(includeDeletedAppsQP.value) {
+        List.empty
+      } else {
+        List(Aggregates.filter(notEqual("state.name", State.DELETED.toString)))
+      }
+    })
+
+  def asAccessTypeFilters(implicit params: List[Param[_]]): List[Bson] =
+    onFirst[AccessTypeQP]( environmentQp => {
+      environmentQp.value.fold(List.empty[Bson])(accessType => List(Aggregates.filter(equal("access.accessType", Codecs.toBson(accessType)))))
+    })
+
 
   def convertToFilter(implicit params: List[Param[_]]): List[Bson] = {
-    asSubscriptionFilters ++ asUserFilters ++ asEnvironmentFilters ++ asDeleteRestrictionFilters
+    asSubscriptionFilters ++ asUserFilters ++ asEnvironmentFilters ++ asDeleteRestrictionFilters ++ asIncludeDeletedAppsFilters ++ asAccessTypeFilters
   }
 
   def convertToSort(sort: Sorting): List[Bson] = sort match {

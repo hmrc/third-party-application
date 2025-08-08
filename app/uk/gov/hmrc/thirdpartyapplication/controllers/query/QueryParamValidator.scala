@@ -196,7 +196,7 @@ object QueryParamValidator {
     val paramName                                              = "accessType"
 
     def validate(values: Seq[String]): ErrorsOr[Param.AccessTypeQP] = {
-      SingleValueExpected(paramName)(values) andThen parseText map { sort => Param.AccessTypeQP(sort) }
+      SingleValueExpected(paramName)(values) andThen parseText map { oType => Param.AccessTypeQP(oType) }
     }
   }
 

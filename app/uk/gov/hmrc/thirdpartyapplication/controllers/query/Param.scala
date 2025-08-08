@@ -53,13 +53,17 @@ object Param {
   
   case class EnvironmentQP(value: Environment) extends Param[Environment] { val section = 5; val order = 1 }
 
+  case class IncludeDeletedQP(value: Boolean)                    extends Param[Boolean]                 { val section = 5; val order = 1 }
 
-  case class StatusFilterQP(value: AppStatusFilter)  extends Param[AppStatusFilter]    { val section = 5; val order = 1 }
+  case class DeleteRestrictionQP(value: DeleteRestrictionFilter) extends Param[DeleteRestrictionFilter] { val section = 5; val order = 1 }
+
   case class AccessTypeQP(value: Option[AccessType]) extends Param[Option[AccessType]] { val section = 5; val order = 1 }
+  
+  case class LastUsedBeforeQP(value: Instant)                    extends Param[Instant]                 { val section = 5; val order = 1 }
+
+  case class LastUsedAfterQP(value: Instant)                     extends Param[Instant]                 { val section = 5; val order = 1 }
+  
+  case class StatusFilterQP(value: AppStatusFilter)  extends Param[AppStatusFilter]    { val section = 5; val order = 1 }
 
   case class SearchTextQP(value: String)                         extends Param[String]                  { val section = 5; val order = 1 }
-  case class IncludeDeletedQP(value: Boolean)                    extends Param[Boolean]                 { val section = 5; val order = 1 }
-  case class DeleteRestrictionQP(value: DeleteRestrictionFilter) extends Param[DeleteRestrictionFilter] { val section = 5; val order = 1 }
-  case class LastUsedBeforeQP(value: Instant)                    extends Param[Instant]                 { val section = 5; val order = 1 }
-  case class LastUsedAfterQP(value: Instant)                     extends Param[Instant]                 { val section = 5; val order = 1 }
 }

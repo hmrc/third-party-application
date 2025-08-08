@@ -25,8 +25,10 @@ object AppStatusFilter {
   case object PendingSubmitterVerification             extends AppStatusFilter
   case object Active                                   extends AppStatusFilter
   case object WasDeleted                               extends AppStatusFilter
+
   case object ExcludingDeleted                         extends AppStatusFilter
   case object Blocked                                  extends AppStatusFilter
+
   case object NoFiltering                              extends AppStatusFilter
 
   def apply(text: String): Option[AppStatusFilter] = {
