@@ -39,6 +39,7 @@ object ApplicationQueryConverter {
     case qp : T => qp
   }.headOption.fold(List.empty[Bson])(fn)
 
+
   def asSubscriptionFilters(implicit params: List[Param[_]]): List[Bson] = {
     if(first[NoSubscriptionsQP.type].isDefined)
       List(Aggregates.filter(size("subscribedApis", 0)))
@@ -93,9 +94,38 @@ object ApplicationQueryConverter {
       environmentQp.value.fold(List.empty[Bson])(accessType => List(Aggregates.filter(equal("access.accessType", Codecs.toBson(accessType)))))
     })
 
+  def asLastUsedFilters(implicit params: List[Param[_]]): List[Bson] = {
+    import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.Implicits.jatInstantFormat
+
+    val a = onFirst[LastUsedAfterQP]( qp => {
+      List(Aggregates.filter(
+        or(
+          gte("lastAccess", Codecs.toBson(qp.value)),
+          and(
+            exists("lastAccess", false),
+            gte("createdOn", Codecs.toBson(qp.value))
+          )
+        )
+      ))
+    })
+    
+    val b = onFirst[LastUsedBeforeQP]( qp => {
+      List(Aggregates.filter(
+        or(
+          lte("lastAccess", Codecs.toBson(qp.value)),
+          and(
+            exists("lastAccess", false),
+            lte("createdOn", Codecs.toBson(qp.value))
+          )
+        )
+      ))
+    })
+
+    a ++ b
+  }
 
   def convertToFilter(implicit params: List[Param[_]]): List[Bson] = {
-    asSubscriptionFilters ++ asUserFilters ++ asEnvironmentFilters ++ asDeleteRestrictionFilters ++ asIncludeDeletedAppsFilters ++ asAccessTypeFilters
+    asSubscriptionFilters ++ asUserFilters ++ asEnvironmentFilters ++ asDeleteRestrictionFilters ++ asIncludeDeletedAppsFilters ++ asAccessTypeFilters ++ asLastUsedFilters
   }
 
   def convertToSort(sort: Sorting): List[Bson] = sort match {

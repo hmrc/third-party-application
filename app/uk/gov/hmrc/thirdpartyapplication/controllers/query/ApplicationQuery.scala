@@ -61,6 +61,10 @@ object ApplicationQuery {
     }
   }
 
+  def checkLastUsedParams(params: List[Param[_]]): ErrorsOr[Unit] = {
+    ???
+  }
+
   def identifyAnyPagination(allParams: List[Param[_]]): Option[Pagination] = {
     allParams.filter(_.section == 2) match {
       case PageSizeQP(size) :: PageNbrQP(nbr) :: Nil => Pagination(size, nbr).some

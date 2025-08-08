@@ -49,7 +49,7 @@ object Param {
   case class ApiVersionNbrQP(value: ApiVersionNbr) extends SubscriptionQP[ApiVersionNbr] { val section = 4; val order = 4 }
 
 
-  case class UserIdQP(value: UserId)           extends Param[UserId]      { val section = 5; val order = 1 }
+  case class UserIdQP(value: UserId)                extends Param[UserId]      { val section = 5; val order = 1 }
   
   case class EnvironmentQP(value: Environment) extends Param[Environment] { val section = 5; val order = 1 }
 
@@ -59,9 +59,9 @@ object Param {
 
   case class AccessTypeQP(value: Option[AccessType]) extends Param[Option[AccessType]] { val section = 5; val order = 1 }
   
-  case class LastUsedBeforeQP(value: Instant)                    extends Param[Instant]                 { val section = 5; val order = 1 }
-
   case class LastUsedAfterQP(value: Instant)                     extends Param[Instant]                 { val section = 5; val order = 1 }
+
+  case class LastUsedBeforeQP(value: Instant)                    extends Param[Instant]                 { val section = 5; val order = 1 }
   
   case class StatusFilterQP(value: AppStatusFilter)  extends Param[AppStatusFilter]    { val section = 5; val order = 1 }
 
