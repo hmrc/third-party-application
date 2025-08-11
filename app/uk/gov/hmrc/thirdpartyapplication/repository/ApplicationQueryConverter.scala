@@ -26,8 +26,6 @@ import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model._
 import org.mongodb.scala.bson.collection.immutable.Document
 import uk.gov.hmrc.mongo.play.json.Codecs
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.DeleteRestrictionFilter.DoNotDelete
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.DeleteRestrictionFilter.NoRestriction
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 
 object ApplicationQueryConverter {
@@ -71,15 +69,15 @@ object ApplicationQueryConverter {
       List(Aggregates.filter(equal("environment", Codecs.toBson(environmentQp.value))))
     )
 
-  def asDeleteRestrictionFilters(implicit params: List[Param[_]]): List[Bson] =
-    onFirst[DeleteRestrictionQP]( deleteRestrictionQp => {
-      val deleteRestrictionValue = deleteRestrictionQp.value match {
-        case DoNotDelete => "DO_NOT_DELETE"
-        case NoRestriction => "NO_RESTRICTION"
-      }
+  def asDeleteRestrictionFilters(implicit params: List[Param[_]]): List[Bson] = {
+    def eq(text: String) = List(Aggregates.filter(equal("deleteRestriction.deleteRestrictionType", Codecs.toBson(text))))
 
-      List(Aggregates.filter(equal("deleteRestriction.deleteRestrictionType", Codecs.toBson(deleteRestrictionValue))))
-    })
+    onFirst[DeleteRestrictionQP] { _ match {
+        case Param.DoNotDeleteQP => eq("DO_NOT_DELETE")
+        case Param.NoRestrictionQP => eq("NO_RESTRICTION")
+      }
+    }
+  }
 
   def asIncludeDeletedAppsFilters(implicit params: List[Param[_]]): List[Bson] =
     onFirst[IncludeDeletedQP](includeDeletedAppsQP => {

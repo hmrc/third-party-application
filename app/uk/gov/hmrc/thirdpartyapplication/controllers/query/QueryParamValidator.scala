@@ -217,16 +217,15 @@ object QueryParamValidator {
     }
   }
 
-  private object DeleteRestrictionExpected {
-    def apply(value: String): ErrorsOr[DeleteRestrictionFilter] = DeleteRestrictionFilter(value).toValidNel(s"$value is not a valid delete restriction filter")
-  }
-
   object DeleteRestrictionValidator extends QueryParamValidator {
     val paramName = "deleteRestriction"
 
-    def validate(values: Seq[String]): ErrorsOr[Param.DeleteRestrictionQP] = {
-      SingleValueExpected(paramName)(values) andThen DeleteRestrictionExpected.apply map { value => Param.DeleteRestrictionQP(value) }
-    }
+    def validate(values: Seq[String]): ErrorsOr[Param.DeleteRestrictionQP] =
+      SingleValueExpected(paramName)(values) andThen { _ match {
+      case "DO_NOT_DELETE"  => Param.DoNotDeleteQP.validNel
+      case "NO_RESTRICTION" => Param.NoRestrictionQP.validNel
+      case value => s"$value is not a valid delete restriction filter".invalidNel
+    }}
   }
 
   private object EnvironmentExpected {

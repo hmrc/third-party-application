@@ -63,7 +63,9 @@ object Param {
 
   case class IncludeDeletedQP(value: Boolean)                    extends Param[Boolean]                 { val section = 6; val order = 1 }
 
-  case class DeleteRestrictionQP(value: DeleteRestrictionFilter) extends Param[DeleteRestrictionFilter] { val section = 6; val order = 1 }
+  trait DeleteRestrictionQP extends Param[Unit] { val section = 6; val order = 1 }
+  case object NoRestrictionQP extends DeleteRestrictionQP
+  case object DoNotDeleteQP   extends DeleteRestrictionQP
 
   case class AppStateFilterQP(value: AppStateFilter)  extends Param[AppStateFilter]    { val section = 6; val order = 1 }
 
