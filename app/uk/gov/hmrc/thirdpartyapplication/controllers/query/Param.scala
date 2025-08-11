@@ -49,21 +49,25 @@ object Param {
   case class ApiVersionNbrQP(value: ApiVersionNbr) extends SubscriptionQP[ApiVersionNbr] { val section = 4; val order = 4 }
 
 
-  case class UserIdQP(value: UserId)                extends Param[UserId]      { val section = 5; val order = 1 }
-  
-  case class EnvironmentQP(value: Environment) extends Param[Environment] { val section = 5; val order = 1 }
-
-  case class IncludeDeletedQP(value: Boolean)                    extends Param[Boolean]                 { val section = 5; val order = 1 }
-
-  case class DeleteRestrictionQP(value: DeleteRestrictionFilter) extends Param[DeleteRestrictionFilter] { val section = 5; val order = 1 }
-
-  case class AccessTypeQP(value: Option[AccessType]) extends Param[Option[AccessType]] { val section = 5; val order = 1 }
   
   case class LastUsedAfterQP(value: Instant)                     extends Param[Instant]                 { val section = 5; val order = 1 }
+  case class LastUsedBeforeQP(value: Instant)                    extends Param[Instant]                 { val section = 5; val order = 2 }
 
-  case class LastUsedBeforeQP(value: Instant)                    extends Param[Instant]                 { val section = 5; val order = 1 }
+
+  case class UserIdQP(value: UserId)                extends Param[UserId]      { val section = 6; val order = 1 }
   
-  case class StatusFilterQP(value: AppStatusFilter)  extends Param[AppStatusFilter]    { val section = 5; val order = 1 }
+  case class EnvironmentQP(value: Environment) extends Param[Environment] { val section = 6; val order = 1 }
 
-  case class SearchTextQP(value: String)                         extends Param[String]                  { val section = 5; val order = 1 }
+  case class IncludeDeletedQP(value: Boolean)                    extends Param[Boolean]                 { val section = 6; val order = 1 }
+
+  case class DeleteRestrictionQP(value: DeleteRestrictionFilter) extends Param[DeleteRestrictionFilter] { val section = 6; val order = 1 }
+
+
+  // TODO below
+
+  case class AccessTypeQP(value: Option[AccessType]) extends Param[Option[AccessType]] { val section = 6; val order = 1 }
+  
+  case class StatusFilterQP(value: AppStatusFilter)  extends Param[AppStatusFilter]    { val section = 6; val order = 1 }
+
+  case class SearchTextQP(value: String)                         extends Param[String]                  { val section = 6; val order = 1 }
 }

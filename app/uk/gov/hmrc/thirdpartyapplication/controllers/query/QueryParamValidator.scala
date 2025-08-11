@@ -24,7 +24,6 @@ import cats.data.ValidatedNel
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.services.InstantJsonFormatter
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import java.time.format.DateTimeFormatter
 
@@ -61,7 +60,6 @@ object QueryParamValidator {
   private object InstantValueExpected {
 
     def apply(paramName: String)(value: String): ErrorsOr[Instant] = {
-      println(value)
       Try(Instant.from(DateTimeFormatter.ISO_INSTANT.parse(value)))
         .toOption
         .fold[ErrorsOr[Instant]](s"$paramName of $value must be a valid date".invalidNel)(d => d.validNel)
