@@ -145,15 +145,15 @@ object QueryParamValidator {
     }
   }
 
-  private object AppStatusFilterExpected {
-    def apply(value: String): ErrorsOr[AppStatusFilter] = AppStatusFilter(value).toValidNel(s"$value is not a valid status filter")
+  private object AppStateFilterExpected {
+    def apply(value: String): ErrorsOr[AppStateFilter] = AppStateFilter(value).toValidNel(s"$value is not a valid status filter")
   }
 
   object StatusValidator extends QueryParamValidator {
     val paramName = "status"
 
-    def validate(values: Seq[String]): ErrorsOr[Param.StatusFilterQP] = {
-      SingleValueExpected(paramName)(values) andThen AppStatusFilterExpected.apply map { Param.StatusFilterQP(_) }
+    def validate(values: Seq[String]): ErrorsOr[Param.AppStateFilterQP] = {
+      SingleValueExpected(paramName)(values) andThen AppStateFilterExpected.apply map { Param.AppStateFilterQP(_) }
     }
   }
 

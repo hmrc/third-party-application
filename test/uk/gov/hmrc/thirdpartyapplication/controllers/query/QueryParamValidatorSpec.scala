@@ -68,15 +68,15 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
     }
 
     "extract valid params - status filter" in {
-      test(Map("status" -> Seq("CREATED"))).value shouldBe List(StatusFilterQP(AppStatusFilter.Created))
-      test(Map("status" -> Seq("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION"))).value shouldBe List(StatusFilterQP(AppStatusFilter.PendingResponsibleIndividualVerification))
-      test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))).value shouldBe List(StatusFilterQP(AppStatusFilter.PendingGatekeeperCheck))
-      test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))).value shouldBe List(StatusFilterQP(AppStatusFilter.PendingSubmitterVerification))
-      test(Map("status" -> Seq("ACTIVE"))).value shouldBe List(StatusFilterQP(AppStatusFilter.Active))
-      test(Map("status" -> Seq("DELETED"))).value shouldBe List(StatusFilterQP(AppStatusFilter.WasDeleted))
-      test(Map("status" -> Seq("EXCLUDING_DELETED"))).value shouldBe List(StatusFilterQP(AppStatusFilter.ExcludingDeleted))
-      test(Map("status" -> Seq("BLOCKED"))).value shouldBe List(StatusFilterQP(AppStatusFilter.Blocked))
-      test(Map("status" -> Seq("ANY"))).value shouldBe List(StatusFilterQP(AppStatusFilter.NoFiltering))
+      test(Map("status" -> Seq("CREATED"))).value shouldBe List(StatusFilterQP(AppStateFilter.Created))
+      test(Map("status" -> Seq("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION"))).value shouldBe List(StatusFilterQP(AppStateFilter.PendingResponsibleIndividualVerification))
+      test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))).value shouldBe List(StatusFilterQP(AppStateFilter.PendingGatekeeperCheck))
+      test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))).value shouldBe List(StatusFilterQP(AppStateFilter.PendingSubmitterVerification))
+      test(Map("status" -> Seq("ACTIVE"))).value shouldBe List(StatusFilterQP(AppStateFilter.Active))
+      test(Map("status" -> Seq("DELETED"))).value shouldBe List(StatusFilterQP(AppStateFilter.WasDeleted))
+      test(Map("status" -> Seq("EXCLUDING_DELETED"))).value shouldBe List(StatusFilterQP(AppStateFilter.ExcludingDeleted))
+      test(Map("status" -> Seq("BLOCKED"))).value shouldBe List(StatusFilterQP(AppStateFilter.Blocked))
+      test(Map("status" -> Seq("ANY"))).value shouldBe List(StatusFilterQP(AppStateFilter.NoFiltering))
     }
 
     "extract valid params - sort filter" in {

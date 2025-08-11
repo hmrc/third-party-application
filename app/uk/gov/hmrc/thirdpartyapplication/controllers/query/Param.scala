@@ -21,6 +21,9 @@ import java.time.Instant
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 
+/*
+ * Param is used to store validated (singularly and in combo) values for queries
+*/
 sealed trait Param[+P] {
   def order: Int
   def section: Int
@@ -62,12 +65,11 @@ object Param {
 
   case class DeleteRestrictionQP(value: DeleteRestrictionFilter) extends Param[DeleteRestrictionFilter] { val section = 6; val order = 1 }
 
+  case class AppStateFilterQP(value: AppStateFilter)  extends Param[AppStateFilter]    { val section = 6; val order = 1 }
 
   // TODO below
 
   case class AccessTypeQP(value: Option[AccessType]) extends Param[Option[AccessType]] { val section = 6; val order = 1 }
   
-  case class StatusFilterQP(value: AppStatusFilter)  extends Param[AppStatusFilter]    { val section = 6; val order = 1 }
-
   case class SearchTextQP(value: String)                         extends Param[String]                  { val section = 6; val order = 1 }
 }

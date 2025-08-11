@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import uk.gov.hmrc.thirdpartyapplication.controllers.query._
 import org.bson.conversions.Bson
 import org.mongodb.scala.model._
+import org.mongodb.scala.bson._
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 import scala.reflect.ClassTag
 import org.mongodb.scala.model.Filters._
@@ -124,8 +125,19 @@ object ApplicationQueryConverter {
     a ++ b
   }
 
+  def applicationStateMatch(states: State*): Bson = in("state.name", states.map(_.toString): _*)
+
+  def asAppStateFilters(implicit params: List[Param[_]]): List[Bson] =
+    onFirst[AppStateFilterQP]( _.value match {
+      case AppStateFilter.NoFiltering       => List.empty
+      case AppStateFilter.Matching(state)   => List(Aggregates.filter(equal("state.name", state.toString)))
+      case AppStateFilter.Active            => List(Aggregates.filter(applicationStateMatch(State.PRE_PRODUCTION, State.PRODUCTION)))
+      case AppStateFilter.ExcludingDeleted  => List(Aggregates.filter(notEqual("state.name", State.DELETED.toString)))
+      case AppStateFilter.Blocked           => List(Aggregates.filter(and(equal("blocked", BsonBoolean(true)), notEqual("state.name", State.DELETED.toString))))
+    })
+
   def convertToFilter(implicit params: List[Param[_]]): List[Bson] = {
-    asSubscriptionFilters ++ asUserFilters ++ asEnvironmentFilters ++ asDeleteRestrictionFilters ++ asIncludeDeletedAppsFilters ++ asAccessTypeFilters ++ asLastUsedFilters
+    asSubscriptionFilters ++ asUserFilters ++ asEnvironmentFilters ++ asDeleteRestrictionFilters ++ asIncludeDeletedAppsFilters ++ asAccessTypeFilters ++ asLastUsedFilters ++ asAppStateFilters
   }
 
   def convertToSort(sort: Sorting): List[Bson] = sort match {
