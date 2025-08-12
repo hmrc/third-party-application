@@ -17,17 +17,16 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.thirdpartyapplication.controllers.{JsonUtils, ExtraHeadersController}
+
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.PaginatedApplicationQuery
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.GeneralOpenEndedApplicationQuery
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.{GeneralOpenEndedApplicationQuery, PaginatedApplicationQuery}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
 class QueryController @Inject() (
@@ -42,30 +41,28 @@ class QueryController @Inject() (
 
   def queryDispatcher() = Action.async { implicit request =>
     ApplicationQuery.attemptToConstructQuery(request.queryString, request.headers.toMap)
-    .fold[Future[Result]]( nel =>
-      Future.successful(BadRequest(Json.toJson(nel.toList)))
-    ,
-      appQry => apply(appQry)
-    )
+      .fold[Future[Result]](
+        nel =>
+          Future.successful(BadRequest(Json.toJson(nel.toList))),
+        appQry => apply(appQry)
+      )
   }
 
   def apply(appQry: ApplicationQuery): Future[Result] = {
     appQry match {
-      case q: SingleApplicationQuery => applicationRepository.fetchBySingleApplicationQuery(q).map( oapp => {
-        oapp.fold[Result](
-          NotFound("No application found for query")
-        )(
-          app => Ok(Json.toJson(StoredApplication.asApplication(app)))
-        )}
-      )
-      
-      case q: GeneralOpenEndedApplicationQuery => applicationRepository.fetchByGeneralOpenEndedApplicationQuery(q).map(apps => {
-        Ok(Json.toJson(apps.map(StoredApplication.asApplication(_))))
-      })
+      case q: SingleApplicationQuery => applicationRepository.fetchBySingleApplicationQuery(q).map(oapp => {
+          oapp.fold[Result](
+            NotFound("No application found for query")
+          )(app => Ok(Json.toJson(StoredApplication.asApplication(app))))
+        })
 
-      case q: PaginatedApplicationQuery => applicationRepository.fetchByPaginatedApplicationQuery(q).map( par => {
-        Ok(Results.EmptyContent())  // TODO
-      })
+      case q: GeneralOpenEndedApplicationQuery => applicationRepository.fetchByGeneralOpenEndedApplicationQuery(q).map(apps => {
+          Ok(Json.toJson(apps.map(StoredApplication.asApplication(_))))
+        })
+
+      case q: PaginatedApplicationQuery => applicationRepository.fetchByPaginatedApplicationQuery(q).map(par => {
+          Ok(Results.EmptyContent()) // TODO
+        })
     }
   }
 }

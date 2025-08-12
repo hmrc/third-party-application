@@ -23,13 +23,12 @@ sealed trait AppStateFilter
 object AppStateFilter {
   case class Matching(state: State) extends AppStateFilter
 
-  case object Active                                   extends AppStateFilter
-  case object ExcludingDeleted                         extends AppStateFilter
+  case object Active           extends AppStateFilter
+  case object ExcludingDeleted extends AppStateFilter
 
-  case object Blocked                                  extends AppStateFilter
+  case object Blocked extends AppStateFilter
 
-  case object NoFiltering                              extends AppStateFilter
-
+  case object NoFiltering extends AppStateFilter
 
   def apply(text: String): Option[AppStateFilter] = {
     import cats.implicits._
@@ -39,11 +38,11 @@ object AppStateFilter {
       case "PENDING_GATEKEEPER_CHECK"                    => Matching(State.PENDING_GATEKEEPER_APPROVAL).some
       case "PENDING_SUBMITTER_VERIFICATION"              => Matching(State.PENDING_REQUESTER_VERIFICATION).some
 
-      case "ACTIVE"                                      => Active.some
-      case "EXCLUDING_DELETED"                           => ExcludingDeleted.some
-      case "BLOCKED"                                     => Blocked.some
-      case "ANY"                                         => NoFiltering.some
-      case text                                          => State(text).map(Matching)
+      case "ACTIVE"            => Active.some
+      case "EXCLUDING_DELETED" => ExcludingDeleted.some
+      case "BLOCKED"           => Blocked.some
+      case "ANY"               => NoFiltering.some
+      case text                => State(text).map(Matching)
     }
   }
 }

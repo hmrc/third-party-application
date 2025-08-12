@@ -23,7 +23,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessT
 
 /*
  * Param is used to store validated (singularly and in combo) values for queries
-*/
+ */
 sealed trait Param[+P] {
   def order: Int
   def section: Int
@@ -36,13 +36,10 @@ object Param {
   case class UserAgentQP(value: String)            extends Param[String]        { val section = 1; val order = 3 }
   case class ApplicationIdQP(value: ApplicationId) extends Param[ApplicationId] { val section = 1; val order = 4 }
 
-
   case class PageSizeQP(value: Int) extends Param[Int] { val section = 2; val order = 1 }
   case class PageNbrQP(value: Int)  extends Param[Int] { val section = 2; val order = 2 }
 
-
   case class SortQP(value: Sorting) extends Param[Sorting] { val section = 3; val order = 200 }
-
 
   sealed trait SubscriptionQP[T] extends Param[T]
 
@@ -51,25 +48,22 @@ object Param {
   case class ApiContextQP(value: ApiContext)       extends SubscriptionQP[ApiContext]    { val section = 4; val order = 3 }
   case class ApiVersionNbrQP(value: ApiVersionNbr) extends SubscriptionQP[ApiVersionNbr] { val section = 4; val order = 4 }
 
+  case class LastUsedAfterQP(value: Instant)  extends Param[Instant] { val section = 5; val order = 1 }
+  case class LastUsedBeforeQP(value: Instant) extends Param[Instant] { val section = 5; val order = 2 }
 
-  
-  case class LastUsedAfterQP(value: Instant)                     extends Param[Instant]                 { val section = 5; val order = 1 }
-  case class LastUsedBeforeQP(value: Instant)                    extends Param[Instant]                 { val section = 5; val order = 2 }
+  case class UserIdQP(value: UserId) extends Param[UserId] { val section = 6; val order = 1 }
 
-
-  case class UserIdQP(value: UserId)                extends Param[UserId]      { val section = 6; val order = 1 }
-  
   case class EnvironmentQP(value: Environment) extends Param[Environment] { val section = 6; val order = 1 }
 
-  case class IncludeDeletedQP(value: Boolean)                    extends Param[Boolean]                 { val section = 6; val order = 1 }
+  case class IncludeDeletedQP(value: Boolean) extends Param[Boolean] { val section = 6; val order = 1 }
 
-  trait DeleteRestrictionQP extends Param[Unit] { val section = 6; val order = 1 }
-  case object NoRestrictionQP extends DeleteRestrictionQP
-  case object DoNotDeleteQP   extends DeleteRestrictionQP
+  sealed trait DeleteRestrictionQP extends Param[Unit] { val section = 6; val order = 1 }
+  case object NoRestrictionQP      extends DeleteRestrictionQP
+  case object DoNotDeleteQP        extends DeleteRestrictionQP
 
-  case class AppStateFilterQP(value: AppStateFilter)  extends Param[AppStateFilter]    { val section = 6; val order = 1 }
+  case class AppStateFilterQP(value: AppStateFilter) extends Param[AppStateFilter] { val section = 6; val order = 1 }
 
-  case class SearchTextQP(value: String)                         extends Param[String]                  { val section = 6; val order = 1 }
+  case class SearchTextQP(value: String) extends Param[String] { val section = 6; val order = 1 }
 
   case class AccessTypeQP(value: Option[AccessType]) extends Param[Option[AccessType]] { val section = 6; val order = 1 }
 }

@@ -450,7 +450,7 @@ class ApplicationRepositoryISpec
 
     "do not update the lastAccess property if it is today, and different to the createdOn date" in {
       val midnightToday = instant.truncatedTo(ChronoUnit.DAYS)
-      val yesterday = midnightToday.minus(Duration.ofHours(1))
+      val yesterday     = midnightToday.minus(Duration.ofHours(1))
       createApplication(createdOn = yesterday, lastAccess = Some(midnightToday))
 
       val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
@@ -468,7 +468,7 @@ class ApplicationRepositoryISpec
     }
 
     "update the lastAccess property if it is before today" in {
-      val aDayAgo = instant.minus(Duration.ofDays(1))
+      val aDayAgo  = instant.minus(Duration.ofDays(1))
       val aWeekAgo = instant.minus(Duration.ofDays(7))
       createApplication(createdOn = aWeekAgo, lastAccess = Some(aDayAgo))
 

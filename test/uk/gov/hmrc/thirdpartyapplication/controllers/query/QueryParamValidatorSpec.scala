@@ -23,7 +23,7 @@ import org.scalatest.matchers.{MatchResult, Matcher}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, State}
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
 class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues with FixedClock {
@@ -68,15 +68,17 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
     }
 
     "extract valid params - status filter" in {
-      test(Map("status" -> Seq("CREATED"))).value shouldBe List(StatusFilterQP(AppStateFilter.Created))
-      test(Map("status" -> Seq("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION"))).value shouldBe List(StatusFilterQP(AppStateFilter.PendingResponsibleIndividualVerification))
-      test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))).value shouldBe List(StatusFilterQP(AppStateFilter.PendingGatekeeperCheck))
-      test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))).value shouldBe List(StatusFilterQP(AppStateFilter.PendingSubmitterVerification))
-      test(Map("status" -> Seq("ACTIVE"))).value shouldBe List(StatusFilterQP(AppStateFilter.Active))
-      test(Map("status" -> Seq("DELETED"))).value shouldBe List(StatusFilterQP(AppStateFilter.WasDeleted))
-      test(Map("status" -> Seq("EXCLUDING_DELETED"))).value shouldBe List(StatusFilterQP(AppStateFilter.ExcludingDeleted))
-      test(Map("status" -> Seq("BLOCKED"))).value shouldBe List(StatusFilterQP(AppStateFilter.Blocked))
-      test(Map("status" -> Seq("ANY"))).value shouldBe List(StatusFilterQP(AppStateFilter.NoFiltering))
+      test(Map("status" -> Seq("CREATED"))).value shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.TESTING)))
+      test(Map("status" -> Seq("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION"))).value shouldBe List(
+        AppStateFilterQP(AppStateFilter.Matching(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION))
+      )
+      test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))).value shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.PENDING_GATEKEEPER_APPROVAL)))
+      test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))).value shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.PENDING_REQUESTER_VERIFICATION)))
+      test(Map("status" -> Seq("ACTIVE"))).value shouldBe List(AppStateFilterQP(AppStateFilter.Active))
+      test(Map("status" -> Seq("DELETED"))).value shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.DELETED)))
+      test(Map("status" -> Seq("EXCLUDING_DELETED"))).value shouldBe List(AppStateFilterQP(AppStateFilter.ExcludingDeleted))
+      test(Map("status" -> Seq("BLOCKED"))).value shouldBe List(AppStateFilterQP(AppStateFilter.Blocked))
+      test(Map("status" -> Seq("ANY"))).value shouldBe List(AppStateFilterQP(AppStateFilter.NoFiltering))
     }
 
     "extract valid params - sort filter" in {
@@ -100,8 +102,8 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
     }
 
     "extract valid params - delete restriction filter" in {
-      test(Map("deleteRestriction" -> Seq("DO_NOT_DELETE"))).value shouldBe List(DeleteRestrictionQP(DeleteRestrictionFilter.DoNotDelete))
-      test(Map("deleteRestriction" -> Seq("NO_RESTRICTION"))).value shouldBe List(DeleteRestrictionQP(DeleteRestrictionFilter.NoRestriction))
+      test(Map("deleteRestriction" -> Seq("DO_NOT_DELETE"))).value shouldBe List(DoNotDeleteQP)
+      test(Map("deleteRestriction" -> Seq("NO_RESTRICTION"))).value shouldBe List(NoRestrictionQP)
     }
 
     "extract valid params - last used before filter" in {

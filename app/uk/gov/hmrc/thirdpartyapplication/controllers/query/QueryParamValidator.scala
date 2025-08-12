@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import java.time.Instant
+import java.time.format.DateTimeFormatter
 import scala.util.Try
 
 import cats.data.Validated.{Invalid, Valid}
@@ -25,7 +26,6 @@ import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
-import java.time.format.DateTimeFormatter
 
 sealed trait QueryParamValidator {
   def paramName: String
@@ -168,11 +168,10 @@ object QueryParamValidator {
       SingleValueExpected(paramName)(values) andThen SortExpected.apply map { sort => Param.SortQP(sort) }
     }
   }
-  
+
   private object UserIdExpected {
     def apply(paramName: String)(value: String): ErrorsOr[UserId] = UserId.apply(value).toValidNel(s"$value is not a valid user id")
   }
-
 
   object UserIdValidator extends QueryParamValidator {
     val paramName = "userId"
@@ -181,7 +180,7 @@ object QueryParamValidator {
       SingleValueExpected(paramName)(values) andThen UserIdExpected(paramName) map { Param.UserIdQP(_) }
     }
   }
-  
+
   object AccessTypeValidator extends QueryParamValidator {
 
     def parseText(value: String): ErrorsOr[Option[AccessType]] = {
@@ -221,17 +220,20 @@ object QueryParamValidator {
     val paramName = "deleteRestriction"
 
     def validate(values: Seq[String]): ErrorsOr[Param.DeleteRestrictionQP] =
-      SingleValueExpected(paramName)(values) andThen { _ match {
-      case "DO_NOT_DELETE"  => Param.DoNotDeleteQP.validNel
-      case "NO_RESTRICTION" => Param.NoRestrictionQP.validNel
-      case value => s"$value is not a valid delete restriction filter".invalidNel
-    }}
+      SingleValueExpected(paramName)(values) andThen {
+        _ match {
+          case "DO_NOT_DELETE"  => Param.DoNotDeleteQP.validNel
+          case "NO_RESTRICTION" => Param.NoRestrictionQP.validNel
+          case value            => s"$value is not a valid delete restriction filter".invalidNel
+        }
+      }
   }
 
   private object EnvironmentExpected {
     def apply(value: String): ErrorsOr[Environment] = Environment.apply(value).toValidNel(s"$value is not a valid environment")
 
   }
+
   object EnvironmentValidator extends QueryParamValidator {
     val paramName = "environment"
 

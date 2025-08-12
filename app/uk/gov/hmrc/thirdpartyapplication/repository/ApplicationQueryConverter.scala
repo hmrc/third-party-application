@@ -16,64 +16,64 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import uk.gov.hmrc.thirdpartyapplication.controllers.query._
-import org.bson.conversions.Bson
-import org.mongodb.scala.model._
-import org.mongodb.scala.bson._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 import scala.reflect.ClassTag
+
+import org.bson.conversions.Bson
+import org.mongodb.scala.bson._
+import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model._
-import org.mongodb.scala.bson.collection.immutable.Document
+
 import uk.gov.hmrc.mongo.play.json.Codecs
+
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
+import uk.gov.hmrc.thirdpartyapplication.controllers.query._
 
 object ApplicationQueryConverter {
 
   def first[T <: Param[_]](implicit params: List[Param[_]], ct: ClassTag[T]): Option[T] = params.collect {
-    case qp : T => qp
+    case qp: T => qp
   }.headOption
 
   def onFirst[T <: Param[_]](fn: (T) => List[Bson])(implicit params: List[Param[_]], ct: ClassTag[T]): List[Bson] = params.collect {
-    case qp : T => qp
+    case qp: T => qp
   }.headOption.fold(List.empty[Bson])(fn)
 
-
   def asSubscriptionFilters(implicit params: List[Param[_]]): List[Bson] = {
-    if(first[NoSubscriptionsQP.type].isDefined)
+    if (first[NoSubscriptionsQP.type].isDefined)
       List(Aggregates.filter(size("subscribedApis", 0)))
-
-    else if(first[HasSubscriptionsQP.type].isDefined)
+    else if (first[HasSubscriptionsQP.type].isDefined)
       List(Aggregates.filter(Document(s"""{$$expr: {$$gte: [{$$size:"$$subscribedApis"}, 1] }}""")))
-
     else {
-      first[ApiContextQP].fold( List.empty[Bson] )( context => {
+      first[ApiContextQP].fold(List.empty[Bson])(context => {
         val contextFilter = Aggregates.filter(equal("subscribedApis.apiIdentifier.context", Codecs.toBson(context.value)))
 
-        first[ApiVersionNbrQP].fold( List(contextFilter) )( versionNbr => {
+        first[ApiVersionNbrQP].fold(List(contextFilter))(versionNbr => {
           val versionFilter = Aggregates.filter(equal("subscribedApis.apiIdentifier.version", Codecs.toBson(versionNbr.value)))
 
           List(and(contextFilter, versionFilter))
         })
       })
     }
-  }   
+  }
 
   def asUserFilters(implicit params: List[Param[_]]): List[Bson] =
-    onFirst[UserIdQP]( userIdQp =>
+    onFirst[UserIdQP](userIdQp =>
       List(Aggregates.filter(equal("collaborators.userId", Codecs.toBson(userIdQp.value))))
     )
 
   def asEnvironmentFilters(implicit params: List[Param[_]]): List[Bson] =
-    onFirst[EnvironmentQP]( environmentQp =>
+    onFirst[EnvironmentQP](environmentQp =>
       List(Aggregates.filter(equal("environment", Codecs.toBson(environmentQp.value))))
     )
 
   def asDeleteRestrictionFilters(implicit params: List[Param[_]]): List[Bson] = {
     def eq(text: String) = List(Aggregates.filter(equal("deleteRestriction.deleteRestrictionType", Codecs.toBson(text))))
 
-    onFirst[DeleteRestrictionQP] { _ match {
-        case Param.DoNotDeleteQP => eq("DO_NOT_DELETE")
+    onFirst[DeleteRestrictionQP] {
+      _ match {
+        case Param.DoNotDeleteQP   => eq("DO_NOT_DELETE")
         case Param.NoRestrictionQP => eq("NO_RESTRICTION")
       }
     }
@@ -81,7 +81,7 @@ object ApplicationQueryConverter {
 
   def asIncludeDeletedAppsFilters(implicit params: List[Param[_]]): List[Bson] =
     onFirst[IncludeDeletedQP](includeDeletedAppsQP => {
-      if(includeDeletedAppsQP.value) {
+      if (includeDeletedAppsQP.value) {
         List.empty
       } else {
         List(Aggregates.filter(notEqual("state.name", State.DELETED.toString)))
@@ -89,14 +89,14 @@ object ApplicationQueryConverter {
     })
 
   def asAccessTypeFilters(implicit params: List[Param[_]]): List[Bson] =
-    onFirst[AccessTypeQP]( qp => {
+    onFirst[AccessTypeQP](qp => {
       qp.value.fold(List.empty[Bson])(accessType => List(Aggregates.filter(equal("access.accessType", Codecs.toBson(accessType)))))
     })
 
   def asLastUsedFilters(implicit params: List[Param[_]]): List[Bson] = {
     import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.Implicits.jatInstantFormat
 
-    val a = onFirst[LastUsedAfterQP]( qp => {
+    val a = onFirst[LastUsedAfterQP](qp => {
       List(Aggregates.filter(
         or(
           gte("lastAccess", Codecs.toBson(qp.value)),
@@ -107,8 +107,8 @@ object ApplicationQueryConverter {
         )
       ))
     })
-    
-    val b = onFirst[LastUsedBeforeQP]( qp => {
+
+    val b = onFirst[LastUsedBeforeQP](qp => {
       List(Aggregates.filter(
         or(
           lte("lastAccess", Codecs.toBson(qp.value)),
@@ -126,12 +126,12 @@ object ApplicationQueryConverter {
   def applicationStateMatch(states: State*): Bson = in("state.name", states.map(_.toString): _*)
 
   def asAppStateFilters(implicit params: List[Param[_]]): List[Bson] =
-    onFirst[AppStateFilterQP]( _.value match {
-      case AppStateFilter.NoFiltering       => List.empty
-      case AppStateFilter.Matching(state)   => List(Aggregates.filter(equal("state.name", state.toString)))
-      case AppStateFilter.Active            => List(Aggregates.filter(applicationStateMatch(State.PRE_PRODUCTION, State.PRODUCTION)))
-      case AppStateFilter.ExcludingDeleted  => List(Aggregates.filter(notEqual("state.name", State.DELETED.toString)))
-      case AppStateFilter.Blocked           => List(Aggregates.filter(and(equal("blocked", BsonBoolean(true)), notEqual("state.name", State.DELETED.toString))))
+    onFirst[AppStateFilterQP](_.value match {
+      case AppStateFilter.NoFiltering      => List.empty
+      case AppStateFilter.Matching(state)  => List(Aggregates.filter(equal("state.name", state.toString)))
+      case AppStateFilter.Active           => List(Aggregates.filter(applicationStateMatch(State.PRE_PRODUCTION, State.PRODUCTION)))
+      case AppStateFilter.ExcludingDeleted => List(Aggregates.filter(notEqual("state.name", State.DELETED.toString)))
+      case AppStateFilter.Blocked          => List(Aggregates.filter(and(equal("blocked", BsonBoolean(true)), notEqual("state.name", State.DELETED.toString))))
     })
 
   def asSearchFilter(implicit params: List[Param[_]]): List[Bson] =
@@ -146,15 +146,15 @@ object ApplicationQueryConverter {
     )
 
   def convertToFilter(implicit params: List[Param[_]]): List[Bson] = {
-    asSubscriptionFilters ++ 
-    asUserFilters ++ 
-    asEnvironmentFilters ++ 
-    asDeleteRestrictionFilters ++ 
-    asIncludeDeletedAppsFilters ++ 
-    asAccessTypeFilters ++ 
-    asLastUsedFilters ++ 
-    asAppStateFilters ++
-    asSearchFilter
+    asSubscriptionFilters ++
+      asUserFilters ++
+      asEnvironmentFilters ++
+      asDeleteRestrictionFilters ++
+      asIncludeDeletedAppsFilters ++
+      asAccessTypeFilters ++
+      asLastUsedFilters ++
+      asAppStateFilters ++
+      asSearchFilter
   }
 
   def convertToSort(sort: Sorting): List[Bson] = sort match {
@@ -168,26 +168,26 @@ object ApplicationQueryConverter {
   }
 
   def pageNumber(params: List[Param[_]]): Int = {
-      params.collectFirst {
-        case PageNbrQP(value) => value
-      }.getOrElse(1)
+    params.collectFirst {
+      case PageNbrQP(value) => value
+    }.getOrElse(1)
   }
 
   def pageSize(params: List[Param[_]]): Int = {
-      params.collectFirst {
-        case PageSizeQP(value) => value
-      }.getOrElse(Int.MaxValue)
+    params.collectFirst {
+      case PageSizeQP(value) => value
+    }.getOrElse(Int.MaxValue)
   }
 
   def hasAnySubscriptionFilter(params: List[Param[_]]): Boolean =
     params.find(_ match {
-      case _ : SubscriptionQP[_] => true
-      case _ => false
+      case _: SubscriptionQP[_] => true
+      case _                    => false
     }).isDefined
 
   def hasSpecificSubscriptionFilter(params: List[Param[_]]): Boolean =
     params.find(_ match {
       case ApiContextQP(_) => true
-      case _ => false
+      case _               => false
     }).isDefined
 }

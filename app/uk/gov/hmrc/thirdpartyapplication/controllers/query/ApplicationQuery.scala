@@ -17,8 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param.LastUsedBeforeQP
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param.{LastUsedBeforeQP, _}
 
 sealed trait ApplicationQuery
 
@@ -65,7 +64,7 @@ object ApplicationQuery {
   def checkLastUsedParams(params: List[Param[_]]): ErrorOr[Unit] =
     params.filter(_.section == 5).sortBy(_.order) match {
       case LastUsedAfterQP(after) :: LastUsedBeforeQP(before) :: _ if after.isAfter(before) => "cannot query for used after date that is after a given before date".invalid
-      case _ => ().valid
+      case _                                                                                => ().valid
     }
 
   def identifyAnyPagination(allParams: List[Param[_]]): Option[Pagination] = {
@@ -116,8 +115,8 @@ object ApplicationQuery {
       val multiQueryParams = validParams.filter(_.section >= 4)
 
       checkSubscriptionsParams(validParams)
-      .combine(checkLastUsedParams(validParams))
-      .toValidatedNel andThen { _: Unit =>
+        .combine(checkLastUsedParams(validParams))
+        .toValidatedNel andThen { _: Unit =>
         val sorting = identifySort(validParams)
 
         identifyAnyPagination(validParams)
@@ -134,7 +133,7 @@ object ApplicationQuery {
     val headerParams = HeaderValidator.parseHeaders(rawHeaders)
     val allParams    = queryParams combine headerParams
 
-    allParams.andThen( validParams => {
+    allParams.andThen(validParams => {
       attemptToConstructSingleResultQuery(validParams).toValidatedNel andThen { q: Option[SingleApplicationQuery] =>
         q.fold[ErrorsOr[ApplicationQuery]](
           attemptToConstructMultiResultQuery(validParams)
