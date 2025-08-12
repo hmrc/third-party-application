@@ -134,8 +134,27 @@ object ApplicationQueryConverter {
       case AppStateFilter.Blocked           => List(Aggregates.filter(and(equal("blocked", BsonBoolean(true)), notEqual("state.name", State.DELETED.toString))))
     })
 
+  def asSearchFilter(implicit params: List[Param[_]]): List[Bson] =
+    onFirst[SearchTextQP](qp =>
+      List(
+        Aggregates.filter(
+          or(
+            List("id", "name", "tokens.production.clientId").map(field => regex(field, qp.value, "i")): _* // TODO This list of search fields is a bit naff
+          )
+        )
+      )
+    )
+
   def convertToFilter(implicit params: List[Param[_]]): List[Bson] = {
-    asSubscriptionFilters ++ asUserFilters ++ asEnvironmentFilters ++ asDeleteRestrictionFilters ++ asIncludeDeletedAppsFilters ++ asAccessTypeFilters ++ asLastUsedFilters ++ asAppStateFilters
+    asSubscriptionFilters ++ 
+    asUserFilters ++ 
+    asEnvironmentFilters ++ 
+    asDeleteRestrictionFilters ++ 
+    asIncludeDeletedAppsFilters ++ 
+    asAccessTypeFilters ++ 
+    asLastUsedFilters ++ 
+    asAppStateFilters ++
+    asSearchFilter
   }
 
   def convertToSort(sort: Sorting): List[Bson] = sort match {
