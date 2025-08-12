@@ -69,9 +69,7 @@ object Param {
 
   case class AppStateFilterQP(value: AppStateFilter)  extends Param[AppStateFilter]    { val section = 6; val order = 1 }
 
-  // TODO below
+  case class SearchTextQP(value: String)                         extends Param[String]                  { val section = 6; val order = 1 }
 
   case class AccessTypeQP(value: Option[AccessType]) extends Param[Option[AccessType]] { val section = 6; val order = 1 }
-  
-  case class SearchTextQP(value: String)                         extends Param[String]                  { val section = 6; val order = 1 }
 }

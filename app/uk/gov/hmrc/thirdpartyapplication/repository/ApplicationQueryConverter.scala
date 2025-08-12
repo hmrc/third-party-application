@@ -89,8 +89,8 @@ object ApplicationQueryConverter {
     })
 
   def asAccessTypeFilters(implicit params: List[Param[_]]): List[Bson] =
-    onFirst[AccessTypeQP]( environmentQp => {
-      environmentQp.value.fold(List.empty[Bson])(accessType => List(Aggregates.filter(equal("access.accessType", Codecs.toBson(accessType)))))
+    onFirst[AccessTypeQP]( qp => {
+      qp.value.fold(List.empty[Bson])(accessType => List(Aggregates.filter(equal("access.accessType", Codecs.toBson(accessType)))))
     })
 
   def asLastUsedFilters(implicit params: List[Param[_]]): List[Bson] = {
