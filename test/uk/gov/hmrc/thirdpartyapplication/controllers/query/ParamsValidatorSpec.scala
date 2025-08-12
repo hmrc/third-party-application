@@ -20,11 +20,12 @@ import cats.data.NonEmptyList
 import org.scalatest.EitherValues
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment
-import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
+import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
-class ParamsValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues {
+class ParamsValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues with FixedClock {
+  import cats.implicits._
 
   val appOneParam      = "applicationId"   -> Seq(applicationIdOne.toString)
   val userIdParam      = "userId"          -> Seq(userIdOne.toString)
@@ -32,6 +33,31 @@ class ParamsValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixt
   val pageSizeParam    = "pageSize"        -> Seq("10")
   val noSubsParam      = "noSubscriptions" -> Seq()
   val irrelevantHeader = Map("someheadername" -> Seq("bob"))
+
+  "checkLastUsedParamsCombinations" should {
+
+    val test = (ps: List[Param[_]]) => ParamsValidator.checkLastUsedParamsCombinations(ps)
+
+    "work when provided no last active dates" in {
+      test(List.empty) shouldBe ().validNel
+    }
+
+    "work when provided a last active before date" in {
+      test(List(LastUsedAfterQP(instant))) shouldBe ().validNel
+    }
+
+    "work when provided a last active after date" in {
+      test(List(LastUsedAfterQP(instant))) shouldBe ().validNel
+    }
+
+    "work when provided sensible last active before and last active after dates" in {
+      test(List(LastUsedAfterQP(instant.minusSeconds(5)), LastUsedBeforeQP(instant))) shouldBe ().validNel
+    }
+
+    "fail when provided incorrect last active before and last active after dates" in {
+      test(List(LastUsedAfterQP(instant), LastUsedBeforeQP(instant.minusSeconds(5)))) shouldBe "cannot query for used after date that is after a given before date".invalidNel
+    }
+  }
 
   "parseAndValidateParams" should {
     val test = (ps: Map[String, Seq[String]], hs: Map[String, Seq[String]]) => ParamsValidator.parseAndValidateParams(ps, hs).toEither
@@ -54,10 +80,15 @@ class ParamsValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixt
   }
 
   "validateParamCombinations" should {
-    val test = (ps: List[Param[_]]) => ParamsValidator.checkUniqueParamsCombinations(ps).toEither
+    val testBadCombo  = (ps: List[Param[_]]) => ParamsValidator.checkUniqueParamsCombinations(ps)
+    val testGoodCombo = (ps: List[Param[_]]) => ParamsValidator.checkUniqueParamsCombinations(ps) shouldBe ().validNel
+
+    "work when given a correct combo" in {
+      testGoodCombo(List(Param.UserIdQP(userIdOne), SortQP(Sorting.LastUseDateAscending)))
+    }
 
     "identify invalid combo of applicationId and clientId" in {
-      test(List(Param.ApplicationIdQP(applicationIdOne), Param.ClientIdQP(clientIdOne))) shouldBe Left(NonEmptyList.one("clientId can only be used with an optional userAgent"))
+      testBadCombo(List(Param.ApplicationIdQP(applicationIdOne), Param.ClientIdQP(clientIdOne))) shouldBe "clientId can only be used with an optional userAgent".invalidNel
     }
   }
 }

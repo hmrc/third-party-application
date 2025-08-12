@@ -27,127 +27,129 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Applicat
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
 class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues with FixedClock {
+  import cats.implicits._
+
   val appOneParam   = "applicationId"   -> Seq(applicationIdOne.toString)
   val pageSizeParam = "pageSize"        -> Seq("10")
   val noSubsParam   = "noSubscriptions" -> Seq()
   val invalidItem   = Map("someheadername" -> Seq("bob"))
 
   "parseParams" should {
-    val test = QueryParamValidator.parseParams _ andThen (_.toEither)
+    val test = QueryParamValidator.parseParams _
 
     "extract valid params - applicationId" in {
-      test(Map(appOneParam)).value shouldBe List(ApplicationIdQP(applicationIdOne))
+      test(Map(appOneParam)) shouldBe List(ApplicationIdQP(applicationIdOne)).validNel
     }
 
     "extract valid params - clientId" in {
-      test(Map("clientId" -> Seq(clientIdOne.toString))).value shouldBe List(ClientIdQP(clientIdOne))
+      test(Map("clientId" -> Seq(clientIdOne.toString))) shouldBe List(ClientIdQP(clientIdOne)).validNel
     }
 
     "extract valid params - apiContext" in {
-      test(Map("context" -> Seq("context1"))).value shouldBe List(ApiContextQP(ApiContext("context1")))
+      test(Map("context" -> Seq("context1"))) shouldBe List(ApiContextQP(ApiContext("context1"))).validNel
     }
 
     "extract valid params - apiVersionNbr" in {
-      test(Map("versionNbr" -> Seq("1.0"))).value shouldBe List(ApiVersionNbrQP(ApiVersionNbr("1.0")))
+      test(Map("versionNbr" -> Seq("1.0"))) shouldBe List(ApiVersionNbrQP(ApiVersionNbr("1.0"))).validNel
     }
 
     "extract valid params - hasSubscriptions" in {
-      test(Map("oneOrMoreSubscriptions" -> Seq())).value shouldBe List(HasSubscriptionsQP)
+      test(Map("oneOrMoreSubscriptions" -> Seq())) shouldBe List(HasSubscriptionsQP).validNel
     }
 
     "extract valid params - noSubscriptions" in {
-      test(Map(noSubsParam)).value shouldBe List(NoSubscriptionsQP)
+      test(Map(noSubsParam)) shouldBe List(NoSubscriptionsQP).validNel
     }
 
     "extract valid params - pageSize" in {
-      test(Map("pageSize" -> Seq("10"))).value shouldBe List(PageSizeQP(10))
+      test(Map("pageSize" -> Seq("10"))) shouldBe List(PageSizeQP(10)).validNel
     }
 
     "extract valid params - pageNbr" in {
-      test(Map("pageNbr" -> Seq("3"))).value shouldBe List(PageNbrQP(3))
+      test(Map("pageNbr" -> Seq("3"))) shouldBe List(PageNbrQP(3)).validNel
     }
 
     "extract valid params - status filter" in {
-      test(Map("status" -> Seq("CREATED"))).value shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.TESTING)))
-      test(Map("status" -> Seq("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION"))).value shouldBe List(
+      test(Map("status" -> Seq("CREATED"))) shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.TESTING))).validNel
+      test(Map("status" -> Seq("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION"))) shouldBe List(
         AppStateFilterQP(AppStateFilter.Matching(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION))
-      )
-      test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))).value shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.PENDING_GATEKEEPER_APPROVAL)))
-      test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))).value shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.PENDING_REQUESTER_VERIFICATION)))
-      test(Map("status" -> Seq("ACTIVE"))).value shouldBe List(AppStateFilterQP(AppStateFilter.Active))
-      test(Map("status" -> Seq("DELETED"))).value shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.DELETED)))
-      test(Map("status" -> Seq("EXCLUDING_DELETED"))).value shouldBe List(AppStateFilterQP(AppStateFilter.ExcludingDeleted))
-      test(Map("status" -> Seq("BLOCKED"))).value shouldBe List(AppStateFilterQP(AppStateFilter.Blocked))
-      test(Map("status" -> Seq("ANY"))).value shouldBe List(AppStateFilterQP(AppStateFilter.NoFiltering))
+      ).validNel
+      test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))) shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.PENDING_GATEKEEPER_APPROVAL))).validNel
+      test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))) shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.PENDING_REQUESTER_VERIFICATION))).validNel
+      test(Map("status" -> Seq("ACTIVE"))) shouldBe List(AppStateFilterQP(AppStateFilter.Active)).validNel
+      test(Map("status" -> Seq("DELETED"))) shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.DELETED))).validNel
+      test(Map("status" -> Seq("EXCLUDING_DELETED"))) shouldBe List(AppStateFilterQP(AppStateFilter.ExcludingDeleted)).validNel
+      test(Map("status" -> Seq("BLOCKED"))) shouldBe List(AppStateFilterQP(AppStateFilter.Blocked)).validNel
+      test(Map("status" -> Seq("ANY"))) shouldBe List(AppStateFilterQP(AppStateFilter.NoFiltering)).validNel
     }
 
     "extract valid params - sort filter" in {
-      test(Map("sort" -> Seq("LAST_USE_ASC"))).value shouldBe List(SortQP(Sorting.LastUseDateAscending))
-      test(Map("sort" -> Seq("LAST_USE_DESC"))).value shouldBe List(SortQP(Sorting.LastUseDateDescending))
-      test(Map("sort" -> Seq("NAME_ASC"))).value shouldBe List(SortQP(Sorting.NameAscending))
-      test(Map("sort" -> Seq("NAME_DESC"))).value shouldBe List(SortQP(Sorting.NameDescending))
-      test(Map("sort" -> Seq("SUBMITTED_ASC"))).value shouldBe List(SortQP(Sorting.SubmittedAscending))
-      test(Map("sort" -> Seq("SUBMITTED_DESC"))).value shouldBe List(SortQP(Sorting.SubmittedDescending))
-      test(Map("sort" -> Seq("NO_SORT"))).value shouldBe List(SortQP(Sorting.NoSorting))
+      test(Map("sort" -> Seq("LAST_USE_ASC"))) shouldBe List(SortQP(Sorting.LastUseDateAscending)).validNel
+      test(Map("sort" -> Seq("LAST_USE_DESC"))) shouldBe List(SortQP(Sorting.LastUseDateDescending)).validNel
+      test(Map("sort" -> Seq("NAME_ASC"))) shouldBe List(SortQP(Sorting.NameAscending)).validNel
+      test(Map("sort" -> Seq("NAME_DESC"))) shouldBe List(SortQP(Sorting.NameDescending)).validNel
+      test(Map("sort" -> Seq("SUBMITTED_ASC"))) shouldBe List(SortQP(Sorting.SubmittedAscending)).validNel
+      test(Map("sort" -> Seq("SUBMITTED_DESC"))) shouldBe List(SortQP(Sorting.SubmittedDescending)).validNel
+      test(Map("sort" -> Seq("NO_SORT"))) shouldBe List(SortQP(Sorting.NoSorting)).validNel
     }
 
     "extract valid params - accessType filter" in {
-      test(Map("accessType" -> Seq("STANDARD"))).value shouldBe List(AccessTypeQP(Some(AccessType.STANDARD)))
-      test(Map("accessType" -> Seq("ROPC"))).value shouldBe List(AccessTypeQP(Some(AccessType.ROPC)))
-      test(Map("accessType" -> Seq("PRIVILEGED"))).value shouldBe List(AccessTypeQP(Some(AccessType.PRIVILEGED)))
-      test(Map("accessType" -> Seq("ANY"))).value shouldBe List(AccessTypeQP(None))
+      test(Map("accessType" -> Seq("STANDARD"))) shouldBe List(AccessTypeQP(Some(AccessType.STANDARD))).validNel
+      test(Map("accessType" -> Seq("ROPC"))) shouldBe List(AccessTypeQP(Some(AccessType.ROPC))).validNel
+      test(Map("accessType" -> Seq("PRIVILEGED"))) shouldBe List(AccessTypeQP(Some(AccessType.PRIVILEGED))).validNel
+      test(Map("accessType" -> Seq("ANY"))) shouldBe List(AccessTypeQP(None)).validNel
     }
 
     "extract valid params - search filter" in {
-      test(Map("search" -> Seq("ANY"))).value shouldBe List(SearchTextQP("ANY"))
+      test(Map("search" -> Seq("ANY"))) shouldBe List(SearchTextQP("ANY")).validNel
     }
 
     "extract valid params - include deleted filter" in {
-      test(Map("includeDeleted" -> Seq("true"))).value shouldBe List(IncludeDeletedQP(true))
-      test(Map("includeDeleted" -> Seq("false"))).value shouldBe List(IncludeDeletedQP(false))
+      test(Map("includeDeleted" -> Seq("true"))) shouldBe List(IncludeDeletedQP(true)).validNel
+      test(Map("includeDeleted" -> Seq("false"))) shouldBe List(IncludeDeletedQP(false)).validNel
     }
 
     "extract valid params - delete restriction filter" in {
-      test(Map("deleteRestriction" -> Seq("DO_NOT_DELETE"))).value shouldBe List(DoNotDeleteQP)
-      test(Map("deleteRestriction" -> Seq("NO_RESTRICTION"))).value shouldBe List(NoRestrictionQP)
+      test(Map("deleteRestriction" -> Seq("DO_NOT_DELETE"))) shouldBe List(DoNotDeleteQP).validNel
+      test(Map("deleteRestriction" -> Seq("NO_RESTRICTION"))) shouldBe List(NoRestrictionQP).validNel
     }
 
     "extract valid params - last used before filter" in {
-      test(Map("lastUsedBefore" -> Seq(nowAsText))).value shouldBe List(LastUsedBeforeQP(instant))
+      test(Map("lastUsedBefore" -> Seq(nowAsText))) shouldBe List(LastUsedBeforeQP(instant)).validNel
     }
 
     "extract valid params - last used after filter" in {
-      test(Map("lastUsedAfter" -> Seq(nowAsText))).value shouldBe List(LastUsedAfterQP(instant))
+      test(Map("lastUsedAfter" -> Seq(nowAsText))) shouldBe List(LastUsedAfterQP(instant)).validNel
     }
 
     // -----
 
     "extract valid params - applicationId, pageSize" in {
-      test(Map(appOneParam, pageSizeParam)).value shouldBe List(ApplicationIdQP(applicationIdOne), PageSizeQP(10))
+      test(Map(appOneParam, pageSizeParam)) shouldBe List(ApplicationIdQP(applicationIdOne), PageSizeQP(10)).validNel
     }
 
     // -----
 
     "extract valid params regardless of case - applicationId" in {
-      test(Map("APPLICATIONID" -> Seq(applicationIdOne.toString()))).value shouldBe List(ApplicationIdQP(applicationIdOne))
+      test(Map("APPLICATIONID" -> Seq(applicationIdOne.toString()))) shouldBe List(ApplicationIdQP(applicationIdOne)).validNel
     }
 
     // -----
 
     "error on params with multiple applicationId values" in {
-      inside(test(Map("applicationId" -> Seq(applicationIdOne.toString(), applicationIdTwo.toString())))) {
+      inside(test(Map("applicationId" -> Seq(applicationIdOne.toString(), applicationIdTwo.toString()))).toEither) {
         case Left(nel) => nel should (reportErrorForAllowsOnlyOneValue("applicationId"))
       }
     }
 
     "multiple errors" in {
-      inside(test(Map("applicationId" -> Seq(applicationIdOne.toString(), applicationIdTwo.toString()), "bob" -> Seq("fred")))) {
+      inside(test(Map("applicationId" -> Seq(applicationIdOne.toString(), applicationIdTwo.toString()), "bob" -> Seq("fred"))).toEither) {
         case Left(nel) => nel should (reportErrorForAllowsOnlyOneValue("applicationId") and reportErrorForInvalidParameterName("bob"))
       }
     }
 
     "error on param with invalid applicationId value" in {
-      inside(test(Map("applicationId" -> Seq("123")))) {
+      inside(test(Map("applicationId" -> Seq("123"))).toEither) {
         case Left(nel) => nel should (new ErrorIncludes("123 is not a valid application id"))
       }
     }
@@ -155,18 +157,18 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
     // -----
 
     "extract valid params regardless of case - userId" in {
-      test(Map("USERID" -> Seq(userIdOne.toString()))).value shouldBe List(UserIdQP(userIdOne))
-      test(Map("userId" -> Seq(userIdOne.toString()))).value shouldBe List(UserIdQP(userIdOne))
+      test(Map("USERID" -> Seq(userIdOne.toString()))) shouldBe List(UserIdQP(userIdOne)).validNel
+      test(Map("userId" -> Seq(userIdOne.toString()))) shouldBe List(UserIdQP(userIdOne)).validNel
     }
 
     "error on params with multiple userId values" in {
-      inside(test(Map("userId" -> Seq(userIdOne.toString(), userIdTwo.toString())))) {
+      inside(test(Map("userId" -> Seq(userIdOne.toString(), userIdTwo.toString()))).toEither) {
         case Left(nel) => nel should (reportErrorForAllowsOnlyOneValue("userId"))
       }
     }
 
     "error on param with invalid userId value" in {
-      inside(test(Map("userId" -> Seq("123")))) {
+      inside(test(Map("userId" -> Seq("123"))).toEither) {
         case Left(nel) => nel should (new ErrorIncludes("123 is not a valid user id"))
       }
     }
@@ -174,12 +176,12 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
     // -----
 
     "extract valid params - environment" in {
-      test(Map("environment" -> Seq("PRODUCTION"))).value shouldBe List(EnvironmentQP(Environment.PRODUCTION))
-      test(Map("environment" -> Seq("SANDBOX"))).value shouldBe List(EnvironmentQP(Environment.SANDBOX))
+      test(Map("environment" -> Seq("PRODUCTION"))) shouldBe List(EnvironmentQP(Environment.PRODUCTION)).validNel
+      test(Map("environment" -> Seq("SANDBOX"))) shouldBe List(EnvironmentQP(Environment.SANDBOX)).validNel
     }
 
     "error on params with invalid environment" in {
-      inside(test(Map("environment" -> Seq("BANG")))) {
+      inside(test(Map("environment" -> Seq("BANG"))).toEither) {
         case Left(nel) => nel should (new ErrorIncludes("BANG is not a valid environment"))
       }
     }

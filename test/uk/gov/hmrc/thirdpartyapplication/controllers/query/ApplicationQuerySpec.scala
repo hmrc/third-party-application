@@ -32,6 +32,14 @@ class ApplicationQuerySpec extends HmrcSpec with ApplicationWithCollaboratorsFix
       test(List(ApplicationIdQP(applicationIdOne))) shouldBe ApplicationQuery.ById(applicationIdOne)
     }
 
+    "work when given a correct clientId" in {
+      test(List(ClientIdQP(clientIdOne))) shouldBe ApplicationQuery.ByClientId(clientIdOne, false)
+    }
+
+    "work when given a correct serverToken" in {
+      test(List(ServerTokenQP("abc"))) shouldBe ApplicationQuery.ByServerToken("abc", false)
+    }
+
     "work when given a correct applicationId and some irrelevant header" in {
       test(List(ApplicationIdQP(applicationIdOne), UserAgentQP("XYZ"))) shouldBe ApplicationQuery.ById(applicationIdOne)
     }
