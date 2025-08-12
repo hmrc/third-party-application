@@ -40,11 +40,10 @@ class QueryController @Inject() (
   // private val E = EitherTHelper.make[String]
 
   def queryDispatcher() = Action.async { implicit request =>
-    ApplicationQuery.attemptToConstructQuery(request.queryString, request.headers.toMap)
+    ParamsValidator.parseAndValidateParams(request.queryString, request.headers.toMap)
       .fold[Future[Result]](
-        nel =>
-          Future.successful(BadRequest(Json.toJson(nel.toList))),
-        appQry => apply(appQry)
+        nel => Future.successful(BadRequest(Json.toJson(nel.toList))),
+        params => apply(ApplicationQuery.attemptToConstructQuery(params))
       )
   }
 

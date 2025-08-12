@@ -82,6 +82,12 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
     }
 
     "extract valid params - sort filter" in {
+      test(Map("sort" -> Seq("LAST_USE_ASC"))).value shouldBe List(SortQP(Sorting.LastUseDateAscending))
+      test(Map("sort" -> Seq("LAST_USE_DESC"))).value shouldBe List(SortQP(Sorting.LastUseDateDescending))
+      test(Map("sort" -> Seq("NAME_ASC"))).value shouldBe List(SortQP(Sorting.NameAscending))
+      test(Map("sort" -> Seq("NAME_DESC"))).value shouldBe List(SortQP(Sorting.NameDescending))
+      test(Map("sort" -> Seq("SUBMITTED_ASC"))).value shouldBe List(SortQP(Sorting.SubmittedAscending))
+      test(Map("sort" -> Seq("SUBMITTED_DESC"))).value shouldBe List(SortQP(Sorting.SubmittedDescending))
       test(Map("sort" -> Seq("NO_SORT"))).value shouldBe List(SortQP(Sorting.NoSorting))
     }
 
@@ -128,7 +134,7 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
 
     // -----
 
-    "error on params with multiple values" in {
+    "error on params with multiple applicationId values" in {
       inside(test(Map("applicationId" -> Seq(applicationIdOne.toString(), applicationIdTwo.toString())))) {
         case Left(nel) => nel should (reportErrorForAllowsOnlyOneValue("applicationId"))
       }
@@ -137,6 +143,44 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
     "multiple errors" in {
       inside(test(Map("applicationId" -> Seq(applicationIdOne.toString(), applicationIdTwo.toString()), "bob" -> Seq("fred")))) {
         case Left(nel) => nel should (reportErrorForAllowsOnlyOneValue("applicationId") and reportErrorForInvalidParameterName("bob"))
+      }
+    }
+
+    "error on param with invalid applicationId value" in {
+      inside(test(Map("applicationId" -> Seq("123")))) {
+        case Left(nel) => nel should (new ErrorIncludes("123 is not a valid application id"))
+      }
+    }
+
+    // -----
+
+    "extract valid params regardless of case - userId" in {
+      test(Map("USERID" -> Seq(userIdOne.toString()))).value shouldBe List(UserIdQP(userIdOne))
+      test(Map("userId" -> Seq(userIdOne.toString()))).value shouldBe List(UserIdQP(userIdOne))
+    }
+
+    "error on params with multiple userId values" in {
+      inside(test(Map("userId" -> Seq(userIdOne.toString(), userIdTwo.toString())))) {
+        case Left(nel) => nel should (reportErrorForAllowsOnlyOneValue("userId"))
+      }
+    }
+
+    "error on param with invalid userId value" in {
+      inside(test(Map("userId" -> Seq("123")))) {
+        case Left(nel) => nel should (new ErrorIncludes("123 is not a valid user id"))
+      }
+    }
+
+    // -----
+
+    "extract valid params - environment" in {
+      test(Map("environment" -> Seq("PRODUCTION"))).value shouldBe List(EnvironmentQP(Environment.PRODUCTION))
+      test(Map("environment" -> Seq("SANDBOX"))).value shouldBe List(EnvironmentQP(Environment.SANDBOX))
+    }
+
+    "error on params with invalid environment" in {
+      inside(test(Map("environment" -> Seq("BANG")))) {
+        case Left(nel) => nel should (new ErrorIncludes("BANG is not a valid environment"))
       }
     }
   }

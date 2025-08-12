@@ -30,11 +30,12 @@ sealed trait Param[+P] {
 }
 
 object Param {
+  val ApiGatewayUserAgent: String = "APIPlatformAuthorizer"
 
   case class ServerTokenQP(value: String)          extends Param[String]        { val section = 1; val order = 1 }
   case class ClientIdQP(value: ClientId)           extends Param[ClientId]      { val section = 1; val order = 2 }
-  case class UserAgentQP(value: String)            extends Param[String]        { val section = 1; val order = 3 }
-  case class ApplicationIdQP(value: ApplicationId) extends Param[ApplicationId] { val section = 1; val order = 4 }
+  case class ApplicationIdQP(value: ApplicationId) extends Param[ApplicationId] { val section = 1; val order = 3 }
+  case class UserAgentQP(value: String)            extends Param[String]        { val section = 1; val order = 4 }
 
   case class PageSizeQP(value: Int) extends Param[Int] { val section = 2; val order = 1 }
   case class PageNbrQP(value: Int)  extends Param[Int] { val section = 2; val order = 2 }

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param.{LastUsedBeforeQP, _}
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
 sealed trait ApplicationQuery
 
@@ -28,7 +28,6 @@ sealed trait MultipleApplicationQuery extends ApplicationQuery {
 }
 
 object ApplicationQuery {
-  val ApiGatewayUserAgent: String = "APIPlatformAuthorizer"
 
   case class ById(applicationId: ApplicationId)                                                       extends SingleApplicationQuery
   case class ByClientId(clientId: ClientId, recordUsage: Boolean = false)                             extends SingleApplicationQuery
@@ -37,35 +36,6 @@ object ApplicationQuery {
   case class PaginatedApplicationQuery(sort: Sorting, pagination: Pagination, params: List[Param[_]]) extends MultipleApplicationQuery
 
   import cats.implicits._
-
-  def checkSubscriptionsParams(params: List[Param[_]]): ErrorOr[Unit] = {
-    import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
-
-    params.filter(_.section == 4).sortBy(_.order) match {
-      case NoSubscriptionsQP :: Nil                                 => ().valid
-      case HasSubscriptionsQP :: Nil                                => ().valid
-      case ApiContextQP(context) :: ApiVersionNbrQP(version) :: Nil => ().valid
-      case ApiContextQP(context) :: Nil                             => ().valid
-
-      case NoSubscriptionsQP :: HasSubscriptionsQP :: _ => "cannot query for no subscriptions and then query for subscriptions".invalid
-
-      case NoSubscriptionsQP :: ApiContextQP(_) :: _    => "cannot query for no subscriptions and then query context".invalid
-      case NoSubscriptionsQP :: ApiVersionNbrQP(_) :: _ => "cannot query for no subscriptions and then query version nbr".invalid
-
-      case HasSubscriptionsQP :: ApiContextQP(_) :: _    => "cannot query for any subscriptions and then query context".invalid
-      case HasSubscriptionsQP :: ApiVersionNbrQP(_) :: _ => "cannot query for any subscriptions and then query version nbr".invalid
-
-      case ApiVersionNbrQP(_) :: _ => "cannot query for a version without a context".invalid
-
-      case _ => ().valid // "Unexpected combination of subscription query parameters".invalid
-    }
-  }
-
-  def checkLastUsedParams(params: List[Param[_]]): ErrorOr[Unit] =
-    params.filter(_.section == 5).sortBy(_.order) match {
-      case LastUsedAfterQP(after) :: LastUsedBeforeQP(before) :: _ if after.isAfter(before) => "cannot query for used after date that is after a given before date".invalid
-      case _                                                                                => ().valid
-    }
 
   def identifyAnyPagination(allParams: List[Param[_]]): Option[Pagination] = {
     allParams.filter(_.section == 2) match {
@@ -84,63 +54,46 @@ object ApplicationQuery {
     }
   }
 
-  def attemptToConstructQuery(rawQueryParams: Map[String, Seq[String]], rawHeaders: Map[String, Seq[String]]): ErrorsOr[ApplicationQuery] = {
-    def attemptToConstructSingleResultQuery(validParams: List[Param[_]]): ErrorOr[Option[SingleApplicationQuery]] = {
+  // List must be valid or outcome is undefined.
+  def attemptToConstructQuery(validParams: List[Param[_]]): ApplicationQuery = {
+    def attemptToConstructSingleResultQuery(): Option[SingleApplicationQuery] = {
       import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
       validParams.partition(_.section == 1) match {
-        case (Nil, Nil)               => "undefined queries are not permitted".invalid
-        case (Nil, _)                 => None.valid
+        case (Nil, _)                 => None
         case (singleQueryParams, Nil) =>
           singleQueryParams.sortBy(_.order) match {
-            case ServerTokenQP(serverToken) :: Nil                                       => ApplicationQuery.ByServerToken(serverToken, false).some.valid
-            case ServerTokenQP(serverToken) :: UserAgentQP(`ApiGatewayUserAgent`) :: Nil => ApplicationQuery.ByServerToken(serverToken, true).some.valid
-            case ServerTokenQP(serverToken) :: UserAgentQP(_) :: Nil                     => ApplicationQuery.ByServerToken(serverToken, false).some.valid
-            case ServerTokenQP(_) :: _ :: Nil                                            => "serverToken can only be used with an optional userAgent".invalid
+            case ServerTokenQP(serverToken) :: Nil                                       => ApplicationQuery.ByServerToken(serverToken, false).some
+            case ServerTokenQP(serverToken) :: UserAgentQP(`ApiGatewayUserAgent`) :: Nil => ApplicationQuery.ByServerToken(serverToken, true).some
+            case ServerTokenQP(serverToken) :: UserAgentQP(_) :: Nil                     => ApplicationQuery.ByServerToken(serverToken, false).some
 
-            case ClientIdQP(clientId) :: Nil                                       => ApplicationQuery.ByClientId(clientId, false).some.valid
-            case ClientIdQP(clientId) :: UserAgentQP(`ApiGatewayUserAgent`) :: Nil => ApplicationQuery.ByClientId(clientId, true).some.valid
-            case ClientIdQP(clientId) :: UserAgentQP(_) :: Nil                     => ApplicationQuery.ByClientId(clientId, false).some.valid
-            case ClientIdQP(_) :: _ :: Nil                                         => "clientId can only be used with an optional userAgent".invalid
+            case ClientIdQP(clientId) :: Nil                                       => ApplicationQuery.ByClientId(clientId, false).some
+            case ClientIdQP(clientId) :: UserAgentQP(`ApiGatewayUserAgent`) :: Nil => ApplicationQuery.ByClientId(clientId, true).some
+            case ClientIdQP(clientId) :: UserAgentQP(_) :: Nil                     => ApplicationQuery.ByClientId(clientId, false).some
 
-            case ApplicationIdQP(applicationId) :: Nil      => ApplicationQuery.ById(applicationId).some.valid
-            case ApplicationIdQP(applicationId) :: _ :: Nil => "applicationId cannot be mixed with any other parameters".invalid
-            case _                                          => "unexpected match for singe result parameters".invalid
+            case ApplicationIdQP(applicationId) :: Nil                   => ApplicationQuery.ById(applicationId).some
+            case ApplicationIdQP(applicationId) :: UserAgentQP(_) :: Nil => ApplicationQuery.ById(applicationId).some
+            case _                                                       => None
           }
-        case (_, _)                   => "queries with identifiers cannot be matched with other parameters, sorting or pagination".invalid
+        case _                        => None
       }
     }
 
-    def attemptToConstructMultiResultQuery(validParams: List[Param[_]]): ErrorsOr[MultipleApplicationQuery] = {
+    def attemptToConstructMultiResultQuery(): MultipleApplicationQuery = {
       val multiQueryParams = validParams.filter(_.section >= 4)
 
-      checkSubscriptionsParams(validParams)
-        .combine(checkLastUsedParams(validParams))
-        .toValidatedNel andThen { _: Unit =>
-        val sorting = identifySort(validParams)
+      val sorting = identifySort(validParams)
 
-        identifyAnyPagination(validParams)
-          .fold[MultipleApplicationQuery](
-            ApplicationQuery.GeneralOpenEndedApplicationQuery(sorting, multiQueryParams)
-          )(pagination =>
-            ApplicationQuery.PaginatedApplicationQuery(sorting, pagination, multiQueryParams)
-          )
-          .validNel
-      }
+      identifyAnyPagination(validParams)
+        .fold[MultipleApplicationQuery](
+          ApplicationQuery.GeneralOpenEndedApplicationQuery(sorting, multiQueryParams)
+        )(pagination =>
+          ApplicationQuery.PaginatedApplicationQuery(sorting, pagination, multiQueryParams)
+        )
     }
 
-    val queryParams  = QueryParamValidator.parseParams(rawQueryParams)
-    val headerParams = HeaderValidator.parseHeaders(rawHeaders)
-    val allParams    = queryParams combine headerParams
-
-    allParams.andThen(validParams => {
-      attemptToConstructSingleResultQuery(validParams).toValidatedNel andThen { q: Option[SingleApplicationQuery] =>
-        q.fold[ErrorsOr[ApplicationQuery]](
-          attemptToConstructMultiResultQuery(validParams)
-        )(
-          _.validNel
-        )
-      }
-    })
+    attemptToConstructSingleResultQuery().fold[ApplicationQuery](
+      attemptToConstructMultiResultQuery()
+    )(identity)
   }
 }

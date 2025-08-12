@@ -16,37 +16,52 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
-import cats.data.NonEmptyList
 import org.scalatest.EitherValues
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery._
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
 class ApplicationQuerySpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues {
 
-  val appOneParam      = "applicationId"   -> Seq(applicationIdOne.toString)
-  val pageSizeParam    = "pageSize"        -> Seq("10")
-  val noSubsParam      = "noSubscriptions" -> Seq()
-  val irrelevantHeader = Map("someheadername" -> Seq("bob"))
-
   "attemptToConstructQuery" should {
-    val test = (ps: Map[String, Seq[String]], hs: Map[String, Seq[String]]) => ApplicationQuery.attemptToConstructQuery(ps, hs).toEither
+    val test = (ps: List[Param[_]]) => ApplicationQuery.attemptToConstructQuery(ps)
 
     "work when given a correct applicationId" in {
-      test(Map(appOneParam), Map.empty).value shouldBe ApplicationQuery.ById(applicationIdOne)
+      test(List(ApplicationIdQP(applicationIdOne))) shouldBe ApplicationQuery.ById(applicationIdOne)
     }
 
     "work when given a correct applicationId and some irrelevant header" in {
-      test(Map(appOneParam), irrelevantHeader).value shouldBe ApplicationQuery.ById(applicationIdOne)
+      test(List(ApplicationIdQP(applicationIdOne), UserAgentQP("XYZ"))) shouldBe ApplicationQuery.ById(applicationIdOne)
     }
 
-    "fail for applicationId with pageSize" in {
-      test(Map(appOneParam, pageSizeParam), Map.empty) shouldBe Left(NonEmptyList.one("queries with identifiers cannot be matched with other parameters, sorting or pagination"))
+    "work when given sorting and userId" in {
+      test(List(UserIdQP(userIdOne), SortQP(Sorting.NameAscending))) shouldBe GeneralOpenEndedApplicationQuery(Sorting.NameAscending, List(UserIdQP(userIdOne)))
     }
 
-    "fail for applicationId with pageSize first" in {
-      test(Map(pageSizeParam, appOneParam), Map.empty) shouldBe Left(NonEmptyList.one("queries with identifiers cannot be matched with other parameters, sorting or pagination"))
+    "work when given pagination, sorting and userId" in {
+      test(List(UserIdQP(userIdOne), PageNbrQP(2), PageSizeQP(10), SortQP(Sorting.NameAscending))) shouldBe PaginatedApplicationQuery(
+        Sorting.NameAscending,
+        Pagination(10, 2),
+        List(UserIdQP(userIdOne))
+      )
     }
 
+    "work when given page size, sorting and userId" in {
+      test(List(UserIdQP(userIdOne), PageSizeQP(10), SortQP(Sorting.NameAscending))) shouldBe PaginatedApplicationQuery(
+        Sorting.NameAscending,
+        Pagination(10, 1),
+        List(UserIdQP(userIdOne))
+      )
+    }
+
+    "work when given page nbr, sorting and userId" in {
+      test(List(UserIdQP(userIdOne), PageNbrQP(2), SortQP(Sorting.NameAscending))) shouldBe PaginatedApplicationQuery(
+        Sorting.NameAscending,
+        Pagination(50, 2),
+        List(UserIdQP(userIdOne))
+      )
+    }
   }
 }
