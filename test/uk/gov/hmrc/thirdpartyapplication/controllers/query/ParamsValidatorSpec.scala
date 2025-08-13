@@ -17,46 +17,131 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import cats.data.NonEmptyList
+import cats.data.Validated.Invalid
 import org.scalatest.EitherValues
+import org.scalatest.compatible.Assertion
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiIdentifierFixtures, Environment}
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
-class ParamsValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues with FixedClock {
+class ParamsValidatorSpec
+    extends HmrcSpec
+    with ApplicationWithCollaboratorsFixtures
+    with ApiIdentifierFixtures
+    with EitherValues
+    with FixedClock {
+
   import cats.implicits._
 
   val appOneParam      = "applicationId"   -> Seq(applicationIdOne.toString)
   val userIdParam      = "userId"          -> Seq(userIdOne.toString)
+  val clientIdParam    = "clientId"        -> Seq(userIdOne.toString)
   val envParam         = "environment"     -> Seq(Environment.PRODUCTION.toString)
   val pageSizeParam    = "pageSize"        -> Seq("10")
   val noSubsParam      = "noSubscriptions" -> Seq()
   val irrelevantHeader = Map("someheadername" -> Seq("bob"))
+  val Pass             = ().validNel
+
+  def shouldFail[T](testThis: ErrorsOr[T]): Assertion = {
+    inside(testThis) {
+      case Invalid(_) => succeed
+      case _          => fail("valid when expecting invalid")
+    }
+  }
 
   "checkLastUsedParamsCombinations" should {
 
     val test = (ps: List[Param[_]]) => ParamsValidator.checkLastUsedParamsCombinations(ps)
 
-    "work when provided no last active dates" in {
-      test(List.empty) shouldBe ().validNel
+    "pass when provided no last active dates" in {
+      test(List.empty) shouldBe Pass
     }
 
-    "work when provided a last active before date" in {
-      test(List(LastUsedAfterQP(instant))) shouldBe ().validNel
+    "pass when provided a last active before date" in {
+      test(List(LastUsedAfterQP(instant))) shouldBe Pass
     }
 
-    "work when provided a last active after date" in {
-      test(List(LastUsedAfterQP(instant))) shouldBe ().validNel
+    "pass when provided a last active after date" in {
+      test(List(LastUsedAfterQP(instant))) shouldBe Pass
     }
 
-    "work when provided sensible last active before and last active after dates" in {
-      test(List(LastUsedAfterQP(instant.minusSeconds(5)), LastUsedBeforeQP(instant))) shouldBe ().validNel
+    "pass when provided sensible last active before and last active after dates" in {
+      test(List(LastUsedAfterQP(instant.minusSeconds(5)), LastUsedBeforeQP(instant))) shouldBe Pass
     }
 
     "fail when provided incorrect last active before and last active after dates" in {
       test(List(LastUsedAfterQP(instant), LastUsedBeforeQP(instant.minusSeconds(5)))) shouldBe "cannot query for used after date that is after a given before date".invalidNel
     }
+  }
+
+  "checkSubscriptionsParamsCombinations" should {
+    val test: List[Param[_]] => ErrorsOr[Unit] = (ps) => ParamsValidator.checkSubscriptionsParamsCombinations(ps)
+    val Context                                = ApiContextQP(apiContextOne)
+    val Version                                = ApiVersionNbrQP(apiVersionNbrOne)
+
+    "pass when given valid combinations" in {
+      test(List(NoSubscriptionsQP)) shouldBe Pass
+      test(List(HasSubscriptionsQP)) shouldBe Pass
+      test(List(Context)) shouldBe Pass
+      test(List(Context, Version)) shouldBe Pass
+      test(List.empty) shouldBe Pass
+    }
+
+    "fail when given invalid combinations" in {
+      shouldFail(test(List(NoSubscriptionsQP, HasSubscriptionsQP)))
+      shouldFail(test(List(NoSubscriptionsQP, Context)))
+      shouldFail(test(List(NoSubscriptionsQP, Context, Version)))
+      shouldFail(test(List(NoSubscriptionsQP, Version)))
+      shouldFail(test(List(HasSubscriptionsQP, Context)))
+      shouldFail(test(List(HasSubscriptionsQP, Context, Version)))
+      shouldFail(test(List(HasSubscriptionsQP, Version)))
+      shouldFail(test(List(Version)))
+    }
+  }
+
+  "checkUniqueParamsCombinations" should {
+    val test: List[Param[_]] => ErrorsOr[Unit] = (ps) => ParamsValidator.checkUniqueParamsCombinations(ps)
+
+    "pass when given a correct applicationId" in {
+      test(List(ApplicationIdQP(applicationIdOne))) shouldBe Pass
+    }
+
+    "pass when given a correct clientId" in {
+      test(List(ClientIdQP(clientIdOne))) shouldBe Pass
+    }
+
+    "pass when given a correct clientId and User Agent" in {
+      test(List(ClientIdQP(clientIdOne), UserAgentQP(Param.ApiGatewayUserAgent))) shouldBe Pass
+      test(List(ClientIdQP(clientIdOne), UserAgentQP("Bob"))) shouldBe Pass
+    }
+
+    "pass when given a correct serverToken" in {
+      test(List(ServerTokenQP("abc"))) shouldBe Pass
+    }
+
+    "pass when given a correct serverToken and User Agent" in {
+      test(List(ServerTokenQP("abc"), UserAgentQP(Param.ApiGatewayUserAgent))) shouldBe Pass
+      test(List(ServerTokenQP("abc"), UserAgentQP("Bob"))) shouldBe Pass
+    }
+
+    "pass when given a correct applicationId and some irrelevant header" in {
+      test(List(ApplicationIdQP(applicationIdOne), UserAgentQP("XYZ"))) shouldBe Pass
+    }
+
+    "fail for id when mixed with with pageSize" in {
+      shouldFail(test(List(ApplicationIdQP(applicationIdOne), PageSizeQP(10))))
+      shouldFail(test(List(ClientIdQP(clientIdOne), PageSizeQP(10))))
+      shouldFail(test(List(ServerTokenQP("ABC"), PageSizeQP(10))))
+    }
+
+    "fail when mixing two ids" in {
+      shouldFail(test(List(ApplicationIdQP(applicationIdOne), ClientIdQP(clientIdOne))))
+      shouldFail(test(List(ApplicationIdQP(applicationIdOne), ServerTokenQP("ABC"))))
+      shouldFail(test(List(ClientIdQP(clientIdOne), ServerTokenQP("ABC"))))
+    }
+
   }
 
   "parseAndValidateParams" should {
@@ -81,7 +166,7 @@ class ParamsValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixt
 
   "validateParamCombinations" should {
     val testBadCombo  = (ps: List[Param[_]]) => ParamsValidator.checkUniqueParamsCombinations(ps)
-    val testGoodCombo = (ps: List[Param[_]]) => ParamsValidator.checkUniqueParamsCombinations(ps) shouldBe ().validNel
+    val testGoodCombo = (ps: List[Param[_]]) => ParamsValidator.checkUniqueParamsCombinations(ps) shouldBe Pass
 
     "work when given a correct combo" in {
       testGoodCombo(List(Param.UserIdQP(userIdOne), SortQP(Sorting.LastUseDateAscending)))
