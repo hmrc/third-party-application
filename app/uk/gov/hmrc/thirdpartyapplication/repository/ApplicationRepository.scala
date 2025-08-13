@@ -1033,13 +1033,13 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   }
 
   def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[StoredApplication]] = {
-    val filters = ApplicationQueryConverter.convertToFilter(qry.params)
-    val sort    = ApplicationQueryConverter.convertToSort(qry.sort)
+    val filters: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+    val sort                = ApplicationQueryConverter.convertToSort(qry.sort)
 
     val pagination = List(skip(0), limit(Int.MaxValue))
 
     runAggregationQuery(
-      filters,
+      List(Aggregates.filter(and(filters: _*))),
       pagination,
       sort,
       ApplicationQueryConverter.hasAnySubscriptionFilter(qry.params),
