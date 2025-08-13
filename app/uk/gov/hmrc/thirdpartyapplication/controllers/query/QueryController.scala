@@ -47,7 +47,7 @@ class QueryController @Inject() (
   def queryDispatcher() = Action.async { implicit request =>
     ParamsValidator.parseAndValidateParams(request.queryString, request.headers.toMap)
       .fold[Future[Result]](
-        nel => Future.successful(BadRequest(Json.toJson(nel.toList))),
+        nel => Future.successful(BadRequest(asBody("INVALID_QUERY", nel.toList))),
         params => apply(ApplicationQuery.attemptToConstructQuery(params))
       )
   }

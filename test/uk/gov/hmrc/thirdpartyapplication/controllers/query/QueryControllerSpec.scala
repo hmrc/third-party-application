@@ -95,5 +95,16 @@ class QueryControllerSpec
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(PaginatedApplications(List.empty, 1, 10, 102, 0))
     }
+
+    "report errors back" in new Setup {
+      ApplicationRepoMock.FetchByGeneralOpenEndedApplicationQuery.thenReturns()
+      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=ABC&environment=STAGING"))
+
+      status(result) shouldBe BAD_REQUEST
+      contentAsJson(result) shouldBe JsObject(Map(
+        "code"    -> JsString("INVALID_QUERY"),
+        "message" -> JsArray(Seq(JsString("ABC is not a valid user id"), JsString("STAGING is not a valid environment")))
+      ))
+    }
   }
 }

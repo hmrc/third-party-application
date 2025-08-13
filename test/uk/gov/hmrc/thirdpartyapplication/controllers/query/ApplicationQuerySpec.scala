@@ -36,8 +36,18 @@ class ApplicationQuerySpec extends HmrcSpec with ApplicationWithCollaboratorsFix
       test(List(ClientIdQP(clientIdOne))) shouldBe ApplicationQuery.ByClientId(clientIdOne, false)
     }
 
+    "work when given a correct clientId and User Agent" in {
+      test(List(ClientIdQP(clientIdOne), UserAgentQP(Param.ApiGatewayUserAgent))) shouldBe ApplicationQuery.ByClientId(clientIdOne, true)
+      test(List(ClientIdQP(clientIdOne), UserAgentQP("Bob"))) shouldBe ApplicationQuery.ByClientId(clientIdOne, false)
+    }
+
     "work when given a correct serverToken" in {
       test(List(ServerTokenQP("abc"))) shouldBe ApplicationQuery.ByServerToken("abc", false)
+    }
+
+    "work when given a correct serverToken and User Agent" in {
+      test(List(ServerTokenQP("abc"), UserAgentQP(Param.ApiGatewayUserAgent))) shouldBe ApplicationQuery.ByServerToken("abc", true)
+      test(List(ServerTokenQP("abc"), UserAgentQP("Bob"))) shouldBe ApplicationQuery.ByServerToken("abc", false)
     }
 
     "work when given a correct applicationId and some irrelevant header" in {

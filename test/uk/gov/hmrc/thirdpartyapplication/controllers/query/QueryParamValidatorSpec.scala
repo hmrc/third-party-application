@@ -165,6 +165,7 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
         test(Map("accessType" -> Seq("ROPC"))) shouldBe List(AccessTypeQP(Some(AccessType.ROPC))).validNel
         test(Map("accessType" -> Seq("PRIVILEGED"))) shouldBe List(AccessTypeQP(Some(AccessType.PRIVILEGED))).validNel
         test(Map("accessType" -> Seq("ANY"))) shouldBe List(AccessTypeQP(None)).validNel
+        shouldFail(test(Map("accessType" -> Seq("BOBBINS"))))
       }
 
       "extract valid params - search filter" in {
@@ -179,6 +180,7 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
       "extract valid params - delete restriction filter" in {
         test(Map("deleteRestriction" -> Seq("DO_NOT_DELETE"))) shouldBe List(DoNotDeleteQP).validNel
         test(Map("deleteRestriction" -> Seq("NO_RESTRICTION"))) shouldBe List(NoRestrictionQP).validNel
+        shouldFail(test(Map("deleteRestriction" -> Seq("Blah Blah Blah"))))
       }
 
       "extract valid params - last used before filter" in {
@@ -252,6 +254,10 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
       inside(test(Map("environment" -> Seq("BANG"))).toEither) {
         case Left(nel) => nel should (new ErrorIncludes("BANG is not a valid environment"))
       }
+    }
+
+    "multiple errors stack" in {
+      test(Map("environment" -> Seq("BLAH BLAH"), "userId" -> Seq("ABC"))) shouldBe Invalid(NonEmptyList.of("BLAH BLAH is not a valid environment", "ABC is not a valid user id"))
     }
   }
 

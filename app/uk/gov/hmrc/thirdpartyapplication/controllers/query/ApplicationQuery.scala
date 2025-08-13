@@ -39,9 +39,8 @@ object ApplicationQuery {
   import cats.implicits._
 
   def identifyAnyPagination(allParams: List[Param[_]]): Option[Pagination] = {
-    allParams.filter(_.section == 2) match {
+    allParams.filter(_.section == 2).sortBy(_.order) match {
       case PageSizeQP(size) :: PageNbrQP(nbr) :: Nil => Pagination(size, nbr).some
-      case PageNbrQP(nbr) :: PageSizeQP(size) :: Nil => Pagination(size, nbr).some
       case PageSizeQP(size) :: Nil                   => Pagination(size, 1).some
       case PageNbrQP(nbr) :: Nil                     => Pagination(50, nbr).some
       case _                                         => None
