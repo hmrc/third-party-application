@@ -34,7 +34,16 @@ sealed trait QueryParamValidator {
 
 object QueryParamValidator {
 
-  private object SingleValueExpected {
+  object NoValueExpected {
+
+    def apply(paramName: String)(values: Seq[String]): ErrorsOr[Unit] =
+      values.toList match {
+        case Nil => ().validNel
+        case _   => s"No query value is allowed for $paramName".invalidNel
+      }
+  }
+
+  object SingleValueExpected {
 
     def apply(paramName: String)(values: Seq[String]): ErrorsOr[String] =
       values.toList match {
@@ -44,20 +53,22 @@ object QueryParamValidator {
       }
   }
 
-  private object NoValueExpected {
-
-    def apply(paramName: String)(values: Seq[String]): ErrorsOr[Unit] =
-      values.toList match {
-        case Nil => ().validNel
-        case _   => s"No query value is allowed for $paramName".invalidNel
-      }
-  }
-
-  private object BooleanValueExpected {
+  object BooleanValueExpected {
     def apply(paramName: String)(value: String): ErrorsOr[Boolean] = value.toBooleanOption.toValidNel(s"$paramName must be true or false")
   }
 
-  private object InstantValueExpected {
+  object IntValueExpected {
+    def apply(paramName: String)(value: String): ErrorsOr[Int] = value.toIntOption.toValidNel(s"$paramName must be an integer value")
+  }
+
+  object PositiveIntValueExpected {
+
+    def apply(paramName: String)(value: String): ErrorsOr[Int] = IntValueExpected(paramName)(value) andThen { i =>
+      i.some.filter(_ > 0).toValidNel(s"$paramName must be an positive integer value")
+    }
+  }
+
+  object InstantValueExpected {
 
     def apply(paramName: String)(value: String): ErrorsOr[Instant] = {
       Try(Instant.from(DateTimeFormatter.ISO_INSTANT.parse(value)))
@@ -66,18 +77,7 @@ object QueryParamValidator {
     }
   }
 
-  private object IntValueExpected {
-    def apply(paramName: String)(value: String): ErrorsOr[Int] = value.toIntOption.toValidNel(s"$paramName must be an integer value")
-  }
-
-  private object PositiveIntValueExpected {
-
-    def apply(paramName: String)(value: String): ErrorsOr[Int] = IntValueExpected(paramName)(value) andThen { i =>
-      i.some.filter(_ > 0).toValidNel(s"$paramName must be an positive integer value")
-    }
-  }
-
-  private object ApplicationIdExpected {
+  object ApplicationIdExpected {
     def apply(paramName: String)(value: String): ErrorsOr[ApplicationId] = ApplicationId(value).toValidNel(s"$value is not a valid application id")
   }
 

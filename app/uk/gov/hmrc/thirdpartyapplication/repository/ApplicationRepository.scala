@@ -1048,6 +1048,17 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   }
 
   def fetchByPaginatedApplicationQuery(qry: PaginatedApplicationQuery): Future[PaginatedApplicationData] = {
-    ???
+    val filters = ApplicationQueryConverter.convertToFilter(qry.params)
+    val sort    = ApplicationQueryConverter.convertToSort(qry.sort)
+
+    val pagination = List(skip((qry.pagination.pageNbr - 1) * qry.pagination.pageSize), limit(qry.pagination.pageSize))
+
+    runAggregationQuery(
+      filters,
+      pagination,
+      sort,
+      ApplicationQueryConverter.hasAnySubscriptionFilter(qry.params),
+      ApplicationQueryConverter.hasSpecificSubscriptionFilter(qry.params)
+    )
   }
 }

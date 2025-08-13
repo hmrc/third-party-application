@@ -516,6 +516,25 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturnWhen(applicationId: ApplicationId)(updatedApplicationData: StoredApplication) =
         when(aMock.removeOldGrantLength(eqTo(applicationId))).thenReturn(successful(updatedApplicationData))
     }
+
+    object FetchBySingleApplicationQuery {
+      def thenReturnsNothing() = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(None))
+
+      def thenReturns(app: StoredApplication) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Some(app)))
+    }
+
+    object FetchByGeneralOpenEndedApplicationQuery {
+      def thenReturns(apps: StoredApplication*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(apps.toList))
+    }
+
+    object FetchByPaginatedApplicationQuery {
+
+      def thenReturnsNone(totals: Int) =
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplicationData(List.empty, List(PaginationTotal(totals)), List(PaginationTotal(0)))))
+
+      def thenReturns(totals: Int, apps: StoredApplication*) =
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplicationData(apps.toList, List(PaginationTotal(totals)), List(PaginationTotal(apps.size)))))
+    }
   }
 
   object ApplicationRepoMock extends BaseApplicationRepoMock {

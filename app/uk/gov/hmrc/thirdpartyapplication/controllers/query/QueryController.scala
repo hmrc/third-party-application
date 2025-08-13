@@ -23,6 +23,7 @@ import play.api.libs.json._
 import play.api.mvc._
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.PaginatedApplications
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.{GeneralOpenEndedApplicationQuery, PaginatedApplicationQuery}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -37,7 +38,11 @@ class QueryController @Inject() (
     with JsonUtils
     with ApplicationLogger {
 
-  // private val E = EitherTHelper.make[String]
+  private def asBody(errorCode: String, message: Json.JsValueWrapper): JsObject =
+    Json.obj(
+      "code"    -> errorCode.toString,
+      "message" -> message
+    )
 
   def queryDispatcher() = Action.async { implicit request =>
     ParamsValidator.parseAndValidateParams(request.queryString, request.headers.toMap)
@@ -47,11 +52,11 @@ class QueryController @Inject() (
       )
   }
 
-  def apply(appQry: ApplicationQuery): Future[Result] = {
+  private def apply(appQry: ApplicationQuery): Future[Result] = {
     appQry match {
       case q: SingleApplicationQuery => applicationRepository.fetchBySingleApplicationQuery(q).map(oapp => {
           oapp.fold[Result](
-            NotFound("No application found for query")
+            NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query"))
           )(app => Ok(Json.toJson(StoredApplication.asApplication(app))))
         })
 
@@ -60,7 +65,15 @@ class QueryController @Inject() (
         })
 
       case q: PaginatedApplicationQuery => applicationRepository.fetchByPaginatedApplicationQuery(q).map(par => {
-          Ok(Results.EmptyContent()) // TODO
+          Ok(Json.toJson(
+            PaginatedApplications(
+              par.applications.map(StoredApplication.asApplication),
+              q.pagination.pageNbr,
+              q.pagination.pageSize,
+              par.totals.map(_.total).sum,
+              par.matching.map(_.total).sum
+            )
+          ))
         })
     }
   }

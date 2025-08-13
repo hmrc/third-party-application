@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders
 
 class HeaderValidatorSpec extends HmrcSpec with EitherValues {
   val serverToken = HttpHeaders.SERVER_TOKEN_HEADER -> Seq("ABC")
-  val userAgent   = HttpHeaders.INTERNAL_USER_AGENT -> Seq("XYZ")
+  val userAgent   = HttpHeaders.INTERNAL_USER_AGENT -> Seq(Param.ApiGatewayUserAgent)
 
   "parseParams" should {
     val test = HeaderValidator.parseHeaders _ andThen (_.toEither)
@@ -36,11 +36,11 @@ class HeaderValidatorSpec extends HmrcSpec with EitherValues {
     }
 
     "extract valid params - user agent" in {
-      test(Map(userAgent)).value shouldBe List(UserAgentQP("XYZ"))
+      test(Map(userAgent)).value shouldBe List(UserAgentQP(Param.ApiGatewayUserAgent))
     }
 
     "extract valid params - both" in {
-      test(Map(serverToken, userAgent)).value shouldBe List(ServerTokenQP("ABC"), UserAgentQP("XYZ"))
+      test(Map(serverToken, userAgent)).value shouldBe List(ServerTokenQP("ABC"), UserAgentQP(Param.ApiGatewayUserAgent))
     }
 
     "extract valid params regardless of case - server token" in {
