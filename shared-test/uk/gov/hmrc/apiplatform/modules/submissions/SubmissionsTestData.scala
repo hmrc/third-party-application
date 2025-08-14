@@ -275,11 +275,10 @@ trait AnsweringQuestionsHelper {
           List(absence.flatMap(a => if (a._2 == desiredMark) Some(ActualAnswer.NoAnswer) else None))
     }
 
-    Map(question.id -> Random.shuffle(
-      answers.collect {
+    Map(question.id ->
+      answers.collectFirst {
         case Some(a) => a
-      }
-    ).headOption)
+      })
   }
 
   def answersForQuestionnaire(desiredMark: Mark)(questionnaire: Questionnaire): Map[Question.Id, ActualAnswer] = {
