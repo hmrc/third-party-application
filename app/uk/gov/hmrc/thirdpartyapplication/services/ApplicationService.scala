@@ -284,15 +284,14 @@ class ApplicationService @Inject() (
 
     val applicationsResponse: Future[PaginatedApplicationData] = applicationRepository.searchApplications("applicationSearch")(applicationSearch)
     val appHistory: Future[List[StateHistory]]                 = {
-      applicationsResponse.map(data => data.applications.map(app => app.id)).flatMap(ar => stateHistoryRepository.fetchDeletedByApplicationIds(ar))
-    }
+      applicationsResponse.map(data => data.applications.map(app => app.id)).flatMap(ar => stateHistoryRepository.fetchDeletedByApplicationIds(ar))    }
 
     applicationsResponse.zipWith(appHistory) {
       case (data, appHistory) => PaginatedApplications(
           page = applicationSearch.pageNumber,
           pageSize = applicationSearch.pageSize,
-          total = data.totals.foldLeft(0)(_ + _.total),
-          matching = data.matching.foldLeft(0)(_ + _.total),
+          total = data.countOfAllApps.foldLeft(0)(_ + _.total),
+          matching = data.countOfMatchingApps.foldLeft(0)(_ + _.total),
           applications = data.applications.map(app => buildApplication(app, appHistory.find(ah => ah.applicationId == app.id)))
         )
     }

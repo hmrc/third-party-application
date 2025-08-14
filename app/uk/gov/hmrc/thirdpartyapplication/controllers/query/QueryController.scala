@@ -61,7 +61,7 @@ class QueryController @Inject() (
         })
 
       case q: GeneralOpenEndedApplicationQuery => applicationRepository.fetchByGeneralOpenEndedApplicationQuery(q).map(apps => {
-          Ok(Json.toJson(apps.map(StoredApplication.asApplication(_))))
+          Ok(Json.toJson(apps))
         })
 
       case q: PaginatedApplicationQuery => applicationRepository.fetchByPaginatedApplicationQuery(q).map(par => {
@@ -70,8 +70,8 @@ class QueryController @Inject() (
               par.applications.map(StoredApplication.asApplication),
               q.pagination.pageNbr,
               q.pagination.pageSize,
-              par.totals.map(_.total).sum,
-              par.matching.map(_.total).sum
+              par.countOfAllApps.map(_.total).sum,
+              par.countOfMatchingApps.map(_.total).sum
             )
           ))
         })

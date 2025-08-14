@@ -30,7 +30,7 @@ object ParamsValidator {
   def checkSubscriptionsParamsCombinations(params: List[Param[_]]): ErrorsOr[Unit] = {
     import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
-    params.filter(_.section == 4).sortBy(_.order) match {
+    params.filter(_.section == 4).filterNot(_ == Param.WantSubscriptionsQP).sortBy(_.order) match {
       case NoSubscriptionsQP :: Nil                                 => ().validNel
       case HasSubscriptionsQP :: Nil                                => ().validNel
       case ApiContextQP(context) :: ApiVersionNbrQP(version) :: Nil => ().validNel

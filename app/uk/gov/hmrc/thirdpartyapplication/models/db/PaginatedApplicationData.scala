@@ -24,4 +24,4 @@ object PaginationTotal {
   implicit val formatPaginationTotal: Format[PaginationTotal] = Json.format[PaginationTotal]
 }
 
-case class PaginatedApplicationData(applications: List[StoredApplication], totals: List[PaginationTotal], matching: List[PaginationTotal])
+case class PaginatedApplicationData(applications: List[StoredApplication], countOfAllApps: List[PaginationTotal], countOfMatchingApps: List[PaginationTotal])

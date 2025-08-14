@@ -129,6 +129,14 @@ object QueryParamValidator {
     }
   }
 
+  object WantSubscriptionsValidator extends QueryParamValidator {
+    val paramName = "wantSubscriptions"
+
+    def validate(values: Seq[String]): ErrorsOr[Param.WantSubscriptionsQP.type] = {
+      NoValueExpected(paramName)(values) map { _ => Param.WantSubscriptionsQP }
+    }
+  }
+
   object PageSizeValidator extends QueryParamValidator {
     val paramName = "pageSize"
 
@@ -276,7 +284,8 @@ object QueryParamValidator {
     QueryParamValidator.StatusValidator,
     QueryParamValidator.SortValidator,
     QueryParamValidator.SearchTextValidator,
-    QueryParamValidator.UserIdValidator
+    QueryParamValidator.UserIdValidator,
+    QueryParamValidator.WantSubscriptionsValidator
   )
 
   private val validatorLookup: Map[String, QueryParamValidator] = paramValidators.map(pv => pv.paramName.toLowerCase -> pv).toMap
