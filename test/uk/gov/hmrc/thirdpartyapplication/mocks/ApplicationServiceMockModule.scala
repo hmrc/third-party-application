@@ -24,7 +24,7 @@ import cats.data.OptionT
 import cats.implicits.catsStdInstancesForFuture
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.CreateApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
@@ -76,6 +76,25 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
 
       def verifyCalledWith(applicationId: ApplicationId, request: Option[DeleteApplicationRequest]) = {
         verify(aMock).deleteApplication(eqTo(applicationId), eqTo(request), *)(*)
+      }
+    }
+
+    object GetAppsForAdminOrRI {
+
+      def onRequestReturn(request: LaxEmailAddress)(response: List[ApplicationWithCollaborators]) = {
+        when(aMock.getAppsForResponsibleIndividualOrAdmin(eqTo(request))).thenReturn(successful(response))
+      }
+
+      def thenReturnNothingFor(request: LaxEmailAddress) = {
+        when(aMock.getAppsForResponsibleIndividualOrAdmin(eqTo(request))).thenReturn(successful(List.empty))
+      }
+
+      def thenThrowFor(request: LaxEmailAddress)(exception: RuntimeException) = {
+        when(aMock.getAppsForResponsibleIndividualOrAdmin(eqTo(request))).thenReturn(failed(exception))
+      }
+
+      def verifyCalledWith(request: LaxEmailAddress) = {
+        verify(aMock).getAppsForResponsibleIndividualOrAdmin(eqTo(request))
       }
     }
   }

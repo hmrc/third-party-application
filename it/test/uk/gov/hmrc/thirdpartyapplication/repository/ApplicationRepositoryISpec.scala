@@ -36,6 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators.{Administrator, Developer}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType.NO_RESTRICTION
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
@@ -451,7 +452,7 @@ class ApplicationRepositoryISpec
 
     "do not update the lastAccess property if it is today, and different to the createdOn date" in {
       val midnightToday = instant.truncatedTo(ChronoUnit.DAYS)
-      val yesterday = midnightToday.minus(Duration.ofHours(1))
+      val yesterday     = midnightToday.minus(Duration.ofHours(1))
       createApplication(createdOn = yesterday, lastAccess = Some(midnightToday))
 
       val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
@@ -469,7 +470,7 @@ class ApplicationRepositoryISpec
     }
 
     "update the lastAccess property if it is before today" in {
-      val aDayAgo = instant.minus(Duration.ofDays(1))
+      val aDayAgo  = instant.minus(Duration.ofDays(1))
       val aWeekAgo = instant.minus(Duration.ofDays(7))
       createApplication(createdOn = aWeekAgo, lastAccess = Some(aDayAgo))
 
@@ -2556,6 +2557,90 @@ class ApplicationRepositoryISpec
       val result: Set[ApiIdentifier] = await(applicationRepository.getSubscriptionsForDeveloper(developerId))
 
       result shouldBe Set.empty
+    }
+  }
+
+  "getAppsForResponsibleIndividualOrAdmin" should {
+
+    "retrieve all the applications where the user is an admin on the application" in {
+      val email        = LaxEmailAddress("john.doe@example.com")
+      val application1 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      ).withCollaborators(Administrator(emailAddress = email, userId = UserIdData.one))
+      val application2 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      ).withCollaborators(Developer(emailAddress = email, userId = UserIdData.two))
+      val application3 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      ).withCollaborators(Administrator(emailAddress = email, userId = UserIdData.three))
+        .withState(appStateDeleted)
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+
+      val retrieved =
+        await(applicationRepository.getAppsForResponsibleIndividualOrAdmin(email))
+
+      retrieved shouldBe List(application1)
+    }
+
+    "retrieve all the applications where the user is an RI on the application" in {
+      val email        = LaxEmailAddress("john.doe@example.com")
+      val application1 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      ).withCollaborators(Administrator(emailAddress = email, userId = UserIdData.one))
+        .copy(access = standardAccessWithSubmission)
+      val application2 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      ).withCollaborators(Developer(emailAddress = email, userId = UserIdData.two))
+        .copy(access = standardAccessWithSubmission)
+      val application3 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      ).withCollaborators(Administrator(emailAddress = email, userId = UserIdData.three))
+        .withState(appStateDeleted)
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+
+      val retrieved =
+        await(applicationRepository.getAppsForResponsibleIndividualOrAdmin(LaxEmailAddressData.one))
+
+      retrieved shouldBe List(application1, application2)
+    }
+
+    "retrieve all the applications where the user is an admin or RI on the application" in {
+      val email        = LaxEmailAddress("john.doe@example.com")
+      val application1 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      ).withCollaborators(Administrator(emailAddress = email, userId = UserIdData.one))
+        .copy(access = standardAccessWithSubmission)
+      val application2 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      ).withCollaborators(Developer(emailAddress = email, userId = UserIdData.two))
+        .copy(access = standardAccessWithSubmission)
+      val application3 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      ).withCollaborators(Administrator(emailAddress = LaxEmailAddressData.one, userId = UserIdData.three))
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+
+      val retrieved =
+        await(applicationRepository.getAppsForResponsibleIndividualOrAdmin(LaxEmailAddressData.one))
+
+      retrieved should contain theSameElementsAs List(application1, application2, application3)
     }
   }
 }
