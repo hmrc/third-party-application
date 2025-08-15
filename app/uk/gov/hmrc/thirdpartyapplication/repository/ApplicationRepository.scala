@@ -1081,4 +1081,23 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
+  def getAppsForResponsibleIndividualOrAdmin(emailAddress: LaxEmailAddress): Future[List[StoredApplication]] = {
+    val query =
+      or(
+        and(
+          equal("collaborators.emailAddress", emailAddress.text),
+          equal("collaborators.role", "ADMINISTRATOR"),
+          notEqual("state.name", State.DELETED.toString())
+        ),
+        and(
+          equal("access.importantSubmissionData.responsibleIndividual.emailAddress", emailAddress.text),
+          notEqual("state.name", State.DELETED.toString())
+        )
+      )
+
+    collection.find(query)
+      .toFuture()
+      .map(_.toList)
+  }
+
 }

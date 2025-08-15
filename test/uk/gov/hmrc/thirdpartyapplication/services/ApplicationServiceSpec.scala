@@ -38,6 +38,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators.{Administrator, Developer}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
@@ -786,6 +787,29 @@ class ApplicationServiceSpec
       result.total shouldBe 3
       result.matching shouldBe 3
       result.applications.size shouldBe 3
+    }
+  }
+
+  "getAppsForResponsibleIndividualOrAdmin" should {
+    "fetch all applications for an email" in new Setup {
+      val userId       = UserId.random
+      val email        = LaxEmailAddress("john.doe@example.com")
+      val application1 = storedApp.copy(
+        id = ApplicationId.random,
+        access = standardAccessWithSubmission
+      ).withCollaborators(Administrator(emailAddress = email, userId = UserIdData.one))
+      val application2 = storedApp.copy(
+        id = ApplicationId.random,
+        access = standardAccessWithSubmission
+      ).withCollaborators(Developer(emailAddress = email, userId = UserIdData.two))
+      val application3 = storedApp.copy(
+        id = ApplicationId.random
+      ).withCollaborators(Administrator(emailAddress = email, userId = UserIdData.three))
+
+      ApplicationRepoMock.GetAppsForResponsibleIndividualOrAdmin.thenReturnWhen(LaxEmailAddressData.one)(application1, application2, application3)
+
+      val result = await(underTest.getAppsForResponsibleIndividualOrAdmin(LaxEmailAddressData.one))
+      result should contain theSameElementsAs List(application1, application2, application3).map(app => StoredApplication.asApplication(app))
     }
   }
 

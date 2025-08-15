@@ -70,6 +70,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatApplicationWithUpliftRequest: OFormat[ApplicationWithUpliftRequest]            = Json.format[ApplicationWithUpliftRequest]
   implicit val formatDeleteApplicationRequest: OFormat[DeleteApplicationRequest]                    = Json.format[DeleteApplicationRequest]
   implicit val formatFixCollaboratorRequest: OFormat[FixCollaboratorRequest]                        = Json.format[FixCollaboratorRequest]
+  implicit val formatGetAppsForAdminOrRIRequest: OFormat[GetAppsForAdminOrRIRequest]                = Json.format[GetAppsForAdminOrRIRequest]
 
   implicit val createApplicationResponseWrites: OWrites[CreateApplicationResponse] = (
     JsPath.write[ApplicationWithCollaborators] and (JsPath \ "totp").writeNullable[CreateApplicationResponse.TotpSecret]
