@@ -65,7 +65,7 @@ class QueryControllerSpec
     }
 
     "work for general query" in new Setup {
-      ApplicationRepoMock.FetchByGeneralOpenEndedApplicationQuery.thenReturns(storedApp)
+      ApplicationRepoMock.FetchByGeneralOpenEndedApplicationQuery.thenReturns(StoredApplication.asApplication(storedApp))
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=${userIdOne}"))
 
       status(result) shouldBe OK
@@ -73,7 +73,7 @@ class QueryControllerSpec
     }
 
     "work for general query finding nothing" in new Setup {
-      ApplicationRepoMock.FetchByGeneralOpenEndedApplicationQuery.thenReturns()
+      ApplicationRepoMock.FetchByGeneralOpenEndedApplicationQuery.thenReturnsWithSubs()
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=${userIdOne}"))
 
       status(result) shouldBe OK

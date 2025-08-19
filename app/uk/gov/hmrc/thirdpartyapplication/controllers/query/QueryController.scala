@@ -48,11 +48,11 @@ class QueryController @Inject() (
     ParamsValidator.parseAndValidateParams(request.queryString, request.headers.toMap)
       .fold[Future[Result]](
         nel => Future.successful(BadRequest(asBody("INVALID_QUERY", nel.toList))),
-        params => apply(ApplicationQuery.attemptToConstructQuery(params))
+        params => execute(ApplicationQuery.attemptToConstructQuery(params))
       )
   }
 
-  private def apply(appQry: ApplicationQuery): Future[Result] = {
+  private def execute(appQry: ApplicationQuery): Future[Result] = {
     appQry match {
       case q: SingleApplicationQuery => applicationRepository.fetchBySingleApplicationQuery(q).map(oapp => {
           oapp.fold[Result](
@@ -60,21 +60,10 @@ class QueryController @Inject() (
           )(app => Ok(Json.toJson(StoredApplication.asApplication(app))))
         })
 
-      case q: GeneralOpenEndedApplicationQuery => applicationRepository.fetchByGeneralOpenEndedApplicationQuery(q).map(apps => {
-          Ok(Json.toJson(apps))
-        })
+      case q: GeneralOpenEndedApplicationQuery => 
+        applicationRepository.fetchByGeneralOpenEndedApplicationQuery(q).map(_.fold(l => Ok(Json.toJson(l)), r => Ok(Json.toJson(r))))
 
-      case q: PaginatedApplicationQuery => applicationRepository.fetchByPaginatedApplicationQuery(q).map(par => {
-          Ok(Json.toJson(
-            PaginatedApplications(
-              par.applications.map(StoredApplication.asApplication),
-              q.pagination.pageNbr,
-              q.pagination.pageSize,
-              par.countOfAllApps.map(_.total).sum,
-              par.countOfMatchingApps.map(_.total).sum
-            )
-          ))
-        })
+      case q: PaginatedApplicationQuery => applicationRepository.fetchByPaginatedApplicationQuery(q).map(results => Ok(Json.toJson(results)))
     }
   }
 }

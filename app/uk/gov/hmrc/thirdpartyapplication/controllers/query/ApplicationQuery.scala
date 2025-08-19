@@ -18,23 +18,29 @@ package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueryConverter
 
 sealed trait ApplicationQuery
 
 sealed trait SingleApplicationQuery extends ApplicationQuery
 
 sealed trait MultipleApplicationQuery extends ApplicationQuery {
-  def sort: Sorting
+  def sorting: Sorting
+  def params: List[Param[_]]
+  lazy val hasAnySubscriptionFilter: Boolean = ApplicationQueryConverter.hasAnySubscriptionFilter(params)
+  lazy val hasSpecificSubscriptionFilter: Boolean = ApplicationQueryConverter.hasSpecificSubscriptionFilter(params)
+  lazy val wantsSubscriptions: Boolean = ApplicationQueryConverter.wantsSubscriptions(params)
 }
 
 object ApplicationQuery {
 
-  case class ById(applicationId: ApplicationId)                       extends SingleApplicationQuery
-  case class ByClientId(clientId: ClientId, recordUsage: Boolean)     extends SingleApplicationQuery
-  case class ByServerToken(serverToken: String, recordUsage: Boolean) extends SingleApplicationQuery
+  case class ById protected(applicationId: ApplicationId)                       extends SingleApplicationQuery
+  case class ByClientId protected(clientId: ClientId, recordUsage: Boolean)     extends SingleApplicationQuery
+  case class ByServerToken protected(serverToken: String, recordUsage: Boolean) extends SingleApplicationQuery
 
-  case class GeneralOpenEndedApplicationQuery(sort: Sorting, params: List[Param[_]])                  extends MultipleApplicationQuery
-  case class PaginatedApplicationQuery(sort: Sorting, pagination: Pagination, params: List[Param[_]]) extends MultipleApplicationQuery
+  case class GeneralOpenEndedApplicationQuery protected(sorting: Sorting, params: List[Param[_]]) extends MultipleApplicationQuery
+
+  case class PaginatedApplicationQuery protected(pagination: Pagination, sorting: Sorting, params: List[Param[_]]) extends MultipleApplicationQuery
 
   import cats.implicits._
 
@@ -82,14 +88,14 @@ object ApplicationQuery {
     def attemptToConstructMultiResultQuery(): MultipleApplicationQuery = {
       val multiQueryParams = validParams.filter(_.section >= 4)
 
-      val sorting = identifySort(validParams)
+      val sorting = ApplicationQuery.identifySort(validParams)
 
       identifyAnyPagination(validParams)
         .fold[MultipleApplicationQuery](
           ApplicationQuery.GeneralOpenEndedApplicationQuery(sorting, multiQueryParams)
-        )(pagination =>
-          ApplicationQuery.PaginatedApplicationQuery(sorting, pagination, multiQueryParams)
-        )
+        )(pagination => {
+          ApplicationQuery.PaginatedApplicationQuery(pagination, sorting, multiQueryParams)
+        })
     }
 
     attemptToConstructSingleResultQuery().fold[ApplicationQuery](

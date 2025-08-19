@@ -48,11 +48,11 @@ object Param {
   case object HasSubscriptionsQP                   extends SubscriptionQP[Unit]          { val section = 4; val order = 2 }
   case class ApiContextQP(value: ApiContext)       extends SubscriptionQP[ApiContext]    { val section = 4; val order = 3 }
   case class ApiVersionNbrQP(value: ApiVersionNbr) extends SubscriptionQP[ApiVersionNbr] { val section = 4; val order = 4 }
-  case object WantSubscriptionsQP                  extends SubscriptionQP[Unit]          { val section = 4; val order = 5 }
 
   case class LastUsedAfterQP(value: Instant)  extends Param[Instant] { val section = 5; val order = 1 }
   case class LastUsedBeforeQP(value: Instant) extends Param[Instant] { val section = 5; val order = 2 }
 
+  case object WantSubscriptionsQP    extends Param[Unit]          { val section = 6; val order = 1 }
   case class UserIdQP(value: UserId) extends Param[UserId] { val section = 6; val order = 1 }
 
   case class EnvironmentQP(value: Environment) extends Param[Environment] { val section = 6; val order = 1 }

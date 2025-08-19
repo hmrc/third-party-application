@@ -524,7 +524,9 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchByGeneralOpenEndedApplicationQuery {
-      def thenReturns(apps: StoredApplication*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(apps.toList))
+      def thenReturns(apps: ApplicationWithCollaborators*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Left(apps.toList)))
+
+      def thenReturnsWithSubs(apps: ApplicationWithSubscriptions*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Right(apps.toList)))
     }
 
     object FetchByPaginatedApplicationQuery {

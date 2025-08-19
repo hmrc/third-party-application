@@ -144,7 +144,7 @@ object ApplicationQueryConverter {
     )
 
   def convertToFilter(implicit params: List[Param[_]]): List[Bson] = {
-    asSubscriptionFilters ++
+    val individualFilters = asSubscriptionFilters ++
       asUserFilters ++
       asEnvironmentFilters ++
       asDeleteRestrictionFilters ++
@@ -153,6 +153,13 @@ object ApplicationQueryConverter {
       asLastUsedFilters ++
       asAppStateFilters ++
       asSearchFilter
+
+    if(individualFilters.isEmpty) {
+      List.empty
+    }
+    else {
+      List(Aggregates.filter(and(individualFilters: _*)))
+    }
   }
 
   def convertToSort(sort: Sorting): List[Bson] = sort match {
@@ -163,6 +170,13 @@ object ApplicationQueryConverter {
     case Sorting.LastUseDateAscending  => List(Aggregates.sort(Sorts.ascending("lastAccess")))
     case Sorting.LastUseDateDescending => List(Aggregates.sort(Sorts.descending("lastAccess")))
     case Sorting.NoSorting             => List()
+  }
+
+  def identifySort(allParams: List[Param[_]]): Sorting = {
+    allParams.filter(_.section == 3) match {
+      case SortQP(sort) :: Nil => sort
+      case _                   => Sorting.SubmittedAscending
+    }
   }
 
   def pageNumber(params: List[Param[_]]): Int = {
@@ -185,7 +199,13 @@ object ApplicationQueryConverter {
 
   def hasSpecificSubscriptionFilter(params: List[Param[_]]): Boolean =
     params.find(_ match {
-      case ApiContextQP(_) => true
+      case ApiVersionNbrQP(_) => true
       case _               => false
     }).isDefined
+
+  def wantsSubscriptions(params: List[Param[_]]): Boolean =
+    params.exists( _ match {
+      case WantSubscriptionsQP => true
+      case _ => false
+    })
 }
