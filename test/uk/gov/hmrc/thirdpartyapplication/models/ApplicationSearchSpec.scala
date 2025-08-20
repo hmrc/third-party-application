@@ -18,10 +18,13 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.time.{ZoneOffset, ZonedDateTime}
 
+import org.scalatest.prop.TableDrivenPropertyChecks._
+
 import play.api.test.FakeRequest
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.thirdpartyapplication.models.DeleteRestrictionFilter.DoNotDelete
 
 class ApplicationSearchSpec extends HmrcSpec {
 
@@ -49,7 +52,7 @@ class ApplicationSearchSpec extends HmrcSpec {
       searchObject.textToSearch shouldBe Some(searchText)
     }
 
-    "correctly parse API Subscriptions filter" in {
+    "correctly parse ANY API Subscriptions filter" in {
       val request = FakeRequest("GET", "/applications?apiSubscription=ANY")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
@@ -57,28 +60,53 @@ class ApplicationSearchSpec extends HmrcSpec {
       searchObject.filters should contain(APISubscriptionFilter.OneOrMoreAPISubscriptions)
     }
 
-    "correctly parse Application Status filter" in {
-      val request = FakeRequest("GET", "/applications?status=PENDING_GATEKEEPER_CHECK")
+    "correctly parse NONE API Subscriptions filter" in {
+      val request = FakeRequest("GET", "/applications?apiSubscription=NONE")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain(StatusFilter.PendingGatekeeperCheck)
+      searchObject.filters should contain(APISubscriptionFilter.NoAPISubscriptions)
     }
 
-    "correctly parse Application Status blocked filter" in {
-      val request = FakeRequest("GET", "/applications?status=BLOCKED")
+    "correctly parse Application Status filters" in {
+      val scenarios = Table(
+        ("status", "result"),
+        ("CREATED", StatusFilter.Created),
+        ("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION", StatusFilter.PendingResponsibleIndividualVerification),
+        ("PENDING_GATEKEEPER_CHECK", StatusFilter.PendingGatekeeperCheck),
+        ("PENDING_SUBMITTER_VERIFICATION", StatusFilter.PendingSubmitterVerification),
+        ("ACTIVE", StatusFilter.Active),
+        ("DELETED", StatusFilter.WasDeleted),
+        ("EXCLUDING_DELETED", StatusFilter.ExcludingDeleted),
+        ("BLOCKED", StatusFilter.Blocked),
+        ("ALL", StatusFilter.NoFiltering)
+      )
 
-      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
-
-      searchObject.filters should contain(StatusFilter.Blocked)
+      forAll(scenarios) { (testStatus: String, testResult: StatusFilter) =>
+        {
+          val request = FakeRequest("GET", s"/applications?status=$testStatus")
+          val result  = ApplicationSearch.fromQueryString(request.queryString)
+          result.filters should contain(testResult)
+        }
+      }
     }
 
-    "correctly parse Access Type filter" in {
-      val request = FakeRequest("GET", "/applications?accessType=PRIVILEGED")
+    "correctly parse Access Type filters" in {
+      val scenarios = Table(
+        ("access type", "result"),
+        ("STANDARD", AccessTypeFilter.StandardAccess),
+        ("PRIVILEGED", AccessTypeFilter.PrivilegedAccess),
+        ("ROPC", AccessTypeFilter.ROPCAccess),
+        ("ALL", AccessTypeFilter.NoFiltering)
+      )
 
-      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
-
-      searchObject.filters should contain(AccessTypeFilter.PrivilegedAccess)
+      forAll(scenarios) { (testAccessType: String, testResult: AccessTypeFilter) =>
+        {
+          val request = FakeRequest("GET", s"/applications?accessType=$testAccessType")
+          val result  = ApplicationSearch.fromQueryString(request.queryString)
+          result.filters should contain(testResult)
+        }
+      }
     }
 
     "correctly parse lastUseBefore into LastUseBeforeDate filter" in {
@@ -140,6 +168,14 @@ class ApplicationSearchSpec extends HmrcSpec {
         case LastUseAfterDate(lastUseDate) => lastUseDate shouldBe expectedDateTime
         case _                             => fail()
       }
+    }
+
+    "correctly parse delete restriction filter" in {
+      val request = FakeRequest("GET", s"/applications?deleteRestriction=DO_NOT_DELETE")
+
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      searchObject.filters should contain(DoNotDelete)
     }
 
     "correctly parses multiple filters" in {

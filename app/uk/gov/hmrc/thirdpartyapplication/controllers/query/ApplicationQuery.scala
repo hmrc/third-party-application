@@ -26,26 +26,29 @@ sealed trait SingleApplicationQuery extends ApplicationQuery
 
 sealed trait MultipleApplicationQuery extends ApplicationQuery {
   def sorting: Sorting
-  def params: List[Param[_]]
-  lazy val hasAnySubscriptionFilter: Boolean = ApplicationQueryConverter.hasAnySubscriptionFilter(params)
+  def params: List[FilterParam[_]]
+  lazy val hasAnySubscriptionFilter: Boolean      = ApplicationQueryConverter.hasAnySubscriptionFilter(params)
   lazy val hasSpecificSubscriptionFilter: Boolean = ApplicationQueryConverter.hasSpecificSubscriptionFilter(params)
-  lazy val wantsSubscriptions: Boolean = ApplicationQueryConverter.wantsSubscriptions(params)
+  lazy val wantsSubscriptions: Boolean            = ApplicationQueryConverter.wantsSubscriptions(params)
 }
 
 object ApplicationQuery {
 
-  case class ById protected(applicationId: ApplicationId)                       extends SingleApplicationQuery
-  case class ByClientId protected(clientId: ClientId, recordUsage: Boolean)     extends SingleApplicationQuery
-  case class ByServerToken protected(serverToken: String, recordUsage: Boolean) extends SingleApplicationQuery
+  case class ById protected (applicationId: ApplicationId)                       extends SingleApplicationQuery
+  case class ByClientId protected (clientId: ClientId, recordUsage: Boolean)     extends SingleApplicationQuery
+  case class ByServerToken protected (serverToken: String, recordUsage: Boolean) extends SingleApplicationQuery
 
-  case class GeneralOpenEndedApplicationQuery protected(sorting: Sorting, params: List[Param[_]]) extends MultipleApplicationQuery
+  case class GeneralOpenEndedApplicationQuery protected (sorting: Sorting, params: List[FilterParam[_]]) extends MultipleApplicationQuery
 
-  case class PaginatedApplicationQuery protected(pagination: Pagination, sorting: Sorting, params: List[Param[_]]) extends MultipleApplicationQuery
+  case class PaginatedApplicationQuery protected (pagination: Pagination, sorting: Sorting, params: List[FilterParam[_]]) extends MultipleApplicationQuery
 
   import cats.implicits._
 
   def identifyAnyPagination(allParams: List[Param[_]]): Option[Pagination] = {
-    allParams.filter(_.section == 2).sortBy(_.order) match {
+    allParams.collect {
+      case pp: PaginationParam[_] => pp
+    }
+      .sortBy(_.order) match {
       case PageSizeQP(size) :: PageNbrQP(nbr) :: Nil => Pagination(size, nbr).some
       case PageSizeQP(size) :: Nil                   => Pagination(size, 1).some
       case PageNbrQP(nbr) :: Nil                     => Pagination(50, nbr).some
@@ -53,8 +56,8 @@ object ApplicationQuery {
     }
   }
 
-  def identifySort(allParams: List[Param[_]]): Sorting = {
-    allParams.filter(_.section == 3) match {
+  def identifySort(params: List[SortingParam[_]]): Sorting = {
+    params match {
       case SortQP(sort) :: Nil => sort
       case _                   => Sorting.SubmittedAscending
     }
@@ -65,30 +68,32 @@ object ApplicationQuery {
     def attemptToConstructSingleResultQuery(): Option[SingleApplicationQuery] = {
       import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
-      validParams.partition(_.section == 1) match {
-        case (Nil, _)                 => None
-        case (singleQueryParams, Nil) =>
-          singleQueryParams.sortBy(_.order) match {
-            case ServerTokenQP(serverToken) :: Nil                                       => ApplicationQuery.ByServerToken(serverToken, false).some
-            case ServerTokenQP(serverToken) :: UserAgentQP(`ApiGatewayUserAgent`) :: Nil => ApplicationQuery.ByServerToken(serverToken, true).some
-            case ServerTokenQP(serverToken) :: UserAgentQP(_) :: Nil                     => ApplicationQuery.ByServerToken(serverToken, false).some
+      val hasApiGatewayUserAgent = validParams.find(_ match {
+        case UserAgentQP(`ApiGatewayUserAgent`) => true
+        case _                                  => false
+      }).isDefined
 
-            case ClientIdQP(clientId) :: Nil                                       => ApplicationQuery.ByClientId(clientId, false).some
-            case ClientIdQP(clientId) :: UserAgentQP(`ApiGatewayUserAgent`) :: Nil => ApplicationQuery.ByClientId(clientId, true).some
-            case ClientIdQP(clientId) :: UserAgentQP(_) :: Nil                     => ApplicationQuery.ByClientId(clientId, false).some
-
-            case ApplicationIdQP(applicationId) :: Nil                   => ApplicationQuery.ById(applicationId).some
-            case ApplicationIdQP(applicationId) :: UserAgentQP(_) :: Nil => ApplicationQuery.ById(applicationId).some
-            case _                                                       => None
-          }
-        case _                        => None
+      validParams.collect {
+        case fp: UniqueFilterParam[_] => fp
       }
+        .headOption // There can only be one
+        .flatMap {
+          case ServerTokenQP(serverToken)     => ApplicationQuery.ByServerToken(serverToken, hasApiGatewayUserAgent).some
+          case ClientIdQP(clientId)           => ApplicationQuery.ByClientId(clientId, hasApiGatewayUserAgent).some
+          case ApplicationIdQP(applicationId) => ApplicationQuery.ById(applicationId).some
+        }
     }
 
     def attemptToConstructMultiResultQuery(): MultipleApplicationQuery = {
-      val multiQueryParams = validParams.filter(_.section >= 4)
+      val multiQueryParams = validParams.collect {
+        case fp: FilterParam[_] => fp
+      }
 
-      val sorting = ApplicationQuery.identifySort(validParams)
+      val sortingParams = validParams.collect {
+        case sp: SortingParam[_] => sp
+      }
+
+      val sorting = ApplicationQuery.identifySort(sortingParams)
 
       identifyAnyPagination(validParams)
         .fold[MultipleApplicationQuery](

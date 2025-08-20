@@ -16,69 +16,83 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
+import cats.data.NonEmptyList
+
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
 object ParamsValidator {
   import cats.implicits._
 
-  def checkLastUsedParamsCombinations(params: List[Param[_]]): ErrorsOr[Unit] =
+  def checkLastUsedParamsCombinations(params: List[NonUniqueFilterParam[_]]): ErrorsOr[Unit] =
     params.filter(_.section == 5).sortBy(_.order) match {
-      case LastUsedAfterQP(after) :: LastUsedBeforeQP(before) :: _ if after.isAfter(before) => "cannot query for used after date that is after a given before date".invalidNel
+      case LastUsedAfterQP(after) :: LastUsedBeforeQP(before) :: _ if after.isAfter(before) => "Cannot query for used after date that is after a given before date".invalidNel
       case _                                                                                => ().validNel
     }
 
-  def checkSubscriptionsParamsCombinations(params: List[Param[_]]): ErrorsOr[Unit] = {
+  def checkSubscriptionsParamsCombinations(params: List[NonUniqueFilterParam[_]]): ErrorsOr[Unit] = {
     import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
-    params.filter(_.section == 4).sortBy(_.order) match {
+    params.filter(_.section == 4)
+      .sortBy(_.order) match {
       case NoSubscriptionsQP :: Nil                                 => ().validNel
       case HasSubscriptionsQP :: Nil                                => ().validNel
       case ApiContextQP(context) :: ApiVersionNbrQP(version) :: Nil => ().validNel
       case ApiContextQP(context) :: Nil                             => ().validNel
 
-      case NoSubscriptionsQP :: HasSubscriptionsQP :: _ => "cannot query for no subscriptions and then query for subscriptions".invalidNel
+      case NoSubscriptionsQP :: HasSubscriptionsQP :: _ => "Cannot query for no subscriptions and then query for subscriptions".invalidNel
 
-      case NoSubscriptionsQP :: ApiContextQP(_) :: _    => "cannot query for no subscriptions and then query context".invalidNel
-      case NoSubscriptionsQP :: ApiVersionNbrQP(_) :: _ => "cannot query for no subscriptions and then query version nbr".invalidNel
+      case NoSubscriptionsQP :: ApiContextQP(_) :: _    => "Cannot query for no subscriptions and then query context".invalidNel
+      case NoSubscriptionsQP :: ApiVersionNbrQP(_) :: _ => "Cannot query for no subscriptions and then query version nbr".invalidNel
 
-      case HasSubscriptionsQP :: ApiContextQP(_) :: _    => "cannot query for any subscriptions and then query context".invalidNel
-      case HasSubscriptionsQP :: ApiVersionNbrQP(_) :: _ => "cannot query for any subscriptions and then query version nbr".invalidNel
+      case HasSubscriptionsQP :: ApiContextQP(_) :: _    => "Cannot query for any subscriptions and then query context".invalidNel
+      case HasSubscriptionsQP :: ApiVersionNbrQP(_) :: _ => "Cannot query for any subscriptions and then query version nbr".invalidNel
 
-      case ApiVersionNbrQP(_) :: _ => "cannot query for a version without a context".invalidNel
+      case ApiVersionNbrQP(_) :: _ => "Cannot query for a version without a context".invalidNel
 
       case _ => ().validNel // "Unexpected combination of subscription query parameters".invalid
     }
   }
 
-  def checkUniqueParamsCombinations(params: List[Param[_]]): ErrorsOr[Unit] = {
-    params.partition(_.section == 1) match {
-      case (Nil, Nil)               => "undefined queries are not permitted".invalidNel
-      case (Nil, _)                 => ().validNel
-      case (singleQueryParams, Nil) =>
-        singleQueryParams.sortBy(_.order) match {
-          case ServerTokenQP(serverToken) :: Nil                                       => ().validNel
-          case ServerTokenQP(serverToken) :: UserAgentQP(`ApiGatewayUserAgent`) :: Nil => ().validNel
-          case ServerTokenQP(serverToken) :: UserAgentQP(_) :: Nil                     => ().validNel
-          case ServerTokenQP(_) :: _ :: Nil                                            => "serverToken can only be used with an optional userAgent".invalidNel
+  def checkUniqueParamsCombinations(uniqueFilterParams: NonEmptyList[UniqueFilterParam[_]], otherFilterParams: List[NonUniqueFilterParam[_]]): ErrorsOr[Unit] = {
+    // Cannot have more than one unique filter param
+    // Cannot have a unqiue filter param and other filter params other than UserAgentQP or WantSubscriptions
 
-          case ClientIdQP(clientId) :: Nil                                       => ().validNel
-          case ClientIdQP(clientId) :: UserAgentQP(`ApiGatewayUserAgent`) :: Nil => ().validNel
-          case ClientIdQP(clientId) :: UserAgentQP(_) :: Nil                     => ().validNel
-          case ClientIdQP(_) :: _ :: Nil                                         => "clientId can only be used with an optional userAgent".invalidNel
+    val onlyHasAllowableOtherParams = otherFilterParams.find(_ match {
+      case WantSubscriptionsQP => false
+      case UserAgentQP(_)      => false
+      case _                   => true
+    }).fold[ErrorsOr[Unit]](().validNel)(f => "Cannot mix unqiue and non-unique filter params".invalidNel)
 
-          case ApplicationIdQP(applicationId) :: Nil                   => ().validNel
-          case ApplicationIdQP(applicationId) :: UserAgentQP(_) :: Nil => ().validNel
-          case ApplicationIdQP(applicationId) :: _ :: Nil              => "applicationId cannot be mixed with any other parameters".invalidNel
-          case _                                                       => "unexpected match for singe result parameters".invalidNel
-        }
-      case (_, _)                   => "queries with identifiers cannot be matched with other parameters, sorting or pagination".invalidNel
+    (uniqueFilterParams.head, uniqueFilterParams.tail.isEmpty) match {
+      case (head, true) => onlyHasAllowableOtherParams
+      case _            => "Cannot mix one or more unique query params (serverToken, clientId and applicationId)".invalidNel
     }
   }
 
   def validateParamCombinations(allParams: List[Param[_]]): ErrorsOr[Unit] = {
-    checkSubscriptionsParamsCombinations(allParams)
-      .combine(checkLastUsedParamsCombinations(allParams))
-      .combine(checkUniqueParamsCombinations(allParams))
+    val otherfilterParams  = allParams.collect {
+      case fp: NonUniqueFilterParam[_] => fp
+    }
+    val uniqueFilterParams = allParams.collect(_ match {
+      case ufp: UniqueFilterParam[_] => ufp
+    })
+    val sortingParams      = allParams.collect(_ match {
+      case sp: SortingParam[_] => sp
+    })
+    val paginationParams   = allParams.collect(_ match {
+      case pp: PaginationParam[_] => pp
+    })
+
+    ((uniqueFilterParams, otherfilterParams, sortingParams, paginationParams) match {
+      case (Nil, Nil, Nil, Nil)  => ().validNel // Only GK
+      case (Nil, Nil, _, _)      => ().validNel
+      case (Nil, _, _, _)        => ().validNel
+      case (u, Nil, Nil, Nil)    => ().validNel
+      case (h :: t, f, Nil, Nil) => checkUniqueParamsCombinations(NonEmptyList(h, t), f)
+      case (h :: t, f, _, _)     => checkUniqueParamsCombinations(NonEmptyList(h, t), f) combine "Cannot mix unique queries with sorting or pagination".invalidNel
+    })
+      .combine(checkSubscriptionsParamsCombinations(otherfilterParams))
+      .combine(checkLastUsedParamsCombinations(otherfilterParams))
   }
 
   def parseAndValidateParams(rawQueryParams: Map[String, Seq[String]], rawHeaders: Map[String, Seq[String]]): ErrorsOr[List[Param[_]]] = {

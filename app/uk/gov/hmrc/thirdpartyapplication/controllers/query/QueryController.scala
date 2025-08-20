@@ -23,7 +23,6 @@ import play.api.libs.json._
 import play.api.mvc._
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.PaginatedApplications
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.{GeneralOpenEndedApplicationQuery, PaginatedApplicationQuery}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -60,7 +59,7 @@ class QueryController @Inject() (
           )(app => Ok(Json.toJson(StoredApplication.asApplication(app))))
         })
 
-      case q: GeneralOpenEndedApplicationQuery => 
+      case q: GeneralOpenEndedApplicationQuery =>
         applicationRepository.fetchByGeneralOpenEndedApplicationQuery(q).map(_.fold(l => Ok(Json.toJson(l)), r => Ok(Json.toJson(r))))
 
       case q: PaginatedApplicationQuery => applicationRepository.fetchByPaginatedApplicationQuery(q).map(results => Ok(Json.toJson(results)))

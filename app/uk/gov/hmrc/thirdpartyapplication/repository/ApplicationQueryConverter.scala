@@ -154,10 +154,9 @@ object ApplicationQueryConverter {
       asAppStateFilters ++
       asSearchFilter
 
-    if(individualFilters.isEmpty) {
+    if (individualFilters.isEmpty) {
       List.empty
-    }
-    else {
+    } else {
       List(Aggregates.filter(and(individualFilters: _*)))
     }
   }
@@ -172,8 +171,8 @@ object ApplicationQueryConverter {
     case Sorting.NoSorting             => List()
   }
 
-  def identifySort(allParams: List[Param[_]]): Sorting = {
-    allParams.filter(_.section == 3) match {
+  def identifySort(params: List[SortingParam[_]]): Sorting = {
+    params match {
       case SortQP(sort) :: Nil => sort
       case _                   => Sorting.SubmittedAscending
     }
@@ -193,19 +192,19 @@ object ApplicationQueryConverter {
 
   def hasAnySubscriptionFilter(params: List[Param[_]]): Boolean =
     params.find(_ match {
-      case _: SubscriptionQP[_] => true
-      case _                    => false
+      case _: SubscriptionFilterParam[_] => true
+      case _                             => false
     }).isDefined
 
   def hasSpecificSubscriptionFilter(params: List[Param[_]]): Boolean =
     params.find(_ match {
       case ApiVersionNbrQP(_) => true
-      case _               => false
+      case _                  => false
     }).isDefined
 
   def wantsSubscriptions(params: List[Param[_]]): Boolean =
-    params.exists( _ match {
+    params.exists(_ match {
       case WantSubscriptionsQP => true
-      case _ => false
+      case _                   => false
     })
 }

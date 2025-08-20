@@ -60,24 +60,24 @@ class ApplicationQuerySpec extends HmrcSpec with ApplicationWithCollaboratorsFix
 
     "work when given pagination, sorting and userId" in {
       test(List(UserIdQP(userIdOne), PageNbrQP(2), PageSizeQP(10), SortQP(Sorting.NameAscending))) shouldBe PaginatedApplicationQuery(
-        Sorting.NameAscending,
         Pagination(10, 2),
+        Sorting.NameAscending,
         List(UserIdQP(userIdOne))
       )
     }
 
     "work when given page size, sorting and userId" in {
       test(List(UserIdQP(userIdOne), PageSizeQP(10), SortQP(Sorting.NameAscending))) shouldBe PaginatedApplicationQuery(
-        Sorting.NameAscending,
         Pagination(10, 1),
+        Sorting.NameAscending,
         List(UserIdQP(userIdOne))
       )
     }
 
     "work when given page nbr, sorting and userId" in {
       test(List(UserIdQP(userIdOne), PageNbrQP(2), SortQP(Sorting.NameAscending))) shouldBe PaginatedApplicationQuery(
-        Sorting.NameAscending,
         Pagination(50, 2),
+        Sorting.NameAscending,
         List(UserIdQP(userIdOne))
       )
     }

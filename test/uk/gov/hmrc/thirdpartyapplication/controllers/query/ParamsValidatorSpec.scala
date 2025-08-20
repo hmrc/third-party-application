@@ -53,7 +53,7 @@ class ParamsValidatorSpec
 
   "checkLastUsedParamsCombinations" should {
 
-    val test = (ps: List[Param[_]]) => ParamsValidator.checkLastUsedParamsCombinations(ps)
+    val test = (ps: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkLastUsedParamsCombinations(ps)
 
     "pass when provided no last active dates" in {
       test(List.empty) shouldBe Pass
@@ -72,14 +72,14 @@ class ParamsValidatorSpec
     }
 
     "fail when provided incorrect last active before and last active after dates" in {
-      test(List(LastUsedAfterQP(instant), LastUsedBeforeQP(instant.minusSeconds(5)))) shouldBe "cannot query for used after date that is after a given before date".invalidNel
+      test(List(LastUsedAfterQP(instant), LastUsedBeforeQP(instant.minusSeconds(5)))) shouldBe "Cannot query for used after date that is after a given before date".invalidNel
     }
   }
 
   "checkSubscriptionsParamsCombinations" should {
-    val test: List[Param[_]] => ErrorsOr[Unit] = (ps) => ParamsValidator.checkSubscriptionsParamsCombinations(ps)
-    val Context                                = ApiContextQP(apiContextOne)
-    val Version                                = ApiVersionNbrQP(apiVersionNbrOne)
+    val test: List[NonUniqueFilterParam[_]] => ErrorsOr[Unit] = (ps) => ParamsValidator.checkSubscriptionsParamsCombinations(ps)
+    val Context                                               = ApiContextQP(apiContextOne)
+    val Version                                               = ApiVersionNbrQP(apiVersionNbrOne)
 
     "pass when given valid combinations" in {
       test(List(NoSubscriptionsQP)) shouldBe Pass
@@ -102,44 +102,39 @@ class ParamsValidatorSpec
   }
 
   "checkUniqueParamsCombinations" should {
-    val test: List[Param[_]] => ErrorsOr[Unit] = (ps) => ParamsValidator.checkUniqueParamsCombinations(ps)
+    val testBadCombo  = (us: NonEmptyList[UniqueFilterParam[_]], os: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkUniqueParamsCombinations(us, os)
+    val testGoodCombo = (us: NonEmptyList[UniqueFilterParam[_]], os: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkUniqueParamsCombinations(us, os) shouldBe Pass
 
     "pass when given a correct applicationId" in {
-      test(List(ApplicationIdQP(applicationIdOne))) shouldBe Pass
+      testGoodCombo(NonEmptyList.of(ApplicationIdQP(applicationIdOne)), List.empty)
     }
 
     "pass when given a correct clientId" in {
-      test(List(ClientIdQP(clientIdOne))) shouldBe Pass
+      testGoodCombo(NonEmptyList.of(ClientIdQP(clientIdOne)), List.empty)
     }
 
     "pass when given a correct clientId and User Agent" in {
-      test(List(ClientIdQP(clientIdOne), UserAgentQP(Param.ApiGatewayUserAgent))) shouldBe Pass
-      test(List(ClientIdQP(clientIdOne), UserAgentQP("Bob"))) shouldBe Pass
+      testGoodCombo(NonEmptyList.of(ClientIdQP(clientIdOne)), List(UserAgentQP(Param.ApiGatewayUserAgent)))
+      testGoodCombo(NonEmptyList.of(ClientIdQP(clientIdOne)), List(UserAgentQP("Bob")))
     }
 
     "pass when given a correct serverToken" in {
-      test(List(ServerTokenQP("abc"))) shouldBe Pass
+      testGoodCombo(NonEmptyList.of(ServerTokenQP("abc")), List.empty)
     }
 
     "pass when given a correct serverToken and User Agent" in {
-      test(List(ServerTokenQP("abc"), UserAgentQP(Param.ApiGatewayUserAgent))) shouldBe Pass
-      test(List(ServerTokenQP("abc"), UserAgentQP("Bob"))) shouldBe Pass
+      testGoodCombo(NonEmptyList.of(ServerTokenQP("abc")), List(UserAgentQP(Param.ApiGatewayUserAgent)))
+      testGoodCombo(NonEmptyList.of(ServerTokenQP("abc")), List(UserAgentQP("Bob")))
     }
 
     "pass when given a correct applicationId and some irrelevant header" in {
-      test(List(ApplicationIdQP(applicationIdOne), UserAgentQP("XYZ"))) shouldBe Pass
-    }
-
-    "fail for id when mixed with with pageSize" in {
-      shouldFail(test(List(ApplicationIdQP(applicationIdOne), PageSizeQP(10))))
-      shouldFail(test(List(ClientIdQP(clientIdOne), PageSizeQP(10))))
-      shouldFail(test(List(ServerTokenQP("ABC"), PageSizeQP(10))))
+      testGoodCombo(NonEmptyList.of(ApplicationIdQP(applicationIdOne)), List(UserAgentQP("XYZ")))
     }
 
     "fail when mixing two ids" in {
-      shouldFail(test(List(ApplicationIdQP(applicationIdOne), ClientIdQP(clientIdOne))))
-      shouldFail(test(List(ApplicationIdQP(applicationIdOne), ServerTokenQP("ABC"))))
-      shouldFail(test(List(ClientIdQP(clientIdOne), ServerTokenQP("ABC"))))
+      testBadCombo(NonEmptyList.of(ApplicationIdQP(applicationIdOne), ClientIdQP(clientIdOne)), List.empty)
+      testBadCombo(NonEmptyList.of(ApplicationIdQP(applicationIdOne), ServerTokenQP("ABC")), List.empty)
+      testBadCombo(NonEmptyList.of(ClientIdQP(clientIdOne), ServerTokenQP("ABC")), List.empty)
     }
 
   }
@@ -160,20 +155,16 @@ class ParamsValidatorSpec
     }
 
     "fail for applicationId with pageSize" in {
-      test(Map(appOneParam, pageSizeParam), Map.empty) shouldBe Left(NonEmptyList.one("queries with identifiers cannot be matched with other parameters, sorting or pagination"))
-    }
-  }
-
-  "validateParamCombinations" should {
-    val testBadCombo  = (ps: List[Param[_]]) => ParamsValidator.checkUniqueParamsCombinations(ps)
-    val testGoodCombo = (ps: List[Param[_]]) => ParamsValidator.checkUniqueParamsCombinations(ps) shouldBe Pass
-
-    "work when given a correct combo" in {
-      testGoodCombo(List(Param.UserIdQP(userIdOne), SortQP(Sorting.LastUseDateAscending)))
+      test(Map(appOneParam, pageSizeParam), Map.empty) shouldBe Left(NonEmptyList.one("Cannot mix unique queries with sorting or pagination"))
     }
 
-    "identify invalid combo of applicationId and clientId" in {
-      testBadCombo(List(Param.ApplicationIdQP(applicationIdOne), Param.ClientIdQP(clientIdOne))) shouldBe "clientId can only be used with an optional userAgent".invalidNel
+    "fail for applicationId, clientId, pageSize and two subscription params" in {
+      test(Map(appOneParam, clientIdParam, pageSizeParam, noSubsParam, "context" -> Seq(apiContextOne.toString)), Map.empty) shouldBe
+        Left(NonEmptyList.of(
+          "Cannot mix one or more unique query params (serverToken, clientId and applicationId)",
+          "Cannot mix unique queries with sorting or pagination",
+          "Cannot query for no subscriptions and then query context"
+        ))
     }
   }
 }

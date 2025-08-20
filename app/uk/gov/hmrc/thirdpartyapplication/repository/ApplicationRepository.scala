@@ -29,7 +29,7 @@ import org.mongodb.scala.model
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model.Projections.{excludeId, fields, include, computed}
+import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
 import org.mongodb.scala.model._
 
 import play.api.libs.json.Json._
@@ -47,12 +47,11 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueryConverter.hasSpecificSubscriptionFilter
 
 object ApplicationRepository {
   import play.api.libs.functional.syntax._
 
-  val grantLengthConfig             = ConfigFactory.load().getInt("grantLengthInDays")
+  val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
   object MongoFormats {
     import uk.gov.hmrc.play.json.Union
@@ -152,26 +151,26 @@ object ApplicationRepository {
   }
 
   case class QueryAppWithSubs(
-    id: ApplicationId,
-    name: ApplicationName,
-    normalisedName: String,
-    collaborators: Set[Collaborator],
-    description: Option[String] = None,
-    wso2ApplicationName: String,
-    tokens: ApplicationTokens,
-    state: ApplicationState,
-    access: Access = Access.Standard(),
-    createdOn: Instant,
-    lastAccess: Option[Instant],
-    refreshTokensAvailableFor: Period = Period.ofDays(grantLengthConfig),
-    rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-    environment: Environment = Environment.PRODUCTION,
-    checkInformation: Option[CheckInformation] = None,
-    blocked: Boolean = false,
-    ipAllowlist: IpAllowlist = IpAllowlist(),
-    deleteRestriction: DeleteRestriction = DeleteRestriction.NoRestriction,
-    apis: List[ApiIdentifier]
-  ) {
+      id: ApplicationId,
+      name: ApplicationName,
+      normalisedName: String,
+      collaborators: Set[Collaborator],
+      description: Option[String] = None,
+      wso2ApplicationName: String,
+      tokens: ApplicationTokens,
+      state: ApplicationState,
+      access: Access = Access.Standard(),
+      createdOn: Instant,
+      lastAccess: Option[Instant],
+      refreshTokensAvailableFor: Period = Period.ofDays(grantLengthConfig),
+      rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
+      environment: Environment = Environment.PRODUCTION,
+      checkInformation: Option[CheckInformation] = None,
+      blocked: Boolean = false,
+      ipAllowlist: IpAllowlist = IpAllowlist(),
+      deleteRestriction: DeleteRestriction = DeleteRestriction.NoRestriction,
+      apis: List[ApiIdentifier]
+    ) {
 
     def asApplicationWithSubs(): ApplicationWithSubscriptions = {
       ApplicationWithSubscriptions(
@@ -204,6 +203,7 @@ object ApplicationRepository {
   import MongoFormats._
 
   object QueryAppWithSubs {
+
     implicit val read: Reads[QueryAppWithSubs] = (
       (JsPath \ "id").read[ApplicationId] and
         (JsPath \ "name").read[ApplicationName] and
@@ -225,8 +225,7 @@ object ApplicationRepository {
         ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
         ((JsPath \ "deleteRestriction").read[DeleteRestriction] or Reads.pure[DeleteRestriction](DeleteRestriction.NoRestriction)) and
-        ((JsPath \ "apis").read[List[ApiIdentifier]]  or Reads.pure[List[ApiIdentifier]](List.empty))
-
+        ((JsPath \ "apis").read[List[ApiIdentifier]] or Reads.pure[List[ApiIdentifier]](List.empty))
     )(QueryAppWithSubs.apply _)
   }
 }
@@ -687,7 +686,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  private def runOldPaginationQuery(filters: List[Bson], pagination: List[Bson], sort: List[Bson], hasSubscriptionsQuery: Boolean, hasSpecificApiSubscription: Boolean): Future[PaginatedApplicationData] = {
+  private def runOldPaginationQuery(filters: List[Bson], pagination: List[Bson], sort: List[Bson], hasSubscriptionsQuery: Boolean, hasSpecificApiSubscription: Boolean)
+      : Future[PaginatedApplicationData] = {
     timeFuture("Run Pagination Query", "application.repository.runPaginationQuery") {
 
       val applicationProjection: Bson = project(fields(
@@ -697,11 +697,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         )
       ))
 
-      val totalCount                                    = Aggregates.count("total")
-      val subscriptionsLookupFilter                     = if (hasSubscriptionsQuery) Seq(subscriptionsLookup) else Seq.empty
-      val subscriptionsLookupExtendedFilter             = if (hasSpecificApiSubscription) subscriptionsLookupFilter :+ unwind("$subscribedApis") else subscriptionsLookupFilter
-      val countMatchingPipeline                         = subscriptionsLookupExtendedFilter ++ filters :+ totalCount
-      val matchingAppsPipeline: Seq[Bson]               = subscriptionsLookupExtendedFilter ++ filters ++ sort ++ pagination :+ applicationProjection
+      val totalCount                        = Aggregates.count("total")
+      val subscriptionsLookupFilter         = if (hasSubscriptionsQuery) Seq(subscriptionsLookup) else Seq.empty
+      val subscriptionsLookupExtendedFilter = if (hasSpecificApiSubscription) subscriptionsLookupFilter :+ unwind("$subscribedApis") else subscriptionsLookupFilter
+      val countMatchingPipeline             = subscriptionsLookupExtendedFilter ++ filters :+ totalCount
+      val matchingAppsPipeline: Seq[Bson]   = subscriptionsLookupExtendedFilter ++ filters ++ sort ++ pagination :+ applicationProjection
 
       val facets: Seq[Bson] = Seq(
         facet(
@@ -715,7 +715,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         .head()
         .map(Codecs.fromBson[PaginatedApplicationData])
         .map(d => PaginatedApplicationData(d.applications, d.countOfAllApps, d.countOfMatchingApps))
-    }  
+    }
   }
 
   def searchApplications(actionSubtask: String)(applicationSearch: ApplicationSearch): Future[PaginatedApplicationData] = {
@@ -1096,50 +1096,49 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  private val subscriptionsLookup: Bson = 
+  private val subscriptionsLookup: Bson =
     lookup(
-      from = "subscription", 
-      as = "subscribedApis", 
-      localField = "id", 
+      from = "subscription",
+      as = "subscribedApis",
+      localField = "id",
       foreignField = "applications"
     )
 
   private val fieldsToProject = List(
-      "id",
-      "name",
-      "normalisedName",
-      "collaborators",
-      "description",
-      "wso2ApplicationName",
-      "tokens",
-      "state",
-      "access",
-      "createdOn",
-      "lastAccess",
-      "grantLength",
-      "refreshTokensAvailableFor",
-      "rateLimitTier",
-      "environment",
-      "blocked",
-      "deleteRestriction"
+    "id",
+    "name",
+    "normalisedName",
+    "collaborators",
+    "description",
+    "wso2ApplicationName",
+    "tokens",
+    "state",
+    "access",
+    "createdOn",
+    "lastAccess",
+    "grantLength",
+    "refreshTokensAvailableFor",
+    "rateLimitTier",
+    "environment",
+    "blocked",
+    "deleteRestriction"
   )
 
-
-  private val applicationWithSubscriptionsProjection: Bson     = project(
+  private val applicationWithSubscriptionsProjection: Bson = project(
     fields(
       excludeId(),
       include(
-        fieldsToProject: _*,
+        fieldsToProject: _*
       ),
       computed("apis", "$subscribedApis.apiIdentifier")
     )
   )
 
-  private val applicationProjection: Bson     = project(
+  private val applicationProjection: Bson = project(
     fields(
       excludeId(),
       include(
-        fieldsToProject: _*,
+        fieldsToProject: _*
       )
     )
   )
@@ -1155,7 +1154,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
       val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => needsLookup && qry.hasSpecificSubscriptionFilter)
 
-      val projectionToUse = if(qry.wantsSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
+      val projectionToUse     = if (qry.wantsSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
       val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage ++ sortingStage :+ projectionToUse
 
       val facets: Seq[Bson] = Seq(
@@ -1164,7 +1163,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         )
       )
 
-      if(qry.wantsSubscriptions) {
+      if (qry.wantsSubscriptions) {
         implicit val readApplications = ((JsPath \ "applications").read[List[QueryAppWithSubs]])
 
         collection.aggregate[BsonValue](facets)
@@ -1172,7 +1171,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           .map(bson => {
             Right(
               Codecs.fromBson[List[QueryAppWithSubs]](bson)
-              .map(_.asApplicationWithSubs())
+                .map(_.asApplicationWithSubs())
             )
           })
       } else {
@@ -1183,31 +1182,32 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           .map(bson => {
             Left(
               Codecs.fromBson[List[StoredApplication]](bson)
-              .map(StoredApplication.asApplication))
+                .map(StoredApplication.asApplication)
+            )
           })
       }
     }
   }
-  
+
   def fetchByPaginatedApplicationQuery(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {
     timeFuture("Run Pagination Query", "application.repository.fetchByPaginatedApplicationQuery") {
 
       val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
       val sortingStage: List[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
-      val paginationStage = List(skip((qry.pagination.pageNbr - 1) * qry.pagination.pageSize), limit(qry.pagination.pageSize))
+      val paginationStage          = List(skip((qry.pagination.pageNbr - 1) * qry.pagination.pageSize), limit(qry.pagination.pageSize))
 
       val needsLookup = qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
-      
+
       import cats.implicits._
       val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
       val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => needsLookup && qry.hasSpecificSubscriptionFilter)
 
-      val projectionToUse = if(qry.wantsSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
+      val projectionToUse = if (qry.wantsSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
 
-      val totalCount                                    = Aggregates.count("total")
-      val commonPipeline                                = maybeSubsLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage
-      val countMatchingPipeline                         = commonPipeline :+ totalCount
-      val pipeline: Seq[Bson]                           = commonPipeline ++ sortingStage ++ paginationStage :+ projectionToUse
+      val totalCount            = Aggregates.count("total")
+      val commonPipeline        = maybeSubsLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage
+      val countMatchingPipeline = commonPipeline :+ totalCount
+      val pipeline: Seq[Bson]   = commonPipeline ++ sortingStage ++ paginationStage :+ projectionToUse
 
       val facets: Seq[Bson] = Seq(
         facet(
@@ -1223,15 +1223,13 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         .map(pad =>
           PaginatedApplications(
             pad.applications.map(StoredApplication.asApplication),
-            qry.pagination.pageNbr,
             qry.pagination.pageSize,
+            qry.pagination.pageNbr,
             pad.countOfAllApps.map(_.total).sum,
             pad.countOfMatchingApps.map(_.total).sum
           )
         )
-    }  
+    }
   }
-
-
 
 }

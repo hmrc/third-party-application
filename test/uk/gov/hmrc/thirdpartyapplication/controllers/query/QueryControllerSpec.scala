@@ -52,7 +52,7 @@ class QueryControllerSpec
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}"))
 
       status(result) shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(StoredApplication.asApplication(storedApp))
+      contentAsJson(result) shouldBe Json.toJson(appWithCollaborators)
     }
 
     "work for single query finding nothing" in new Setup {
@@ -65,7 +65,7 @@ class QueryControllerSpec
     }
 
     "work for general query" in new Setup {
-      ApplicationRepoMock.FetchByGeneralOpenEndedApplicationQuery.thenReturns(StoredApplication.asApplication(storedApp))
+      ApplicationRepoMock.FetchByGeneralOpenEndedApplicationQuery.thenReturns(appWithCollaborators)
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=${userIdOne}"))
 
       status(result) shouldBe OK
@@ -81,16 +81,19 @@ class QueryControllerSpec
     }
 
     "work for paginated query" in new Setup {
-      ApplicationRepoMock.FetchByPaginatedApplicationQuery.thenReturns(105, storedApp)
+      val pa = PaginatedApplications(List(appWithCollaborators), 1, 25, 105, 1)
+      ApplicationRepoMock.FetchByPaginatedApplicationQuery.thenReturns(pa)
+
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?pageSize=25&userId=${userIdOne}"))
 
       status(result) shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(PaginatedApplications(List(appWithCollaborators), 1, 25, 105, 1))
+      contentAsJson(result) shouldBe Json.toJson(pa)
     }
 
     "work for paginated query finding nothing" in new Setup {
       ApplicationRepoMock.FetchByPaginatedApplicationQuery.thenReturnsNone(102)
-      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?pageSize=10&userId=${userIdOne}"))
+
+      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?pageNbr=1&userId=${userIdOne}"))
 
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(PaginatedApplications(List.empty, 1, 10, 102, 0))

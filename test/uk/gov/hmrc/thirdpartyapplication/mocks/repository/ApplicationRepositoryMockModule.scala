@@ -532,10 +532,13 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object FetchByPaginatedApplicationQuery {
 
       def thenReturnsNone(totals: Int) =
-        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplicationData(List.empty, List(PaginationTotal(totals)), List(PaginationTotal(0)))))
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplications(List.empty, 1, 10, totals, 0)))
 
-      def thenReturns(totals: Int, apps: StoredApplication*) =
-        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplicationData(apps.toList, List(PaginationTotal(totals)), List(PaginationTotal(apps.size)))))
+      def thenReturns(totals: Int, apps: ApplicationWithCollaborators*) =
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplications(apps.toList, 1, 10, totals, apps.size)))
+
+      def thenReturns(pas: PaginatedApplications) =
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(pas))
     }
   }
 
