@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.repositories
 
 import java.time.Clock
+import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.mongodb.MongoException
@@ -94,6 +95,19 @@ class SubmissionsDAOISpec
       await(submissionsDao.save(aSubmission))
       await(submissionsDao.save(altSubmission))
       await(submissionsDao.fetchLatest(applicationId)).value shouldBe altSubmission
+    }
+
+    "find the latest ones for all applications" in {
+      val appBeforeOrigDeployment  = aSubmission.copy(id = submissionIdThree, applicationId = applicationIdThree)
+      val earlierSubmissionSameApp = aSubmission.copy(startedOn = instant.plus(1095L, ChronoUnit.DAYS))
+      val laterSubmissionSameApp   = altSubmission.copy(startedOn = instant.plus(1096L, ChronoUnit.DAYS))
+      val differentAppSubmission   = altSubmission.copy(id = submissionIdFour, applicationId = applicationIdTwo, startedOn = instant.plus(1095L, ChronoUnit.DAYS))
+      await(submissionsDao.save(earlierSubmissionSameApp))
+      await(submissionsDao.save(laterSubmissionSameApp))
+      await(submissionsDao.save(differentAppSubmission))
+      await(submissionsDao.save(appBeforeOrigDeployment))
+
+      await(submissionsDao.fetchLatestSubmissionForAll()) should contain allOf (differentAppSubmission, laterSubmissionSameApp)
     }
   }
 

@@ -16,10 +16,13 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.repositories
 
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Accumulators
+import org.mongodb.scala.model.Aggregates._
+import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Sorts.descending
 
 import uk.gov.hmrc.mongo.play.json.Codecs
@@ -32,6 +35,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(implicit val ec: ExecutionContext) {
 
   private lazy val collection = submissionsRepository.collection
+  // 2022-08-01: 00:00:00
+  private val deployment      = Instant.ofEpochMilli(1659312000000L);
 
   def save(submission: Submission): Future[Submission] = {
     collection.insertOne(submission)
@@ -61,11 +66,29 @@ class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(im
       .headOption()
   }
 
+  def fetchLatestSubmissionForAll(): Future[List[Submission]] = {
+    collection.aggregate[Submission](Seq(
+      filter(gte("startedOn", deployment)),
+      // $group – keep only the top document per applicationId
+      group(
+        "$applicationId",
+        Accumulators.top(
+          fieldName = "latestDoc",
+          sortBy = descending("startedOn"),
+          outExpression = Codecs.toBson("$$ROOT")
+        )
+      ),
+      // $replaceRoot – flatten the wrapped document
+      replaceRoot("$latestDoc")
+    ))
+      .toFuture().map(_.toList)
+  }
+
   // $COVERAGE-OFF$
   def fetchAllForApplication(id: ApplicationId): Future[List[Submission]] = {
     collection.find(equal("applicationId", Codecs.toBson(id))).toFuture().map(_.toList)
   }
-// $COVERAGE-ON$
+  // $COVERAGE-ON$
 
   def fetch(id: SubmissionId): Future[Option[Submission]] = {
     collection.find(equal("id", Codecs.toBson(id)))
