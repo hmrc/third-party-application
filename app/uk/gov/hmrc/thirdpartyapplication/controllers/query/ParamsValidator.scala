@@ -16,12 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
+import scala.reflect.ClassTag
+
 import cats.data.NonEmptyList
 
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
 object ParamsValidator {
   import cats.implicits._
+
+  def first[T <: Param[_]](implicit params: List[Param[_]], ct: ClassTag[T]): Option[T] = params.collect {
+    case qp: T => qp
+  }.headOption
 
   def checkLastUsedParamsCombinations(params: List[NonUniqueFilterParam[_]]): ErrorsOr[Unit] =
     params.collect {
@@ -75,8 +81,16 @@ object ParamsValidator {
     }
   }
 
+  def checkVerificationCodeUsesDeleteExclusion(implicit otherFilterParams: List[NonUniqueFilterParam[_]]): ErrorsOr[Unit] = {
+    (first[VerificationCodeQP], first[AppStateFilterQP]) match {
+      case (None, _)                                                                              => ().validNel
+      case (Some(VerificationCodeQP(_)), Some(AppStateFilterQP(AppStateFilter.ExcludingDeleted))) => ().validNel
+      case (Some(VerificationCodeQP(_)), _)                                                       => "Verification code queries must exclude deleted state".invalidNel
+    }
+  }
+
   def validateParamCombinations(allParams: List[Param[_]]): ErrorsOr[Unit] = {
-    val otherfilterParams  = allParams.collect {
+    val otherFilterParams  = allParams.collect {
       case fp: NonUniqueFilterParam[_] => fp
     }
     val uniqueFilterParams = allParams.collect(_ match {
@@ -89,7 +103,7 @@ object ParamsValidator {
       case pp: PaginationParam[_] => pp
     })
 
-    ((uniqueFilterParams, otherfilterParams, sortingParams, paginationParams) match {
+    ((uniqueFilterParams, otherFilterParams, sortingParams, paginationParams) match {
       case (Nil, Nil, Nil, Nil)  => ().validNel // Only GK
       case (Nil, Nil, _, _)      => ().validNel
       case (Nil, _, _, _)        => ().validNel
@@ -97,8 +111,9 @@ object ParamsValidator {
       case (h :: t, f, Nil, Nil) => checkUniqueParamsCombinations(NonEmptyList(h, t), f)
       case (h :: t, f, _, _)     => checkUniqueParamsCombinations(NonEmptyList(h, t), f) combine "Cannot mix unique queries with sorting or pagination".invalidNel
     })
-      .combine(checkSubscriptionsParamsCombinations(otherfilterParams))
-      .combine(checkLastUsedParamsCombinations(otherfilterParams))
+      .combine(checkSubscriptionsParamsCombinations(otherFilterParams))
+      .combine(checkLastUsedParamsCombinations(otherFilterParams))
+      .combine(checkVerificationCodeUsesDeleteExclusion(otherFilterParams))
   }
 
   def parseAndValidateParams(rawQueryParams: Map[String, Seq[String]], rawHeaders: Map[String, Seq[String]]): ErrorsOr[List[Param[_]]] = {

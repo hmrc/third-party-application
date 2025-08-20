@@ -136,18 +136,34 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
         test(Map("pageNbr" -> Seq("3"))) shouldBe List(PageNbrQP(3)).validNel
       }
 
+      "extract valid params - name" in {
+        test(Map("name" -> Seq("Bob"))) shouldBe List(NameQP("Bob")).validNel
+      }
+
+      "extract valid params - verificationCode" in {
+        test(Map("verificationCode" -> Seq("ABC"))) shouldBe List(VerificationCodeQP("ABC")).validNel
+      }
+
       "extract valid params - status filter" in {
-        test(Map("status" -> Seq("CREATED"))) shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.TESTING))).validNel
+        test(Map("status" -> Seq("CREATED"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingOne(State.TESTING))).validNel
         test(Map("status" -> Seq("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION"))) shouldBe List(
-          AppStateFilterQP(AppStateFilter.Matching(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION))
+          AppStateFilterQP(AppStateFilter.MatchingOne(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION))
         ).validNel
-        test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))) shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.PENDING_GATEKEEPER_APPROVAL))).validNel
-        test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))) shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.PENDING_REQUESTER_VERIFICATION))).validNel
+        test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingOne(State.PENDING_GATEKEEPER_APPROVAL))).validNel
+        test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingOne(State.PENDING_REQUESTER_VERIFICATION))).validNel
         test(Map("status" -> Seq("ACTIVE"))) shouldBe List(AppStateFilterQP(AppStateFilter.Active)).validNel
-        test(Map("status" -> Seq("DELETED"))) shouldBe List(AppStateFilterQP(AppStateFilter.Matching(State.DELETED))).validNel
+        test(Map("status" -> Seq("DELETED"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingOne(State.DELETED))).validNel
         test(Map("status" -> Seq("EXCLUDING_DELETED"))) shouldBe List(AppStateFilterQP(AppStateFilter.ExcludingDeleted)).validNel
         test(Map("status" -> Seq("BLOCKED"))) shouldBe List(AppStateFilterQP(AppStateFilter.Blocked)).validNel
         test(Map("status" -> Seq("ANY"))) shouldBe List(AppStateFilterQP(AppStateFilter.NoFiltering)).validNel
+        test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK", "PRODUCTION"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingMany(Set(
+          State.PENDING_GATEKEEPER_APPROVAL,
+          State.PRODUCTION
+        )))).validNel
+      }
+
+      "extract valid params - multiple states" in {
+        test(Map("status" -> Seq("PRODUCTION", "TESTING"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingMany(Set(State.PRODUCTION, State.TESTING)))).validNel
       }
 
       "extract valid params - sort filter" in {

@@ -32,6 +32,8 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.query._
 
 object ApplicationQueryConverter {
 
+  private val commonNotDeleted = notEqual("state.name", State.DELETED.toString)
+
   def first[T <: Param[_]](implicit params: List[Param[_]], ct: ClassTag[T]): Option[T] = params.collect {
     case qp: T => qp
   }.headOption
@@ -84,7 +86,7 @@ object ApplicationQueryConverter {
       if (includeDeletedAppsQP.value) {
         List.empty
       } else {
-        List(notEqual("state.name", State.DELETED.toString))
+        List(commonNotDeleted)
       }
     })
 
@@ -127,11 +129,12 @@ object ApplicationQueryConverter {
 
   def asAppStateFilters(implicit params: List[Param[_]]): List[Bson] =
     onFirst[AppStateFilterQP](_.value match {
-      case AppStateFilter.NoFiltering      => List.empty
-      case AppStateFilter.Matching(state)  => List(equal("state.name", state.toString))
-      case AppStateFilter.Active           => List(applicationStateMatch(State.PRE_PRODUCTION, State.PRODUCTION))
-      case AppStateFilter.ExcludingDeleted => List(notEqual("state.name", State.DELETED.toString))
-      case AppStateFilter.Blocked          => List(and(equal("blocked", BsonBoolean(true)), notEqual("state.name", State.DELETED.toString)))
+      case AppStateFilter.NoFiltering          => List.empty
+      case AppStateFilter.Active               => List(applicationStateMatch(State.PRE_PRODUCTION, State.PRODUCTION))
+      case AppStateFilter.ExcludingDeleted     => List(commonNotDeleted)
+      case AppStateFilter.Blocked              => List(and(equal("blocked", BsonBoolean(true)), commonNotDeleted))
+      case AppStateFilter.MatchingOne(state)   => List(equal("state.name", state.toString))
+      case AppStateFilter.MatchingMany(states) => List(in("state.name", states.map(_.toString)))
     })
 
   def asSearchFilter(implicit params: List[Param[_]]): List[Bson] =
@@ -143,6 +146,16 @@ object ApplicationQueryConverter {
       )
     )
 
+  def asNameFilter(implicit params: List[Param[_]]): List[Bson] =
+    onFirst[NameQP](qp =>
+      List(equal("normalisedName", qp.value.toLowerCase))
+    )
+
+  def asVerificationCodeFilter(implicit params: List[Param[_]]): List[Bson] =
+    onFirst[VerificationCodeQP](qp =>
+      List(equal("state.verificationCode", qp.value))
+    )
+
   def convertToFilter(implicit params: List[Param[_]]): List[Bson] = {
     val individualFilters = asSubscriptionFilters ++
       asUserFilters ++
@@ -152,6 +165,7 @@ object ApplicationQueryConverter {
       asAccessTypeFilters ++
       asLastUsedFilters ++
       asAppStateFilters ++
+      asNameFilter ++
       asSearchFilter
 
     if (individualFilters.isEmpty) {

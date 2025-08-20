@@ -35,14 +35,7 @@ class ParamsValidatorSpec
 
   import cats.implicits._
 
-  val appOneParam      = "applicationId"   -> Seq(applicationIdOne.toString)
-  val userIdParam      = "userId"          -> Seq(userIdOne.toString)
-  val clientIdParam    = "clientId"        -> Seq(userIdOne.toString)
-  val envParam         = "environment"     -> Seq(Environment.PRODUCTION.toString)
-  val pageSizeParam    = "pageSize"        -> Seq("10")
-  val noSubsParam      = "noSubscriptions" -> Seq()
-  val irrelevantHeader = Map("someheadername" -> Seq("bob"))
-  val Pass             = ().validNel
+  val Pass = ().validNel
 
   def shouldFail[T](testThis: ErrorsOr[T]): Assertion = {
     inside(testThis) {
@@ -102,7 +95,7 @@ class ParamsValidatorSpec
   }
 
   "checkUniqueParamsCombinations" should {
-    val testBadCombo  = (us: NonEmptyList[UniqueFilterParam[_]], os: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkUniqueParamsCombinations(us, os)
+    val testBadCombo  = (us: NonEmptyList[UniqueFilterParam[_]], os: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkUniqueParamsCombinations(us, os) should not be Pass
     val testGoodCombo = (us: NonEmptyList[UniqueFilterParam[_]], os: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkUniqueParamsCombinations(us, os) shouldBe Pass
 
     "pass when given a correct applicationId" in {
@@ -139,7 +132,30 @@ class ParamsValidatorSpec
 
   }
 
+  "checkVerificationCodeUsesDeleteExclusion" should {
+    val testBadCombo  = (ps: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkVerificationCodeUsesDeleteExclusion(ps) should not be Pass
+    val testGoodCombo = (ps: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkVerificationCodeUsesDeleteExclusion(ps) shouldBe Pass
+
+    "pass when given a verification code and exclude deleted" in {
+      testGoodCombo(List(AppStateFilterQP(AppStateFilter.ExcludingDeleted), VerificationCodeQP("ABC")))
+    }
+    "fail when given a verification code only" in {
+      testBadCombo(List(VerificationCodeQP("ABC")))
+    }
+    "fail when given a verification code and a state filter" in {
+      testBadCombo(List(AppStateFilterQP(AppStateFilter.Active), VerificationCodeQP("ABC")))
+    }
+  }
+
   "parseAndValidateParams" should {
+    val appOneParam      = "applicationId"   -> Seq(applicationIdOne.toString)
+    val userIdParam      = "userId"          -> Seq(userIdOne.toString)
+    val clientIdParam    = "clientId"        -> Seq(userIdOne.toString)
+    val envParam         = "environment"     -> Seq(Environment.PRODUCTION.toString)
+    val pageSizeParam    = "pageSize"        -> Seq("10")
+    val noSubsParam      = "noSubscriptions" -> Seq()
+    val irrelevantHeader = Map("someheadername" -> Seq("bob"))
+
     val test = (ps: Map[String, Seq[String]], hs: Map[String, Seq[String]]) => ParamsValidator.parseAndValidateParams(ps, hs).toEither
 
     "work when given a correct applicationId" in {

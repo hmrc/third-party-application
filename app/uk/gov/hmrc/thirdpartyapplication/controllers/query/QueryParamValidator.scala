@@ -53,6 +53,12 @@ object QueryParamValidator {
       }
   }
 
+  object ManyValuesAllowed {
+
+    def apply(paramName: String)(values: Seq[String]): ErrorsOr[Seq[String]] =
+      values.validNel
+  }
+
   object BooleanValueExpected {
     def apply(paramName: String)(value: String): ErrorsOr[Boolean] = value.toBooleanOption.toValidNel(s"$paramName must be true or false")
   }
@@ -154,19 +160,19 @@ object QueryParamValidator {
   }
 
   private object AppStateFilterExpected {
-    def apply(value: String): ErrorsOr[AppStateFilter] = AppStateFilter(value).toValidNel(s"$value is not a valid status filter")
+    def apply(values: Seq[String]): ErrorsOr[AppStateFilter] = AppStateFilter(values).toValidNel(s"$values contains invalid parameters")
   }
 
   object StatusValidator extends QueryParamValidator {
     val paramName = "status"
 
     def validate(values: Seq[String]): ErrorsOr[Param.AppStateFilterQP] = {
-      SingleValueExpected(paramName)(values) andThen AppStateFilterExpected.apply map { Param.AppStateFilterQP(_) }
+      ManyValuesAllowed(paramName)(values) andThen AppStateFilterExpected.apply map { Param.AppStateFilterQP(_) }
     }
   }
 
   private object SortExpected {
-    def apply(value: String): ErrorsOr[Sorting] = Sorting(value).toValidNel(s"$value  is not a valid sort")
+    def apply(value: String): ErrorsOr[Sorting] = Sorting(value).toValidNel(s"$value is not a valid sort")
   }
 
   object SortValidator extends QueryParamValidator {
@@ -213,6 +219,22 @@ object QueryParamValidator {
 
     def validate(values: Seq[String]): ErrorsOr[Param.SearchTextQP] = {
       SingleValueExpected(paramName)(values) map { text => Param.SearchTextQP(text) }
+    }
+  }
+
+  object NameValidator extends QueryParamValidator {
+    val paramName = "name"
+
+    def validate(values: Seq[String]): ErrorsOr[Param.NameQP] = {
+      SingleValueExpected(paramName)(values) map { Param.NameQP }
+    }
+  }
+
+  object VerificationCodeValidator extends QueryParamValidator {
+    val paramName = "verificationCode"
+
+    def validate(values: Seq[String]): ErrorsOr[Param.VerificationCodeQP] = {
+      SingleValueExpected(paramName)(values) map { Param.VerificationCodeQP }
     }
   }
 
@@ -278,6 +300,7 @@ object QueryParamValidator {
     QueryParamValidator.IncludeDeletedValidator,
     QueryParamValidator.LastUseBeforeValidator,
     QueryParamValidator.LastUseAfterValidator,
+    QueryParamValidator.NameValidator,
     QueryParamValidator.NoSubscriptionsValidator,
     QueryParamValidator.PageSizeValidator,
     QueryParamValidator.PageNbrValidator,
@@ -285,6 +308,7 @@ object QueryParamValidator {
     QueryParamValidator.SortValidator,
     QueryParamValidator.SearchTextValidator,
     QueryParamValidator.UserIdValidator,
+    QueryParamValidator.VerificationCodeValidator,
     QueryParamValidator.WantSubscriptionsValidator
   )
 
