@@ -756,33 +756,6 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "fetchAllForEmailAddress" should {
-    "retrieve all the applications for a given collaborator email address" in {
-      val application1 = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      )
-      val application2 = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      )
-      val application3 = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      )
-        .withState(appStateDeleted)
-
-      await(applicationRepository.save(application1))
-      await(applicationRepository.save(application2))
-      await(applicationRepository.save(application3))
-
-      val retrieved =
-        await(applicationRepository.fetchAllForEmailAddress(application1.collaborators.head.emailAddress.text))
-
-      retrieved shouldBe List(application1, application2)
-    }
-  }
-
   "fetchStandardNonTestingApps" should {
     "retrieve all the standard applications not in TESTING (or DELETED) state" in {
       val application1 = anApplicationDataForTest(
@@ -2115,41 +2088,6 @@ class ApplicationRepositoryISpec
       result.head.environment shouldBe productionEnv
       result.map(
         _.collaborators.map(collaborator => collaborator.userId shouldBe userId)
-      )
-    }
-  }
-
-  "fetchAllForEmailAddressAndEnvironment" should {
-    "return one application when 3 apps have the same user email but only one is in Production and not deleted" in {
-      val applicationId1 = ApplicationId.random
-      val applicationId2 = ApplicationId.random
-      val applicationId3 = ApplicationId.random
-      val userId         = UserId.random
-      val productionEnv  = Environment.PRODUCTION
-
-      val collaborator: Collaborator = "user@example.com".admin(userId)
-
-      val prodApplication1   = anApplicationDataForTest(applicationId1).copy(environment = productionEnv).withCollaborators(collaborator)
-      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(collaborator).withState(appStateDeleted)
-      val sandboxApplication = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(collaborator).inSandbox()
-
-      await(applicationRepository.save(prodApplication1))
-      await(applicationRepository.save(prodApplication2))
-      await(applicationRepository.save(sandboxApplication))
-
-      val result = await(
-        applicationRepository.fetchAllForEmailAddressAndEnvironment(
-          collaborator.emailAddress.text,
-          productionEnv
-        )
-      )
-
-      result.size shouldBe 1
-      result.head.environment shouldBe productionEnv
-      result.map(
-        _.collaborators.map(x =>
-          x.emailAddress shouldBe collaborator.emailAddress
-        )
       )
     }
   }

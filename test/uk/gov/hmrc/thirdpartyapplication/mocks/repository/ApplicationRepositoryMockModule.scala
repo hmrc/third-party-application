@@ -205,15 +205,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     }
 
-    object FetchAllForEmail {
-
-      def thenReturnWhen(emailAddress: String)(apps: StoredApplication*) =
-        when(aMock.fetchAllForEmailAddress(eqTo(emailAddress))).thenReturn(successful(apps.toList))
-
-      def thenReturnEmptyWhen(emailAddress: String) =
-        when(aMock.fetchAllForEmailAddress(eqTo(emailAddress))).thenReturn(successful(List.empty))
-    }
-
     object fetchAllForUserId {
 
       def thenReturnWhen(userId: UserId, includeDeleted: Boolean)(apps: StoredApplication*) =

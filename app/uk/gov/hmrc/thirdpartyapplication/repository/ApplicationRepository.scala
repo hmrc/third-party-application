@@ -646,25 +646,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchAllForEmailAddress(emailAddress: String): Future[Seq[StoredApplication]] = {
-    val query = and(
-      equal("collaborators.emailAddress", emailAddress),
-      notEqual("state.name", State.DELETED.toString())
-    )
-
-    collection.find(query).toFuture()
-  }
-
-  def fetchAllForEmailAddressAndEnvironment(emailAddress: String, environment: Environment): Future[Seq[StoredApplication]] = {
-    val query = and(
-      equal("collaborators.emailAddress", emailAddress),
-      equal("environment", Codecs.toBson(environment)),
-      notEqual("state.name", State.DELETED.toString())
-    )
-
-    collection.find(query).toFuture()
-  }
-
   def fetchProdAppStateHistories(): Future[Seq[ApplicationWithStateHistory]] = {
     def conditional[T](condition: Document, trueValue: Int, falseValue: Int): Bson = {
       Document("$cond" -> BsonArray(
