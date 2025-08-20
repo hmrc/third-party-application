@@ -53,10 +53,13 @@ object QueryParamValidator {
       }
   }
 
-  object ManyValuesAllowed {
+  object AtLeastOneValue {
 
     def apply(paramName: String)(values: Seq[String]): ErrorsOr[Seq[String]] =
-      values.validNel
+      values.toList match {
+        case Nil           => s"$paramName requires at least one value".invalidNel
+        case _             => values.validNel
+      }
   }
 
   object BooleanValueExpected {
@@ -167,7 +170,7 @@ object QueryParamValidator {
     val paramName = "status"
 
     def validate(values: Seq[String]): ErrorsOr[Param.AppStateFilterQP] = {
-      ManyValuesAllowed(paramName)(values) andThen AppStateFilterExpected.apply map { Param.AppStateFilterQP(_) }
+      AtLeastOneValue(paramName)(values.flatMap(v => v.split(","))) andThen AppStateFilterExpected.apply map { Param.AppStateFilterQP(_) }
     }
   }
 

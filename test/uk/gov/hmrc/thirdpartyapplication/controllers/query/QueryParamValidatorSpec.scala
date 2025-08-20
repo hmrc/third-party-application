@@ -163,7 +163,8 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
       }
 
       "extract valid params - multiple states" in {
-        test(Map("status" -> Seq("PRODUCTION", "TESTING"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingMany(Set(State.PRODUCTION, State.TESTING)))).validNel
+        test(Map("status" -> Seq("PRODUCTION", "PRE_PRODUCTION"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingMany(Set(State.PRODUCTION, State.PRE_PRODUCTION)))).validNel
+        test(Map("status" -> Seq("PRODUCTION,PRE_PRODUCTION"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingMany(Set(State.PRODUCTION, State.PRE_PRODUCTION)))).validNel
       }
 
       "extract valid params - sort filter" in {

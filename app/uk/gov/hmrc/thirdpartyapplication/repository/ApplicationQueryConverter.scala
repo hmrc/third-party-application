@@ -134,7 +134,7 @@ object ApplicationQueryConverter {
       case AppStateFilter.ExcludingDeleted     => List(commonNotDeleted)
       case AppStateFilter.Blocked              => List(and(equal("blocked", BsonBoolean(true)), commonNotDeleted))
       case AppStateFilter.MatchingOne(state)   => List(equal("state.name", state.toString))
-      case AppStateFilter.MatchingMany(states) => List(in("state.name", states.map(_.toString)))
+      case AppStateFilter.MatchingMany(states) => List(in("state.name", states.toList.map(_.toString): _*))
     })
 
   def asSearchFilter(implicit params: List[Param[_]]): List[Bson] =
