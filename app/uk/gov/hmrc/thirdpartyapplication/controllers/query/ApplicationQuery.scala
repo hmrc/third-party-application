@@ -38,9 +38,9 @@ object ApplicationQuery {
   case class ByClientId protected (clientId: ClientId, recordUsage: Boolean)     extends SingleApplicationQuery
   case class ByServerToken protected (serverToken: String, recordUsage: Boolean) extends SingleApplicationQuery
 
-  case class GeneralOpenEndedApplicationQuery protected (sorting: Sorting, params: List[FilterParam[_]]) extends MultipleApplicationQuery
+  case class GeneralOpenEndedApplicationQuery protected (sorting: Sorting, params: List[NonUniqueFilterParam[_]]) extends MultipleApplicationQuery
 
-  case class PaginatedApplicationQuery protected (pagination: Pagination, sorting: Sorting, params: List[FilterParam[_]]) extends MultipleApplicationQuery
+  case class PaginatedApplicationQuery protected (pagination: Pagination, sorting: Sorting, params: List[NonUniqueFilterParam[_]]) extends MultipleApplicationQuery
 
   import cats.implicits._
 
@@ -56,8 +56,10 @@ object ApplicationQuery {
     }
   }
 
-  def identifySort(params: List[SortingParam[_]]): Sorting = {
-    params match {
+  def identifyAnySorting(params: List[Param[_]]): Sorting = {
+    params.collect {
+      case sp: SortingParam[_] => sp
+    } match {
       case SortQP(sort) :: Nil => sort
       case _                   => Sorting.SubmittedAscending
     }
@@ -86,14 +88,10 @@ object ApplicationQuery {
 
     def attemptToConstructMultiResultQuery(): MultipleApplicationQuery = {
       val multiQueryParams = validParams.collect {
-        case fp: FilterParam[_] => fp
+        case fp: NonUniqueFilterParam[_] => fp
       }
 
-      val sortingParams = validParams.collect {
-        case sp: SortingParam[_] => sp
-      }
-
-      val sorting = ApplicationQuery.identifySort(sortingParams)
+      val sorting = ApplicationQuery.identifyAnySorting(validParams)
 
       identifyAnyPagination(validParams)
         .fold[MultipleApplicationQuery](

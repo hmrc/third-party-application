@@ -24,7 +24,11 @@ object ParamsValidator {
   import cats.implicits._
 
   def checkLastUsedParamsCombinations(params: List[NonUniqueFilterParam[_]]): ErrorsOr[Unit] =
-    params.filter(_.section == 5).sortBy(_.order) match {
+    params.collect {
+      case qp: LastUsedAfterQP  => qp
+      case qp: LastUsedBeforeQP => qp
+    }
+      .sortBy(_.order) match {
       case LastUsedAfterQP(after) :: LastUsedBeforeQP(before) :: _ if after.isAfter(before) => "Cannot query for used after date that is after a given before date".invalidNel
       case _                                                                                => ().validNel
     }
@@ -32,7 +36,9 @@ object ParamsValidator {
   def checkSubscriptionsParamsCombinations(params: List[NonUniqueFilterParam[_]]): ErrorsOr[Unit] = {
     import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
-    params.filter(_.section == 4)
+    params.collect {
+      case qp: SubscriptionFilterParam[_] => qp
+    }
       .sortBy(_.order) match {
       case NoSubscriptionsQP :: Nil                                 => ().validNel
       case HasSubscriptionsQP :: Nil                                => ().validNel
@@ -49,7 +55,7 @@ object ParamsValidator {
 
       case ApiVersionNbrQP(_) :: _ => "Cannot query for a version without a context".invalidNel
 
-      case _ => ().validNel // "Unexpected combination of subscription query parameters".invalid
+      case _ => ().validNel
     }
   }
 

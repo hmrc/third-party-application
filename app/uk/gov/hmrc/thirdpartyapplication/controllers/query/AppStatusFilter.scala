@@ -37,12 +37,12 @@ object AppStateFilter {
       case "PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION" => Matching(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION).some
       case "PENDING_GATEKEEPER_CHECK"                    => Matching(State.PENDING_GATEKEEPER_APPROVAL).some
       case "PENDING_SUBMITTER_VERIFICATION"              => Matching(State.PENDING_REQUESTER_VERIFICATION).some
-
-      case "ACTIVE"            => Active.some
-      case "EXCLUDING_DELETED" => ExcludingDeleted.some
-      case "BLOCKED"           => Blocked.some
-      case "ANY"               => NoFiltering.some
-      case text                => State(text).map(Matching)
+      //
+      case "ACTIVE"                                      => Active.some
+      case "EXCLUDING_DELETED"                           => ExcludingDeleted.some
+      case "BLOCKED"                                     => Blocked.some
+      case "ANY"                                         => NoFiltering.some
+      case text                                          => State(text).map(Matching)
     }
   }
 }
