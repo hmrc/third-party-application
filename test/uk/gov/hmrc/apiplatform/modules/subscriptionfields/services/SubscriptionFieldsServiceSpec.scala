@@ -37,11 +37,16 @@ class SubscriptionFieldsServiceSpec extends AsyncHmrcSpec with ApiSubscriptionFi
   private val version1 = ApiVersionNbr("V1")
   private val version2 = ApiVersionNbr("V2")
 
-  private val fieldName1 = FieldName("F1")
-  private val fieldName2 = FieldName("F2")
-  private val fieldName3 = FieldName("F3")
+  private val fieldName1 = FieldName("Fa")
+  private val fieldName2 = FieldName("Fb")
+  private val fieldName3 = FieldName("Fc")
 
-  def fieldDef(c: Int, v: Int, f: Int) = FieldDefinition(FieldName(s"F$c-$v-$f"), s"field $f", "", FieldDefinitionType.STRING, s"short $f", None)
+  def fieldDef(c: Int, v: Int, f: Int) = {
+    val cs = "abcdefghijklmnopqrstuxwxyz".charAt(c)
+    val vs = "abcdefghijklmnopqrstuxwxyz".charAt(v)
+    val fs = "abcdefghijklmnopqrstuxwxyz".charAt(f)
+    FieldDefinition(FieldName(s"F$cs$vs$fs"), s"field $f", "", FieldDefinitionType.STRING, s"short $f", None)
+  }
 
   def fv(c: Int, v: Int, f: Int) = FieldValue(s"$c-$v-$f")
 
