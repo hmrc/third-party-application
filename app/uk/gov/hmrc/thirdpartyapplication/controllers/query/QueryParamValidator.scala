@@ -57,8 +57,8 @@ object QueryParamValidator {
 
     def apply(paramName: String)(values: Seq[String]): ErrorsOr[Seq[String]] =
       values.toList match {
-        case Nil           => s"$paramName requires at least one value".invalidNel
-        case _             => values.validNel
+        case Nil => s"$paramName requires at least one value".invalidNel
+        case _   => values.validNel
       }
   }
 

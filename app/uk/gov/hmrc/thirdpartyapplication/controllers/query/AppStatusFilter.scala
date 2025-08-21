@@ -35,12 +35,11 @@ object AppStateFilter {
 
   def apply(values: Seq[String]): Option[AppStateFilter] = values match {
     case v :: Nil => applyOne(v)
-    case vs       => {
-      val x: Option[List[State]] = vs.toList.map(applyState(_)).traverse(identity)
-      println(x)
-      val z = x.map(ss => MatchingMany(ss.toSet))
-      z
-    }
+    case vs       =>
+      vs.toList
+        .map(applyState(_))
+        .traverse(identity)
+        .map(ss => MatchingMany(ss.toSet))
   }
 
   private def applyState(value: String): Option[State] = value match {
