@@ -148,85 +148,27 @@ object ApplicationRepository {
     implicit val readsApplicationWithSubscriptionCount: Reads[ApplicationWithSubscriptionCount] = Json.reads[ApplicationWithSubscriptionCount]
 
     implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
-  }
 
-  case class QueryAppWithSubs(
-      id: ApplicationId,
-      name: ApplicationName,
-      normalisedName: String,
-      collaborators: Set[Collaborator],
-      description: Option[String] = None,
-      wso2ApplicationName: String,
-      tokens: ApplicationTokens,
-      state: ApplicationState,
-      access: Access = Access.Standard(),
-      createdOn: Instant,
-      lastAccess: Option[Instant],
-      refreshTokensAvailableFor: Period = Period.ofDays(grantLengthConfig),
-      rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-      environment: Environment = Environment.PRODUCTION,
-      checkInformation: Option[CheckInformation] = None,
-      blocked: Boolean = false,
-      ipAllowlist: IpAllowlist = IpAllowlist(),
-      deleteRestriction: DeleteRestriction = DeleteRestriction.NoRestriction,
-      apis: List[ApiIdentifier]
-    ) {
-
-    def asApplicationWithSubs(): ApplicationWithSubscriptions = {
-      ApplicationWithSubscriptions(
-        CoreApplication(
-          this.id,
-          this.tokens.production.clientId,
-          this.wso2ApplicationName,
-          this.name,
-          this.environment,
-          this.description,
-          this.createdOn,
-          this.lastAccess,
-          GrantLength.apply(this.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
-          this.tokens.production.lastAccessTokenUsage,
-          this.access,
-          this.state,
-          this.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
-          this.checkInformation,
-          this.blocked,
-          ipAllowlist = this.ipAllowlist,
-          lastActionActor = ActorType.UNKNOWN,
-          deleteRestriction = this.deleteRestriction
-        ),
-        this.collaborators,
-        this.apis.toSet
+    val transformApplications: Reads[JsArray] = 
+    (__ \ "applications").read[JsArray].map { array =>
+      JsArray(
+        array.value.map { item =>
+          val obj = item.as[JsObject]
+          Json.obj(
+            "app" -> (obj - "apis"),
+            "apis" -> (obj \ "apis").getOrElse(JsArray.empty)
+          )
+        }
       )
     }
-  }
 
-  import MongoFormats._
+    case class StoredAppWithSubs(app: StoredApplication, apis: List[ApiIdentifier]) {
+      lazy val asApplicationWithSubs = StoredApplication.asApplication(app).withSubscriptions(apis.toSet)
+    }
 
-  object QueryAppWithSubs {
-
-    implicit val read: Reads[QueryAppWithSubs] = (
-      (JsPath \ "id").read[ApplicationId] and
-        (JsPath \ "name").read[ApplicationName] and
-        (JsPath \ "normalisedName").read[String] and
-        (JsPath \ "collaborators").read[Set[Collaborator]] and
-        (JsPath \ "description").readNullable[String] and
-        (JsPath \ "wso2ApplicationName").read[String] and
-        (JsPath \ "tokens").read[ApplicationTokens] and
-        (JsPath \ "state").read[ApplicationState] and
-        (JsPath \ "access").read[Access] and
-        (JsPath \ "createdOn").read[Instant] and
-        (JsPath \ "lastAccess").readNullable[Instant] and
-        (((JsPath \ "refreshTokensAvailableFor").read[Period]
-          .orElse((JsPath \ "grantLength").read[Int].map(periodFromInt(_))))
-          or Reads.pure(periodFromInt(grantLengthConfig))) and
-        (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
-        (JsPath \ "environment").read[Environment] and
-        (JsPath \ "checkInformation").readNullable[CheckInformation] and
-        ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
-        ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
-        ((JsPath \ "deleteRestriction").read[DeleteRestriction] or Reads.pure[DeleteRestriction](DeleteRestriction.NoRestriction)) and
-        ((JsPath \ "apis").read[List[ApiIdentifier]] or Reads.pure[List[ApiIdentifier]](List.empty))
-    )(QueryAppWithSubs.apply _)
+    object StoredAppWithSubs {
+      implicit val reads: Reads[StoredAppWithSubs] = Json.reads[StoredAppWithSubs]
+    }
   }
 }
 
@@ -1145,18 +1087,19 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
 
       if (qry.wantsSubscriptions) {
-        implicit val readApplications = ((JsPath \ "applications").read[List[QueryAppWithSubs]])
+        val listRdr: Reads[List[StoredAppWithSubs]] = implicitly
+        implicit val rdr = transformApplications.andThen(listRdr)
 
         collection.aggregate[BsonValue](facets)
           .head()
           .map(bson => {
             Right(
-              Codecs.fromBson[List[QueryAppWithSubs]](bson)
-                .map(_.asApplicationWithSubs())
+              Codecs.fromBson[List[StoredAppWithSubs]](bson)
+                .map(_.asApplicationWithSubs)
             )
           })
       } else {
-        implicit val readApplications = ((JsPath \ "applications").read[List[StoredApplication]])
+        implicit val readsList = (JsPath \ "applications").read[List[StoredApplication]]
 
         collection.aggregate[BsonValue](facets)
           .head()
