@@ -89,7 +89,16 @@ object ParamsValidator {
     }
   }
 
-  def validateParamCombinations(allParams: List[Param[_]]): ErrorsOr[Unit] = {
+  def checkWantSubscriptions(wantSubcriptions: Boolean, wantPagination: Boolean): ErrorsOr[Unit] =
+    if (wantSubcriptions && wantPagination) {
+      "Cannot return subscriptions with paginated queries".invalidNel
+    } else {
+      ().validNel
+    }
+
+  def validateParamCombinations(implicit allParams: List[Param[_]]): ErrorsOr[Unit] = {
+    val wantSubcriptions = first[WantSubscriptionsQP.type].headOption.isDefined
+
     val otherFilterParams  = allParams.collect {
       case fp: NonUniqueFilterParam[_] => fp
     }
@@ -102,6 +111,7 @@ object ParamsValidator {
     val paginationParams   = allParams.collect(_ match {
       case pp: PaginationParam[_] => pp
     })
+    val wantPagination     = paginationParams.headOption.isDefined
 
     ((uniqueFilterParams, otherFilterParams, sortingParams, paginationParams) match {
       case (Nil, Nil, Nil, Nil)  => ().validNel // Only GK
@@ -114,6 +124,7 @@ object ParamsValidator {
       .combine(checkSubscriptionsParamsCombinations(otherFilterParams))
       .combine(checkLastUsedParamsCombinations(otherFilterParams))
       .combine(checkVerificationCodeUsesDeleteExclusion(otherFilterParams))
+      .combine(checkWantSubscriptions(wantSubcriptions, wantPagination))
   }
 
   def parseAndValidateParams(rawQueryParams: Map[String, Seq[String]], rawHeaders: Map[String, Seq[String]]): ErrorsOr[List[Param[_]]] = {

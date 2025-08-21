@@ -149,18 +149,18 @@ object ApplicationRepository {
 
     implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
 
-    val transformApplications: Reads[JsArray] = 
-    (__ \ "applications").read[JsArray].map { array =>
-      JsArray(
-        array.value.map { item =>
-          val obj = item.as[JsObject]
-          Json.obj(
-            "app" -> (obj - "apis"),
-            "apis" -> (obj \ "apis").getOrElse(JsArray.empty)
-          )
-        }
-      )
-    }
+    val transformApplications: Reads[JsArray] =
+      (__ \ "applications").read[JsArray].map { array =>
+        JsArray(
+          array.value.map { item =>
+            val obj = item.as[JsObject]
+            Json.obj(
+              "app"  -> (obj - "apis"),
+              "apis" -> (obj \ "apis").getOrElse(JsArray.empty)
+            )
+          }
+        )
+      }
 
     case class StoredAppWithSubs(app: StoredApplication, apis: List[ApiIdentifier]) {
       lazy val asApplicationWithSubs = StoredApplication.asApplication(app).withSubscriptions(apis.toSet)
@@ -251,7 +251,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     with ApplicationLogger
     with ClockNow {
 
-  import ApplicationRepository._
   import ApplicationRepository.MongoFormats._
 
   def save(application: StoredApplication): Future[StoredApplication] = {
@@ -1088,7 +1087,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       if (qry.wantsSubscriptions) {
         val listRdr: Reads[List[StoredAppWithSubs]] = implicitly
-        implicit val rdr = transformApplications.andThen(listRdr)
+        implicit val rdr                            = transformApplications.andThen(listRdr)
 
         collection.aggregate[BsonValue](facets)
           .head()
