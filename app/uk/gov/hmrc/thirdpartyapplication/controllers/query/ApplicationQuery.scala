@@ -24,8 +24,8 @@ sealed trait ApplicationQuery
 
 sealed trait SingleApplicationQuery extends ApplicationQuery {
   def otherParams: List[NonUniqueFilterParam[_]]
-  
-  lazy val wantsSubscriptions: Boolean            = ApplicationQueryConverter.wantsSubscriptions(otherParams)
+
+  lazy val wantsSubscriptions: Boolean = ApplicationQueryConverter.wantsSubscriptions(otherParams)
 }
 
 sealed trait MultipleApplicationQuery extends ApplicationQuery {

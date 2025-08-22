@@ -509,14 +509,19 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchBySingleApplicationQuery {
-      def thenReturnsNothing() = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(None))
 
-      def thenReturns(app: StoredApplication) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Some(app)))
+      def thenReturnsNothing(withSubs: Boolean = false) =
+        if (withSubs)
+          when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Right(None)))
+        else
+          when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Left(None)))
+
+      def thenReturns(app: ApplicationWithCollaborators) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Left(Some(app))))
+      def thenReturns(app: ApplicationWithSubscriptions) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Right(Some(app))))
     }
 
     object FetchByGeneralOpenEndedApplicationQuery {
-      def thenReturns(apps: ApplicationWithCollaborators*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Left(apps.toList)))
-
+      def thenReturns(apps: ApplicationWithCollaborators*)         = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Left(apps.toList)))
       def thenReturnsWithSubs(apps: ApplicationWithSubscriptions*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Right(apps.toList)))
     }
 

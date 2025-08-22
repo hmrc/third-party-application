@@ -53,12 +53,12 @@ class QueryController @Inject() (
   private def execute(appQry: ApplicationQuery): Future[Result] = {
     appQry match {
       case q: SingleApplicationQuery => applicationRepository.fetchBySingleApplicationQuery(q).map {
-        _.fold(
-          // Yes these look the same but they are for different types
-          _.fold(NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query")))(appWithCollabs => Ok(Json.toJson(appWithCollabs))),
-          _.fold(NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query")))(appWithSubs => Ok(Json.toJson(appWithSubs)))
-        )
-      }
+          _.fold(
+            // Yes these look the same but they are for different types
+            _.fold(NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query")))(appWithCollabs => Ok(Json.toJson(appWithCollabs))),
+            _.fold(NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query")))(appWithSubs => Ok(Json.toJson(appWithSubs)))
+          )
+        }
 
       case q: GeneralOpenEndedApplicationQuery =>
         applicationRepository.fetchByGeneralOpenEndedApplicationQuery(q).map(_.fold(l => Ok(Json.toJson(l)), r => Ok(Json.toJson(r))))

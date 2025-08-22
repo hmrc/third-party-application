@@ -149,27 +149,6 @@ object ApplicationRepository {
 
     implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
 
-    val transformApplications: Reads[JsArray] =
-      (__ \ "applications").read[JsArray].map { array =>
-        JsArray(
-          array.value.map { item =>
-            val obj = item.as[JsObject]
-            Json.obj(
-              "app"  -> (obj - "apis"),
-              "apis" -> (obj \ "apis").getOrElse(JsArray.empty)
-            )
-          }
-        )
-      }
-    val transformApplication: Reads[JsObject] =
-      (__ \ "application").read[JsValue].map { item =>
-        val obj = item.as[JsObject]
-        Json.obj(
-          "app"  -> (obj - "apis"),
-          "apis" -> (obj \ "apis").getOrElse(JsArray.empty)
-        )
-      }
-
     case class StoredAppWithSubs(app: StoredApplication, apis: List[ApiIdentifier]) {
       lazy val asApplicationWithSubs = StoredApplication.asApplication(app).withSubscriptions(apis.toSet)
     }
@@ -1062,18 +1041,30 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     )
   )
 
-
   // So simple that we don't need to do anything other than use existing methods.  These could be done via conversion to AggregateQuery components at a later date.
   def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Either[Option[ApplicationWithCollaborators], Option[ApplicationWithSubscriptions]]] = {
     qry match {
-      case ApplicationQuery.ByClientId(clientId, true, _)        => findAndRecordApplicationUsage(clientId).map(osa => Left( osa.map(StoredApplication.asApplication(_))))
-      case ApplicationQuery.ByServerToken(serverToken, true, _)  => findAndRecordServerTokenUsage(serverToken).map(osa => Left( osa.map(StoredApplication.asApplication(_))))
-      case _ => fetchSingleAppByAggregates(qry)
+      case ApplicationQuery.ByClientId(clientId, true, _)       => findAndRecordApplicationUsage(clientId).map(osa => Left(osa.map(StoredApplication.asApplication(_))))
+      case ApplicationQuery.ByServerToken(serverToken, true, _) => findAndRecordServerTokenUsage(serverToken).map(osa => Left(osa.map(StoredApplication.asApplication(_))))
+      case _                                                    => fetchSingleAppByAggregates(qry)
     }
   }
 
+  private val transformApplications: Reads[JsArray] =
+    (__ \ "applications").read[JsArray].map { array =>
+      JsArray(
+        array.value.map { item =>
+          val obj = item.as[JsObject]
+          Json.obj(
+            "app"  -> (obj - "apis"),
+            "apis" -> (obj \ "apis").getOrElse(JsArray.empty)
+          )
+        }
+      )
+    }
+
   private def executeAggregate(wantsSubscriptions: Boolean, pipeline: Seq[Bson]): Future[Either[List[ApplicationWithCollaborators], List[ApplicationWithSubscriptions]]] = {
-    val projectionToUse     = if (wantsSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
+    val projectionToUse = if (wantsSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
 
     val facets: Seq[Bson] = Seq(
       facet(
@@ -1110,14 +1101,14 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def fetchSingleAppByAggregates(qry: SingleApplicationQuery): Future[Either[Option[ApplicationWithCollaborators], Option[ApplicationWithSubscriptions]]] = {
     timeFuture("Run Single Query", "application.repository.fetchSingleAppByAggregates") {
       val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.otherParams)
-      
-      val needsLookup = qry.wantsSubscriptions   
-        import cats.implicits._
-      val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
+
+      val needsLookup         = qry.wantsSubscriptions
+      import cats.implicits._
+      val maybeSubsLookup     = subscriptionsLookup.some.filter(_ => needsLookup)
       val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ filtersStage
 
       executeAggregate(qry.wantsSubscriptions, pipeline)
-        .map( _.bimap(_.headOption, _.headOption))
+        .map(_.bimap(_.headOption, _.headOption))
     }
   }
 

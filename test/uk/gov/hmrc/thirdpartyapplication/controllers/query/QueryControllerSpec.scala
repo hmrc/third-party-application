@@ -24,6 +24,7 @@ import org.apache.pekko.stream.testkit.NoMaterializer
 import play.api.libs.json._
 import play.api.test.FakeRequest
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifierFixtures
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, PaginatedApplications}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerSpec
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController
@@ -35,6 +36,7 @@ class QueryControllerSpec
     extends ControllerSpec
     with CommonApplicationId
     with ApplicationWithCollaboratorsFixtures
+    with ApiIdentifierFixtures
     with StoredApplicationFixtures {
   import play.api.test.Helpers._
   import play.api.test.Helpers
@@ -44,20 +46,38 @@ class QueryControllerSpec
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest            = new QueryController(ApplicationRepoMock.aMock, Helpers.stubControllerComponents())
     val appWithCollaborators = StoredApplication.asApplication(storedApp)
+    val appWithSubs          = appWithCollaborators.withSubscriptions(Set(apiIdentifierOne, apiIdentifierTwo))
   }
 
   "QueryController" should {
     "work for single query" in new Setup {
-      ApplicationRepoMock.FetchBySingleApplicationQuery.thenReturns(storedApp)
+      ApplicationRepoMock.FetchBySingleApplicationQuery.thenReturns(appWithCollaborators)
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}"))
 
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(appWithCollaborators)
     }
 
+    "work for single query with subs" in new Setup {
+      ApplicationRepoMock.FetchBySingleApplicationQuery.thenReturns(appWithSubs)
+      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}&wantSubscriptions"))
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(appWithSubs)
+    }
+
     "work for single query finding nothing" in new Setup {
       ApplicationRepoMock.FetchBySingleApplicationQuery.thenReturnsNothing()
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}"))
+
+      status(result) shouldBe NOT_FOUND
+      contentAsString(result) should include("No application found for query")
+      contentAsString(result) should include("APPLICATION_NOT_FOUND")
+    }
+
+    "work for single query with subs finding nothing" in new Setup {
+      ApplicationRepoMock.FetchBySingleApplicationQuery.thenReturnsNothing()
+      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}&wantSubscriptions"))
 
       status(result) shouldBe NOT_FOUND
       contentAsString(result) should include("No application found for query")
@@ -72,9 +92,25 @@ class QueryControllerSpec
       contentAsJson(result) shouldBe Json.toJson(List(appWithCollaborators))
     }
 
+    "work for general query with subs" in new Setup {
+      ApplicationRepoMock.FetchByGeneralOpenEndedApplicationQuery.thenReturnsWithSubs(appWithSubs)
+      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=${userIdOne}&wantSubscriptions"))
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(List(appWithSubs))
+    }
+
     "work for general query finding nothing" in new Setup {
-      ApplicationRepoMock.FetchByGeneralOpenEndedApplicationQuery.thenReturnsWithSubs()
+      ApplicationRepoMock.FetchByGeneralOpenEndedApplicationQuery.thenReturns()
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=${userIdOne}"))
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe JsArray.empty
+    }
+
+    "work for general query with subs finding nothing" in new Setup {
+      ApplicationRepoMock.FetchByGeneralOpenEndedApplicationQuery.thenReturnsWithSubs()
+      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=${userIdOne}&wantSubscriptions"))
 
       status(result) shouldBe OK
       contentAsJson(result) shouldBe JsArray.empty
