@@ -156,8 +156,18 @@ object ApplicationQueryConverter {
       List(equal("state.verificationCode", qp.value))
     )
 
+  def asSingleQueryFilters(implicit params: List[Param[_]]): List[Bson] = {
+    onFirst[UniqueFilterParam[_]]( _ match {
+      case ApplicationIdQP(id) => List(equal("id", Codecs.toBson(id)))
+      case ClientIdQP(id) => List(equal("tokens.production.clientId", Codecs.toBson(id)))
+      case ServerTokenQP(value) => List(equal("tokens.production.accessToken", value))
+    })
+  }
+
   def convertToFilter(implicit params: List[Param[_]]): List[Bson] = {
-    val individualFilters = asSubscriptionFilters ++
+    val individualFilters = 
+      asSingleQueryFilters ++
+      asSubscriptionFilters ++
       asUserFilters ++
       asEnvironmentFilters ++
       asDeleteRestrictionFilters ++

@@ -25,7 +25,6 @@ import play.api.mvc._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.{GeneralOpenEndedApplicationQuery, PaginatedApplicationQuery}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
@@ -53,11 +52,13 @@ class QueryController @Inject() (
 
   private def execute(appQry: ApplicationQuery): Future[Result] = {
     appQry match {
-      case q: SingleApplicationQuery => applicationRepository.fetchBySingleApplicationQuery(q).map(oapp => {
-          oapp.fold[Result](
-            NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query"))
-          )(app => Ok(Json.toJson(StoredApplication.asApplication(app))))
-        })
+      case q: SingleApplicationQuery => applicationRepository.fetchBySingleApplicationQuery(q).map {
+        _.fold(
+          // Yes these look the same but they are for different types
+          _.fold(NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query")))(appWithCollabs => Ok(Json.toJson(appWithCollabs))),
+          _.fold(NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query")))(appWithSubs => Ok(Json.toJson(appWithSubs)))
+        )
+      }
 
       case q: GeneralOpenEndedApplicationQuery =>
         applicationRepository.fetchByGeneralOpenEndedApplicationQuery(q).map(_.fold(l => Ok(Json.toJson(l)), r => Ok(Json.toJson(r))))

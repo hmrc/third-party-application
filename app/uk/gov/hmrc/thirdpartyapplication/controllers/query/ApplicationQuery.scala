@@ -22,7 +22,11 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueryConverter
 
 sealed trait ApplicationQuery
 
-sealed trait SingleApplicationQuery extends ApplicationQuery
+sealed trait SingleApplicationQuery extends ApplicationQuery {
+  def otherParams: List[NonUniqueFilterParam[_]]
+  
+  lazy val wantsSubscriptions: Boolean            = ApplicationQueryConverter.wantsSubscriptions(otherParams)
+}
 
 sealed trait MultipleApplicationQuery extends ApplicationQuery {
   def sorting: Sorting
@@ -34,9 +38,9 @@ sealed trait MultipleApplicationQuery extends ApplicationQuery {
 
 object ApplicationQuery {
 
-  case class ById protected (applicationId: ApplicationId)                       extends SingleApplicationQuery
-  case class ByClientId protected (clientId: ClientId, recordUsage: Boolean)     extends SingleApplicationQuery
-  case class ByServerToken protected (serverToken: String, recordUsage: Boolean) extends SingleApplicationQuery
+  case class ById protected (applicationId: ApplicationId, otherParams: List[NonUniqueFilterParam[_]])                       extends SingleApplicationQuery
+  case class ByClientId protected (clientId: ClientId, recordUsage: Boolean, otherParams: List[NonUniqueFilterParam[_]])     extends SingleApplicationQuery
+  case class ByServerToken protected (serverToken: String, recordUsage: Boolean, otherParams: List[NonUniqueFilterParam[_]]) extends SingleApplicationQuery
 
   case class GeneralOpenEndedApplicationQuery protected (sorting: Sorting, params: List[NonUniqueFilterParam[_]]) extends MultipleApplicationQuery
 
@@ -67,7 +71,7 @@ object ApplicationQuery {
 
   // List must be valid or outcome is undefined.
   def attemptToConstructQuery(validParams: List[Param[_]]): ApplicationQuery = {
-    def attemptToConstructSingleResultQuery(): Option[SingleApplicationQuery] = {
+    def attemptToConstructSingleResultQuery(nonUniqueFilterParam: List[NonUniqueFilterParam[_]]): Option[SingleApplicationQuery] = {
       import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
       val hasApiGatewayUserAgent = validParams.find(_ match {
@@ -80,29 +84,30 @@ object ApplicationQuery {
       }
         .headOption // There can only be one
         .flatMap {
-          case ServerTokenQP(serverToken)     => ApplicationQuery.ByServerToken(serverToken, hasApiGatewayUserAgent).some
-          case ClientIdQP(clientId)           => ApplicationQuery.ByClientId(clientId, hasApiGatewayUserAgent).some
-          case ApplicationIdQP(applicationId) => ApplicationQuery.ById(applicationId).some
+          case ServerTokenQP(serverToken)     => ApplicationQuery.ByServerToken(serverToken, hasApiGatewayUserAgent, nonUniqueFilterParam).some
+          case ClientIdQP(clientId)           => ApplicationQuery.ByClientId(clientId, hasApiGatewayUserAgent, nonUniqueFilterParam).some
+          case ApplicationIdQP(applicationId) => ApplicationQuery.ById(applicationId, nonUniqueFilterParam).some
         }
     }
 
-    def attemptToConstructMultiResultQuery(): MultipleApplicationQuery = {
-      val multiQueryParams = validParams.collect {
-        case fp: NonUniqueFilterParam[_] => fp
-      }
+    def attemptToConstructMultiResultQuery(nonUniqueFilterParam: List[NonUniqueFilterParam[_]]): MultipleApplicationQuery = {
 
       val sorting = ApplicationQuery.identifyAnySorting(validParams)
 
       identifyAnyPagination(validParams)
         .fold[MultipleApplicationQuery](
-          ApplicationQuery.GeneralOpenEndedApplicationQuery(sorting, multiQueryParams)
+          ApplicationQuery.GeneralOpenEndedApplicationQuery(sorting, nonUniqueFilterParam)
         )(pagination => {
-          ApplicationQuery.PaginatedApplicationQuery(pagination, sorting, multiQueryParams)
+          ApplicationQuery.PaginatedApplicationQuery(pagination, sorting, nonUniqueFilterParam)
         })
     }
 
-    attemptToConstructSingleResultQuery().fold[ApplicationQuery](
-      attemptToConstructMultiResultQuery()
+    val nonUniqueFilterParam = validParams.collect {
+      case fp: NonUniqueFilterParam[_] => fp
+    }
+
+    attemptToConstructSingleResultQuery(nonUniqueFilterParam).fold[ApplicationQuery](
+      attemptToConstructMultiResultQuery(nonUniqueFilterParam)
     )(identity)
   }
 }
