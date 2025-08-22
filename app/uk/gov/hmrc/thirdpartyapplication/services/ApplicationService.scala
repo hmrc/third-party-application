@@ -99,7 +99,7 @@ class ApplicationService @Inject() (
     for {
       existing <- fetchApp(applicationId)
       savedApp <- applicationRepository.save(existing.copy(checkInformation = Some(checkInformation)))
-    } yield StoredApplication.asApplication(savedApp)
+    } yield savedApp.asAppWithCollaborators
   }
 
   def confirmSetupComplete(applicationId: ApplicationId, requesterEmailAddress: LaxEmailAddress): Future[StoredApplication] = {
@@ -172,7 +172,7 @@ class ApplicationService @Inject() (
 
   def fetchByClientId(clientId: ClientId): Future[Option[ApplicationWithCollaborators]] = {
     applicationRepository.fetchByClientId(clientId) map {
-      _.map(application => StoredApplication.asApplication(application))
+      _.map(application => application.asAppWithCollaborators)
     }
   }
 
@@ -183,7 +183,7 @@ class ApplicationService @Inject() (
           app           <- OptionT(applicationRepository.findAndRecordApplicationUsage(clientId))
           serverToken    = app.tokens.production.accessToken
           subscriptions <- OptionT.liftF(subscriptionRepository.getSubscriptions(app.id))
-          result         = StoredApplication.asApplication(app).withSubscriptions(subscriptions.toSet)
+          result         = app.asAppWithCollaborators.withSubscriptions(subscriptions.toSet)
         } yield (result, serverToken)
       )
         .value
@@ -193,7 +193,7 @@ class ApplicationService @Inject() (
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationWithCollaborators]] = {
     applicationRepository.fetchByServerToken(serverToken) map {
       _.map(application =>
-        StoredApplication.asApplication(application)
+        application.asAppWithCollaborators
       )
     }
   }
@@ -206,7 +206,7 @@ class ApplicationService @Inject() (
           // Unlike findAndRecordApplicationUsage(clientId), in this method the serverToken is provided as input and is used as a search term for accessToken
           // so it's not necessary create a variable here, such as serverToken = app.tokens.production.accessToken
           subscriptions <- OptionT.liftF(subscriptionRepository.getSubscriptions(app.id))
-          result         = StoredApplication.asApplication(app).withSubscriptions(subscriptions.toSet)
+          result         = app.asAppWithCollaborators.withSubscriptions(subscriptions.toSet)
         } yield (result, serverToken)
       )
         .value
@@ -220,7 +220,7 @@ class ApplicationService @Inject() (
 
   private def asExtendedResponses(apps: List[StoredApplication]): Future[List[ApplicationWithSubscriptions]] = {
     def asExtendedResponse(app: StoredApplication): Future[ApplicationWithSubscriptions] = {
-      subscriptionRepository.getSubscriptions(app.id).map(subscriptions => StoredApplication.asApplication(app).withSubscriptions(subscriptions.toSet))
+      subscriptionRepository.getSubscriptions(app.id).map(subscriptions => app.asAppWithCollaborators.withSubscriptions(subscriptions.toSet))
     }
 
     Future.sequence(apps.map(asExtendedResponse))
@@ -230,7 +230,7 @@ class ApplicationService @Inject() (
     Future.sequence(
       userIds.map(applicationRepository.fetchAllForUserId(_, false).map(_.toList))
     ).map(_.foldLeft(List[StoredApplication]())(_ ++ _)).map {
-      _.map(application => StoredApplication.asApplication(application))
+      _.map(application => application.asAppWithCollaborators)
     }
       .map(_.distinct)
   }
@@ -246,25 +246,25 @@ class ApplicationService @Inject() (
 
   def fetchAll(): Future[List[ApplicationWithCollaborators]] = {
     applicationRepository.fetchAll().map {
-      _.map(application => StoredApplication.asApplication(application))
+      _.map(application => application.asAppWithCollaborators)
     }
   }
 
   def fetchAllBySubscription(apiContext: ApiContext): Future[List[ApplicationWithCollaborators]] = {
     applicationRepository.fetchAllForContext(apiContext) map {
-      _.map(application => StoredApplication.asApplication(application))
+      _.map(application => application.asAppWithCollaborators)
     }
   }
 
   def fetchAllBySubscription(apiIdentifier: ApiIdentifier): Future[List[ApplicationWithCollaborators]] = {
     applicationRepository.fetchAllForApiIdentifier(apiIdentifier) map {
-      _.map(application => StoredApplication.asApplication(application))
+      _.map(application => application.asAppWithCollaborators)
     }
   }
 
   def fetchAllWithNoSubscriptions(): Future[List[ApplicationWithCollaborators]] = {
     applicationRepository.fetchAllWithNoSubscriptions() map {
-      _.map(application => StoredApplication.asApplication(application))
+      _.map(application => application.asAppWithCollaborators)
     }
   }
 
@@ -273,12 +273,12 @@ class ApplicationService @Inject() (
 
   def fetch(applicationId: ApplicationId): OptionT[Future, ApplicationWithCollaborators] =
     OptionT(applicationRepository.fetch(applicationId))
-      .map(application => StoredApplication.asApplication(application))
+      .map(application => application.asAppWithCollaborators)
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplications] = {
 
     def buildApplication(storedApplication: StoredApplication, stateHistory: Option[StateHistory]) = {
-      val partApp = StoredApplication.asApplication(storedApplication)
+      val partApp = storedApplication.asAppWithCollaborators
       partApp.modify(_.copy(lastActionActor = stateHistory.map(sh => ActorType.actorType(sh.actor)).getOrElse(ActorType.UNKNOWN)))
     }
 
@@ -332,7 +332,7 @@ class ApplicationService @Inject() (
       _       <- applicationRepository.save(appData)
       _       <- createStateHistory(appData)
       _        = auditAppCreated(appData)
-    } yield CreateApplicationResponse(StoredApplication.asApplication(appData), extractTotpSecret(totp))
+    } yield CreateApplicationResponse(appData.asAppWithCollaborators, extractTotpSecret(totp))
 
     f andThen {
       case Failure(_) =>

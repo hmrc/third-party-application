@@ -25,9 +25,12 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param.{AccessTypeQP, AppStateFilterQP}
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.{AppStateFilter, ApplicationQuery, Sorting}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, _}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, StoredApplication}
@@ -45,6 +48,14 @@ class GatekeeperService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
+  private val standardNonTestingAppsQuery = ApplicationQuery.GeneralOpenEndedApplicationQuery(
+    sorting = Sorting.NoSorting,
+    params = List(
+      AccessTypeQP(Some(AccessType.STANDARD)),
+      AppStateFilterQP(AppStateFilter.MatchingMany(State.values.toSet[State] - State.TESTING - State.DELETED))
+    )
+  )
+
   def fetchNonTestingAppsWithSubmittedDate(): Future[List[ApplicationWithUpliftRequest]] = {
     def appError(applicationId: ApplicationId) = new InconsistentDataState(s"App not found for id: ${applicationId}")
 
@@ -55,7 +66,7 @@ class GatekeeperService @Inject() (
         yield id -> history.maxBy(_.changedAt)
     }
 
-    val appsFuture         = applicationRepository.fetchStandardNonTestingApps()
+    val appsFuture         = applicationRepository.fetchApplicationWithCollaboratorsQuery(standardNonTestingAppsQuery)
     val stateHistoryFuture = stateHistoryRepository.fetchByState(State.PENDING_GATEKEEPER_APPROVAL)
     for {
       apps      <- appsFuture
@@ -71,7 +82,7 @@ class GatekeeperService @Inject() (
       app     <- fetchApp(applicationId)
       history <- stateHistoryRepository.fetchByApplicationId(applicationId)
     } yield {
-      ApplicationWithHistoryResponse(StoredApplication.asApplication(app), history.map(StateHistoryResponse.from))
+      ApplicationWithHistoryResponse(app.asAppWithCollaborators, history.map(StateHistoryResponse.from))
     }
   }
 

@@ -130,10 +130,19 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       }
     }
 
-    object FetchStandardNonTestingApps {
+    // object FetchStandardNonTestingApps {
 
-      def thenReturn(apps: StoredApplication*) =
-        when(aMock.fetchStandardNonTestingApps()).thenReturn(successful(apps.toList))
+    //   def thenReturn(apps: StoredApplication*) =
+    //     when(aMock.fetchStandardNonTestingApps()).thenReturn(successful(apps.toList))
+    // }
+
+    object FetchApplicationWithCollaboratorsQuery {
+
+      def thenReturnNothing()                             =
+        when(aMock.fetchApplicationWithCollaboratorsQuery(*)).thenReturn(successful(List.empty))
+
+      def thenReturn(apps: ApplicationWithCollaborators*) =
+        when(aMock.fetchApplicationWithCollaboratorsQuery(*)).thenReturn(successful(apps.toList))
     }
 
     object FetchByName {

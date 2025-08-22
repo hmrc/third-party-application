@@ -42,9 +42,10 @@ object ApplicationQuery {
   case class ByClientId protected (clientId: ClientId, recordUsage: Boolean, otherParams: List[NonUniqueFilterParam[_]])     extends SingleApplicationQuery
   case class ByServerToken protected (serverToken: String, recordUsage: Boolean, otherParams: List[NonUniqueFilterParam[_]]) extends SingleApplicationQuery
 
-  case class GeneralOpenEndedApplicationQuery protected (sorting: Sorting, params: List[NonUniqueFilterParam[_]]) extends MultipleApplicationQuery
+  case class GeneralOpenEndedApplicationQuery protected (params: List[NonUniqueFilterParam[_]], sorting: Sorting = Sorting.NoSorting) extends MultipleApplicationQuery
 
-  case class PaginatedApplicationQuery protected (pagination: Pagination, sorting: Sorting, params: List[NonUniqueFilterParam[_]]) extends MultipleApplicationQuery
+  case class PaginatedApplicationQuery protected (params: List[NonUniqueFilterParam[_]], sorting: Sorting = Sorting.NoSorting, pagination: Pagination = Pagination())
+      extends MultipleApplicationQuery
 
   import cats.implicits._
 
@@ -54,8 +55,8 @@ object ApplicationQuery {
     }
       .sortBy(_.order) match {
       case PageSizeQP(size) :: PageNbrQP(nbr) :: Nil => Pagination(size, nbr).some
-      case PageSizeQP(size) :: Nil                   => Pagination(size, 1).some
-      case PageNbrQP(nbr) :: Nil                     => Pagination(50, nbr).some
+      case PageSizeQP(size) :: Nil                   => Pagination(pageSize = size).some
+      case PageNbrQP(nbr) :: Nil                     => Pagination(pageNbr = nbr).some
       case _                                         => None
     }
   }
@@ -96,9 +97,9 @@ object ApplicationQuery {
 
       identifyAnyPagination(validParams)
         .fold[MultipleApplicationQuery](
-          ApplicationQuery.GeneralOpenEndedApplicationQuery(sorting, nonUniqueFilterParam)
+          ApplicationQuery.GeneralOpenEndedApplicationQuery(nonUniqueFilterParam, sorting)
         )(pagination => {
-          ApplicationQuery.PaginatedApplicationQuery(pagination, sorting, nonUniqueFilterParam)
+          ApplicationQuery.PaginatedApplicationQuery(nonUniqueFilterParam, sorting, pagination)
         })
     }
 

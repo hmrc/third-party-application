@@ -756,87 +756,87 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "fetchStandardNonTestingApps" should {
-    "retrieve all the standard applications not in TESTING (or DELETED) state" in {
-      val application1 = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      )
-      val application2 = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      )
-        .withState(appStatePendingRequesterVerification)
+  // "fetchStandardNonTestingApps" should {
+  //   "retrieve all the standard applications not in TESTING (or DELETED) state" in {
+  //     val application1 = anApplicationDataForTest(
+  //       id = ApplicationId.random,
+  //       prodClientId = generateClientId
+  //     )
+  //     val application2 = anApplicationDataForTest(
+  //       id = ApplicationId.random,
+  //       prodClientId = generateClientId
+  //     )
+  //       .withState(appStatePendingRequesterVerification)
 
-      val application3 = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      )
-        .withState(appStateProduction)
+  //     val application3 = anApplicationDataForTest(
+  //       id = ApplicationId.random,
+  //       prodClientId = generateClientId
+  //     )
+  //       .withState(appStateProduction)
 
-      val application4 = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      )
-        .withState(appStatePendingRequesterVerification)
+  //     val application4 = anApplicationDataForTest(
+  //       id = ApplicationId.random,
+  //       prodClientId = generateClientId
+  //     )
+  //       .withState(appStatePendingRequesterVerification)
 
-      val application5 = anApplicationDataForTest(
-        id = ApplicationId.random,
-        prodClientId = generateClientId
-      )
-        .withState(appStateDeleted)
+  //     val application5 = anApplicationDataForTest(
+  //       id = ApplicationId.random,
+  //       prodClientId = generateClientId
+  //     )
+  //       .withState(appStateDeleted)
 
-      await(applicationRepository.save(application1))
-      await(applicationRepository.save(application2))
-      await(applicationRepository.save(application3))
-      await(applicationRepository.save(application4))
-      await(applicationRepository.save(application5))
+  //     await(applicationRepository.save(application1))
+  //     await(applicationRepository.save(application2))
+  //     await(applicationRepository.save(application3))
+  //     await(applicationRepository.save(application4))
+  //     await(applicationRepository.save(application5))
 
-      val retrieved = await(applicationRepository.fetchStandardNonTestingApps())
+  //     val retrieved = await(applicationRepository.fetchStandardNonTestingApps())
 
-      retrieved.toSet shouldBe Set(application2, application3, application4)
-    }
+  //     retrieved.toSet shouldBe Set(application2, application3, application4)
+  //   }
 
-    "return empty list when no apps are found" in {
-      await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
-    }
+  //   "return empty list when no apps are found" in {
+  //     await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
+  //   }
 
-    "not return Access.Privileged applications" in {
-      val application1 = anApplicationDataForTest(
-        ApplicationId.random
-      )
-        .withState(appStateProduction)
-        .withAccess(Access.Privileged())
+  //   "not return Access.Privileged applications" in {
+  //     val application1 = anApplicationDataForTest(
+  //       ApplicationId.random
+  //     )
+  //       .withState(appStateProduction)
+  //       .withAccess(Access.Privileged())
 
-      await(applicationRepository.save(application1))
-      await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
-    }
+  //     await(applicationRepository.save(application1))
+  //     await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
+  //   }
 
-    "not return ROPC applications" in {
-      val application1 = anApplicationDataForTest(
-        ApplicationId.random
-      )
-        .withState(appStateProduction)
-        .withAccess(Access.Ropc())
+  //   "not return ROPC applications" in {
+  //     val application1 = anApplicationDataForTest(
+  //       ApplicationId.random
+  //     )
+  //       .withState(appStateProduction)
+  //       .withAccess(Access.Ropc())
 
-      await(applicationRepository.save(application1))
-      await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
-    }
+  //     await(applicationRepository.save(application1))
+  //     await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
+  //   }
 
-    "return empty list when all apps in TESTING state" in {
-      val application1 = anApplicationDataForTest(ApplicationId.random)
+  //   "return empty list when all apps in TESTING state" in {
+  //     val application1 = anApplicationDataForTest(ApplicationId.random)
 
-      await(applicationRepository.save(application1))
-      await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
-    }
+  //     await(applicationRepository.save(application1))
+  //     await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
+  //   }
 
-    "return empty list when all apps in DELETED state" in {
-      val application1 = anApplicationDataForTest(ApplicationId.random).withState(appStateDeleted)
+  //   "return empty list when all apps in DELETED state" in {
+  //     val application1 = anApplicationDataForTest(ApplicationId.random).withState(appStateDeleted)
 
-      await(applicationRepository.save(application1))
-      await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
-    }
-  }
+  //     await(applicationRepository.save(application1))
+  //     await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
+  //   }
+  // }
 
   "fetchNonTestingApplicationByName" should {
 

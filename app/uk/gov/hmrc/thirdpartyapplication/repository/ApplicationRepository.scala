@@ -150,7 +150,7 @@ object ApplicationRepository {
     implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
 
     case class StoredAppWithSubs(app: StoredApplication, apis: List[ApiIdentifier]) {
-      lazy val asApplicationWithSubs = StoredApplication.asApplication(app).withSubscriptions(apis.toSet)
+      lazy val asApplicationWithSubs = app.asAppWithCollaborators.withSubscriptions(apis.toSet)
     }
 
     object StoredAppWithSubs {
@@ -418,15 +418,15 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     ).toFuture()
   }
 
-  def fetchStandardNonTestingApps(): Future[Seq[StoredApplication]] = {
-    val query = and(
-      equal("access.accessType", AccessType.STANDARD.toString()),
-      notEqual("state.name", State.TESTING.toString()),
-      notEqual("state.name", State.DELETED.toString())
-    )
+  // def fetchStandardNonTestingApps(): Future[Seq[StoredApplication]] = {
+  //   val query = and(
+  //     equal("access.accessType", AccessType.STANDARD.toString()),
+  //     notEqual("state.name", State.TESTING.toString()),
+  //     notEqual("state.name", State.DELETED.toString())
+  //   )
 
-    collection.find(query).toFuture()
-  }
+  //   collection.find(query).toFuture()
+  // }
 
   def fetch(id: ApplicationId): Future[Option[StoredApplication]] = {
     collection.find(equal("id", Codecs.toBson(id))).headOption()
@@ -1044,8 +1044,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   // So simple that we don't need to do anything other than use existing methods.  These could be done via conversion to AggregateQuery components at a later date.
   def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Either[Option[ApplicationWithCollaborators], Option[ApplicationWithSubscriptions]]] = {
     qry match {
-      case ApplicationQuery.ByClientId(clientId, true, _)       => findAndRecordApplicationUsage(clientId).map(osa => Left(osa.map(StoredApplication.asApplication(_))))
-      case ApplicationQuery.ByServerToken(serverToken, true, _) => findAndRecordServerTokenUsage(serverToken).map(osa => Left(osa.map(StoredApplication.asApplication(_))))
+      case ApplicationQuery.ByClientId(clientId, true, _)       => findAndRecordApplicationUsage(clientId).map(osa => Left(osa.map(_.asAppWithCollaborators)))
+      case ApplicationQuery.ByServerToken(serverToken, true, _) => findAndRecordServerTokenUsage(serverToken).map(osa => Left(osa.map(_.asAppWithCollaborators)))
       case _                                                    => fetchSingleAppByAggregates(qry)
     }
   }
@@ -1092,7 +1092,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         .map(bson => {
           Left(
             Codecs.fromBson[List[StoredApplication]](bson)
-              .map(StoredApplication.asApplication)
+              .map(_.asAppWithCollaborators)
           )
         })
     }
@@ -1110,6 +1110,14 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       executeAggregate(qry.wantsSubscriptions, pipeline)
         .map(_.bimap(_.headOption, _.headOption))
     }
+  }
+
+  def fetchApplicationWithCollaboratorsQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[ApplicationWithCollaborators]] = {
+    fetchByGeneralOpenEndedApplicationQuery(qry).map(_.swap.getOrElse(throw new RuntimeException("Called the wrong fetch application method for the query")))
+  }
+
+  def fetchApplicationWithSubscriptionsCollaboratorsQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[ApplicationWithSubscriptions]] = {
+    fetchByGeneralOpenEndedApplicationQuery(qry).map(_.getOrElse(throw new RuntimeException("Called the wrong fetch application method for the query")))
   }
 
   def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[Either[List[ApplicationWithCollaborators], List[ApplicationWithSubscriptions]]] = {
@@ -1162,7 +1170,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         .map(Codecs.fromBson[PaginatedApplicationData])
         .map(pad =>
           PaginatedApplications(
-            pad.applications.map(StoredApplication.asApplication),
+            pad.applications.map(StoredApplication.asAppWithCollaborators),
             qry.pagination.pageNbr,
             qry.pagination.pageSize,
             pad.countOfAllApps.map(_.total).sum,

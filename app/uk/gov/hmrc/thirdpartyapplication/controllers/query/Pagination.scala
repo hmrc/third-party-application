@@ -16,4 +16,4 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
-case class Pagination(pageSize: Int, pageNbr: Int)
+case class Pagination(pageSize: Int = 50, pageNbr: Int = 1)

@@ -653,7 +653,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
       val result = await(underTest.fetchAllForCollaborators(List(userId)))
-      result should contain theSameElementsAs List(standardApplicationData, privilegedApplicationData, ropcApplicationData).map(app => StoredApplication.asApplication(app))
+      result should contain theSameElementsAs List(standardApplicationData, privilegedApplicationData, ropcApplicationData).map(app => app.asAppWithCollaborators)
     }
 
     "fetch all applications for two given collaborator user ids" in new Setup {
@@ -668,7 +668,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId2, false)(standardApplicationData2)
 
       val result = await(underTest.fetchAllForCollaborators(List(userId1, userId2)))
-      result should contain theSameElementsAs List(standardApplicationData1, standardApplicationData2).map(app => StoredApplication.asApplication(app))
+      result should contain theSameElementsAs List(standardApplicationData1, standardApplicationData2).map(app => app.asAppWithCollaborators)
     }
 
     "deduplicate applications if more than one user belongs to the same application" in new Setup {
@@ -683,7 +683,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId2, false)(standardApplicationData1, standardApplicationData2)
 
       val result = await(underTest.fetchAllForCollaborators(List(userId1, userId2)))
-      result should contain theSameElementsAs List(standardApplicationData1, standardApplicationData2).map(app => StoredApplication.asApplication(app))
+      result should contain theSameElementsAs List(standardApplicationData1, standardApplicationData2).map(app => app.asAppWithCollaborators)
     }
   }
 
@@ -695,7 +695,7 @@ class ApplicationServiceSpec
       val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllBySubscription(apiContext))
 
       result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => StoredApplication.asApplication(app))
+      result shouldBe List(applicationData).map(app => app.asAppWithCollaborators)
     }
 
     "return no matching applications for a given subscription to an API context" in new Setup {
@@ -714,7 +714,7 @@ class ApplicationServiceSpec
       val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllBySubscription(apiIdentifier))
 
       result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => StoredApplication.asApplication(app))
+      result shouldBe List(applicationData).map(app => app.asAppWithCollaborators)
     }
 
     "return no matching applications for a given subscription to an API identifier" in new Setup {
@@ -744,7 +744,7 @@ class ApplicationServiceSpec
       val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllWithNoSubscriptions())
 
       result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => StoredApplication.asApplication(app))
+      result shouldBe List(applicationData).map(app => app.asAppWithCollaborators)
     }
   }
 

@@ -29,7 +29,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Applicat
 import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerSpec
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util.{CommonApplicationId, StoredApplicationFixtures}
 
 class QueryControllerSpec
@@ -45,7 +44,7 @@ class QueryControllerSpec
 
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest            = new QueryController(ApplicationRepoMock.aMock, Helpers.stubControllerComponents())
-    val appWithCollaborators = StoredApplication.asApplication(storedApp)
+    val appWithCollaborators = storedApp.asAppWithCollaborators
     val appWithSubs          = appWithCollaborators.withSubscriptions(Set(apiIdentifierOne, apiIdentifierTwo))
   }
 
