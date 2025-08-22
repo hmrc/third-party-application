@@ -4,10 +4,10 @@ import org.apache.ivy.core.module.descriptor.ExcludeRule
 object AppDependencies {
   def apply(): Seq[ModuleID] = compileDeps ++ testDeps
 
-  lazy val bootstrapVersion         = "9.13.0"
+  lazy val bootstrapVersion         = "9.19.0"
   lazy val hmrcMongoVersion         = "2.7.0"
   lazy val applicationEventVersion  = "0.81.0" // Ensure this version of the application-events library uses the appDomainVersion below
-  lazy val applicationDomainVersion = "0.79.0"
+  lazy val applicationDomainVersion = "0.81.0"
 
   private lazy val compileDeps = Seq(
     "uk.gov.hmrc"                   %% "bootstrap-backend-play-30"                % bootstrapVersion,
@@ -20,6 +20,7 @@ object AppDependencies {
     // Use these during poc stage of development
     "uk.gov.hmrc"                   %% "api-platform-application-events"          % applicationEventVersion exclude("uk.gov.hmrc","api-platform-application-domain"),
     "uk.gov.hmrc"                   %% "api-platform-application-domain"          % applicationDomainVersion,
+    "org.typelevel"                 %% "cats-core"                                % "2.13.0",
     "com.iheart"                    %% "ficus"                                    % "1.5.2"
   )
 

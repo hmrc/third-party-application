@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,6 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models.db
+package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
-import play.api.libs.json.{Format, Json}
-
-case class PaginationTotal(total: Int)
-
-object PaginationTotal {
-  implicit val formatPaginationTotal: Format[PaginationTotal] = Json.format[PaginationTotal]
-}
-
-case class PaginatedApplicationData(applications: List[StoredApplication], countOfAllApps: List[PaginationTotal], countOfMatchingApps: List[PaginationTotal])
+case class Pagination(pageSize: Int = 50, pageNbr: Int = 1)

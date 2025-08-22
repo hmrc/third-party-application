@@ -42,7 +42,7 @@ class CredentialService @Inject() (
   val clientSecretLimit = config.clientSecretLimit
 
   def fetch(applicationId: ApplicationId): Future[Option[ApplicationWithCollaborators]] = {
-    applicationRepository.fetch(applicationId) map (_.map(app => StoredApplication.asApplication(app)))
+    applicationRepository.fetch(applicationId) map (_.map(app => app.asAppWithCollaborators))
   }
 
   def fetchCredentials(applicationId: ApplicationId): Future[Option[ApplicationTokenResponse]] = {
@@ -63,7 +63,7 @@ class CredentialService @Inject() (
       matchedClientSecret <- OptionT(clientSecretService.clientSecretIsValid(application.id, validation.clientSecret, application.tokens.production.clientSecrets))
       updatedApplication  <- OptionT.liftF(applicationRepository.recordClientSecretUsage(application.id, matchedClientSecret.id)
                                .recover(recoverFromFailedUsageDateUpdate(application)))
-    } yield StoredApplication.asApplication(updatedApplication)
+    } yield updatedApplication.asAppWithCollaborators
   }
 
 }

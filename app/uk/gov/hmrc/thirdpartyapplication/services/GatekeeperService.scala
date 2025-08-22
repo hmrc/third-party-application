@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, _}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, StoredApplication}
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationQueries, ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
 @Singleton
@@ -55,7 +55,7 @@ class GatekeeperService @Inject() (
         yield id -> history.maxBy(_.changedAt)
     }
 
-    val appsFuture         = applicationRepository.fetchStandardNonTestingApps()
+    val appsFuture         = applicationRepository.fetchApplicationWithCollaboratorsQuery(ApplicationQueries.standardNonTestingApps)
     val stateHistoryFuture = stateHistoryRepository.fetchByState(State.PENDING_GATEKEEPER_APPROVAL)
     for {
       apps      <- appsFuture
@@ -71,7 +71,7 @@ class GatekeeperService @Inject() (
       app     <- fetchApp(applicationId)
       history <- stateHistoryRepository.fetchByApplicationId(applicationId)
     } yield {
-      ApplicationWithHistoryResponse(StoredApplication.asApplication(app), history.map(StateHistoryResponse.from))
+      ApplicationWithHistoryResponse(app.asAppWithCollaborators, history.map(StateHistoryResponse.from))
     }
   }
 

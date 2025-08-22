@@ -130,10 +130,19 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       }
     }
 
-    object FetchStandardNonTestingApps {
+    // object FetchStandardNonTestingApps {
 
-      def thenReturn(apps: StoredApplication*) =
-        when(aMock.fetchStandardNonTestingApps()).thenReturn(successful(apps.toList))
+    //   def thenReturn(apps: StoredApplication*) =
+    //     when(aMock.fetchStandardNonTestingApps()).thenReturn(successful(apps.toList))
+    // }
+
+    object FetchApplicationWithCollaboratorsQuery {
+
+      def thenReturnNothing()                             =
+        when(aMock.fetchApplicationWithCollaboratorsQuery(*)).thenReturn(successful(List.empty))
+
+      def thenReturn(apps: ApplicationWithCollaborators*) =
+        when(aMock.fetchApplicationWithCollaboratorsQuery(*)).thenReturn(successful(apps.toList))
     }
 
     object FetchByName {
@@ -203,15 +212,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturnWhen(apiContext: ApiContext)(apps: StoredApplication*) =
         when(aMock.fetchAllForContext(eqTo(apiContext))).thenReturn(successful(apps.toList))
 
-    }
-
-    object FetchAllForEmail {
-
-      def thenReturnWhen(emailAddress: String)(apps: StoredApplication*) =
-        when(aMock.fetchAllForEmailAddress(eqTo(emailAddress))).thenReturn(successful(apps.toList))
-
-      def thenReturnEmptyWhen(emailAddress: String) =
-        when(aMock.fetchAllForEmailAddress(eqTo(emailAddress))).thenReturn(successful(List.empty))
     }
 
     object fetchAllForUserId {
@@ -515,6 +515,35 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def thenReturnWhen(applicationId: ApplicationId)(updatedApplicationData: StoredApplication) =
         when(aMock.removeOldGrantLength(eqTo(applicationId))).thenReturn(successful(updatedApplicationData))
+    }
+
+    object FetchBySingleApplicationQuery {
+
+      def thenReturnsNothing(withSubs: Boolean = false) =
+        if (withSubs)
+          when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Right(None)))
+        else
+          when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Left(None)))
+
+      def thenReturns(app: ApplicationWithCollaborators) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Left(Some(app))))
+      def thenReturns(app: ApplicationWithSubscriptions) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Right(Some(app))))
+    }
+
+    object FetchByGeneralOpenEndedApplicationQuery {
+      def thenReturns(apps: ApplicationWithCollaborators*)         = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Left(apps.toList)))
+      def thenReturnsWithSubs(apps: ApplicationWithSubscriptions*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Right(apps.toList)))
+    }
+
+    object FetchByPaginatedApplicationQuery {
+
+      def thenReturnsNone(totals: Int) =
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplications(List.empty, 1, 10, totals, 0)))
+
+      def thenReturns(totals: Int, apps: ApplicationWithCollaborators*) =
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplications(apps.toList, 1, 10, totals, apps.size)))
+
+      def thenReturns(pas: PaginatedApplications) =
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(pas))
     }
   }
 

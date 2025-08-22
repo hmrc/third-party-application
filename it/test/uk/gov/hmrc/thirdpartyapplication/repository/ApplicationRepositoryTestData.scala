@@ -24,7 +24,6 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.SubscriptionData
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredClientSecret, StoredToken}
-import uk.gov.hmrc.thirdpartyapplication.models.{StandardAccess => _}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 trait ApplicationRepositoryTestData extends StoredApplicationFixtures with CollaboratorTestData {

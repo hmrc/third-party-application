@@ -18,10 +18,13 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.time.{ZoneOffset, ZonedDateTime}
 
+import org.scalatest.prop.TableDrivenPropertyChecks._
+
 import play.api.test.FakeRequest
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.thirdpartyapplication.models.DeleteRestrictionFilter.DoNotDelete
 
 class ApplicationSearchSpec extends HmrcSpec {
 
@@ -49,36 +52,61 @@ class ApplicationSearchSpec extends HmrcSpec {
       searchObject.textToSearch shouldBe Some(searchText)
     }
 
-    "correctly parse API Subscriptions filter" in {
+    "correctly parse ANY API Subscriptions filter" in {
       val request = FakeRequest("GET", "/applications?apiSubscription=ANY")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain(OneOrMoreAPISubscriptions)
+      searchObject.filters should contain(APISubscriptionFilter.OneOrMoreAPISubscriptions)
     }
 
-    "correctly parse Application Status filter" in {
-      val request = FakeRequest("GET", "/applications?status=PENDING_GATEKEEPER_CHECK")
+    "correctly parse NONE API Subscriptions filter" in {
+      val request = FakeRequest("GET", "/applications?apiSubscription=NONE")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain(PendingGatekeeperCheck)
+      searchObject.filters should contain(APISubscriptionFilter.NoAPISubscriptions)
     }
 
-    "correctly parse Application Status blocked filter" in {
-      val request = FakeRequest("GET", "/applications?status=BLOCKED")
+    "correctly parse Application Status filters" in {
+      val scenarios = Table(
+        ("status", "result"),
+        ("CREATED", StatusFilter.Created),
+        ("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION", StatusFilter.PendingResponsibleIndividualVerification),
+        ("PENDING_GATEKEEPER_CHECK", StatusFilter.PendingGatekeeperCheck),
+        ("PENDING_SUBMITTER_VERIFICATION", StatusFilter.PendingSubmitterVerification),
+        ("ACTIVE", StatusFilter.Active),
+        ("DELETED", StatusFilter.WasDeleted),
+        ("EXCLUDING_DELETED", StatusFilter.ExcludingDeleted),
+        ("BLOCKED", StatusFilter.Blocked),
+        ("ALL", StatusFilter.NoFiltering)
+      )
 
-      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
-
-      searchObject.filters should contain(Blocked)
+      forAll(scenarios) { (testStatus: String, testResult: StatusFilter) =>
+        {
+          val request = FakeRequest("GET", s"/applications?status=$testStatus")
+          val result  = ApplicationSearch.fromQueryString(request.queryString)
+          result.filters should contain(testResult)
+        }
+      }
     }
 
-    "correctly parse Access Type filter" in {
-      val request = FakeRequest("GET", "/applications?accessType=PRIVILEGED")
+    "correctly parse Access Type filters" in {
+      val scenarios = Table(
+        ("access type", "result"),
+        ("STANDARD", AccessTypeFilter.StandardAccess),
+        ("PRIVILEGED", AccessTypeFilter.PrivilegedAccess),
+        ("ROPC", AccessTypeFilter.ROPCAccess),
+        ("ALL", AccessTypeFilter.NoFiltering)
+      )
 
-      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
-
-      searchObject.filters should contain(PrivilegedAccess)
+      forAll(scenarios) { (testAccessType: String, testResult: AccessTypeFilter) =>
+        {
+          val request = FakeRequest("GET", s"/applications?accessType=$testAccessType")
+          val result  = ApplicationSearch.fromQueryString(request.queryString)
+          result.filters should contain(testResult)
+        }
+      }
     }
 
     "correctly parse lastUseBefore into LastUseBeforeDate filter" in {
@@ -142,6 +170,14 @@ class ApplicationSearchSpec extends HmrcSpec {
       }
     }
 
+    "correctly parse delete restriction filter" in {
+      val request = FakeRequest("GET", s"/applications?deleteRestriction=DO_NOT_DELETE")
+
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      searchObject.filters should contain(DoNotDelete)
+    }
+
     "correctly parses multiple filters" in {
       val expectedPageNumber: Int    = 3
       val expectedPageSize: Int      = 250
@@ -164,8 +200,8 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain(SpecificAPISubscription)
-      searchObject.filters should contain(Created)
+      searchObject.filters should contain(APISubscriptionFilter.SpecificAPISubscription)
+      searchObject.filters should contain(StatusFilter.Created)
     }
 
     "not return a filter where apiSubscription is included with empty string" in {
@@ -183,7 +219,7 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.apiContext shouldBe Some(api.asContext)
-      searchObject.filters should contain(SpecificAPISubscription)
+      searchObject.filters should contain(APISubscriptionFilter.SpecificAPISubscription)
     }
 
     "populate apiContext and apiVersion if specific values are provided" in {
@@ -193,7 +229,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain(SpecificAPISubscription)
+      searchObject.filters should contain(APISubscriptionFilter.SpecificAPISubscription)
       searchObject.apiContext shouldBe Some(api.asContext)
       searchObject.apiVersion shouldBe Some(apiVersion.asVersion)
     }
@@ -202,35 +238,35 @@ class ApplicationSearchSpec extends HmrcSpec {
       val request      = FakeRequest("GET", "/applications?sort=NAME_ASC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.sort shouldBe NameAscending
+      searchObject.sort shouldBe ApplicationSort.NameAscending
     }
 
     "populate sort as NameDescending when sort is NAME_DESC" in {
       val request      = FakeRequest("GET", "/applications?sort=NAME_DESC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.sort shouldBe NameDescending
+      searchObject.sort shouldBe ApplicationSort.NameDescending
     }
 
     "populate sort as SubmittedAscending when sort is SUBMITTED_DESC" in {
       val request      = FakeRequest("GET", "/applications?sort=SUBMITTED_ASC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.sort shouldBe SubmittedAscending
+      searchObject.sort shouldBe ApplicationSort.SubmittedAscending
     }
 
     "populate sort as SubmittedDescending when sort is SUBMITTED_DESC" in {
       val request      = FakeRequest("GET", "/applications?sort=SUBMITTED_DESC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.sort shouldBe SubmittedDescending
+      searchObject.sort shouldBe ApplicationSort.SubmittedDescending
     }
 
     "populate sort as SubmittedAscending when sort is not specified" in {
       val request      = FakeRequest("GET", "/applications")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.sort shouldBe SubmittedAscending
+      searchObject.sort shouldBe ApplicationSort.SubmittedAscending
     }
   }
 }

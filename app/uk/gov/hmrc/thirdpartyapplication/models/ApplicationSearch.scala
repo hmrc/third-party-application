@@ -38,11 +38,11 @@ case class ApplicationSearch(
     textToSearch: Option[String] = None,
     apiContext: Option[ApiContext] = None,
     apiVersion: Option[ApiVersionNbr] = None,
-    sort: ApplicationSort = SubmittedAscending,
+    sort: ApplicationSort = ApplicationSort.SubmittedAscending,
     includeDeleted: Boolean = false
   ) {
   def hasSubscriptionFilter()            = filters.exists(filter => filter.isInstanceOf[APISubscriptionFilter])
-  def hasSpecificApiSubscriptionFilter() = filters.exists(filter => filter.isInstanceOf[SpecificAPISubscription.type])
+  def hasSpecificApiSubscriptionFilter() = filters.exists(filter => filter.isInstanceOf[APISubscriptionFilter.SpecificAPISubscription.type])
 }
 
 object ApplicationSearch {
@@ -58,7 +58,7 @@ object ApplicationSearch {
           key match {
             case "search"                         => TextSearchFilter(value.head)
             case "apiSubscription"                => APISubscriptionFilter(value.head)
-            case "status"                         => ApplicationStatusFilter(value.head)
+            case "status"                         => StatusFilter(value.head)
             case "accessType"                     => AccessTypeFilter(value.head)
             case "lastUseBefore" | "lastUseAfter" => LastUseDateFilter(key, value.head)
             case "deleteRestriction"              => DeleteRestrictionFilter(value.head)
@@ -94,12 +94,12 @@ case object TextSearchFilter extends TextSearchFilter {
   }
 }
 
-sealed trait APISubscriptionFilter    extends ApplicationSearchFilter
-case object OneOrMoreAPISubscriptions extends APISubscriptionFilter
-case object NoAPISubscriptions        extends APISubscriptionFilter
-case object SpecificAPISubscription   extends APISubscriptionFilter
+sealed trait APISubscriptionFilter extends ApplicationSearchFilter
 
-case object APISubscriptionFilter extends APISubscriptionFilter {
+case object APISubscriptionFilter {
+  case object OneOrMoreAPISubscriptions extends APISubscriptionFilter
+  case object NoAPISubscriptions        extends APISubscriptionFilter
+  case object SpecificAPISubscription   extends APISubscriptionFilter
 
   def apply(value: String): Option[APISubscriptionFilter] = {
 
@@ -112,17 +112,18 @@ case object APISubscriptionFilter extends APISubscriptionFilter {
   }
 }
 
-sealed trait StatusFilter                            extends ApplicationSearchFilter
-case object Created                                  extends StatusFilter
-case object PendingResponsibleIndividualVerification extends StatusFilter
-case object PendingGatekeeperCheck                   extends StatusFilter
-case object PendingSubmitterVerification             extends StatusFilter
-case object Active                                   extends StatusFilter
-case object WasDeleted                               extends StatusFilter
-case object ExcludingDeleted                         extends StatusFilter
-case object Blocked                                  extends StatusFilter
+sealed trait StatusFilter extends ApplicationSearchFilter
 
-case object ApplicationStatusFilter extends StatusFilter {
+object StatusFilter {
+  case object Created                                  extends StatusFilter
+  case object PendingResponsibleIndividualVerification extends StatusFilter
+  case object PendingGatekeeperCheck                   extends StatusFilter
+  case object PendingSubmitterVerification             extends StatusFilter
+  case object Active                                   extends StatusFilter
+  case object WasDeleted                               extends StatusFilter
+  case object ExcludingDeleted                         extends StatusFilter
+  case object Blocked                                  extends StatusFilter
+  case object NoFiltering                              extends StatusFilter
 
   def apply(value: String): Option[StatusFilter] = {
     value match {
@@ -134,23 +135,26 @@ case object ApplicationStatusFilter extends StatusFilter {
       case "DELETED"                                     => Some(WasDeleted)
       case "EXCLUDING_DELETED"                           => Some(ExcludingDeleted)
       case "BLOCKED"                                     => Some(Blocked)
+      case "ALL"                                         => Some(NoFiltering)
       case _                                             => None
     }
   }
 }
 
 sealed trait AccessTypeFilter extends ApplicationSearchFilter
-case object StandardAccess    extends AccessTypeFilter
-case object ROPCAccess        extends AccessTypeFilter
-case object PrivilegedAccess  extends AccessTypeFilter
 
-case object AccessTypeFilter extends AccessTypeFilter {
+case object AccessTypeFilter {
+  case object StandardAccess   extends AccessTypeFilter
+  case object ROPCAccess       extends AccessTypeFilter
+  case object PrivilegedAccess extends AccessTypeFilter
+  case object NoFiltering      extends AccessTypeFilter
 
   def apply(value: String): Option[AccessTypeFilter] = {
     value match {
       case "STANDARD"   => Some(StandardAccess)
       case "ROPC"       => Some(ROPCAccess)
       case "PRIVILEGED" => Some(PrivilegedAccess)
+      case "ALL"        => Some(NoFiltering)
       case _            => None
     }
   }
@@ -158,11 +162,9 @@ case object AccessTypeFilter extends AccessTypeFilter {
 
 sealed trait DeleteRestrictionFilter extends ApplicationSearchFilter
 
-case object NoRestriction extends DeleteRestrictionFilter
-
-case object DoNotDelete extends DeleteRestrictionFilter
-
-case object DeleteRestrictionFilter extends DeleteRestrictionFilter {
+case object DeleteRestrictionFilter {
+  case object NoRestriction extends DeleteRestrictionFilter
+  case object DoNotDelete   extends DeleteRestrictionFilter
 
   def apply(value: String): Option[DeleteRestrictionFilter] = {
     value match {
@@ -222,15 +224,15 @@ case object LastUseDateFilter extends LastUseDateFilter {
 }
 
 sealed trait ApplicationSort
-case object NameAscending         extends ApplicationSort
-case object NameDescending        extends ApplicationSort
-case object SubmittedAscending    extends ApplicationSort
-case object SubmittedDescending   extends ApplicationSort
-case object LastUseDateAscending  extends ApplicationSort
-case object LastUseDateDescending extends ApplicationSort
-case object NoSorting             extends ApplicationSort
 
-object ApplicationSort extends ApplicationSort {
+object ApplicationSort {
+  case object NameAscending         extends ApplicationSort
+  case object NameDescending        extends ApplicationSort
+  case object SubmittedAscending    extends ApplicationSort
+  case object SubmittedDescending   extends ApplicationSort
+  case object LastUseDateAscending  extends ApplicationSort
+  case object LastUseDateDescending extends ApplicationSort
+  case object NoSorting             extends ApplicationSort
 
   def apply(value: Option[String]): ApplicationSort = value match {
     case Some("NAME_ASC")       => NameAscending

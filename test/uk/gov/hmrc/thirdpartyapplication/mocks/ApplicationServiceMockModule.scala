@@ -43,7 +43,7 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     object Fetch {
 
       def thenReturn(applicationData: StoredApplication) = {
-        val r: OptionT[Future, ApplicationWithCollaborators] = OptionT.pure[Future](StoredApplication.asApplication(applicationData))
+        val r: OptionT[Future, ApplicationWithCollaborators] = OptionT.pure[Future](applicationData.asAppWithCollaborators)
         when(aMock.fetch(*[ApplicationId])).thenReturn(r)
       }
 

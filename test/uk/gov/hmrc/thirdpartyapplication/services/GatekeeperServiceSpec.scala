@@ -84,12 +84,12 @@ class GatekeeperServiceSpec
   "fetch nonTestingApps with submitted date" should {
 
     "return apps" in new Setup {
-      val app1     = storedApp.withId(ApplicationId.random)
-      val app2     = storedApp.withId(ApplicationId.random)
+      val app1     = storedApp.withId(ApplicationId.random).asAppWithCollaborators
+      val app2     = storedApp.withId(ApplicationId.random).asAppWithCollaborators
       val history1 = aHistory(app1.id)
       val history2 = aHistory(app2.id)
 
-      ApplicationRepoMock.FetchStandardNonTestingApps.thenReturn(app1, app2)
+      ApplicationRepoMock.FetchApplicationWithCollaboratorsQuery.thenReturn(app1, app2)
       StateHistoryRepoMock.FetchLatestByState.thenReturnWhen(State.PENDING_GATEKEEPER_APPROVAL)(history1, history2)
 
       val result = await(underTest.fetchNonTestingAppsWithSubmittedDate())
@@ -110,7 +110,7 @@ class GatekeeperServiceSpec
 
       val result = await(underTest.fetchAppWithHistory(appId))
 
-      result shouldBe ApplicationWithHistoryResponse(StoredApplication.asApplication(app1), history.map(StateHistoryResponse.from))
+      result shouldBe ApplicationWithHistoryResponse(app1.asAppWithCollaborators, history.map(StateHistoryResponse.from))
     }
 
     "throw not found exception" in new Setup {
