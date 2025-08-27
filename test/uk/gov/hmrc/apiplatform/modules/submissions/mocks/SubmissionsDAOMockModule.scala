@@ -40,7 +40,7 @@ trait SubmissionsDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {
     }
 
     object FetchOrganisationIdentifiers {
-      def thenReturn(submission: Submission*) = when(aMock.fetchLatestSubmissionForAll()) thenReturn (successful(submission.toList))
+      def thenReturn(submission: Submission*) = when(aMock.fetchLatestSubmissionForAll(*)) thenReturn (successful(submission.toList))
     }
 
     object Fetch {

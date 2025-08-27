@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.controllers
 
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -24,6 +25,7 @@ import play.api.mvc.{ControllerComponents, Results}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.InstantJsonFormatter.lenientFormatter
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -67,8 +69,14 @@ class SubmissionsController @Inject() (
     service.fetch(id).map(_.fold(failed)(success))
   }
 
-  def fetchOrganisationIdentifiers() = Action.async { _ =>
-    service.fetchOrganisationIdentifiers().map(result => Ok(Json.toJson(result)))
+  def fetchOrganisationIdentifiers() = Action.async { implicit request =>
+    def parseDateString(maybeDateString: Option[Seq[String]]) = {
+      maybeDateString match {
+        case Some(dateString) => Instant.from(lenientFormatter.parse(dateString.head))
+        case _                => Instant.from(lenientFormatter.parse("2022-08-01"))
+      }
+    }
+    service.fetchOrganisationIdentifiers(parseDateString(request.queryString.get("startedon"))).map(result => Ok(Json.toJson(result)))
   }
 
   def fetchLatest(applicationId: ApplicationId) = Action.async { _ =>
