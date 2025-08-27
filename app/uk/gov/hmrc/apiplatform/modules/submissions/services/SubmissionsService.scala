@@ -29,6 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.Applica
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
+import java.time.Instant
 
 @Singleton
 class SubmissionsService @Inject() (
@@ -75,8 +76,8 @@ class SubmissionsService @Inject() (
       .value
   }
 
-  def fetchOrganisationIdentifiers(): Future[Map[String, Int]] = {
-    submissionsDAO.fetchLatestSubmissionForAll()
+  def fetchOrganisationIdentifiers(startedOn: Instant): Future[Map[String, Int]] = {
+    submissionsDAO.fetchLatestSubmissionForAll(startedOn)
       .map(_.map(sub => sub.latestInstance.answersToQuestions.get(QuestionnaireDAO.Questionnaires.OrganisationDetails.question2.id))
         .filter(_.isDefined).map {
           case Some(ActualAnswer.SingleChoiceAnswer(value)) => value

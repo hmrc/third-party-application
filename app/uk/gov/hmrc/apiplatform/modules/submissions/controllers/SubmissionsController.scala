@@ -27,6 +27,9 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.InstantJsonFormatter.lenientFormatter
+
+import java.time.Instant
 
 object SubmissionsController {
 
@@ -67,8 +70,14 @@ class SubmissionsController @Inject() (
     service.fetch(id).map(_.fold(failed)(success))
   }
 
-  def fetchOrganisationIdentifiers() = Action.async { _ =>
-    service.fetchOrganisationIdentifiers().map(result => Ok(Json.toJson(result)))
+  def fetchOrganisationIdentifiers(startedOn: Option[String]) = Action.async { _ =>
+    def parseDateString(maybeDateString: Option[String]) = {
+      maybeDateString match {
+        case Some(dateString) => Instant.from(lenientFormatter.parse(dateString))
+        case _                => Instant.from(lenientFormatter.parse("2022-08-01"))
+      }
+    }
+    service.fetchOrganisationIdentifiers(parseDateString(startedOn)).map(result => Ok(Json.toJson(result)))
   }
 
   def fetchLatest(applicationId: ApplicationId) = Action.async { _ =>
