@@ -70,14 +70,14 @@ class SubmissionsController @Inject() (
     service.fetch(id).map(_.fold(failed)(success))
   }
 
-  def fetchOrganisationIdentifiers(startedOn: Option[String]) = Action.async { _ =>
-    def parseDateString(maybeDateString: Option[String]) = {
+  def fetchOrganisationIdentifiers() = Action.async { implicit request =>
+    def parseDateString(maybeDateString: Option[Seq[String]]) = {
       maybeDateString match {
-        case Some(dateString) => Instant.from(lenientFormatter.parse(dateString))
+        case Some(dateString) => Instant.from(lenientFormatter.parse(dateString.head))
         case _                => Instant.from(lenientFormatter.parse("2022-08-01"))
       }
     }
-    service.fetchOrganisationIdentifiers(parseDateString(startedOn)).map(result => Ok(Json.toJson(result)))
+    service.fetchOrganisationIdentifiers(parseDateString(request.queryString.get("startedon"))).map(result => Ok(Json.toJson(result)))
   }
 
   def fetchLatest(applicationId: ApplicationId) = Action.async { _ =>
