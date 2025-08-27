@@ -24,16 +24,15 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaborators, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
 object ApplicationNaming {
-  type ExclusionCondition = (StoredApplication) => Boolean
+  type ExclusionCondition = (ApplicationWithCollaborators) => Boolean
   val noExclusions: ExclusionCondition                           = _ => false
-  def excludeThisAppId(appId: ApplicationId): ExclusionCondition = (x: StoredApplication) => x.id == appId
+  def excludeThisAppId(appId: ApplicationId): ExclusionCondition = (x: ApplicationWithCollaborators) => x.id == appId
 }
 
 object ApplicationNamingService {
@@ -42,7 +41,7 @@ object ApplicationNamingService {
 
 abstract class AbstractApplicationNamingService(
     auditService: AuditService,
-    applicationRepository: ApplicationRepository,
+    queryService: QueryService,
     nameValidationConfig: ApplicationNamingService.Config
   )(implicit ec: ExecutionContext
   ) {
@@ -51,9 +50,7 @@ abstract class AbstractApplicationNamingService(
 
   def isDuplicateName(applicationName: String, exclusions: ExclusionCondition): Future[Boolean] = {
     if (nameValidationConfig.validateForDuplicateAppNames) {
-      applicationRepository
-        .fetchApplicationsByName(applicationName)
-        .map(_.filter(a => a.environment.isProduction)) // Helps with single db environments
+      queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByName(applicationName))
         .map(_.filterNot(exclusions).nonEmpty)
     } else {
       successful(false)

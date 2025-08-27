@@ -22,6 +22,7 @@ import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaborators, ApplicationWithSubscriptions, PaginatedApplications}
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.GeneralOpenEndedApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.services.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util._
 
@@ -82,9 +83,15 @@ trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar wit
     }
 
     object FetchApplicationsWithCollaborators {
+      def verifyCalledWith(qry: GeneralOpenEndedApplicationQuery) = QueryServiceMock.verify.fetchApplicationsWithCollaborators(eqTo(qry))
+
+      def verifyNeverCalled() = QueryServiceMock.verify(never).fetchApplicationsWithCollaborators(*)
 
       def thenReturns(apps: ApplicationWithCollaborators*) =
         when(aMock.fetchApplicationsWithCollaborators(*)).thenReturn(successful(apps.toList))
+
+      def thenReturnsNothing() =
+        when(aMock.fetchApplicationsWithCollaborators(*)).thenReturn(successful(List.empty))
     }
 
   }

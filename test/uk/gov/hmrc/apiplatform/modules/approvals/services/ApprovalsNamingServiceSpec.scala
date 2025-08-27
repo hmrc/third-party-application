@@ -22,10 +22,10 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationNameValidationConfigMockModule, AuditServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationNameValidationConfigMockModule, AuditServiceMockModule, QueryServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
@@ -33,22 +33,22 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
   trait Setup
       extends AuditServiceMockModule
-      with ApplicationRepositoryMockModule
+      with QueryServiceMockModule
       with ApplicationNameValidationConfigMockModule
-      with StoredApplicationFixtures {
+      with ApplicationWithCollaboratorsFixtures {
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val applicationId: ApplicationId = ApplicationId.random
     val accessType: AccessType       = AccessType.STANDARD
-    val underTest                    = new ApprovalsNamingService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, ApplicationNameValidationConfigMock.aMock)
+    val underTest                    = new ApprovalsNamingService(AuditServiceMock.aMock, QueryServiceMock.aMock, ApplicationNameValidationConfigMock.aMock)
   }
 
   "ApplicationApprovalsNamingService" when {
     "validate application name" should {
 
       "allow valid name" in new Setup {
-        ApplicationRepoMock.FetchByName.thenReturnEmptyList()
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsNothing()
         ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("HMRC"))
 
         val result = await(underTest.validateApplicationNameAndAudit(ValidatedApplicationName("my application name").get, applicationId, accessType))
@@ -57,7 +57,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       }
 
       "block a name with HMRC in" in new Setup {
-        ApplicationRepoMock.FetchByName.thenReturnEmptyList()
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsNothing()
         ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("HMRC"))
 
         val result = await(underTest.validateApplicationName(ValidatedApplicationName("Invalid name HMRC").get, applicationId))
@@ -66,7 +66,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       }
 
       "block a name with multiple denyListed names in" in new Setup {
-        ApplicationRepoMock.FetchByName.thenReturnEmptyList()
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsNothing()
         ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("InvalidName1", "InvalidName2", "InvalidName3"))
 
         val result = await(underTest.validateApplicationName(ValidatedApplicationName("ValidName InvalidName1 InvalidName2").get, applicationId))
@@ -75,7 +75,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       }
 
       "block an invalid ignoring case" in new Setup {
-        ApplicationRepoMock.FetchByName.thenReturnEmptyList()
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsNothing()
         ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("InvalidName"))
 
         val result = await(underTest.validateApplicationName(ValidatedApplicationName("invalidname").get, applicationId))
@@ -84,7 +84,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       }
 
       "block a duplicate app name" in new Setup {
-        ApplicationRepoMock.FetchByName.thenReturn(storedApp)
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturns(standardApp)
         ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
         ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 
@@ -93,11 +93,11 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
         result shouldBe ApplicationNameValidationResult.Duplicate
 
-        ApplicationRepoMock.FetchByName.verifyCalledWith(duplicateName)
+        QueryServiceMock.FetchApplicationsWithCollaborators.verifyCalledWith(ApplicationQueries.applicationsByName(duplicateName))
       }
 
       "ignore a duplicate app name for local sandbox app" in new Setup {
-        ApplicationRepoMock.FetchByName.thenReturn(storedApp.inSandbox())
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsNothing() // Filter on query eliminates sandbox
         ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
         ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 
@@ -106,7 +106,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
         result shouldBe ApplicationNameValidationResult.Valid
 
-        ApplicationRepoMock.FetchByName.verifyCalledWith(duplicateName)
+        QueryServiceMock.FetchApplicationsWithCollaborators.verifyCalledWith(ApplicationQueries.applicationsByName(duplicateName))
       }
 
       "Ignore duplicate name check if not configured e.g. on a subordinate / sandbox environment" in new Setup {
@@ -117,13 +117,13 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
         result shouldBe ApplicationNameValidationResult.Valid
 
-        ApplicationRepoMock.FetchByName.veryNeverCalled()
+        QueryServiceMock.FetchApplicationsWithCollaborators.verifyNeverCalled()
       }
 
       "Ignore application when checking for duplicates if it is self application" in new Setup {
         ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
 
-        ApplicationRepoMock.FetchByName.thenReturn(storedApp)
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturns(standardApp)
 
         val result = await(underTest.validateApplicationName(ValidatedApplicationName("app name").get, applicationId))
 

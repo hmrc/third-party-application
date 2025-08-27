@@ -26,18 +26,17 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessT
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNaming, ApplicationNamingService, AuditService}
+import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNaming, ApplicationNamingService, AuditService, QueryService}
 
 @Singleton
 class UpliftNamingService @Inject() (
     auditService: AuditService,
-    applicationRepository: ApplicationRepository,
+    queryService: QueryService,
     nameValidationConfig: ApplicationNamingService.Config
   )(implicit ec: ExecutionContext
   ) extends AbstractApplicationNamingService(
       auditService,
-      applicationRepository,
+      queryService,
       nameValidationConfig
     ) {
 
