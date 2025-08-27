@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.query._
 
 object ApplicationQueryConverter {
 
-  private val commonNotDeleted = notEqual("state.name", State.DELETED.toString)
+  private val excludeDeleted = notEqual("state.name", State.DELETED.toString)
 
   def first[T <: Param[_]](implicit params: List[Param[_]], ct: ClassTag[T]): Option[T] = params.collect {
     case qp: T => qp
@@ -81,13 +81,10 @@ object ApplicationQueryConverter {
     }
   }
 
-  def asIncludeDeletedAppsFilters(implicit params: List[Param[_]]): List[Bson] =
-    onFirst[IncludeDeletedQP](includeDeletedAppsQP => {
-      if (includeDeletedAppsQP.value) {
-        List.empty
-      } else {
-        List(commonNotDeleted)
-      }
+  // IncludeDeleted is a NOP
+  def asIncludeOrExcludeDeletedAppsFilters(implicit params: List[Param[_]]): List[Bson] =
+    onFirst[ExcludeDeletedQP.type](_ => {
+      List(excludeDeleted)
     })
 
   def asAccessTypeFilters(implicit params: List[Param[_]]): List[Bson] =
@@ -131,8 +128,8 @@ object ApplicationQueryConverter {
     onFirst[AppStateFilterQP](_.value match {
       case AppStateFilter.NoFiltering          => List.empty
       case AppStateFilter.Active               => List(applicationStateMatch(State.PRE_PRODUCTION, State.PRODUCTION))
-      case AppStateFilter.ExcludingDeleted     => List(commonNotDeleted)
-      case AppStateFilter.Blocked              => List(and(equal("blocked", BsonBoolean(true)), commonNotDeleted))
+      case AppStateFilter.ExcludingDeleted     => List(excludeDeleted)
+      case AppStateFilter.Blocked              => List(and(equal("blocked", BsonBoolean(true)), excludeDeleted))
       case AppStateFilter.MatchingOne(state)   => List(equal("state.name", state.toString))
       case AppStateFilter.MatchingMany(states) => List(in("state.name", states.toList.map(_.toString): _*))
     })
@@ -171,7 +168,7 @@ object ApplicationQueryConverter {
         asUserFilters ++
         asEnvironmentFilters ++
         asDeleteRestrictionFilters ++
-        asIncludeDeletedAppsFilters ++
+        asIncludeOrExcludeDeletedAppsFilters ++
         asAccessTypeFilters ++
         asLastUsedFilters ++
         asAppStateFilters ++

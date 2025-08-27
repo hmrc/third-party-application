@@ -192,8 +192,8 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
       }
 
       "extract valid params - include deleted filter" in {
-        test(Map("includeDeleted" -> Seq("true"))) shouldBe List(IncludeDeletedQP(true)).validNel
-        test(Map("includeDeleted" -> Seq("false"))) shouldBe List(IncludeDeletedQP(false)).validNel
+        test(Map("includeDeleted" -> Seq("true"))) shouldBe List(IncludeDeletedQP).validNel
+        test(Map("includeDeleted" -> Seq("false"))) shouldBe List(ExcludeDeletedQP).validNel
       }
 
       "extract valid params - delete restriction filter" in {

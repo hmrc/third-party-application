@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
@@ -28,6 +29,15 @@ object ApplicationQueries {
     params = List(
       AccessTypeQP(Some(AccessType.STANDARD)),
       AppStateFilterQP(AppStateFilter.MatchingMany(State.values.toSet[State] - State.TESTING - State.DELETED))
+    )
+  )
+
+  def applicationsByName(name: String) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
+    sorting = Sorting.NoSorting,
+    params = List(
+      NameQP(name),
+      EnvironmentQP(Environment.PRODUCTION),
+      ExcludeDeletedQP
     )
   )
 

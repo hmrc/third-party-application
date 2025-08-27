@@ -63,7 +63,9 @@ object Param {
 
   case class EnvironmentQP(value: Environment) extends NonUniqueFilterParam[Environment] { val order = 1 }
 
-  case class IncludeDeletedQP(value: Boolean) extends NonUniqueFilterParam[Boolean] { val order = 1 }
+  sealed trait IncludeOrExcludeDeletedQP extends NonUniqueFilterParam[Unit]
+  object IncludeDeletedQP                extends IncludeOrExcludeDeletedQP { val order = 1 }
+  object ExcludeDeletedQP                extends IncludeOrExcludeDeletedQP { val order = 1 }
 
   sealed trait DeleteRestrictionQP extends NonUniqueFilterParam[Unit] { val order = 1 }
   case object NoRestrictionQP      extends DeleteRestrictionQP

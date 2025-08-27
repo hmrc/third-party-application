@@ -244,8 +244,8 @@ object QueryParamValidator {
   object IncludeDeletedValidator extends QueryParamValidator {
     val paramName = "includeDeleted"
 
-    def validate(values: Seq[String]): ErrorsOr[Param.IncludeDeletedQP] = {
-      SingleValueExpected(paramName)(values) andThen BooleanValueExpected(paramName) map { bool => Param.IncludeDeletedQP(bool) }
+    def validate(values: Seq[String]): ErrorsOr[Param.IncludeOrExcludeDeletedQP] = {
+      SingleValueExpected(paramName)(values) andThen BooleanValueExpected(paramName) map { bool => if (bool) Param.IncludeDeletedQP else Param.ExcludeDeletedQP }
     }
   }
 
