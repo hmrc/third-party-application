@@ -16,20 +16,19 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
-import java.time.Clock
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.NonEmptyList
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.services.{ClockNow, EitherTHelper}
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
-import java.time.Instant
 
 @Singleton
 class SubmissionsService @Inject() (
@@ -38,7 +37,7 @@ class SubmissionsService @Inject() (
     contextService: ContextService,
     val clock: Clock
   )(implicit val ec: ExecutionContext
-  ) extends EitherTHelper[String] with ClockNow {
+  ) extends EitherTHelper[String] with ClockNow with ApplicationLogger {
   import cats.instances.future.catsStdInstancesForFuture
 
   private val emptyAnswers = Map.empty[Question.Id, ActualAnswer]
