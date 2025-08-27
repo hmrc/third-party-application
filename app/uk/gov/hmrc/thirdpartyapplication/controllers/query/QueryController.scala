@@ -25,11 +25,11 @@ import play.api.mvc._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.{GeneralOpenEndedApplicationQuery, PaginatedApplicationQuery}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.services.QueryService
 
 @Singleton
 class QueryController @Inject() (
-    applicationRepository: ApplicationRepository,
+    queryService: QueryService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
@@ -50,20 +50,29 @@ class QueryController @Inject() (
       )
   }
 
+  private val applicationNotFound = NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query"))
+
   private def execute(appQry: ApplicationQuery): Future[Result] = {
     appQry match {
-      case q: SingleApplicationQuery => applicationRepository.fetchBySingleApplicationQuery(q).map {
-          _.fold(
+      case q: SingleApplicationQuery => queryService.fetchSingleApplication(q).map { eoa =>
+          eoa.fold(
             // Yes these look the same but they are for different types
-            _.fold(NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query")))(appWithCollabs => Ok(Json.toJson(appWithCollabs))),
-            _.fold(NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query")))(appWithSubs => Ok(Json.toJson(appWithSubs)))
+            _.fold(applicationNotFound)(app => Ok(Json.toJson(app))),
+            _.fold(applicationNotFound)(app => Ok(Json.toJson(app)))
           )
         }
 
       case q: GeneralOpenEndedApplicationQuery =>
-        applicationRepository.fetchByGeneralOpenEndedApplicationQuery(q).map(_.fold(l => Ok(Json.toJson(l)), r => Ok(Json.toJson(r))))
+        queryService.fetchApplications(q).map { eoa =>
+          eoa.fold(
+            // Yes these look the same but they are for different types
+            apps => Ok(Json.toJson(apps)),
+            apps => Ok(Json.toJson(apps))
+          )
+        }
 
-      case q: PaginatedApplicationQuery => applicationRepository.fetchByPaginatedApplicationQuery(q).map(results => Ok(Json.toJson(results)))
+      case q: PaginatedApplicationQuery => queryService.fetchPaginatedApplications(q)
+          .map(results => Ok(Json.toJson(results)))
     }
   }
 }

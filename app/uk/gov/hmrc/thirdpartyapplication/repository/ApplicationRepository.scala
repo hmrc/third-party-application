@@ -44,6 +44,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Clock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
@@ -418,18 +419,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     ).toFuture()
   }
 
-  // def fetchStandardNonTestingApps(): Future[Seq[StoredApplication]] = {
-  //   val query = and(
-  //     equal("access.accessType", AccessType.STANDARD.toString()),
-  //     notEqual("state.name", State.TESTING.toString()),
-  //     notEqual("state.name", State.DELETED.toString())
-  //   )
-
-  //   collection.find(query).toFuture()
-  // }
-
   def fetch(id: ApplicationId): Future[Option[StoredApplication]] = {
-    collection.find(equal("id", Codecs.toBson(id))).headOption()
+    fetchBySingleApplicationQuery(ApplicationQuery.ById(id, List.empty))
+      .map(_.left.getOrElse(None))
   }
 
   def fetchApplicationsByName(name: String): Future[Seq[StoredApplication]] = {
@@ -1018,6 +1010,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     "refreshTokensAvailableFor",
     "rateLimitTier",
     "environment",
+    "checkInformation",
     "blocked",
     "deleteRestriction"
   )
@@ -1042,10 +1035,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   )
 
   // So simple that we don't need to do anything other than use existing methods.  These could be done via conversion to AggregateQuery components at a later date.
-  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Either[Option[ApplicationWithCollaborators], Option[ApplicationWithSubscriptions]]] = {
+  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Either[Option[StoredApplication], Option[StoredAppWithSubs]]] = {
     qry match {
-      case ApplicationQuery.ByClientId(clientId, true, _)       => findAndRecordApplicationUsage(clientId).map(osa => Left(osa.map(_.asAppWithCollaborators)))
-      case ApplicationQuery.ByServerToken(serverToken, true, _) => findAndRecordServerTokenUsage(serverToken).map(osa => Left(osa.map(_.asAppWithCollaborators)))
+      case ApplicationQuery.ByClientId(clientId, true, _)       => findAndRecordApplicationUsage(clientId).map(osa => Left(osa))
+      case ApplicationQuery.ByServerToken(serverToken, true, _) => findAndRecordServerTokenUsage(serverToken).map(osa => Left(osa))
       case _                                                    => fetchSingleAppByAggregates(qry)
     }
   }
@@ -1063,7 +1056,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     }
 
-  private def executeAggregate(wantsSubscriptions: Boolean, pipeline: Seq[Bson]): Future[Either[List[ApplicationWithCollaborators], List[ApplicationWithSubscriptions]]] = {
+  private def executeAggregate(wantsSubscriptions: Boolean, pipeline: Seq[Bson]): Future[Either[List[StoredApplication], List[StoredAppWithSubs]]] = {
     val projectionToUse = if (wantsSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
 
     val facets: Seq[Bson] = Seq(
@@ -1081,7 +1074,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         .map(bson => {
           Right(
             Codecs.fromBson[List[StoredAppWithSubs]](bson)
-              .map(_.asApplicationWithSubs)
           )
         })
     } else {
@@ -1092,13 +1084,12 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         .map(bson => {
           Left(
             Codecs.fromBson[List[StoredApplication]](bson)
-              .map(_.asAppWithCollaborators)
           )
         })
     }
   }
 
-  def fetchSingleAppByAggregates(qry: SingleApplicationQuery): Future[Either[Option[ApplicationWithCollaborators], Option[ApplicationWithSubscriptions]]] = {
+  def fetchSingleAppByAggregates(qry: SingleApplicationQuery): Future[Either[Option[StoredApplication], Option[StoredAppWithSubs]]] = {
     timeFuture("Run Single Query", "application.repository.fetchSingleAppByAggregates") {
       val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.otherParams)
 
@@ -1112,15 +1103,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchApplicationWithCollaboratorsQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[ApplicationWithCollaborators]] = {
-    fetchByGeneralOpenEndedApplicationQuery(qry).map(_.swap.getOrElse(throw new RuntimeException("Called the wrong fetch application method for the query")))
-  }
-
-  def fetchApplicationWithSubscriptionsCollaboratorsQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[ApplicationWithSubscriptions]] = {
-    fetchByGeneralOpenEndedApplicationQuery(qry).map(_.getOrElse(throw new RuntimeException("Called the wrong fetch application method for the query")))
-  }
-
-  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[Either[List[ApplicationWithCollaborators], List[ApplicationWithSubscriptions]]] = {
+  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[Either[List[StoredApplication], List[StoredAppWithSubs]]] = {
     timeFuture("Run General Query", "application.repository.fetchByGeneralOpenEndedApplicationQuery") {
       val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
       val sortingStage: List[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
@@ -1137,7 +1120,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchByPaginatedApplicationQuery(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {
+  def fetchByPaginatedApplicationQuery(qry: PaginatedApplicationQuery): Future[PaginatedApplicationData] = {
     timeFuture("Run Pagination Query", "application.repository.fetchByPaginatedApplicationQuery") {
 
       val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
@@ -1168,15 +1151,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       collection.aggregate[BsonValue](facets)
         .head()
         .map(Codecs.fromBson[PaginatedApplicationData])
-        .map(pad =>
-          PaginatedApplications(
-            pad.applications.map(StoredApplication.asAppWithCollaborators),
-            qry.pagination.pageNbr,
-            qry.pagination.pageSize,
-            pad.countOfAllApps.map(_.total).sum,
-            pad.countOfMatchingApps.map(_.total).sum
-          )
-        )
     }
   }
 

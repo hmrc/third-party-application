@@ -757,7 +757,7 @@ class ApplicationRepositoryISpec
   }
 
   "fetchStandardNonTestingApps" should {
-    def test = applicationRepository.fetchApplicationWithCollaboratorsQuery(ApplicationQueries.standardNonTestingApps)
+    def test = applicationRepository.fetchByGeneralOpenEndedApplicationQuery(ApplicationQueries.standardNonTestingApps)
 
     "retrieve all the standard applications not in TESTING (or DELETED) state" in {
       val application1 = anApplicationDataForTest(
@@ -794,14 +794,14 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application4))
       await(applicationRepository.save(application5))
 
-      val retrieved = await(test)
+      val retrieved = await(test).swap.getOrElse(Nil)
 
       retrieved.length shouldBe 3
-      retrieved.toSet shouldBe Set(application2, application3, application4).map(_.asAppWithCollaborators)
+      retrieved.toSet shouldBe Set(application2, application3, application4)
     }
 
     "return empty list when no apps are found" in {
-      await(test) shouldBe Nil
+      await(test) shouldBe Left(Nil)
     }
 
     "not return Access.Privileged applications" in {
@@ -812,7 +812,7 @@ class ApplicationRepositoryISpec
         .withAccess(Access.Privileged())
 
       await(applicationRepository.save(application1))
-      await(test) shouldBe Nil
+      await(test) shouldBe Left(Nil)
     }
 
     "not return ROPC applications" in {
@@ -823,21 +823,21 @@ class ApplicationRepositoryISpec
         .withAccess(Access.Ropc())
 
       await(applicationRepository.save(application1))
-      await(test) shouldBe Nil
+      await(test) shouldBe Left(Nil)
     }
 
     "return empty list when all apps in TESTING state" in {
       val application1 = anApplicationDataForTest(ApplicationId.random)
 
       await(applicationRepository.save(application1))
-      await(test) shouldBe Nil
+      await(test) shouldBe Left(Nil)
     }
 
     "return empty list when all apps in DELETED state" in {
       val application1 = anApplicationDataForTest(ApplicationId.random).withState(appStateDeleted)
 
       await(applicationRepository.save(application1))
-      await(test) shouldBe Nil
+      await(test) shouldBe Left(Nil)
     }
   }
 

@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule, QueryServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util._
@@ -54,6 +54,7 @@ class GatekeeperServiceSpec
   }
 
   trait Setup extends AuditServiceMockModule
+      with QueryServiceMockModule
       with ApplicationRepositoryMockModule
       with ApiGatewayStoreMockModule
       with StateHistoryRepositoryMockModule {
@@ -66,6 +67,7 @@ class GatekeeperServiceSpec
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val underTest = new GatekeeperService(
+      QueryServiceMock.aMock,
       ApplicationRepoMock.aMock,
       StateHistoryRepoMock.aMock,
       AuditServiceMock.aMock,
@@ -89,7 +91,7 @@ class GatekeeperServiceSpec
       val history1 = aHistory(app1.id)
       val history2 = aHistory(app2.id)
 
-      ApplicationRepoMock.FetchApplicationWithCollaboratorsQuery.thenReturn(app1, app2)
+      QueryServiceMock.FetchApplicationsWithCollaborators.thenReturns(app1, app2)
       StateHistoryRepoMock.FetchLatestByState.thenReturnWhen(State.PENDING_GATEKEEPER_APPROVAL)(history1, history2)
 
       val result = await(underTest.fetchNonTestingAppsWithSubmittedDate())
