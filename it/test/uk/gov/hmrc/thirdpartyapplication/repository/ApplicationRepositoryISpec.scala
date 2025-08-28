@@ -1755,39 +1755,6 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "fetchAllForUserIdAndEnvironment" should {
-    "return one application when 3 apps have the same userId but only one is in Production and not deleted" in {
-      val applicationId1 = ApplicationId.random
-      val applicationId2 = ApplicationId.random
-      val applicationId3 = ApplicationId.random
-      val userId         = UserId.random
-      val productionEnv  = Environment.PRODUCTION
-
-      val collaborator = "user@example.com".admin(userId)
-
-      val prodApplication1   = anApplicationDataForTest(applicationId1).withCollaborators(collaborator)
-      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(collaborator).withState(appStateDeleted)
-      val sandboxApplication = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(collaborator).inSandbox()
-
-      await(applicationRepository.save(prodApplication1))
-      await(applicationRepository.save(prodApplication2))
-      await(applicationRepository.save(sandboxApplication))
-
-      val result = await(
-        applicationRepository.fetchAllForUserIdAndEnvironment(
-          userId,
-          productionEnv
-        )
-      )
-
-      result.size shouldBe 1
-      result.head.environment shouldBe productionEnv
-      result.map(
-        _.collaborators.map(collaborator => collaborator.userId shouldBe userId)
-      )
-    }
-  }
-
   "documentsWithFieldMissing" should {
     "return count of documents with missing description" in {
       val appWithNoDescription = anApplicationDataForTest(

@@ -468,18 +468,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment): Future[Seq[StoredApplication]] = {
-    timeFuture("Fetch All Applications for UserId and Environment", "application.repository.fetchAllForUserIdAndEnvironment") {
-      val query = and(
-        equal("collaborators.userId", Codecs.toBson(userId)),
-        equal("environment", Codecs.toBson(environment)),
-        notEqual("state.name", State.DELETED.toString())
-      )
-
-      collection.find(query).toFuture()
-    }
-  }
-
   def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
     timeFuture("Get Subscriptions for Developer", "application.repository.getSubscriptionsForDeveloper") {
 

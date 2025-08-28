@@ -49,6 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, Qu
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -521,14 +522,17 @@ class ApplicationControllerSpec
       }
     }
 
-    val userId      = UserId.random
     val environment = Environment.PRODUCTION
 
     "succeed with a 200 when applications are found for the collaborator by userId and environment" in new Setup with ExtendedResponses {
-      val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=${userId.toString()}&environment=$environment")
+      val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=${userIdOne.toString()}&environment=$environment")
 
-      when(underTest.applicationService.fetchAllForUserIdAndEnvironment(userId, environment))
-        .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
+      QueryServiceMock.FetchApplicationsWithSubscriptions.thenReturnsFor(
+        ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, environment),
+        standardApp.withSubscriptions(Set(apiIdentifier1)),
+        privilegedApp.withSubscriptions(Set(apiIdentifier1)),
+        ropcApp.withSubscriptions(Set(apiIdentifier1))
+      )
 
       status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe OK
     }
@@ -536,8 +540,12 @@ class ApplicationControllerSpec
     "fail with a BadRequest when applications are requested for the collaborator by userId and environment but the userId is badly formed" in new Setup with ExtendedResponses {
       val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=XXX&environment=$environment")
 
-      when(underTest.applicationService.fetchAllForUserIdAndEnvironment(userId, environment))
-        .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
+      QueryServiceMock.FetchApplicationsWithSubscriptions.thenReturnsFor(
+        ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, environment),
+        standardApp.withSubscriptions(Set(apiIdentifier1)),
+        privilegedApp.withSubscriptions(Set(apiIdentifier1)),
+        ropcApp.withSubscriptions(Set(apiIdentifier1))
+      )
 
       status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe BAD_REQUEST
     }

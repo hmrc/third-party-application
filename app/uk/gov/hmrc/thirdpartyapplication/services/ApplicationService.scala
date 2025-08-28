@@ -209,19 +209,6 @@ class ApplicationService @Inject() (
     }
   }
 
-  // TODO - introduce me
-  // private def asResponse(apps: List[StoredApplication]): List[Application] = {
-  //   apps.map(Application(data = _))
-  // }
-
-  private def asExtendedResponses(apps: List[StoredApplication]): Future[List[ApplicationWithSubscriptions]] = {
-    def asExtendedResponse(app: StoredApplication): Future[ApplicationWithSubscriptions] = {
-      subscriptionRepository.getSubscriptions(app.id).map(subscriptions => app.asAppWithCollaborators.withSubscriptions(subscriptions.toSet))
-    }
-
-    Future.sequence(apps.map(asExtendedResponse))
-  }
-
   def fetchAllForCollaborators(userIds: List[UserId]): Future[List[ApplicationWithCollaborators]] = {
     Future.sequence(
       userIds.map(userId =>
@@ -230,11 +217,6 @@ class ApplicationService @Inject() (
     )
       .map(_.fold(Nil)(_ ++ _))
       .map(_.distinct)
-  }
-
-  def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment): Future[List[ApplicationWithSubscriptions]] = {
-    applicationRepository.fetchAllForUserIdAndEnvironment(userId, environment)
-      .flatMap(x => asExtendedResponses(x.toList))
   }
 
   def fetchAll(): Future[List[ApplicationWithCollaborators]] = {

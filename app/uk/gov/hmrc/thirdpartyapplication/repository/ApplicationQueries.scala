@@ -55,4 +55,8 @@ object ApplicationQueries {
   def applicationsByUserId(userId: UserId, includeDeleted: Boolean) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
     params = UserIdQP(userId) :: WantSubscriptionsQP :: List(ExcludeDeletedQP).filterNot(_ => includeDeleted)
   )
+
+  def applicationsByUserIdAndEnvironment(userId: UserId, environment: Environment) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
+    params = UserIdQP(userId) :: WantSubscriptionsQP :: ExcludeDeletedQP :: EnvironmentQP(environment) :: Nil
+  )
 }

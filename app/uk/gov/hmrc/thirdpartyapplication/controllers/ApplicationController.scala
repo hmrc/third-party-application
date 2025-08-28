@@ -284,7 +284,8 @@ class ApplicationController @Inject() (
   }
 
   private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment) = {
-    applicationService.fetchAllForUserIdAndEnvironment(userId, environment).map(apps => Ok(toJson(apps))) recover recovery
+    queryService.fetchApplicationsWithSubscriptions(ApplicationQueries.applicationsByUserIdAndEnvironment(userId, environment))
+      .map(apps => Ok(toJson(apps))) recover recovery
   }
 
   private def fetchAll() = {

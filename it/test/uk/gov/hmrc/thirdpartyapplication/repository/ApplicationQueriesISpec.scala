@@ -348,4 +348,28 @@ class ApplicationQueriesISpec
     }
   }
 
+  "applicationsByUserIdAndEnvironment" should {
+    "return one application when 3 apps have the same userId but only one is in Production and not deleted" in {
+      val collaborator       = "user@example.com".admin(userIdOne)
+      val applicationId1     = ApplicationId.random
+      val applicationId2     = ApplicationId.random
+      val applicationId3     = ApplicationId.random
+      val prodApplication1   = anApplicationDataForTest(applicationId1).withCollaborators(collaborator)
+      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(collaborator).withState(appStateDeleted)
+      val sandboxApplication = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(collaborator).inSandbox()
+
+      await(applicationRepository.save(prodApplication1))
+      await(applicationRepository.save(prodApplication2))
+      await(applicationRepository.save(sandboxApplication))
+
+      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, Environment.PRODUCTION)))
+
+      result.size shouldBe 1
+      result.head.environment shouldBe Environment.PRODUCTION
+      result.map(
+        _.collaborators.map(collaborator => collaborator.userId shouldBe userIdOne)
+      )
+    }
+  }
+
 }
