@@ -29,6 +29,8 @@ import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocation, SubmissionId, TermsAndConditionsLocation, TermsOfUseAcceptance}
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.GeneralOpenEndedApplicationQuery
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.SingleApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredToken, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -77,20 +79,20 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.getSubscriptionsForDeveloper(*[UserId])).thenReturn(failed(ex))
     }
 
-    object FetchByClientId {
+    // object FetchByClientId {
 
-      def thenReturnWhen(clientId: ClientId)(applicationData: StoredApplication) =
-        when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(Some(applicationData)))
+    //   def thenReturnWhen(clientId: ClientId)(applicationData: StoredApplication) =
+    //     when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(Some(applicationData)))
 
-      def thenReturnNone() =
-        when(aMock.fetchByClientId(*[ClientId])).thenReturn(successful(None))
+    //   def thenReturnNone() =
+    //     when(aMock.fetchByClientId(*[ClientId])).thenReturn(successful(None))
 
-      def thenReturnNoneWhen(clientId: ClientId) =
-        when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(None))
+    //   def thenReturnNoneWhen(clientId: ClientId) =
+    //     when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(None))
 
-      def thenFail(failWith: Throwable) =
-        when(aMock.fetchByClientId(*[ClientId])).thenReturn(failed(failWith))
-    }
+    //   def thenFail(failWith: Throwable) =
+    //     when(aMock.fetchByClientId(*[ClientId])).thenReturn(failed(failWith))
+    // }
 
     object Save {
       private val defaultFn = (a: StoredApplication) => successful(a)
@@ -145,26 +147,26 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     //     when(aMock.fetchApplicationWithCollaboratorsQuery(*)).thenReturn(successful(apps.toList))
     // }
 
-    object FetchByName {
+    // object FetchByName {
 
-      def thenReturnEmptyList() =
-        when(aMock.fetchApplicationsByName(*)).thenReturn(successful(List.empty))
+    //   def thenReturnEmptyList() =
+    //     when(aMock.fetchApplicationsByName(*)).thenReturn(successful(List.empty))
 
-      def thenReturn(apps: StoredApplication*) =
-        when(aMock.fetchApplicationsByName(*)).thenReturn(successful(apps.toList))
+    //   def thenReturn(apps: StoredApplication*) =
+    //     when(aMock.fetchApplicationsByName(*)).thenReturn(successful(apps.toList))
 
-      def thenReturnWhen(name: String)(apps: StoredApplication*) =
-        when(aMock.fetchApplicationsByName(eqTo(name))).thenReturn(successful(apps.toList))
+    //   def thenReturnWhen(name: String)(apps: StoredApplication*) =
+    //     when(aMock.fetchApplicationsByName(eqTo(name))).thenReturn(successful(apps.toList))
 
-      def thenReturnEmptyWhen(requestedName: String) = thenReturnWhen(requestedName)()
+    //   def thenReturnEmptyWhen(requestedName: String) = thenReturnWhen(requestedName)()
 
-      def verifyCalledWith(duplicateName: String) =
-        ApplicationRepoMock.verify.fetchApplicationsByName(eqTo(duplicateName))
+    //   def verifyCalledWith(duplicateName: String) =
+    //     ApplicationRepoMock.verify.fetchApplicationsByName(eqTo(duplicateName))
 
-      def veryNeverCalled() =
-        ApplicationRepoMock.verify(never).fetchApplicationsByName(*)
+    //   def veryNeverCalled() =
+    //     ApplicationRepoMock.verify(never).fetchApplicationsByName(*)
 
-    }
+    // }
 
     object Delete {
 
@@ -194,15 +196,15 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     }
 
-    object FetchVerifiableUpliftBy {
+    // object FetchVerifiableUpliftBy {
 
-      def thenReturnNoneWhen(verificationCode: String) =
-        when(aMock.fetchVerifiableUpliftBy(eqTo(verificationCode))).thenReturn(successful(None))
+    //   def thenReturnNoneWhen(verificationCode: String) =
+    //     when(aMock.fetchVerifiableUpliftBy(eqTo(verificationCode))).thenReturn(successful(None))
 
-      def thenReturnWhen(verificationCode: String)(applicationData: StoredApplication) =
-        when(aMock.fetchVerifiableUpliftBy(eqTo(verificationCode))).thenReturn(successful(Some(applicationData)))
+    //   def thenReturnWhen(verificationCode: String)(applicationData: StoredApplication) =
+    //     when(aMock.fetchVerifiableUpliftBy(eqTo(verificationCode))).thenReturn(successful(Some(applicationData)))
 
-    }
+    // }
 
     object FetchAllForContent {
 
@@ -529,8 +531,26 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturns(app: ApplicationRepository.MongoFormats.StoredAppWithSubs) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Right(Some(app))))
     }
 
+    object FetchSingleApplication {
+
+      def thenReturnNothing() =
+        when(aMock.fetchSingleApplication(*)).thenReturn(successful(None))
+
+      def thenReturnNothingFor(qry: SingleApplicationQuery) =
+        when(aMock.fetchSingleApplication(eqTo(qry))).thenReturn(successful(None))
+
+      def thenReturn(app: StoredApplication) =
+        when(aMock.fetchSingleApplication(*)).thenReturn(successful(Some(app)))
+
+      def thenReturnFor(qry: SingleApplicationQuery, app: StoredApplication) =
+        when(aMock.fetchSingleApplication(eqTo(qry))).thenReturn(successful(Some(app)))
+    }
+
     object FetchByGeneralOpenEndedApplicationQuery {
-      def thenReturns(apps: StoredApplication*)                                            = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Left(apps.toList)))
+      def thenReturns(apps: StoredApplication*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Left(apps.toList)))
+
+      def thenReturnsWhen(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) =
+        when(aMock.fetchByGeneralOpenEndedApplicationQuery(eqTo(qry))).thenReturn(successful(Left(apps.toList)))
 
       def thenReturnsWithSubs(apps: ApplicationRepository.MongoFormats.StoredAppWithSubs*) =
         when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Right(apps.toList)))
@@ -547,6 +567,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturns(pad: PaginatedApplicationData) =
         when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(pad))
     }
+
   }
 
   object ApplicationRepoMock extends BaseApplicationRepoMock {

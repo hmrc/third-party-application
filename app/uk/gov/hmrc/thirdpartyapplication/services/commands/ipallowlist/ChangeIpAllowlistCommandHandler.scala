@@ -22,7 +22,6 @@ import scala.concurrent.ExecutionContext
 import cats._
 import cats.data.Validated._
 import cats.data._
-import cats.implicits._
 import org.apache.commons.net.util.SubnetUtils
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CidrBlock, IpAllowlist}

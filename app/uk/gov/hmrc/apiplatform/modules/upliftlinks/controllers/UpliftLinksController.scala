@@ -19,8 +19,6 @@ package uk.gov.hmrc.apiplatform.modules.upliftlinks.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.implicits._
-
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 

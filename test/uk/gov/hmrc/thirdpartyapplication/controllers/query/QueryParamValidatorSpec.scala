@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
+import cats.syntax.validated._
 import org.scalatest.EitherValues
 import org.scalatest.compatible.Assertion
 import org.scalatest.matchers.{MatchResult, Matcher}
@@ -29,7 +30,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Applicat
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
 class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues with FixedClock {
-  import cats.implicits._
 
   val appOneParam   = "applicationId"   -> Seq(applicationIdOne.toString)
   val pageSizeParam = "pageSize"        -> Seq("10")

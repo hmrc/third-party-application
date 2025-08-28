@@ -46,7 +46,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, Deleted}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{PaginatedApplicationData, StoredApplication}
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, SubscriptionRepository, TermsOfUseInvitationRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -55,6 +55,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator,
 @Singleton
 class ApplicationService @Inject() (
     val metrics: Metrics,
+    queryService: QueryService,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     subscriptionRepository: SubscriptionRepository,
@@ -171,9 +172,7 @@ class ApplicationService @Inject() (
   }
 
   def fetchByClientId(clientId: ClientId): Future[Option[ApplicationWithCollaborators]] = {
-    applicationRepository.fetchByClientId(clientId) map {
-      _.map(application => application.asAppWithCollaborators)
-    }
+    queryService.fetchSingleApplicationWithCollaborators(ApplicationQueries.applicationByClientId(clientId))
   }
 
   def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[(ApplicationWithSubscriptions, String)]] = {
@@ -269,7 +268,6 @@ class ApplicationService @Inject() (
   }
 
   import cats.data.OptionT
-  import cats.implicits._
 
   def fetch(applicationId: ApplicationId): OptionT[Future, ApplicationWithCollaborators] =
     OptionT(applicationRepository.fetch(applicationId))

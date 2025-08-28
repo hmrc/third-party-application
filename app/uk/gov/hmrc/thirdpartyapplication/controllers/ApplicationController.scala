@@ -67,8 +67,6 @@ class ApplicationController @Inject() (
     with AuthKeyRefiner
     with ApplicationLogger {
 
-  import cats.implicits._
-
   val applicationCacheExpiry  = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 

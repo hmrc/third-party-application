@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
+import cats.syntax.validated._
 import org.scalatest.EitherValues
 import org.scalatest.compatible.Assertion
 
@@ -32,8 +33,6 @@ class ParamsValidatorSpec
     with ApiIdentifierFixtures
     with EitherValues
     with FixedClock {
-
-  import cats.implicits._
 
   val Pass = ().validNel
 

@@ -173,6 +173,7 @@ object ApplicationQueryConverter {
         asLastUsedFilters ++
         asAppStateFilters ++
         asNameFilter ++
+        asVerificationCodeFilter ++
         asSearchFilter
 
     if (individualFilters.isEmpty) {

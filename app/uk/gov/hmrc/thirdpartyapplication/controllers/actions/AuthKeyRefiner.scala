@@ -21,7 +21,7 @@ import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-import cats.implicits._
+import cats.syntax.all._
 
 import play.api.mvc._
 

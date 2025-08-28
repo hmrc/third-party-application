@@ -50,7 +50,6 @@ class ApplicationCommandController @Inject() (
     with JsonUtils
     with ApplicationLogger {
 
-  import cats.implicits._
   import ApplicationCommandController._
 
   val E = EitherTHelper.make[CommandHandler.Failures]

@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
+import cats.syntax.option._
+
 sealed trait Sorting
 
 object Sorting {
@@ -28,7 +30,6 @@ object Sorting {
   case object NoSorting             extends Sorting
 
   def apply(text: String): Option[Sorting] = {
-    import cats.implicits._
     text match {
       case "NAME_ASC"       => NameAscending.some
       case "NAME_DESC"      => NameDescending.some

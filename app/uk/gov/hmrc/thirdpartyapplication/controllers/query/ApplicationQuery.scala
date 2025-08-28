@@ -20,10 +20,14 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueryConverter
 
-sealed trait ApplicationQuery
+sealed trait ApplicationQuery {
+  def params: List[FilterParam[_]]
+}
 
 sealed trait SingleApplicationQuery extends ApplicationQuery {
   def otherParams: List[NonUniqueFilterParam[_]]
+  def specificParam: UniqueFilterParam[_]
+  lazy val params = specificParam +: otherParams
 
   lazy val wantsSubscriptions: Boolean = ApplicationQueryConverter.wantsSubscriptions(otherParams)
 }
@@ -38,16 +42,24 @@ sealed trait MultipleApplicationQuery extends ApplicationQuery {
 
 object ApplicationQuery {
 
-  case class ById protected (applicationId: ApplicationId, otherParams: List[NonUniqueFilterParam[_]])                       extends SingleApplicationQuery
-  case class ByClientId protected (clientId: ClientId, recordUsage: Boolean, otherParams: List[NonUniqueFilterParam[_]])     extends SingleApplicationQuery
-  case class ByServerToken protected (serverToken: String, recordUsage: Boolean, otherParams: List[NonUniqueFilterParam[_]]) extends SingleApplicationQuery
+  case class ById protected (applicationId: ApplicationId, otherParams: List[NonUniqueFilterParam[_]]) extends SingleApplicationQuery {
+    lazy val specificParam = ApplicationIdQP(applicationId)
+  }
+
+  case class ByClientId protected (clientId: ClientId, recordUsage: Boolean, otherParams: List[NonUniqueFilterParam[_]]) extends SingleApplicationQuery {
+    lazy val specificParam = ClientIdQP(clientId)
+  }
+
+  case class ByServerToken protected (serverToken: String, recordUsage: Boolean, otherParams: List[NonUniqueFilterParam[_]]) extends SingleApplicationQuery {
+    lazy val specificParam = ServerTokenQP(serverToken)
+  }
 
   case class GeneralOpenEndedApplicationQuery protected (params: List[NonUniqueFilterParam[_]], sorting: Sorting = Sorting.NoSorting) extends MultipleApplicationQuery
 
   case class PaginatedApplicationQuery protected (params: List[NonUniqueFilterParam[_]], sorting: Sorting = Sorting.NoSorting, pagination: Pagination = Pagination())
       extends MultipleApplicationQuery
 
-  import cats.implicits._
+  import cats.syntax.option._
 
   def identifyAnyPagination(allParams: List[Param[_]]): Option[Pagination] = {
     allParams.collect {

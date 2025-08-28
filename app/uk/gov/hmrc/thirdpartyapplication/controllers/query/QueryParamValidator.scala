@@ -22,7 +22,7 @@ import scala.util.Try
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
-import cats.implicits._
+import cats.syntax.all._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType

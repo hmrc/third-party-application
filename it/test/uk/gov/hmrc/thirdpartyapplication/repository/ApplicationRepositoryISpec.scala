@@ -632,28 +632,25 @@ class ApplicationRepositoryISpec
   "fetchByClientId" should {
 
     "retrieve the application for a given client id when it has a matching client id" in {
+
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
-        ClientId("aaa")
+        clientIdOne
       )
         .withState(appStateProduction)
 
       val application2 = anApplicationDataForTest(
         ApplicationId.random,
-        ClientId("zzz")
+        clientIdTwo
       )
         .withState(appStateProduction)
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
 
-      val retrieved = await(
-        applicationRepository.fetchByClientId(
-          application2.tokens.production.clientId
-        )
-      )
+      val retrieved = await(applicationRepository.fetchSingleApplication(ApplicationQueries.applicationByClientId(clientIdTwo)))
 
-      retrieved shouldBe Some(application2)
+      retrieved.value shouldBe application2
     }
 
     "retrieve the grant length for an application for a given client id when it has a matching client id" in {
@@ -661,14 +658,14 @@ class ApplicationRepositoryISpec
       val grantLength2 = GrantLength.ONE_YEAR.period
       val application1 = anApplicationDataForTest(
         ApplicationId.random,
-        ClientId("aaa")
+        clientIdOne
       )
         .withState(appStateProduction)
         .copy(refreshTokensAvailableFor = grantLength1)
 
       val application2 = anApplicationDataForTest(
         ApplicationId.random,
-        ClientId("zzz")
+        clientIdTwo
       )
         .withState(appStateProduction)
         .copy(refreshTokensAvailableFor = grantLength2)
@@ -676,16 +673,8 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
 
-      val retrieved1 = await(
-        applicationRepository.fetchByClientId(
-          application1.tokens.production.clientId
-        )
-      )
-      val retrieved2 = await(
-        applicationRepository.fetchByClientId(
-          application2.tokens.production.clientId
-        )
-      )
+      val retrieved1 = await(applicationRepository.fetchSingleApplication(ApplicationQueries.applicationByClientId(clientIdOne)))
+      val retrieved2 = await(applicationRepository.fetchSingleApplication(ApplicationQueries.applicationByClientId(clientIdTwo)))
 
       retrieved1.map(_.refreshTokensAvailableFor) shouldBe Some(grantLength1)
       retrieved2.map(_.refreshTokensAvailableFor) shouldBe Some(grantLength2)
@@ -700,11 +689,7 @@ class ApplicationRepositoryISpec
 
       await(applicationRepository.save(application1))
 
-      val retrieved = await(
-        applicationRepository.fetchByClientId(
-          application1.tokens.production.clientId
-        )
-      )
+      val retrieved = await(applicationRepository.fetchSingleApplication(ApplicationQueries.applicationByClientId(application1.tokens.production.clientId)))
 
       retrieved shouldBe None
     }
@@ -852,7 +837,7 @@ class ApplicationRepositoryISpec
 
       await(applicationRepository.save(application))
       val retrieved =
-        await(applicationRepository.fetchApplicationsByName(applicationName))
+        await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByName(applicationName)))
 
       retrieved shouldBe List(application)
     }
@@ -864,9 +849,7 @@ class ApplicationRepositoryISpec
         .copy(normalisedName = applicationNormalisedName)
       await(applicationRepository.save(application))
 
-      val retrieved = await(
-        applicationRepository.fetchApplicationsByName("non-matching-name")
-      )
+      val retrieved = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByName("non-matching-name")))
 
       retrieved shouldBe List.empty
     }
@@ -881,7 +864,7 @@ class ApplicationRepositoryISpec
 
       await(applicationRepository.save(application))
       val retrieved =
-        await(applicationRepository.fetchApplicationsByName(applicationName))
+        await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByName(applicationName)))
 
       retrieved shouldBe List.empty
     }
@@ -1131,8 +1114,8 @@ class ApplicationRepositoryISpec
         .withState(appStatePendingRequesterVerification)
 
       await(applicationRepository.save(application))
-      val retrieved = await(applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode))
-      retrieved shouldBe Some(application)
+      val retrieved = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByVerifiableUplift(appStateVerificationCode)))
+      retrieved shouldBe List(application)
     }
 
     "retrieve the application with verificationCode when in pre production state" in {
@@ -1142,8 +1125,8 @@ class ApplicationRepositoryISpec
         .withState(appStatePreProduction)
 
       await(applicationRepository.save(application))
-      val retrieved = await(applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode))
-      retrieved shouldBe Some(application)
+      val retrieved = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByVerifiableUplift(appStateVerificationCode)))
+      retrieved shouldBe List(application)
     }
 
     "not retrieve the application with an unknown verificationCode" in {
@@ -1153,8 +1136,9 @@ class ApplicationRepositoryISpec
         .withState(appStatePendingRequesterVerification)
 
       await(applicationRepository.save(application))
-      val retrieved = await(applicationRepository.fetchVerifiableUpliftBy("aDifferentVerificationCode"))
-      retrieved shouldBe None
+
+      val retrieved = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByVerifiableUplift("aDifferentVerificationCode")))
+      retrieved shouldBe List.empty
     }
 
     "not retrieve the application with verificationCode when in deleted state" in {
@@ -1166,10 +1150,8 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application))
       await(applicationRepository.delete(application.id, instant))
 
-      val retrieved = await(
-        applicationRepository.fetchVerifiableUpliftBy(appStateVerificationCode)
-      )
-      retrieved shouldBe None
+      val retrieved = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByVerifiableUplift(appStateVerificationCode)))
+      retrieved shouldBe List.empty
     }
   }
 

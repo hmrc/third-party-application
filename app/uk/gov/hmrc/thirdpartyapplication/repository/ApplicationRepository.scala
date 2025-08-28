@@ -20,6 +20,8 @@ import java.time.{Clock, Instant, Period}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import cats.syntax.either._
+import cats.syntax.option._
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import com.typesafe.config.ConfigFactory
 import org.bson.BsonValue
@@ -424,24 +426,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       .map(_.left.getOrElse(None))
   }
 
-  def fetchApplicationsByName(name: String): Future[Seq[StoredApplication]] = {
-    val query = and(
-      equal("normalisedName", name.toLowerCase),
-      notEqual("state.name", State.DELETED.toString())
-    )
-
-    collection.find(query).toFuture()
-  }
-
-  def fetchVerifiableUpliftBy(verificationCode: String): Future[Option[StoredApplication]] = {
-    val query = and(
-      equal("state.verificationCode", verificationCode),
-      notEqual("state.name", State.DELETED.toString())
-    )
-
-    collection.find(query).headOption()
-  }
-
   def fetchAllByStatusDetails(state: State, updatedBefore: Instant): Future[Seq[StoredApplication]] = {
     val query = and(
       equal("state.name", state.toString()),
@@ -474,9 +458,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       collection.aggregate(
         Seq(
           filter(equal("state.name", state.toString())),
+          filter(lte("state.updatedOn", updatedBefore)),
           filter(equal("environment", Codecs.toBson(environment))),
           filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DO_NOT_DELETE.toString())),
-          filter(lte("state.updatedOn", updatedBefore)),
           lookup(from = "notifications", localField = "id", foreignField = "applicationId", as = "matched"),
           filter(size("matched", 0))
         )
@@ -484,16 +468,17 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchByClientId(clientId: ClientId): Future[Option[StoredApplication]] = {
-    timeFuture("Fetch Application by ClientId", "application.repository.fetchByClientId") {
-      val query = and(
-        equal("tokens.production.clientId", clientId),
-        notEqual("state.name", State.DELETED.toString())
-      )
+  // def fetchByClientId(clientId: ClientId): Future[Option[StoredApplication]] = ???
+  // def fetchByClientId(clientId: ClientId): Future[Option[StoredApplication]] = {
+  //   timeFuture("Fetch Application by ClientId", "application.repository.fetchByClientId") {
+  //     val query = and(
+  //       equal("tokens.production.clientId", clientId),
+  //       notEqual("state.name", State.DELETED.toString())
+  //     )
 
-      collection.find(query).headOption()
-    }
-  }
+  //     collection.find(query).headOption()
+  //   }
+  // }
 
   def fetchByServerToken(serverToken: String): Future[Option[StoredApplication]] = {
     timeFuture("Fetch Application by Server Token", "application.repository.fetchByServerToken") {
@@ -1034,15 +1019,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     )
   )
 
-  // So simple that we don't need to do anything other than use existing methods.  These could be done via conversion to AggregateQuery components at a later date.
-  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Either[Option[StoredApplication], Option[StoredAppWithSubs]]] = {
-    qry match {
-      case ApplicationQuery.ByClientId(clientId, true, _)       => findAndRecordApplicationUsage(clientId).map(osa => Left(osa))
-      case ApplicationQuery.ByServerToken(serverToken, true, _) => findAndRecordServerTokenUsage(serverToken).map(osa => Left(osa))
-      case _                                                    => fetchSingleAppByAggregates(qry)
-    }
-  }
-
   private val transformApplications: Reads[JsArray] =
     (__ \ "applications").read[JsArray].map { array =>
       JsArray(
@@ -1089,18 +1065,34 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchSingleAppByAggregates(qry: SingleApplicationQuery): Future[Either[Option[StoredApplication], Option[StoredAppWithSubs]]] = {
+  protected def fetchSingleAppByAggregates(qry: SingleApplicationQuery): Future[Either[Option[StoredApplication], Option[StoredAppWithSubs]]] = {
     timeFuture("Run Single Query", "application.repository.fetchSingleAppByAggregates") {
-      val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.otherParams)
+      val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
 
       val needsLookup         = qry.wantsSubscriptions
-      import cats.implicits._
       val maybeSubsLookup     = subscriptionsLookup.some.filter(_ => needsLookup)
       val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ filtersStage
 
       executeAggregate(qry.wantsSubscriptions, pipeline)
         .map(_.bimap(_.headOption, _.headOption))
     }
+  }
+
+  // So simple that we don't need to do anything other than use existing methods.  These could be done via conversion to AggregateQuery components at a later date.
+  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Either[Option[StoredApplication], Option[StoredAppWithSubs]]] = {
+    qry match {
+      case ApplicationQuery.ByClientId(clientId, true, _)       => findAndRecordApplicationUsage(clientId).map(osa => Left(osa))
+      case ApplicationQuery.ByServerToken(serverToken, true, _) => findAndRecordServerTokenUsage(serverToken).map(osa => Left(osa))
+      case _                                                    => fetchSingleAppByAggregates(qry)
+    }
+  }
+
+  def fetchSingleApplication(qry: SingleApplicationQuery): Future[Option[StoredApplication]] = {
+    fetchBySingleApplicationQuery(qry).map(_.fold(identity, _.map(_.app)))
+  }
+
+  def fetchApplications(qry: GeneralOpenEndedApplicationQuery): Future[List[StoredApplication]] = {
+    fetchByGeneralOpenEndedApplicationQuery(qry).map(_.fold(identity, _.map(_.app)))
   }
 
   def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[Either[List[StoredApplication], List[StoredAppWithSubs]]] = {
@@ -1110,7 +1102,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       val needsLookup = qry.wantsSubscriptions || qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
 
-      import cats.implicits._
       val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
       val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => needsLookup && qry.hasSpecificSubscriptionFilter)
 
@@ -1129,7 +1120,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       val needsLookup = qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
 
-      import cats.implicits._
       val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
       val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => needsLookup && qry.hasSpecificSubscriptionFilter)
 

@@ -33,17 +33,17 @@ class QueryService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def fetchSingleApplicationWithCollaborators(qry: SingleApplicationQuery): Future[Option[ApplicationWithCollaborators]] = {
-    fetchSingleApplication(qry).map(_.fold(identity, _.map(_.asAppWithCollaborators)))
-  }
-
   def fetchSingleApplication(qry: SingleApplicationQuery): Future[Either[Option[ApplicationWithCollaborators], Option[ApplicationWithSubscriptions]]] = {
-    EitherT(applicationRepository.fetchSingleAppByAggregates(qry))
+    EitherT(applicationRepository.fetchBySingleApplicationQuery(qry))
       .bimap(
         _.map(_.asAppWithCollaborators),
         _.map(_.asApplicationWithSubs)
       )
       .value
+  }
+
+  def fetchSingleApplicationWithCollaborators(qry: SingleApplicationQuery): Future[Option[ApplicationWithCollaborators]] = {
+    fetchSingleApplication(qry).map(_.fold(identity, _.map(_.asAppWithCollaborators)))
   }
 
   def fetchApplications(qry: GeneralOpenEndedApplicationQuery): Future[Either[List[ApplicationWithCollaborators], List[ApplicationWithSubscriptions]]] = {

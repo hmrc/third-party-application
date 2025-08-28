@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, Environment}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 import uk.gov.hmrc.thirdpartyapplication.controllers.query._
 
 object ApplicationQueries {
+
+  def applicationByClientId(clientId: ClientId) = ApplicationQuery.ByClientId(clientId, false, List(ExcludeDeletedQP))
 
   lazy val standardNonTestingApps = ApplicationQuery.GeneralOpenEndedApplicationQuery(
     sorting = Sorting.NoSorting,
@@ -41,4 +43,10 @@ object ApplicationQueries {
     )
   )
 
+  def applicationsByVerifiableUplift(verificationCode: String) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
+    params = List(
+      VerificationCodeQP(verificationCode),
+      ExcludeDeletedQP
+    )
+  )
 }

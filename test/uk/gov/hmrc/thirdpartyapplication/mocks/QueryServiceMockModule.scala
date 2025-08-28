@@ -23,6 +23,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaborators, ApplicationWithSubscriptions, PaginatedApplications}
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.GeneralOpenEndedApplicationQuery
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.SingleApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.services.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util._
 
@@ -55,6 +56,12 @@ trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar wit
         when(aMock.fetchSingleApplicationWithCollaborators(*)).thenReturn(successful(Some(app)))
 
       def thenReturnsNothing() =
+        when(aMock.fetchSingleApplicationWithCollaborators(*)).thenReturn(successful(None))
+
+      def thenReturnsFor(qry: SingleApplicationQuery, app: ApplicationWithCollaborators) =
+        when(aMock.fetchSingleApplicationWithCollaborators(eqTo(qry))).thenReturn(successful(Some(app)))
+
+      def thenReturnsNothingFor(qry: SingleApplicationQuery) =
         when(aMock.fetchSingleApplicationWithCollaborators(*)).thenReturn(successful(None))
     }
 
@@ -92,6 +99,9 @@ trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar wit
 
       def thenReturnsNothing() =
         when(aMock.fetchApplicationsWithCollaborators(*)).thenReturn(successful(List.empty))
+
+      def thenReturnsNothingWhen(qry: GeneralOpenEndedApplicationQuery) =
+        when(aMock.fetchApplicationsWithCollaborators(eqTo(qry))).thenReturn(successful(List.empty))
     }
 
   }
