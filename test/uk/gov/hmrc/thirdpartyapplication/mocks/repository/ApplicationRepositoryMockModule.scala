@@ -79,21 +79,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.getSubscriptionsForDeveloper(*[UserId])).thenReturn(failed(ex))
     }
 
-    // object FetchByClientId {
-
-    //   def thenReturnWhen(clientId: ClientId)(applicationData: StoredApplication) =
-    //     when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(Some(applicationData)))
-
-    //   def thenReturnNone() =
-    //     when(aMock.fetchByClientId(*[ClientId])).thenReturn(successful(None))
-
-    //   def thenReturnNoneWhen(clientId: ClientId) =
-    //     when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(None))
-
-    //   def thenFail(failWith: Throwable) =
-    //     when(aMock.fetchByClientId(*[ClientId])).thenReturn(failed(failWith))
-    // }
-
     object Save {
       private val defaultFn = (a: StoredApplication) => successful(a)
 
@@ -132,42 +117,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       }
     }
 
-    // object FetchStandardNonTestingApps {
-
-    //   def thenReturn(apps: StoredApplication*) =
-    //     when(aMock.fetchStandardNonTestingApps()).thenReturn(successful(apps.toList))
-    // }
-
-    // object FetchApplicationWithCollaboratorsQuery {
-
-    //   def thenReturnNothing()                             =
-    //     when(aMock.fetchApplicationWithCollaboratorsQuery(*)).thenReturn(successful(List.empty))
-
-    //   def thenReturn(apps: ApplicationWithCollaborators*) =
-    //     when(aMock.fetchApplicationWithCollaboratorsQuery(*)).thenReturn(successful(apps.toList))
-    // }
-
-    // object FetchByName {
-
-    //   def thenReturnEmptyList() =
-    //     when(aMock.fetchApplicationsByName(*)).thenReturn(successful(List.empty))
-
-    //   def thenReturn(apps: StoredApplication*) =
-    //     when(aMock.fetchApplicationsByName(*)).thenReturn(successful(apps.toList))
-
-    //   def thenReturnWhen(name: String)(apps: StoredApplication*) =
-    //     when(aMock.fetchApplicationsByName(eqTo(name))).thenReturn(successful(apps.toList))
-
-    //   def thenReturnEmptyWhen(requestedName: String) = thenReturnWhen(requestedName)()
-
-    //   def verifyCalledWith(duplicateName: String) =
-    //     ApplicationRepoMock.verify.fetchApplicationsByName(eqTo(duplicateName))
-
-    //   def veryNeverCalled() =
-    //     ApplicationRepoMock.verify(never).fetchApplicationsByName(*)
-
-    // }
-
     object Delete {
 
       def verifyCalledWith(id: ApplicationId) =
@@ -186,26 +135,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.hardDelete(*[ApplicationId])).thenReturn(successful(HasSucceeded))
     }
 
-    // object FetchByServerToken {
-
-    //   def thenReturnWhen(serverToken: String)(applicationData: StoredApplication) =
-    //     when(aMock.fetchByServerToken(eqTo(serverToken))).thenReturn(successful(Some(applicationData)))
-
-    //   def thenReturnNoneWhen(serverToken: String) =
-    //     when(aMock.fetchByServerToken(eqTo(serverToken))).thenReturn(successful(None))
-
-    // }
-
-    // object FetchVerifiableUpliftBy {
-
-    //   def thenReturnNoneWhen(verificationCode: String) =
-    //     when(aMock.fetchVerifiableUpliftBy(eqTo(verificationCode))).thenReturn(successful(None))
-
-    //   def thenReturnWhen(verificationCode: String)(applicationData: StoredApplication) =
-    //     when(aMock.fetchVerifiableUpliftBy(eqTo(verificationCode))).thenReturn(successful(Some(applicationData)))
-
-    // }
-
     object FetchAllForContent {
 
       def thenReturnEmptyWhen(apiContext: ApiContext) =
@@ -214,12 +143,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturnWhen(apiContext: ApiContext)(apps: StoredApplication*) =
         when(aMock.fetchAllForContext(eqTo(apiContext))).thenReturn(successful(apps.toList))
 
-    }
-
-    object fetchAllForUserId {
-
-      def thenReturnWhen(userId: UserId, includeDeleted: Boolean)(apps: StoredApplication*) =
-        when(aMock.fetchAllForUserId(eqTo(userId), eqTo(includeDeleted))).thenReturn(successful(apps.toList))
     }
 
     object FetchAllForApiIdentifier {

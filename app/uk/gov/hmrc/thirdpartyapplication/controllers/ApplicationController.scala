@@ -44,7 +44,9 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAut
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
@@ -59,6 +61,7 @@ class ApplicationController @Inject() (
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
     upliftLinkService: UpliftLinkService,
+    queryService: QueryService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
@@ -276,7 +279,8 @@ class ApplicationController @Inject() (
   }
 
   def fetchAllForCollaborator(userId: UserId) = Action.async {
-    applicationService.fetchAllForCollaborator(userId, false).map(apps => Ok(toJson(apps))) recover recovery
+    queryService.fetchApplicationsWithSubscriptions(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false))
+      .map(apps => Ok(toJson(apps))) recover recovery
   }
 
   private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment) = {

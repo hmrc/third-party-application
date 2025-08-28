@@ -59,6 +59,10 @@ class QueryService @Inject() (
     fetchApplications(qry).map(_.fold(identity, _.map(_.asAppWithCollaborators)))
   }
 
+  def fetchApplicationsWithSubscriptions(qry: GeneralOpenEndedApplicationQuery): Future[List[ApplicationWithSubscriptions]] = {
+    fetchApplications(qry).map(_.getOrElse(Nil))
+  }
+
   def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {
     applicationRepository.fetchByPaginatedApplicationQuery(qry)
       .map(pad =>

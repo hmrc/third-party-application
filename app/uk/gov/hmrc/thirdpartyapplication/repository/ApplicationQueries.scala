@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, Environment}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, Environment, UserId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
@@ -50,5 +50,9 @@ object ApplicationQueries {
       VerificationCodeQP(verificationCode),
       ExcludeDeletedQP
     )
+  )
+
+  def applicationsByUserId(userId: UserId, includeDeleted: Boolean) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
+    params = UserIdQP(userId) :: WantSubscriptionsQP :: List(ExcludeDeletedQP).filterNot(_ => includeDeleted)
   )
 }

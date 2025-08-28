@@ -468,46 +468,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  // def fetchByClientId(clientId: ClientId): Future[Option[StoredApplication]] = ???
-  // def fetchByClientId(clientId: ClientId): Future[Option[StoredApplication]] = {
-  //   timeFuture("Fetch Application by ClientId", "application.repository.fetchByClientId") {
-  //     val query = and(
-  //       equal("tokens.production.clientId", clientId),
-  //       notEqual("state.name", State.DELETED.toString())
-  //     )
-
-  //     collection.find(query).headOption()
-  //   }
-  // }
-
-  // def fetchByServerToken(serverToken: String): Future[Option[StoredApplication]] = ???
-  //   timeFuture("Fetch Application by Server Token", "application.repository.fetchByServerToken") {
-  //     val query = and(
-  //       equal("tokens.production.accessToken", serverToken),
-  //       notEqual("state.name", State.DELETED.toString())
-  //     )
-
-  //     collection.find(query).headOption()
-  //   }
-  // }
-
-  def fetchAllForUserId(userId: UserId, includeDeleted: Boolean): Future[Seq[StoredApplication]] = {
-    timeFuture("Fetch All Applications for UserId", "application.repository.fetchAllForUserId") {
-      def query = {
-        if (includeDeleted) {
-          equal("collaborators.userId", Codecs.toBson(userId))
-        } else {
-          and(
-            equal("collaborators.userId", Codecs.toBson(userId)),
-            notEqual("state.name", State.DELETED.toString())
-          )
-        }
-      }
-
-      collection.find(query).toFuture()
-    }
-  }
-
   def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment): Future[Seq[StoredApplication]] = {
     timeFuture("Fetch All Applications for UserId and Environment", "application.repository.fetchAllForUserIdAndEnvironment") {
       val query = and(

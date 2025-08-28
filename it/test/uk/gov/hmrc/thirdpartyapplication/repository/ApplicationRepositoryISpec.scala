@@ -1755,54 +1755,6 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "fetchAllForUserId" should {
-    "return two applications when all have the same userId" in {
-      val applicationId1 = ApplicationId.random
-      val applicationId2 = ApplicationId.random
-      val applicationId3 = ApplicationId.random
-      val userId         = UserId.random
-
-      val collaborator     = "user@example.com".admin(userId)
-      val testApplication1 = anApplicationDataForTest(applicationId1).withCollaborators(collaborator)
-      val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(collaborator)
-      val testApplication3 = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(collaborator).withState(appStateDeleted)
-
-      await(applicationRepository.save(testApplication1))
-      await(applicationRepository.save(testApplication2))
-      await(applicationRepository.save(testApplication3))
-
-      val result = await(applicationRepository.fetchAllForUserId(userId, false))
-
-      result.size shouldBe 2
-      result.map(
-        _.collaborators.map(collaborator => collaborator.userId shouldBe userId)
-      )
-    }
-
-    "return three applications when all have the same userId and one is deleted" in {
-      val applicationId1 = ApplicationId.random
-      val applicationId2 = ApplicationId.random
-      val applicationId3 = ApplicationId.random
-      val userId         = UserId.random
-
-      val collaborator     = "user@example.com".admin(userId)
-      val testApplication1 = anApplicationDataForTest(applicationId1).withCollaborators(collaborator)
-      val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(collaborator)
-      val testApplication3 = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(collaborator).withState(appStateDeleted)
-
-      await(applicationRepository.save(testApplication1))
-      await(applicationRepository.save(testApplication2))
-      await(applicationRepository.save(testApplication3))
-
-      val result = await(applicationRepository.fetchAllForUserId(userId, true))
-
-      result.size shouldBe 3
-      result.map(
-        _.collaborators.map(collaborator => collaborator.userId shouldBe userId)
-      )
-    }
-  }
-
   "fetchAllForUserIdAndEnvironment" should {
     "return one application when 3 apps have the same userId but only one is in Production and not deleted" in {
       val applicationId1 = ApplicationId.random

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
-import scala.concurrent.Future.successful
+import scala.concurrent.Future.{failed, successful}
 
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
@@ -100,8 +100,32 @@ trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar wit
       def thenReturnsNothing() =
         when(aMock.fetchApplicationsWithCollaborators(*)).thenReturn(successful(List.empty))
 
-      def thenReturnsNothingWhen(qry: GeneralOpenEndedApplicationQuery) =
+      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: ApplicationWithCollaborators*) =
+        when(aMock.fetchApplicationsWithCollaborators(eqTo(qry))).thenReturn(successful(apps.toList))
+
+      def thenReturnsNothingFor(qry: GeneralOpenEndedApplicationQuery) =
         when(aMock.fetchApplicationsWithCollaborators(eqTo(qry))).thenReturn(successful(List.empty))
+    }
+
+    object FetchApplicationsWithSubscriptions {
+      def verifyCalledWith(qry: GeneralOpenEndedApplicationQuery) = QueryServiceMock.verify.fetchApplicationsWithSubscriptions(eqTo(qry))
+
+      def verifyNeverCalled() = QueryServiceMock.verify(never).fetchApplicationsWithSubscriptions(*)
+
+      def thenReturns(apps: ApplicationWithSubscriptions*) =
+        when(aMock.fetchApplicationsWithSubscriptions(*)).thenReturn(successful(apps.toList))
+
+      def thenReturnsNothing() =
+        when(aMock.fetchApplicationsWithSubscriptions(*)).thenReturn(successful(List.empty))
+
+      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: ApplicationWithSubscriptions*) =
+        when(aMock.fetchApplicationsWithSubscriptions(eqTo(qry))).thenReturn(successful(apps.toList))
+
+      def thenReturnsFailure(exc: Exception) =
+        when(aMock.fetchApplicationsWithSubscriptions(*)).thenReturn(failed(exc))
+
+      def thenReturnsNothingFor(qry: GeneralOpenEndedApplicationQuery) =
+        when(aMock.fetchApplicationsWithSubscriptions(eqTo(qry))).thenReturn(successful(List.empty))
     }
 
   }

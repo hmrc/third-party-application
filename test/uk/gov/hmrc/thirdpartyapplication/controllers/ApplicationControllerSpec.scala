@@ -45,7 +45,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.SubscriptionData
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, QueryServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -68,6 +68,7 @@ class ApplicationControllerSpec
 
   trait Setup
       extends AuthConfigSetup
+      with QueryServiceMockModule
       with SubmissionsServiceMockModule
       with UpliftLinkServiceMockModule
       with StrideGatekeeperRoleAuthorisationServiceMockModule
@@ -98,6 +99,7 @@ class ApplicationControllerSpec
       SubmissionsServiceMock.aMock,
       mockUpliftNamingService,
       UpliftLinkServiceMock.aMock,
+      QueryServiceMock.aMock,
       Helpers.stubControllerComponents()
     )
   }
@@ -565,34 +567,6 @@ class ApplicationControllerSpec
       when(underTest.applicationService.fetchAllForCollaborators(List(userId))).thenReturn(failed(new RuntimeException("Expected test failure")))
 
       val result = underTest.fetchAllForCollaborators()(request.withBody(requestBody))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-  }
-
-  "fetchAllForCollaborator" should {
-    val userId = UserId.random
-
-    "succeed with a 200 when applications are found for the collaborator by user id" in new Setup with ExtendedResponses {
-      when(underTest.applicationService.fetchAllForCollaborator(userId, false))
-        .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
-
-      status(underTest.fetchAllForCollaborator(userId)(request)) shouldBe OK
-    }
-
-    "succeed with a 200 when no applications are found for the collaborator by user id" in new Setup {
-      when(underTest.applicationService.fetchAllForCollaborator(userId, false)).thenReturn(successful(Nil))
-
-      val result = underTest.fetchAllForCollaborator(userId)(request)
-
-      status(result) shouldBe OK
-      contentAsString(result) shouldBe "[]"
-    }
-
-    "fail with a 500 when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetchAllForCollaborator(userId, false)).thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.fetchAllForCollaborator(userId)(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
