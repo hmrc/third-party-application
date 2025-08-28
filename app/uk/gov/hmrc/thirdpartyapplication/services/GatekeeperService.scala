@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, StoredApplication}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationQueries, ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 
 @Singleton
 class GatekeeperService @Inject() (

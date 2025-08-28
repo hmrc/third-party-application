@@ -1,5 +1,3 @@
-import sbt.Keys._
-import sbt._
 import uk.gov.hmrc.DefaultBuildSettings
 
 lazy val appName = "third-party-application"
@@ -9,9 +7,9 @@ Global / bloopExportJarClassifiers := Some(Set("sources"))
 
 ThisBuild / scalaVersion := "2.13.16"
 ThisBuild / majorVersion := 0
-ThisBuild / libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
+ThisBuild / libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(PlayScala, SbtDistributablesPlugin)
@@ -29,25 +27,24 @@ lazy val microservice = Project(appName, file("."))
     )
   )
   .settings(
-    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
-    Test / fork              := false,
-    Test / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "test", baseDirectory.value / "shared-test"),
-    Test / parallelExecution := false
+    addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full)
   )
   .settings(
-    addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full)
+    Test / parallelExecution := false,
+    Test / fork              := false,
+    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+    Test / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "shared-test")
   )
   .settings(
     target := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / "coverage" else target.value},
     coverageDataDir := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / ".." else target.value},
   )
-
-lazy val it = (project in file("it"))
+  
+val it = (project in file("it"))
   .enablePlugins(PlayScala)
-  .dependsOn(microservice % "test->test;compile->compile")
+  .dependsOn(microservice % "test->test")
   .settings(
     name := "integration-tests",
-    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     DefaultBuildSettings.itSettings()
   )
 

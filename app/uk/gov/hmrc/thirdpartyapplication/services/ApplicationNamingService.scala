@@ -28,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Applicat
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 
 object ApplicationNaming {
   type ExclusionCondition = (ApplicationWithCollaborators) => Boolean

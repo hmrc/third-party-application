@@ -480,16 +480,16 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   //   }
   // }
 
-  def fetchByServerToken(serverToken: String): Future[Option[StoredApplication]] = {
-    timeFuture("Fetch Application by Server Token", "application.repository.fetchByServerToken") {
-      val query = and(
-        equal("tokens.production.accessToken", serverToken),
-        notEqual("state.name", State.DELETED.toString())
-      )
+  // def fetchByServerToken(serverToken: String): Future[Option[StoredApplication]] = ???
+  //   timeFuture("Fetch Application by Server Token", "application.repository.fetchByServerToken") {
+  //     val query = and(
+  //       equal("tokens.production.accessToken", serverToken),
+  //       notEqual("state.name", State.DELETED.toString())
+  //     )
 
-      collection.find(query).headOption()
-    }
-  }
+  //     collection.find(query).headOption()
+  //   }
+  // }
 
   def fetchAllForUserId(userId: UserId, includeDeleted: Boolean): Future[Seq[StoredApplication]] = {
     timeFuture("Fetch All Applications for UserId", "application.repository.fetchAllForUserId") {

@@ -186,15 +186,15 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.hardDelete(*[ApplicationId])).thenReturn(successful(HasSucceeded))
     }
 
-    object FetchByServerToken {
+    // object FetchByServerToken {
 
-      def thenReturnWhen(serverToken: String)(applicationData: StoredApplication) =
-        when(aMock.fetchByServerToken(eqTo(serverToken))).thenReturn(successful(Some(applicationData)))
+    //   def thenReturnWhen(serverToken: String)(applicationData: StoredApplication) =
+    //     when(aMock.fetchByServerToken(eqTo(serverToken))).thenReturn(successful(Some(applicationData)))
 
-      def thenReturnNoneWhen(serverToken: String) =
-        when(aMock.fetchByServerToken(eqTo(serverToken))).thenReturn(successful(None))
+    //   def thenReturnNoneWhen(serverToken: String) =
+    //     when(aMock.fetchByServerToken(eqTo(serverToken))).thenReturn(successful(None))
 
-    }
+    // }
 
     // object FetchVerifiableUpliftBy {
 

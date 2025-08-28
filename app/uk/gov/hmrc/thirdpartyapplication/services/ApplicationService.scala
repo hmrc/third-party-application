@@ -48,6 +48,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{PaginatedApplicationData, StoredApplication}
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, MetricsTimer}
@@ -190,11 +191,7 @@ class ApplicationService @Inject() (
   }
 
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationWithCollaborators]] = {
-    applicationRepository.fetchByServerToken(serverToken) map {
-      _.map(application =>
-        application.asAppWithCollaborators
-      )
-    }
+    queryService.fetchSingleApplicationWithCollaborators(ApplicationQueries.applicationByServerToken(serverToken))
   }
 
   def findAndRecordServerTokenUsage(serverToken: String): Future[Option[(ApplicationWithSubscriptions, String)]] = {

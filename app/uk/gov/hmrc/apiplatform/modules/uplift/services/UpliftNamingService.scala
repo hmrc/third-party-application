@@ -26,7 +26,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessT
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ValidatedApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNaming, ApplicationNamingService, AuditService, QueryService}
+import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
+import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNaming, ApplicationNamingService, AuditService}
 
 @Singleton
 class UpliftNamingService @Inject() (

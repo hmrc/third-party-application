@@ -603,9 +603,10 @@ class ApplicationServiceSpec
   }
 
   "fetchByServerToken" should {
+    val expectedQry = ApplicationQueries.applicationByServerToken(serverToken)
 
     "return none when no application exists in the repository for the given server token" in new Setup {
-      ApplicationRepoMock.FetchByServerToken.thenReturnNoneWhen(serverToken)
+      QueryServiceMock.FetchSingleApplicationWithCollaborators.thenReturnsNothingFor(expectedQry)
 
       val result: Option[ApplicationWithCollaborators] = await(underTest.fetchByServerToken(serverToken))
 
@@ -614,9 +615,9 @@ class ApplicationServiceSpec
 
     "return an application when it exists in the repository for the given server token" in new Setup {
 
-      override val applicationData: StoredApplication = storedApp.copy(tokens = ApplicationTokens(productionToken))
+      val app = storedApp.copy(tokens = ApplicationTokens(productionToken)).asAppWithCollaborators
 
-      ApplicationRepoMock.FetchByServerToken.thenReturnWhen(serverToken)(applicationData)
+      QueryServiceMock.FetchSingleApplicationWithCollaborators.thenReturnsFor(expectedQry, app)
 
       val result: Option[ApplicationWithCollaborators] = await(underTest.fetchByServerToken(serverToken))
 

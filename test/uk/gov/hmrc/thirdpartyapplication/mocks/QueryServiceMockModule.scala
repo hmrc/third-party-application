@@ -24,7 +24,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaborators, ApplicationWithSubscriptions, PaginatedApplications}
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.GeneralOpenEndedApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.SingleApplicationQuery
-import uk.gov.hmrc.thirdpartyapplication.services.QueryService
+import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with StoredApplicationFixtures {

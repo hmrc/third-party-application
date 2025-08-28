@@ -26,7 +26,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaborators, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
-import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNaming, ApplicationNamingService, AuditService, QueryService}
+import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
+import uk.gov.hmrc.thirdpartyapplication.services.{AbstractApplicationNamingService, ApplicationNaming, ApplicationNamingService, AuditService}
 
 @Singleton
 class ApprovalsNamingService @Inject() (
