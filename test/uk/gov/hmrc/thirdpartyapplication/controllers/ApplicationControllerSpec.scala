@@ -444,7 +444,7 @@ class ApplicationControllerSpec
     }
 
     "retrieve when no subscriptions" in new Setup {
-      when(underTest.applicationService.fetchAllWithNoSubscriptions()).thenReturn(Future(List(standardApp)))
+      QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFor(ApplicationQueries.applicationsByNoSubscriptions, standardApp)
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions=true"))
 
@@ -587,12 +587,9 @@ class ApplicationControllerSpec
       val queryRequest = FakeRequest("GET", s"?subscribesTo=$subscribesTo")
 
       "succeed with a 200 (ok) when applications are found" in new Setup {
-        val standardApplicationResponse: ApplicationWithCollaborators   = standardApp
-        val privilegedApplicationResponse: ApplicationWithCollaborators = privilegedApp
-        val ropcApplicationResponse: ApplicationWithCollaborators       = ropcApp
-        val response: List[ApplicationWithCollaborators]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
+        val response: List[ApplicationWithCollaborators] = List(standardApp, privilegedApp, ropcApp)
 
-        when(underTest.applicationService.fetchAllBySubscription(subscribesTo.asContext)).thenReturn(successful(response))
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFor(ApplicationQueries.applicationsByApiContext(subscribesTo.asContext), response: _*)
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -602,7 +599,7 @@ class ApplicationControllerSpec
       }
 
       "succeed with a 200 (ok) when no applications are found" in new Setup {
-        when(underTest.applicationService.fetchAllBySubscription(subscribesTo.asContext)).thenReturn(successful(List.empty))
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsNothingFor(ApplicationQueries.applicationsByApiContext(subscribesTo.asContext))
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -612,7 +609,7 @@ class ApplicationControllerSpec
       }
 
       "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-        when(underTest.applicationService.fetchAllBySubscription(subscribesTo.asContext)).thenReturn(failed(new RuntimeException("Expected test failure")))
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFailure(new RuntimeException("Expected test failure"))
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -626,12 +623,9 @@ class ApplicationControllerSpec
       val apiIdentifier = subscribesTo.asIdentifier(version)
 
       "succeed with a 200 (ok) when applications are found" in new Setup {
-        val standardApplicationResponse: ApplicationWithCollaborators   = standardApp
-        val privilegedApplicationResponse: ApplicationWithCollaborators = privilegedApp
-        val ropcApplicationResponse: ApplicationWithCollaborators       = ropcApp
-        val response: List[ApplicationWithCollaborators]                = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
+        val response: List[ApplicationWithCollaborators] = List(standardApp, privilegedApp, ropcApp)
 
-        when(underTest.applicationService.fetchAllBySubscription(apiIdentifier)).thenReturn(successful(response))
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFor(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier), response: _*)
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -642,7 +636,7 @@ class ApplicationControllerSpec
       }
 
       "succeed with a 200 (ok) when no applications are found" in new Setup {
-        when(underTest.applicationService.fetchAllBySubscription(apiIdentifier)).thenReturn(successful(List.empty))
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsNothingFor(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier))
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -652,7 +646,7 @@ class ApplicationControllerSpec
       }
 
       "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-        when(underTest.applicationService.fetchAllBySubscription(apiIdentifier)).thenReturn(failed(new RuntimeException("Expected test failure")))
+        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFailure(new RuntimeException("Expected test failure"))
 
         val result = underTest.queryDispatcher()(queryRequest)
 

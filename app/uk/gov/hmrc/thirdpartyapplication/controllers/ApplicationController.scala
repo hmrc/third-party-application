@@ -61,7 +61,7 @@ class ApplicationController @Inject() (
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
     upliftLinkService: UpliftLinkService,
-    queryService: QueryService,
+    val queryService: QueryService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
@@ -293,15 +293,18 @@ class ApplicationController @Inject() (
   }
 
   private def fetchAllBySubscription(apiContext: ApiContext) = {
-    applicationService.fetchAllBySubscription(apiContext).map(apps => Ok(toJson(apps))) recover recovery
+    queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByApiContext(apiContext))
+      .map(apps => Ok(toJson(apps))) recover recovery
   }
 
-  private def fetchAllBySubscriptionVersion(apiContext: ApiIdentifier) = {
-    applicationService.fetchAllBySubscription(apiContext).map(apps => Ok(toJson(apps))) recover recovery
+  private def fetchAllBySubscriptionVersion(apiIdentifier: ApiIdentifier) = {
+    queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier))
+      .map(apps => Ok(toJson(apps))) recover recovery
   }
 
   def fetchAllWithNoSubscriptions() = {
-    applicationService.fetchAllWithNoSubscriptions().map(apps => Ok(toJson(apps))) recover recovery
+    queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByNoSubscriptions)
+      .map(apps => Ok(toJson(apps))) recover recovery
   }
 
   def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async((request: Request[play.api.mvc.AnyContent]) =>

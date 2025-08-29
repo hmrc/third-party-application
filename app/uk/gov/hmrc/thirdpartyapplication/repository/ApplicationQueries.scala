@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, Environment, UserId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, Environment, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
@@ -58,5 +58,17 @@ object ApplicationQueries {
 
   def applicationsByUserIdAndEnvironment(userId: UserId, environment: Environment) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
     params = UserIdQP(userId) :: WantSubscriptionsQP :: ExcludeDeletedQP :: EnvironmentQP(environment) :: Nil
+  )
+
+  def applicationsByApiContext(apiContext: ApiContext) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
+    params = ApiContextQP(apiContext) :: Nil
+  )
+
+  def applicationsByApiIdentifier(apiIdentifier: ApiIdentifier) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
+    params = ApiContextQP(apiIdentifier.context) :: ApiVersionNbrQP(apiIdentifier.versionNbr) :: Nil
+  )
+
+  val applicationsByNoSubscriptions = ApplicationQuery.GeneralOpenEndedApplicationQuery(
+    params = NoSubscriptionsQP :: Nil
   )
 }

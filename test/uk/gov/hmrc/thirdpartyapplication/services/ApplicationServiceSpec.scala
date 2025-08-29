@@ -396,7 +396,6 @@ class ApplicationServiceSpec
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(CreationAccess.Privileged)
 
-      // ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name.value)(storedApp)
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
@@ -627,23 +626,6 @@ class ApplicationServiceSpec
     }
   }
 
-  // "fetchAllForCollaborator" should {
-  //   "fetch all applications for a given collaborator user id" in new Setup {
-  //     SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)("api1".asIdentifier, "api2".asIdentifier)
-  //     val userId                                       = UserId.random
-  //     val standardApplicationData: StoredApplication   = storedApp.withAccess(Access.Standard())
-  //     val privilegedApplicationData: StoredApplication = storedApp.withAccess(Access.Privileged())
-  //     val ropcApplicationData: StoredApplication       = storedApp.withAccess(Access.Ropc())
-
-  //     ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
-
-  //     val result = await(underTest.fetchAllForCollaborator(userId, false))
-  //     result.size shouldBe 3
-  //     result.head.subscriptions.size shouldBe 2
-  //   }
-
-  // }
-
   "fetchAllForCollaborators" should {
     "fetch all applications for a given collaborator user id" in new Setup {
       QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFor(
@@ -671,67 +653,6 @@ class ApplicationServiceSpec
 
       val result = await(underTest.fetchAllForCollaborators(List(userIdOne, userIdTwo)))
       result should contain theSameElementsAs List(standardApp, standardApp2)
-    }
-  }
-
-  "fetchAllBySubscription" should {
-    "return applications for a given subscription to an API context" in new Setup {
-      val apiContext = "some-context".asContext
-
-      ApplicationRepoMock.FetchAllForContent.thenReturnWhen(apiContext)(applicationData)
-      val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllBySubscription(apiContext))
-
-      result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => app.asAppWithCollaborators)
-    }
-
-    "return no matching applications for a given subscription to an API context" in new Setup {
-      val apiContext = "some-context".asContext
-
-      ApplicationRepoMock.FetchAllForContent.thenReturnEmptyWhen(apiContext)
-      val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllBySubscription(apiContext))
-
-      result.size shouldBe 0
-    }
-
-    "return applications for a given subscription to an API identifier" in new Setup {
-      val apiIdentifier = "some-context".asIdentifier("some-version")
-
-      ApplicationRepoMock.FetchAllForApiIdentifier.thenReturnWhen(apiIdentifier)(applicationData)
-      val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllBySubscription(apiIdentifier))
-
-      result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => app.asAppWithCollaborators)
-    }
-
-    "return no matching applications for a given subscription to an API identifier" in new Setup {
-      val apiIdentifier = "some-context".asIdentifier("some-version")
-
-      ApplicationRepoMock.FetchAllForApiIdentifier.thenReturnEmptyWhen(apiIdentifier)
-
-      val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllBySubscription(apiIdentifier))
-
-      result.size shouldBe 0
-    }
-  }
-
-  "fetchAllWithNoSubscriptions" should {
-
-    "return no matching applications if application has a subscription" in new Setup {
-      ApplicationRepoMock.FetchAllWithNoSubscriptions.thenReturnNone()
-
-      val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllWithNoSubscriptions())
-
-      result.size shouldBe 0
-    }
-
-    "return applications when there are no matching subscriptions" in new Setup {
-      ApplicationRepoMock.FetchAllWithNoSubscriptions.thenReturn(applicationData)
-
-      val result: List[ApplicationWithCollaborators] = await(underTest.fetchAllWithNoSubscriptions())
-
-      result.size shouldBe 1
-      result shouldBe List(applicationData).map(app => app.asAppWithCollaborators)
     }
   }
 

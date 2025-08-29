@@ -27,6 +27,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.GrantLength
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -369,6 +370,205 @@ class ApplicationQueriesISpec
       result.map(
         _.collaborators.map(collaborator => collaborator.userId shouldBe userIdOne)
       )
+    }
+  }
+
+  "applicationsByNoSubscriptions" should {
+    "fetch only those applications with no subscriptions" in {
+
+      val application1     = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+      val application2     = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+      val subscriptionData =
+        aSubscriptionData("context", "version", application1.id)
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(subscriptionRepository.collection.insertOne(subscriptionData).toFuture())
+
+      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByNoSubscriptions))
+
+      result shouldBe List(application2)
+    }
+  }
+
+  "applicationsByApiContext" should {
+
+    "fetch only those applications when the context matches" in {
+      val application1 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+      val application2 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+      val application3 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData("context", "version-1", application1.id))
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData("context", "version-2", application2.id))
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData("other", "version-2", application3.id))
+          .toFuture()
+      )
+
+      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByApiContext("context".asContext)))
+
+      result shouldBe List(application1, application2)
+    }
+  }
+
+  "applicationsByApiIdentifier" should {
+
+    "fetch only those applications when the context and version matches" in {
+      val application1 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+      val application2 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+      val application3 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData("context", "version-1", application1.id))
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData("context", "version-2", application2.id))
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(
+            aSubscriptionData(
+              "other",
+              "version-2",
+              application2.id,
+              application3.id
+            )
+          )
+          .toFuture()
+      )
+
+      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByApiIdentifier("context".asIdentifier("version-2"))))
+
+      result shouldBe List(application2)
+    }
+
+    "fetch multiple applications with the same matching context and versions" in {
+      val application1 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+      val application2 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+      val application3 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData("context", "version-1", application1.id))
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(
+            aSubscriptionData(
+              "context",
+              "version-2",
+              application2.id,
+              application3.id
+            )
+          )
+          .toFuture()
+      )
+
+      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByApiIdentifier("context".asIdentifier("version-2"))))
+
+      result shouldBe List(application2, application3)
+    }
+
+    "fetch no applications when the context and version do not match" in {
+      val application1                            = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+      val application2                            = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+      val nonExistentApiIdentifier: ApiIdentifier =
+        "other".asIdentifier("version-1")
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+
+      await(
+        subscriptionRepository.collection
+          .insertOne(
+            aSubscriptionData("context-1", "version-1", application1.id)
+          )
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(
+            aSubscriptionData("context-2", "version-2", application2.id)
+          )
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(
+            aSubscriptionData(
+              "other",
+              "version-2",
+              application1.id,
+              application2.id
+            )
+          )
+          .toFuture()
+      )
+
+      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByApiIdentifier(nonExistentApiIdentifier)))
+
+      result shouldBe List.empty
     }
   }
 

@@ -105,6 +105,9 @@ trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar wit
 
       def thenReturnsNothingFor(qry: GeneralOpenEndedApplicationQuery) =
         when(aMock.fetchApplicationsWithCollaborators(eqTo(qry))).thenReturn(successful(List.empty))
+
+      def thenReturnsFailure(exc: Exception) =
+        when(aMock.fetchApplicationsWithCollaborators(*)).thenReturn(failed(exc))
     }
 
     object FetchApplicationsWithSubscriptions {

@@ -225,23 +225,23 @@ class ApplicationService @Inject() (
     }
   }
 
-  def fetchAllBySubscription(apiContext: ApiContext): Future[List[ApplicationWithCollaborators]] = {
-    applicationRepository.fetchAllForContext(apiContext) map {
-      _.map(application => application.asAppWithCollaborators)
-    }
-  }
+  // def fetchAllBySubscription(apiContext: ApiContext): Future[List[ApplicationWithCollaborators]] = {
+  //   applicationRepository.fetchAllForContext(apiContext) map {
+  //     _.map(application => application.asAppWithCollaborators)
+  //   }
+  // }
 
-  def fetchAllBySubscription(apiIdentifier: ApiIdentifier): Future[List[ApplicationWithCollaborators]] = {
-    applicationRepository.fetchAllForApiIdentifier(apiIdentifier) map {
-      _.map(application => application.asAppWithCollaborators)
-    }
-  }
+  // def fetchAllBySubscription(apiIdentifier: ApiIdentifier): Future[List[ApplicationWithCollaborators]] = {
+  //   applicationRepository.fetchAllForApiIdentifier(apiIdentifier) map {
+  //     _.map(application => application.asAppWithCollaborators)
+  //   }
+  // }
 
-  def fetchAllWithNoSubscriptions(): Future[List[ApplicationWithCollaborators]] = {
-    applicationRepository.fetchAllWithNoSubscriptions() map {
-      _.map(application => application.asAppWithCollaborators)
-    }
-  }
+  // def fetchAllWithNoSubscriptions(): Future[List[ApplicationWithCollaborators]] = {
+  //   applicationRepository.fetchAllWithNoSubscriptions() map {
+  //     _.map(application => application.asAppWithCollaborators)
+  //   }
+  // }
 
   import cats.data.OptionT
 
