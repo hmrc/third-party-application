@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
-import java.time.Clock
+import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.NonEmptyList
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.common.services.{ClockNow, EitherTHelper}
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
@@ -37,7 +37,7 @@ class SubmissionsService @Inject() (
     contextService: ContextService,
     val clock: Clock
   )(implicit val ec: ExecutionContext
-  ) extends EitherTHelper[String] with ClockNow {
+  ) extends EitherTHelper[String] with ClockNow with ApplicationLogger {
   import cats.instances.future.catsStdInstancesForFuture
 
   private val emptyAnswers = Map.empty[Question.Id, ActualAnswer]
@@ -75,8 +75,8 @@ class SubmissionsService @Inject() (
       .value
   }
 
-  def fetchOrganisationIdentifiers(): Future[Map[String, Int]] = {
-    submissionsDAO.fetchLatestSubmissionForAll()
+  def fetchOrganisationIdentifiers(startedOn: Instant): Future[Map[String, Int]] = {
+    submissionsDAO.fetchLatestSubmissionForAll(startedOn)
       .map(_.map(sub => sub.latestInstance.answersToQuestions.get(QuestionnaireDAO.Questionnaires.OrganisationDetails.question2.id))
         .filter(_.isDefined).map {
           case Some(ActualAnswer.SingleChoiceAnswer(value)) => value

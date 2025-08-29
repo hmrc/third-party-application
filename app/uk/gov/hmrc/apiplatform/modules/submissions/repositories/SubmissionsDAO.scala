@@ -35,8 +35,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(implicit val ec: ExecutionContext) {
 
   private lazy val collection = submissionsRepository.collection
-  // 2022-08-01: 00:00:00
-  private val deployment      = Instant.ofEpochMilli(1659312000000L);
 
   def save(submission: Submission): Future[Submission] = {
     collection.insertOne(submission)
@@ -66,9 +64,9 @@ class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(im
       .headOption()
   }
 
-  def fetchLatestSubmissionForAll(): Future[List[Submission]] = {
+  def fetchLatestSubmissionForAll(startedOn: Instant): Future[List[Submission]] = {
     collection.aggregate[Submission](Seq(
-      filter(gte("startedOn", deployment)),
+      filter(gte("startedOn", startedOn)),
       // $group – keep only the top document per applicationId
       group(
         "$applicationId",

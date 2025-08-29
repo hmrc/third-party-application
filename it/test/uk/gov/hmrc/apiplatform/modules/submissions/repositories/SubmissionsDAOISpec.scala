@@ -99,7 +99,7 @@ class SubmissionsDAOISpec
 
     "find the latest ones for all applications" in {
       val appBeforeOrigDeployment  = aSubmission.copy(id = submissionIdThree, applicationId = applicationIdThree)
-      val earlierSubmissionSameApp = aSubmission.copy(startedOn = instant.plus(1095L, ChronoUnit.DAYS))
+      val earlierSubmissionSameApp = aSubmission.copy(startedOn = instant.plus(1093L, ChronoUnit.DAYS))
       val laterSubmissionSameApp   = altSubmission.copy(startedOn = instant.plus(1096L, ChronoUnit.DAYS))
       val differentAppSubmission   = altSubmission.copy(id = submissionIdFour, applicationId = applicationIdTwo, startedOn = instant.plus(1095L, ChronoUnit.DAYS))
       await(submissionsDao.save(earlierSubmissionSameApp))
@@ -107,7 +107,7 @@ class SubmissionsDAOISpec
       await(submissionsDao.save(differentAppSubmission))
       await(submissionsDao.save(appBeforeOrigDeployment))
 
-      await(submissionsDao.fetchLatestSubmissionForAll()) should contain allOf (differentAppSubmission, laterSubmissionSameApp)
+      await(submissionsDao.fetchLatestSubmissionForAll(instant.plus(1094L, ChronoUnit.DAYS))) should contain allOf (differentAppSubmission, laterSubmissionSameApp)
     }
   }
 
