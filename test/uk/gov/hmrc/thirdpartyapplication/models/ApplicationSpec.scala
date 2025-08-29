@@ -38,14 +38,14 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with 
     val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator("1".toLaxEmail), changedAt = instant)
 
     "create object" in {
-      val result = ApplicationWithUpliftRequest.create(app, history)
+      val result = ApplicationWithUpliftRequest.create(app.asAppWithCollaborators, history)
 
       result shouldBe ApplicationWithUpliftRequest(app.id, app.name, history.changedAt, State.PRODUCTION)
     }
 
     "Fail to create when invalid state is sent" in {
       val ex = intercept[InconsistentDataState] {
-        ApplicationWithUpliftRequest.create(app, history.copy(state = State.PENDING_REQUESTER_VERIFICATION))
+        ApplicationWithUpliftRequest.create(app.asAppWithCollaborators, history.copy(state = State.PENDING_REQUESTER_VERIFICATION))
       }
 
       ex.getMessage shouldBe "cannot create with invalid state: PENDING_REQUESTER_VERIFICATION"

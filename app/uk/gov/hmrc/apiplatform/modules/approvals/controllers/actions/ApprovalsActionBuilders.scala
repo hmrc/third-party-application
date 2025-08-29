@@ -70,8 +70,6 @@ class ApplicationExtendedSubmissionRequest[A](
 trait ApprovalsActionBuilders extends JsonErrorResponse {
   self: BackendController =>
 
-  import cats.implicits._
-
   def applicationDataService: ApplicationDataService
   def submissionService: SubmissionsService
   implicit def ec: ExecutionContext

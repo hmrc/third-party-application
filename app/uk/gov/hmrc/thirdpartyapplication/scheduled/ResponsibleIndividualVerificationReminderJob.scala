@@ -23,7 +23,6 @@ import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.OptionT
-import cats.implicits._
 import com.google.inject.Singleton
 
 import uk.gov.hmrc.http.HeaderCarrier

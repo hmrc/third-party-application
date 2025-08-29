@@ -25,12 +25,12 @@ import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 import uk.gov.hmrc.thirdpartyapplication.mocks.ClientSecretServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures with CommonApplicationId {
@@ -88,10 +88,11 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
   }
 
   "validate credentials" should {
+    val clientId    = productionToken.clientId
+    val expectedQry = ApplicationQueries.applicationByClientId(clientId)
 
     "return none when no application exists in the repository for the given client id" in new Setup {
-      val clientId = ClientId("some-client-id")
-      ApplicationRepoMock.FetchByClientId.thenReturnNoneWhen(clientId)
+      ApplicationRepoMock.FetchSingleApplication.thenReturnNothingFor(expectedQry)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, "aSecret")).value)
 
@@ -99,10 +100,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
     }
 
     "return none when credentials don't match with an application" in new Setup {
+      ApplicationRepoMock.FetchSingleApplication.thenReturnFor(expectedQry, applicationData)
 
-      val clientId = applicationData.tokens.production.clientId
-
-      ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
       ClientSecretServiceMock.ClientSecretIsValid.noMatchingClientSecret(applicationData.id, "wrongSecret", applicationData.tokens.production.clientSecrets)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, "wrongSecret")).value)
@@ -114,12 +113,11 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
     "return application details when credentials match" in new Setup {
 
       val updatedApplicationData      = applicationData.copy(lastAccess = Some(instant))
-      val expectedApplicationResponse = StoredApplication.asApplication(updatedApplicationData)
-      val clientId                    = applicationData.tokens.production.clientId
+      val expectedApplicationResponse = updatedApplicationData.asAppWithCollaborators
       val secret                      = UUID.randomUUID().toString
       val matchingClientSecret        = applicationData.tokens.production.clientSecrets.head
 
-      ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
+      ApplicationRepoMock.FetchSingleApplication.thenReturnFor(expectedQry, applicationData)
       ClientSecretServiceMock.ClientSecretIsValid
         .thenReturnValidationResult(applicationData.id, secret, environmentToken.clientSecrets)(matchingClientSecret)
       ApplicationRepoMock.RecordClientSecretUsage.thenReturnWhen(applicationData.id, matchingClientSecret.id)(updatedApplicationData)
@@ -131,13 +129,12 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
 
     "return application details and write log if updating usage date fails" in new Setup {
 
-      val expectedApplicationResponse = StoredApplication.asApplication(applicationData)
-      val clientId                    = applicationData.tokens.production.clientId
+      val expectedApplicationResponse = applicationData.asAppWithCollaborators
       val secret                      = UUID.randomUUID().toString
       val matchingClientSecret        = applicationData.tokens.production.clientSecrets.head
       val thrownException             = new RuntimeException
 
-      ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
+      ApplicationRepoMock.FetchSingleApplication.thenReturnFor(expectedQry, applicationData)
       ClientSecretServiceMock.ClientSecretIsValid
         .thenReturnValidationResult(applicationData.id, secret, applicationData.tokens.production.clientSecrets)(matchingClientSecret)
       ApplicationRepoMock.RecordClientSecretUsage.thenFail(thrownException)

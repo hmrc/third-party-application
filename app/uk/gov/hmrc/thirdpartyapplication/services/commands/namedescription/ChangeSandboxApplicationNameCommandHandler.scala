@@ -21,7 +21,6 @@ import scala.concurrent.ExecutionContext
 
 import cats._
 import cats.data._
-import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult

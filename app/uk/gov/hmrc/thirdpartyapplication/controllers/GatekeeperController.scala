@@ -29,10 +29,13 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthor
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitationActionBuilders
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 
 @Singleton
 class GatekeeperController @Inject() (
+    queryService: QueryService,
     val applicationService: ApplicationService,
     val ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService,
     val strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,
@@ -71,7 +74,8 @@ class GatekeeperController @Inject() (
   }
 
   def fetchAllForCollaborator(userId: UserId) = Action.async {
-    applicationService.fetchAllForCollaborator(userId, true).map(apps => Ok(Json.toJson(apps))) recover recovery
+    queryService.fetchApplicationsWithSubscriptions(ApplicationQueries.applicationsByUserId(userId, includeDeleted = true))
+      .map(apps => Ok(Json.toJson(apps))) recover recovery
   }
 
   def deleteApplication(id: ApplicationId) =

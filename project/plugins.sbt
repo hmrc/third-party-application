@@ -8,7 +8,7 @@ addSbtPlugin("uk.gov.hmrc"       % "sbt-distributables"    % "2.6.0")
 addSbtPlugin("org.playframework" % "sbt-plugin"            % "3.0.8")
 addSbtPlugin("org.scoverage"     % "sbt-scoverage"         % "2.3.1")
 addSbtPlugin("org.scalastyle"    % "scalastyle-sbt-plugin" % "1.0.0")
-addSbtPlugin("ch.epfl.scala"     % "sbt-bloop"             % "2.0.10")
+addSbtPlugin("ch.epfl.scala"     % "sbt-bloop"             % "2.0.13")
 addSbtPlugin("org.scalameta"     % "sbt-scalafmt"          % "2.5.2")
 addSbtPlugin("ch.epfl.scala"     % "sbt-scalafix"          % "0.14.2")
 

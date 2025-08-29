@@ -20,7 +20,6 @@ import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.OptionT
-import cats.implicits._
 
 import play.api.libs.json.Json
 import play.api.mvc._

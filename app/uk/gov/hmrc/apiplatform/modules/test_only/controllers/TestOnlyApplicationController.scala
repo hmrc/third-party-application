@@ -57,7 +57,7 @@ class TestOnlyApplicationController @Inject() (
   def cloneApplication(appId: ApplicationId): Action[AnyContent] = Action.async { implicit request =>
     cloneAppService.cloneApplication(appId).flatMap(_ match {
       case Left(newAppId) => applicationService.deleteApplication(newAppId, None, noAuditing).map(_ => InternalServerError)
-      case Right(newApp)  => successful(Created(Json.toJson(StoredApplication.asApplication(newApp))))
+      case Right(newApp)  => successful(Created(Json.toJson(newApp.asAppWithCollaborators)))
     })
   }
 }

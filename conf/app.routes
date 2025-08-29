@@ -51,3 +51,5 @@ POST          /admin/application/restore-aws-data                    uk.gov.hmrc
 GET           /application/:id/linked-subordinate-id                 uk.gov.hmrc.apiplatform.modules.upliftlinks.controllers.UpliftLinksController.getSandboxAppIdForProductionApp(id: ApplicationId)
 
 POST          /application/:id/confirm-setup-complete                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.confirmSetupComplete(id: ApplicationId)
+
+GET           /query                                                 uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController.queryDispatcher()

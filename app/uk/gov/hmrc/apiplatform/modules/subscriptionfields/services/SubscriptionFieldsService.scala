@@ -59,7 +59,7 @@ class SubscriptionFieldsService @Inject() (
     ): Future[Either[Map[ApiIdentifier, FieldErrors], Unit]] = {
 
     import cats._
-    import cats.implicits._
+    import cats.syntax.either._
 
     Future.sequence(
       apiIdentifiers.toList.map(api =>

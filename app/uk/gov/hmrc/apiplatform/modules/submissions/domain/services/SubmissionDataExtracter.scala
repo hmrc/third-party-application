@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import cats.Apply
+import cats.syntax.option._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -92,7 +93,6 @@ object SubmissionDataExtracter extends ApplicationLogger {
       ))
 
   def getTermsAndConditionsLocation(submission: Submission): Option[TermsAndConditionsLocation] = {
-    import cats.implicits._
     val yesNoOrDesktop   = getSingleChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.termsAndConditionsId)
     lazy val urlIfChosen = getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.termsAndConditionsUrlId)
 
@@ -104,7 +104,6 @@ object SubmissionDataExtracter extends ApplicationLogger {
   }
 
   def getPrivacyPolicyLocation(submission: Submission): Option[PrivacyPolicyLocation] = {
-    import cats.implicits._
     val yesNoOrDesktop   = getSingleChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.privacyPolicyId)
     lazy val urlIfChosen = getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.privacyPolicyUrlId)
 
@@ -130,7 +129,6 @@ object SubmissionDataExtracter extends ApplicationLogger {
     logger.debug(s"termsAndConditionsLocation $termsAndConditionsLocation")
     logger.debug(s"privacyPolicyLocation $privacyPolicyLocation")
 
-    import cats.implicits._
     Apply[Option].map4(responsibleIndividualName, responsibleIndividualEmail, termsAndConditionsLocation, privacyPolicyLocation) {
       case (name, email, tnc, pp) =>
         ImportantSubmissionData(organisationUrl, ResponsibleIndividual(name, email.toLaxEmail), serverLocations, tnc, pp, List.empty)

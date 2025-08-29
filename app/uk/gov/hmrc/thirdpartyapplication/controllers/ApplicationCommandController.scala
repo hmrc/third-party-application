@@ -27,7 +27,6 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Eithe
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, CommandFailures, DispatchRequest}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
@@ -51,7 +50,6 @@ class ApplicationCommandController @Inject() (
     with JsonUtils
     with ApplicationLogger {
 
-  import cats.implicits._
   import ApplicationCommandController._
 
   val E = EitherTHelper.make[CommandHandler.Failures]
@@ -76,7 +74,7 @@ class ApplicationCommandController @Inject() (
 
   def update(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     def passes(result: CommandHandler.Success) = {
-      Ok(Json.toJson(StoredApplication.asApplication(result._1)))
+      Ok(Json.toJson(result._1.asAppWithCollaborators))
     }
 
     withJsonBody[ApplicationCommand] { command =>
@@ -89,7 +87,7 @@ class ApplicationCommandController @Inject() (
 
   def dispatch(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     def passes(result: CommandHandler.Success) = {
-      val output = DispatchResult(StoredApplication.asApplication(result._1), result._2.toList)
+      val output = DispatchResult(result._1.asAppWithCollaborators, result._2.toList)
       Ok(Json.toJson(output))
     }
 

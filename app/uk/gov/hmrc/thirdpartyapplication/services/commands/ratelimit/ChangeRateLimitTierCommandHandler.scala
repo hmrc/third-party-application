@@ -20,7 +20,6 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.data._
-import cats.implicits._
 
 import uk.gov.hmrc.http.HeaderCarrier
 

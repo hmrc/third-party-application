@@ -22,7 +22,7 @@ import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.NonEmptyList
-import cats.implicits._
+import cats.syntax.all._
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._

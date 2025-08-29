@@ -64,11 +64,12 @@ case class StoredApplication(
   def withState(newState: ApplicationState): StoredApplication = this.focus(_.state).replace(newState)
   def withAccess(newAccess: Access): StoredApplication         = this.focus(_.access).replace(newAccess)
 
+  lazy val asAppWithCollaborators = StoredApplication.asAppWithCollaborators(this)
 }
 
 object StoredApplication {
 
-  def asApplication(data: StoredApplication): ApplicationWithCollaborators = {
+  def asAppWithCollaborators(data: StoredApplication): ApplicationWithCollaborators = {
     ApplicationWithCollaborators(
       CoreApplication(
         data.id,

@@ -22,7 +22,6 @@ import scala.concurrent.ExecutionContext
 
 import cats._
 import cats.data._
-import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeGrantLength

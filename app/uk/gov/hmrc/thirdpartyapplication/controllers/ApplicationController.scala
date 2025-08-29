@@ -44,7 +44,9 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAut
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
@@ -59,6 +61,7 @@ class ApplicationController @Inject() (
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
     upliftLinkService: UpliftLinkService,
+    val queryService: QueryService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
@@ -66,8 +69,6 @@ class ApplicationController @Inject() (
     with ApplicationTypeAuthorisationActions
     with AuthKeyRefiner
     with ApplicationLogger {
-
-  import cats.implicits._
 
   val applicationCacheExpiry  = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
@@ -134,6 +135,7 @@ class ApplicationController @Inject() (
     handleOption(credentialService.fetchCredentials(applicationId))
   }
 
+// TODO remove
   def fixCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[FixCollaboratorRequest] { fixCollaboratorRequest =>
       applicationService.fixCollaborator(applicationId, fixCollaboratorRequest).map {
@@ -277,11 +279,13 @@ class ApplicationController @Inject() (
   }
 
   def fetchAllForCollaborator(userId: UserId) = Action.async {
-    applicationService.fetchAllForCollaborator(userId, false).map(apps => Ok(toJson(apps))) recover recovery
+    queryService.fetchApplicationsWithSubscriptions(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false))
+      .map(apps => Ok(toJson(apps))) recover recovery
   }
 
   private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment) = {
-    applicationService.fetchAllForUserIdAndEnvironment(userId, environment).map(apps => Ok(toJson(apps))) recover recovery
+    queryService.fetchApplicationsWithSubscriptions(ApplicationQueries.applicationsByUserIdAndEnvironment(userId, environment))
+      .map(apps => Ok(toJson(apps))) recover recovery
   }
 
   private def fetchAll() = {
@@ -289,15 +293,18 @@ class ApplicationController @Inject() (
   }
 
   private def fetchAllBySubscription(apiContext: ApiContext) = {
-    applicationService.fetchAllBySubscription(apiContext).map(apps => Ok(toJson(apps))) recover recovery
+    queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByApiContext(apiContext))
+      .map(apps => Ok(toJson(apps))) recover recovery
   }
 
-  private def fetchAllBySubscriptionVersion(apiContext: ApiIdentifier) = {
-    applicationService.fetchAllBySubscription(apiContext).map(apps => Ok(toJson(apps))) recover recovery
+  private def fetchAllBySubscriptionVersion(apiIdentifier: ApiIdentifier) = {
+    queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier))
+      .map(apps => Ok(toJson(apps))) recover recovery
   }
 
   def fetchAllWithNoSubscriptions() = {
-    applicationService.fetchAllWithNoSubscriptions().map(apps => Ok(toJson(apps))) recover recovery
+    queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByNoSubscriptions)
+      .map(apps => Ok(toJson(apps))) recover recovery
   }
 
   def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async((request: Request[play.api.mvc.AnyContent]) =>

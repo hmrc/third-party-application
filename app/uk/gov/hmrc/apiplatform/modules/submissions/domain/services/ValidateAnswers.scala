@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import cats.implicits._
+import cats.syntax.either._
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
@@ -24,14 +24,14 @@ object ValidateAnswers {
 
   def validate(question: Question, rawAnswers: List[String]): Either[String, ActualAnswer] = {
     (question, rawAnswers) match {
-      case (_: Question.AcknowledgementOnly, Nil) => Either.right(ActualAnswer.AcknowledgedAnswer)
-      case (_: Question.AcknowledgementOnly, _)   => Either.left("Acknowledgement cannot accept answers")
+      case (_: Question.AcknowledgementOnly, Nil) => ActualAnswer.AcknowledgedAnswer.asRight
+      case (_: Question.AcknowledgementOnly, _)   => "Acknowledgement cannot accept answers".asLeft
 
-      case (_, Nil) if (question.isOptional) => Either.right(ActualAnswer.NoAnswer)
-      case (_, Nil)                          => Either.left("Question requires an answer")
+      case (_, Nil) if (question.isOptional) => ActualAnswer.NoAnswer.asRight
+      case (_, Nil)                          => "Question requires an answer".asLeft
 
       case (q: Question.MultiChoiceQuestion, answers) => validateAgainstPossibleAnswers(q, answers.toSet)
-      case (_, a :: b :: Nil)                         => Either.left("Question only accepts one answer")
+      case (_, a :: b :: Nil)                         => "Question only accepts one answer".asLeft
 
       case (q: Question.TextQuestion, head :: Nil)         => validateAgainstPossibleTextValidationRule(q, head)
       case (q: Question.SingleChoiceQuestion, head :: Nil) => validateAgainstPossibleAnswers(q, head)
@@ -47,17 +47,17 @@ object ValidateAnswers {
 
   def validateAgainstPossibleAnswers(question: Question.MultiChoiceQuestion, rawAnswers: Set[String]): Either[String, ActualAnswer] = {
     if (rawAnswers subsetOf question.choices.map(_.value)) {
-      Either.right(ActualAnswer.MultipleChoiceAnswer(rawAnswers))
+      ActualAnswer.MultipleChoiceAnswer(rawAnswers).asRight
     } else {
-      Either.left("Not all answers are valid")
+      "Not all answers are valid".asLeft
     }
   }
 
   def validateAgainstPossibleAnswers(question: Question.SingleChoiceQuestion, rawAnswer: String): Either[String, ActualAnswer] = {
     if (question.choices.map(_.value).contains(rawAnswer)) {
-      Either.right(ActualAnswer.SingleChoiceAnswer(rawAnswer))
+      ActualAnswer.SingleChoiceAnswer(rawAnswer).asRight
     } else {
-      Either.left("Answer is not valid")
+      "Answer is not valid".asLeft
     }
   }
 }

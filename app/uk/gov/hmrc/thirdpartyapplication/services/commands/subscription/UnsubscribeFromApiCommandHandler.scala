@@ -21,7 +21,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import cats._
 import cats.data._
-import cats.implicits._
 
 import uk.gov.hmrc.http.HeaderCarrier
 

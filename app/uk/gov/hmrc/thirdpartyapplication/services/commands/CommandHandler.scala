@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import scala.concurrent.ExecutionContext
 
 import cats.data.{NonEmptyList, Validated}
-import cats.implicits._
+import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress, UserId}

@@ -23,7 +23,6 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
 import cats.data.OptionT
-import cats.implicits._
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 
@@ -42,11 +41,12 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule, QueryServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, TermsOfUseInvitation}
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.util._
 
@@ -62,6 +62,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
   trait Setup
       extends StrideGatekeeperRoleAuthorisationServiceMockModule
       with LdapGatekeeperRoleAuthorisationServiceMockModule
+      with QueryServiceMockModule
       with ApplicationServiceMockModule
       with TermsOfUseInvitationServiceMockModule
       with ApplicationDataServiceMockModule
@@ -75,6 +76,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
 
     lazy val underTest =
       new GatekeeperController(
+        QueryServiceMock.aMock,
         ApplicationServiceMock.aMock,
         LdapGatekeeperRoleAuthorisationServiceMock.aMock,
         StrideGatekeeperRoleAuthorisationServiceMock.aMock,
@@ -311,16 +313,15 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
   "fetchAllForCollaborator" should {
     val userId                                                    = UserId.random
     val standardApplicationResponse: ApplicationWithSubscriptions = standardApp.withSubscriptions(Set.empty)
-
+    val expectedQry                                               = ApplicationQueries.applicationsByUserId(userId, true)
     "succeed with a 200 when applications are found for the collaborator by user id" in new Setup {
-      when(underTest.applicationService.fetchAllForCollaborator(userId, true))
-        .thenReturn(successful(List(standardApplicationResponse)))
+      QueryServiceMock.FetchApplicationsWithSubscriptions.thenReturnsFor(expectedQry, standardApplicationResponse)
 
       status(underTest.fetchAllForCollaborator(userId)(request)) shouldBe OK
     }
 
     "succeed with a 200 when no applications are found for the collaborator by user id" in new Setup {
-      when(underTest.applicationService.fetchAllForCollaborator(userId, true)).thenReturn(successful(Nil))
+      QueryServiceMock.FetchApplicationsWithSubscriptions.thenReturnsNothingFor(expectedQry)
 
       val result = underTest.fetchAllForCollaborator(userId)(request)
 
@@ -329,7 +330,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
     }
 
     "fail with a 500 when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetchAllForCollaborator(userId, true)).thenReturn(failed(new RuntimeException("Expected test failure")))
+      QueryServiceMock.FetchApplicationsWithSubscriptions.thenReturnsFailure(new RuntimeException("Expected test failure"))
 
       val result = underTest.fetchAllForCollaborator(userId)(request)
 
