@@ -1,0 +1,20 @@
+meta {
+  name: By Client ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/query?clientId=3m1zwq5fHD2Qe08uo0fcphjLFNYA
+  body: none
+  auth: inherit
+}
+
+params:query {
+  clientId: 3m1zwq5fHD2Qe08uo0fcphjLFNYA
+  ~wantSubscriptions: 
+}
+
+settings {
+  encodeUrl: true
+}

@@ -520,49 +520,21 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  private def runOldPaginationQuery(filters: List[Bson], pagination: List[Bson], sort: List[Bson], hasSubscriptionsQuery: Boolean, hasSpecificApiSubscription: Boolean)
-      : Future[PaginatedApplicationData] = {
-    timeFuture("Run Pagination Query", "application.repository.runPaginationQuery") {
-
-      val applicationProjection: Bson = project(fields(
-        excludeId(),
-        include(
-          fieldsToProject: _*
-        )
-      ))
-
-      val totalCount                        = Aggregates.count("total")
-      val subscriptionsLookupFilter         = if (hasSubscriptionsQuery) Seq(subscriptionsLookup) else Seq.empty
-      val subscriptionsLookupExtendedFilter = if (hasSpecificApiSubscription) subscriptionsLookupFilter :+ unwind("$subscribedApis") else subscriptionsLookupFilter
-      val countMatchingPipeline             = subscriptionsLookupExtendedFilter ++ filters :+ totalCount
-      val matchingAppsPipeline: Seq[Bson]   = subscriptionsLookupExtendedFilter ++ filters ++ sort ++ pagination :+ applicationProjection
-
-      val facets: Seq[Bson] = Seq(
-        facet(
-          model.Facet("countOfAllApps", totalCount),
-          model.Facet("countOfMatchingApps", countMatchingPipeline: _*),
-          model.Facet("applications", matchingAppsPipeline: _*)
-        )
-      )
-
-      collection.aggregate[BsonValue](facets)
-        .head()
-        .map(Codecs.fromBson[PaginatedApplicationData])
-        .map(d => PaginatedApplicationData(d.applications, d.countOfAllApps, d.countOfMatchingApps))
-    }
-  }
-
   def searchApplications(actionSubtask: String)(applicationSearch: ApplicationSearch): Future[PaginatedApplicationData] = {
     timeFuture("Search Applications", s"application.repository.searchApplications.$actionSubtask") {
-      val filters = applicationSearch.filters.map(filter => convertFilterToQueryClause(filter, applicationSearch)) ++ deletedFilter(applicationSearch)
-      val sort    = convertToSortClause(applicationSearch.sort)
+      val filters = applicationSearch.filters
+        .map(filter =>
+          convertFilterToQueryClause(filter, applicationSearch)
+        ) ++ deletedFilter(applicationSearch)
+
+      val sort = convertToSortClause(applicationSearch.sort)
 
       val pagination = List(
         skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
         limit(applicationSearch.pageSize)
       )
 
-      runOldPaginationQuery(filters, pagination, sort, applicationSearch.hasSubscriptionFilter(), applicationSearch.hasSpecificApiSubscriptionFilter())
+      runAggregationQuery(filters, pagination, sort, applicationSearch.hasSubscriptionFilter(), applicationSearch.hasSpecificApiSubscriptionFilter())
     }
   }
 
@@ -627,13 +599,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       case StatusFilter.WasDeleted                               => applicationStatusMatch(State.DELETED)
       case StatusFilter.ExcludingDeleted                         => applicationStatusNotEqual(State.DELETED)
       case StatusFilter.Blocked                                  => applicationBlocked()
-      case StatusFilter.NoFiltering                              => Document()
 
       // Access Type
       case AccessTypeFilter.StandardAccess   => accessTypeMatch(AccessType.STANDARD)
       case AccessTypeFilter.ROPCAccess       => accessTypeMatch(AccessType.ROPC)
       case AccessTypeFilter.PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
-      case AccessTypeFilter.NoFiltering      => Document()
 
       // Text Search
       case ApplicationTextSearch => regexTextSearch(List("id", "name", "tokens.production.clientId"), applicationSearch.textToSearch.getOrElse(""))
@@ -646,7 +616,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       case DeleteRestrictionFilter.NoRestriction => deleteRestrictionMatch(DeleteRestrictionType.NO_RESTRICTION)
       case DeleteRestrictionFilter.DoNotDelete   => deleteRestrictionMatch(DeleteRestrictionType.DO_NOT_DELETE)
 
-      case _ => Document() // Only here to complete the match
+      case x => throw new RuntimeException(s"There is an umatched query filter (${x.toString()}) that would cause Mongo to fail")
     }
   }
   // scalastyle:on cyclomatic.complexity
@@ -659,10 +629,60 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     case ApplicationSort.LastUseDateAscending  => List(Aggregates.sort(Sorts.ascending("lastAccess")))
     case ApplicationSort.LastUseDateDescending => List(Aggregates.sort(Sorts.descending("lastAccess")))
     case ApplicationSort.NoSorting             => List()
+    case _                                     => List(Aggregates.sort(Sorts.ascending("normalisedName")))
   }
 
   private def regexTextSearch(fields: List[String], searchText: String): Bson = {
     matches(or(fields.map(field => regex(field, searchText, "i")): _*))
+  }
+
+  private def runAggregationQuery(filters: List[Bson], pagination: List[Bson], sort: List[Bson], hasSubscriptionsQuery: Boolean, hasSpecificApiSubscription: Boolean) = {
+    timeFuture("Run Application Aggregation Query", "application.repository.runAggregationQuery") {
+
+      lazy val subscriptionsLookup: Bson  = lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis")
+      lazy val unwindSubscribedApis: Bson = unwind("$subscribedApis")
+      val applicationProjection: Bson     = project(fields(
+        excludeId(),
+        include(
+          "id",
+          "name",
+          "normalisedName",
+          "collaborators",
+          "description",
+          "wso2ApplicationName",
+          "tokens",
+          "state",
+          "access",
+          "createdOn",
+          "lastAccess",
+          "grantLength",
+          "refreshTokensAvailableFor",
+          "rateLimitTier",
+          "environment",
+          "blocked",
+          "deleteRestriction"
+        )
+      ))
+
+      val totalCount                                    = Aggregates.count("total")
+      val subscriptionsLookupFilter                     = if (hasSubscriptionsQuery) Seq(subscriptionsLookup) else Seq.empty
+      val subscriptionsLookupExtendedFilter             = if (hasSpecificApiSubscription) subscriptionsLookupFilter :+ unwindSubscribedApis else subscriptionsLookupFilter
+      val filteredPipelineCount                         = subscriptionsLookupExtendedFilter ++ filters :+ totalCount
+      val paginatedFilteredAndSortedPipeline: Seq[Bson] = subscriptionsLookupExtendedFilter ++ filters ++ sort ++ pagination :+ applicationProjection
+
+      val facets: Seq[Bson] = Seq(
+        facet(
+          model.Facet("countOfAllApps", totalCount),
+          model.Facet("countOfMatchingApps", filteredPipelineCount: _*),
+          model.Facet("applications", paginatedFilteredAndSortedPipeline: _*)
+        )
+      )
+
+      collection.aggregate[BsonValue](facets)
+        .head()
+        .map(Codecs.fromBson[PaginatedApplicationData])
+        .map(d => PaginatedApplicationData(d.applications, d.countOfAllApps, d.countOfMatchingApps))
+    }
   }
 
   def fetchAllForContext(apiContext: ApiContext): Future[List[StoredApplication]] =
