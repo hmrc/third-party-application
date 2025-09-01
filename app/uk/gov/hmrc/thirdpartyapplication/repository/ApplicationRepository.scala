@@ -523,6 +523,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def searchApplications(actionSubtask: String)(applicationSearch: ApplicationSearch): Future[PaginatedApplicationData] = {
     timeFuture("Search Applications", s"application.repository.searchApplications.$actionSubtask") {
       val filters = applicationSearch.filters
+        .filterNot(_ == StatusFilter.NoFiltering)
         .map(filter =>
           convertFilterToQueryClause(filter, applicationSearch)
         ) ++ deletedFilter(applicationSearch)
