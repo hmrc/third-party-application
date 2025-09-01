@@ -135,34 +135,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.hardDelete(*[ApplicationId])).thenReturn(successful(HasSucceeded))
     }
 
-    object FetchAllForContent {
-
-      def thenReturnEmptyWhen(apiContext: ApiContext) =
-        when(aMock.fetchAllForContext(eqTo(apiContext))).thenReturn(successful(List.empty))
-
-      def thenReturnWhen(apiContext: ApiContext)(apps: StoredApplication*) =
-        when(aMock.fetchAllForContext(eqTo(apiContext))).thenReturn(successful(apps.toList))
-
-    }
-
-    object FetchAllForApiIdentifier {
-
-      def thenReturnEmptyWhen(apiIdentifier: ApiIdentifier) =
-        when(aMock.fetchAllForApiIdentifier(eqTo(apiIdentifier))).thenReturn(successful(List.empty))
-
-      def thenReturnWhen(apiIdentifier: ApiIdentifier)(apps: StoredApplication*) =
-        when(aMock.fetchAllForApiIdentifier(eqTo(apiIdentifier))).thenReturn(successful(apps.toList))
-    }
-
-    object FetchAllWithNoSubscriptions {
-
-      def thenReturn(apps: StoredApplication*) =
-        when(aMock.fetchAllWithNoSubscriptions()).thenReturn(successful(apps.toList))
-
-      def thenReturnNone() =
-        when(aMock.fetchAllWithNoSubscriptions()).thenReturn(successful(Nil))
-    }
-
     object GetAppsWithSubscriptions {
 
       def thenReturn(apps: GatekeeperAppSubsResponse*) =

@@ -686,30 +686,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchAllForContext(apiContext: ApiContext): Future[List[StoredApplication]] =
-    searchApplications("fetchAllForContext")(
-      ApplicationSearch(
-        filters = List(APISubscriptionFilter.SpecificAPISubscription),
-        apiContext = Some(apiContext)
-      )
-    ).map(_.applications)
-
-  def fetchAllForApiIdentifier(apiIdentifier: ApiIdentifier): Future[List[StoredApplication]] =
-    searchApplications("fetchAllForApiIdentifier")(
-      ApplicationSearch(
-        filters = List(APISubscriptionFilter.SpecificAPISubscription),
-        apiContext = Some(apiIdentifier.context),
-        apiVersion = Some(apiIdentifier.versionNbr)
-      )
-    ).map(_.applications)
-
-  def fetchAllWithNoSubscriptions(): Future[List[StoredApplication]] =
-    searchApplications("fetchAllWithNoSubscriptions")(
-      ApplicationSearch(
-        filters = List(APISubscriptionFilter.NoAPISubscriptions)
-      )
-    ).map(_.applications)
-
   def fetchAll(includeDeleted: Boolean = false): Future[List[StoredApplication]] = {
     searchApplications("fetchAll")(
       ApplicationSearch(includeDeleted = includeDeleted)

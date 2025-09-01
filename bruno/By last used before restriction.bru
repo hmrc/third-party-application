@@ -1,0 +1,19 @@
+meta {
+  name: By last used before restriction
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/query?lastUsedbefore=2023-01-01T00:00:00.000Z
+  body: none
+  auth: inherit
+}
+
+params:query {
+  lastUsedbefore: 2023-01-01T00:00:00.000Z
+}
+
+settings {
+  encodeUrl: true
+}
