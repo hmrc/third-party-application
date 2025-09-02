@@ -660,7 +660,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           "refreshTokensAvailableFor",
           "rateLimitTier",
           "environment",
+          "checkInformation",
           "blocked",
+          "ipAllowlist",
           "deleteRestriction"
         )
       ))
@@ -935,6 +937,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     "environment",
     "checkInformation",
     "blocked",
+    "ipAllowlist",
     "deleteRestriction"
   )
 
