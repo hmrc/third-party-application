@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import java.time.Instant
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, Environment, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
@@ -58,6 +60,10 @@ object ApplicationQueries {
 
   def applicationsByUserId(userId: UserId, includeDeleted: Boolean) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
     params = UserIdQP(userId) :: WantSubscriptionsQP :: List(ExcludeDeletedQP).filterNot(_ => includeDeleted)
+  )
+
+  def applicationsByStateAndDate(state: State, beforeDate: Instant) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
+    params = AppStateFilterQP(AppStateFilter.MatchingOne(state)) :: AppStateBeforeDateQP(beforeDate) :: Nil
   )
 
   def applicationsByUserIdAndEnvironment(userId: UserId, environment: Environment) = ApplicationQuery.GeneralOpenEndedApplicationQuery(

@@ -426,15 +426,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       .map(_.left.getOrElse(None))
   }
 
-  def fetchAllByStatusDetails(state: State, updatedBefore: Instant): Future[Seq[StoredApplication]] = {
-    val query = and(
-      equal("state.name", state.toString()),
-      lte("state.updatedOn", updatedBefore)
-    )
-
-    collection.find(query).toFuture()
-  }
-
   def fetchByStatusDetailsAndEnvironmentForDeleteJob(state: State, updatedBefore: Instant, environment: Environment): Future[Seq[StoredApplication]] = {
     collection.aggregate(
       Seq(

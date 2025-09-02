@@ -174,6 +174,14 @@ object QueryParamValidator {
     }
   }
 
+  object StatusBeforeDate extends QueryParamValidator {
+    val paramName = "statusDate"
+
+    def validate(values: Seq[String]): ErrorsOr[Param[_]] = {
+      SingleValueExpected(paramName)(values) andThen InstantValueExpected.apply(paramName) map (date => Param.AppStateBeforeDateQP(date))
+    }
+  }
+
   private object SortExpected {
     def apply(value: String): ErrorsOr[Sorting] = Sorting(value).toValidNel(s"$value is not a valid sort")
   }
@@ -307,6 +315,7 @@ object QueryParamValidator {
     QueryParamValidator.NoSubscriptionsValidator,
     QueryParamValidator.PageSizeValidator,
     QueryParamValidator.PageNbrValidator,
+    QueryParamValidator.StatusBeforeDate,
     QueryParamValidator.StatusValidator,
     QueryParamValidator.SortValidator,
     QueryParamValidator.SearchTextValidator,

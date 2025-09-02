@@ -132,7 +132,8 @@ object ApplicationQueryConverter {
       case AppStateFilter.Blocked              => List(and(equal("blocked", BsonBoolean(true)), excludeDeleted))
       case AppStateFilter.MatchingOne(state)   => List(equal("state.name", state.toString))
       case AppStateFilter.MatchingMany(states) => List(in("state.name", states.toList.map(_.toString): _*))
-    })
+    }) ++
+      onFirst[AppStateBeforeDateQP](qp => List(lte("state.updatedOn", qp.value)))
 
   def asSearchFilter(implicit params: List[Param[_]]): List[Bson] =
     onFirst[SearchTextQP](qp =>

@@ -66,7 +66,6 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
         QueryParamValidator.BooleanValueExpected("param")("true") shouldBe true.validNel
         QueryParamValidator.BooleanValueExpected("param")("false") shouldBe false.validNel
       }
-
       "boolean-expected fails" in {
         shouldFail(QueryParamValidator.BooleanValueExpected("param")("not-a-boolean"))
       }
@@ -76,7 +75,6 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
         QueryParamValidator.IntValueExpected("param")("4") shouldBe 4.validNel
         QueryParamValidator.IntValueExpected("param")("-5") shouldBe -5.validNel
       }
-
       "integer-expected fails" in {
         shouldFail(QueryParamValidator.IntValueExpected("param")("not-an-int"))
         shouldFail(QueryParamValidator.IntValueExpected("param")("1.5"))
@@ -87,7 +85,6 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
         QueryParamValidator.IntValueExpected("param")("4") shouldBe 4.validNel
         QueryParamValidator.IntValueExpected("param")("0") shouldBe 0.validNel
       }
-
       "positive-integer-expected fails" in {
         shouldFail(QueryParamValidator.PositiveIntValueExpected("param")("-5"))
         shouldFail(QueryParamValidator.PositiveIntValueExpected("param")("not-an-int"))
@@ -97,7 +94,6 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
       "instant-value-expected passes" in {
         QueryParamValidator.InstantValueExpected("param")(nowAsText) shouldBe instant.validNel
       }
-
       "instant-value-expected fails" in {
         shouldFail(QueryParamValidator.InstantValueExpected("param")("not-an-instant"))
       }
@@ -208,6 +204,10 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
 
       "extract valid params - last used after filter" in {
         test(Map("lastUsedAfter" -> Seq(nowAsText))) shouldBe List(LastUsedAfterQP(instant)).validNel
+      }
+
+      "extract valid params - status used before filter" in {
+        test(Map("statusDate" -> Seq(nowAsText))) shouldBe List(AppStateBeforeDateQP(instant)).validNel
       }
 
       // -----

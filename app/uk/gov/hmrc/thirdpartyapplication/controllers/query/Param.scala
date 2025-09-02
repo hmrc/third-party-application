@@ -28,9 +28,10 @@ sealed trait Param[+P] {
   def order: Int
 }
 
-sealed trait FilterParam[+P] extends Param[P] {}
+sealed trait FilterParam[+P] extends Param[P]
 
-sealed trait UniqueFilterParam[+P]    extends FilterParam[P]
+sealed trait UniqueFilterParam[+P] extends FilterParam[P]
+
 sealed trait NonUniqueFilterParam[+P] extends FilterParam[P]
 
 sealed trait PaginationParam[+P] extends Param[P]
@@ -72,10 +73,10 @@ object Param {
   case object DoNotDeleteQP        extends DeleteRestrictionQP
 
   case class AppStateFilterQP(value: AppStateFilter) extends NonUniqueFilterParam[AppStateFilter] { val order = 1 }
-
-  case class SearchTextQP(value: String)       extends NonUniqueFilterParam[String] { val order = 1 }
-  case class NameQP(value: String)             extends NonUniqueFilterParam[String] { val order = 1 }
-  case class VerificationCodeQP(value: String) extends NonUniqueFilterParam[String] { val order = 1 }
+  case class AppStateBeforeDateQP(value: Instant)    extends NonUniqueFilterParam[Instant]        { val order = 1 }
+  case class SearchTextQP(value: String)             extends NonUniqueFilterParam[String]         { val order = 1 }
+  case class NameQP(value: String)                   extends NonUniqueFilterParam[String]         { val order = 1 }
+  case class VerificationCodeQP(value: String)       extends NonUniqueFilterParam[String]         { val order = 1 }
 
   case class AccessTypeQP(value: Option[AccessType]) extends NonUniqueFilterParam[Option[AccessType]] { val order = 1 }
 }

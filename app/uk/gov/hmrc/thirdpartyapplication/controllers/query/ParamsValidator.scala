@@ -96,6 +96,19 @@ object ParamsValidator {
       ().validNel
     }
 
+  def checkAppStateFilters(implicit otherFilterParams: List[NonUniqueFilterParam[Any]]): ErrorsOr[Unit] = {
+    val stateFilter = first[AppStateFilterQP]
+    val dateFilter  = first[AppStateBeforeDateQP]
+
+    (stateFilter, dateFilter) match {
+      case (_, None) => ().validNel
+
+      case (Some(AppStateFilterQP(AppStateFilter.MatchingOne(_))), _) => ().validNel
+      case (None, Some(_))                                            => "Cannot query state used before date without a state filter".invalidNel
+      case _                                                          => "Cannot query state used before date without a single state filter".invalidNel
+    }
+  }
+
   def validateParamCombinations(implicit allParams: List[Param[_]]): ErrorsOr[Unit] = {
     val wantSubcriptions = first[WantSubscriptionsQP.type].headOption.isDefined
 
@@ -125,6 +138,7 @@ object ParamsValidator {
       .combine(checkLastUsedParamsCombinations(otherFilterParams))
       .combine(checkVerificationCodeUsesDeleteExclusion(otherFilterParams))
       .combine(checkWantSubscriptions(wantSubcriptions, wantPagination))
+      .combine(checkAppStateFilters(otherFilterParams))
   }
 
   def parseAndValidateParams(rawQueryParams: Map[String, Seq[String]], rawHeaders: Map[String, Seq[String]]): ErrorsOr[List[Param[_]]] = {

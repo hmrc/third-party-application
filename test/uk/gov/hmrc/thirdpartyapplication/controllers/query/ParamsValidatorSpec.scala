@@ -24,7 +24,7 @@ import org.scalatest.compatible.Assertion
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiIdentifierFixtures, Environment}
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, State}
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
 class ParamsValidatorSpec
@@ -128,7 +128,6 @@ class ParamsValidatorSpec
       testBadCombo(NonEmptyList.of(ApplicationIdQP(applicationIdOne), ServerTokenQP("ABC")), List.empty)
       testBadCombo(NonEmptyList.of(ClientIdQP(clientIdOne), ServerTokenQP("ABC")), List.empty)
     }
-
   }
 
   "checkVerificationCodeUsesDeleteExclusion" should {
@@ -143,6 +142,35 @@ class ParamsValidatorSpec
     }
     "fail when given a verification code and a state filter" in {
       testBadCombo(List(AppStateFilterQP(AppStateFilter.Active), VerificationCodeQP("ABC")))
+    }
+  }
+
+  "checkAppStateFilters" should {
+    val oneState     = Param.AppStateFilterQP(AppStateFilter.MatchingOne(State.PRODUCTION))
+    val manyState    = Param.AppStateFilterQP(AppStateFilter.MatchingMany(Set(State.PRODUCTION, State.PRE_PRODUCTION)))
+    val blockedState = Param.AppStateFilterQP(AppStateFilter.Blocked)
+    val dateBefore   = Param.AppStateBeforeDateQP(instant)
+
+    val testBadCombo  = (ps: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkAppStateFilters(ps) should not be Pass
+    val testGoodCombo = (ps: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkAppStateFilters(ps) shouldBe Pass
+
+    "pass when only a state filter" in {
+      testGoodCombo(oneState :: Nil)
+      testGoodCombo(manyState :: Nil)
+      testGoodCombo(blockedState :: Nil)
+    }
+
+    "pass when one state with a date before" in {
+      testGoodCombo(oneState :: dateBefore :: Nil)
+    }
+
+    "fail when no state but with a date before" in {
+      testBadCombo(dateBefore :: Nil)
+    }
+
+    "fail when inappropriate state with a date before" in {
+      testBadCombo(manyState :: dateBefore :: Nil)
+      testBadCombo(blockedState :: dateBefore :: Nil)
     }
   }
 

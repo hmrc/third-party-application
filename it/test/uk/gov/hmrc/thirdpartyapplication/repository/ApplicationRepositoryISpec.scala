@@ -436,8 +436,6 @@ class ApplicationRepositoryISpec
   }
 
   "recordApplicationUsage" should {
-    def minutesAgo(minutes: Int) = instant.minus(Duration.ofMinutes(minutes))
-
     def createApplication(createdOn: Instant, lastAccess: Option[Instant]) = {
 
       val application = anApplicationDataForTest(applicationId, clientIdOne)
@@ -625,114 +623,6 @@ class ApplicationRepositoryISpec
           retrievedClientSecret.lastAccess.get.isBefore(
             testStartTime
           ) shouldBe true
-      )
-    }
-  }
-
-  "fetchAllByStatusDetails" should {
-
-    val dayOfExpiry          = instant
-    val expiryOnTheDayBefore = dayOfExpiry.minus(Duration.ofDays(1))
-    val expiryOnTheDayAfter  = dayOfExpiry.plus(Duration.ofDays(1))
-
-    def verifyApplications(
-        responseApplications: Seq[StoredApplication],
-        expectedState: State,
-        expectedNumber: Int
-      ): Unit = {
-      responseApplications.foreach(app => app.state.name shouldBe expectedState)
-      withClue(
-        s"The expected number of applications with state $expectedState is $expectedNumber"
-      ) {
-        responseApplications.size shouldBe expectedNumber
-      }
-    }
-
-    "retrieve the only application with PENDING_REQUESTER_VERIFICATION state that have been updated before the expiryDay" in {
-      val applications = Seq(
-        createAppWithStatusUpdatedOn(State.TESTING, expiryOnTheDayBefore),
-        createAppWithStatusUpdatedOn(State.PENDING_GATEKEEPER_APPROVAL, expiryOnTheDayBefore),
-        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, expiryOnTheDayBefore),
-        createAppWithStatusUpdatedOn(State.PRODUCTION, expiryOnTheDayBefore)
-      )
-      applications.foreach(application =>
-        await(applicationRepository.save(application))
-      )
-
-      val applicationDetails = await(
-        applicationRepository.fetchAllByStatusDetails(
-          State.PENDING_REQUESTER_VERIFICATION,
-          dayOfExpiry
-        )
-      )
-
-      verifyApplications(
-        applicationDetails,
-        State.PENDING_REQUESTER_VERIFICATION,
-        1
-      )
-    }
-
-    "retrieve the application with PENDING_REQUESTER_VERIFICATION state that have been updated before the dayOfExpiry" in {
-      val application = createAppWithStatusUpdatedOn(
-        State.PENDING_REQUESTER_VERIFICATION,
-        expiryOnTheDayBefore
-      )
-      await(applicationRepository.save(application))
-
-      val applicationDetails = await(
-        applicationRepository.fetchAllByStatusDetails(
-          State.PENDING_REQUESTER_VERIFICATION,
-          dayOfExpiry
-        )
-      )
-
-      verifyApplications(
-        applicationDetails,
-        State.PENDING_REQUESTER_VERIFICATION,
-        1
-      )
-    }
-
-    "retrieve the application with PENDING_REQUESTER_VERIFICATION state that have been updated on the dayOfExpiry" in {
-      val application = createAppWithStatusUpdatedOn(
-        State.PENDING_REQUESTER_VERIFICATION,
-        dayOfExpiry
-      )
-      await(applicationRepository.save(application))
-
-      val applicationDetails = await(
-        applicationRepository.fetchAllByStatusDetails(
-          State.PENDING_REQUESTER_VERIFICATION,
-          dayOfExpiry
-        )
-      )
-
-      verifyApplications(
-        applicationDetails,
-        State.PENDING_REQUESTER_VERIFICATION,
-        1
-      )
-    }
-
-    "retrieve no application with PENDING_REQUESTER_VERIFICATION state that have been updated after the dayOfExpiry" in {
-      val application = createAppWithStatusUpdatedOn(
-        State.PENDING_REQUESTER_VERIFICATION,
-        expiryOnTheDayAfter
-      )
-      await(applicationRepository.save(application))
-
-      val applicationDetail = await(
-        applicationRepository.fetchAllByStatusDetails(
-          State.PENDING_REQUESTER_VERIFICATION,
-          dayOfExpiry
-        )
-      )
-
-      verifyApplications(
-        applicationDetail,
-        State.PENDING_REQUESTER_VERIFICATION,
-        0
       )
     }
   }

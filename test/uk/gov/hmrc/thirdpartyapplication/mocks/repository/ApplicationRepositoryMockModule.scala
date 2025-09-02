@@ -444,15 +444,16 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object FetchApplications {
       def thenReturns(apps: StoredApplication*) = when(aMock.fetchApplications(*)).thenReturn(successful(apps.toList))
 
-      def thenReturnsWhen(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) =
+      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) =
         when(aMock.fetchApplications(eqTo(qry))).thenReturn(successful(apps.toList))
 
+      def thenFails(exc: Exception) = when(aMock.fetchApplications(*)).thenReturn(failed(exc))
     }
 
     object FetchByGeneralOpenEndedApplicationQuery {
       def thenReturns(apps: StoredApplication*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Left(apps.toList)))
 
-      def thenReturnsWhen(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) =
+      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) =
         when(aMock.fetchByGeneralOpenEndedApplicationQuery(eqTo(qry))).thenReturn(successful(Left(apps.toList)))
 
       def thenReturnsWithSubs(apps: ApplicationRepository.MongoFormats.StoredAppWithSubs*) =
