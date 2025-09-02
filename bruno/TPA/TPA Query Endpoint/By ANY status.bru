@@ -1,0 +1,19 @@
+meta {
+  name: By ANY status
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/query?status=ANY
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: ANY
+}
+
+settings {
+  encodeUrl: true
+}

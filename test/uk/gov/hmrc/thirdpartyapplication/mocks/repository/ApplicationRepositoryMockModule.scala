@@ -441,6 +441,14 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.fetchSingleApplication(eqTo(qry))).thenReturn(successful(Some(app)))
     }
 
+    object FetchApplications {
+      def thenReturns(apps: StoredApplication*) = when(aMock.fetchApplications(*)).thenReturn(successful(apps.toList))
+
+      def thenReturnsWhen(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) =
+        when(aMock.fetchApplications(eqTo(qry))).thenReturn(successful(apps.toList))
+
+    }
+
     object FetchByGeneralOpenEndedApplicationQuery {
       def thenReturns(apps: StoredApplication*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Left(apps.toList)))
 

@@ -1,0 +1,21 @@
+meta {
+  name: By search text and subscriptions
+  type: http
+  seq: 29
+}
+
+get {
+  url: {{baseUrl}}/query?search=pete&oneOrMoreSubscriptions
+  body: none
+  auth: inherit
+}
+
+params:query {
+  search: pete
+  oneOrMoreSubscriptions: 
+  ~wantSubscriptions: 
+}
+
+settings {
+  encodeUrl: true
+}

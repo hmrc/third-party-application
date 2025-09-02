@@ -17,16 +17,15 @@
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class RateLimitMetricsSpec extends AsyncHmrcSpec {
 
-  trait Setup {
+  trait Setup extends ApplicationRepositoryMockModule {
 
     def applicationsWithRateLimit(rateLimit: Option[RateLimitTier], numberOfApplications: Int): List[StoredApplication] = {
       def mockedApplication: StoredApplication = {
@@ -39,9 +38,7 @@ class RateLimitMetricsSpec extends AsyncHmrcSpec {
       List.fill(numberOfApplications)(mockedApplication)
     }
 
-    val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository]
-
-    val metricUnderTest: RateLimitMetrics = new RateLimitMetrics(mockApplicationRepository)
+    val metricUnderTest: RateLimitMetrics = new RateLimitMetrics(ApplicationRepoMock.aMock)
   }
 
   "metrics refresh" should {
@@ -57,7 +54,7 @@ class RateLimitMetricsSpec extends AsyncHmrcSpec {
           applicationsWithRateLimit(Some(RateLimitTier.GOLD), numberOfGold) ++
           applicationsWithRateLimit(None, numberOfUnknown)
 
-      when(mockApplicationRepository.fetchAll()).thenReturn(Future.successful(applicationsToReturn))
+      ApplicationRepoMock.FetchApplications.thenReturns(applicationsToReturn: _*)
 
       private val result = await(metricUnderTest.metrics)
 

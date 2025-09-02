@@ -1,0 +1,20 @@
+meta {
+  name: By ACTIVE status
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/query?status=ACTIVE&pageSize=2
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: ACTIVE
+  pageSize: 2
+}
+
+settings {
+  encodeUrl: true
+}

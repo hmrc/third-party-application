@@ -78,7 +78,7 @@ object ApplicationQuery {
       case sp: SortingParam[_] => sp
     } match {
       case SortQP(sort) :: Nil => sort
-      case _                   => Sorting.SubmittedAscending
+      case _                   => Sorting.NoSorting // SubmittedDescending ???
     }
   }
 

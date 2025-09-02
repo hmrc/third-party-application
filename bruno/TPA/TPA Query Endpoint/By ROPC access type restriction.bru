@@ -1,0 +1,19 @@
+meta {
+  name: By ROPC access type restriction
+  type: http
+  seq: 27
+}
+
+get {
+  url: {{baseUrl}}/query?accessType=ROPC
+  body: none
+  auth: inherit
+}
+
+params:query {
+  accessType: ROPC
+}
+
+settings {
+  encodeUrl: true
+}

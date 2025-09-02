@@ -1,0 +1,23 @@
+meta {
+  name: By Server Token
+  type: http
+  seq: 31
+}
+
+get {
+  url: {{baseUrl}}/query
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~wantSubscriptions: 
+}
+
+headers {
+  X-server-token: aef909d4a518e819d3a0d7c60cc44928
+}
+
+settings {
+  encodeUrl: true
+}

@@ -27,6 +27,8 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifierFixtures
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, PaginatedApplications}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerSpec
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.PaginatedApplicationQuery
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param.{NoSubscriptionsQP, UserIdQP, WantSubscriptionsQP}
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController
 import uk.gov.hmrc.thirdpartyapplication.mocks.QueryServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{CommonApplicationId, StoredApplicationFixtures}
@@ -50,7 +52,7 @@ class QueryControllerSpec
 
   "QueryController" should {
     "work for single query" in new Setup {
-      QueryServiceMock.FetchSingleApplication.thenReturns(appWithCollaborators)
+      QueryServiceMock.FetchSingleApplication.thenReturnsFor(ApplicationQuery.ByClientId(clientIdOne, false, Nil), appWithCollaborators)
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}"))
 
       status(result) shouldBe OK
@@ -58,7 +60,7 @@ class QueryControllerSpec
     }
 
     "work for single query with subs" in new Setup {
-      QueryServiceMock.FetchSingleApplication.thenReturns(appWithSubs)
+      QueryServiceMock.FetchSingleApplication.thenReturnsFor(ApplicationQuery.ByClientId(clientIdOne, false, WantSubscriptionsQP :: Nil), appWithSubs)
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}&wantSubscriptions"))
 
       status(result) shouldBe OK
@@ -66,7 +68,7 @@ class QueryControllerSpec
     }
 
     "work for single query finding nothing" in new Setup {
-      QueryServiceMock.FetchSingleApplication.thenReturnsNothing()
+      QueryServiceMock.FetchSingleApplication.thenReturnsLeftNoneFor(ApplicationQuery.ByClientId(clientIdOne, false, Nil))
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}"))
 
       status(result) shouldBe NOT_FOUND
@@ -75,7 +77,7 @@ class QueryControllerSpec
     }
 
     "work for single query with subs finding nothing" in new Setup {
-      QueryServiceMock.FetchSingleApplication.thenReturnsNothing()
+      QueryServiceMock.FetchSingleApplication.thenReturnsRightNoneFor(ApplicationQuery.ByClientId(clientIdOne, false, WantSubscriptionsQP :: Nil))
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}&wantSubscriptions"))
 
       status(result) shouldBe NOT_FOUND
@@ -84,15 +86,26 @@ class QueryControllerSpec
     }
 
     "work for general query" in new Setup {
-      QueryServiceMock.FetchApplications.thenReturnsAppsWithCollaborators(appWithCollaborators)
+      QueryServiceMock.FetchApplications.thenReturnsAppsWithCollaboratorsFor(ApplicationQuery.GeneralOpenEndedApplicationQuery(UserIdQP(userIdOne) :: Nil), appWithCollaborators)
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=${userIdOne}"))
 
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(List(appWithCollaborators))
     }
 
+    "work for general query for noSubscriptions" in new Setup {
+      QueryServiceMock.FetchApplications.thenReturnsAppsWithCollaboratorsFor(ApplicationQuery.GeneralOpenEndedApplicationQuery(NoSubscriptionsQP :: Nil), appWithCollaborators)
+      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions="))
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(List(appWithCollaborators))
+    }
+
     "work for general query with subs" in new Setup {
-      QueryServiceMock.FetchApplications.thenReturnsAppsWithSubscriptions(appWithSubs)
+      QueryServiceMock.FetchApplications.thenReturnsAppsWithSubscriptionsFor(
+        ApplicationQuery.GeneralOpenEndedApplicationQuery(UserIdQP(userIdOne) :: WantSubscriptionsQP :: Nil),
+        appWithSubs
+      )
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=${userIdOne}&wantSubscriptions"))
 
       status(result) shouldBe OK
@@ -108,7 +121,7 @@ class QueryControllerSpec
     }
 
     "work for general query with subs finding nothing" in new Setup {
-      QueryServiceMock.FetchApplications.thenReturnsNoAppsWithCollaborators()
+      QueryServiceMock.FetchApplications.thenReturnsNoAppsWithSubscriptions()
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=${userIdOne}&wantSubscriptions"))
 
       status(result) shouldBe OK
@@ -116,12 +129,15 @@ class QueryControllerSpec
     }
 
     "work for paginated query" in new Setup {
-      QueryServiceMock.FetchPaginatedApplications.thenReturns(PaginatedApplications(List(appWithCollaborators), 1, 25, 105, 1))
+      QueryServiceMock.FetchPaginatedApplications.thenReturnsFor(
+        PaginatedApplicationQuery(UserIdQP(userIdOne) :: Nil, pagination = Pagination(33)),
+        PaginatedApplications(List(appWithCollaborators), 1, 33, 105, 1)
+      )
 
-      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?pageSize=25&userId=${userIdOne}"))
+      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?pageSize=33&userId=${userIdOne}"))
 
       status(result) shouldBe OK
-      val expected = PaginatedApplications(List(storedApp.asAppWithCollaborators), 1, 25, 105, 1)
+      val expected = PaginatedApplications(List(storedApp.asAppWithCollaborators), 1, 33, 105, 1)
       contentAsJson(result) shouldBe Json.toJson(expected)
     }
 
@@ -135,7 +151,6 @@ class QueryControllerSpec
     }
 
     "report errors back" in new Setup {
-      QueryServiceMock.FetchApplications.thenReturnsNoAppsWithCollaborators()
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=ABC&environment=STAGING"))
 
       status(result) shouldBe BAD_REQUEST

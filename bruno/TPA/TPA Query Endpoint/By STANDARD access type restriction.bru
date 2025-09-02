@@ -1,0 +1,20 @@
+meta {
+  name: By STANDARD access type restriction
+  type: http
+  seq: 32
+}
+
+get {
+  url: {{baseUrl}}/query?accessType=STANDARD&wantSubscriptions
+  body: none
+  auth: inherit
+}
+
+params:query {
+  accessType: STANDARD
+  wantSubscriptions: 
+}
+
+settings {
+  encodeUrl: true
+}

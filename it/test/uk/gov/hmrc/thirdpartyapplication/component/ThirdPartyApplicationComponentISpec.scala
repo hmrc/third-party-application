@@ -153,24 +153,6 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       result shouldBe application
     }
 
-    Scenario("Fetch application from a collaborator email address") {
-      Given("No applications exist")
-      emptyApplicationRepository()
-
-      Given("A collaborator has access to two third party applications")
-      val application1: ApplicationWithCollaborators = createApplication(applicationName1)
-      val application2: ApplicationWithCollaborators = createApplication(applicationName2)
-
-      When("We fetch the application by the collaborator email address")
-      val uri           = s"$serviceUrl/application?emailAddress=$emailAddress"
-      val fetchResponse = http(basicRequest.get(uri"$uri"))
-      fetchResponse.code shouldBe StatusCode.Ok
-      val result        = Json.parse(fetchResponse.body.value).as[Seq[ApplicationWithCollaborators]]
-
-      Then("The applications are returned")
-      result should contain theSameElementsAs Seq(application1, application2)
-    }
-
     // TODO use commands
     Scenario("Fetch application credentials") {
       Given("No applications exist")

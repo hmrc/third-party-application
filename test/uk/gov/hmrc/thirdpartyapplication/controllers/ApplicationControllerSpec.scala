@@ -410,7 +410,7 @@ class ApplicationControllerSpec
     }
 
     "retrieve by client id" in new Setup {
-      when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(standardApp)))
+      QueryServiceMock.FetchSingleApplicationWithCollaborators.thenReturnsFor(ApplicationQueries.applicationByClientId(clientId), standardApp)
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}"))
 
@@ -418,7 +418,7 @@ class ApplicationControllerSpec
     }
 
     "retrieve by server token" in new Setup {
-      when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(standardApp)))
+      QueryServiceMock.FetchSingleApplicationWithCollaborators.thenReturnsFor(ApplicationQueries.applicationByServerToken(serverToken), standardApp)
 
       private val scenarios =
         Table(
@@ -434,35 +434,24 @@ class ApplicationControllerSpec
       }
     }
 
-    "retrieve all" in new Setup {
-      when(underTest.applicationService.fetchAll()).thenReturn(Future(List(standardApp, standardApp2)))
-
+    "retrieve all with no immediate matches redirects to query controller" in new Setup {
       private val result = underTest.queryDispatcher()(FakeRequest())
 
-      validateResult(result, OK, None, None)
-      contentAsJson(result).as[Seq[JsValue]] should have size 2
+      validateResult(result, SEE_OTHER, None, None)
     }
 
-    "retrieve when no subscriptions" in new Setup {
+    "retrieve when requesting no subscriptions" in new Setup {
       QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFor(ApplicationQueries.applicationsByNoSubscriptions, standardApp)
 
-      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions=true"))
+      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions="))
 
       validateResult(result, OK, None, None)
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown from fetchAll" in new Setup {
-      when(underTest.applicationService.fetchAll()).thenReturn(failed(new RuntimeException("Expected test exception")))
-
-      private val result = underTest.queryDispatcher()(FakeRequest())
-
-      validateResult(result, INTERNAL_SERVER_ERROR, None, None)
     }
 
     "fail with a 500 (internal server error) when a clientId is supplied" in new Setup {
-      when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(failed(new RuntimeException("Expected test exception")))
+      QueryServiceMock.FetchSingleApplicationWithCollaborators.thenFails(new RuntimeException("Expected test exception"))
 
-      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}"))
+      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
 
       validateResult(result, INTERNAL_SERVER_ERROR, None, None)
     }
@@ -479,7 +468,7 @@ class ApplicationControllerSpec
         )
 
       forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
-        when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
+        QueryServiceMock.FetchSingleApplicationWithCollaborators.thenReturnsFor(ApplicationQueries.applicationByServerToken(serverToken), applicationResponse)
         when(underTest.applicationService.findAndRecordServerTokenUsage(serverToken)).thenReturn(Future(Some((updatedApplicationResponse, serverToken))))
 
         val result = underTest.queryDispatcher()(request.withHeaders(headers: _*))
@@ -505,7 +494,7 @@ class ApplicationControllerSpec
         )
 
       forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
-        when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(applicationResponse)))
+        QueryServiceMock.FetchSingleApplicationWithCollaborators.thenReturnsFor(ApplicationQueries.applicationByClientId(clientId), applicationResponse)
         when(underTest.applicationService.findAndRecordApplicationUsage(clientId)).thenReturn(Future(Some((updatedApplicationResponse, "aServerToken"))))
 
         val result =
@@ -515,8 +504,6 @@ class ApplicationControllerSpec
         (contentAsJson(result) \ "details" \ "lastAccess").as[Instant].toEpochMilli() shouldBe expectedLastAccessTime
         if (shouldUpdate) {
           verify(underTest.applicationService).findAndRecordApplicationUsage(eqTo(clientId))
-        } else {
-          verify(underTest.applicationService).fetchByClientId(eqTo(clientId))
         }
         reset(underTest.applicationService)
       }
@@ -607,14 +594,6 @@ class ApplicationControllerSpec
 
         contentAsString(result) shouldBe "[]"
       }
-
-      "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFailure(new RuntimeException("Expected test failure"))
-
-        val result = underTest.queryDispatcher()(queryRequest)
-
-        status(result) shouldBe INTERNAL_SERVER_ERROR
-      }
     }
 
     "given a version" should {
@@ -643,14 +622,6 @@ class ApplicationControllerSpec
         status(result) shouldBe OK
 
         contentAsString(result) shouldBe "[]"
-      }
-
-      "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-        QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFailure(new RuntimeException("Expected test failure"))
-
-        val result = underTest.queryDispatcher()(queryRequest)
-
-        status(result) shouldBe INTERNAL_SERVER_ERROR
       }
     }
   }

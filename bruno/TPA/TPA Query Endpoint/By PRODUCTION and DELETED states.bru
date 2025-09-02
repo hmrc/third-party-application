@@ -1,0 +1,19 @@
+meta {
+  name: By PRODUCTION and DELETED states
+  type: http
+  seq: 25
+}
+
+get {
+  url: {{baseUrl}}/query?status=PRODUCTION,DELETED
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: PRODUCTION,DELETED
+}
+
+settings {
+  encodeUrl: true
+}

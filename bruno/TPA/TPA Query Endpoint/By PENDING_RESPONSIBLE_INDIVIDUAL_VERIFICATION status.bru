@@ -1,0 +1,19 @@
+meta {
+  name: By PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION status
+  type: http
+  seq: 22
+}
+
+get {
+  url: {{baseUrl}}/query?status=PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+}
+
+settings {
+  encodeUrl: true
+}

@@ -35,7 +35,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, Clie
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationQueries, ApplicationRepository}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ResetLastAccessDateJobSpec
@@ -102,7 +102,7 @@ class ResetLastAccessDateJobSpec
       await(underTest.runJob)
 
       eventually {
-        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
+        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchApplications(ApplicationQueries.allApplications()))
 
         retrievedApplications.size should be(3)
 
@@ -122,7 +122,7 @@ class ResetLastAccessDateJobSpec
       await(underTest.runJob)
 
       eventually {
-        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
+        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchApplications(ApplicationQueries.allApplications()))
 
         retrievedApplications.size shouldBe 1
         retrievedApplications.head.lastAccess should not be None
@@ -139,7 +139,7 @@ class ResetLastAccessDateJobSpec
       await(underTest.runJob)
 
       eventually {
-        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchAll())
+        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchApplications(ApplicationQueries.allApplications()))
 
         def inDbList(appId: ApplicationId): Option[StoredApplication] = retrievedApplications.find(_.id == appId)
         def epochMillisInDb(appId: ApplicationId): Option[Long]       = inDbList(appId).flatMap(_.lastAccess).map(_.toEpochMilli())

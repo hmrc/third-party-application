@@ -1052,7 +1052,8 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
 
-      await(applicationRepository.fetchAll()) shouldBe List(
+      // await(applicationRepository.fetchAll()) shouldBe List(
+      await(applicationRepository.fetchApplications(ApplicationQueries.allApplications(excludeDeleted = true))) shouldBe List(
         application1,
         application2
       )
@@ -1063,7 +1064,8 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
 
-      await(applicationRepository.fetchAll(includeDeleted = true)) shouldBe List(
+      // await(applicationRepository.fetchAll(includeDeleted = true)) shouldBe List(
+      await(applicationRepository.fetchApplications(ApplicationQueries.allApplications(excludeDeleted = false))) shouldBe List(
         application1,
         application2,
         application3

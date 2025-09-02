@@ -1,18 +1,17 @@
 meta {
-  name: By search text
+  name: By PRODUCTION status
   type: http
   seq: 26
 }
 
 get {
-  url: {{baseUrl}}/query?search=pete
+  url: {{baseUrl}}/query?status=PRODUCTION
   body: none
   auth: inherit
 }
 
 params:query {
-  search: pete
-  ~wantSubscriptions: 
+  status: PRODUCTION
 }
 
 settings {

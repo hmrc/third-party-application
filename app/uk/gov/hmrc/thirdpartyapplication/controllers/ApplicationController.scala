@@ -185,30 +185,42 @@ class ApplicationController @Inject() (
       if (pred(res)) res.withHeaders(headers: _*) else res
 
     (queryBy, serverToken) match {
-      case (_, Some(token))                      =>
+      case (_, Some(token)) =>
         fetchByServerToken(token)
           .map(addHeaders(res => res.header.status == OK || res.header.status == NOT_FOUND, CACHE_CONTROL -> s"max-age=$applicationCacheExpiry", VARY -> SERVER_TOKEN_HEADER))
-      case ("clientId" :: _, _)                  =>
+
+      case ("clientId" :: _, _) =>
         val clientId = ClientId(request.queryString("clientId").head)
         fetchByClientId(clientId)
           .map(addHeaders(_.header.status == OK, CACHE_CONTROL -> s"max-age=$applicationCacheExpiry"))
-      case ("environment" :: "userId" :: _, _)   =>
-        val rawQueryParameter = request.queryString("userId")
-        val ouserId           = UserId.apply(rawQueryParameter.head)
 
-        ouserId.fold(
-          successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"UserId ${rawQueryParameter.head} is not a valid user Id")))
-        )(userId => fetchAllForUserIdAndEnvironment(userId, Environment.unsafeApply(request.queryString("environment").head)))
+      case ("environment" :: "userId" :: _, _) =>
+        val oUserId = UserId(request.queryString("userId").head)
+        val oEnv    = Environment(request.queryString("environment").head)
+
+        (oUserId, oEnv) match {
+          case (Some(u), Some(e)) => fetchAllForUserIdAndEnvironment(u, e)
+          case (None, None)       => successful(BadRequest(JsErrorResponse(
+              BAD_QUERY_PARAMETER,
+              s"Neither UserId ${request.queryString("userId").head} nor Environment ${request.queryString("environment").head} are valid"
+            )))
+          case (None, Some(_))    => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"UserId ${request.queryString("userId").head} is not a valid user Id")))
+          case (Some(_), None)    => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"Environment ${request.queryString("environment").head} is not a valid environment")))
+        }
+
       case ("subscribesTo" :: "version" :: _, _) =>
+        val context       = ApiContext(request.queryString("subscribesTo").head)
+        val version       = ApiVersionNbr(request.queryString("version").head)
+        val apiIdentifier = ApiIdentifier(context, version)
+        queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier)).map(apps => Ok(Json.toJson(apps)))
+
+      case ("subscribesTo" :: _, _) =>
         val context = ApiContext(request.queryString("subscribesTo").head)
-        val version = ApiVersionNbr(request.queryString("version").head)
-        fetchAllBySubscriptionVersion(ApiIdentifier(context, version))
-      case ("subscribesTo" :: _, _)              =>
-        val context = ApiContext(request.queryString("subscribesTo").head)
-        fetchAllBySubscription(context)
-      case ("noSubscriptions" :: _, _)           =>
-        fetchAllWithNoSubscriptions()
-      case _                                     => fetchAll()
+        queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByApiContext(context)).map(apps => Ok(Json.toJson(apps)))
+
+      case ("noSubscriptions" :: _, _) => queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByNoSubscriptions).map(apps => Ok(Json.toJson(apps)))
+
+      case _ => successful(Redirect(uk.gov.hmrc.thirdpartyapplication.controllers.query.routes.QueryController.queryDispatcher().url, request.queryString))
     }
   }
 
@@ -254,7 +266,8 @@ class ApplicationController @Inject() (
       if (hasGatewayUserAgent) {
         applicationService.findAndRecordServerTokenUsage(serverToken).map(asJsonResultWithServerToken(notFoundMessage))
       } else {
-        applicationService.fetchByServerToken(serverToken).map(asJsonResult(notFoundMessage))
+        queryService.fetchSingleApplicationWithCollaborators(ApplicationQueries.applicationByServerToken(serverToken))
+          .map(asJsonResult(notFoundMessage))
       }
     ) recover recovery
   }
@@ -267,7 +280,8 @@ class ApplicationController @Inject() (
       if (hasGatewayUserAgent) {
         applicationService.findAndRecordApplicationUsage(clientId).map(asJsonResultWithServerToken(notFoundMessage))
       } else {
-        applicationService.fetchByClientId(clientId).map(asJsonResult(notFoundMessage))
+        queryService.fetchSingleApplicationWithCollaborators(ApplicationQueries.applicationByClientId(clientId))
+          .map(asJsonResult(notFoundMessage))
       }
     ) recover recovery
   }
@@ -285,25 +299,6 @@ class ApplicationController @Inject() (
 
   private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment) = {
     queryService.fetchApplicationsWithSubscriptions(ApplicationQueries.applicationsByUserIdAndEnvironment(userId, environment))
-      .map(apps => Ok(toJson(apps))) recover recovery
-  }
-
-  private def fetchAll() = {
-    applicationService.fetchAll().map(apps => Ok(toJson(apps))) recover recovery
-  }
-
-  private def fetchAllBySubscription(apiContext: ApiContext) = {
-    queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByApiContext(apiContext))
-      .map(apps => Ok(toJson(apps))) recover recovery
-  }
-
-  private def fetchAllBySubscriptionVersion(apiIdentifier: ApiIdentifier) = {
-    queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier))
-      .map(apps => Ok(toJson(apps))) recover recovery
-  }
-
-  def fetchAllWithNoSubscriptions() = {
-    queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByNoSubscriptions)
       .map(apps => Ok(toJson(apps))) recover recovery
   }
 

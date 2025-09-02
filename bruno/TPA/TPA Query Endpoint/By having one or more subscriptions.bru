@@ -1,0 +1,20 @@
+meta {
+  name: By having one or more subscriptions
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{baseUrl}}/query?oneOrMoreSubscriptions
+  body: none
+  auth: inherit
+}
+
+params:query {
+  oneOrMoreSubscriptions: 
+  ~wantSubscriptions: 
+}
+
+settings {
+  encodeUrl: true
+}

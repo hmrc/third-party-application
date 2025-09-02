@@ -579,53 +579,6 @@ class ApplicationServiceSpec
     }
   }
 
-  "fetchByClientId" should {
-    val clientId    = standardApp.clientId
-    val expectedQry = ApplicationQueries.applicationByClientId(clientId)
-
-    "return none when no application exists in the repository for the given client id" in new Setup {
-      QueryServiceMock.FetchSingleApplicationWithCollaborators.thenReturnsNothingFor(expectedQry)
-
-      val result: Option[ApplicationWithCollaborators] = await(underTest.fetchByClientId(clientId))
-
-      result shouldBe None
-    }
-
-    "return an application when it exists in the repository for the given client id" in new Setup {
-      QueryServiceMock.FetchSingleApplicationWithCollaborators.thenReturnsFor(expectedQry, standardApp)
-
-      val result: Option[ApplicationWithCollaborators] = await(underTest.fetchByClientId(clientId))
-
-      result.value shouldBe standardApp
-    }
-
-  }
-
-  "fetchByServerToken" should {
-    val expectedQry = ApplicationQueries.applicationByServerToken(serverToken)
-
-    "return none when no application exists in the repository for the given server token" in new Setup {
-      QueryServiceMock.FetchSingleApplicationWithCollaborators.thenReturnsNothingFor(expectedQry)
-
-      val result: Option[ApplicationWithCollaborators] = await(underTest.fetchByServerToken(serverToken))
-
-      result shouldBe None
-    }
-
-    "return an application when it exists in the repository for the given server token" in new Setup {
-
-      val app = storedApp.copy(tokens = ApplicationTokens(productionToken)).asAppWithCollaborators
-
-      QueryServiceMock.FetchSingleApplicationWithCollaborators.thenReturnsFor(expectedQry, app)
-
-      val result: Option[ApplicationWithCollaborators] = await(underTest.fetchByServerToken(serverToken))
-
-      result.get.id shouldBe applicationId
-      result.get.collaborators shouldBe applicationData.collaborators
-      result.get.details.createdOn shouldBe applicationData.createdOn
-    }
-  }
-
   "fetchAllForCollaborators" should {
     "fetch all applications for a given collaborator user id" in new Setup {
       QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFor(

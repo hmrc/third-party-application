@@ -686,13 +686,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchAll(includeDeleted: Boolean = false): Future[List[StoredApplication]] = {
-    searchApplications("fetchAll")(
-      ApplicationSearch(includeDeleted = includeDeleted)
-    )
-      .map(_.applications)
-  }
-
   def processAll(function: StoredApplication => Unit): Future[Unit] = {
     timeFuture("Process All Applications", "application.repository.processAll") {
 

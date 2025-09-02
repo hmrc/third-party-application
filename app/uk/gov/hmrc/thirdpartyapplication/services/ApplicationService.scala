@@ -172,10 +172,6 @@ class ApplicationService @Inject() (
     applicationRepository.updateCollaboratorId(applicationId, fixCollaboratorRequest.emailAddress, fixCollaboratorRequest.userId)
   }
 
-  def fetchByClientId(clientId: ClientId): Future[Option[ApplicationWithCollaborators]] = {
-    queryService.fetchSingleApplicationWithCollaborators(ApplicationQueries.applicationByClientId(clientId))
-  }
-
   def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[(ApplicationWithSubscriptions, String)]] = {
     timeFuture("Service Find And Record Application Usage", "application.service.findAndRecordApplicationUsage") {
       (
@@ -188,10 +184,6 @@ class ApplicationService @Inject() (
       )
         .value
     }
-  }
-
-  def fetchByServerToken(serverToken: String): Future[Option[ApplicationWithCollaborators]] = {
-    queryService.fetchSingleApplicationWithCollaborators(ApplicationQueries.applicationByServerToken(serverToken))
   }
 
   def findAndRecordServerTokenUsage(serverToken: String): Future[Option[(ApplicationWithSubscriptions, String)]] = {
@@ -218,30 +210,6 @@ class ApplicationService @Inject() (
       .map(_.fold(Nil)(_ ++ _))
       .map(_.distinct)
   }
-
-  def fetchAll(): Future[List[ApplicationWithCollaborators]] = {
-    applicationRepository.fetchAll().map {
-      _.map(application => application.asAppWithCollaborators)
-    }
-  }
-
-  // def fetchAllBySubscription(apiContext: ApiContext): Future[List[ApplicationWithCollaborators]] = {
-  //   applicationRepository.fetchAllForContext(apiContext) map {
-  //     _.map(application => application.asAppWithCollaborators)
-  //   }
-  // }
-
-  // def fetchAllBySubscription(apiIdentifier: ApiIdentifier): Future[List[ApplicationWithCollaborators]] = {
-  //   applicationRepository.fetchAllForApiIdentifier(apiIdentifier) map {
-  //     _.map(application => application.asAppWithCollaborators)
-  //   }
-  // }
-
-  // def fetchAllWithNoSubscriptions(): Future[List[ApplicationWithCollaborators]] = {
-  //   applicationRepository.fetchAllWithNoSubscriptions() map {
-  //     _.map(application => application.asAppWithCollaborators)
-  //   }
-  // }
 
   import cats.data.OptionT
 

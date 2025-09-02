@@ -1,0 +1,20 @@
+meta {
+  name: By search text
+  type: http
+  seq: 28
+}
+
+get {
+  url: {{baseUrl}}/query?search=pete
+  body: none
+  auth: inherit
+}
+
+params:query {
+  search: pete
+  ~wantSubscriptions: 
+}
+
+settings {
+  encodeUrl: true
+}

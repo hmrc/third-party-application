@@ -24,6 +24,10 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.query._
 
 object ApplicationQueries {
 
+  def allApplications(excludeDeleted: Boolean = true) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
+    params = if (excludeDeleted) ExcludeDeletedQP :: Nil else Nil
+  )
+
   def applicationByClientId(clientId: ClientId) = ApplicationQuery.ByClientId(clientId, false, List(ExcludeDeletedQP))
 
   def applicationByServerToken(serverToken: String) = ApplicationQuery.ByServerToken(serverToken, false, List(ExcludeDeletedQP))

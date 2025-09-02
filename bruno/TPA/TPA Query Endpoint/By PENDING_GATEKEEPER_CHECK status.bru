@@ -1,0 +1,15 @@
+meta {
+  name: By PENDING_GATEKEEPER_CHECK status
+  type: http
+  seq: 21
+}
+
+get {
+  url: {{baseUrl}}/applications
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}
