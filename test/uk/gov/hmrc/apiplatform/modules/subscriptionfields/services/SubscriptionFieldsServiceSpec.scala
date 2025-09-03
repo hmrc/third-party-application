@@ -37,46 +37,46 @@ class SubscriptionFieldsServiceSpec extends AsyncHmrcSpec with ApiSubscriptionFi
   private val version1 = ApiVersionNbr("V1")
   private val version2 = ApiVersionNbr("V2")
 
-  private val fieldName1 = FieldName("F1")
-  private val fieldName2 = FieldName("F2")
-  private val fieldName3 = FieldName("F3")
+  private val fieldName1 = FieldName("fieldNameOne")
+  private val fieldName2 = FieldName("fieldNameTwo")
+  private val fieldName3 = FieldName("fieldNameThree")
 
-  def fieldDef(c: Int, v: Int, f: Int) = FieldDefinition(FieldName(s"F$c-$v-$f"), s"field $f", "", FieldDefinitionType.STRING, s"short $f", None)
+  def fieldDef(c: String, v: String, f: String) = FieldDefinition(FieldName(s"F$c$v$f"), s"field $f", "", FieldDefinitionType.STRING, s"short $f", None)
 
   def fv(c: Int, v: Int, f: Int) = FieldValue(s"$c-$v-$f")
 
   private val defns: ApiFieldMap[FieldDefinition] = Map(
     context1 -> Map(
       version1 -> Map(
-        fieldName1 -> fieldDef(1, 1, 1),
-        fieldName2 -> fieldDef(1, 1, 2)
+        fieldName1 -> fieldDef("one", "one", "one"),
+        fieldName2 -> fieldDef("one", "one", "two")
       ),
       version2 -> Map(
-        fieldName1 -> fieldDef(1, 2, 1),
-        fieldName2 -> fieldDef(1, 2, 2)
+        fieldName1 -> fieldDef("one", "two", "one"),
+        fieldName2 -> fieldDef("one", "two", "two")
       )
     ),
     context2 -> Map(
       version1 -> Map(
-        fieldName1 -> fieldDef(2, 1, 1)
+        fieldName1 -> fieldDef("two", "one", "one")
       ),
       version2 -> Map(
-        fieldName1 -> fieldDef(2, 2, 1),
-        fieldName2 -> fieldDef(2, 2, 2)
+        fieldName1 -> fieldDef("two", "two", "one"),
+        fieldName2 -> fieldDef("two", "two", "two")
       )
     ),
     context3 -> Map(
       version1 -> Map(
-        fieldName1 -> fieldDef(3, 1, 1),
-        fieldName2 -> fieldDef(3, 1, 2),
-        fieldName3 -> fieldDef(3, 1, 3)
+        fieldName1 -> fieldDef("three", "one", "one"),
+        fieldName2 -> fieldDef("three", "one", "two"),
+        fieldName3 -> fieldDef("three", "one", "three")
       )
     ),
     context4 -> Map(
       version1 -> Map(
-        fieldName1 -> fieldDef(4, 1, 1),
-        fieldName2 -> fieldDef(4, 1, 2),
-        fieldName3 -> fieldDef(4, 1, 3)
+        fieldName1 -> fieldDef("four", "one", "one"),
+        fieldName2 -> fieldDef("four", "one", "two"),
+        fieldName3 -> fieldDef("four", "one", "three")
       )
     )
   )
