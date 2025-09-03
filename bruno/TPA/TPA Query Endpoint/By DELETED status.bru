@@ -1,0 +1,19 @@
+meta {
+  name: By DELETED status
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/query?status=DELETED
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: DELETED
+}
+
+settings {
+  encodeUrl: true
+}

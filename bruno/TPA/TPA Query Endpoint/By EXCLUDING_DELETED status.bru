@@ -1,0 +1,19 @@
+meta {
+  name: By EXCLUDING_DELETED status
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/query?status=EXCLUDING_DELETED
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: EXCLUDING_DELETED
+}
+
+settings {
+  encodeUrl: true
+}

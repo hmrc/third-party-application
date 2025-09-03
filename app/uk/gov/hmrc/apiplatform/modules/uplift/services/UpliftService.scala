@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, S
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, UpliftVerified}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationQueries, ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AuditHelper, AuditService}
 
@@ -83,8 +83,11 @@ class UpliftService @Inject() (
     } yield UpliftVerified
 
     for {
-      app <- applicationRepository.fetchVerifiableUpliftBy(verificationCode)
-               .map(_.getOrElse(throw InvalidUpliftVerificationCode(verificationCode)))
+      app <- applicationRepository.fetchApplications(ApplicationQueries.applicationsByVerifiableUplift(verificationCode))
+               .map(
+                 _.headOption
+                   .getOrElse(throw InvalidUpliftVerificationCode(verificationCode))
+               )
 
       result <- app.state.name match {
                   case State.PRE_PRODUCTION | State.PRODUCTION => verifyProduction(app)

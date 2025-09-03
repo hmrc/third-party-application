@@ -29,6 +29,8 @@ import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocation, SubmissionId, TermsAndConditionsLocation, TermsOfUseAcceptance}
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.GeneralOpenEndedApplicationQuery
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.SingleApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredToken, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -77,21 +79,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.getSubscriptionsForDeveloper(*[UserId])).thenReturn(failed(ex))
     }
 
-    object FetchByClientId {
-
-      def thenReturnWhen(clientId: ClientId)(applicationData: StoredApplication) =
-        when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(Some(applicationData)))
-
-      def thenReturnNone() =
-        when(aMock.fetchByClientId(*[ClientId])).thenReturn(successful(None))
-
-      def thenReturnNoneWhen(clientId: ClientId) =
-        when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(None))
-
-      def thenFail(failWith: Throwable) =
-        when(aMock.fetchByClientId(*[ClientId])).thenReturn(failed(failWith))
-    }
-
     object Save {
       private val defaultFn = (a: StoredApplication) => successful(a)
 
@@ -130,33 +117,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       }
     }
 
-    object FetchStandardNonTestingApps {
-
-      def thenReturn(apps: StoredApplication*) =
-        when(aMock.fetchStandardNonTestingApps()).thenReturn(successful(apps.toList))
-    }
-
-    object FetchByName {
-
-      def thenReturnEmptyList() =
-        when(aMock.fetchApplicationsByName(*)).thenReturn(successful(List.empty))
-
-      def thenReturn(apps: StoredApplication*) =
-        when(aMock.fetchApplicationsByName(*)).thenReturn(successful(apps.toList))
-
-      def thenReturnWhen(name: String)(apps: StoredApplication*) =
-        when(aMock.fetchApplicationsByName(eqTo(name))).thenReturn(successful(apps.toList))
-
-      def thenReturnEmptyWhen(requestedName: String) = thenReturnWhen(requestedName)()
-
-      def verifyCalledWith(duplicateName: String) =
-        ApplicationRepoMock.verify.fetchApplicationsByName(eqTo(duplicateName))
-
-      def veryNeverCalled() =
-        ApplicationRepoMock.verify(never).fetchApplicationsByName(*)
-
-    }
-
     object Delete {
 
       def verifyCalledWith(id: ApplicationId) =
@@ -173,69 +133,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def thenReturnHasSucceeded() =
         when(aMock.hardDelete(*[ApplicationId])).thenReturn(successful(HasSucceeded))
-    }
-
-    object FetchByServerToken {
-
-      def thenReturnWhen(serverToken: String)(applicationData: StoredApplication) =
-        when(aMock.fetchByServerToken(eqTo(serverToken))).thenReturn(successful(Some(applicationData)))
-
-      def thenReturnNoneWhen(serverToken: String) =
-        when(aMock.fetchByServerToken(eqTo(serverToken))).thenReturn(successful(None))
-
-    }
-
-    object FetchVerifiableUpliftBy {
-
-      def thenReturnNoneWhen(verificationCode: String) =
-        when(aMock.fetchVerifiableUpliftBy(eqTo(verificationCode))).thenReturn(successful(None))
-
-      def thenReturnWhen(verificationCode: String)(applicationData: StoredApplication) =
-        when(aMock.fetchVerifiableUpliftBy(eqTo(verificationCode))).thenReturn(successful(Some(applicationData)))
-
-    }
-
-    object FetchAllForContent {
-
-      def thenReturnEmptyWhen(apiContext: ApiContext) =
-        when(aMock.fetchAllForContext(eqTo(apiContext))).thenReturn(successful(List.empty))
-
-      def thenReturnWhen(apiContext: ApiContext)(apps: StoredApplication*) =
-        when(aMock.fetchAllForContext(eqTo(apiContext))).thenReturn(successful(apps.toList))
-
-    }
-
-    object FetchAllForEmail {
-
-      def thenReturnWhen(emailAddress: String)(apps: StoredApplication*) =
-        when(aMock.fetchAllForEmailAddress(eqTo(emailAddress))).thenReturn(successful(apps.toList))
-
-      def thenReturnEmptyWhen(emailAddress: String) =
-        when(aMock.fetchAllForEmailAddress(eqTo(emailAddress))).thenReturn(successful(List.empty))
-    }
-
-    object fetchAllForUserId {
-
-      def thenReturnWhen(userId: UserId, includeDeleted: Boolean)(apps: StoredApplication*) =
-        when(aMock.fetchAllForUserId(eqTo(userId), eqTo(includeDeleted))).thenReturn(successful(apps.toList))
-    }
-
-    object FetchAllForApiIdentifier {
-
-      def thenReturnEmptyWhen(apiIdentifier: ApiIdentifier) =
-        when(aMock.fetchAllForApiIdentifier(eqTo(apiIdentifier))).thenReturn(successful(List.empty))
-
-      def thenReturnWhen(apiIdentifier: ApiIdentifier)(apps: StoredApplication*) =
-        when(aMock.fetchAllForApiIdentifier(eqTo(apiIdentifier))).thenReturn(successful(apps.toList))
-    }
-
-    object FetchAllWithNoSubscriptions {
-
-      def thenReturn(apps: StoredApplication*) =
-        when(aMock.fetchAllWithNoSubscriptions()).thenReturn(successful(apps.toList))
-
-      def thenReturnNone() =
-        when(aMock.fetchAllWithNoSubscriptions()).thenReturn(successful(Nil))
     }
 
     object GetAppsWithSubscriptions {
@@ -516,6 +413,65 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturnWhen(applicationId: ApplicationId)(updatedApplicationData: StoredApplication) =
         when(aMock.removeOldGrantLength(eqTo(applicationId))).thenReturn(successful(updatedApplicationData))
     }
+
+    object FetchBySingleApplicationQuery {
+
+      def thenReturnsNothing(withSubs: Boolean = false) =
+        if (withSubs)
+          when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Right(None)))
+        else
+          when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Left(None)))
+
+      def thenReturns(app: StoredApplication)                                    = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Left(Some(app))))
+      def thenReturns(app: ApplicationRepository.MongoFormats.StoredAppWithSubs) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Right(Some(app))))
+    }
+
+    object FetchSingleApplication {
+
+      def thenReturnNothing() =
+        when(aMock.fetchSingleApplication(*)).thenReturn(successful(None))
+
+      def thenReturnNothingFor(qry: SingleApplicationQuery) =
+        when(aMock.fetchSingleApplication(eqTo(qry))).thenReturn(successful(None))
+
+      def thenReturn(app: StoredApplication) =
+        when(aMock.fetchSingleApplication(*)).thenReturn(successful(Some(app)))
+
+      def thenReturnFor(qry: SingleApplicationQuery, app: StoredApplication) =
+        when(aMock.fetchSingleApplication(eqTo(qry))).thenReturn(successful(Some(app)))
+    }
+
+    object FetchApplications {
+      def thenReturns(apps: StoredApplication*) = when(aMock.fetchApplications(*)).thenReturn(successful(apps.toList))
+
+      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) =
+        when(aMock.fetchApplications(eqTo(qry))).thenReturn(successful(apps.toList))
+
+      def thenFails(exc: Exception) = when(aMock.fetchApplications(*)).thenReturn(failed(exc))
+    }
+
+    object FetchByGeneralOpenEndedApplicationQuery {
+      def thenReturns(apps: StoredApplication*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Left(apps.toList)))
+
+      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) =
+        when(aMock.fetchByGeneralOpenEndedApplicationQuery(eqTo(qry))).thenReturn(successful(Left(apps.toList)))
+
+      def thenReturnsWithSubs(apps: ApplicationRepository.MongoFormats.StoredAppWithSubs*) =
+        when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Right(apps.toList)))
+    }
+
+    object FetchByPaginatedApplicationQuery {
+
+      def thenReturnsNone(totals: Int) =
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplicationData.simple(List.empty, totals, 0)))
+
+      def thenReturns(totals: Int, apps: StoredApplication*) =
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplicationData.simple(apps.toList, totals, apps.size)))
+
+      def thenReturns(pad: PaginatedApplicationData) =
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(pad))
+    }
+
   }
 
   object ApplicationRepoMock extends BaseApplicationRepoMock {

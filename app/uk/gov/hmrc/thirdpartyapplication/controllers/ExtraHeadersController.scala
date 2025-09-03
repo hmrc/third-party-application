@@ -24,10 +24,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 abstract class ExtraHeadersController(cc: ControllerComponents) extends BackendController(cc) {
 
-  // This header is not expected to reach outside but is used to pass information further down the call stack.
-  // TODO - tidy this up to use a better way to decorate calls with the knowledge they came from API Gateway (or not)
-  val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
-
   override implicit def hc(implicit request: RequestHeader): HeaderCarrier = {
     def header(key: String)                        = request.headers.get(key) map (key -> _)
     def renamedHeader(key: String, newKey: String) = request.headers.get(key) map (newKey -> _)

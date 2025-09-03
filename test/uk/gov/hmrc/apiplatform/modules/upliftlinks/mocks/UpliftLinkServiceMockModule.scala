@@ -21,7 +21,6 @@ import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
 import cats.data.OptionT
-import cats.implicits._
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId

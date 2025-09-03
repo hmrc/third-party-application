@@ -21,7 +21,6 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
 import cats.data.OptionT
-import cats.implicits._
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 

@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Clock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationQueries, ApplicationRepository, StateHistoryRepository}
 
 @Singleton
 class UpliftVerificationExpiryJob @Inject() (
@@ -73,7 +73,7 @@ class UpliftVerificationExpiryJob @Inject() (
     logger.info(s"Move back applications to TESTING having status 'PENDING_REQUESTER_VERIFICATION' with timestamp earlier than $expiredTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
-      expiredApps <- applicationRepository.fetchAllByStatusDetails(state = State.PENDING_REQUESTER_VERIFICATION, updatedBefore = expiredTime)
+      expiredApps <- applicationRepository.fetchApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, expiredTime))
       _            = logger.info(s"Scheduled job $name found ${expiredApps.size} applications")
       _           <- Future.sequence(expiredApps.map(transitionAppBackToTesting))
     } yield RunningOfJobSuccessful

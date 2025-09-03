@@ -47,7 +47,7 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, QueryServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util._
@@ -77,6 +77,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
   trait Setup
       extends SubmissionsServiceMockModule
+      with QueryServiceMockModule
       with UpliftLinkServiceMockModule
       with StrideGatekeeperRoleAuthorisationServiceMockModule
       with ApplicationServiceMockModule {
@@ -105,6 +106,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       SubmissionsServiceMock.aMock,
       mockNamingService,
       UpliftLinkServiceMock.aMock,
+      QueryServiceMock.aMock,
       Helpers.stubControllerComponents()
     )
   }

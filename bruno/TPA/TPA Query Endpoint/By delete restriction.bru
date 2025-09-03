@@ -1,0 +1,20 @@
+meta {
+  name: By delete restriction
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/query?deleteRestriction=DO_NOT_DELETE&wantSubscriptions
+  body: none
+  auth: inherit
+}
+
+params:query {
+  deleteRestriction: DO_NOT_DELETE
+  wantSubscriptions: 
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,19 @@
+meta {
+  name: By having no subscriptions
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{baseUrl}}/query?noSubscriptions
+  body: none
+  auth: inherit
+}
+
+params:query {
+  noSubscriptions: 
+}
+
+settings {
+  encodeUrl: true
+}

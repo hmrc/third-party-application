@@ -1,0 +1,19 @@
+meta {
+  name: By PRODUCTION status
+  type: http
+  seq: 26
+}
+
+get {
+  url: {{baseUrl}}/query?status=PRODUCTION
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: PRODUCTION
+}
+
+settings {
+  encodeUrl: true
+}

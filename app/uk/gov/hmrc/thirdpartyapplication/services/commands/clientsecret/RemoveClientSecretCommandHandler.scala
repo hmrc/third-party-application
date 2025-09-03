@@ -21,7 +21,6 @@ import scala.concurrent.ExecutionContext
 
 import cats.Apply
 import cats.data.{NonEmptyList, Validated}
-import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret

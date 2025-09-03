@@ -1,0 +1,19 @@
+meta {
+  name: By last used after restriction
+  type: http
+  seq: 17
+}
+
+get {
+  url: {{baseUrl}}/query?lastUsedAfter=2020-01-01T00:00:00.000Z
+  body: none
+  auth: inherit
+}
+
+params:query {
+  lastUsedAfter: 2020-01-01T00:00:00.000Z
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,19 @@
+meta {
+  name: By CREATED status
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/query?status=CREATED
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: CREATED
+}
+
+settings {
+  encodeUrl: true
+}

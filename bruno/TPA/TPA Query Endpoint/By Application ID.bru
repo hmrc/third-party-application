@@ -1,0 +1,20 @@
+meta {
+  name: By Application ID
+  type: http
+  seq: NaN
+}
+
+get {
+  url: {{baseUrl}}/query?applicationId=aa4bed91-3372-457b-9d9f-d3420e08fdf3
+  body: none
+  auth: inherit
+}
+
+params:query {
+  applicationId: aa4bed91-3372-457b-9d9f-d3420e08fdf3
+  ~wantSubscriptions: 
+}
+
+settings {
+  encodeUrl: true
+}

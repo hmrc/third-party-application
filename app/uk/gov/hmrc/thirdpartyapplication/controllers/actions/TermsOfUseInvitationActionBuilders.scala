@@ -94,8 +94,6 @@ trait TermsOfUseInvitationActionBuilders {
       def executionContext: ExecutionContext = ec
 
       override def refine[A](request: Request[A]): Future[Either[Result, ApplicationRequest[A]]] = {
-        import cats.implicits._
-
         E.fromOptionF(
           applicationDataService
             .fetchApp(applicationId),

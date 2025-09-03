@@ -34,7 +34,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentMatchersSugar {
-  import cats.implicits._
 
   protected trait BaseApplicationCommandDispatcherMock {
 

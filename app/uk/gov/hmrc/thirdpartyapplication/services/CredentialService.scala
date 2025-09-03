@@ -21,7 +21,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 import cats.data.OptionT
-import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -29,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Applicati
 import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationQueries, ApplicationRepository}
 
 @Singleton
 class CredentialService @Inject() (
@@ -42,7 +41,7 @@ class CredentialService @Inject() (
   val clientSecretLimit = config.clientSecretLimit
 
   def fetch(applicationId: ApplicationId): Future[Option[ApplicationWithCollaborators]] = {
-    applicationRepository.fetch(applicationId) map (_.map(app => StoredApplication.asApplication(app)))
+    applicationRepository.fetch(applicationId) map (_.map(app => app.asAppWithCollaborators))
   }
 
   def fetchCredentials(applicationId: ApplicationId): Future[Option[ApplicationTokenResponse]] = {
@@ -59,11 +58,11 @@ class CredentialService @Inject() (
     }
 
     for {
-      application         <- OptionT(applicationRepository.fetchByClientId(validation.clientId))
+      application         <- OptionT(applicationRepository.fetchSingleApplication(ApplicationQueries.applicationByClientId(validation.clientId)))
       matchedClientSecret <- OptionT(clientSecretService.clientSecretIsValid(application.id, validation.clientSecret, application.tokens.production.clientSecrets))
       updatedApplication  <- OptionT.liftF(applicationRepository.recordClientSecretUsage(application.id, matchedClientSecret.id)
                                .recover(recoverFromFailedUsageDateUpdate(application)))
-    } yield StoredApplication.asApplication(updatedApplication)
+    } yield updatedApplication.asAppWithCollaborators
   }
 
 }

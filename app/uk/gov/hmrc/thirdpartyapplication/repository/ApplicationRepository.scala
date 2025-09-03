@@ -20,6 +20,8 @@ import java.time.{Clock, Instant, Period}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import cats.syntax.either._
+import cats.syntax.option._
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import com.typesafe.config.ConfigFactory
 import org.bson.BsonValue
@@ -29,7 +31,7 @@ import org.mongodb.scala.model
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model.Projections.{excludeId, fields, include}
+import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
 import org.mongodb.scala.model._
 
 import play.api.libs.json.Json._
@@ -44,14 +46,17 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Clock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object ApplicationRepository {
+  import play.api.libs.functional.syntax._
+
+  val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
   object MongoFormats {
-    import play.api.libs.functional.syntax._
     import uk.gov.hmrc.play.json.Union
 
     implicit val formatInstant: Format[Instant] = MongoJavatimeFormats.instantFormat
@@ -115,7 +120,6 @@ object ApplicationRepository {
     implicit val formatIpAllowlist: OFormat[IpAllowlist] = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
 
     def periodFromInt(i: Int): Period = (GrantLength.apply(i).getOrElse(GrantLength.EIGHTEEN_MONTHS)).period
-    val grantLengthConfig             = ConfigFactory.load().getInt("grantLengthInDays")
 
     // Non-standard format compared to companion object
     val readStoredApplication: Reads[StoredApplication] = (
@@ -147,6 +151,14 @@ object ApplicationRepository {
     implicit val readsApplicationWithSubscriptionCount: Reads[ApplicationWithSubscriptionCount] = Json.reads[ApplicationWithSubscriptionCount]
 
     implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
+
+    case class StoredAppWithSubs(app: StoredApplication, apis: List[ApiIdentifier]) {
+      lazy val asApplicationWithSubs = app.asAppWithCollaborators.withSubscriptions(apis.toSet)
+    }
+
+    object StoredAppWithSubs {
+      implicit val reads: Reads[StoredAppWithSubs] = Json.reads[StoredAppWithSubs]
+    }
   }
 }
 
@@ -409,45 +421,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     ).toFuture()
   }
 
-  def fetchStandardNonTestingApps(): Future[Seq[StoredApplication]] = {
-    val query = and(
-      equal("access.accessType", AccessType.STANDARD.toString()),
-      notEqual("state.name", State.TESTING.toString()),
-      notEqual("state.name", State.DELETED.toString())
-    )
-
-    collection.find(query).toFuture()
-  }
-
   def fetch(id: ApplicationId): Future[Option[StoredApplication]] = {
-    collection.find(equal("id", Codecs.toBson(id))).headOption()
-  }
-
-  def fetchApplicationsByName(name: String): Future[Seq[StoredApplication]] = {
-    val query = and(
-      equal("normalisedName", name.toLowerCase),
-      notEqual("state.name", State.DELETED.toString())
-    )
-
-    collection.find(query).toFuture()
-  }
-
-  def fetchVerifiableUpliftBy(verificationCode: String): Future[Option[StoredApplication]] = {
-    val query = and(
-      equal("state.verificationCode", verificationCode),
-      notEqual("state.name", State.DELETED.toString())
-    )
-
-    collection.find(query).headOption()
-  }
-
-  def fetchAllByStatusDetails(state: State, updatedBefore: Instant): Future[Seq[StoredApplication]] = {
-    val query = and(
-      equal("state.name", state.toString()),
-      lte("state.updatedOn", updatedBefore)
-    )
-
-    collection.find(query).toFuture()
+    fetchBySingleApplicationQuery(ApplicationQuery.ById(id, List.empty))
+      .map(_.left.getOrElse(None))
   }
 
   def fetchByStatusDetailsAndEnvironmentForDeleteJob(state: State, updatedBefore: Instant, environment: Environment): Future[Seq[StoredApplication]] = {
@@ -473,64 +449,13 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       collection.aggregate(
         Seq(
           filter(equal("state.name", state.toString())),
+          filter(lte("state.updatedOn", updatedBefore)),
           filter(equal("environment", Codecs.toBson(environment))),
           filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DO_NOT_DELETE.toString())),
-          filter(lte("state.updatedOn", updatedBefore)),
           lookup(from = "notifications", localField = "id", foreignField = "applicationId", as = "matched"),
           filter(size("matched", 0))
         )
       ).toFuture()
-    }
-  }
-
-  def fetchByClientId(clientId: ClientId): Future[Option[StoredApplication]] = {
-    timeFuture("Fetch Application by ClientId", "application.repository.fetchByClientId") {
-      val query = and(
-        equal("tokens.production.clientId", clientId),
-        notEqual("state.name", State.DELETED.toString())
-      )
-
-      collection.find(query).headOption()
-    }
-  }
-
-  def fetchByServerToken(serverToken: String): Future[Option[StoredApplication]] = {
-    timeFuture("Fetch Application by Server Token", "application.repository.fetchByServerToken") {
-      val query = and(
-        equal("tokens.production.accessToken", serverToken),
-        notEqual("state.name", State.DELETED.toString())
-      )
-
-      collection.find(query).headOption()
-    }
-  }
-
-  def fetchAllForUserId(userId: UserId, includeDeleted: Boolean): Future[Seq[StoredApplication]] = {
-    timeFuture("Fetch All Applications for UserId", "application.repository.fetchAllForUserId") {
-      def query = {
-        if (includeDeleted) {
-          equal("collaborators.userId", Codecs.toBson(userId))
-        } else {
-          and(
-            equal("collaborators.userId", Codecs.toBson(userId)),
-            notEqual("state.name", State.DELETED.toString())
-          )
-        }
-      }
-
-      collection.find(query).toFuture()
-    }
-  }
-
-  def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment): Future[Seq[StoredApplication]] = {
-    timeFuture("Fetch All Applications for UserId and Environment", "application.repository.fetchAllForUserIdAndEnvironment") {
-      val query = and(
-        equal("collaborators.userId", Codecs.toBson(userId)),
-        equal("environment", Codecs.toBson(environment)),
-        notEqual("state.name", State.DELETED.toString())
-      )
-
-      collection.find(query).toFuture()
     }
   }
 
@@ -565,25 +490,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchAllForEmailAddress(emailAddress: String): Future[Seq[StoredApplication]] = {
-    val query = and(
-      equal("collaborators.emailAddress", emailAddress),
-      notEqual("state.name", State.DELETED.toString())
-    )
-
-    collection.find(query).toFuture()
-  }
-
-  def fetchAllForEmailAddressAndEnvironment(emailAddress: String, environment: Environment): Future[Seq[StoredApplication]] = {
-    val query = and(
-      equal("collaborators.emailAddress", emailAddress),
-      equal("environment", Codecs.toBson(environment)),
-      notEqual("state.name", State.DELETED.toString())
-    )
-
-    collection.find(query).toFuture()
-  }
-
   def fetchProdAppStateHistories(): Future[Seq[ApplicationWithStateHistory]] = {
     def conditional[T](condition: Document, trueValue: Int, falseValue: Int): Bson = {
       Document("$cond" -> BsonArray(
@@ -607,8 +513,13 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   def searchApplications(actionSubtask: String)(applicationSearch: ApplicationSearch): Future[PaginatedApplicationData] = {
     timeFuture("Search Applications", s"application.repository.searchApplications.$actionSubtask") {
-      val filters = applicationSearch.filters.map(filter => convertFilterToQueryClause(filter, applicationSearch)) ++ deletedFilter(applicationSearch)
-      val sort    = convertToSortClause(applicationSearch.sort)
+      val filters = applicationSearch.filters
+        .filterNot(_ == StatusFilter.NoFiltering)
+        .map(filter =>
+          convertFilterToQueryClause(filter, applicationSearch)
+        ) ++ deletedFilter(applicationSearch)
+
+      val sort = convertToSortClause(applicationSearch.sort)
 
       val pagination = List(
         skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
@@ -667,24 +578,24 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     applicationSearchFilter match {
 
       // API Subscriptions
-      case NoAPISubscriptions        => matches(size("subscribedApis", 0))
-      case OneOrMoreAPISubscriptions => matches(Document(s"""{$$expr: {$$gte: [{$$size:"$$subscribedApis"}, 1] }}"""))
-      case SpecificAPISubscription   => specificAPISubscription(applicationSearch.apiContext.get, applicationSearch.apiVersion)
+      case APISubscriptionFilter.NoAPISubscriptions        => matches(size("subscribedApis", 0))
+      case APISubscriptionFilter.OneOrMoreAPISubscriptions => matches(Document(s"""{$$expr: {$$gte: [{$$size:"$$subscribedApis"}, 1] }}"""))
+      case APISubscriptionFilter.SpecificAPISubscription   => specificAPISubscription(applicationSearch.apiContext.get, applicationSearch.apiVersion)
 
       // Application Status
-      case Created                                  => applicationStatusMatch(State.TESTING)
-      case PendingResponsibleIndividualVerification => applicationStatusMatch(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
-      case PendingGatekeeperCheck                   => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
-      case PendingSubmitterVerification             => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
-      case Active                                   => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
-      case WasDeleted                               => applicationStatusMatch(State.DELETED)
-      case ExcludingDeleted                         => applicationStatusNotEqual(State.DELETED)
-      case Blocked                                  => applicationBlocked()
+      case StatusFilter.Created                                  => applicationStatusMatch(State.TESTING)
+      case StatusFilter.PendingResponsibleIndividualVerification => applicationStatusMatch(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
+      case StatusFilter.PendingGatekeeperCheck                   => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
+      case StatusFilter.PendingSubmitterVerification             => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
+      case StatusFilter.Active                                   => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
+      case StatusFilter.WasDeleted                               => applicationStatusMatch(State.DELETED)
+      case StatusFilter.ExcludingDeleted                         => applicationStatusNotEqual(State.DELETED)
+      case StatusFilter.Blocked                                  => applicationBlocked()
 
       // Access Type
-      case StandardAccess   => accessTypeMatch(AccessType.STANDARD)
-      case ROPCAccess       => accessTypeMatch(AccessType.ROPC)
-      case PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
+      case AccessTypeFilter.StandardAccess   => accessTypeMatch(AccessType.STANDARD)
+      case AccessTypeFilter.ROPCAccess       => accessTypeMatch(AccessType.ROPC)
+      case AccessTypeFilter.PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
 
       // Text Search
       case ApplicationTextSearch => regexTextSearch(List("id", "name", "tokens.production.clientId"), applicationSearch.textToSearch.getOrElse(""))
@@ -694,23 +605,23 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       case lastUsedAfter: LastUseAfterDate   => lastUsedAfter.toMongoMatch
 
       // Delete Restriction
-      case NoRestriction => deleteRestrictionMatch(DeleteRestrictionType.NO_RESTRICTION)
-      case DoNotDelete   => deleteRestrictionMatch(DeleteRestrictionType.DO_NOT_DELETE)
+      case DeleteRestrictionFilter.NoRestriction => deleteRestrictionMatch(DeleteRestrictionType.NO_RESTRICTION)
+      case DeleteRestrictionFilter.DoNotDelete   => deleteRestrictionMatch(DeleteRestrictionType.DO_NOT_DELETE)
 
-      case _ => Document() // Only here to complete the match
+      case x => throw new RuntimeException(s"There is an umatched query filter (${x.toString()}) that would cause Mongo to fail")
     }
   }
   // scalastyle:on cyclomatic.complexity
 
   private def convertToSortClause(sort: ApplicationSort): List[Bson] = sort match {
-    case NameAscending         => List(Aggregates.sort(Sorts.ascending("normalisedName")))
-    case NameDescending        => List(Aggregates.sort(Sorts.descending("normalisedName")))
-    case SubmittedAscending    => List(Aggregates.sort(Sorts.ascending("createdOn")))
-    case SubmittedDescending   => List(Aggregates.sort(Sorts.descending("createdOn")))
-    case LastUseDateAscending  => List(Aggregates.sort(Sorts.ascending("lastAccess")))
-    case LastUseDateDescending => List(Aggregates.sort(Sorts.descending("lastAccess")))
-    case NoSorting             => List()
-    case _                     => List(Aggregates.sort(Sorts.ascending("normalisedName")))
+    case ApplicationSort.NameAscending         => List(Aggregates.sort(Sorts.ascending("normalisedName")))
+    case ApplicationSort.NameDescending        => List(Aggregates.sort(Sorts.descending("normalisedName")))
+    case ApplicationSort.SubmittedAscending    => List(Aggregates.sort(Sorts.ascending("createdOn")))
+    case ApplicationSort.SubmittedDescending   => List(Aggregates.sort(Sorts.descending("createdOn")))
+    case ApplicationSort.LastUseDateAscending  => List(Aggregates.sort(Sorts.ascending("lastAccess")))
+    case ApplicationSort.LastUseDateDescending => List(Aggregates.sort(Sorts.descending("lastAccess")))
+    case ApplicationSort.NoSorting             => List()
+    case _                                     => List(Aggregates.sort(Sorts.ascending("normalisedName")))
   }
 
   private def regexTextSearch(fields: List[String], searchText: String): Bson = {
@@ -740,7 +651,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           "refreshTokensAvailableFor",
           "rateLimitTier",
           "environment",
+          "checkInformation",
           "blocked",
+          "ipAllowlist",
           "deleteRestriction"
         )
       ))
@@ -753,8 +666,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       val facets: Seq[Bson] = Seq(
         facet(
-          model.Facet("totals", totalCount),
-          model.Facet("matching", filteredPipelineCount: _*),
+          model.Facet("countOfAllApps", totalCount),
+          model.Facet("countOfMatchingApps", filteredPipelineCount: _*),
           model.Facet("applications", paginatedFilteredAndSortedPipeline: _*)
         )
       )
@@ -762,34 +675,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       collection.aggregate[BsonValue](facets)
         .head()
         .map(Codecs.fromBson[PaginatedApplicationData])
-        .map(d => PaginatedApplicationData(d.applications, d.totals, d.matching))
+        .map(d => PaginatedApplicationData(d.applications, d.countOfAllApps, d.countOfMatchingApps))
     }
-  }
-
-  def fetchAllForContext(apiContext: ApiContext): Future[List[StoredApplication]] =
-    searchApplications("fetchAllForContext")(
-      ApplicationSearch(
-        filters = List(SpecificAPISubscription),
-        apiContext = Some(apiContext)
-      )
-    ).map(_.applications)
-
-  def fetchAllForApiIdentifier(apiIdentifier: ApiIdentifier): Future[List[StoredApplication]] =
-    searchApplications("fetchAllForApiIdentifier")(
-      ApplicationSearch(
-        filters = List(SpecificAPISubscription),
-        apiContext = Some(apiIdentifier.context),
-        apiVersion = Some(apiIdentifier.versionNbr)
-      )
-    ).map(_.applications)
-
-  def fetchAllWithNoSubscriptions(): Future[List[StoredApplication]] =
-    searchApplications("fetchAllWithNoSubscriptions")(new ApplicationSearch(filters = List(NoAPISubscriptions))).map(_.applications)
-
-  def fetchAll(includeDeleted: Boolean = false): Future[List[StoredApplication]] = {
-    val result = searchApplications("fetchAll")(new ApplicationSearch(includeDeleted = includeDeleted))
-
-    result.map(_.applications)
   }
 
   def processAll(function: StoredApplication => Unit): Future[Unit] = {
@@ -1009,6 +896,183 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         .map(Codecs.fromBson[GatekeeperAppSubsResponse])
         .toFuture()
         .map(_.toList)
+    }
+  }
+
+  import uk.gov.hmrc.thirdpartyapplication.controllers.query._
+  import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery._
+
+  private val subscriptionsLookup: Bson =
+    lookup(
+      from = "subscription",
+      as = "subscribedApis",
+      localField = "id",
+      foreignField = "applications"
+    )
+
+  private val fieldsToProject = List(
+    "id",
+    "name",
+    "normalisedName",
+    "collaborators",
+    "description",
+    "wso2ApplicationName",
+    "tokens",
+    "state",
+    "access",
+    "createdOn",
+    "lastAccess",
+    "grantLength",
+    "refreshTokensAvailableFor",
+    "rateLimitTier",
+    "environment",
+    "checkInformation",
+    "blocked",
+    "ipAllowlist",
+    "deleteRestriction"
+  )
+
+  private val applicationWithSubscriptionsProjection: Bson = project(
+    fields(
+      excludeId(),
+      include(
+        fieldsToProject: _*
+      ),
+      computed("apis", "$subscribedApis.apiIdentifier")
+    )
+  )
+
+  private val applicationProjection: Bson = project(
+    fields(
+      excludeId(),
+      include(
+        fieldsToProject: _*
+      )
+    )
+  )
+
+  private val transformApplications: Reads[JsArray] =
+    (__ \ "applications").read[JsArray].map { array =>
+      JsArray(
+        array.value.map { item =>
+          val obj = item.as[JsObject]
+          Json.obj(
+            "app"  -> (obj - "apis"),
+            "apis" -> (obj \ "apis").getOrElse(JsArray.empty)
+          )
+        }
+      )
+    }
+
+  private def executeAggregate(wantsSubscriptions: Boolean, pipeline: Seq[Bson]): Future[Either[List[StoredApplication], List[StoredAppWithSubs]]] = {
+    val projectionToUse = if (wantsSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
+
+    val facets: Seq[Bson] = Seq(
+      facet(
+        model.Facet("applications", (pipeline :+ projectionToUse): _*)
+      )
+    )
+
+    if (wantsSubscriptions) {
+      val listRdr: Reads[List[StoredAppWithSubs]] = implicitly
+      implicit val rdr                            = transformApplications.andThen(listRdr)
+
+      collection.aggregate[BsonValue](facets)
+        .head()
+        .map(bson => {
+          Right(
+            Codecs.fromBson[List[StoredAppWithSubs]](bson)
+          )
+        })
+    } else {
+      implicit val readsList = (JsPath \ "applications").read[List[StoredApplication]]
+
+      collection.aggregate[BsonValue](facets)
+        .head()
+        .map(bson => {
+          Left(
+            Codecs.fromBson[List[StoredApplication]](bson)
+          )
+        })
+    }
+  }
+
+  protected def fetchSingleAppByAggregates(qry: SingleApplicationQuery): Future[Either[Option[StoredApplication], Option[StoredAppWithSubs]]] = {
+    timeFuture("Run Single Query", "application.repository.fetchSingleAppByAggregates") {
+      val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+
+      val needsLookup         = qry.wantsSubscriptions
+      val maybeSubsLookup     = subscriptionsLookup.some.filter(_ => needsLookup)
+      val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ filtersStage
+
+      executeAggregate(qry.wantsSubscriptions, pipeline)
+        .map(_.bimap(_.headOption, _.headOption))
+    }
+  }
+
+  // So simple that we don't need to do anything other than use existing methods.  These could be done via conversion to AggregateQuery components at a later date.
+  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Either[Option[StoredApplication], Option[StoredAppWithSubs]]] = {
+    qry match {
+      case ApplicationQuery.ByClientId(clientId, true, _)       => findAndRecordApplicationUsage(clientId).map(osa => Left(osa))
+      case ApplicationQuery.ByServerToken(serverToken, true, _) => findAndRecordServerTokenUsage(serverToken).map(osa => Left(osa))
+      case _                                                    => fetchSingleAppByAggregates(qry)
+    }
+  }
+
+  def fetchSingleApplication(qry: SingleApplicationQuery): Future[Option[StoredApplication]] = {
+    fetchBySingleApplicationQuery(qry).map(_.fold(identity, _.map(_.app)))
+  }
+
+  def fetchApplications(qry: GeneralOpenEndedApplicationQuery): Future[List[StoredApplication]] = {
+    fetchByGeneralOpenEndedApplicationQuery(qry).map(_.fold(identity, _.map(_.app)))
+  }
+
+  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[Either[List[StoredApplication], List[StoredAppWithSubs]]] = {
+    timeFuture("Run General Query", "application.repository.fetchByGeneralOpenEndedApplicationQuery") {
+      val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+      val sortingStage: List[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
+
+      val needsLookup = qry.wantsSubscriptions || qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
+
+      val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
+      val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => needsLookup && qry.hasSpecificSubscriptionFilter)
+
+      val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage ++ sortingStage
+
+      executeAggregate(qry.wantsSubscriptions, pipeline)
+    }
+  }
+
+  def fetchByPaginatedApplicationQuery(qry: PaginatedApplicationQuery): Future[PaginatedApplicationData] = {
+    timeFuture("Run Pagination Query", "application.repository.fetchByPaginatedApplicationQuery") {
+
+      val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+      val sortingStage: List[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
+      val paginationStage          = List(skip((qry.pagination.pageNbr - 1) * qry.pagination.pageSize), limit(qry.pagination.pageSize))
+
+      val needsLookup = qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
+
+      val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
+      val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => needsLookup && qry.hasSpecificSubscriptionFilter)
+
+      val projectionToUse = if (qry.wantsSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
+
+      val totalCount            = Aggregates.count("total")
+      val commonPipeline        = maybeSubsLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage
+      val countMatchingPipeline = commonPipeline :+ totalCount
+      val pipeline: Seq[Bson]   = commonPipeline ++ sortingStage ++ paginationStage :+ projectionToUse
+
+      val facets: Seq[Bson] = Seq(
+        facet(
+          model.Facet("countOfAllApps", totalCount),
+          model.Facet("countOfMatchingApps", countMatchingPipeline: _*),
+          model.Facet("applications", pipeline: _*)
+        )
+      )
+
+      collection.aggregate[BsonValue](facets)
+        .head()
+        .map(Codecs.fromBson[PaginatedApplicationData])
     }
   }
 

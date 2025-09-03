@@ -1,0 +1,19 @@
+meta {
+  name: By API context
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/query?context=hello
+  body: none
+  auth: inherit
+}
+
+params:query {
+  context: hello
+}
+
+settings {
+  encodeUrl: true
+}

@@ -62,7 +62,7 @@ class SubscriptionFieldsConnectorSpec
             "name": "${fieldDefnOne.name}",
             "description": "${fieldDefnOne.description}",
             "hint": "${fieldDefnOne.hint}",
-            "type": "${fieldDefnOne.`type`}",
+            "type": "${fieldDefnOne.`type`.label}",
             "shortDescription": "${fieldDefnOne.shortDescription}"
         }"""
 

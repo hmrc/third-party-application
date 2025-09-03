@@ -1,0 +1,21 @@
+meta {
+  name: By API context and version sorted by NAME ASC
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/query?context=hello&versionNbr=1.0&sort=NAME_ASC
+  body: none
+  auth: inherit
+}
+
+params:query {
+  context: hello
+  versionNbr: 1.0
+  sort: NAME_ASC
+}
+
+settings {
+  encodeUrl: true
+}

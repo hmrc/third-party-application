@@ -1,0 +1,19 @@
+meta {
+  name: By PRIVILEGED access type restriction
+  type: http
+  seq: 24
+}
+
+get {
+  url: {{baseUrl}}/query?accessType=PRIVILEGED
+  body: none
+  auth: inherit
+}
+
+params:query {
+  accessType: PRIVILEGED
+}
+
+settings {
+  encodeUrl: true
+}

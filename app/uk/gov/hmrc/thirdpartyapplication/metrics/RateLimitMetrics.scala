@@ -26,7 +26,7 @@ import uk.gov.hmrc.mongo.metrix.MetricSource
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationQueries, ApplicationRepository}
 
 @Singleton
 class RateLimitMetrics @Inject() (applicationRepository: ApplicationRepository)
@@ -42,7 +42,8 @@ class RateLimitMetrics @Inject() (applicationRepository: ApplicationRepository)
   }
 
   def numberOfApplicationsByRateLimit(implicit ec: ExecutionContext): Future[Map[Option[RateLimitTier], Int]] = {
-    val result = applicationRepository.fetchAll().map(applications => applications.groupBy(_.rateLimitTier).view.mapValues(_.size).toMap)
+    val result = applicationRepository.fetchApplications(ApplicationQueries.allApplications())
+      .map(_.groupBy(_.rateLimitTier).view.mapValues(_.size).toMap)
 
     result.onComplete({
       case Success(v) => logger.info(s"[METRIC] Success - RateLimitMetrics: ${v}")
