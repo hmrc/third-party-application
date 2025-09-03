@@ -64,8 +64,6 @@ case class ConfirmSetupCompleteRequest(requesterEmailAddress: LaxEmailAddress)
 
 case class CollaboratorUserIds(userIds: List[UserId])
 
-case class GetAppsForAdminOrRIRequest(adminOrRespIndEmail: LaxEmailAddress)
-
 object ErrorCode extends Enumeration {
   type ErrorCode = Value
 
