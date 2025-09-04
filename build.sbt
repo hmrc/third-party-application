@@ -36,10 +36,10 @@ lazy val microservice = Project(appName, file("."))
     Test / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "shared-test"),
     Test / javaOptions += s"-javaagent:${csrCacheDirectory.value.getAbsolutePath}/https/repo1.maven.org/maven2/org/mockito/mockito-core/${AppDependencies.mockitoVersion}/mockito-core-${AppDependencies.mockitoVersion}.jar"
   )
-  .settings(
-    target := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / "coverage" else target.value},
-    coverageDataDir := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / ".." else target.value},
-  )
+  // .settings(
+  //   target := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / "coverage" else target.value},
+  //   coverageDataDir := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / ".." else target.value},
+  // )
   
 val it = (project in file("it"))
   .enablePlugins(PlayScala)
