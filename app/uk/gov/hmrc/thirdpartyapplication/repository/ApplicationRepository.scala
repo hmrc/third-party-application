@@ -426,6 +426,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       .map(_.left.getOrElse(None))
   }
 
+  // TODO - definitely
   def fetchByStatusDetailsAndEnvironmentForDeleteJob(state: State, updatedBefore: Instant, environment: Environment): Future[Seq[StoredApplication]] = {
     collection.aggregate(
       Seq(
@@ -437,6 +438,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     ).toFuture()
   }
 
+  // TODO - maybe
   def fetchByStatusDetailsAndEnvironmentNotAleadyNotifiedForDeleteJob(
       state: State,
       updatedBefore: Instant,
@@ -459,6 +461,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
+  // TODO - maybe
   def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
     timeFuture("Get Subscriptions for Developer", "application.repository.getSubscriptionsForDeveloper") {
 
@@ -717,6 +720,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       .map(_.toInt)
   }
 
+  // TODO - probably
   def getApplicationWithSubscriptionCount(): Future[Map[String, Int]] = {
     timeFuture("Applications with Subscription Count", "application.repository.getApplicationWithSubscriptionCount") {
 
@@ -876,6 +880,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
+  // TODO - probably
   def getAppsWithSubscriptions: Future[List[GatekeeperAppSubsResponse]] = {
     implicit val readsGatekeeperAppSubsResponse: Reads[GatekeeperAppSubsResponse] = Json.reads[GatekeeperAppSubsResponse]
 
