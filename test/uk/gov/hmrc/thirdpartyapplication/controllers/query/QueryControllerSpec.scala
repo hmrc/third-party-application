@@ -86,7 +86,10 @@ class QueryControllerSpec
     }
 
     "work for general query" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsAppsWithCollaboratorsFor(ApplicationQuery.GeneralOpenEndedApplicationQuery(UserIdQP(userIdOne) :: Nil), appWithCollaborators)
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsAppsWithCollaboratorsFor(
+        ApplicationQuery.GeneralOpenEndedApplicationQuery(UserIdQP(userIdOne) :: Nil),
+        appWithCollaborators
+      )
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=${userIdOne}"))
 
       status(result) shouldBe OK
@@ -94,7 +97,10 @@ class QueryControllerSpec
     }
 
     "work for general query for noSubscriptions" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsAppsWithCollaboratorsFor(ApplicationQuery.GeneralOpenEndedApplicationQuery(NoSubscriptionsQP :: Nil), appWithCollaborators)
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsAppsWithCollaboratorsFor(
+        ApplicationQuery.GeneralOpenEndedApplicationQuery(NoSubscriptionsQP :: Nil),
+        appWithCollaborators
+      )
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions="))
 
       status(result) shouldBe OK

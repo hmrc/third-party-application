@@ -33,6 +33,7 @@ case class StoredClientSecret(
 }
 
 object StoredClientSecret {
+
   def asClientSecret(in: StoredClientSecret): ClientSecret = {
     ClientSecret(
       in.id,

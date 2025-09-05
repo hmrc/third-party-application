@@ -41,6 +41,7 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAuthorisationActions, AuthKeyRefiner}
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -49,7 +50,6 @@ import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery
 
 @Singleton
 class ApplicationController @Inject() (
@@ -132,6 +132,7 @@ class ApplicationController @Inject() (
     handleOptionT(applicationService.fetch(applicationId))
   }
 
+  // TODO - repoint users of this as fetch application and access via details.token
   def fetchCredentials(applicationId: ApplicationId) = Action.async {
     handleOption(queryService.fetchSingleApplication(ApplicationQuery.ById(applicationId, List.empty)).map(_.map(_.details.token)))
   }

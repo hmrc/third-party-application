@@ -19,8 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 import java.time.Instant
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredClientSecret
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationToken
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredClientSecret
 
 case class StoredToken(
     clientId: ClientId,
@@ -32,12 +32,13 @@ case class StoredToken(
 }
 
 object StoredToken {
+
   def asApplicationToken(in: StoredToken): ApplicationToken = {
     ApplicationToken(
       in.clientId,
       in.accessToken,
       in.clientSecrets.map(_.asClientSecret),
-      in.lastAccessTokenUsage,
+      in.lastAccessTokenUsage
     )
   }
 }
