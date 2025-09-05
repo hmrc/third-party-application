@@ -54,7 +54,7 @@ class RateLimitMetricsSpec extends AsyncHmrcSpec {
           applicationsWithRateLimit(Some(RateLimitTier.GOLD), numberOfGold) ++
           applicationsWithRateLimit(None, numberOfUnknown)
 
-      ApplicationRepoMock.FetchApplications.thenReturns(applicationsToReturn: _*)
+      ApplicationRepoMock.FetchApplicationsByQuery.thenReturns(applicationsToReturn: _*)
 
       private val result = await(metricUnderTest.metrics)
 

@@ -49,6 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery
 
 @Singleton
 class ApplicationController @Inject() (
@@ -132,7 +133,7 @@ class ApplicationController @Inject() (
   }
 
   def fetchCredentials(applicationId: ApplicationId) = Action.async {
-    handleOption(credentialService.fetchCredentials(applicationId))
+    handleOption(queryService.fetchSingleApplication(ApplicationQuery.ById(applicationId, List.empty)).map(_.map(_.details.token)))
   }
 
 // TODO remove
@@ -212,13 +213,13 @@ class ApplicationController @Inject() (
         val context       = ApiContext(request.queryString("subscribesTo").head)
         val version       = ApiVersionNbr(request.queryString("version").head)
         val apiIdentifier = ApiIdentifier(context, version)
-        queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier)).map(apps => Ok(Json.toJson(apps)))
+        queryService.fetchApplications(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier)).map(apps => Ok(Json.toJson(apps)))
 
       case ("subscribesTo" :: _, _) =>
         val context = ApiContext(request.queryString("subscribesTo").head)
-        queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByApiContext(context)).map(apps => Ok(Json.toJson(apps)))
+        queryService.fetchApplications(ApplicationQueries.applicationsByApiContext(context)).map(apps => Ok(Json.toJson(apps)))
 
-      case ("noSubscriptions" :: _, _) => queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByNoSubscriptions).map(apps => Ok(Json.toJson(apps)))
+      case ("noSubscriptions" :: _, _) => queryService.fetchApplications(ApplicationQueries.applicationsByNoSubscriptions).map(apps => Ok(Json.toJson(apps)))
 
       case _ => successful(Redirect(uk.gov.hmrc.thirdpartyapplication.controllers.query.routes.QueryController.queryDispatcher().url, request.queryString))
     }
@@ -266,7 +267,7 @@ class ApplicationController @Inject() (
       if (hasGatewayUserAgent) {
         applicationService.findAndRecordServerTokenUsage(serverToken).map(asJsonResultWithServerToken(notFoundMessage))
       } else {
-        queryService.fetchSingleApplicationWithCollaborators(ApplicationQueries.applicationByServerToken(serverToken))
+        queryService.fetchSingleApplication(ApplicationQueries.applicationByServerToken(serverToken))
           .map(asJsonResult(notFoundMessage))
       }
     ) recover recovery
@@ -280,7 +281,7 @@ class ApplicationController @Inject() (
       if (hasGatewayUserAgent) {
         applicationService.findAndRecordApplicationUsage(clientId).map(asJsonResultWithServerToken(notFoundMessage))
       } else {
-        queryService.fetchSingleApplicationWithCollaborators(ApplicationQueries.applicationByClientId(clientId))
+        queryService.fetchSingleApplication(ApplicationQueries.applicationByClientId(clientId))
           .map(asJsonResult(notFoundMessage))
       }
     ) recover recovery

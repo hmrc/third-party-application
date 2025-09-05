@@ -27,4 +27,18 @@ case class StoredClientSecret(
     lastAccess: Option[Instant] = None,
     id: ClientSecret.Id = ClientSecret.Id.random,
     hashedSecret: String
-  )
+  ) {
+
+  def asClientSecret = StoredClientSecret.asClientSecret(this)
+}
+
+object StoredClientSecret {
+  def asClientSecret(in: StoredClientSecret): ClientSecret = {
+    ClientSecret(
+      in.id,
+      in.name,
+      in.createdOn,
+      in.lastAccess
+    )
+  }
+}

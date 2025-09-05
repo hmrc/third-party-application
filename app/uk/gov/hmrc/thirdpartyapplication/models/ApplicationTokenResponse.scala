@@ -23,7 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db._
 case class ApplicationTokenResponse(
     clientId: ClientId,
     accessToken: String,
-    clientSecrets: List[ClientSecretResponse]
+    clientSecrets: List[ClientSecret]
   )
 
 object ApplicationTokenResponse {
@@ -32,6 +32,6 @@ object ApplicationTokenResponse {
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
-      clientSecrets = token.clientSecrets map { csd: StoredClientSecret => ClientSecretResponse(csd.id, csd.name, csd.createdOn, csd.lastAccess) }
+      clientSecrets = token.clientSecrets map { csd: StoredClientSecret => ClientSecret(csd.id, csd.name, csd.createdOn, csd.lastAccess) }
     )
 }

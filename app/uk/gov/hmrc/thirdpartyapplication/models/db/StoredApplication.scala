@@ -73,7 +73,7 @@ object StoredApplication {
     ApplicationWithCollaborators(
       CoreApplication(
         data.id,
-        data.tokens.production.clientId,
+        data.tokens.production.asApplicationToken,
         data.wso2ApplicationName,
         data.name,
         data.environment,
@@ -81,7 +81,6 @@ object StoredApplication {
         data.createdOn,
         data.lastAccess,
         GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
-        data.tokens.production.lastAccessTokenUsage,
         data.access,
         data.state,
         data.rateLimitTier.getOrElse(RateLimitTier.BRONZE),

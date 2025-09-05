@@ -204,7 +204,7 @@ class ApplicationService @Inject() (
   def fetchAllForCollaborators(userIds: List[UserId]): Future[List[ApplicationWithCollaborators]] = {
     Future.sequence(
       userIds.map(userId =>
-        queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false))
+        queryService.fetchApplications(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false))
       )
     )
       .map(_.fold(Nil)(_ ++ _))
