@@ -54,7 +54,7 @@ class QueryController @Inject() (
 
   private def execute(appQry: ApplicationQuery): Future[Result] = {
     appQry match {
-      case q: SingleApplicationQuery => queryService.fetchSingleApplication(q).map { eoa =>
+      case q: SingleApplicationQuery => queryService.fetchSingleApplicationByQuery(q).map { eoa =>
           eoa.fold(
             // Yes these look the same but they are for different types
             _.fold(applicationNotFound)(app => Ok(Json.toJson(app))),
@@ -63,7 +63,7 @@ class QueryController @Inject() (
         }
 
       case q: GeneralOpenEndedApplicationQuery =>
-        queryService.fetchApplications(q).map { eoa =>
+        queryService.fetchApplicationsByQuery(q).map { eoa =>
           eoa.fold(
             // Yes these look the same but they are for different types
             apps => Ok(Json.toJson(apps)),

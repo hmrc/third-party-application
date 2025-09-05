@@ -57,7 +57,7 @@ class GatekeeperService @Inject() (
         yield id -> history.maxBy(_.changedAt)
     }
 
-    val appsFuture         = queryService.fetchApplicationsWithCollaborators(ApplicationQueries.standardNonTestingApps)
+    val appsFuture         = queryService.fetchApplications(ApplicationQueries.standardNonTestingApps)
     val stateHistoryFuture = stateHistoryRepository.fetchByState(State.PENDING_GATEKEEPER_APPROVAL)
     for {
       apps      <- appsFuture

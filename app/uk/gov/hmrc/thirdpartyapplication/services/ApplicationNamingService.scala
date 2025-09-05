@@ -51,7 +51,7 @@ abstract class AbstractApplicationNamingService(
 
   def isDuplicateName(applicationName: String, exclusions: ExclusionCondition): Future[Boolean] = {
     if (nameValidationConfig.validateForDuplicateAppNames) {
-      queryService.fetchApplicationsWithCollaborators(ApplicationQueries.applicationsByName(applicationName))
+      queryService.fetchApplications(ApplicationQueries.applicationsByName(applicationName))
         .map(_.filterNot(exclusions).nonEmpty)
     } else {
       successful(false)

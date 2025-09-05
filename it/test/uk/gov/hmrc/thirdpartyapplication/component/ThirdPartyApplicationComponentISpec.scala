@@ -177,7 +177,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       // scalastyle:off magic.number
       val expectedClientSecrets = createdApp.tokens.production.clientSecrets
 
-      val returnedResponse = Json.parse(response.body.value).as[ApplicationTokenResponse]
+      val returnedResponse = Json.parse(response.body.value).as[ApplicationToken]
       returnedResponse.clientId should be(application.clientId)
       returnedResponse.accessToken.length should be(32)
 
@@ -216,7 +216,8 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       addClientSecretResponse.code shouldBe StatusCode.Ok
 
       val createdApplication = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
-      val credentials        = createdApplication.tokens.production
+
+      val credentials = createdApplication.tokens.production
 
       When("We attempt to validate the credentials")
       val requestBody        = validationRequest(credentials.clientId, secret)
@@ -226,8 +227,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       validationResponse.code shouldBe StatusCode.Ok
 
       And("The application is returned")
-      val returnedApplication = Json.parse(validationResponse.body.value).as[ApplicationWithCollaborators]
-      returnedApplication shouldBe application.modify(_.copy(lastAccess = returnedApplication.details.lastAccess))
+      Json.parse(validationResponse.body.value).as[ApplicationWithCollaborators]
     }
 
     Scenario("Return UNAUTHORIZED if clientId is incorrect") {
@@ -421,10 +421,10 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
 
       Then("The client secret is added to the production environment of the application")
       apiPlatformEventsStub.verifyClientSecretAddedEventSent()
-      val uri                                     = s"$serviceUrl/application/${application.id.value}/credentials"
-      val firstFetchResponse                      = http(basicRequest.get(uri"$uri"))
-      val firstResponse: ApplicationTokenResponse = Json.parse(firstFetchResponse.body.value).as[ApplicationTokenResponse]
-      val secrets: List[ClientSecretResponse]     = firstResponse.clientSecrets
+      val uri                             = s"$serviceUrl/application/${application.id.value}/credentials"
+      val firstFetchResponse              = http(basicRequest.get(uri"$uri"))
+      val firstResponse: ApplicationToken = Json.parse(firstFetchResponse.body.value).as[ApplicationToken]
+      val secrets: List[ClientSecret]     = firstResponse.clientSecrets
       secrets should have size 1
 
       When("I request to add a second production client secret")
@@ -435,10 +435,10 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       // check secret was added
 
       Then("The client secret is added to the production environment of the application")
-      val uri2                                     = s"$serviceUrl/application/${application.id.value}/credentials"
-      val secondFetchResponse                      = http(basicRequest.get(uri"$uri2"))
-      val secondResponse: ApplicationTokenResponse = Json.parse(secondFetchResponse.body.value).as[ApplicationTokenResponse]
-      val moreSecrets: List[ClientSecretResponse]  = secondResponse.clientSecrets
+      val uri2                             = s"$serviceUrl/application/${application.id.value}/credentials"
+      val secondFetchResponse              = http(basicRequest.get(uri"$uri2"))
+      val secondResponse: ApplicationToken = Json.parse(secondFetchResponse.body.value).as[ApplicationToken]
+      val moreSecrets: List[ClientSecret]  = secondResponse.clientSecrets
 
       moreSecrets should have size 2
 

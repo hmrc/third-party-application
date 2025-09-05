@@ -35,8 +35,8 @@ trait TokenServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
     object CreateEnvironmentToken {
 
-      def thenReturn(environmentToken: StoredToken) = {
-        when(aMock.createEnvironmentToken()).thenReturn(environmentToken)
+      def thenReturn(productionToken: StoredToken) = {
+        when(aMock.createEnvironmentToken()).thenReturn(productionToken)
       }
 
       def verifyCalled() = {
