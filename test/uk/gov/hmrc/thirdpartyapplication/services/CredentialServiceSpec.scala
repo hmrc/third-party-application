@@ -28,7 +28,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 import uk.gov.hmrc.thirdpartyapplication.mocks.ClientSecretServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.util._
@@ -55,36 +54,14 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
 
     val anotherAdminUser = "admin@example.com".toLaxEmail
 
-    val applicationData  = storedApp
-    val environmentToken = applicationData.tokens.production
-    val firstSecret      = environmentToken.clientSecrets.head
+    val applicationData = storedApp
+    val productionToken = applicationData.tokens.production
+    val firstSecret     = productionToken.clientSecrets.head
 
-    val prodTokenWith5Secrets       = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => StoredClientSecret(v, hashedSecret = "hashed-secret")))
+    val prodTokenWith5Secrets       = productionToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => StoredClientSecret(v, hashedSecret = "hashed-secret")))
     val applicationDataWith5Secrets = storedApp.copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
-    val expectedTokenResponse = ApplicationTokenResponse(environmentToken)
-  }
-
-  "fetch credentials" should {
-
-    "return none when no application exists in the repository for the given application id" in new Setup {
-
-      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
-
-      val result = await(underTest.fetchCredentials(applicationId))
-
-      result shouldBe None
-    }
-
-    "return tokens when application exists in the repository for the given application id" in new Setup {
-
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-
-      val result = await(underTest.fetchCredentials(applicationId))
-
-      result shouldBe Some(expectedTokenResponse)
-    }
-
+    val expectedTokenResponse = productionToken.asApplicationToken
   }
 
   "validate credentials" should {
@@ -92,7 +69,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
     val expectedQry = ApplicationQueries.applicationByClientId(clientId)
 
     "return none when no application exists in the repository for the given client id" in new Setup {
-      ApplicationRepoMock.FetchSingleApplication.thenReturnNothingFor(expectedQry)
+      ApplicationRepoMock.FetchSingleApplicationByQuery.thenReturnNothingFor(expectedQry)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, "aSecret")).value)
 
@@ -100,7 +77,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
     }
 
     "return none when credentials don't match with an application" in new Setup {
-      ApplicationRepoMock.FetchSingleApplication.thenReturnFor(expectedQry, applicationData)
+      ApplicationRepoMock.FetchSingleApplicationByQuery.thenReturnFor(expectedQry, applicationData)
 
       ClientSecretServiceMock.ClientSecretIsValid.noMatchingClientSecret(applicationData.id, "wrongSecret", applicationData.tokens.production.clientSecrets)
 
@@ -117,9 +94,9 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
       val secret                      = UUID.randomUUID().toString
       val matchingClientSecret        = applicationData.tokens.production.clientSecrets.head
 
-      ApplicationRepoMock.FetchSingleApplication.thenReturnFor(expectedQry, applicationData)
+      ApplicationRepoMock.FetchSingleApplicationByQuery.thenReturnFor(expectedQry, applicationData)
       ClientSecretServiceMock.ClientSecretIsValid
-        .thenReturnValidationResult(applicationData.id, secret, environmentToken.clientSecrets)(matchingClientSecret)
+        .thenReturnValidationResult(applicationData.id, secret, productionToken.clientSecrets)(matchingClientSecret)
       ApplicationRepoMock.RecordClientSecretUsage.thenReturnWhen(applicationData.id, matchingClientSecret.id)(updatedApplicationData)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, secret)).value)
@@ -134,7 +111,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
       val matchingClientSecret        = applicationData.tokens.production.clientSecrets.head
       val thrownException             = new RuntimeException
 
-      ApplicationRepoMock.FetchSingleApplication.thenReturnFor(expectedQry, applicationData)
+      ApplicationRepoMock.FetchSingleApplicationByQuery.thenReturnFor(expectedQry, applicationData)
       ClientSecretServiceMock.ClientSecretIsValid
         .thenReturnValidationResult(applicationData.id, secret, applicationData.tokens.production.clientSecrets)(matchingClientSecret)
       ApplicationRepoMock.RecordClientSecretUsage.thenFail(thrownException)

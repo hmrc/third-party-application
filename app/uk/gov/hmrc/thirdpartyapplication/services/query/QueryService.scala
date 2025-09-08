@@ -33,7 +33,7 @@ class QueryService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def fetchSingleApplication(qry: SingleApplicationQuery): Future[Either[Option[ApplicationWithCollaborators], Option[ApplicationWithSubscriptions]]] = {
+  def fetchSingleApplicationByQuery(qry: SingleApplicationQuery): Future[Either[Option[ApplicationWithCollaborators], Option[ApplicationWithSubscriptions]]] = {
     EitherT(applicationRepository.fetchBySingleApplicationQuery(qry))
       .bimap(
         _.map(_.asAppWithCollaborators),
@@ -42,11 +42,11 @@ class QueryService @Inject() (
       .value
   }
 
-  def fetchSingleApplicationWithCollaborators(qry: SingleApplicationQuery): Future[Option[ApplicationWithCollaborators]] = {
-    fetchSingleApplication(qry).map(_.fold(identity, _.map(_.asAppWithCollaborators)))
+  def fetchSingleApplication(qry: SingleApplicationQuery): Future[Option[ApplicationWithCollaborators]] = {
+    fetchSingleApplicationByQuery(qry).map(_.fold(identity, _.map(_.asAppWithCollaborators)))
   }
 
-  def fetchApplications(qry: GeneralOpenEndedApplicationQuery): Future[Either[List[ApplicationWithCollaborators], List[ApplicationWithSubscriptions]]] = {
+  def fetchApplicationsByQuery(qry: GeneralOpenEndedApplicationQuery): Future[Either[List[ApplicationWithCollaborators], List[ApplicationWithSubscriptions]]] = {
     EitherT(applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry))
       .bimap(
         _.map(_.asAppWithCollaborators),
@@ -55,12 +55,12 @@ class QueryService @Inject() (
       .value
   }
 
-  def fetchApplicationsWithCollaborators(qry: GeneralOpenEndedApplicationQuery): Future[List[ApplicationWithCollaborators]] = {
-    fetchApplications(qry).map(_.fold(identity, _.map(_.asAppWithCollaborators)))
+  def fetchApplications(qry: GeneralOpenEndedApplicationQuery): Future[List[ApplicationWithCollaborators]] = {
+    fetchApplicationsByQuery(qry).map(_.fold(identity, _.map(_.asAppWithCollaborators)))
   }
 
   def fetchApplicationsWithSubscriptions(qry: GeneralOpenEndedApplicationQuery): Future[List[ApplicationWithSubscriptions]] = {
-    fetchApplications(qry).map(_.getOrElse(Nil))
+    fetchApplicationsByQuery(qry).map(_.getOrElse(Nil))
   }
 
   def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {

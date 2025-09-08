@@ -40,7 +40,7 @@ lazy val microservice = Project(appName, file("."))
   //   target := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / "coverage" else target.value},
   //   coverageDataDir := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / ".." else target.value},
   // )
-  
+
 val it = (project in file("it"))
   .enablePlugins(PlayScala)
   .dependsOn(microservice % "test->test")

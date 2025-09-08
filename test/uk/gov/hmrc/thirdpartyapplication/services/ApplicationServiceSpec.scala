@@ -361,7 +361,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Save.thenAnswer(successful)
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Privileged)
 
-      QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsNothing()
+      QueryServiceMock.FetchApplications.thenReturnsNothing()
 
       val prodTOTP                       = Totp("prodTotp", "prodTotpId")
       val totpQueue: mutable.Queue[Totp] = mutable.Queue(prodTOTP)
@@ -556,7 +556,7 @@ class ApplicationServiceSpec
       result shouldBe Some(ApplicationWithCollaborators(
         CoreApplication(
           id = applicationId,
-          clientId = productionToken.clientId,
+          token = productionToken.asApplicationToken,
           gatewayId = data.wso2ApplicationName,
           name = data.name,
           deployedTo = data.environment,
@@ -564,7 +564,6 @@ class ApplicationServiceSpec
           createdOn = data.createdOn,
           lastAccess = data.lastAccess,
           grantLength = GrantLength.EIGHTEEN_MONTHS,
-          lastAccessTokenUsage = productionToken.lastAccessTokenUsage,
           access = data.access,
           state = data.state,
           rateLimitTier = RateLimitTier.SILVER,
@@ -581,7 +580,7 @@ class ApplicationServiceSpec
 
   "fetchAllForCollaborators" should {
     "fetch all applications for a given collaborator user id" in new Setup {
-      QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFor(
+      QueryServiceMock.FetchApplications.thenReturnsFor(
         ApplicationQueries.applicationsByUserId(userIdOne, includeDeleted = false),
         standardApp,
         privilegedApp,
@@ -593,16 +592,16 @@ class ApplicationServiceSpec
     }
 
     "fetch all applications for two given collaborator user ids" in new Setup {
-      QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFor(ApplicationQueries.applicationsByUserId(userIdOne, includeDeleted = false), standardApp)
-      QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFor(ApplicationQueries.applicationsByUserId(userIdTwo, includeDeleted = false), standardApp2)
+      QueryServiceMock.FetchApplications.thenReturnsFor(ApplicationQueries.applicationsByUserId(userIdOne, includeDeleted = false), standardApp)
+      QueryServiceMock.FetchApplications.thenReturnsFor(ApplicationQueries.applicationsByUserId(userIdTwo, includeDeleted = false), standardApp2)
 
       val result = await(underTest.fetchAllForCollaborators(List(userIdOne, userIdTwo)))
       result should contain theSameElementsAs List(standardApp, standardApp2)
     }
 
     "deduplicate applications if more than one user belongs to the same application" in new Setup {
-      QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFor(ApplicationQueries.applicationsByUserId(userIdOne, includeDeleted = false), standardApp)
-      QueryServiceMock.FetchApplicationsWithCollaborators.thenReturnsFor(ApplicationQueries.applicationsByUserId(userIdTwo, includeDeleted = false), standardApp, standardApp2)
+      QueryServiceMock.FetchApplications.thenReturnsFor(ApplicationQueries.applicationsByUserId(userIdOne, includeDeleted = false), standardApp)
+      QueryServiceMock.FetchApplications.thenReturnsFor(ApplicationQueries.applicationsByUserId(userIdTwo, includeDeleted = false), standardApp, standardApp2)
 
       val result = await(underTest.fetchAllForCollaborators(List(userIdOne, userIdTwo)))
       result should contain theSameElementsAs List(standardApp, standardApp2)

@@ -73,7 +73,7 @@ object StoredApplication {
     ApplicationWithCollaborators(
       CoreApplication(
         data.id,
-        data.tokens.production.clientId,
+        data.tokens.production.asApplicationToken,
         data.wso2ApplicationName,
         data.name,
         data.environment,
@@ -81,7 +81,6 @@ object StoredApplication {
         data.createdOn,
         data.lastAccess,
         GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
-        data.tokens.production.lastAccessTokenUsage,
         data.access,
         data.state,
         data.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
@@ -100,7 +99,7 @@ object StoredApplication {
   def create(
       createApplicationRequest: CreateApplicationRequest,
       wso2ApplicationName: String,
-      environmentToken: StoredToken,
+      productionToken: StoredToken,
       createdOn: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
     ): StoredApplication = {
     import createApplicationRequest._
@@ -138,7 +137,7 @@ object StoredApplication {
       collaborators,
       createApplicationRequest.description.filterNot(_ => environment.isProduction),
       wso2ApplicationName,
-      ApplicationTokens(environmentToken),
+      ApplicationTokens(productionToken),
       applicationState,
       applicationAccess,
       createdOn,

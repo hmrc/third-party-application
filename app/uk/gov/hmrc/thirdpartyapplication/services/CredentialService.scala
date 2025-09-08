@@ -22,11 +22,9 @@ import scala.util.control.NonFatal
 
 import cats.data.OptionT
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
 import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationQueries, ApplicationRepository}
 
@@ -39,16 +37,6 @@ class CredentialService @Inject() (
   ) extends ApplicationLogger {
 
   val clientSecretLimit = config.clientSecretLimit
-
-  def fetch(applicationId: ApplicationId): Future[Option[ApplicationWithCollaborators]] = {
-    applicationRepository.fetch(applicationId) map (_.map(app => app.asAppWithCollaborators))
-  }
-
-  def fetchCredentials(applicationId: ApplicationId): Future[Option[ApplicationTokenResponse]] = {
-    applicationRepository.fetch(applicationId) map (_.map { app =>
-      ApplicationTokenResponse(app.tokens.production)
-    })
-  }
 
   def validateCredentials(validation: ValidationRequest): OptionT[Future, ApplicationWithCollaborators] = {
     def recoverFromFailedUsageDateUpdate(application: StoredApplication): PartialFunction[Throwable, StoredApplication] = {

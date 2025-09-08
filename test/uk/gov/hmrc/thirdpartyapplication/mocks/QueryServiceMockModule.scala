@@ -38,64 +38,64 @@ trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar wit
 
     def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
 
-    object FetchSingleApplication {
+    object FetchSingleApplicationByQuery {
 
       def thenReturnsFor(qry: SingleApplicationQuery, app: ApplicationWithCollaborators) =
-        when(aMock.fetchSingleApplication(eqTo(qry))).thenReturn(successful(Left(Some(app))))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))).thenReturn(successful(Left(Some(app))))
 
       def thenReturns(app: ApplicationWithCollaborators) =
-        when(aMock.fetchSingleApplication(*)).thenReturn(successful(Left(Some(app))))
+        when(aMock.fetchSingleApplicationByQuery(*)).thenReturn(successful(Left(Some(app))))
 
       def thenReturnsFor(qry: SingleApplicationQuery, app: ApplicationWithSubscriptions) =
-        when(aMock.fetchSingleApplication(eqTo(qry))).thenReturn(successful(Right(Some(app))))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))).thenReturn(successful(Right(Some(app))))
 
       def thenReturns(app: ApplicationWithSubscriptions) =
-        when(aMock.fetchSingleApplication(*)).thenReturn(successful(Right(Some(app))))
+        when(aMock.fetchSingleApplicationByQuery(*)).thenReturn(successful(Right(Some(app))))
 
       def thenReturnsLeftNoneFor(qry: SingleApplicationQuery) =
-        when(aMock.fetchSingleApplication(eqTo(qry))).thenReturn(successful(Left(None)))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))).thenReturn(successful(Left(None)))
 
       def thenReturnsRightNoneFor(qry: SingleApplicationQuery) =
-        when(aMock.fetchSingleApplication(eqTo(qry))).thenReturn(successful(Right(None)))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))).thenReturn(successful(Right(None)))
     }
 
-    object FetchSingleApplicationWithCollaborators {
+    object FetchSingleApplication {
 
       def thenReturns(app: ApplicationWithCollaborators) =
-        when(aMock.fetchSingleApplicationWithCollaborators(*)).thenReturn(successful(Some(app)))
+        when(aMock.fetchSingleApplication(*)).thenReturn(successful(Some(app)))
 
       def thenReturnsNothing() =
-        when(aMock.fetchSingleApplicationWithCollaborators(*)).thenReturn(successful(None))
+        when(aMock.fetchSingleApplication(*)).thenReturn(successful(None))
 
       def thenReturnsFor(qry: SingleApplicationQuery, app: ApplicationWithCollaborators) =
-        when(aMock.fetchSingleApplicationWithCollaborators(eqTo(qry))).thenReturn(successful(Some(app)))
+        when(aMock.fetchSingleApplication(eqTo(qry))).thenReturn(successful(Some(app)))
 
       def thenReturnsNothingFor(qry: SingleApplicationQuery) =
-        when(aMock.fetchSingleApplicationWithCollaborators(*)).thenReturn(successful(None))
+        when(aMock.fetchSingleApplication(*)).thenReturn(successful(None))
 
       def thenFails(exc: Exception) =
-        when(aMock.fetchSingleApplicationWithCollaborators(*)).thenReturn(failed(exc))
+        when(aMock.fetchSingleApplication(*)).thenReturn(failed(exc))
     }
 
-    object FetchApplications {
+    object FetchApplicationsByQuery {
 
       def thenReturnsAppsWithCollaboratorsFor(qry: GeneralOpenEndedApplicationQuery, apps: ApplicationWithCollaborators*) =
-        when(aMock.fetchApplications(eqTo(qry))).thenReturn(successful(Left(apps.toList)))
+        when(aMock.fetchApplicationsByQuery(eqTo(qry))).thenReturn(successful(Left(apps.toList)))
 
       def thenReturnsNoAppsWithCollaborators() =
-        when(aMock.fetchApplications(*)).thenReturn(successful(Left(List.empty)))
+        when(aMock.fetchApplicationsByQuery(*)).thenReturn(successful(Left(List.empty)))
 
       def thenReturnsAppsWithSubscriptionsFor(qry: GeneralOpenEndedApplicationQuery, apps: ApplicationWithSubscriptions*) =
-        when(aMock.fetchApplications(eqTo(qry))).thenReturn(successful(Right(apps.toList)))
+        when(aMock.fetchApplicationsByQuery(eqTo(qry))).thenReturn(successful(Right(apps.toList)))
 
       def thenReturnsNoAppsWithSubscriptions() =
-        when(aMock.fetchApplications(*)).thenReturn(successful(Right(List.empty)))
+        when(aMock.fetchApplicationsByQuery(*)).thenReturn(successful(Right(List.empty)))
 
       def thenFails(exc: Exception) =
-        when(aMock.fetchApplications(*)).thenReturn(failed(exc))
+        when(aMock.fetchApplicationsByQuery(*)).thenReturn(failed(exc))
 
       def thenFailsFor(qry: ApplicationQuery.GeneralOpenEndedApplicationQuery, exc: Exception) =
-        when(aMock.fetchApplications(eqTo(qry))).thenReturn(failed(exc))
+        when(aMock.fetchApplicationsByQuery(eqTo(qry))).thenReturn(failed(exc))
     }
 
     object FetchPaginatedApplications {
@@ -107,25 +107,25 @@ trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar wit
         when(aMock.fetchPaginatedApplications(*)).thenReturn(successful(PaginatedApplications(List.empty, 1, 25, count, 0)))
     }
 
-    object FetchApplicationsWithCollaborators {
-      def verifyCalledWith(qry: GeneralOpenEndedApplicationQuery) = QueryServiceMock.verify.fetchApplicationsWithCollaborators(eqTo(qry))
+    object FetchApplications {
+      def verifyCalledWith(qry: GeneralOpenEndedApplicationQuery) = QueryServiceMock.verify.fetchApplications(eqTo(qry))
 
-      def verifyNeverCalled() = QueryServiceMock.verify(never).fetchApplicationsWithCollaborators(*)
+      def verifyNeverCalled() = QueryServiceMock.verify(never).fetchApplications(*)
 
       def thenReturns(apps: ApplicationWithCollaborators*) =
-        when(aMock.fetchApplicationsWithCollaborators(*)).thenReturn(successful(apps.toList))
+        when(aMock.fetchApplications(*)).thenReturn(successful(apps.toList))
 
       def thenReturnsNothing() =
-        when(aMock.fetchApplicationsWithCollaborators(*)).thenReturn(successful(List.empty))
+        when(aMock.fetchApplications(*)).thenReturn(successful(List.empty))
 
       def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: ApplicationWithCollaborators*) =
-        when(aMock.fetchApplicationsWithCollaborators(eqTo(qry))).thenReturn(successful(apps.toList))
+        when(aMock.fetchApplications(eqTo(qry))).thenReturn(successful(apps.toList))
 
       def thenReturnsNothingFor(qry: GeneralOpenEndedApplicationQuery) =
-        when(aMock.fetchApplicationsWithCollaborators(eqTo(qry))).thenReturn(successful(List.empty))
+        when(aMock.fetchApplications(eqTo(qry))).thenReturn(successful(List.empty))
 
       def thenReturnsFailure(exc: Exception) =
-        when(aMock.fetchApplicationsWithCollaborators(*)).thenReturn(failed(exc))
+        when(aMock.fetchApplications(*)).thenReturn(failed(exc))
     }
 
     object FetchApplicationsWithSubscriptions {
