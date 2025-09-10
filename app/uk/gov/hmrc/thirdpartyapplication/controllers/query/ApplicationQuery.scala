@@ -54,8 +54,8 @@ object ApplicationQuery {
     lazy val specificParam = ServerTokenQP(serverToken)
   }
 
-  case class GeneralOpenEndedApplicationQuery protected (params: List[NonUniqueFilterParam[_]], sorting: Sorting = Sorting.NoSorting) extends MultipleApplicationQuery
 
+  case class GeneralOpenEndedApplicationQuery protected (params: List[NonUniqueFilterParam[_]], sorting: Sorting = Sorting.NoSorting) extends MultipleApplicationQuery
   case class PaginatedApplicationQuery protected (params: List[NonUniqueFilterParam[_]], sorting: Sorting = Sorting.NoSorting, pagination: Pagination = Pagination())
       extends MultipleApplicationQuery
 

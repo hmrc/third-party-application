@@ -21,7 +21,7 @@ import java.time.format.DateTimeFormatter
 import scala.util.Try
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.syntax.all._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
@@ -60,6 +60,16 @@ object QueryParamValidator {
       values.toList match {
         case Nil => s"$paramName requires at least one value".invalidNel
         case _   => values.validNel
+      }
+  }
+
+  object OptionalValueAllowed {
+
+    def apply(paramName: String)(values: Seq[String]): ErrorsOr[Option[String]] =
+      values.toList match {
+        case Nil           => None.validNel
+        case single :: Nil => single.some.validNel
+        case _             => s"Multiple $paramName query parameters are not permitted".invalidNel
       }
   }
 
@@ -164,14 +174,42 @@ object QueryParamValidator {
   }
 
   private object AppStateFilterExpected {
-    def apply(values: Seq[String]): ErrorsOr[AppStateFilter] = AppStateFilter(values).toValidNel(s"$values contains invalid parameters")
+    import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+
+    def applyState(value: String): Option[State] = value match {
+      case "CREATED"                        => State.TESTING.some
+      case "PENDING_GATEKEEPER_CHECK"       => State.PENDING_GATEKEEPER_APPROVAL.some
+      case "PENDING_SUBMITTER_VERIFICATION" => State.PENDING_REQUESTER_VERIFICATION.some
+      case text                             => State(text)
+    }
+
+    def applyOne(value: String): Option[AppStateParam[_]] =
+      value match {
+        case "ACTIVE"            => ActiveStateQP.some
+        case "EXCLUDING_DELETED" => ExcludeDeletedQP.some
+        case "BLOCKED"           => BlockedStateQP.some
+        case "ANY"               => NoStateFilteringQP.some
+        //
+        case text                => applyState(text).map(MatchOneStateQP(_))
+      }
+
+    def applyMany(values: Seq[String]): Option[AppStateParam[_]] = values match {
+      case v :: Nil => applyOne(v)
+      case vs       =>
+        vs.toList
+          .map(applyState(_))
+          .traverse(identity)
+          .map(ss => MatchManyStatesQP(NonEmptyList.fromListUnsafe(ss)))
+    }
+
+    def apply(values: Seq[String]): ErrorsOr[AppStateParam[_]] = applyMany(values).toValidNel(s"$values contains invalid parameters")
   }
 
   object StatusValidator extends QueryParamValidator {
     val paramName = "status"
 
-    def validate(values: Seq[String]): ErrorsOr[AppStateFilterQP] = {
-      AtLeastOneValue(paramName)(values.flatMap(v => v.split(","))) andThen AppStateFilterExpected.apply map { AppStateFilterQP(_) }
+    def validate(values: Seq[String]): ErrorsOr[AppStateParam[_]] = {
+      AtLeastOneValue(paramName)(values.flatMap(v => v.split(","))) andThen AppStateFilterExpected.apply
     }
   }
 
@@ -253,8 +291,20 @@ object QueryParamValidator {
   object IncludeDeletedValidator extends QueryParamValidator {
     val paramName = "includeDeleted"
 
-    def validate(values: Seq[String]): ErrorsOr[IncludeOrExcludeDeletedQP] = {
-      SingleValueExpected(paramName)(values) andThen BooleanValueExpected(paramName) map { bool => if (bool) IncludeDeletedQP else ExcludeDeletedQP }
+    def validate(values: Seq[String]): ErrorsOr[IncludeDeletedQP.type] = {
+      OptionalValueAllowed(paramName)(values) andThen {
+        case None       => IncludeDeletedQP.validNel
+        case Some(text) =>
+          text.toBooleanOption
+            .fold[ErrorsOr[IncludeDeletedQP.type]](
+              s"$paramName must be true or blank".invalidNel
+            )(bool =>
+              if (bool)
+                IncludeDeletedQP.validNel
+              else
+                s"$paramName cannot be specified as false".invalidNel
+            )
+      }
     }
   }
 

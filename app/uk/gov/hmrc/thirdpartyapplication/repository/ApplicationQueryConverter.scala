@@ -126,13 +126,13 @@ object ApplicationQueryConverter {
   def applicationStateMatch(states: State*): Bson = in("state.name", states.map(_.toString): _*)
 
   def asAppStateFilters(implicit params: List[Param[_]]): List[Bson] =
-    onFirst[AppStateFilterQP](_.value match {
-      case AppStateFilter.NoFiltering          => List.empty
-      case AppStateFilter.Active               => List(applicationStateMatch(State.PRE_PRODUCTION, State.PRODUCTION))
-      case AppStateFilter.ExcludingDeleted     => List(excludeDeleted)
-      case AppStateFilter.Blocked              => List(and(equal("blocked", BsonBoolean(true)), excludeDeleted))
-      case AppStateFilter.MatchingOne(state)   => List(equal("state.name", state.toString))
-      case AppStateFilter.MatchingMany(states) => List(in("state.name", states.toList.map(_.toString): _*))
+    onFirst[AppStateParam[_]](_ match {
+      case NoStateFilteringQP        => List.empty
+      case ActiveStateQP             => List(applicationStateMatch(State.PRE_PRODUCTION, State.PRODUCTION))
+      case ExcludeDeletedQP          => List(excludeDeleted)
+      case BlockedStateQP            => List(and(equal("blocked", BsonBoolean(true)), excludeDeleted))
+      case MatchOneStateQP(state)    => List(equal("state.name", state.toString))
+      case MatchManyStatesQP(states) => List(in("state.name", states.toList.map(_.toString): _*))
     }) ++
       onFirst[AppStateBeforeDateQP](qp => List(lte("state.updatedOn", qp.value)))
 
