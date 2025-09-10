@@ -32,9 +32,9 @@ object ApplicationQueries {
     params = if (excludeDeleted) ExcludeDeletedQP :: Nil else Nil
   )
 
-  def applicationByClientId(clientId: ClientId) = ApplicationQuery.ByClientId(clientId, false, List(ExcludeDeletedQP))
+  def applicationByClientId(clientId: ClientId) = ApplicationQuery.ByClientId(clientId, recordUsage = false, List(ExcludeDeletedQP), wantSubscriptions = false)
 
-  def applicationByServerToken(serverToken: String) = ApplicationQuery.ByServerToken(serverToken, false, List(ExcludeDeletedQP))
+  def applicationByServerToken(serverToken: String) = ApplicationQuery.ByServerToken(serverToken, recordUsage = false, List(ExcludeDeletedQP), wantSubscriptions = false)
 
   lazy val standardNonTestingApps = ApplicationQuery.GeneralOpenEndedApplicationQuery(
     sorting = Sorting.NoSorting,
@@ -61,7 +61,8 @@ object ApplicationQueries {
   )
 
   def applicationsByUserId(userId: UserId, includeDeleted: Boolean) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
-    params = UserIdQP(userId) :: WantSubscriptionsQP :: List(ExcludeDeletedQP).filterNot(_ => includeDeleted)
+    params = UserIdQP(userId) :: List(ExcludeDeletedQP).filterNot(_ => includeDeleted),
+    wantsSubscriptions = true
   )
 
   def applicationsByStateAndDate(state: State, beforeDate: Instant) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
@@ -69,7 +70,7 @@ object ApplicationQueries {
   )
 
   def applicationsByUserIdAndEnvironment(userId: UserId, environment: Environment) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
-    params = UserIdQP(userId) :: WantSubscriptionsQP :: ExcludeDeletedQP :: EnvironmentQP(environment) :: Nil
+    params = UserIdQP(userId) :: ExcludeDeletedQP :: EnvironmentQP(environment) :: Nil
   )
 
   def applicationsByApiContext(apiContext: ApiContext) = ApplicationQuery.GeneralOpenEndedApplicationQuery(

@@ -40,6 +40,8 @@ sealed trait PaginationParam[+P] extends Param[P] { def order: Int }
 sealed trait SortingParam[+P] extends Param[P]
 
 object Param {
+  case object WantSubscriptionsQP extends FilterParam[Unit]
+
   case class ServerTokenQP(value: String)          extends UniqueFilterParam[String]
   case class ClientIdQP(value: ClientId)           extends UniqueFilterParam[ClientId]
   case class ApplicationIdQP(value: ApplicationId) extends UniqueFilterParam[ApplicationId]
@@ -62,7 +64,6 @@ object Param {
   case class LastUsedAfterQP(value: Instant)  extends NonUniqueFilterParam[Instant]
   case class LastUsedBeforeQP(value: Instant) extends NonUniqueFilterParam[Instant]
 
-  case object WantSubscriptionsQP    extends NonUniqueFilterParam[Unit]
   case class UserIdQP(value: UserId) extends NonUniqueFilterParam[UserId]
 
   case class EnvironmentQP(value: Environment) extends NonUniqueFilterParam[Environment]
