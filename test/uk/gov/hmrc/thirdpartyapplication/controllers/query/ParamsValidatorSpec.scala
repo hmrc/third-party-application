@@ -135,20 +135,20 @@ class ParamsValidatorSpec
     val testGoodCombo = (ps: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkVerificationCodeUsesDeleteExclusion(ps) shouldBe Pass
 
     "pass when given a verification code and exclude deleted" in {
-      testGoodCombo(List(AppStateFilterQP(AppStateFilter.ExcludingDeleted), VerificationCodeQP("ABC")))
+      testGoodCombo(List(ExcludeDeletedQP, VerificationCodeQP("ABC")))
     }
     "fail when given a verification code only" in {
       testBadCombo(List(VerificationCodeQP("ABC")))
     }
     "fail when given a verification code and a state filter" in {
-      testBadCombo(List(AppStateFilterQP(AppStateFilter.Active), VerificationCodeQP("ABC")))
+      testBadCombo(List(ActiveStateQP, VerificationCodeQP("ABC")))
     }
   }
 
   "checkAppStateFilters" should {
-    val oneState     = Param.AppStateFilterQP(AppStateFilter.MatchingOne(State.PRODUCTION))
-    val manyState    = Param.AppStateFilterQP(AppStateFilter.MatchingMany(Set(State.PRODUCTION, State.PRE_PRODUCTION)))
-    val blockedState = Param.AppStateFilterQP(AppStateFilter.Blocked)
+    val oneState     = MatchOneStateQP(State.PRODUCTION)
+    val manyState    = MatchManyStatesQP(NonEmptyList.of(State.PRODUCTION, State.PRE_PRODUCTION))
+    val blockedState = BlockedStateQP
     val dateBefore   = Param.AppStateBeforeDateQP(instant)
 
     val testBadCombo  = (ps: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkAppStateFilters(ps) should not be Pass

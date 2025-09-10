@@ -18,6 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.time.Instant
 
+import cats.data.NonEmptyList
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, Environment, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
@@ -38,7 +40,7 @@ object ApplicationQueries {
     sorting = Sorting.NoSorting,
     params = List(
       MatchAccessTypeQP(AccessType.STANDARD),
-      AppStateFilterQP(AppStateFilter.MatchingMany(State.values.toSet[State] - State.TESTING - State.DELETED))
+      MatchManyStatesQP(NonEmptyList.fromListUnsafe((State.values - State.TESTING - State.DELETED).toList))
     )
   )
 
@@ -63,7 +65,7 @@ object ApplicationQueries {
   )
 
   def applicationsByStateAndDate(state: State, beforeDate: Instant) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
-    params = AppStateFilterQP(AppStateFilter.MatchingOne(state)) :: AppStateBeforeDateQP(beforeDate) :: Nil
+    params = MatchOneStateQP(state) :: AppStateBeforeDateQP(beforeDate) :: Nil
   )
 
   def applicationsByUserIdAndEnvironment(userId: UserId, environment: Environment) = ApplicationQuery.GeneralOpenEndedApplicationQuery(

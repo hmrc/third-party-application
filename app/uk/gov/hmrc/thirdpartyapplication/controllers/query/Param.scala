@@ -18,8 +18,11 @@ package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import java.time.Instant
 
+import cats.data.NonEmptyList
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 
 /*
  * Param is used to store validated (singularly and in combo) values for queries
@@ -64,19 +67,25 @@ object Param {
 
   case class EnvironmentQP(value: Environment) extends NonUniqueFilterParam[Environment]
 
-  sealed trait IncludeOrExcludeDeletedQP extends NonUniqueFilterParam[Unit]
-  object IncludeDeletedQP                extends IncludeOrExcludeDeletedQP
-  object ExcludeDeletedQP                extends IncludeOrExcludeDeletedQP
+  case object IncludeDeletedQP extends NonUniqueFilterParam[Environment]
 
   sealed trait DeleteRestrictionQP extends NonUniqueFilterParam[Unit]
   case object NoRestrictionQP      extends DeleteRestrictionQP
   case object DoNotDeleteQP        extends DeleteRestrictionQP
 
-  case class AppStateFilterQP(value: AppStateFilter) extends NonUniqueFilterParam[AppStateFilter]
-  case class AppStateBeforeDateQP(value: Instant)    extends NonUniqueFilterParam[Instant]
-  case class SearchTextQP(value: String)             extends NonUniqueFilterParam[String]
-  case class NameQP(value: String)                   extends NonUniqueFilterParam[String]
-  case class VerificationCodeQP(value: String)       extends NonUniqueFilterParam[String]
+  sealed trait AppStateParam[T]                             extends NonUniqueFilterParam[T]
+  case class MatchOneStateQP(state: State)                  extends AppStateParam[State]
+  case class MatchManyStatesQP(states: NonEmptyList[State]) extends AppStateParam[NonEmptyList[State]]
+  case object ActiveStateQP                                 extends AppStateParam[Unit]
+  case object ExcludeDeletedQP                              extends AppStateParam[Unit] // TODO - dupe of ExcludeDeletedQP
+  case object BlockedStateQP                                extends AppStateParam[Unit]
+  case object NoStateFilteringQP                            extends AppStateParam[Unit]
+
+  case class AppStateBeforeDateQP(value: Instant) extends NonUniqueFilterParam[Instant]
+
+  case class SearchTextQP(value: String)       extends NonUniqueFilterParam[String]
+  case class NameQP(value: String)             extends NonUniqueFilterParam[String]
+  case class VerificationCodeQP(value: String) extends NonUniqueFilterParam[String]
 
   sealed trait AccessTypeParam[T]                 extends NonUniqueFilterParam[T]
   case class MatchAccessTypeQP(value: AccessType) extends AccessTypeParam[AccessType]

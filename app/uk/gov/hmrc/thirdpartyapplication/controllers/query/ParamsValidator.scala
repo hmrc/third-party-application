@@ -82,10 +82,10 @@ object ParamsValidator {
   }
 
   def checkVerificationCodeUsesDeleteExclusion(implicit otherFilterParams: List[NonUniqueFilterParam[_]]): ErrorsOr[Unit] = {
-    (first[VerificationCodeQP], first[AppStateFilterQP]) match {
-      case (None, _)                                                                              => ().validNel
-      case (Some(VerificationCodeQP(_)), Some(AppStateFilterQP(AppStateFilter.ExcludingDeleted))) => ().validNel
-      case (Some(VerificationCodeQP(_)), _)                                                       => "Verification code queries must exclude deleted state".invalidNel
+    (first[VerificationCodeQP], first[ExcludeDeletedQP.type]) match {
+      case (None, _)                                             => ().validNel
+      case (Some(VerificationCodeQP(_)), Some(ExcludeDeletedQP)) => ().validNel
+      case (Some(VerificationCodeQP(_)), _)                      => "Verification code queries must exclude deleted state".invalidNel
     }
   }
 
@@ -97,15 +97,15 @@ object ParamsValidator {
     }
 
   def checkAppStateFilters(implicit otherFilterParams: List[NonUniqueFilterParam[Any]]): ErrorsOr[Unit] = {
-    val stateFilter = first[AppStateFilterQP]
+    val stateFilter = first[MatchOneStateQP]
     val dateFilter  = first[AppStateBeforeDateQP]
 
     (stateFilter, dateFilter) match {
       case (_, None) => ().validNel
 
-      case (Some(AppStateFilterQP(AppStateFilter.MatchingOne(_))), _) => ().validNel
-      case (None, Some(_))                                            => "Cannot query state used before date without a state filter".invalidNel
-      case _                                                          => "Cannot query state used before date without a single state filter".invalidNel
+      case (Some(MatchOneStateQP(_)), _) => ().validNel
+      case (None, Some(_))               => "Cannot query state used before date without a state filter".invalidNel
+      case _                             => "Cannot query state used before date without a single state filter".invalidNel
     }
   }
 

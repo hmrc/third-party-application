@@ -141,28 +141,28 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
       }
 
       "extract valid params - status filter" in {
-        test(Map("status" -> Seq("CREATED"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingOne(State.TESTING))).validNel
+        test(Map("status" -> Seq("CREATED"))) shouldBe List(MatchOneStateQP(State.TESTING)).validNel
         test(Map("status" -> Seq("PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION"))) shouldBe List(
-          AppStateFilterQP(AppStateFilter.MatchingOne(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION))
+          MatchOneStateQP(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
         ).validNel
-        test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingOne(State.PENDING_GATEKEEPER_APPROVAL))).validNel
-        test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingOne(State.PENDING_REQUESTER_VERIFICATION))).validNel
-        test(Map("status" -> Seq("ACTIVE"))) shouldBe List(AppStateFilterQP(AppStateFilter.Active)).validNel
-        test(Map("status" -> Seq("DELETED"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingOne(State.DELETED))).validNel
-        test(Map("status" -> Seq("EXCLUDING_DELETED"))) shouldBe List(AppStateFilterQP(AppStateFilter.ExcludingDeleted)).validNel
-        test(Map("status" -> Seq("BLOCKED"))) shouldBe List(AppStateFilterQP(AppStateFilter.Blocked)).validNel
-        test(Map("status" -> Seq("ANY"))) shouldBe List(AppStateFilterQP(AppStateFilter.NoFiltering)).validNel
-        test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK", "PRODUCTION"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingMany(Set(
+        test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK"))) shouldBe List(MatchOneStateQP(State.PENDING_GATEKEEPER_APPROVAL)).validNel
+        test(Map("status" -> Seq("PENDING_SUBMITTER_VERIFICATION"))) shouldBe List(MatchOneStateQP(State.PENDING_REQUESTER_VERIFICATION)).validNel
+        test(Map("status" -> Seq("ACTIVE"))) shouldBe List(ActiveStateQP).validNel
+        test(Map("status" -> Seq("DELETED"))) shouldBe List(MatchOneStateQP(State.DELETED)).validNel
+        test(Map("status" -> Seq("EXCLUDING_DELETED"))) shouldBe List(ExcludeDeletedQP).validNel
+        test(Map("status" -> Seq("BLOCKED"))) shouldBe List(BlockedStateQP).validNel
+        test(Map("status" -> Seq("ANY"))) shouldBe List(NoStateFilteringQP).validNel
+        test(Map("status" -> Seq("PENDING_GATEKEEPER_CHECK", "PRODUCTION"))) shouldBe List(MatchManyStatesQP(NonEmptyList.of(
           State.PENDING_GATEKEEPER_APPROVAL,
           State.PRODUCTION
-        )))).validNel
+        ))).validNel
       }
 
       "extract valid params - multiple states" in {
         test(Map("status" -> Seq("PRODUCTION", "PRE_PRODUCTION"))) shouldBe List(
-          AppStateFilterQP(AppStateFilter.MatchingMany(Set(State.PRODUCTION, State.PRE_PRODUCTION)))
+          MatchManyStatesQP(NonEmptyList.of(State.PRODUCTION, State.PRE_PRODUCTION))
         ).validNel
-        test(Map("status" -> Seq("PRODUCTION,PRE_PRODUCTION"))) shouldBe List(AppStateFilterQP(AppStateFilter.MatchingMany(Set(State.PRODUCTION, State.PRE_PRODUCTION)))).validNel
+        test(Map("status" -> Seq("PRODUCTION,PRE_PRODUCTION"))) shouldBe List(MatchManyStatesQP(NonEmptyList.of(State.PRODUCTION, State.PRE_PRODUCTION))).validNel
       }
 
       "extract valid params - sort filter" in {
@@ -189,7 +189,9 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
 
       "extract valid params - include deleted filter" in {
         test(Map("includeDeleted" -> Seq("true"))) shouldBe List(IncludeDeletedQP).validNel
-        test(Map("includeDeleted" -> Seq("false"))) shouldBe List(ExcludeDeletedQP).validNel
+        test(Map("includeDeleted" -> Seq())) shouldBe List(IncludeDeletedQP).validNel
+        test(Map("includeDeleted" -> Seq(""))) shouldBe List(IncludeDeletedQP).validNel
+        test(Map("includeDeleted" -> Seq("false"))) shouldBe "includeDeleted cannot be specified as false".invalidNel
       }
 
       "extract valid params - delete restriction filter" in {
