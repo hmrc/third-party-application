@@ -225,10 +225,4 @@ object ApplicationQueryConverter {
       case ApiVersionNbrQP(_) => true
       case _                  => false
     }).isDefined
-
-  def wantsSubscriptions(params: List[Param[_]]): Boolean =
-    params.exists(_ match {
-      case WantSubscriptionsQP => true
-      case _                   => false
-    })
 }

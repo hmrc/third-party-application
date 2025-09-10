@@ -966,8 +966,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     }
 
-  private def executeAggregate(wantsSubscriptions: Boolean, pipeline: Seq[Bson]): Future[Either[List[StoredApplication], List[StoredAppWithSubs]]] = {
-    val projectionToUse = if (wantsSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
+  private def executeAggregate(wantSubscriptions: Boolean, pipeline: Seq[Bson]): Future[Either[List[StoredApplication], List[StoredAppWithSubs]]] = {
+
+    val projectionToUse = if (wantSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
 
     val facets: Seq[Bson] = Seq(
       facet(
@@ -975,7 +976,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
-    if (wantsSubscriptions) {
+    if (wantSubscriptions) {
       val listRdr: Reads[List[StoredAppWithSubs]] = implicitly
       implicit val rdr                            = transformApplications.andThen(listRdr)
 
@@ -1037,7 +1038,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val needsLookup = qry.wantSubscriptions || qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
 
       val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
-      val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => needsLookup && qry.hasSpecificSubscriptionFilter)
+      val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => qry.hasSpecificSubscriptionFilter).filterNot(_ => qry.wantSubscriptions)
 
       val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage ++ sortingStage
 
