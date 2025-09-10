@@ -38,7 +38,6 @@ sealed trait MultipleApplicationQuery extends ApplicationQuery {
   def params: List[FilterParam[_]]
   lazy val hasAnySubscriptionFilter: Boolean      = ApplicationQueryConverter.hasAnySubscriptionFilter(params)
   lazy val hasSpecificSubscriptionFilter: Boolean = ApplicationQueryConverter.hasSpecificSubscriptionFilter(params)
-  lazy val wantSubscriptions: Boolean             = ApplicationQueryConverter.wantsSubscriptions(params)
 }
 
 object ApplicationQuery {
@@ -61,7 +60,7 @@ object ApplicationQuery {
     lazy val specificParam = ServerTokenQP(serverToken)
   }
 
-  case class GeneralOpenEndedApplicationQuery protected (params: List[NonUniqueFilterParam[_]], sorting: Sorting = Sorting.NoSorting, wantsSubscriptions: Boolean = false)
+  case class GeneralOpenEndedApplicationQuery protected (params: List[NonUniqueFilterParam[_]], sorting: Sorting = Sorting.NoSorting, wantSubscriptions: Boolean = false)
       extends MultipleApplicationQuery
 
   case class PaginatedApplicationQuery protected (params: List[NonUniqueFilterParam[_]], sorting: Sorting = Sorting.NoSorting, pagination: Pagination = Pagination())
@@ -117,9 +116,9 @@ object ApplicationQuery {
       val sorting = ApplicationQuery.identifyAnySorting(validParams)
 
       identifyAnyPagination(validParams)
-        .fold[MultipleApplicationQuery](
+        .fold[MultipleApplicationQuery]({
           ApplicationQuery.GeneralOpenEndedApplicationQuery(nonUniqueFilterParam, sorting, wantSubscriptions)
-        )(pagination => {
+        })(pagination => {
           ApplicationQuery.PaginatedApplicationQuery(nonUniqueFilterParam, sorting, pagination)
         })
     }

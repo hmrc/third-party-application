@@ -109,7 +109,7 @@ class QueryControllerSpec
 
     "work for general query with subs" in new Setup {
       QueryServiceMock.FetchApplicationsByQuery.thenReturnsAppsWithSubscriptionsFor(
-        ApplicationQuery.GeneralOpenEndedApplicationQuery(UserIdQP(userIdOne) :: Nil, wantsSubscriptions = true),
+        ApplicationQuery.GeneralOpenEndedApplicationQuery(UserIdQP(userIdOne) :: Nil, wantSubscriptions = true),
         appWithSubs
       )
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?userId=${userIdOne}&wantSubscriptions"))

@@ -62,7 +62,7 @@ object ApplicationQueries {
 
   def applicationsByUserId(userId: UserId, includeDeleted: Boolean) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
     params = UserIdQP(userId) :: List(ExcludeDeletedQP).filterNot(_ => includeDeleted),
-    wantsSubscriptions = true
+    wantSubscriptions = true
   )
 
   def applicationsByStateAndDate(state: State, beforeDate: Instant) = ApplicationQuery.GeneralOpenEndedApplicationQuery(
