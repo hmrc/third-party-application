@@ -69,7 +69,6 @@ object ParamsValidator {
     // Cannot have a unqiue filter param and other filter params other than UserAgentQP or WantSubscriptions
 
     val onlyHasAllowableOtherParams = otherFilterParams.find(_ match {
-      case WantSubscriptionsQP   => false
       case GenericUserAgentQP(_) => false
       case ApiGatewayUserAgentQP => false
       case _                     => true

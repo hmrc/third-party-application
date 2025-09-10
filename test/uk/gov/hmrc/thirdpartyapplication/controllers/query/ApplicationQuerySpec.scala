@@ -29,29 +29,29 @@ class ApplicationQuerySpec extends HmrcSpec with ApplicationWithCollaboratorsFix
     val test = (ps: List[Param[_]]) => ApplicationQuery.attemptToConstructQuery(ps)
 
     "work when given a correct applicationId" in {
-      test(List(ApplicationIdQP(applicationIdOne))) shouldBe ApplicationQuery.ById(applicationIdOne, List.empty)
+      test(List(ApplicationIdQP(applicationIdOne))) shouldBe ApplicationQuery.ById(applicationIdOne, List.empty, false)
     }
 
     "work when given a correct clientId" in {
-      test(List(ClientIdQP(clientIdOne))) shouldBe ApplicationQuery.ByClientId(clientIdOne, false, List.empty)
+      test(List(ClientIdQP(clientIdOne))) shouldBe ApplicationQuery.ByClientId(clientIdOne, false, List.empty, false)
     }
 
     "work when given a correct clientId and User Agent" in {
-      test(List(ClientIdQP(clientIdOne), ApiGatewayUserAgentQP)) shouldBe ApplicationQuery.ByClientId(clientIdOne, true, List(Param.ApiGatewayUserAgentQP))
-      test(List(ClientIdQP(clientIdOne), GenericUserAgentQP("Bob"))) shouldBe ApplicationQuery.ByClientId(clientIdOne, false, List(GenericUserAgentQP("Bob")))
+      test(List(ClientIdQP(clientIdOne), ApiGatewayUserAgentQP)) shouldBe ApplicationQuery.ByClientId(clientIdOne, true, List(Param.ApiGatewayUserAgentQP), false)
+      test(List(ClientIdQP(clientIdOne), GenericUserAgentQP("Bob"))) shouldBe ApplicationQuery.ByClientId(clientIdOne, false, List(GenericUserAgentQP("Bob")), false)
     }
 
     "work when given a correct serverToken" in {
-      test(List(ServerTokenQP("abc"))) shouldBe ApplicationQuery.ByServerToken("abc", false, List.empty)
+      test(List(ServerTokenQP("abc"))) shouldBe ApplicationQuery.ByServerToken("abc", false, List.empty, false)
     }
 
     "work when given a correct serverToken and User Agent" in {
-      test(List(ServerTokenQP("abc"), Param.ApiGatewayUserAgentQP)) shouldBe ApplicationQuery.ByServerToken("abc", true, List(Param.ApiGatewayUserAgentQP))
-      test(List(ServerTokenQP("abc"), Param.GenericUserAgentQP("Bob"))) shouldBe ApplicationQuery.ByServerToken("abc", false, List(Param.GenericUserAgentQP("Bob")))
+      test(List(ServerTokenQP("abc"), Param.ApiGatewayUserAgentQP)) shouldBe ApplicationQuery.ByServerToken("abc", true, List(Param.ApiGatewayUserAgentQP), false)
+      test(List(ServerTokenQP("abc"), Param.GenericUserAgentQP("Bob"))) shouldBe ApplicationQuery.ByServerToken("abc", false, List(Param.GenericUserAgentQP("Bob")), false)
     }
 
     "work when given a correct applicationId and some irrelevant header" in {
-      test(List(ApplicationIdQP(applicationIdOne), Param.GenericUserAgentQP("XYZ"))) shouldBe ApplicationQuery.ById(applicationIdOne, List(Param.GenericUserAgentQP("XYZ")))
+      test(List(ApplicationIdQP(applicationIdOne), Param.GenericUserAgentQP("XYZ"))) shouldBe ApplicationQuery.ById(applicationIdOne, List(Param.GenericUserAgentQP("XYZ")), false)
     }
 
     "work when given sorting and userId" in {

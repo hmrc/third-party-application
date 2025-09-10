@@ -134,7 +134,7 @@ class ApplicationController @Inject() (
 
   // TODO - repoint users of this as fetch application and access via details.token
   def fetchCredentials(applicationId: ApplicationId) = Action.async {
-    handleOption(queryService.fetchSingleApplication(ApplicationQuery.ById(applicationId, List.empty)).map(_.map(_.details.token)))
+    handleOption(queryService.fetchSingleApplication(ApplicationQuery.ById(applicationId, List.empty, false)).map(_.map(_.details.token)))
   }
 
 // TODO remove
