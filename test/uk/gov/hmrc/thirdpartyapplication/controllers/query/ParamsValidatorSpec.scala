@@ -106,8 +106,8 @@ class ParamsValidatorSpec
     }
 
     "pass when given a correct clientId and User Agent" in {
-      testGoodCombo(NonEmptyList.of(ClientIdQP(clientIdOne)), List(UserAgentQP(Param.ApiGatewayUserAgent)))
-      testGoodCombo(NonEmptyList.of(ClientIdQP(clientIdOne)), List(UserAgentQP("Bob")))
+      testGoodCombo(NonEmptyList.of(ClientIdQP(clientIdOne)), List(ApiGatewayUserAgentQP))
+      testGoodCombo(NonEmptyList.of(ClientIdQP(clientIdOne)), List(GenericUserAgentQP("Bob")))
     }
 
     "pass when given a correct serverToken" in {
@@ -115,12 +115,12 @@ class ParamsValidatorSpec
     }
 
     "pass when given a correct serverToken and User Agent" in {
-      testGoodCombo(NonEmptyList.of(ServerTokenQP("abc")), List(UserAgentQP(Param.ApiGatewayUserAgent)))
-      testGoodCombo(NonEmptyList.of(ServerTokenQP("abc")), List(UserAgentQP("Bob")))
+      testGoodCombo(NonEmptyList.of(ServerTokenQP("abc")), List(ApiGatewayUserAgentQP))
+      testGoodCombo(NonEmptyList.of(ServerTokenQP("abc")), List(GenericUserAgentQP("Bob")))
     }
 
     "pass when given a correct applicationId and some irrelevant header" in {
-      testGoodCombo(NonEmptyList.of(ApplicationIdQP(applicationIdOne)), List(UserAgentQP("XYZ")))
+      testGoodCombo(NonEmptyList.of(ApplicationIdQP(applicationIdOne)), List(GenericUserAgentQP("XYZ")))
     }
 
     "fail when mixing two ids" in {

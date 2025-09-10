@@ -64,8 +64,7 @@ object ApplicationQuery {
   def identifyAnyPagination(allParams: List[Param[_]]): Option[Pagination] = {
     allParams.collect {
       case pp: PaginationParam[_] => pp
-    }
-      .sortBy(_.order) match {
+    } sortBy (_.order) match {
       case PageSizeQP(size) :: PageNbrQP(nbr) :: Nil => Pagination(size, nbr).some
       case PageSizeQP(size) :: Nil                   => Pagination(pageSize = size).some
       case PageNbrQP(nbr) :: Nil                     => Pagination(pageNbr = nbr).some
@@ -88,8 +87,8 @@ object ApplicationQuery {
       import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
 
       val hasApiGatewayUserAgent = validParams.find(_ match {
-        case UserAgentQP(`ApiGatewayUserAgent`) => true
-        case _                                  => false
+        case ApiGatewayUserAgentQP => true
+        case _                     => false
       }).isDefined
 
       validParams.collect {

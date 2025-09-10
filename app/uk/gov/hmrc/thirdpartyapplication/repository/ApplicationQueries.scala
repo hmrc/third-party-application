@@ -37,7 +37,7 @@ object ApplicationQueries {
   lazy val standardNonTestingApps = ApplicationQuery.GeneralOpenEndedApplicationQuery(
     sorting = Sorting.NoSorting,
     params = List(
-      AccessTypeQP(Some(AccessType.STANDARD)),
+      MatchAccessTypeQP(AccessType.STANDARD),
       AppStateFilterQP(AppStateFilter.MatchingMany(State.values.toSet[State] - State.TESTING - State.DELETED))
     )
   )

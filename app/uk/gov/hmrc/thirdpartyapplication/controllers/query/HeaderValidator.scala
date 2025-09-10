@@ -49,10 +49,16 @@ private object HeaderValidator {
   }
 
   object InternalUserAgentValidator extends HeaderValidator {
-    val headerName = HttpHeaders.INTERNAL_USER_AGENT
+    val headerName                  = HttpHeaders.INTERNAL_USER_AGENT
+    val ApiGatewayUserAgent: String = "APIPlatformAuthorizer"
 
-    def validate(values: Seq[String]): ErrorsOr[Param.UserAgentQP] = {
-      SingleValueExpected(headerName)(values) map { Param.UserAgentQP(_) }
+    def validate(values: Seq[String]): ErrorsOr[Param.UserAgentParam[_]] = {
+      SingleValueExpected(headerName)(values) map {
+        _ match {
+          case `ApiGatewayUserAgent` => Param.ApiGatewayUserAgentQP
+          case v                     => Param.GenericUserAgentQP(v)
+        }
+      }
     }
   }
 

@@ -176,10 +176,10 @@ class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaborators
       }
 
       "extract valid params - accessType filter" in {
-        test(Map("accessType" -> Seq("STANDARD"))) shouldBe List(AccessTypeQP(Some(AccessType.STANDARD))).validNel
-        test(Map("accessType" -> Seq("ROPC"))) shouldBe List(AccessTypeQP(Some(AccessType.ROPC))).validNel
-        test(Map("accessType" -> Seq("PRIVILEGED"))) shouldBe List(AccessTypeQP(Some(AccessType.PRIVILEGED))).validNel
-        test(Map("accessType" -> Seq("ANY"))) shouldBe List(AccessTypeQP(None)).validNel
+        test(Map("accessType" -> Seq("STANDARD"))) shouldBe List(MatchAccessTypeQP(AccessType.STANDARD)).validNel
+        test(Map("accessType" -> Seq("ROPC"))) shouldBe List(MatchAccessTypeQP(AccessType.ROPC)).validNel
+        test(Map("accessType" -> Seq("PRIVILEGED"))) shouldBe List(MatchAccessTypeQP(AccessType.PRIVILEGED)).validNel
+        test(Map("accessType" -> Seq("ANY"))) shouldBe List(AnyAccessTypeQP).validNel
         shouldFail(test(Map("accessType" -> Seq("BOBBINS"))))
       }
 

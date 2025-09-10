@@ -37,8 +37,8 @@ class ApplicationQuerySpec extends HmrcSpec with ApplicationWithCollaboratorsFix
     }
 
     "work when given a correct clientId and User Agent" in {
-      test(List(ClientIdQP(clientIdOne), UserAgentQP(Param.ApiGatewayUserAgent))) shouldBe ApplicationQuery.ByClientId(clientIdOne, true, List(UserAgentQP(Param.ApiGatewayUserAgent)))
-      test(List(ClientIdQP(clientIdOne), UserAgentQP("Bob"))) shouldBe ApplicationQuery.ByClientId(clientIdOne, false, List(UserAgentQP("Bob")))
+      test(List(ClientIdQP(clientIdOne), ApiGatewayUserAgentQP)) shouldBe ApplicationQuery.ByClientId(clientIdOne, true, List(Param.ApiGatewayUserAgentQP))
+      test(List(ClientIdQP(clientIdOne), GenericUserAgentQP("Bob"))) shouldBe ApplicationQuery.ByClientId(clientIdOne, false, List(GenericUserAgentQP("Bob")))
     }
 
     "work when given a correct serverToken" in {
@@ -46,12 +46,12 @@ class ApplicationQuerySpec extends HmrcSpec with ApplicationWithCollaboratorsFix
     }
 
     "work when given a correct serverToken and User Agent" in {
-      test(List(ServerTokenQP("abc"), UserAgentQP(Param.ApiGatewayUserAgent))) shouldBe ApplicationQuery.ByServerToken("abc", true, List(UserAgentQP(Param.ApiGatewayUserAgent)))
-      test(List(ServerTokenQP("abc"), UserAgentQP("Bob"))) shouldBe ApplicationQuery.ByServerToken("abc", false, List(UserAgentQP("Bob")))
+      test(List(ServerTokenQP("abc"), Param.ApiGatewayUserAgentQP)) shouldBe ApplicationQuery.ByServerToken("abc", true, List(Param.ApiGatewayUserAgentQP))
+      test(List(ServerTokenQP("abc"), Param.GenericUserAgentQP("Bob"))) shouldBe ApplicationQuery.ByServerToken("abc", false, List(Param.GenericUserAgentQP("Bob")))
     }
 
     "work when given a correct applicationId and some irrelevant header" in {
-      test(List(ApplicationIdQP(applicationIdOne), UserAgentQP("XYZ"))) shouldBe ApplicationQuery.ById(applicationIdOne, List(UserAgentQP("XYZ")))
+      test(List(ApplicationIdQP(applicationIdOne), Param.GenericUserAgentQP("XYZ"))) shouldBe ApplicationQuery.ById(applicationIdOne, List(Param.GenericUserAgentQP("XYZ")))
     }
 
     "work when given sorting and userId" in {
