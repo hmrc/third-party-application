@@ -33,8 +33,7 @@ object ParamsValidator {
     params.collect {
       case qp: LastUsedAfterQP  => qp
       case qp: LastUsedBeforeQP => qp
-    }
-      .sortBy(_.order) match {
+    } match {
       case LastUsedAfterQP(after) :: LastUsedBeforeQP(before) :: _ if after.isAfter(before) => "Cannot query for used after date that is after a given before date".invalidNel
       case _                                                                                => ().validNel
     }
@@ -70,9 +69,10 @@ object ParamsValidator {
     // Cannot have a unqiue filter param and other filter params other than UserAgentQP or WantSubscriptions
 
     val onlyHasAllowableOtherParams = otherFilterParams.find(_ match {
-      case WantSubscriptionsQP => false
-      case UserAgentQP(_)      => false
-      case _                   => true
+      case WantSubscriptionsQP   => false
+      case GenericUserAgentQP(_) => false
+      case ApiGatewayUserAgentQP => false
+      case _                     => true
     }).fold[ErrorsOr[Unit]](().validNel)(f => "Cannot mix unqiue and non-unique filter params".invalidNel)
 
     (uniqueFilterParams.head, uniqueFilterParams.tail.isEmpty) match {
