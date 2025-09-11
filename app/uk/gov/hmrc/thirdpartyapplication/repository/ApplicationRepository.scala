@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.{Clock, Instant, Period}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
 import cats.syntax.either._
 import cats.syntax.option._
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
@@ -29,18 +28,16 @@ import org.bson.conversions.Bson
 import org.mongodb.scala.bson._
 import org.mongodb.scala.model
 import org.mongodb.scala.model.Aggregates._
-import org.mongodb.scala.model.Filters._
+import org.mongodb.scala.model.Filters.{exists, _}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
 import org.mongodb.scala.model._
-
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
@@ -1079,6 +1076,30 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         .head()
         .map(Codecs.fromBson[PaginatedApplicationData])
     }
+  }
+
+  def getAppsForResponsibleIndividualOrAdmin(emailAddress: LaxEmailAddress): Future[List[StoredApplication]] = {
+    val query =
+      or(
+        and(
+          elemMatch(
+            "collaborators",
+            and(
+              equal("emailAddress", emailAddress.text),
+              equal("role", "ADMINISTRATOR")
+            )
+          ),
+          notEqual("state.name", State.DELETED.toString())
+        ),
+        and(
+          equal("access.importantSubmissionData.responsibleIndividual.emailAddress", emailAddress.text),
+          notEqual("state.name", State.DELETED.toString())
+        )
+      )
+
+    collection.find(query)
+      .toFuture()
+      .map(_.toList)
   }
 
 }

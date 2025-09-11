@@ -28,6 +28,7 @@ GET           /application/:id/subscription/:context/:version        uk.gov.hmrc
 POST          /application/:id/delete                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteApplication(id: ApplicationId)
 
 POST          /verify-uplift/:code                                   uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController.verifyUplift(code: String)
+POST          /responsible-ind-or-admin/applications                 uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.getAppsForResponsibleIndividualOrAdmin()
 
 # Gatekeeper ONLY routes
 GET           /gatekeeper/applications                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppsForGatekeeper()

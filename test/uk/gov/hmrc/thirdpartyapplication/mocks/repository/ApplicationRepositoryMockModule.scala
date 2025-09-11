@@ -472,6 +472,15 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(pad))
     }
 
+    object GetAppsForResponsibleIndividualOrAdmin {
+
+      def thenReturnWhen(emailAddress: LaxEmailAddress)(apps: StoredApplication*) =
+        when(aMock.getAppsForResponsibleIndividualOrAdmin(eqTo(emailAddress))).thenReturn(successful(apps.toList))
+
+      def thenReturnEmptyWhen(emailAddress: LaxEmailAddress) =
+        when(aMock.getAppsForResponsibleIndividualOrAdmin(eqTo(emailAddress))).thenReturn(successful(List.empty))
+    }
+
   }
 
   object ApplicationRepoMock extends BaseApplicationRepoMock {
