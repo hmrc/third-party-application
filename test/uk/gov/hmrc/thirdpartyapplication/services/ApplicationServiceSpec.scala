@@ -809,7 +809,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.GetAppsForResponsibleIndividualOrAdmin.thenReturnWhen(LaxEmailAddressData.one)(application1, application2, application3)
 
       val result = await(underTest.getAppsForResponsibleIndividualOrAdmin(LaxEmailAddressData.one))
-      result should contain theSameElementsAs List(application1, application2, application3).map(app => StoredApplication.asApplication(app))
+      result should contain theSameElementsAs List(application1, application2, application3).map(app => StoredApplication.asAppWithCollaborators(app))
     }
   }
 

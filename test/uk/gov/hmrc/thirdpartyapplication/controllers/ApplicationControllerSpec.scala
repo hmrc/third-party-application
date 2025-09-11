@@ -49,7 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, Qu
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.asApplication
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.asAppWithCollaborators
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util._
@@ -895,7 +895,7 @@ class ApplicationControllerSpec
 
     "succeed with a 200 (ok) when applications are found for an email" in new Setup {
 
-      ApplicationServiceMock.GetAppsForAdminOrRI.onRequestReturn(LaxEmailAddressData.one)(List(asApplication(storedApp)))
+      ApplicationServiceMock.GetAppsForAdminOrRI.onRequestReturn(LaxEmailAddressData.one)(List(asAppWithCollaborators(storedApp)))
 
       val result = underTest.getAppsForResponsibleIndividualOrAdmin()(request.withBody(Json.toJson(GetAppsForAdminOrRIRequest(LaxEmailAddressData.one))))
 

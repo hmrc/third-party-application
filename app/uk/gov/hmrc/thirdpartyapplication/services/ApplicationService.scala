@@ -241,7 +241,7 @@ class ApplicationService @Inject() (
   }
 
   def getAppsForResponsibleIndividualOrAdmin(emailAddress: LaxEmailAddress): Future[List[ApplicationWithCollaborators]] = {
-    applicationRepository.getAppsForResponsibleIndividualOrAdmin(emailAddress).map(_.map(application => StoredApplication.asApplication(application)))
+    applicationRepository.getAppsForResponsibleIndividualOrAdmin(emailAddress).map(_.map(application => StoredApplication.asAppWithCollaborators(application)))
   }
 
   private def createApp(createApplicationRequest: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {

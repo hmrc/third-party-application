@@ -53,35 +53,35 @@ class SubscriptionFieldsServiceSpec extends AsyncHmrcSpec with ApiSubscriptionFi
   private val defns: ApiFieldMap[FieldDefinition] = Map(
     context1 -> Map(
       version1 -> Map(
-        fieldName1 -> fieldDef("one", "one", "one"),
-        fieldName2 -> fieldDef("one", "one", "two")
+        fieldName1 -> fieldDef(1, 1, 1),
+        fieldName2 -> fieldDef(1, 1, 2)
       ),
       version2 -> Map(
-        fieldName1 -> fieldDef("one", "two", "one"),
-        fieldName2 -> fieldDef("one", "two", "two")
+        fieldName1 -> fieldDef(1, 2, 1),
+        fieldName2 -> fieldDef(1, 2, 2)
       )
     ),
     context2 -> Map(
       version1 -> Map(
-        fieldName1 -> fieldDef("two", "one", "one")
+        fieldName1 -> fieldDef(2, 1, 1)
       ),
       version2 -> Map(
-        fieldName1 -> fieldDef("two", "two", "one"),
-        fieldName2 -> fieldDef("two", "two", "two")
+        fieldName1 -> fieldDef(2, 2, 1),
+        fieldName2 -> fieldDef(2, 2, 2)
       )
     ),
     context3 -> Map(
       version1 -> Map(
-        fieldName1 -> fieldDef("three", "one", "one"),
-        fieldName2 -> fieldDef("three", "one", "two"),
-        fieldName3 -> fieldDef("three", "one", "three")
+        fieldName1 -> fieldDef(3, 1, 1),
+        fieldName2 -> fieldDef(3, 1, 2),
+        fieldName3 -> fieldDef(3, 1, 3)
       )
     ),
     context4 -> Map(
       version1 -> Map(
-        fieldName1 -> fieldDef("four", "one", "one"),
-        fieldName2 -> fieldDef("four", "one", "two"),
-        fieldName3 -> fieldDef("four", "one", "three")
+        fieldName1 -> fieldDef(4, 1, 1),
+        fieldName2 -> fieldDef(4, 1, 2),
+        fieldName3 -> fieldDef(4, 1, 3)
       )
     )
   )
