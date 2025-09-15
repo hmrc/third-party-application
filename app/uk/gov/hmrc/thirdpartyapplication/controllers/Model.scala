@@ -60,8 +60,8 @@ case class DeleteSubordinateApplicationRequest(applicationId: String)
 case class FixCollaboratorRequest(emailAddress: String, userId: UserId)
 
 case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: Instant, submissionId: SubmissionId)
-
 case class ConfirmSetupCompleteRequest(requesterEmailAddress: LaxEmailAddress)
+
 case class CollaboratorUserIds(userIds: List[UserId])
 
 object ErrorCode extends Enumeration {

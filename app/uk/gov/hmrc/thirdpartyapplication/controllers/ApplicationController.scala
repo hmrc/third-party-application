@@ -233,6 +233,12 @@ class ApplicationController @Inject() (
     }
   }
 
+  def getAppsForResponsibleIndividualOrAdmin() = Action.async(parse.json) { implicit request =>
+    withJsonBody[GetAppsForAdminOrRIRequest] { getAppsForAdminOrRIRequest =>
+      applicationService.getAppsForResponsibleIndividualOrAdmin(getAppsForAdminOrRIRequest.adminOrRespIndEmail).map(apps => Ok(toJson(apps))) recover recovery
+    }
+  }
+
   private def hasGatewayUserAgent(implicit hc: HeaderCarrier): Boolean = {
     hc.extraHeaders
       .find(_._1 == INTERNAL_USER_AGENT)

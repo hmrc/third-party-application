@@ -39,7 +39,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{ApplicationNameValidationResult, GetAppsForAdminOrRIRequest}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -49,6 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, Qu
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.asAppWithCollaborators
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util._
@@ -887,6 +888,39 @@ class ApplicationControllerSpec
 
       status(result) shouldBe NOT_FOUND
       verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
+    }
+  }
+
+  "getAppsForResponsibleIndividualOrAdmin" should {
+
+    "succeed with a 200 (ok) when applications are found for an email" in new Setup {
+
+      ApplicationServiceMock.GetAppsForAdminOrRI.onRequestReturn(LaxEmailAddressData.one)(List(asAppWithCollaborators(storedApp)))
+
+      val result = underTest.getAppsForResponsibleIndividualOrAdmin()(request.withBody(Json.toJson(GetAppsForAdminOrRIRequest(LaxEmailAddressData.one))))
+
+      status(result) shouldBe OK
+
+      ApplicationServiceMock.GetAppsForAdminOrRI.verifyCalledWith(LaxEmailAddressData.one)
+    }
+
+    "succeed with a 200 (ok) when no applications are not found for an email" in new Setup {
+
+      ApplicationServiceMock.GetAppsForAdminOrRI.onRequestReturn(LaxEmailAddressData.one)(List.empty)
+
+      val result = underTest.getAppsForResponsibleIndividualOrAdmin()(request.withBody(Json.toJson(GetAppsForAdminOrRIRequest(LaxEmailAddressData.one))))
+
+      status(result) shouldBe OK
+
+      ApplicationServiceMock.GetAppsForAdminOrRI.verifyCalledWith(LaxEmailAddressData.one)
+    }
+
+    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
+      ApplicationServiceMock.GetAppsForAdminOrRI.thenThrowFor(LaxEmailAddressData.one)(new RuntimeException("Expected test failure"))
+
+      val result = underTest.getAppsForResponsibleIndividualOrAdmin()(request.withBody(Json.toJson(GetAppsForAdminOrRIRequest(LaxEmailAddressData.one))))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 }
