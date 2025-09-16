@@ -572,7 +572,8 @@ class ApplicationServiceSpec
           blocked = false,
           ipAllowlist = IpAllowlist(),
           lastActionActor = ActorType.UNKNOWN,
-          deleteRestriction = DeleteRestriction.NoRestriction
+          deleteRestriction = DeleteRestriction.NoRestriction,
+          organisationId = None
         ),
         collaborators = data.collaborators
       ))

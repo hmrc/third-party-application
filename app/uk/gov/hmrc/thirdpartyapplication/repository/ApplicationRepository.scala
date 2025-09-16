@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.{Clock, Instant, Period}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+
 import cats.syntax.either._
 import cats.syntax.option._
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
@@ -32,12 +33,14 @@ import org.mongodb.scala.model.Filters.{exists, _}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
 import org.mongodb.scala.model._
+
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
@@ -139,7 +142,8 @@ object ApplicationRepository {
         (JsPath \ "checkInformation").readNullable[CheckInformation] and
         ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
-        ((JsPath \ "deleteRestriction").read[DeleteRestriction] or Reads.pure[DeleteRestriction](DeleteRestriction.NoRestriction))
+        ((JsPath \ "deleteRestriction").read[DeleteRestriction] or Reads.pure[DeleteRestriction](DeleteRestriction.NoRestriction)) and
+        (JsPath \ "organisationId").readNullable[OrganisationId]
     )(StoredApplication.apply _)
 
     implicit val formatStoredApplication: OFormat[StoredApplication] = OFormat(readStoredApplication, Json.writes[StoredApplication])
