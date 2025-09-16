@@ -26,9 +26,10 @@ import play.api.test.FakeRequest
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifierFixtures
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, PaginatedApplications}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{NoSubscriptionsQP, UserIdQP}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerSpec
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.PaginatedApplicationQuery
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param.{NoSubscriptionsQP, UserIdQP}
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController
 import uk.gov.hmrc.thirdpartyapplication.mocks.QueryServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{CommonApplicationId, StoredApplicationFixtures}

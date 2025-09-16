@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers
+package uk.gov.hmrc.apiplatform.modules.applications
 
 import cats.data.{Validated, ValidatedNel}
 

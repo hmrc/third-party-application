@@ -21,8 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationIdData
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationNameValidationConfigMockModule, AuditServiceMockModule, QueryServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNaming.{excludeThisAppId, noExclusions}
 import uk.gov.hmrc.thirdpartyapplication.util._
 

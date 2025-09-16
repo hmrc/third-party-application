@@ -26,7 +26,8 @@ import uk.gov.hmrc.mongo.metrix.MetricSource
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationQueries, ApplicationRepository}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
 class RateLimitMetrics @Inject() (applicationRepository: ApplicationRepository)

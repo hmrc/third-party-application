@@ -22,8 +22,8 @@ import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaborators, ApplicationWithSubscriptions, PaginatedApplications}
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery.GeneralOpenEndedApplicationQuery
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.{ApplicationQuery, SingleApplicationQuery}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQuery, SingleApplicationQuery}
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util._
 

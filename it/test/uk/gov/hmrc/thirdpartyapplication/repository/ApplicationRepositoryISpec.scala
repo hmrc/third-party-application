@@ -40,6 +40,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collabora
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType.NO_RESTRICTION
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
@@ -1841,15 +1842,14 @@ class ApplicationRepositoryISpec
   }
 
   "getAppsForResponsibleIndividualOrAdmin" should {
-    val email        = LaxEmailAddress("john.doe@example.com")
+    val email = LaxEmailAddress("john.doe@example.com")
 
     "return no applications when the email is neither an admin nor RI on any active application" in {
 
       val application1 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
-      ).withCollaborators(Administrator(emailAddress = email, userId = UserIdData.one),
-        Developer(emailAddress = ResponsibleIndividualData.one.emailAddress, userId = UserIdData.one))
+      ).withCollaborators(Administrator(emailAddress = email, userId = UserIdData.one), Developer(emailAddress = ResponsibleIndividualData.one.emailAddress, userId = UserIdData.one))
 
       val application2 = anApplicationDataForTest(
         id = ApplicationId.random,
@@ -1871,7 +1871,6 @@ class ApplicationRepositoryISpec
 
       retrieved shouldBe List.empty
     }
-
 
     "return one application where the email is an admin" in {
 

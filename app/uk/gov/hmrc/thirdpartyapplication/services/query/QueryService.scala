@@ -23,8 +23,8 @@ import cats.data.EitherT
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.SingleApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton

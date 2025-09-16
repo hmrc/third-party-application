@@ -25,7 +25,9 @@ import org.scalatest.compatible.Assertion
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiIdentifierFixtures, Environment}
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, State}
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{NonUniqueFilterParam, UniqueFilterParam}
 
 class ParamsValidatorSpec
     extends HmrcSpec
@@ -149,7 +151,7 @@ class ParamsValidatorSpec
     val oneState     = MatchOneStateQP(State.PRODUCTION)
     val manyState    = MatchManyStatesQP(NonEmptyList.of(State.PRODUCTION, State.PRE_PRODUCTION))
     val blockedState = BlockedStateQP
-    val dateBefore   = Param.AppStateBeforeDateQP(instant)
+    val dateBefore   = uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.AppStateBeforeDateQP(instant)
 
     val testBadCombo  = (ps: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkAppStateFilters(ps) should not be Pass
     val testGoodCombo = (ps: List[NonUniqueFilterParam[_]]) => ParamsValidator.checkAppStateFilters(ps) shouldBe Pass

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers.query
+package uk.gov.hmrc.apiplatform.modules.applications.query.domain.models
 
 import scala.reflect.ClassTag
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueryConverter
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 
 sealed trait ApplicationQuery {
   def params: List[FilterParam[_]]
@@ -36,11 +36,23 @@ sealed trait SingleApplicationQuery extends ApplicationQuery {
 sealed trait MultipleApplicationQuery extends ApplicationQuery {
   def sorting: Sorting
   def params: List[FilterParam[_]]
-  lazy val hasAnySubscriptionFilter: Boolean      = ApplicationQueryConverter.hasAnySubscriptionFilter(params)
-  lazy val hasSpecificSubscriptionFilter: Boolean = ApplicationQueryConverter.hasSpecificSubscriptionFilter(params)
+  lazy val hasAnySubscriptionFilter: Boolean      = ApplicationQuery.hasAnySubscriptionFilter(params)
+  lazy val hasSpecificSubscriptionFilter: Boolean = ApplicationQuery.hasSpecificSubscriptionFilter(params)
 }
 
 object ApplicationQuery {
+
+  def hasAnySubscriptionFilter(params: List[Param[_]]): Boolean =
+    params.find(_ match {
+      case _: SubscriptionFilterParam[_] => true
+      case _                             => false
+    }).isDefined
+
+  def hasSpecificSubscriptionFilter(params: List[Param[_]]): Boolean =
+    params.find(_ match {
+      case ApiVersionNbrQP(_) => true
+      case _                  => false
+    }).isDefined
 
   def first[T <: Param[_]](implicit params: List[Param[_]], ct: ClassTag[T]): Option[T] = params.collect {
     case qp: T => qp
@@ -90,11 +102,9 @@ object ApplicationQuery {
 
   // List must be valid or outcome is undefined.
   def attemptToConstructQuery(validParams: List[Param[_]]): ApplicationQuery = {
-    val wantSubscriptions = first[WantSubscriptionsQP.type](validParams, implicitly).isDefined
+    val wantSubscriptions = first[Param.WantSubscriptionsQP.type](validParams, implicitly).isDefined
 
     def attemptToConstructSingleResultQuery(nonUniqueFilterParam: List[NonUniqueFilterParam[_]]): Option[SingleApplicationQuery] = {
-      import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
-
       val hasApiGatewayUserAgent = validParams.find(_ match {
         case ApiGatewayUserAgentQP => true
         case _                     => false

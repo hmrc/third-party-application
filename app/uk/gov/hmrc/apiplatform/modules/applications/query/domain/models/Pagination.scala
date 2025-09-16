@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers.query
+package uk.gov.hmrc.apiplatform.modules.applications.query.domain.models
 
 case class Pagination(pageSize: Int = 50, pageNbr: Int = 1)

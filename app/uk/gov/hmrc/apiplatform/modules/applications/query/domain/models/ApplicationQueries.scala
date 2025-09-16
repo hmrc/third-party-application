@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.repository
+package uk.gov.hmrc.apiplatform.modules.applications.query.domain.models
 
 import java.time.Instant
 
@@ -23,8 +23,8 @@ import cats.data.NonEmptyList
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, Environment, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 
 object ApplicationQueries {
 

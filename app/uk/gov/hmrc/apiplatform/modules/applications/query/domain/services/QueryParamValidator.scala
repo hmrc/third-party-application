@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers.query
+package uk.gov.hmrc.apiplatform.modules.applications.query.domain.services
 
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -26,7 +26,9 @@ import cats.syntax.all._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.{ErrorMessage, ErrorsOr}
 
 sealed trait QueryParamValidator {
   def paramName: String

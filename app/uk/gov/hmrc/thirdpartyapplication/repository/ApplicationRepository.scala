@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.{Clock, Instant, Period}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+
 import cats.syntax.either._
 import cats.syntax.option._
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
@@ -32,18 +33,20 @@ import org.mongodb.scala.model.Filters.{exists, _}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
 import org.mongodb.scala.model._
+
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{SingleApplicationQuery, _}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
@@ -901,8 +904,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  import uk.gov.hmrc.thirdpartyapplication.controllers.query._
-  import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery._
+  import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
 
   private val subscriptionsLookup: Bson =
     lookup(

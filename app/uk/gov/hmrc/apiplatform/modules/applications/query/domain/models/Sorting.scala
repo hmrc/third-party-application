@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers.query
+package uk.gov.hmrc.apiplatform.modules.applications.query.domain.models
 
 import cats.syntax.option._
 

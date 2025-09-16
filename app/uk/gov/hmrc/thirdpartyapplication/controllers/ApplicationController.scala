@@ -34,6 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Eithe
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQueries, ApplicationQuery}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -41,11 +42,9 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAuthorisationActions, AuthKeyRefiner}
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._

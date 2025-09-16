@@ -27,8 +27,8 @@ import org.mongodb.scala.model._
 import uk.gov.hmrc.mongo.play.json.Codecs
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 
 object ApplicationQueryConverter {
 
@@ -214,15 +214,4 @@ object ApplicationQueryConverter {
     }.getOrElse(Int.MaxValue)
   }
 
-  def hasAnySubscriptionFilter(params: List[Param[_]]): Boolean =
-    params.find(_ match {
-      case _: SubscriptionFilterParam[_] => true
-      case _                             => false
-    }).isDefined
-
-  def hasSpecificSubscriptionFilter(params: List[Param[_]]): Boolean =
-    params.find(_ match {
-      case ApiVersionNbrQP(_) => true
-      case _                  => false
-    }).isDefined
 }

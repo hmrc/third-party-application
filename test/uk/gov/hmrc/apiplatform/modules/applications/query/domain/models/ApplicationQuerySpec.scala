@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers.query
+package uk.gov.hmrc.apiplatform.modules.applications.query.domain.models
 
 import org.scalatest.EitherValues
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 
 class ApplicationQuerySpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues {
 
@@ -37,7 +38,12 @@ class ApplicationQuerySpec extends HmrcSpec with ApplicationWithCollaboratorsFix
     }
 
     "work when given a correct clientId and User Agent" in {
-      test(List(ClientIdQP(clientIdOne), ApiGatewayUserAgentQP)) shouldBe ApplicationQuery.ByClientId(clientIdOne, true, List(Param.ApiGatewayUserAgentQP), false)
+      test(List(ClientIdQP(clientIdOne), ApiGatewayUserAgentQP)) shouldBe ApplicationQuery.ByClientId(
+        clientIdOne,
+        true,
+        List(uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.ApiGatewayUserAgentQP),
+        false
+      )
       test(List(ClientIdQP(clientIdOne), GenericUserAgentQP("Bob"))) shouldBe ApplicationQuery.ByClientId(clientIdOne, false, List(GenericUserAgentQP("Bob")), false)
     }
 
@@ -46,12 +52,26 @@ class ApplicationQuerySpec extends HmrcSpec with ApplicationWithCollaboratorsFix
     }
 
     "work when given a correct serverToken and User Agent" in {
-      test(List(ServerTokenQP("abc"), Param.ApiGatewayUserAgentQP)) shouldBe ApplicationQuery.ByServerToken("abc", true, List(Param.ApiGatewayUserAgentQP), false)
-      test(List(ServerTokenQP("abc"), Param.GenericUserAgentQP("Bob"))) shouldBe ApplicationQuery.ByServerToken("abc", false, List(Param.GenericUserAgentQP("Bob")), false)
+      test(List(ServerTokenQP("abc"), uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.ApiGatewayUserAgentQP)) shouldBe ApplicationQuery.ByServerToken(
+        "abc",
+        true,
+        List(uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.ApiGatewayUserAgentQP),
+        false
+      )
+      test(List(ServerTokenQP("abc"), uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.GenericUserAgentQP("Bob"))) shouldBe ApplicationQuery.ByServerToken(
+        "abc",
+        false,
+        List(uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.GenericUserAgentQP("Bob")),
+        false
+      )
     }
 
     "work when given a correct applicationId and some irrelevant header" in {
-      test(List(ApplicationIdQP(applicationIdOne), Param.GenericUserAgentQP("XYZ"))) shouldBe ApplicationQuery.ById(applicationIdOne, List(Param.GenericUserAgentQP("XYZ")), false)
+      test(List(ApplicationIdQP(applicationIdOne), uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.GenericUserAgentQP("XYZ"))) shouldBe ApplicationQuery.ById(
+        applicationIdOne,
+        List(uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.GenericUserAgentQP("XYZ")),
+        false
+      )
     }
 
     "work when given sorting and userId" in {

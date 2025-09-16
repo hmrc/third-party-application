@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers.query
+package uk.gov.hmrc.apiplatform.modules.applications.query.domain.services
 
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
@@ -27,7 +27,9 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, State}
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.{ErrorMessage, ErrorsOr}
 
 class QueryParamValidatorSpec extends HmrcSpec with ApplicationWithCollaboratorsFixtures with EitherValues with FixedClock {
 

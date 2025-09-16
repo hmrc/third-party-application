@@ -20,7 +20,10 @@ import scala.reflect.ClassTag
 
 import cats.data.NonEmptyList
 
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.ErrorsOr
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.services._
 
 object ParamsValidator {
   import cats.implicits._
@@ -39,7 +42,7 @@ object ParamsValidator {
     }
 
   def checkSubscriptionsParamsCombinations(params: List[NonUniqueFilterParam[_]]): ErrorsOr[Unit] = {
-    import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
+    import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
 
     params.collect {
       case qp: SubscriptionFilterParam[_] => qp
