@@ -16,4 +16,12 @@
 
 package uk.gov.hmrc.apiplatform.modules.applications.query.domain.models
 
-case class Pagination(pageSize: Int = 50, pageNbr: Int = 1)
+case class Pagination(pageSize: Int = Pagination.Defaults.PageSize, pageNbr: Int = Pagination.Defaults.PageNbr)
+
+case object Pagination {
+
+  case object Defaults {
+    val PageSize = 50
+    val PageNbr  = 1
+  }
+}

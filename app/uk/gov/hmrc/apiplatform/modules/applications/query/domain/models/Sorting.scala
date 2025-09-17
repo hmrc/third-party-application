@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.applications.query.domain.models
 
-import cats.syntax.option._
-
 sealed trait Sorting
 
 object Sorting {
@@ -29,16 +27,26 @@ object Sorting {
   case object LastUseDateDescending extends Sorting
   case object NoSorting             extends Sorting
 
-  def apply(text: String): Option[Sorting] = {
-    text match {
-      case "NAME_ASC"       => NameAscending.some
-      case "NAME_DESC"      => NameDescending.some
-      case "SUBMITTED_ASC"  => SubmittedAscending.some
-      case "SUBMITTED_DESC" => SubmittedDescending.some
-      case "LAST_USE_ASC"   => LastUseDateAscending.some
-      case "LAST_USE_DESC"  => LastUseDateDescending.some
-      case "NO_SORT"        => NoSorting.some
-      case _                => None
+  val pairing = List(
+    ("NAME_ASC", NameAscending),
+    ("NAME_DESC", NameDescending),
+    ("SUBMITTED_ASC", SubmittedAscending),
+    ("SUBMITTED_DESC", SubmittedDescending),
+    ("LAST_USE_ASC", LastUseDateAscending),
+    ("LAST_USE_DESC", LastUseDateDescending),
+    ("NO_SORT", NoSorting)
+  )
+
+  def asText(sort: Sorting): String =
+    pairing
+      .find(p => p._2 == sort)
+      .map(_._1)
+      .get // Safe in this case
+
+  def apply(text: String): Option[Sorting] =
+    pairing.filter {
+      case (n, v) => n == text
     }
-  }
+      .headOption
+      .map(_._2)
 }

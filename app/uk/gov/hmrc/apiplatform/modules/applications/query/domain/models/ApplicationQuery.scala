@@ -30,7 +30,7 @@ sealed trait SingleApplicationQuery extends ApplicationQuery {
   def wantSubscriptions: Boolean
   def otherParams: List[NonUniqueFilterParam[_]]
   def specificParam: UniqueFilterParam[_]
-  lazy val params = specificParam +: otherParams
+  lazy val params: List[FilterParam[_]] = specificParam +: otherParams
 }
 
 sealed trait MultipleApplicationQuery extends ApplicationQuery {

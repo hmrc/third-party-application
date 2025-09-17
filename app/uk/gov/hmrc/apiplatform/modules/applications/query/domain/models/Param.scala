@@ -42,13 +42,13 @@ sealed trait SortingParam[+P] extends Param[P]
 object Param {
   case object WantSubscriptionsQP extends FilterParam[Unit]
 
-  case class ServerTokenQP(value: String)          extends UniqueFilterParam[String]
-  case class ClientIdQP(value: ClientId)           extends UniqueFilterParam[ClientId]
-  case class ApplicationIdQP(value: ApplicationId) extends UniqueFilterParam[ApplicationId]
-
   sealed trait UserAgentParam[T]               extends NonUniqueFilterParam[T]
   case class GenericUserAgentQP(value: String) extends UserAgentParam[String]
   case object ApiGatewayUserAgentQP            extends UserAgentParam[Unit]
+
+  case class ServerTokenQP(value: String)          extends UniqueFilterParam[String]
+  case class ClientIdQP(value: ClientId)           extends UniqueFilterParam[ClientId]
+  case class ApplicationIdQP(value: ApplicationId) extends UniqueFilterParam[ApplicationId]
 
   case class PageSizeQP(value: Int) extends PaginationParam[Int] { val order = 1 }
   case class PageNbrQP(value: Int)  extends PaginationParam[Int] { val order = 2 }

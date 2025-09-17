@@ -90,7 +90,7 @@ class ApplicationQuerySpec extends HmrcSpec with ApplicationWithCollaboratorsFix
       test(List(UserIdQP(userIdOne), PageSizeQP(10), SortQP(Sorting.NameAscending))) shouldBe PaginatedApplicationQuery(
         List(UserIdQP(userIdOne)),
         Sorting.NameAscending,
-        Pagination(10, 1)
+        Pagination(10, Pagination.Defaults.PageNbr)
       )
     }
 
@@ -98,7 +98,7 @@ class ApplicationQuerySpec extends HmrcSpec with ApplicationWithCollaboratorsFix
       test(List(UserIdQP(userIdOne), PageNbrQP(2), SortQP(Sorting.NameAscending))) shouldBe PaginatedApplicationQuery(
         List(UserIdQP(userIdOne)),
         Sorting.NameAscending,
-        Pagination(50, 2)
+        Pagination(Pagination.Defaults.PageSize, 2)
       )
     }
   }
