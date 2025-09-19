@@ -145,6 +145,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       status(result) shouldBe OK
       contentAsJson(result).validate[MarkedSubmission] match {
         case JsSuccess(`markedSubmission`, _) => succeed
+        case JsSuccess(_, _)                  => fail(s"Not the marked submission expected")
         case JsError(e)                       => fail(s"Not parsed as a response $e")
       }
     }

@@ -793,7 +793,6 @@ class ApplicationServiceSpec
 
   "getAppsForResponsibleIndividualOrAdmin" should {
     "fetch all applications for an email" in new Setup {
-      val userId       = UserId.random
       val email        = LaxEmailAddress("john.doe@example.com")
       val application1 = storedApp.copy(
         id = ApplicationId.random,

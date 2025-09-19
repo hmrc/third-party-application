@@ -62,6 +62,7 @@ class UpliftService @Inject() (
         case Actors.AppCollaborator(email) => email.text
         case Actors.GatekeeperUser(user)   => user
         case Actors.ScheduledJob(jobId)    => jobId
+        case Actors.Process(name)          => name
       }
 
     def audit(app: StoredApplication) =
