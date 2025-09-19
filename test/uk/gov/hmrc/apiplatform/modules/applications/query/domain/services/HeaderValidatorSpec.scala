@@ -22,6 +22,7 @@ import org.scalatest.matchers.{MatchResult, Matcher}
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.applications.query.ErrorMessage
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.services.HeaderValidator.InternalUserAgentValidator.ApiGatewayUserAgent
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders
@@ -38,11 +39,11 @@ class HeaderValidatorSpec extends HmrcSpec with EitherValues {
     }
 
     "extract valid params - user agent" in {
-      test(Map(userAgent)).value shouldBe List(uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.ApiGatewayUserAgentQP)
+      test(Map(userAgent)).value shouldBe List(Param.ApiGatewayUserAgentQP)
     }
 
     "extract valid params - both" in {
-      test(Map(serverToken, userAgent)).value shouldBe List(ServerTokenQP("ABC"), uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.ApiGatewayUserAgentQP)
+      test(Map(serverToken, userAgent)).value shouldBe List(ServerTokenQP("ABC"), Param.ApiGatewayUserAgentQP)
     }
 
     "extract valid params regardless of case - server token" in {

@@ -46,7 +46,7 @@ object HeaderValidator {
     val headerName = HttpHeaders.SERVER_TOKEN_HEADER
 
     def validate(values: Seq[String]): ErrorsOr[Param.ServerTokenQP] = {
-      SingleValueExpected(headerName)(values) map { uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.ServerTokenQP(_) }
+      SingleValueExpected(headerName)(values) map { Param.ServerTokenQP(_) }
     }
   }
 
@@ -57,8 +57,8 @@ object HeaderValidator {
     def validate(values: Seq[String]): ErrorsOr[Param.UserAgentParam[_]] = {
       SingleValueExpected(headerName)(values) map {
         _ match {
-          case `ApiGatewayUserAgent` => uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.ApiGatewayUserAgentQP
-          case v                     => uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.GenericUserAgentQP(v)
+          case `ApiGatewayUserAgent` => Param.ApiGatewayUserAgentQP
+          case v                     => Param.GenericUserAgentQP(v)
         }
       }
     }
