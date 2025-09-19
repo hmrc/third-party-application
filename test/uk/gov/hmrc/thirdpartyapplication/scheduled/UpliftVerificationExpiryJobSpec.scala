@@ -31,11 +31,12 @@ import uk.gov.hmrc.mongo.test.MongoSupport
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationQueries, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class UpliftVerificationExpiryJobSpec

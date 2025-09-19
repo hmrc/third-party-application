@@ -27,8 +27,8 @@ import org.mongodb.scala.model._
 import uk.gov.hmrc.mongo.play.json.Codecs
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 
 object ApplicationQueryConverter {
 
@@ -88,8 +88,9 @@ object ApplicationQueryConverter {
     })
 
   def asAccessTypeFilters(implicit params: List[Param[_]]): List[Bson] =
-    onFirst[AccessTypeQP](qp => {
-      qp.value.fold(List.empty[Bson])(accessType => List(equal("access.accessType", Codecs.toBson(accessType))))
+    onFirst[AccessTypeParam[_]](_ match {
+      case AnyAccessTypeQP               => List.empty
+      case MatchAccessTypeQP(accessType) => List(equal("access.accessType", Codecs.toBson(accessType)))
     })
 
   def asLastUsedFilters(implicit params: List[Param[_]]): List[Bson] = {
@@ -125,13 +126,13 @@ object ApplicationQueryConverter {
   def applicationStateMatch(states: State*): Bson = in("state.name", states.map(_.toString): _*)
 
   def asAppStateFilters(implicit params: List[Param[_]]): List[Bson] =
-    onFirst[AppStateFilterQP](_.value match {
-      case AppStateFilter.NoFiltering          => List.empty
-      case AppStateFilter.Active               => List(applicationStateMatch(State.PRE_PRODUCTION, State.PRODUCTION))
-      case AppStateFilter.ExcludingDeleted     => List(excludeDeleted)
-      case AppStateFilter.Blocked              => List(and(equal("blocked", BsonBoolean(true)), excludeDeleted))
-      case AppStateFilter.MatchingOne(state)   => List(equal("state.name", state.toString))
-      case AppStateFilter.MatchingMany(states) => List(in("state.name", states.toList.map(_.toString): _*))
+    onFirst[AppStateParam[_]](_ match {
+      case NoStateFilteringQP        => List.empty
+      case ActiveStateQP             => List(applicationStateMatch(State.PRE_PRODUCTION, State.PRODUCTION))
+      case ExcludeDeletedQP          => List(excludeDeleted)
+      case BlockedStateQP            => List(and(equal("blocked", BsonBoolean(true)), excludeDeleted))
+      case MatchOneStateQP(state)    => List(equal("state.name", state.toString))
+      case MatchManyStatesQP(states) => List(in("state.name", states.toList.map(_.toString): _*))
     }) ++
       onFirst[AppStateBeforeDateQP](qp => List(lte("state.updatedOn", qp.value)))
 
@@ -213,21 +214,4 @@ object ApplicationQueryConverter {
     }.getOrElse(Int.MaxValue)
   }
 
-  def hasAnySubscriptionFilter(params: List[Param[_]]): Boolean =
-    params.find(_ match {
-      case _: SubscriptionFilterParam[_] => true
-      case _                             => false
-    }).isDefined
-
-  def hasSpecificSubscriptionFilter(params: List[Param[_]]): Boolean =
-    params.find(_ match {
-      case ApiVersionNbrQP(_) => true
-      case _                  => false
-    }).isDefined
-
-  def wantsSubscriptions(params: List[Param[_]]): Boolean =
-    params.exists(_ match {
-      case WantSubscriptionsQP => true
-      case _                   => false
-    })
 }

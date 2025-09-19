@@ -29,9 +29,10 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationQueries, ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 
 @Singleton
 class UpliftVerificationExpiryJob @Inject() (

@@ -24,12 +24,12 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitationActionBuilders
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 

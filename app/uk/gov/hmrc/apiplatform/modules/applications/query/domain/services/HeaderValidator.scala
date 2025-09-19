@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers.query
+package uk.gov.hmrc.apiplatform.modules.applications.query.domain.services
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import cats.syntax.all._
 
+import uk.gov.hmrc.apiplatform.modules.applications.query.ErrorsOr
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders
 
 sealed trait HeaderValidator {
@@ -27,7 +29,7 @@ sealed trait HeaderValidator {
   def validate(values: Seq[String]): ErrorsOr[Param[_]]
 }
 
-private object HeaderValidator {
+object HeaderValidator {
   type ErrorMessage = String
   type ErrorsOr[A]  = ValidatedNel[ErrorMessage, A]
 
@@ -49,10 +51,16 @@ private object HeaderValidator {
   }
 
   object InternalUserAgentValidator extends HeaderValidator {
-    val headerName = HttpHeaders.INTERNAL_USER_AGENT
+    val headerName                  = HttpHeaders.INTERNAL_USER_AGENT
+    val ApiGatewayUserAgent: String = "APIPlatformAuthorizer"
 
-    def validate(values: Seq[String]): ErrorsOr[Param.UserAgentQP] = {
-      SingleValueExpected(headerName)(values) map { Param.UserAgentQP(_) }
+    def validate(values: Seq[String]): ErrorsOr[Param.UserAgentParam[_]] = {
+      SingleValueExpected(headerName)(values) map {
+        _ match {
+          case `ApiGatewayUserAgent` => Param.ApiGatewayUserAgentQP
+          case v                     => Param.GenericUserAgentQP(v)
+        }
+      }
     }
   }
 

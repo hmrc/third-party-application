@@ -62,6 +62,7 @@ class AccessService @Inject() (applicationRepository: ApplicationRepository, aud
     applicationData.access.accessType match {
       case AccessType.PRIVILEGED => privilegedFunction(applicationData)
       case AccessType.ROPC       => ropcFunction(applicationData)
+      case _: AccessType         => throw new RuntimeException("Standard App found unexpectedly in privilegedOrRopc()")
     }
 
   private def getStandardAccess(applicationData: StoredApplication): Access.Standard =

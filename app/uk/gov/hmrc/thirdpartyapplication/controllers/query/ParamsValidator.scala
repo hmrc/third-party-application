@@ -20,7 +20,10 @@ import scala.reflect.ClassTag
 
 import cats.data.NonEmptyList
 
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.ErrorsOr
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.services._
 
 object ParamsValidator {
   import cats.implicits._
@@ -33,14 +36,13 @@ object ParamsValidator {
     params.collect {
       case qp: LastUsedAfterQP  => qp
       case qp: LastUsedBeforeQP => qp
-    }
-      .sortBy(_.order) match {
+    } match {
       case LastUsedAfterQP(after) :: LastUsedBeforeQP(before) :: _ if after.isAfter(before) => "Cannot query for used after date that is after a given before date".invalidNel
       case _                                                                                => ().validNel
     }
 
   def checkSubscriptionsParamsCombinations(params: List[NonUniqueFilterParam[_]]): ErrorsOr[Unit] = {
-    import uk.gov.hmrc.thirdpartyapplication.controllers.query.Param._
+    import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
 
     params.collect {
       case qp: SubscriptionFilterParam[_] => qp
@@ -70,9 +72,9 @@ object ParamsValidator {
     // Cannot have a unqiue filter param and other filter params other than UserAgentQP or WantSubscriptions
 
     val onlyHasAllowableOtherParams = otherFilterParams.find(_ match {
-      case WantSubscriptionsQP => false
-      case UserAgentQP(_)      => false
-      case _                   => true
+      case GenericUserAgentQP(_) => false
+      case ApiGatewayUserAgentQP => false
+      case _                     => true
     }).fold[ErrorsOr[Unit]](().validNel)(f => "Cannot mix unqiue and non-unique filter params".invalidNel)
 
     (uniqueFilterParams.head, uniqueFilterParams.tail.isEmpty) match {
@@ -82,10 +84,10 @@ object ParamsValidator {
   }
 
   def checkVerificationCodeUsesDeleteExclusion(implicit otherFilterParams: List[NonUniqueFilterParam[_]]): ErrorsOr[Unit] = {
-    (first[VerificationCodeQP], first[AppStateFilterQP]) match {
-      case (None, _)                                                                              => ().validNel
-      case (Some(VerificationCodeQP(_)), Some(AppStateFilterQP(AppStateFilter.ExcludingDeleted))) => ().validNel
-      case (Some(VerificationCodeQP(_)), _)                                                       => "Verification code queries must exclude deleted state".invalidNel
+    (first[VerificationCodeQP], first[ExcludeDeletedQP.type]) match {
+      case (None, _)                                             => ().validNel
+      case (Some(VerificationCodeQP(_)), Some(ExcludeDeletedQP)) => ().validNel
+      case (Some(VerificationCodeQP(_)), _)                      => "Verification code queries must exclude deleted state".invalidNel
     }
   }
 
@@ -97,15 +99,15 @@ object ParamsValidator {
     }
 
   def checkAppStateFilters(implicit otherFilterParams: List[NonUniqueFilterParam[Any]]): ErrorsOr[Unit] = {
-    val stateFilter = first[AppStateFilterQP]
+    val stateFilter = first[MatchOneStateQP]
     val dateFilter  = first[AppStateBeforeDateQP]
 
     (stateFilter, dateFilter) match {
       case (_, None) => ().validNel
 
-      case (Some(AppStateFilterQP(AppStateFilter.MatchingOne(_))), _) => ().validNel
-      case (None, Some(_))                                            => "Cannot query state used before date without a state filter".invalidNel
-      case _                                                          => "Cannot query state used before date without a single state filter".invalidNel
+      case (Some(MatchOneStateQP(_)), _) => ().validNel
+      case (None, Some(_))               => "Cannot query state used before date without a state filter".invalidNel
+      case _                             => "Cannot query state used before date without a single state filter".invalidNel
     }
   }
 

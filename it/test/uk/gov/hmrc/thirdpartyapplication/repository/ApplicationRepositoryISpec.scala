@@ -40,6 +40,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collabora
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType.NO_RESTRICTION
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
