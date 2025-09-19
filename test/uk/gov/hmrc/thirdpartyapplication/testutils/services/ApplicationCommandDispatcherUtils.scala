@@ -20,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.OrganisationIdFixtures
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{
   ApplicationRepositoryMockModule,
@@ -43,6 +44,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.delete._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ipallowlist._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.organisation.{LinkToOrganisationCommandHandler, LinkToOrganisationCommandsProcessor}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi._
@@ -52,7 +54,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
-    with StoredApplicationFixtures {
+    with StoredApplicationFixtures
+    with OrganisationIdFixtures {
 
   trait CommonSetup extends AuditServiceMockModule
       with ApplicationRepositoryMockModule
@@ -133,6 +136,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
 
     val mockRemoveSandboxApplicationTermsAndConditionsUrlCommandHandler: RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler =
       mock[RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler]
+
+    val mockLinkToOrganisationCommandHandler: LinkToOrganisationCommandHandler = mock[LinkToOrganisationCommandHandler]
 
     val blockCommandsProcessor = new BlockCommandsProcessor(
       mockBlockApplicationCommandHandler,
@@ -224,6 +229,10 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       mockUnsubscribeFromRetiredApiCommandHandler
     )
 
+    val linkToOrganisationCommandsProcessor = new LinkToOrganisationCommandsProcessor(
+      mockLinkToOrganisationCommandHandler
+    )
+
     val underTest = new ApplicationCommandDispatcher(
       ApplicationRepoMock.aMock,
       NotificationServiceMock.aMock,
@@ -242,7 +251,8 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       submissionsCommandsProcessor,
       subscriptionCommandsProcessor,
       blockCommandsProcessor,
-      scopesCommandsProcessor
+      scopesCommandsProcessor,
+      linkToOrganisationCommandsProcessor
     )
   }
 }

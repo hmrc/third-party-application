@@ -25,7 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{OrganisationCommand, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.delete.DeleteCommands
 import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength.GrantLengthCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ipallowlist.IpAllowListCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription.NameDescriptionCommandsProcessor
+import uk.gov.hmrc.thirdpartyapplication.services.commands.organisation.LinkToOrganisationCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.policy.PolicyCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit.RateLimitCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.{LoginRedirectUriCommandsProcessor, PostLogoutRedirectUriCommandsProcessor}
@@ -63,7 +64,8 @@ class ApplicationCommandDispatcher @Inject() (
     submissionsCommandsProcessor: SubmissionCommandsProcessor,
     subscriptionCommandsProcessor: SubscriptionCommandsProcessor,
     blockCommandsProcessor: BlockCommandsProcessor,
-    scopesCommandsProcessor: ScopesCommandsProcessor
+    scopesCommandsProcessor: ScopesCommandsProcessor,
+    linkToOrganisationCommandsProcessor: LinkToOrganisationCommandsProcessor
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -100,6 +102,7 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: SubscriptionCommand       => subscriptionCommandsProcessor.process(app, cmd)
       case cmd: BlockCommand              => blockCommandsProcessor.process(app, cmd)
       case cmd: ScopesCommand             => scopesCommandsProcessor.process(app, cmd)
+      case cmd: OrganisationCommand       => linkToOrganisationCommandsProcessor.process(app, cmd)
     }
   }
   // scalastyle:on cyclomatic.complexity

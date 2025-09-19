@@ -42,6 +42,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.delete._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.organisation.LinkToOrganisationCommandHandler
 import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.UpdateLoginRedirectUrisCommandHandler
@@ -911,6 +912,35 @@ class ApplicationCommandDispatcherSpec
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
         verifyNoneButGivenCmmandHandlerCalled[ChangeRateLimitTierCommandHandler]()
+      }
+    }
+
+    "LinkToOrganisation is received" should {
+
+      val cmd = LinkToOrganisation(otherAdminAsActor, organisationIdOne, timestamp)
+      val evt = ApplicationEvents.ApplicationLinkedToOrganisation(
+        EventId.random,
+        applicationId,
+        instant,
+        otherAdminAsActor,
+        organisationIdOne
+      )
+
+      "call LinkToOrganisation Handler and relevant common services if application exists" in new Setup {
+        primeCommonServiceSuccess()
+
+        when(mockLinkToOrganisationCommandHandler.process(*[StoredApplication], *[LinkToOrganisation])).thenReturn(E.pure((
+          applicationData,
+          NonEmptyList.one(evt)
+        )))
+
+        await(underTest.dispatch(applicationId, cmd, Set.empty).value)
+        verifyServicesCalledWithEvent(evt)
+        verifyNoneButGivenCmmandHandlerCalled[LinkToOrganisationCommandHandler]()
+      }
+
+      "bubble up exception when application fetch fails" in new Setup {
+        testFailure(cmd)
       }
     }
   }

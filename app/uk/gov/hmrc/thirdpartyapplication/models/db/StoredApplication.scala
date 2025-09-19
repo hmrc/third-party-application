@@ -46,7 +46,8 @@ case class StoredApplication(
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,
     ipAllowlist: IpAllowlist = IpAllowlist(),
-    deleteRestriction: DeleteRestriction = DeleteRestriction.NoRestriction
+    deleteRestriction: DeleteRestriction = DeleteRestriction.NoRestriction,
+    organisationId: Option[OrganisationId] = None
   ) extends HasState with HasAccess with HasCollaborators with HasEnvironment {
   protected val deployedTo = environment
 
@@ -88,7 +89,8 @@ object StoredApplication {
         data.blocked,
         ipAllowlist = data.ipAllowlist,
         lastActionActor = ActorType.UNKNOWN,
-        deleteRestriction = data.deleteRestriction
+        deleteRestriction = data.deleteRestriction,
+        organisationId = data.organisationId
       ),
       data.collaborators
     )
