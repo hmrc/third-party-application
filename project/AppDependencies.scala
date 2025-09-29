@@ -5,7 +5,6 @@ object AppDependencies {
   def apply(): Seq[ModuleID] = compileDeps ++ testDeps
 
   lazy val mockitoScalaVersion      = "2.0.0"
-  val mockitoVersion = "5.18.0"
   lazy val bootstrapVersion         = "9.19.0"
   lazy val hmrcMongoVersion         = "2.7.0"
   lazy val applicationEventVersion  = "0.88.0" // Ensure this version of the application-events library uses the appDomainVersion below
