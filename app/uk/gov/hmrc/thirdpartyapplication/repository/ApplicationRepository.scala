@@ -45,8 +45,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{SingleApplicationQuery, _}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
@@ -423,7 +423,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   }
 
   def fetch(id: ApplicationId): Future[Option[StoredApplication]] = {
-    fetchBySingleApplicationQuery(ApplicationQuery.ById(id, List.empty))
+    fetchBySingleApplicationQuery(ApplicationQuery.ById(id, List.empty, false))
       .map(_.left.getOrElse(None))
   }
 
@@ -905,8 +905,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  import uk.gov.hmrc.thirdpartyapplication.controllers.query._
-  import uk.gov.hmrc.thirdpartyapplication.controllers.query.ApplicationQuery._
+  import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
 
   private val subscriptionsLookup: Bson =
     lookup(
@@ -970,8 +969,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     }
 
-  private def executeAggregate(wantsSubscriptions: Boolean, pipeline: Seq[Bson]): Future[Either[List[StoredApplication], List[StoredAppWithSubs]]] = {
-    val projectionToUse = if (wantsSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
+  private def executeAggregate(wantSubscriptions: Boolean, pipeline: Seq[Bson]): Future[Either[List[StoredApplication], List[StoredAppWithSubs]]] = {
+
+    val projectionToUse = if (wantSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
 
     val facets: Seq[Bson] = Seq(
       facet(
@@ -979,7 +979,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
-    if (wantsSubscriptions) {
+    if (wantSubscriptions) {
       val listRdr: Reads[List[StoredAppWithSubs]] = implicitly
       implicit val rdr                            = transformApplications.andThen(listRdr)
 
@@ -1007,11 +1007,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Run Single Query", "application.repository.fetchSingleAppByAggregates") {
       val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
 
-      val needsLookup         = qry.wantsSubscriptions
+      val needsLookup         = qry.wantSubscriptions
       val maybeSubsLookup     = subscriptionsLookup.some.filter(_ => needsLookup)
       val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ filtersStage
 
-      executeAggregate(qry.wantsSubscriptions, pipeline)
+      executeAggregate(qry.wantSubscriptions, pipeline)
         .map(_.bimap(_.headOption, _.headOption))
     }
   }
@@ -1019,9 +1019,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   // So simple that we don't need to do anything other than use existing methods.  These could be done via conversion to AggregateQuery components at a later date.
   def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Either[Option[StoredApplication], Option[StoredAppWithSubs]]] = {
     qry match {
-      case ApplicationQuery.ByClientId(clientId, true, _)       => findAndRecordApplicationUsage(clientId).map(osa => Left(osa))
-      case ApplicationQuery.ByServerToken(serverToken, true, _) => findAndRecordServerTokenUsage(serverToken).map(osa => Left(osa))
-      case _                                                    => fetchSingleAppByAggregates(qry)
+      case ApplicationQuery.ByClientId(clientId, true, _, _)       => findAndRecordApplicationUsage(clientId).map(osa => Left(osa))
+      case ApplicationQuery.ByServerToken(serverToken, true, _, _) => findAndRecordServerTokenUsage(serverToken).map(osa => Left(osa))
+      case _                                                       => fetchSingleAppByAggregates(qry)
     }
   }
 
@@ -1038,14 +1038,14 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
       val sortingStage: List[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
 
-      val needsLookup = qry.wantsSubscriptions || qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
+      val needsLookup = qry.wantSubscriptions || qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
 
       val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
-      val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => needsLookup && qry.hasSpecificSubscriptionFilter)
+      val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => qry.hasSpecificSubscriptionFilter).filterNot(_ => qry.wantSubscriptions)
 
       val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage ++ sortingStage
 
-      executeAggregate(qry.wantsSubscriptions, pipeline)
+      executeAggregate(qry.wantSubscriptions, pipeline)
     }
   }
 
@@ -1061,7 +1061,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
       val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => needsLookup && qry.hasSpecificSubscriptionFilter)
 
-      val projectionToUse = if (qry.wantsSubscriptions) applicationWithSubscriptionsProjection else applicationProjection
+      val projectionToUse = applicationProjection
 
       val totalCount            = Aggregates.count("total")
       val commonPipeline        = maybeSubsLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage

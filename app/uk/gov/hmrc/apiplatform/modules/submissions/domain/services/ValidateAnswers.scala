@@ -24,18 +24,19 @@ object ValidateAnswers {
 
   def validate(question: Question, rawAnswers: List[String]): Either[String, ActualAnswer] = {
     (question, rawAnswers) match {
-      case (_: Question.AcknowledgementOnly, Nil) => ActualAnswer.AcknowledgedAnswer.asRight
-      case (_: Question.AcknowledgementOnly, _)   => "Acknowledgement cannot accept answers".asLeft
-
-      case (_, Nil) if (question.isOptional) => ActualAnswer.NoAnswer.asRight
-      case (_, Nil)                          => "Question requires an answer".asLeft
-
-      case (q: Question.MultiChoiceQuestion, answers) => validateAgainstPossibleAnswers(q, answers.toSet)
-      case (_, a :: b :: Nil)                         => "Question only accepts one answer".asLeft
-
+      case (_: Question.AcknowledgementOnly, Nil)          => ActualAnswer.AcknowledgedAnswer.asRight
+      case (_: Question.AcknowledgementOnly, _)            => "Acknowledgement cannot accept answers".asLeft
+//
+      case (_, Nil) if (question.isOptional)               => ActualAnswer.NoAnswer.asRight
+      case (_, Nil)                                        => "Question requires an answer".asLeft
+//
+      case (q: Question.MultiChoiceQuestion, answers)      => validateAgainstPossibleAnswers(q, answers.toSet)
+      case (_, a :: b :: Nil)                              => "Question only accepts one answer".asLeft
+//
       case (q: Question.TextQuestion, head :: Nil)         => validateAgainstPossibleTextValidationRule(q, head)
       case (q: Question.SingleChoiceQuestion, head :: Nil) => validateAgainstPossibleAnswers(q, head)
-
+//
+      case _                                               => throw new RuntimeException("Unexpected question/answer in validate()")
     }
   }
 

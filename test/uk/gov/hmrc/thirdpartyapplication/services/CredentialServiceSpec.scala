@@ -25,11 +25,11 @@ import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
 import uk.gov.hmrc.thirdpartyapplication.mocks.ClientSecretServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures with CommonApplicationId {

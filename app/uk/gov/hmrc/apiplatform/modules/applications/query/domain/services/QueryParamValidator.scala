@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers.query
+package uk.gov.hmrc.apiplatform.modules.applications.query.domain.services
 
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import scala.util.Try
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.syntax.all._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.{ErrorMessage, ErrorsOr}
 
 sealed trait QueryParamValidator {
   def paramName: String
@@ -62,6 +65,16 @@ object QueryParamValidator {
       }
   }
 
+  object OptionalValueAllowed {
+
+    def apply(paramName: String)(values: Seq[String]): ErrorsOr[Option[String]] =
+      values.toList match {
+        case Nil           => None.validNel
+        case single :: Nil => single.some.validNel
+        case _             => s"Multiple $paramName query parameters are not permitted".invalidNel
+      }
+  }
+
   object BooleanValueExpected {
     def apply(paramName: String)(value: String): ErrorsOr[Boolean] = value.toBooleanOption.toValidNel(s"$paramName must be true or false")
   }
@@ -91,94 +104,122 @@ object QueryParamValidator {
   }
 
   object ApplicationIdValidator extends QueryParamValidator {
-    val paramName = "applicationId"
+    val paramName = ParamNames.ApplicationId
 
-    def validate(values: Seq[String]): ErrorsOr[Param.ApplicationIdQP] = {
-      SingleValueExpected(paramName)(values) andThen ApplicationIdExpected(paramName) map { Param.ApplicationIdQP(_) }
+    def validate(values: Seq[String]): ErrorsOr[ApplicationIdQP] = {
+      SingleValueExpected(paramName)(values) andThen ApplicationIdExpected(paramName) map { ApplicationIdQP(_) }
     }
   }
 
   object ClientIdValidator extends QueryParamValidator {
-    val paramName = "clientId"
+    val paramName = ParamNames.ClientId
 
-    def validate(values: Seq[String]): ErrorsOr[Param.ClientIdQP] = {
-      SingleValueExpected(paramName)(values) map { s => Param.ClientIdQP(ClientId(s)) }
+    def validate(values: Seq[String]): ErrorsOr[ClientIdQP] = {
+      SingleValueExpected(paramName)(values) map { s => ClientIdQP(ClientId(s)) }
     }
   }
 
   object ApiContextValidator extends QueryParamValidator {
-    val paramName = "context"
+    val paramName = ParamNames.ApiContext
 
-    def validate(values: Seq[String]): ErrorsOr[Param.ApiContextQP] = {
-      SingleValueExpected(paramName)(values) map { s => Param.ApiContextQP(ApiContext(s)) }
+    def validate(values: Seq[String]): ErrorsOr[ApiContextQP] = {
+      SingleValueExpected(paramName)(values) map { s => ApiContextQP(ApiContext(s)) }
     }
   }
 
   object ApiVersionNbrValidator extends QueryParamValidator {
-    val paramName = "versionNbr"
+    val paramName = ParamNames.ApiVersionNbr
 
-    def validate(values: Seq[String]): ErrorsOr[Param.ApiVersionNbrQP] = {
-      SingleValueExpected(paramName)(values) map { s => Param.ApiVersionNbrQP(ApiVersionNbr(s)) }
+    def validate(values: Seq[String]): ErrorsOr[ApiVersionNbrQP] = {
+      SingleValueExpected(paramName)(values) map { s => ApiVersionNbrQP(ApiVersionNbr(s)) }
     }
   }
 
   object HasSubscriptionsValidator extends QueryParamValidator {
-    val paramName = "oneOrMoreSubscriptions" // TODO - hasSubscription ???
+    val paramName = ParamNames.HasSubscriptions
 
-    def validate(values: Seq[String]): ErrorsOr[Param.HasSubscriptionsQP.type] = {
-      NoValueExpected(paramName)(values) map { _ => Param.HasSubscriptionsQP }
+    def validate(values: Seq[String]): ErrorsOr[HasSubscriptionsQP.type] = {
+      NoValueExpected(paramName)(values) map { _ => HasSubscriptionsQP }
     }
   }
 
   object NoSubscriptionsValidator extends QueryParamValidator {
-    val paramName = "noSubscriptions"
+    val paramName = ParamNames.NoSubscriptions
 
-    def validate(values: Seq[String]): ErrorsOr[Param.NoSubscriptionsQP.type] = {
-      NoValueExpected(paramName)(values) map { _ => Param.NoSubscriptionsQP }
+    def validate(values: Seq[String]): ErrorsOr[NoSubscriptionsQP.type] = {
+      NoValueExpected(paramName)(values) map { _ => NoSubscriptionsQP }
     }
   }
 
   object WantSubscriptionsValidator extends QueryParamValidator {
-    val paramName = "wantSubscriptions"
+    val paramName = ParamNames.WantSubscriptions
 
-    def validate(values: Seq[String]): ErrorsOr[Param.WantSubscriptionsQP.type] = {
-      NoValueExpected(paramName)(values) map { _ => Param.WantSubscriptionsQP }
+    def validate(values: Seq[String]): ErrorsOr[WantSubscriptionsQP.type] = {
+      NoValueExpected(paramName)(values) map { _ => WantSubscriptionsQP }
     }
   }
 
   object PageSizeValidator extends QueryParamValidator {
-    val paramName = "pageSize"
+    val paramName = ParamNames.PageSize
 
-    def validate(values: Seq[String]): ErrorsOr[Param.PageSizeQP] = {
-      SingleValueExpected(paramName)(values) andThen PositiveIntValueExpected(paramName) map { Param.PageSizeQP(_) }
+    def validate(values: Seq[String]): ErrorsOr[PageSizeQP] = {
+      SingleValueExpected(paramName)(values) andThen PositiveIntValueExpected(paramName) map { PageSizeQP(_) }
     }
   }
 
   object PageNbrValidator extends QueryParamValidator {
-    val paramName = "pageNbr"
+    val paramName = ParamNames.PageNbr
 
-    def validate(values: Seq[String]): ErrorsOr[Param.PageNbrQP] = {
-      SingleValueExpected(paramName)(values) andThen PositiveIntValueExpected(paramName) map { Param.PageNbrQP(_) }
+    def validate(values: Seq[String]): ErrorsOr[PageNbrQP] = {
+      SingleValueExpected(paramName)(values) andThen PositiveIntValueExpected(paramName) map { PageNbrQP(_) }
     }
   }
 
   private object AppStateFilterExpected {
-    def apply(values: Seq[String]): ErrorsOr[AppStateFilter] = AppStateFilter(values).toValidNel(s"$values contains invalid parameters")
+    import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
+
+    def applyState(value: String): Option[State] = value match {
+      case "CREATED"                        => State.TESTING.some
+      case "PENDING_GATEKEEPER_CHECK"       => State.PENDING_GATEKEEPER_APPROVAL.some
+      case "PENDING_SUBMITTER_VERIFICATION" => State.PENDING_REQUESTER_VERIFICATION.some
+      case text                             => State(text)
+    }
+
+    def applyOne(value: String): Option[AppStateParam[_]] =
+      value match {
+        case "ACTIVE"            => ActiveStateQP.some
+        case "EXCLUDING_DELETED" => ExcludeDeletedQP.some
+        case "BLOCKED"           => BlockedStateQP.some
+        case "ANY"               => NoStateFilteringQP.some
+        //
+        case text                => applyState(text).map(MatchOneStateQP(_))
+      }
+
+    def applyMany(values: Seq[String]): Option[AppStateParam[_]] = values match {
+      case v :: Nil => applyOne(v)
+      case vs       =>
+        vs.toList
+          .map(applyState(_))
+          .traverse(identity)
+          .map(ss => MatchManyStatesQP(NonEmptyList.fromListUnsafe(ss)))
+    }
+
+    def apply(values: Seq[String]): ErrorsOr[AppStateParam[_]] = applyMany(values).toValidNel(s"$values contains invalid parameters")
   }
 
   object StatusValidator extends QueryParamValidator {
-    val paramName = "status"
+    val paramName = ParamNames.Status
 
-    def validate(values: Seq[String]): ErrorsOr[Param.AppStateFilterQP] = {
-      AtLeastOneValue(paramName)(values.flatMap(v => v.split(","))) andThen AppStateFilterExpected.apply map { Param.AppStateFilterQP(_) }
+    def validate(values: Seq[String]): ErrorsOr[AppStateParam[_]] = {
+      AtLeastOneValue(paramName)(values.flatMap(v => v.split(","))) andThen AppStateFilterExpected.apply
     }
   }
 
   object StatusBeforeDate extends QueryParamValidator {
-    val paramName = "statusDate"
+    val paramName = ParamNames.StatusDateBefore
 
     def validate(values: Seq[String]): ErrorsOr[Param[_]] = {
-      SingleValueExpected(paramName)(values) andThen InstantValueExpected.apply(paramName) map (date => Param.AppStateBeforeDateQP(date))
+      SingleValueExpected(paramName)(values) andThen InstantValueExpected.apply(paramName) map (date => AppStateBeforeDateQP(date))
     }
   }
 
@@ -187,10 +228,10 @@ object QueryParamValidator {
   }
 
   object SortValidator extends QueryParamValidator {
-    val paramName = "sort"
+    val paramName = ParamNames.Sort
 
-    def validate(values: Seq[String]): ErrorsOr[Param.SortQP] = {
-      SingleValueExpected(paramName)(values) andThen SortExpected.apply map { sort => Param.SortQP(sort) }
+    def validate(values: Seq[String]): ErrorsOr[SortQP] = {
+      SingleValueExpected(paramName)(values) andThen SortExpected.apply map { sort => SortQP(sort) }
     }
   }
 
@@ -199,10 +240,10 @@ object QueryParamValidator {
   }
 
   object UserIdValidator extends QueryParamValidator {
-    val paramName = "userId"
+    val paramName = ParamNames.UserId
 
-    def validate(values: Seq[String]): ErrorsOr[Param.UserIdQP] = {
-      SingleValueExpected(paramName)(values) andThen UserIdExpected(paramName) map { Param.UserIdQP(_) }
+    def validate(values: Seq[String]): ErrorsOr[UserIdQP] = {
+      SingleValueExpected(paramName)(values) andThen UserIdExpected(paramName) map { UserIdQP(_) }
     }
   }
 
@@ -218,53 +259,65 @@ object QueryParamValidator {
           )
       }
     }
-    val paramName                                              = "accessType"
+    val paramName                                              = ParamNames.AccessType
 
-    def validate(values: Seq[String]): ErrorsOr[Param.AccessTypeQP] = {
-      SingleValueExpected(paramName)(values) andThen parseText map { oType => Param.AccessTypeQP(oType) }
+    def validate(values: Seq[String]): ErrorsOr[AccessTypeParam[_]] = {
+      SingleValueExpected(paramName)(values) andThen parseText map { ot => ot.fold[AccessTypeParam[_]](AnyAccessTypeQP)(accessType => MatchAccessTypeQP(accessType)) }
     }
   }
 
   object SearchTextValidator extends QueryParamValidator {
-    val paramName = "search"
+    val paramName = ParamNames.Search
 
-    def validate(values: Seq[String]): ErrorsOr[Param.SearchTextQP] = {
-      SingleValueExpected(paramName)(values) map { text => Param.SearchTextQP(text) }
+    def validate(values: Seq[String]): ErrorsOr[SearchTextQP] = {
+      SingleValueExpected(paramName)(values) map { text => SearchTextQP(text) }
     }
   }
 
   object NameValidator extends QueryParamValidator {
-    val paramName = "name"
+    val paramName = ParamNames.Name
 
-    def validate(values: Seq[String]): ErrorsOr[Param.NameQP] = {
-      SingleValueExpected(paramName)(values) map { Param.NameQP }
+    def validate(values: Seq[String]): ErrorsOr[NameQP] = {
+      SingleValueExpected(paramName)(values) map { NameQP }
     }
   }
 
   object VerificationCodeValidator extends QueryParamValidator {
-    val paramName = "verificationCode"
+    val paramName = ParamNames.VerificationCode
 
-    def validate(values: Seq[String]): ErrorsOr[Param.VerificationCodeQP] = {
-      SingleValueExpected(paramName)(values) map { Param.VerificationCodeQP }
+    def validate(values: Seq[String]): ErrorsOr[VerificationCodeQP] = {
+      SingleValueExpected(paramName)(values) map { VerificationCodeQP }
     }
   }
 
   object IncludeDeletedValidator extends QueryParamValidator {
-    val paramName = "includeDeleted"
+    val paramName = ParamNames.IncludeDeleted
 
-    def validate(values: Seq[String]): ErrorsOr[Param.IncludeOrExcludeDeletedQP] = {
-      SingleValueExpected(paramName)(values) andThen BooleanValueExpected(paramName) map { bool => if (bool) Param.IncludeDeletedQP else Param.ExcludeDeletedQP }
+    def validate(values: Seq[String]): ErrorsOr[IncludeDeletedQP.type] = {
+      OptionalValueAllowed(paramName)(values) andThen {
+        case None       => IncludeDeletedQP.validNel
+        case Some(text) =>
+          text.toBooleanOption
+            .fold[ErrorsOr[IncludeDeletedQP.type]](
+              s"$paramName must be true or blank".invalidNel
+            )(bool =>
+              if (bool)
+                IncludeDeletedQP.validNel
+              else
+                s"$paramName cannot be specified as false".invalidNel
+            )
+      }
     }
   }
 
   object DeleteRestrictionValidator extends QueryParamValidator {
-    val paramName = "deleteRestriction"
+    val paramName = ParamNames.DeleteRestriction
 
-    def validate(values: Seq[String]): ErrorsOr[Param.DeleteRestrictionQP] =
+    def validate(values: Seq[String]): ErrorsOr[DeleteRestrictionQP] =
       SingleValueExpected(paramName)(values) andThen {
         _ match {
-          case "DO_NOT_DELETE"  => Param.DoNotDeleteQP.validNel
-          case "NO_RESTRICTION" => Param.NoRestrictionQP.validNel
+          case "DO_NOT_DELETE"  => DoNotDeleteQP.validNel
+          case "NO_RESTRICTION" => NoRestrictionQP.validNel
           case value            => s"$value is not a valid delete restriction filter".invalidNel
         }
       }
@@ -276,26 +329,26 @@ object QueryParamValidator {
   }
 
   object EnvironmentValidator extends QueryParamValidator {
-    val paramName = "environment"
+    val paramName = ParamNames.Environment
 
-    def validate(values: Seq[String]): ErrorsOr[Param.EnvironmentQP] = {
-      SingleValueExpected(paramName)(values) andThen EnvironmentExpected.apply map { value => Param.EnvironmentQP(value) }
+    def validate(values: Seq[String]): ErrorsOr[EnvironmentQP] = {
+      SingleValueExpected(paramName)(values) andThen EnvironmentExpected.apply map { value => EnvironmentQP(value) }
     }
   }
 
   object LastUseBeforeValidator extends QueryParamValidator {
-    val paramName = "lastUsedBefore"
+    val paramName = ParamNames.LastUsedBefore
 
-    def validate(values: Seq[String]): ErrorsOr[Param.LastUsedBeforeQP] = {
-      SingleValueExpected(paramName)(values) andThen InstantValueExpected(paramName) map { date => Param.LastUsedBeforeQP(date) }
+    def validate(values: Seq[String]): ErrorsOr[LastUsedBeforeQP] = {
+      SingleValueExpected(paramName)(values) andThen InstantValueExpected(paramName) map { date => LastUsedBeforeQP(date) }
     }
   }
 
   object LastUseAfterValidator extends QueryParamValidator {
-    val paramName = "lastUsedAfter"
+    val paramName = ParamNames.LastUsedAfter
 
-    def validate(values: Seq[String]): ErrorsOr[Param.LastUsedAfterQP] = {
-      SingleValueExpected(paramName)(values) andThen InstantValueExpected(paramName) map { date => Param.LastUsedAfterQP(date) }
+    def validate(values: Seq[String]): ErrorsOr[LastUsedAfterQP] = {
+      SingleValueExpected(paramName)(values) andThen InstantValueExpected(paramName) map { date => LastUsedAfterQP(date) }
     }
   }
 
