@@ -1,0 +1,20 @@
+meta {
+  name: By UserId and Env
+  type: http
+  seq: 32
+}
+
+get {
+  url: {{baseUrl}}/developer/applications?userId=85682eda-5758-4a13-8b97-057c94b3657b&environment=SANDBOX
+  body: none
+  auth: inherit
+}
+
+params:query {
+  userId: 85682eda-5758-4a13-8b97-057c94b3657b
+  environment: SANDBOX
+}
+
+settings {
+  encodeUrl: true
+}
