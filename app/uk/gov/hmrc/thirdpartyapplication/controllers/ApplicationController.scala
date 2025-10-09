@@ -133,7 +133,7 @@ class ApplicationController @Inject() (
 
   // TODO - repoint users of this as fetch application and access via details.token
   def fetchCredentials(applicationId: ApplicationId) = Action.async {
-    handleOption(queryService.fetchSingleApplication(ApplicationQuery.ById(applicationId, List.empty, false)).map(_.map(_.details.token)))
+    handleOption(queryService.fetchSingleApplicationByQuery(ApplicationQuery.ById(applicationId, List.empty, false)).map(_.map(_.details.token)))
   }
 
 // TODO remove
@@ -213,13 +213,13 @@ class ApplicationController @Inject() (
         val context       = ApiContext(request.queryString("subscribesTo").head)
         val version       = ApiVersionNbr(request.queryString("version").head)
         val apiIdentifier = ApiIdentifier(context, version)
-        queryService.fetchApplications(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier)).map(apps => Ok(Json.toJson(apps)))
+        queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier)).map(apps => Ok(Json.toJson(apps)))
 
       case ("subscribesTo" :: _, _) =>
         val context = ApiContext(request.queryString("subscribesTo").head)
-        queryService.fetchApplications(ApplicationQueries.applicationsByApiContext(context)).map(apps => Ok(Json.toJson(apps)))
+        queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByApiContext(context)).map(apps => Ok(Json.toJson(apps)))
 
-      case ("noSubscriptions" :: _, _) => queryService.fetchApplications(ApplicationQueries.applicationsByNoSubscriptions).map(apps => Ok(Json.toJson(apps)))
+      case ("noSubscriptions" :: _, _) => queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByNoSubscriptions).map(apps => Ok(Json.toJson(apps)))
 
       case _ => successful(Redirect(uk.gov.hmrc.thirdpartyapplication.controllers.query.routes.QueryController.queryDispatcher().url, request.queryString))
     }
@@ -273,7 +273,7 @@ class ApplicationController @Inject() (
       if (hasGatewayUserAgent) {
         applicationService.findAndRecordServerTokenUsage(serverToken).map(asJsonResultWithServerToken(notFoundMessage))
       } else {
-        queryService.fetchSingleApplication(ApplicationQueries.applicationByServerToken(serverToken))
+        queryService.fetchSingleApplicationByQuery(ApplicationQueries.applicationByServerToken(serverToken))
           .map(asJsonResult(notFoundMessage))
       }
     ) recover recovery
@@ -287,7 +287,7 @@ class ApplicationController @Inject() (
       if (hasGatewayUserAgent) {
         applicationService.findAndRecordApplicationUsage(clientId).map(asJsonResultWithServerToken(notFoundMessage))
       } else {
-        queryService.fetchSingleApplication(ApplicationQueries.applicationByClientId(clientId))
+        queryService.fetchSingleApplicationByQuery(ApplicationQueries.applicationByClientId(clientId))
           .map(asJsonResult(notFoundMessage))
       }
     ) recover recovery
@@ -300,12 +300,12 @@ class ApplicationController @Inject() (
   }
 
   def fetchAllForCollaborator(userId: UserId) = Action.async {
-    queryService.fetchApplicationsWithSubscriptions(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false).copy(wantSubscriptions = true))
+    queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false).copy(wantSubscriptions = true))
       .map(apps => Ok(toJson(apps))) recover recovery
   }
 
   private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment) = {
-    queryService.fetchApplicationsWithSubscriptions(ApplicationQueries.applicationsByUserIdAndEnvironment(userId, environment).copy(wantSubscriptions = true))
+    queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserIdAndEnvironment(userId, environment).copy(wantSubscriptions = true))
       .map(apps => Ok(toJson(apps))) recover recovery
   }
 

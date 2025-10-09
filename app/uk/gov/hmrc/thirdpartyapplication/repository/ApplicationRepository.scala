@@ -45,6 +45,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{SingleApplicationQuery, _}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -157,8 +158,9 @@ object ApplicationRepository {
     implicit val formatPaginationTotal: Format[PaginationTotal]                 = Json.format[PaginationTotal]
     implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
 
-    case class StoredAppWithSubs(app: StoredApplication, apis: List[ApiIdentifier]) {
+    case class StoredAppWithSubs(app: StoredApplication, apis: Set[ApiIdentifier]) {
       lazy val asApplicationWithSubs = app.asAppWithCollaborators.withSubscriptions(apis.toSet)
+      lazy val asQueriedApplication  = QueriedApplication(asApplicationWithSubs)
     }
 
     object StoredAppWithSubs {
