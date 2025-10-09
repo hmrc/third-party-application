@@ -315,13 +315,13 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
     val standardApplicationResponse: ApplicationWithSubscriptions = standardApp.withSubscriptions(Set.empty)
     val expectedQry                                               = ApplicationQueries.applicationsByUserId(userId, true)
     "succeed with a 200 when applications are found for the collaborator by user id" in new Setup {
-      QueryServiceMock.FetchApplicationsWithSubscriptions.thenReturnsFor(expectedQry, standardApplicationResponse)
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubsFor(expectedQry, standardApplicationResponse)
 
       status(underTest.fetchAllForCollaborator(userId)(request)) shouldBe OK
     }
 
     "succeed with a 200 when no applications are found for the collaborator by user id" in new Setup {
-      QueryServiceMock.FetchApplicationsWithSubscriptions.thenReturnsNothingFor(expectedQry)
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsNoAppsFor(expectedQry)
 
       val result = underTest.fetchAllForCollaborator(userId)(request)
 
@@ -330,7 +330,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
     }
 
     "fail with a 500 when an exception is thrown" in new Setup {
-      QueryServiceMock.FetchApplicationsWithSubscriptions.thenReturnsFailure(new RuntimeException("Expected test failure"))
+      QueryServiceMock.FetchApplicationsByQuery.thenFails(new RuntimeException("Expected test failure"))
 
       val result = underTest.fetchAllForCollaborator(userId)(request)
 

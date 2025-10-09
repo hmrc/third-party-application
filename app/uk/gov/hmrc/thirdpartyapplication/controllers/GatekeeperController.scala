@@ -74,7 +74,7 @@ class GatekeeperController @Inject() (
   }
 
   def fetchAllForCollaborator(userId: UserId) = Action.async {
-    queryService.fetchApplicationsWithSubscriptions(ApplicationQueries.applicationsByUserId(userId, includeDeleted = true))
+    queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = true))
       .map(apps => Ok(Json.toJson(apps))) recover recovery
   }
 

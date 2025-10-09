@@ -40,7 +40,7 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
   "validate application name" should {
 
     "allow valid name" in new Setup {
-      QueryServiceMock.FetchApplications.thenReturnsNothing()
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsNoApps()
       ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("HMRC"))
 
       val result = await(underTest.validateApplicationName("my application name", None))
@@ -49,7 +49,7 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
     }
 
     "block a name with HMRC in" in new Setup {
-      QueryServiceMock.FetchApplications.thenReturnsNothing()
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsNoApps()
       ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("HMRC"))
 
       val result = await(underTest.validateApplicationName("Invalid name HMRC", None))
@@ -58,7 +58,7 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
     }
 
     "block a name with multiple denyListed names in" in new Setup {
-      QueryServiceMock.FetchApplications.thenReturnsNothing()
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsNoApps()
       ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("InvalidName1", "InvalidName2", "InvalidName3"))
 
       val result = await(underTest.validateApplicationName("ValidName InvalidName1 InvalidName2", None))
@@ -67,7 +67,7 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
     }
 
     "block an invalid ignoring case" in new Setup {
-      QueryServiceMock.FetchApplications.thenReturnsNothing()
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsNoApps()
       ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("InvalidName"))
 
       val result = await(underTest.validateApplicationName("invalidname", None))
@@ -76,16 +76,14 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
     }
 
     "block a duplicate app name" in new Setup {
-      QueryServiceMock.FetchApplications.thenReturns(standardApp)
+      private val duplicateName = "duplicate name"
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQueries.applicationsByName(duplicateName), standardApp)
       ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
       ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 
-      private val duplicateName = "duplicate name"
-      val result                = await(underTest.validateApplicationName(duplicateName, None))
+      val result = await(underTest.validateApplicationName(duplicateName, None))
 
       result shouldBe ApplicationNameValidationResult.Duplicate
-
-      QueryServiceMock.FetchApplications.verifyCalledWith(ApplicationQueries.applicationsByName(duplicateName))
     }
 
     "Ignore duplicate name check if not configured e.g. on a subordinate / sandbox environment" in new Setup {
@@ -95,14 +93,12 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
       val result = await(underTest.validateApplicationName("app name", None))
 
       result shouldBe ApplicationNameValidationResult.Valid
-
-      QueryServiceMock.FetchApplications.verifyNeverCalled()
     }
 
     "Ignore application when checking for duplicates if it is self application" in new Setup {
       ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList()
 
-      QueryServiceMock.FetchApplications.thenReturns(standardApp)
+      QueryServiceMock.FetchApplicationsByQuery.thenReturns(standardApp)
 
       val result = await(underTest.validateApplicationName("app name", Some(ApplicationIdData.one)))
 
@@ -115,7 +111,7 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
 
     "detect duplicate if another app has the same name" in new Setup {
       ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
-      QueryServiceMock.FetchApplications.thenReturns(standardApp)
+      QueryServiceMock.FetchApplicationsByQuery.thenReturns(standardApp)
       val isDuplicate = await(underTest.isDuplicateName(appName, noExclusions))
 
       isDuplicate shouldBe true
@@ -123,7 +119,7 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
 
     "not detect duplicate if another app has the same name but is in Sandbox (local)" in new Setup {
       ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
-      QueryServiceMock.FetchApplications.thenReturnsNothing() // Filter on query eliminates sandbox
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsNoApps() // Filter on query eliminates sandbox
       val isDuplicate = await(underTest.isDuplicateName(appName, noExclusions))
 
       isDuplicate shouldBe false
@@ -131,7 +127,7 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
 
     "not detect duplicate if another app has the same name but also has the same applicationId" in new Setup {
       ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
-      QueryServiceMock.FetchApplications.thenReturns(standardApp)
+      QueryServiceMock.FetchApplicationsByQuery.thenReturns(standardApp)
       val isDuplicate = await(underTest.isDuplicateName(appName, excludeThisAppId(ApplicationIdData.one)))
 
       isDuplicate shouldBe false
@@ -139,7 +135,7 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
 
     "not detect duplicate if another app has the same name but duplicate checking is turned off" in new Setup {
       ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(false)
-      QueryServiceMock.FetchApplications.thenReturns(standardApp)
+      QueryServiceMock.FetchApplicationsByQuery.thenReturns(standardApp)
       val isDuplicate = await(underTest.isDuplicateName(appName, noExclusions))
 
       isDuplicate shouldBe false

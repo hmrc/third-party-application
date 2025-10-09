@@ -58,10 +58,10 @@ class GatekeeperService @Inject() (
         yield id -> history.maxBy(_.changedAt)
     }
 
-    val appsFuture         = queryService.fetchApplications(ApplicationQueries.standardNonTestingApps)
+    val appsFuture         = queryService.fetchApplicationsByQuery(ApplicationQueries.standardNonTestingApps)
     val stateHistoryFuture = stateHistoryRepository.fetchByState(State.PENDING_GATEKEEPER_APPROVAL)
     for {
-      apps      <- appsFuture
+      apps      <- appsFuture.map(_.map(_.asAppWithCollaborators))
       appIds     = apps.map(_.id)
       histories <- stateHistoryFuture.map(_.filter(h => appIds.contains(h.applicationId)))
       appsMap    = apps.groupBy(_.id).view.mapValues(_.head).toMap
