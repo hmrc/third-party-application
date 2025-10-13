@@ -65,32 +65,6 @@ class QueryService @Inject() (
     fetchApplicationsByQuery(qry).map(_.getOrElse(Nil))
   }
 
-  // def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {
-  //   val fPaginatedApps = applicationRepository.fetchByPaginatedApplicationQuery(qry)
-  //     .map(pad =>
-  //       PaginatedApplications(
-  //         pad.applications.map(_.asAppWithCollaborators),
-  //         qry.pagination.pageNbr,
-  //         qry.pagination.pageSize,
-  //         pad.countOfAllApps.map(_.total).sum,
-  //         pad.countOfMatchingApps.map(_.total).sum
-  //       )
-  //     )
-
-  //   val fIds = fPaginatedApps.map(_.applications.map(_.id))
-
-  //   def patchApplication(app: ApplicationWithCollaborators, deleteHistory: Option[StateHistory]) = {
-  //     app.modify(_.copy(lastActionActor = deleteHistory.map(sh => ActorType.actorType(sh.actor)).getOrElse(ActorType.UNKNOWN)))
-  //   }
-
-  //   val fAppHistories: Future[List[StateHistory]]                 =
-  //     fIds.flatMap(ids => stateHistoryRepository.fetchDeletedByApplicationIds(ids))
-
-  //   fPaginatedApps.zipWith(fAppHistories) {
-  //     case (pApps, appHistories) => pApps.copy(applications = pApps.applications.map(app => patchApplication(app, appHistories.find(ah => ah.applicationId == app.id))))
-  //   }
-  // }
-
   def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {
     def patchApplication(app: ApplicationWithCollaborators, deleteHistory: Option[StateHistory]): ApplicationWithCollaborators = {
       app.modify(_.copy(lastActionActor = deleteHistory.map(sh => ActorType.actorType(sh.actor)).getOrElse(ActorType.UNKNOWN)))
