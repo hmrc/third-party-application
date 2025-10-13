@@ -133,7 +133,7 @@ class ApplicationController @Inject() (
 
   // TODO - repoint users of this as fetch application and access via details.token
   def fetchCredentials(applicationId: ApplicationId) = Action.async {
-    handleOption(queryService.fetchSingleApplicationByQuery(ApplicationQuery.ById(applicationId, List.empty, false)).map(_.map(_.details.token)))
+    handleOption(queryService.fetchSingleApplicationByQuery(ApplicationQuery.ById(applicationId, List.empty, false, false, false)).map(_.map(_.details.token)))
   }
 
 // TODO remove
@@ -300,12 +300,12 @@ class ApplicationController @Inject() (
   }
 
   def fetchAllForCollaborator(userId: UserId) = Action.async {
-    queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false).copy(wantSubscriptions = true))
+    queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false, wantSubscriptions = true))
       .map(apps => Ok(toJson(apps))) recover recovery
   }
 
   private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment) = {
-    queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserIdAndEnvironment(userId, environment).copy(wantSubscriptions = true))
+    queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserIdAndEnvironment(userId, environment, wantSubscriptions = true))
       .map(apps => Ok(toJson(apps))) recover recovery
   }
 

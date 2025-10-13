@@ -91,9 +91,9 @@ object ParamsValidator {
     }
   }
 
-  def checkWantSubscriptions(wantSubcriptions: Boolean, wantPagination: Boolean): ErrorsOr[Unit] =
-    if (wantSubcriptions && wantPagination) {
-      "Cannot return subscriptions with paginated queries".invalidNel
+  def checkWants(wantSubcriptions: Boolean, wantSubscriptionFields: Boolean, wantStateHistory: Boolean, wantPagination: Boolean): ErrorsOr[Unit] =
+    if ((wantSubcriptions || wantSubscriptionFields || wantStateHistory) && wantPagination) {
+      "Cannot return subscriptions, fields or state history with paginated queries".invalidNel
     } else {
       ().validNel
     }
@@ -112,7 +112,9 @@ object ParamsValidator {
   }
 
   def validateParamCombinations(implicit allParams: List[Param[_]]): ErrorsOr[Unit] = {
-    val wantSubcriptions = first[WantSubscriptionsQP.type].headOption.isDefined
+    val wantSubcriptions      = first[WantSubscriptionsQP.type].headOption.isDefined
+    val wantSubcriptionFields = first[WantSubscriptionFieldsQP.type].headOption.isDefined
+    val wantStateHistory      = first[WantStateHistoryQP.type].headOption.isDefined
 
     val otherFilterParams  = allParams.collect {
       case fp: NonUniqueFilterParam[_] => fp
@@ -139,7 +141,7 @@ object ParamsValidator {
       .combine(checkSubscriptionsParamsCombinations(otherFilterParams))
       .combine(checkLastUsedParamsCombinations(otherFilterParams))
       .combine(checkVerificationCodeUsesDeleteExclusion(otherFilterParams))
-      .combine(checkWantSubscriptions(wantSubcriptions, wantPagination))
+      .combine(checkWants(wantSubcriptions, wantSubcriptionFields, wantStateHistory, wantPagination))
       .combine(checkAppStateFilters(otherFilterParams))
   }
 

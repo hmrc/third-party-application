@@ -521,7 +521,7 @@ class ApplicationControllerSpec
       val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=${userIdOne.toString()}&environment=$environment")
 
       QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubsFor(
-        ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, environment).copy(wantSubscriptions = true),
+        ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, environment, wantSubscriptions = true),
         standardApp.withSubscriptions(Set(apiIdentifier1)),
         privilegedApp.withSubscriptions(Set(apiIdentifier1)),
         ropcApp.withSubscriptions(Set(apiIdentifier1))
@@ -534,7 +534,7 @@ class ApplicationControllerSpec
       val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=XXX&environment=$environment")
 
       QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubsFor(
-        ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, environment).copy(wantSubscriptions = true),
+        ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, environment, wantSubscriptions = true),
         standardApp.withSubscriptions(Set(apiIdentifier1)),
         privilegedApp.withSubscriptions(Set(apiIdentifier1)),
         ropcApp.withSubscriptions(Set(apiIdentifier1))

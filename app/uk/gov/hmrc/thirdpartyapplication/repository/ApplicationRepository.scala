@@ -429,7 +429,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   }
 
   def fetch(id: ApplicationId): Future[Option[StoredApplication]] = {
-    fetchBySingleApplicationQuery(ApplicationQuery.ById(id, List.empty, false))
+    fetchBySingleApplicationQuery(ApplicationQuery.ById(id, List.empty, false, false, false))
       .map(_.left.getOrElse(None))
   }
 
@@ -1026,9 +1026,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   // So simple that we don't need to do anything other than use existing methods.  These could be done via conversion to AggregateQuery components at a later date.
   def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Either[Option[StoredApplication], Option[StoredAppWithSubs]]] = {
     qry match {
-      case ApplicationQuery.ByClientId(clientId, true, _, _)       => findAndRecordApplicationUsage(clientId).map(osa => Left(osa))
-      case ApplicationQuery.ByServerToken(serverToken, true, _, _) => findAndRecordServerTokenUsage(serverToken).map(osa => Left(osa))
-      case _                                                       => fetchSingleAppByAggregates(qry)
+      case ApplicationQuery.ByClientId(clientId, true, _, _, _, _)       => findAndRecordApplicationUsage(clientId).map(osa => Left(osa))
+      case ApplicationQuery.ByServerToken(serverToken, true, _, _, _, _) => findAndRecordServerTokenUsage(serverToken).map(osa => Left(osa))
+      case _                                                             => fetchSingleAppByAggregates(qry)
     }
   }
 
