@@ -133,7 +133,7 @@ class ApplicationRepositorySerialisationISpec
 
     appSearchResult.applications.size shouldBe 1
     appSearchResult.applications.head.id shouldBe applicationId
-    appSearchResult.applications.head.refreshTokensAvailableFor shouldBe GrantLength.EIGHTEEN_MONTHS.period
+    appSearchResult.applications.head.details.grantLength shouldBe GrantLength.EIGHTEEN_MONTHS
   }
 
   "create application with grantLength 1 day but no refreshTokensAvailableFor. refreshTokensAvailableFor is read back as 1 day " in new Setup {
@@ -154,7 +154,7 @@ class ApplicationRepositorySerialisationISpec
 
     appSearchResult.applications.size shouldBe 1
     appSearchResult.applications.head.id shouldBe applicationId
-    appSearchResult.applications.head.refreshTokensAvailableFor shouldBe GrantLength.ONE_DAY.period
+    appSearchResult.applications.head.details.grantLength shouldBe GrantLength.ONE_DAY
   }
 
   "create application with no grantLength but refreshTokensAvailableFor 1 month. refreshTokensAvailableFor is read back as 1 month " in new Setup {
@@ -175,7 +175,7 @@ class ApplicationRepositorySerialisationISpec
 
     appSearchResult.applications.size shouldBe 1
     appSearchResult.applications.head.id shouldBe applicationId
-    appSearchResult.applications.head.refreshTokensAvailableFor shouldBe GrantLength.ONE_MONTH.period
+    appSearchResult.applications.head.details.grantLength shouldBe GrantLength.ONE_MONTH
   }
 
   "create application with grantLength 1 day and refreshTokensAvailableFor 1 month. refreshTokensAvailableFor is read back as 1 month " in new Setup {
@@ -196,7 +196,7 @@ class ApplicationRepositorySerialisationISpec
 
     appSearchResult.applications.size shouldBe 1
     appSearchResult.applications.head.id shouldBe applicationId
-    appSearchResult.applications.head.refreshTokensAvailableFor shouldBe GrantLength.ONE_MONTH.period
+    appSearchResult.applications.head.details.grantLength shouldBe GrantLength.ONE_MONTH
   }
 
   "successfully remove old grantLength attribute when grantLength 1 day and refreshTokensAvailableFor 1 month" in new Setup {

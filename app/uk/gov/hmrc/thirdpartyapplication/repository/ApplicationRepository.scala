@@ -151,6 +151,10 @@ object ApplicationRepository {
     implicit val formatApplicationWithStateHistory: OFormat[ApplicationWithStateHistory]        = Json.format[ApplicationWithStateHistory]
     implicit val readsApplicationWithSubscriptionCount: Reads[ApplicationWithSubscriptionCount] = Json.reads[ApplicationWithSubscriptionCount]
 
+    case class PaginationTotal(total: Int)
+    case class PaginatedApplicationData(applications: List[StoredApplication], countOfAllApps: List[PaginationTotal], countOfMatchingApps: List[PaginationTotal])
+
+    implicit val formatPaginationTotal: Format[PaginationTotal]                 = Json.format[PaginationTotal]
     implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
 
     case class StoredAppWithSubs(app: StoredApplication, apis: List[ApiIdentifier]) {
@@ -515,7 +519,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def searchApplications(actionSubtask: String)(applicationSearch: ApplicationSearch): Future[PaginatedApplicationData] = {
+  def searchApplications(actionSubtask: String)(applicationSearch: ApplicationSearch): Future[PaginatedApplications] = {
     timeFuture("Search Applications", s"application.repository.searchApplications.$actionSubtask") {
       val filters = applicationSearch.filters
         .filterNot(_ == StatusFilter.NoFiltering)
@@ -531,6 +535,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
 
       runAggregationQuery(filters, pagination, sort, applicationSearch.hasSubscriptionFilter(), applicationSearch.hasSpecificApiSubscriptionFilter())
+        .map(convertRawData(Pagination(applicationSearch.pageNumber, applicationSearch.pageSize)))
     }
   }
 
@@ -1049,7 +1054,18 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchByPaginatedApplicationQuery(qry: PaginatedApplicationQuery): Future[PaginatedApplicationData] = {
+  def convertRawData(pagination: Pagination)(in: PaginatedApplicationData): PaginatedApplications = {
+    PaginatedApplications(
+      page = pagination.pageNbr,
+      pageSize = pagination.pageSize,
+      total = in.countOfAllApps.foldLeft(0)(_ + _.total),
+      matching = in.countOfMatchingApps.foldLeft(0)(_ + _.total),
+      applications = in.applications.map(_.asAppWithCollaborators)
+    )
+  }
+
+  def fetchByPaginatedApplicationQuery(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {
+
     timeFuture("Run Pagination Query", "application.repository.fetchByPaginatedApplicationQuery") {
 
       val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
@@ -1079,6 +1095,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       collection.aggregate[BsonValue](facets)
         .head()
         .map(Codecs.fromBson[PaginatedApplicationData])
+        .map(convertRawData(qry.pagination))
     }
   }
 

@@ -181,7 +181,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object SearchApplications {
 
-      def thenReturn(data: PaginatedApplicationData) =
+      def thenReturn(data: PaginatedApplications) =
         when(aMock.searchApplications(*)(*)).thenReturn(successful(data))
     }
 
@@ -463,13 +463,13 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object FetchByPaginatedApplicationQuery {
 
       def thenReturnsNone(totals: Int) =
-        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplicationData.simple(List.empty, totals, 0)))
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplications(List.empty, 1, 50, totals, 0)))
 
       def thenReturns(totals: Int, apps: StoredApplication*) =
-        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplicationData.simple(apps.toList, totals, apps.size)))
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(PaginatedApplications(apps.toList.map(_.asAppWithCollaborators), 1, 50, totals, apps.size)))
 
-      def thenReturns(pad: PaginatedApplicationData) =
-        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(pad))
+      def thenReturns(pa: PaginatedApplications) =
+        when(aMock.fetchByPaginatedApplicationQuery(*)).thenReturn(successful(pa))
     }
 
     object GetAppsForResponsibleIndividualOrAdmin {
