@@ -135,19 +135,6 @@ class QueryControllerSpec
       contentAsJson(result) shouldBe JsArray.empty
     }
 
-    "work for paginated query adding defaulted name sorting" in new Setup {
-      QueryServiceMock.FetchPaginatedApplications.thenReturnsFor(
-        PaginatedApplicationQuery(UserIdQP(userIdOne) :: Nil, sorting = Sorting.NameAscending, pagination = Pagination(33)),
-        PaginatedApplications(List(appWithCollaborators), 1, 33, 105, 1)
-      )
-
-      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?pageSize=33&userId=${userIdOne}"))
-
-      status(result) shouldBe OK
-      val expected = PaginatedApplications(List(storedApp.asAppWithCollaborators), 1, 33, 105, 1)
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-
     "work for paginated query" in new Setup {
       QueryServiceMock.FetchPaginatedApplications.thenReturnsFor(
         PaginatedApplicationQuery(UserIdQP(userIdOne) :: Nil, sorting = Sorting.LastUseDateAscending, pagination = Pagination(33)),

@@ -24,7 +24,7 @@ import play.api.mvc._
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.{GeneralOpenEndedApplicationQuery, PaginatedApplicationQuery}
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQuery, SingleApplicationQuery, Sorting}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQuery, SingleApplicationQuery}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 
@@ -47,7 +47,7 @@ class QueryController @Inject() (
     ParamsValidator.parseAndValidateParams(request.queryString, request.headers.toMap)
       .fold[Future[Result]](
         nel => Future.successful(BadRequest(asBody("INVALID_QUERY", nel.toList))),
-        params => execute(uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.attemptToConstructQuery(params))
+        params => execute(ApplicationQuery.attemptToConstructQuery(params))
       )
   }
 
