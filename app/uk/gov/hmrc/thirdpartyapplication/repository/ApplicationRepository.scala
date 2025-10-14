@@ -535,7 +535,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
 
       runAggregationQuery(filters, pagination, sort, applicationSearch.hasSubscriptionFilter(), applicationSearch.hasSpecificApiSubscriptionFilter())
-        .map(convertRawData(Pagination(applicationSearch.pageNumber, applicationSearch.pageSize)))
+        .map(convertRawData(Pagination(applicationSearch.pageSize, applicationSearch.pageNumber)))
     }
   }
 
