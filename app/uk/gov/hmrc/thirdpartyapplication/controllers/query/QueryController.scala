@@ -73,14 +73,7 @@ class QueryController @Inject() (
         }
 
       case q: PaginatedApplicationQuery =>
-        // default to name sorting
-        // TODO - we might make this an issue in the validator at some point
-        val qry = if (q.sorting == Sorting.NoSorting)
-          q.copy(sorting = Sorting.NameAscending)
-        else
-          q
-
-        queryService.fetchPaginatedApplications(qry)
+        queryService.fetchPaginatedApplications(q)
           .map(results => Ok(Json.toJson(results)))
     }
   }
