@@ -24,7 +24,7 @@ import play.api.mvc._
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.{GeneralOpenEndedApplicationQuery, PaginatedApplicationQuery}
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQuery, SingleApplicationQuery}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQuery, SingleApplicationQuery, Sorting}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 
@@ -72,7 +72,15 @@ class QueryController @Inject() (
           )
         }
 
-      case q: PaginatedApplicationQuery => queryService.fetchPaginatedApplications(q)
+      case q: PaginatedApplicationQuery =>
+        // default to name sorting
+        // TODO - we might make this an issue in the validator at some point
+        val qry = if (q.sorting == Sorting.NoSorting)
+          q.copy(sorting = Sorting.NameAscending)
+        else
+          q
+
+        queryService.fetchPaginatedApplications(qry)
           .map(results => Ok(Json.toJson(results)))
     }
   }
