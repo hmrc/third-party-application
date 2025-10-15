@@ -766,18 +766,16 @@ class ApplicationServiceSpec
       )
 
       ApplicationRepoMock.SearchApplications.thenReturn(
-        PaginatedApplicationData(
+        PaginatedApplications(
           List(
-            standardApplicationData,
-            privilegedApplicationData,
-            ropcApplicationData
+            standardApplicationData.asAppWithCollaborators,
+            privilegedApplicationData.asAppWithCollaborators,
+            ropcApplicationData.asAppWithCollaborators
           ),
-          List(
-            PaginationTotal(3)
-          ),
-          List(
-            PaginationTotal(3)
-          )
+          2,
+          5,
+          3,
+          3
         )
       )
       val histories = List(aHistory(standardApplicationData.id), aHistory(privilegedApplicationData.id), aHistory(ropcApplicationData.id))

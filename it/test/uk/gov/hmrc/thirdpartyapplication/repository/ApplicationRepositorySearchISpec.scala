@@ -117,10 +117,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 3
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 3
+      result.matching shouldBe 3
+      result.total shouldBe 3
       result.applications.size shouldBe 1                  // as a result of pageSize = 1
       result.applications.head.id shouldBe application2.id // as a result of pageNumber = 2
     }
@@ -145,13 +143,10 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
-      result.applications.size shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.head.id shouldBe applicationNoRestriction.id
-      result.applications.head.deleteRestriction shouldBe DeleteRestriction.NoRestriction
+      result.applications.head.details.deleteRestriction shouldBe DeleteRestriction.NoRestriction
     }
 
     "return application with do not delete restriction" in {
@@ -174,13 +169,10 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
-      result.applications.size shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.head.id shouldBe applicationDoNotDelete.id
-      result.applications.head.deleteRestriction shouldBe doNotDelete
+      result.applications.head.details.deleteRestriction shouldBe doNotDelete
     }
 
     "return applications based on application state filter Active" in {
@@ -198,10 +190,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe applicationInProduction.id
     }
@@ -221,10 +211,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe applicationDeleted.id
     }
@@ -244,10 +232,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe applicationInTest.id
     }
@@ -270,13 +256,10 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
-      result.applications.size shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.head.id shouldBe ropcApplication.id
-      result.applications.head.blocked shouldBe false
+      result.applications.head.details.blocked shouldBe false
     }
 
     "return applications based on blocked filter" in {
@@ -305,13 +288,10 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 3
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
-      result.applications.size shouldBe 1
+      result.total shouldBe 3
+      result.matching shouldBe 1
       result.applications.head.id shouldBe blockedApplication.id
-      result.applications.head.blocked shouldBe true
+      result.applications.head.details.blocked shouldBe true
     }
 
     "return applications with no API subscriptions" in {
@@ -343,11 +323,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
-      result.applications.size shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.head.id shouldBe applicationWithoutSubscriptions.id
     }
 
@@ -380,10 +357,9 @@ class ApplicationRepositorySearchISpec
 
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe applicationWithSubscriptions.id
     }
@@ -413,10 +389,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe applicationId
     }
@@ -454,10 +428,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 3
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 3
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe applicationId
     }
@@ -496,10 +468,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 3
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 2
+      result.total shouldBe 3
+      result.matching shouldBe 2
       result.applications.size shouldBe 2
       result.applications.head.id shouldBe randomDeletedApplication.id
       result.applications.tail.head.id shouldBe applicationId
@@ -531,12 +501,9 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
-      result.applications.size shouldBe 1
-      result.applications.head.tokens.production.clientId shouldBe clientId
+      result.total shouldBe 2
+      result.matching shouldBe 1
+      result.applications.head.details.token.clientId shouldBe clientId
     }
 
     "return applications with matching search text and other filters" in {
@@ -568,10 +535,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       // Only ROPC application should be returned
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe ropcApplication.id
@@ -600,10 +565,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe applicationId
     }
@@ -650,10 +613,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe expectedApplication.id
     }
@@ -702,10 +663,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe expectedApplication.id
     }
@@ -737,10 +696,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe oldApplicationId
     }
@@ -768,10 +725,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe oldApplicationId
     }
@@ -792,10 +747,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 1
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 1
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe oldApplicationId
     }
@@ -847,10 +800,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe newerApplicationId
     }
@@ -877,10 +828,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 2
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe newerApplicationId
     }
@@ -901,10 +850,8 @@ class ApplicationRepositorySearchISpec
       val result =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 1
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 1
+      result.total shouldBe 1
+      result.matching shouldBe 1
       result.applications.size shouldBe 1
       result.applications.head.id shouldBe applicationId
     }
@@ -963,10 +910,8 @@ class ApplicationRepositorySearchISpec
       val result            =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 3
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 3
+      result.total shouldBe 3
+      result.matching shouldBe 3
       result.applications.size shouldBe 3
       result.applications.head.name.value shouldBe firstName
       result.applications.tail.head.name.value shouldBe lowerCaseName
@@ -996,10 +941,8 @@ class ApplicationRepositorySearchISpec
       val result            =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 2
+      result.total shouldBe 2
+      result.matching shouldBe 2
       result.applications.size shouldBe 2
       result.applications.head.name.value shouldBe secondName
       result.applications.last.name.value shouldBe firstName
@@ -1026,13 +969,11 @@ class ApplicationRepositorySearchISpec
       val result            =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 2
+      result.total shouldBe 2
+      result.matching shouldBe 2
       result.applications.size shouldBe 2
-      result.applications.head.createdOn shouldBe firstCreatedOn
-      result.applications.last.createdOn shouldBe secondCreatedOn
+      result.applications.head.details.createdOn shouldBe firstCreatedOn
+      result.applications.last.details.createdOn shouldBe secondCreatedOn
     }
 
     "return applications sorted by submitted descending" in {
@@ -1056,13 +997,11 @@ class ApplicationRepositorySearchISpec
       val result            =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 2
+      result.total shouldBe 2
+      result.matching shouldBe 2
       result.applications.size shouldBe 2
-      result.applications.head.createdOn shouldBe secondCreatedOn
-      result.applications.last.createdOn shouldBe firstCreatedOn
+      result.applications.head.details.createdOn shouldBe secondCreatedOn
+      result.applications.last.details.createdOn shouldBe firstCreatedOn
     }
 
     "return applications sorted by lastAccess ascending" in {
@@ -1084,13 +1023,11 @@ class ApplicationRepositorySearchISpec
       val result            =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 2
+      result.total shouldBe 2
+      result.matching shouldBe 2
       result.applications.size shouldBe 2
-      result.applications.head.lastAccess shouldBe Some(oldestLastAccessDate)
-      result.applications.last.lastAccess shouldBe Some(mostRecentlyAccessedDate)
+      result.applications.head.details.lastAccess shouldBe Some(oldestLastAccessDate)
+      result.applications.last.details.lastAccess shouldBe Some(mostRecentlyAccessedDate)
     }
 
     "return applications sorted by lastAccess descending" in {
@@ -1113,13 +1050,11 @@ class ApplicationRepositorySearchISpec
       val result            =
         await(applicationRepository.searchApplications("testing")(applicationSearch))
 
-      result.countOfAllApps.size shouldBe 1
-      result.countOfAllApps.head.total shouldBe 2
-      result.countOfMatchingApps.size shouldBe 1
-      result.countOfMatchingApps.head.total shouldBe 2
+      result.total shouldBe 2
+      result.matching shouldBe 2
       result.applications.size shouldBe 2
-      result.applications.head.lastAccess shouldBe Some(mostRecentlyAccessedDate)
-      result.applications.last.lastAccess shouldBe Some(oldestLastAccessDate)
+      result.applications.head.details.lastAccess shouldBe Some(mostRecentlyAccessedDate)
+      result.applications.last.details.lastAccess shouldBe Some(oldestLastAccessDate)
     }
   }
 

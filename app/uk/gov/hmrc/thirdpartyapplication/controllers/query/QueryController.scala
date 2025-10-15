@@ -47,7 +47,7 @@ class QueryController @Inject() (
     ParamsValidator.parseAndValidateParams(request.queryString, request.headers.toMap)
       .fold[Future[Result]](
         nel => Future.successful(BadRequest(asBody("INVALID_QUERY", nel.toList))),
-        params => execute(uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.attemptToConstructQuery(params))
+        params => execute(ApplicationQuery.attemptToConstructQuery(params))
       )
   }
 
@@ -72,7 +72,8 @@ class QueryController @Inject() (
           )
         }
 
-      case q: PaginatedApplicationQuery => queryService.fetchPaginatedApplications(q)
+      case q: PaginatedApplicationQuery =>
+        queryService.fetchPaginatedApplications(q)
           .map(results => Ok(Json.toJson(results)))
     }
   }

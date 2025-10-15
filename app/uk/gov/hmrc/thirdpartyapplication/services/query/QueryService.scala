@@ -21,15 +21,17 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.EitherT
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ActorType
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.SingleApplicationQuery
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 
 @Singleton
 class QueryService @Inject() (
-    applicationRepository: ApplicationRepository
+    applicationRepository: ApplicationRepository,
+    stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -64,15 +66,19 @@ class QueryService @Inject() (
   }
 
   def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {
-    applicationRepository.fetchByPaginatedApplicationQuery(qry)
-      .map(pad =>
-        PaginatedApplications(
-          pad.applications.map(_.asAppWithCollaborators),
-          qry.pagination.pageNbr,
-          qry.pagination.pageSize,
-          pad.countOfAllApps.map(_.total).sum,
-          pad.countOfMatchingApps.map(_.total).sum
-        )
-      )
+    def patchApplication(app: ApplicationWithCollaborators, deleteHistory: Option[StateHistory]): ApplicationWithCollaborators = {
+      app.modify(_.copy(lastActionActor = deleteHistory.map(sh => ActorType.actorType(sh.actor)).getOrElse(ActorType.UNKNOWN)))
+    }
+
+    def patchApplications(apps: List[ApplicationWithCollaborators], histories: List[StateHistory]): List[ApplicationWithCollaborators] = {
+      apps.map(app => patchApplication(app, histories.find(_.applicationId == app.id)))
+    }
+
+    for {
+      paginatedApps <- applicationRepository.fetchByPaginatedApplicationQuery(qry)
+      apps           = paginatedApps.applications
+      ids            = apps.map(_.id)
+      histories     <- stateHistoryRepository.fetchDeletedByApplicationIds(ids)
+    } yield paginatedApps.copy(applications = patchApplications(apps, histories))
   }
 }
