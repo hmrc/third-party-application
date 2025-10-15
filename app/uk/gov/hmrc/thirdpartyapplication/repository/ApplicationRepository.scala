@@ -44,6 +44,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{SingleApplicationQuery, _}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.{ApiFieldMap, FieldValue}
@@ -55,6 +56,25 @@ object ApplicationRepository {
   import play.api.libs.functional.syntax._
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
+
+  protected case class QueriedStoredApplication(
+      app: StoredApplication,
+      subscriptions: Option[Set[ApiIdentifier]] = None,
+      fieldValues: Option[ApiFieldMap[FieldValue]] = None,
+      stateHistory: Option[List[StateHistory]] = None
+    ) {
+
+    def asQueriedApplication = {
+      val awc = app.asAppWithCollaborators
+      QueriedApplication(
+        details = awc.details,
+        collaborators = awc.collaborators,
+        subscriptions = subscriptions,
+        fieldValues = fieldValues,
+        stateHistory = stateHistory
+      )
+    }
+  }
 
   object MongoFormats {
     import uk.gov.hmrc.play.json.Union
@@ -156,27 +176,7 @@ object ApplicationRepository {
 
     implicit val formatPaginationTotal: Format[PaginationTotal]                 = Json.format[PaginationTotal]
     implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
-
-    final case class QueriedStoredApplication(
-        app: StoredApplication,
-        subscriptions: Option[Set[ApiIdentifier]] = None,
-        fieldValues: Option[ApiFieldMap[FieldValue]] = None,
-        stateHistory: Option[List[StateHistory]] = None
-      )
-
-    object QueriedStoredApplication {
-      implicit val reads: Reads[QueriedStoredApplication] = Json.reads[QueriedStoredApplication]
-    }
-
-    // case class StoredAppWithSubs(app: StoredApplication, apis: Set[ApiIdentifier]) {
-    //   lazy val asApplicationWithSubs = app.asAppWithCollaborators.withSubscriptions(apis.toSet)
-    //   lazy val asQueriedApplication  = QueriedApplication(asApplicationWithSubs)
-    // }
-
-    // object StoredAppWithSubs {
-    //   implicit val reads: Reads[StoredAppWithSubs] = Json.reads[StoredAppWithSubs]
-    // }
-
+    implicit val readsQSA: Reads[QueriedStoredApplication]                      = Json.reads[QueriedStoredApplication]
   }
 }
 
@@ -260,6 +260,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     with ClockNow {
 
   import ApplicationRepository.MongoFormats._
+  import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.QueriedStoredApplication
 
   def save(application: StoredApplication): Future[StoredApplication] = {
     val query = equal("id", Codecs.toBson(application.id))
@@ -440,7 +441,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   }
 
   def fetch(id: ApplicationId): Future[Option[StoredApplication]] = {
-    fetchSingleApplication(ApplicationQuery.ById(id, List.empty))
+    fetchStoredApplication(ApplicationQuery.ById(id, List.empty))
   }
 
   // TODO - definitely
@@ -1026,7 +1027,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   }
 
   // So simple that we don't need to do anything other than use existing methods.  These could be done via conversion to AggregateQuery components at a later date.
-  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Option[QueriedStoredApplication]] = {
+  private def internalFetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Option[QueriedStoredApplication]] = {
     qry match {
       case ApplicationQuery.ByClientId(clientId, true, _, _, _, _)       =>
         findAndRecordApplicationUsage(clientId).map(osa => osa.map(app => QueriedStoredApplication(app, None, None, None)))
@@ -1036,15 +1037,15 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchSingleApplication(qry: SingleApplicationQuery): Future[Option[StoredApplication]] = {
-    fetchBySingleApplicationQuery(qry).map(_.map(_.app))
+  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Option[QueriedApplication]] = {
+    internalFetchBySingleApplicationQuery(qry).map(_.map(_.asQueriedApplication))
   }
 
-  def fetchApplications(qry: GeneralOpenEndedApplicationQuery): Future[List[StoredApplication]] = {
-    fetchByGeneralOpenEndedApplicationQuery(qry).map(_.map(_.app))
+  def fetchStoredApplication(qry: SingleApplicationQuery): Future[Option[StoredApplication]] = {
+    internalFetchBySingleApplicationQuery(qry).map(_.map(_.app))
   }
 
-  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedStoredApplication]] = {
+  private def internalFetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedStoredApplication]] = {
     timeFuture("Run General Query", "application.repository.fetchByGeneralOpenEndedApplicationQuery") {
       val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
       val sortingStage: List[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
@@ -1058,6 +1059,14 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       executeAggregate(qry.wantSubscriptions, pipeline)
     }
+  }
+
+  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedApplication]] = {
+    internalFetchByGeneralOpenEndedApplicationQuery(qry).map(_.map(_.asQueriedApplication))
+  }
+
+  def fetchStoredApplications(qry: GeneralOpenEndedApplicationQuery): Future[List[StoredApplication]] = {
+    internalFetchByGeneralOpenEndedApplicationQuery(qry).map(_.map(_.app))
   }
 
   def convertRawData(pagination: Pagination)(in: PaginatedApplicationData): PaginatedApplications = {
@@ -1083,7 +1092,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
       val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => needsLookup && qry.hasSpecificSubscriptionFilter)
 
-      val projectionToUse = 
+      val projectionToUse =
         project(
           fields(
             excludeId(),
@@ -1092,7 +1101,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
             )
           )
         )
-
 
       val totalCount            = Aggregates.count("total")
       val commonPipeline        = maybeSubsLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage

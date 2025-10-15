@@ -85,7 +85,7 @@ class UpliftService @Inject() (
     } yield UpliftVerified
 
     for {
-      app <- applicationRepository.fetchApplications(ApplicationQueries.applicationsByVerifiableUplift(verificationCode))
+      app <- applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByVerifiableUplift(verificationCode))
                .map(
                  _.headOption
                    .getOrElse(throw InvalidUpliftVerificationCode(verificationCode))

@@ -34,23 +34,12 @@ class QueryService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def asQueriedApplication(in: ApplicationRepository.MongoFormats.QueriedStoredApplication): QueriedApplication = {
-    val awc = in.app.asAppWithCollaborators
-    QueriedApplication(
-      details = awc.details,
-      collaborators = awc.collaborators,
-      subscriptions = in.subscriptions,
-      fieldValues = in.fieldValues,
-      stateHistory = in.stateHistory
-    )
-  }
-
   def fetchSingleApplicationByQuery(qry: SingleApplicationQuery): Future[Option[QueriedApplication]] = {
-    applicationRepository.fetchBySingleApplicationQuery(qry).map(_.map(asQueriedApplication))
+    applicationRepository.fetchBySingleApplicationQuery(qry)
   }
 
   def fetchApplicationsByQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedApplication]] = {
-    applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry).map(_.map(asQueriedApplication))
+    applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry)
   }
 
   def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {

@@ -113,21 +113,21 @@ class ApplicationQueriesISpec
     }
 
     "retrieve the application for a given client id when it has a matching client id" in new Setup {
-      val retrieved = await(applicationRepository.fetchSingleApplication(ApplicationQueries.applicationByClientId(clientIdTwo)))
+      val retrieved = await(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByClientId(clientIdTwo)))
 
       retrieved.value shouldBe application2
     }
 
     "retrieve the grant length for an application for a given client id when it has a matching client id" in new Setup {
-      val retrieved1 = await(applicationRepository.fetchSingleApplication(ApplicationQueries.applicationByClientId(clientIdOne)))
-      val retrieved2 = await(applicationRepository.fetchSingleApplication(ApplicationQueries.applicationByClientId(clientIdTwo)))
+      val retrieved1 = await(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByClientId(clientIdOne)))
+      val retrieved2 = await(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByClientId(clientIdTwo)))
 
       retrieved1.value.refreshTokensAvailableFor shouldBe grantLength1
       retrieved2.value.refreshTokensAvailableFor shouldBe grantLength2
     }
 
     "do not retrieve the application for a given client id when it has a matching client id but is deleted" in new Setup {
-      val retrieved = await(applicationRepository.fetchSingleApplication(ApplicationQueries.applicationByClientId(application3.tokens.production.clientId)))
+      val retrieved = await(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByClientId(application3.tokens.production.clientId)))
 
       retrieved shouldBe None
     }
@@ -151,7 +151,7 @@ class ApplicationQueriesISpec
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
 
-      val retrieved = await(applicationRepository.fetchSingleApplication(ApplicationQueries.applicationByServerToken(application2.tokens.production.accessToken)))
+      val retrieved = await(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByServerToken(application2.tokens.production.accessToken)))
 
       retrieved shouldBe Some(application2)
     }
@@ -165,7 +165,7 @@ class ApplicationQueriesISpec
 
       await(applicationRepository.save(application1))
 
-      val retrieved = await(applicationRepository.fetchSingleApplication(ApplicationQueries.applicationByServerToken(application1.tokens.production.accessToken)))
+      val retrieved = await(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByServerToken(application1.tokens.production.accessToken)))
 
       retrieved shouldBe None
     }
@@ -202,7 +202,7 @@ class ApplicationQueriesISpec
       )
         .withState(appStateDeleted)
 
-      def test = applicationRepository.fetchApplications(ApplicationQueries.standardNonTestingApps)
+      def test = applicationRepository.fetchStoredApplications(ApplicationQueries.standardNonTestingApps)
     }
 
     "retrieve all the standard applications not in TESTING (or DELETED) state" in new Setup {
@@ -270,7 +270,7 @@ class ApplicationQueriesISpec
 
       await(applicationRepository.save(application))
       val retrieved =
-        await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByName(applicationName)))
+        await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByName(applicationName)))
 
       retrieved shouldBe List(application)
     }
@@ -282,7 +282,7 @@ class ApplicationQueriesISpec
         .copy(normalisedName = applicationNormalisedName)
       await(applicationRepository.save(application))
 
-      val retrieved = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByName("non-matching-name")))
+      val retrieved = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByName("non-matching-name")))
 
       retrieved shouldBe List.empty
     }
@@ -297,7 +297,7 @@ class ApplicationQueriesISpec
 
       await(applicationRepository.save(application))
       val retrieved =
-        await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByName(applicationName)))
+        await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByName(applicationName)))
 
       retrieved shouldBe List.empty
     }
@@ -319,7 +319,7 @@ class ApplicationQueriesISpec
       await(applicationRepository.save(testApplication2))
       await(applicationRepository.save(testApplication3))
 
-      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByUserId(userId, false)))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByUserId(userId, false)))
 
       result.size shouldBe 2
       result.map(
@@ -342,7 +342,7 @@ class ApplicationQueriesISpec
       await(applicationRepository.save(testApplication2))
       await(applicationRepository.save(testApplication3))
 
-      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByUserId(userId, true)))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByUserId(userId, true)))
 
       result.size shouldBe 3
       result.map(
@@ -365,7 +365,7 @@ class ApplicationQueriesISpec
       await(applicationRepository.save(prodApplication2))
       await(applicationRepository.save(sandboxApplication))
 
-      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, Environment.PRODUCTION)))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, Environment.PRODUCTION)))
 
       result.size shouldBe 1
       result.head.environment shouldBe Environment.PRODUCTION
@@ -393,7 +393,7 @@ class ApplicationQueriesISpec
       await(applicationRepository.save(application2))
       await(subscriptionRepository.collection.insertOne(subscriptionData).toFuture())
 
-      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByNoSubscriptions))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByNoSubscriptions))
 
       result shouldBe List(application2)
     }
@@ -433,14 +433,15 @@ class ApplicationQueriesISpec
           .toFuture()
       )
 
-      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByApiContext("context".asContext)))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByApiContext("context".asContext)))
       result shouldBe List(application1, application2)
 
-      val resultQSA =
+      val resultQA =
         await(applicationRepository.fetchByGeneralOpenEndedApplicationQuery(ApplicationQueries.applicationsByApiContext("context".asContext).copy(wantSubscriptions = true)))
-      resultQSA.head.app shouldBe application1
-      resultQSA.head.subscriptions.value shouldBe Set("context".asContext.asIdentifier("version-1"))
-      resultQSA.head.stateHistory shouldBe None
+      resultQA.head.details shouldBe application1.asAppWithCollaborators.details
+      resultQA.head.collaborators shouldBe application1.collaborators
+      resultQA.head.subscriptions.value shouldBe Set("context".asContext.asIdentifier("version-1"))
+      resultQA.head.stateHistory shouldBe None
     }
   }
 
@@ -485,7 +486,7 @@ class ApplicationQueriesISpec
           .toFuture()
       )
 
-      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByApiIdentifier("context".asIdentifier("version-2"))))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByApiIdentifier("context".asIdentifier("version-2"))))
 
       result shouldBe List(application2)
     }
@@ -526,7 +527,7 @@ class ApplicationQueriesISpec
           .toFuture()
       )
 
-      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByApiIdentifier("context".asIdentifier("version-2"))))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByApiIdentifier("context".asIdentifier("version-2"))))
 
       result shouldBe List(application2, application3)
     }
@@ -573,7 +574,7 @@ class ApplicationQueriesISpec
           .toFuture()
       )
 
-      val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByApiIdentifier(nonExistentApiIdentifier)))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByApiIdentifier(nonExistentApiIdentifier)))
 
       result shouldBe List.empty
     }
@@ -609,7 +610,7 @@ class ApplicationQueriesISpec
       )
 
       val applicationDetails = await(
-        applicationRepository.fetchApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
+        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
       )
 
       verifyApplications(
@@ -627,7 +628,7 @@ class ApplicationQueriesISpec
       await(applicationRepository.save(application))
 
       val applicationDetails = await(
-        applicationRepository.fetchApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
+        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
       )
 
       verifyApplications(
@@ -645,7 +646,7 @@ class ApplicationQueriesISpec
       await(applicationRepository.save(application))
 
       val applicationDetails = await(
-        applicationRepository.fetchApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
+        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
       )
 
       verifyApplications(
@@ -663,7 +664,7 @@ class ApplicationQueriesISpec
       await(applicationRepository.save(application))
 
       val applicationDetail = await(
-        applicationRepository.fetchApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
+        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
       )
 
       verifyApplications(
