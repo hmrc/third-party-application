@@ -41,6 +41,9 @@ trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar wit
 
     object FetchSingleApplicationByQuery {
 
+      def thenReturnsFor(qry: SingleApplicationQuery, app: QueriedApplication) =
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))).thenReturn(successful(Some(app)))
+
       def thenReturnsFor(qry: SingleApplicationQuery, app: ApplicationWithCollaborators) =
         when(aMock.fetchSingleApplicationByQuery(eqTo(qry))).thenReturn(successful(Some(QueriedApplication(app))))
 

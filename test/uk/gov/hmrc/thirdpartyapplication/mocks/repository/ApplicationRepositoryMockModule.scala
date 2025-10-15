@@ -34,6 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{P
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredToken, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.MongoFormats.QueriedStoredApplication
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -416,14 +417,11 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object FetchBySingleApplicationQuery {
 
-      def thenReturnsNothing(withSubs: Boolean = false) =
-        if (withSubs)
-          when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Right(None)))
-        else
-          when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Left(None)))
+      def thenReturnsNothing() =
+        when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(None))
 
-      def thenReturns(app: StoredApplication)                                    = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Left(Some(app))))
-      def thenReturns(app: ApplicationRepository.MongoFormats.StoredAppWithSubs) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Right(Some(app))))
+      def thenReturns(app: StoredApplication)        = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Some(QueriedStoredApplication(app))))
+      def thenReturns(app: QueriedStoredApplication) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Some(app)))
     }
 
     object FetchSingleApplicationByQuery {
@@ -451,13 +449,13 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchByGeneralOpenEndedApplicationQuery {
-      def thenReturns(apps: StoredApplication*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Left(apps.toList)))
+      def thenReturns(apps: StoredApplication*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(apps.toList.map(QueriedStoredApplication(_))))
 
       def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) =
-        when(aMock.fetchByGeneralOpenEndedApplicationQuery(eqTo(qry))).thenReturn(successful(Left(apps.toList)))
+        when(aMock.fetchByGeneralOpenEndedApplicationQuery(eqTo(qry))).thenReturn(successful(apps.toList.map(QueriedStoredApplication(_))))
 
-      def thenReturnsWithSubs(apps: ApplicationRepository.MongoFormats.StoredAppWithSubs*) =
-        when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(Right(apps.toList)))
+      def thenReturnsWithSubs(apps: QueriedStoredApplication*) =
+        when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(apps.toList))
     }
 
     object FetchByPaginatedApplicationQuery {

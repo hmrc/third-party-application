@@ -434,8 +434,13 @@ class ApplicationQueriesISpec
       )
 
       val result = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByApiContext("context".asContext)))
-
       result shouldBe List(application1, application2)
+
+      val resultQSA =
+        await(applicationRepository.fetchByGeneralOpenEndedApplicationQuery(ApplicationQueries.applicationsByApiContext("context".asContext).copy(wantSubscriptions = true)))
+      resultQSA.head.app shouldBe application1
+      resultQSA.head.subscriptions.value shouldBe Set("context".asContext.asIdentifier("version-1"))
+      resultQSA.head.stateHistory shouldBe None
     }
   }
 

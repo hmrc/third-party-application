@@ -195,12 +195,13 @@ object ApplicationQueryConverter {
     case Sorting.NoSorting             => List()
   }
 
-  def identifySort(params: List[SortingParam[_]]): Sorting = {
-    params match {
-      case SortQP(sort) :: Nil => sort
-      case _                   => Sorting.SubmittedAscending
-    }
-  }
+  // TODO : Work out why this is not used.
+  // def identifySort(params: List[SortingParam[_]]): Sorting = {
+  //   params match {
+  //     case SortQP(sort) :: Nil => sort
+  //     case _                   => Sorting.SubmittedAscending
+  //   }
+  // }
 
   def pageNumber(params: List[Param[_]]): Int = {
     params.collectFirst {

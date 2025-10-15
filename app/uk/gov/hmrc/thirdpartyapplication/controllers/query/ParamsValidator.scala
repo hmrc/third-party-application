@@ -69,7 +69,7 @@ object ParamsValidator {
 
   def checkUniqueParamsCombinations(uniqueFilterParams: NonEmptyList[UniqueFilterParam[_]], otherFilterParams: List[NonUniqueFilterParam[_]]): ErrorsOr[Unit] = {
     // Cannot have more than one unique filter param
-    // Cannot have a unqiue filter param and other filter params other than UserAgentQP or WantSubscriptions
+    // Cannot have a unqiue filter param and other filter params other than UserAgentQP or WantSubscriptions/WantSubscroiptionField/WantStateHistory
 
     val onlyHasAllowableOtherParams = otherFilterParams.find(_ match {
       case GenericUserAgentQP(_) => false

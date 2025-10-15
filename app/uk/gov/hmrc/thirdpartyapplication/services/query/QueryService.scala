@@ -19,8 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.query
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.EitherT
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ActorType
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
@@ -36,20 +34,23 @@ class QueryService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
+  def asQueriedApplication(in: ApplicationRepository.MongoFormats.QueriedStoredApplication): QueriedApplication = {
+    val awc = in.app.asAppWithCollaborators
+    QueriedApplication(
+      details = awc.details,
+      collaborators = awc.collaborators,
+      subscriptions = in.subscriptions,
+      fieldValues = in.fieldValues,
+      stateHistory = in.stateHistory
+    )
+  }
+
   def fetchSingleApplicationByQuery(qry: SingleApplicationQuery): Future[Option[QueriedApplication]] = {
-    EitherT(applicationRepository.fetchBySingleApplicationQuery(qry))
-      .fold(
-        _.map(_.asQueriedApplication),
-        _.map(_.asQueriedApplication)
-      )
+    applicationRepository.fetchBySingleApplicationQuery(qry).map(_.map(asQueriedApplication))
   }
 
   def fetchApplicationsByQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedApplication]] = {
-    EitherT(applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry))
-      .fold(
-        _.map(_.asQueriedApplication),
-        _.map(_.asQueriedApplication)
-      )
+    applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry).map(_.map(asQueriedApplication))
   }
 
   def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {
