@@ -29,7 +29,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{GrantLength, State}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{GrantLength, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
@@ -673,5 +674,36 @@ class ApplicationQueriesISpec
         0
       )
     }
+  }
+
+  "single app query with state history" in {
+    import LaxEmailAddress.StringSyntax
+
+    val application1     = anApplicationDataForTest(
+      id = ApplicationId.random,
+      prodClientId = ClientId.random
+    )
+    val application2     = anApplicationDataForTest(
+      id = ApplicationId.random,
+      prodClientId = ClientId.random
+    )
+    val subscriptionData =
+      aSubscriptionData("context", "version", application1.id)
+
+    val actor: Actor      = Actors.AppCollaborator("admin@example.com".toLaxEmail)
+    val stateHistoryData1 = StateHistory(application1.id, State.TESTING, actor, changedAt = instant)
+    val stateHistoryData2 = StateHistory(application2.id, State.TESTING, actor, changedAt = instant)
+
+    await(applicationRepository.save(application1))
+    await(applicationRepository.save(application2))
+    await(subscriptionRepository.collection.insertOne(subscriptionData).toFuture())
+    await(stateHistoryRepository.collection.insertOne(stateHistoryData1).toFuture())
+    await(stateHistoryRepository.collection.insertOne(stateHistoryData2).toFuture())
+
+    val queriedApps = await(
+      applicationRepository.fetchByGeneralOpenEndedApplicationQuery(GeneralOpenEndedApplicationQuery(Nil, wantSubscriptions = true, wantStateHistory = true))
+    )
+    queriedApps.head.stateHistory.value shouldBe List(stateHistoryData1)
+    queriedApps.tail.head.stateHistory.value shouldBe List(stateHistoryData2)
   }
 }

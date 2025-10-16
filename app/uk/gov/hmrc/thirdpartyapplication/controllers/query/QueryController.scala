@@ -61,7 +61,8 @@ class QueryController @Inject() (
 
       case q: GeneralOpenEndedApplicationQuery =>
         queryService.fetchApplicationsByQuery(q).map {
-          apps => Ok(Json.toJson(apps))
+          apps =>
+            Ok(Json.toJson(apps))
         }
 
       case q: PaginatedApplicationQuery =>

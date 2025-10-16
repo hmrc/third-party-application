@@ -933,6 +933,14 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       foreignField = "applications"
     )
 
+  private val stateHistoryLookup: Bson =
+    lookup(
+      from = "stateHistory",
+      as = "stateHistory",
+      localField = "id",
+      foreignField = "applicationId"
+    )
+
   private val fieldsToProject = List(
     "id",
     "name",
@@ -959,25 +967,23 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     (__ \ "applications").read[JsArray].map { array =>
       JsArray(
         array.value.map { item =>
-          val obj       = item.as[JsObject]
-          val appfields = (obj - "subscriptions")
-          val oLRSubs   = (obj \ "subscriptions")
+          val obj              = item.as[JsObject]
+          val appFields        = Seq("app" -> (obj - "subscriptions"))
+          val oLRSubscriptions = (obj \ "subscriptions")
+          val oLRStateHistory  = (obj \ "stateHistory")
 
-          if (oLRSubs.isDefined)
-            JsObject(Seq(
-              "app"           -> appfields,
-              "subscriptions" -> oLRSubs.get
-            ))
-          else
-            JsObject(Seq(
-              "app" -> appfields
-            ))
+          val allFields =
+            appFields ++
+              (if (oLRSubscriptions.isDefined) Seq(("subscriptions" -> oLRSubscriptions.get)) else Seq.empty) ++
+              (if (oLRStateHistory.isDefined) Seq(("stateHistory" -> oLRStateHistory.get)) else Seq.empty)
+
+          JsObject(allFields)
         }
       )
     }
   }
 
-  private def executeAggregate(wantSubscriptions: Boolean, pipeline: Seq[Bson]): Future[List[QueriedStoredApplication]] = {
+  private def executeAggregate(wantSubscriptions: Boolean, wantStateHistory: Boolean, pipeline: Seq[Bson]): Future[List[QueriedStoredApplication]] = {
 
     val projectionToUse: Bson =
       project(
@@ -991,6 +997,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
             ) ++ (
               if (wantSubscriptions)
                 Seq(computed("subscriptions", "$subscribedApis.apiIdentifier"))
+              else
+                Seq.empty
+            ) ++ (
+              if (wantStateHistory)
+                Seq(computed("stateHistory", "$stateHistory"))
               else
                 Seq.empty
             )
@@ -1021,7 +1032,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val maybeSubsLookup     = subscriptionsLookup.some.filter(_ => needsLookup)
       val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ filtersStage
 
-      executeAggregate(qry.wantSubscriptions, pipeline)
+      executeAggregate(qry.wantSubscriptions, qry.wantStateHistory, pipeline)
         .map(_.headOption)
     }
   }
@@ -1055,9 +1066,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
       val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => qry.hasSpecificSubscriptionFilter).filterNot(_ => qry.wantSubscriptions)
 
-      val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage ++ sortingStage
+      val maybeStateHistoryLookup = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
 
-      executeAggregate(qry.wantSubscriptions, pipeline)
+      val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ maybeStateHistoryLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage ++ sortingStage
+
+      executeAggregate(qry.wantSubscriptions, qry.wantStateHistory, pipeline)
     }
   }
 
