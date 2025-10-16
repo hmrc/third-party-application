@@ -7,8 +7,8 @@ object AppDependencies {
   lazy val mockitoScalaVersion      = "2.0.0"
   lazy val bootstrapVersion         = "9.19.0"
   lazy val hmrcMongoVersion         = "2.9.0"
-  lazy val applicationEventVersion  = "0.88.0" // Ensure this version of the application-events library uses the appDomainVersion below
-  lazy val applicationDomainVersion = "0.87.0"
+  lazy val applicationEventVersion  = "0.89.0" // Ensure this version of the application-events library uses the appDomainVersion below
+  lazy val applicationDomainVersion = "0.88.0"
 
   private lazy val compileDeps = Seq(
     "uk.gov.hmrc"                   %% "bootstrap-backend-play-30"                % bootstrapVersion,
@@ -17,10 +17,10 @@ object AppDependencies {
     "com.github.t3hnar"             %% "scala-bcrypt"                             % "4.1",
     "commons-validator"              % "commons-validator"                        % "1.7",
     "uk.gov.hmrc"                   %% "internal-auth-client-play-30"             % "3.1.0",
-    "uk.gov.hmrc"                   %% "api-platform-application-events"          % applicationEventVersion,
+    // "uk.gov.hmrc"                   %% "api-platform-application-events"          % applicationEventVersion,
     // Use these during poc stage of development
-    // "uk.gov.hmrc"                   %% "api-platform-application-events"          % applicationEventVersion exclude("uk.gov.hmrc","api-platform-application-domain"),
-    // "uk.gov.hmrc"                   %% "api-platform-application-domain"          % applicationDomainVersion,
+    "uk.gov.hmrc"                   %% "api-platform-application-events"          % applicationEventVersion exclude("uk.gov.hmrc","api-platform-application-domain"),
+    "uk.gov.hmrc"                   %% "api-platform-application-domain"          % applicationDomainVersion,
     "org.typelevel"                 %% "cats-core"                                % "2.13.0",
     "com.iheart"                    %% "ficus"                                    % "1.5.2"
   )

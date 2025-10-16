@@ -765,7 +765,7 @@ class ApplicationRepositoryISpec
         .withState(appStatePendingRequesterVerification)
 
       await(applicationRepository.save(application))
-      val retrieved = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByVerifiableUplift(appStateVerificationCode)))
+      val retrieved = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByVerifiableUplift(appStateVerificationCode)))
       retrieved shouldBe List(application)
     }
 
@@ -776,7 +776,7 @@ class ApplicationRepositoryISpec
         .withState(appStatePreProduction)
 
       await(applicationRepository.save(application))
-      val retrieved = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByVerifiableUplift(appStateVerificationCode)))
+      val retrieved = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByVerifiableUplift(appStateVerificationCode)))
       retrieved shouldBe List(application)
     }
 
@@ -788,7 +788,7 @@ class ApplicationRepositoryISpec
 
       await(applicationRepository.save(application))
 
-      val retrieved = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByVerifiableUplift("aDifferentVerificationCode")))
+      val retrieved = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByVerifiableUplift("aDifferentVerificationCode")))
       retrieved shouldBe List.empty
     }
 
@@ -801,7 +801,7 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application))
       await(applicationRepository.delete(application.id, instant))
 
-      val retrieved = await(applicationRepository.fetchApplications(ApplicationQueries.applicationsByVerifiableUplift(appStateVerificationCode)))
+      val retrieved = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByVerifiableUplift(appStateVerificationCode)))
       retrieved shouldBe List.empty
     }
   }
@@ -945,7 +945,7 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application3))
 
       // await(applicationRepository.fetchAll()) shouldBe List(
-      await(applicationRepository.fetchApplications(ApplicationQueries.allApplications(excludeDeleted = true))) shouldBe List(
+      await(applicationRepository.fetchStoredApplications(ApplicationQueries.allApplications(excludeDeleted = true))) shouldBe List(
         application1,
         application2
       )
@@ -957,7 +957,7 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(application3))
 
       // await(applicationRepository.fetchAll(includeDeleted = true)) shouldBe List(
-      await(applicationRepository.fetchApplications(ApplicationQueries.allApplications(excludeDeleted = false))) shouldBe List(
+      await(applicationRepository.fetchStoredApplications(ApplicationQueries.allApplications(excludeDeleted = false))) shouldBe List(
         application1,
         application2,
         application3

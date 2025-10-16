@@ -219,7 +219,7 @@ class ApplicationControllerSpec
   "fetch credentials" should {
 
     "succeed with a 200 (ok) when the application exists for the given id" in new Setup {
-      QueryServiceMock.FetchSingleApplication.thenReturns(standardApp.modify(_.copy(token = credentialServiceResponseToken)))
+      QueryServiceMock.FetchSingleApplicationByQuery.thenReturns(standardApp.modify(_.copy(token = credentialServiceResponseToken)))
 
       val result = underTest.fetchCredentials(applicationId)(request)
 
@@ -228,7 +228,7 @@ class ApplicationControllerSpec
     }
 
     "fail with a 404 (not found) when no application exists for the given id" in new Setup {
-      QueryServiceMock.FetchSingleApplication.thenReturnsNothing()
+      QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsNone()
 
       val result = underTest.fetchCredentials(applicationId)(request)
 
@@ -236,7 +236,7 @@ class ApplicationControllerSpec
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      QueryServiceMock.FetchSingleApplication.thenFails(new RuntimeException("Expected test failure"))
+      QueryServiceMock.FetchSingleApplicationByQuery.thenFails(new RuntimeException("Expected test failure"))
 
       val result = underTest.fetchCredentials(applicationId)(request)
 
@@ -416,7 +416,7 @@ class ApplicationControllerSpec
     }
 
     "retrieve by client id" in new Setup {
-      QueryServiceMock.FetchSingleApplication.thenReturnsFor(ApplicationQueries.applicationByClientId(clientId), standardApp)
+      QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(ApplicationQueries.applicationByClientId(clientId), standardApp)
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}"))
 
@@ -424,7 +424,7 @@ class ApplicationControllerSpec
     }
 
     "retrieve by server token" in new Setup {
-      QueryServiceMock.FetchSingleApplication.thenReturnsFor(ApplicationQueries.applicationByServerToken(serverToken), standardApp)
+      QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(ApplicationQueries.applicationByServerToken(serverToken), standardApp)
 
       private val scenarios =
         Table(
@@ -447,7 +447,7 @@ class ApplicationControllerSpec
     }
 
     "retrieve when requesting no subscriptions" in new Setup {
-      QueryServiceMock.FetchApplications.thenReturnsFor(ApplicationQueries.applicationsByNoSubscriptions, standardApp)
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQueries.applicationsByNoSubscriptions, standardApp)
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions="))
 
@@ -455,7 +455,7 @@ class ApplicationControllerSpec
     }
 
     "fail with a 500 (internal server error) when a clientId is supplied" in new Setup {
-      QueryServiceMock.FetchSingleApplication.thenFails(new RuntimeException("Expected test exception"))
+      QueryServiceMock.FetchSingleApplicationByQuery.thenFails(new RuntimeException("Expected test exception"))
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
 
@@ -474,7 +474,7 @@ class ApplicationControllerSpec
         )
 
       forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
-        QueryServiceMock.FetchSingleApplication.thenReturnsFor(ApplicationQueries.applicationByServerToken(serverToken), applicationResponse)
+        QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(ApplicationQueries.applicationByServerToken(serverToken), applicationResponse)
         when(underTest.applicationService.findAndRecordServerTokenUsage(serverToken)).thenReturn(Future(Some((updatedApplicationResponse, serverToken))))
 
         val result = underTest.queryDispatcher()(request.withHeaders(headers: _*))
@@ -500,7 +500,7 @@ class ApplicationControllerSpec
         )
 
       forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
-        QueryServiceMock.FetchSingleApplication.thenReturnsFor(ApplicationQueries.applicationByClientId(clientId), applicationResponse)
+        QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(ApplicationQueries.applicationByClientId(clientId), applicationResponse)
         when(underTest.applicationService.findAndRecordApplicationUsage(clientId)).thenReturn(Future(Some((updatedApplicationResponse, "aServerToken"))))
 
         val result =
@@ -520,8 +520,8 @@ class ApplicationControllerSpec
     "succeed with a 200 when applications are found for the collaborator by userId and environment" in new Setup with ExtendedResponses {
       val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=${userIdOne.toString()}&environment=$environment")
 
-      QueryServiceMock.FetchApplicationsWithSubscriptions.thenReturnsFor(
-        ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, environment).copy(wantSubscriptions = true),
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubsFor(
+        ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, environment, wantSubscriptions = true),
         standardApp.withSubscriptions(Set(apiIdentifier1)),
         privilegedApp.withSubscriptions(Set(apiIdentifier1)),
         ropcApp.withSubscriptions(Set(apiIdentifier1))
@@ -533,8 +533,8 @@ class ApplicationControllerSpec
     "fail with a BadRequest when applications are requested for the collaborator by userId and environment but the userId is badly formed" in new Setup with ExtendedResponses {
       val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=XXX&environment=$environment")
 
-      QueryServiceMock.FetchApplicationsWithSubscriptions.thenReturnsFor(
-        ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, environment).copy(wantSubscriptions = true),
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubsFor(
+        ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, environment, wantSubscriptions = true),
         standardApp.withSubscriptions(Set(apiIdentifier1)),
         privilegedApp.withSubscriptions(Set(apiIdentifier1)),
         ropcApp.withSubscriptions(Set(apiIdentifier1))
@@ -582,7 +582,7 @@ class ApplicationControllerSpec
       "succeed with a 200 (ok) when applications are found" in new Setup {
         val response: List[ApplicationWithCollaborators] = List(standardApp, privilegedApp, ropcApp)
 
-        QueryServiceMock.FetchApplications.thenReturnsFor(ApplicationQueries.applicationsByApiContext(subscribesTo.asContext), response: _*)
+        QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQueries.applicationsByApiContext(subscribesTo.asContext), response: _*)
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -592,7 +592,7 @@ class ApplicationControllerSpec
       }
 
       "succeed with a 200 (ok) when no applications are found" in new Setup {
-        QueryServiceMock.FetchApplications.thenReturnsNothingFor(ApplicationQueries.applicationsByApiContext(subscribesTo.asContext))
+        QueryServiceMock.FetchApplicationsByQuery.thenReturnsNoAppsFor(ApplicationQueries.applicationsByApiContext(subscribesTo.asContext))
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -610,7 +610,7 @@ class ApplicationControllerSpec
       "succeed with a 200 (ok) when applications are found" in new Setup {
         val response: List[ApplicationWithCollaborators] = List(standardApp, privilegedApp, ropcApp)
 
-        QueryServiceMock.FetchApplications.thenReturnsFor(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier), response: _*)
+        QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier), response: _*)
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -621,7 +621,7 @@ class ApplicationControllerSpec
       }
 
       "succeed with a 200 (ok) when no applications are found" in new Setup {
-        QueryServiceMock.FetchApplications.thenReturnsNothingFor(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier))
+        QueryServiceMock.FetchApplicationsByQuery.thenReturnsNoAppsFor(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier))
 
         val result = underTest.queryDispatcher()(queryRequest)
 

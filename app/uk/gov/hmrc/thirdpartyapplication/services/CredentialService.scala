@@ -47,7 +47,7 @@ class CredentialService @Inject() (
     }
 
     for {
-      application         <- OptionT(applicationRepository.fetchSingleApplication(ApplicationQueries.applicationByClientId(validation.clientId)))
+      application         <- OptionT(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByClientId(validation.clientId)))
       matchedClientSecret <- OptionT(clientSecretService.clientSecretIsValid(application.id, validation.clientSecret, application.tokens.production.clientSecrets))
       updatedApplication  <- OptionT.liftF(applicationRepository.recordClientSecretUsage(application.id, matchedClientSecret.id)
                                .recover(recoverFromFailedUsageDateUpdate(application)))

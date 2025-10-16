@@ -19,11 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.query
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.EitherT
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ActorType
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.SingleApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
@@ -35,34 +34,12 @@ class QueryService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def fetchSingleApplicationByQuery(qry: SingleApplicationQuery): Future[Either[Option[ApplicationWithCollaborators], Option[ApplicationWithSubscriptions]]] = {
-    EitherT(applicationRepository.fetchBySingleApplicationQuery(qry))
-      .bimap(
-        _.map(_.asAppWithCollaborators),
-        _.map(_.asApplicationWithSubs)
-      )
-      .value
+  def fetchSingleApplicationByQuery(qry: SingleApplicationQuery): Future[Option[QueriedApplication]] = {
+    applicationRepository.fetchBySingleApplicationQuery(qry)
   }
 
-  def fetchSingleApplication(qry: SingleApplicationQuery): Future[Option[ApplicationWithCollaborators]] = {
-    fetchSingleApplicationByQuery(qry).map(_.fold(identity, _.map(_.asAppWithCollaborators)))
-  }
-
-  def fetchApplicationsByQuery(qry: GeneralOpenEndedApplicationQuery): Future[Either[List[ApplicationWithCollaborators], List[ApplicationWithSubscriptions]]] = {
-    EitherT(applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry))
-      .bimap(
-        _.map(_.asAppWithCollaborators),
-        _.map(_.asApplicationWithSubs)
-      )
-      .value
-  }
-
-  def fetchApplications(qry: GeneralOpenEndedApplicationQuery): Future[List[ApplicationWithCollaborators]] = {
-    fetchApplicationsByQuery(qry).map(_.fold(identity, _.map(_.asAppWithCollaborators)))
-  }
-
-  def fetchApplicationsWithSubscriptions(qry: GeneralOpenEndedApplicationQuery): Future[List[ApplicationWithSubscriptions]] = {
-    fetchApplicationsByQuery(qry).map(_.getOrElse(Nil))
+  def fetchApplicationsByQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedApplication]] = {
+    applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry)
   }
 
   def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {

@@ -103,7 +103,7 @@ class ResetLastAccessDateJobSpec
       await(underTest.runJob)
 
       eventually {
-        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchApplications(ApplicationQueries.allApplications()))
+        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchStoredApplications(ApplicationQueries.allApplications()))
 
         retrievedApplications.size should be(3)
 
@@ -123,7 +123,7 @@ class ResetLastAccessDateJobSpec
       await(underTest.runJob)
 
       eventually {
-        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchApplications(ApplicationQueries.allApplications()))
+        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchStoredApplications(ApplicationQueries.allApplications()))
 
         retrievedApplications.size shouldBe 1
         retrievedApplications.head.lastAccess should not be None
@@ -140,7 +140,7 @@ class ResetLastAccessDateJobSpec
       await(underTest.runJob)
 
       eventually {
-        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchApplications(ApplicationQueries.allApplications()))
+        val retrievedApplications: List[StoredApplication] = await(applicationRepository.fetchStoredApplications(ApplicationQueries.allApplications()))
 
         def inDbList(appId: ApplicationId): Option[StoredApplication] = retrievedApplications.find(_.id == appId)
         def epochMillisInDb(appId: ApplicationId): Option[Long]       = inDbList(appId).flatMap(_.lastAccess).map(_.toEpochMilli())

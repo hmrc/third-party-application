@@ -66,6 +66,8 @@ case class StoredApplication(
   def withAccess(newAccess: Access): StoredApplication         = this.focus(_.access).replace(newAccess)
 
   lazy val asAppWithCollaborators = StoredApplication.asAppWithCollaborators(this)
+
+  lazy val asQueriedApplication = QueriedApplication(asAppWithCollaborators)
 }
 
 object StoredApplication {

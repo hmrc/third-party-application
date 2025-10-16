@@ -87,7 +87,7 @@ class UpliftVerificationExpiryJobSpec
       val expectedDate            = instant.minus(JavaTimeDuration.ofDays(expiryTimeInDays))
       val expectedQry             = ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, expectedDate)
 
-      ApplicationRepoMock.FetchApplicationsByQuery.thenReturnsFor(expectedQry, app1, app2)
+      ApplicationRepoMock.FetchApplications.thenReturnsFor(expectedQry, app1, app2)
 
       ApplicationRepoMock.Save.thenAnswer((a: StoredApplication) => successful(a))
       when(mockStateHistoryRepository.insert(*))
@@ -131,7 +131,7 @@ class UpliftVerificationExpiryJobSpec
     }
 
     "handle error on first database call to fetch all applications" in new Setup {
-      ApplicationRepoMock.FetchApplicationsByQuery.thenFails(new RuntimeException("A failure on executing fetchAllByStatusDetails db query"))
+      ApplicationRepoMock.FetchApplications.thenFails(new RuntimeException("A failure on executing fetchAllByStatusDetails db query"))
 
       val result = await(underTest.execute)
 
@@ -146,7 +146,7 @@ class UpliftVerificationExpiryJobSpec
 
       val expectedDate = instant.minus(JavaTimeDuration.ofDays(expiryTimeInDays))
       val expectedQry  = ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, expectedDate)
-      ApplicationRepoMock.FetchApplicationsByQuery.thenReturnsFor(expectedQry, app1, app2)
+      ApplicationRepoMock.FetchApplications.thenReturnsFor(expectedQry, app1, app2)
 
       ApplicationRepoMock.Save.thenFail(new RuntimeException("A failure on executing save db query"))
 

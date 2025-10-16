@@ -91,7 +91,7 @@ class GatekeeperServiceSpec
       val history1 = aHistory(app1.id)
       val history2 = aHistory(app2.id)
 
-      QueryServiceMock.FetchApplications.thenReturns(app1, app2)
+      QueryServiceMock.FetchApplicationsByQuery.thenReturns(app1, app2)
       StateHistoryRepoMock.FetchLatestByState.thenReturnWhen(State.PENDING_GATEKEEPER_APPROVAL)(history1, history2)
 
       val result = await(underTest.fetchNonTestingAppsWithSubmittedDate())

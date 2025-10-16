@@ -123,8 +123,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       val application1: ApplicationWithCollaborators = createApplication(awsApiGatewayApplicationName)
 
       When("We fetch all applications")
-      val uri      = s"$serviceUrl/application"
-      val response = http(basicRequest.get(uri"$uri"))
+      val response = http(basicRequest.get(uri"$serviceUrl/application"))
 
       response.code shouldBe StatusCode.Ok
       val result = Json.parse(response.body.value).as[Seq[ApplicationWithCollaborators]]
