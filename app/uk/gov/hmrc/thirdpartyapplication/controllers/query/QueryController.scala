@@ -25,7 +25,7 @@ import play.api.mvc._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.{GeneralOpenEndedApplicationQuery, PaginatedApplicationQuery}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQuery, SingleApplicationQuery}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 
 @Singleton

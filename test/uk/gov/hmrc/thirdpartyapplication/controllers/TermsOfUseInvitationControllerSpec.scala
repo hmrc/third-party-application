@@ -26,6 +26,7 @@ import play.api.test.Helpers.{contentAsJson, status, stubControllerComponents}
 
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.controllers.termsofuse.TermsOfUseInvitationController
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT

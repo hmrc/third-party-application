@@ -27,10 +27,9 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.CreateApplicationRequest
-import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Deleted
-import uk.gov.hmrc.thirdpartyapplication.models.CreateApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.{CreateApplicationResponse, DeleteApplicationRequest}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.util._
 

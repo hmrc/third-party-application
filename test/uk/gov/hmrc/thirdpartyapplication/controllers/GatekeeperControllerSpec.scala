@@ -45,8 +45,8 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServ
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule, QueryServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, TermsOfUseInvitation}
+import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.util._
 
@@ -118,7 +118,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
   def verifyForbidden(result: Future[Result]): Unit = {
     status(result) shouldBe 403
     contentAsJson(result) shouldBe Json.obj(
-      "code"    -> ErrorCode.FORBIDDEN.toString,
+      "code"    -> common.ErrorCode.FORBIDDEN.toString,
       "message" -> "Insufficient enrolments"
     )
   }
@@ -208,7 +208,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
 
       val result = underTest.fetchAppById(appId)(request)
 
-      verifyErrorResult(result, 404, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, 404, common.ErrorCode.APPLICATION_NOT_FOUND)
     }
   }
 

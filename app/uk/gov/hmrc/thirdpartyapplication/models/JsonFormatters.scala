@@ -24,8 +24,8 @@ import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.controllers.{OldApplicationNameValidationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
+import uk.gov.hmrc.thirdpartyapplication.models._
 
 trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
@@ -52,8 +52,6 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   implicit val formatUpdateIpAllowlistRequest: OFormat[UpdateIpAllowlistRequest]     = Json.format[UpdateIpAllowlistRequest]
   implicit val formatApplicationWithHistory: OFormat[ApplicationWithHistoryResponse] = Json.format[ApplicationWithHistoryResponse]
-  // implicit val formatClientSecretResponse: OFormat[ClientSecret]             = Json.format[ClientSecret]
-  // implicit val formatApplicationTokensResponse: OFormat[ApplicationToken]    = Json.format[ApplicationToken]
 
   implicit val formatValidationRequest: OFormat[ValidationRequest]                                  = Json.format[ValidationRequest]
   implicit val formatApplicationNameValidationRequest: OFormat[OldApplicationNameValidationRequest] = Json.format[OldApplicationNameValidationRequest]

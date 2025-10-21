@@ -23,10 +23,10 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesResponse, ScopeResponse}
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.{OverridesResponse, ScopeResponse}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with FixedClock with CommonApplicationId with StoredApplicationFixtures {

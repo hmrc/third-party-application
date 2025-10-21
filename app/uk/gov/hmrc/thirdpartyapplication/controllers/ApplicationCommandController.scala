@@ -27,6 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Eithe
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, CommandFailures, DispatchRequest}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 

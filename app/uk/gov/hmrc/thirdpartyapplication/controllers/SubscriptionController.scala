@@ -25,6 +25,7 @@ import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.JsonUtils
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 
 private[controllers] case class SubscribersResponse(subscribers: Set[ApplicationId])

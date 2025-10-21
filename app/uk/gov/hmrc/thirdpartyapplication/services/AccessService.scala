@@ -24,8 +24,8 @@ import uk.gov.hmrc.http.NotFoundException
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesResponse, ScopeResponse}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.{OverridesResponse, ScopeResponse}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton

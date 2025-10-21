@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.JsonErrorRe
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.ResponsibleIndividualVerificationFrontendJsonFormatters
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
-import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.JsonUtils
 
 object ResponsibleIndividualVerificationController {
   case class ResponsibleIndividualVerificationRequest(code: String)
