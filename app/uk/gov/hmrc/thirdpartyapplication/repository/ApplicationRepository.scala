@@ -1028,9 +1028,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Run Single Query", "application.repository.fetchSingleAppByAggregates") {
       val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
 
-      val needsLookup         = qry.wantSubscriptions
-      val maybeSubsLookup     = subscriptionsLookup.some.filter(_ => needsLookup)
-      val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ filtersStage
+      val needsLookup             = qry.wantSubscriptions
+      val maybeSubsLookup         = subscriptionsLookup.some.filter(_ => needsLookup)
+      val maybeStateHistoryLookup = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
+
+      val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ maybeStateHistoryLookup.toList ++ filtersStage
 
       executeAggregate(qry.wantSubscriptions, qry.wantStateHistory, pipeline)
         .map(_.headOption)
