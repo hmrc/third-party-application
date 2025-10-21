@@ -679,6 +679,29 @@ class ApplicationQueriesISpec
   "single app query with state history" in {
     import LaxEmailAddress.StringSyntax
 
+    val application      = anApplicationDataForTest(
+      id = ApplicationId.random,
+      prodClientId = ClientId.random
+    )
+    val subscriptionData =
+      aSubscriptionData("context", "version", application.id)
+
+    val actor: Actor     = Actors.AppCollaborator("admin@example.com".toLaxEmail)
+    val stateHistoryData = StateHistory(application.id, State.TESTING, actor, changedAt = instant)
+
+    await(applicationRepository.save(application))
+    await(subscriptionRepository.collection.insertOne(subscriptionData).toFuture())
+    await(stateHistoryRepository.collection.insertOne(stateHistoryData).toFuture())
+
+    val queriedApp = await(
+      applicationRepository.fetchBySingleApplicationQuery(ApplicationQuery.ById(application.id, Nil, wantSubscriptions = true, wantStateHistory = true))
+    )
+    queriedApp.value.stateHistory.value shouldBe List(stateHistoryData)
+  }
+
+  "general query with state history" in {
+    import LaxEmailAddress.StringSyntax
+
     val application1     = anApplicationDataForTest(
       id = ApplicationId.random,
       prodClientId = ClientId.random

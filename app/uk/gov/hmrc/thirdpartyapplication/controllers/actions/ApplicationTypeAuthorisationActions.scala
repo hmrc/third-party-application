@@ -29,8 +29,8 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
-import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.ErrorCode.APPLICATION_NOT_FOUND
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.JsErrorResponse
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 trait ApplicationTypeAuthorisationActions {

@@ -25,7 +25,7 @@ import cats.data.OptionT
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
-import uk.gov.hmrc.thirdpartyapplication.controllers.ValidationRequest
+import uk.gov.hmrc.thirdpartyapplication.models.ValidationRequest
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 

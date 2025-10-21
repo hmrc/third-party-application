@@ -24,7 +24,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ErrorCode, JsErrorResponse}
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ErrorCode, JsErrorResponse}
 
 abstract class AbstractGatekeeperRoleAuthorisationService(authControlConfig: AuthControlConfig) extends ApplicationLogger {
 

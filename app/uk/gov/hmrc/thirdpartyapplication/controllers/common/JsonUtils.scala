@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers
+package uk.gov.hmrc.thirdpartyapplication.controllers.common
 
 import scala.concurrent.Future
 import scala.reflect.ClassTag
@@ -26,7 +26,7 @@ import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.{InvalidIpAllowlistException, ScopeNotFoundException}
 
 // TODO : Sort these helper methods with plans to remove them - APIS-4766

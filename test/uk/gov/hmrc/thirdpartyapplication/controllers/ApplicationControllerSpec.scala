@@ -48,9 +48,9 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockMo
 import uk.gov.hmrc.thirdpartyapplication.domain.models.SubscriptionData
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, QueryServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.asAppWithCollaborators
+import uk.gov.hmrc.thirdpartyapplication.models.{ConfirmSetupCompleteRequest, DeleteApplicationRequest, ValidationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -164,7 +164,7 @@ class ApplicationControllerSpec
 
       val result = underTest.updateCheck(id)(request.withBody(Json.toJson(checkInformation)))
 
-      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, common.ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "successfully update approval information for application XYZ" in new Setup {
@@ -204,7 +204,7 @@ class ApplicationControllerSpec
 
       val result = underTest.fetch(applicationId)(request)
 
-      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, common.ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -232,7 +232,7 @@ class ApplicationControllerSpec
 
       val result = underTest.fetchCredentials(applicationId)(request)
 
-      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, common.ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -277,7 +277,7 @@ class ApplicationControllerSpec
 
       val result = underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
-      verifyErrorResult(result, UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS)
+      verifyErrorResult(result, UNAUTHORIZED, common.ErrorCode.INVALID_CREDENTIALS)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -657,7 +657,7 @@ class ApplicationControllerSpec
       val result = underTest.isSubscribed(applicationId, context, version)(request)
 
       status(result) shouldBe NOT_FOUND
-      verifyErrorResult(result, NOT_FOUND, ErrorCode.SUBSCRIPTION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, common.ErrorCode.SUBSCRIPTION_NOT_FOUND)
       headers(result).get(HeaderNames.CACHE_CONTROL) shouldBe None
     }
 

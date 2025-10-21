@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.ExtraHeadersController
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 class ExtraHeadersControllerSpec
