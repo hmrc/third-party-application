@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatform.modules.submissions.controllers
+package uk.gov.hmrc.apiplatform.modules.submissions.controllers.questionnaires
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext

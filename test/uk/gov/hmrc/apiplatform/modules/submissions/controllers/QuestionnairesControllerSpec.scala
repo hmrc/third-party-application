@@ -25,7 +25,7 @@ import play.api.libs.json.{JsError, JsSuccess}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 
-import uk.gov.hmrc.apiplatform.modules.submissions.controllers.QuestionnairesController
+import uk.gov.hmrc.apiplatform.modules.submissions.controllers.questionnaires.QuestionnairesController
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.QuestionnaireDAOMockModule
 import uk.gov.hmrc.thirdpartyapplication.util._
