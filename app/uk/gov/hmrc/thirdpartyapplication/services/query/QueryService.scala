@@ -19,6 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.services.query
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
+
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ActorType
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
@@ -26,20 +28,30 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.Querie
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.SingleApplicationQuery
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 @Singleton
 class QueryService @Inject() (
+    val metrics: Metrics,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger {
+  ) extends ApplicationLogger with MetricsTimer {
 
   def fetchSingleApplicationByQuery(qry: SingleApplicationQuery): Future[Option[QueriedApplication]] = {
-    applicationRepository.fetchBySingleApplicationQuery(qry)
+    timeFuture("Query Service", "fetchSingleApplicationByQuery") {
+      (
+        applicationRepository.fetchBySingleApplicationQuery(qry)
+      )
+    }
   }
 
   def fetchApplicationsByQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedApplication]] = {
-    applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry)
+    timeFuture("Query Service", "fetchApplicationsByQuery") {
+      (
+        applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry)
+      )
+    }
   }
 
   def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {
@@ -51,11 +63,15 @@ class QueryService @Inject() (
       apps.map(app => patchApplication(app, histories.find(_.applicationId == app.id)))
     }
 
-    for {
-      paginatedApps <- applicationRepository.fetchByPaginatedApplicationQuery(qry)
-      apps           = paginatedApps.applications
-      ids            = apps.map(_.id)
-      histories     <- stateHistoryRepository.fetchDeletedByApplicationIds(ids)
-    } yield paginatedApps.copy(applications = patchApplications(apps, histories))
+    timeFuture("Query Service", "fetchPaginatedApplications") {
+      (
+        for {
+          paginatedApps <- applicationRepository.fetchByPaginatedApplicationQuery(qry)
+          apps           = paginatedApps.applications
+          ids            = apps.map(_.id)
+          histories     <- stateHistoryRepository.fetchDeletedByApplicationIds(ids)
+        } yield paginatedApps.copy(applications = patchApplications(apps, histories))
+      )
+    }
   }
 }

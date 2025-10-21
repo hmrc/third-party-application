@@ -451,7 +451,7 @@ class ApplicationControllerSpec
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions="))
 
-      validateResult(result, OK, None, None)
+      validateResult(result, SEE_OTHER, None, None)
     }
 
     "fail with a 500 (internal server error) when a clientId is supplied" in new Setup {

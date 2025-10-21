@@ -219,7 +219,7 @@ class ApplicationController @Inject() (
         val context = ApiContext(request.queryString("subscribesTo").head)
         queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByApiContext(context)).map(apps => Ok(Json.toJson(apps)))
 
-      case ("noSubscriptions" :: _, _) => queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByNoSubscriptions).map(apps => Ok(Json.toJson(apps)))
+      // case ("noSubscriptions" :: _, _) => queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByNoSubscriptions).map(apps => Ok(Json.toJson(apps)))
 
       case _ => successful(Redirect(uk.gov.hmrc.thirdpartyapplication.controllers.query.routes.QueryController.queryDispatcher().url, request.queryString))
     }
