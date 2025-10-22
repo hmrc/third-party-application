@@ -37,7 +37,8 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Clock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.UserIdsQP
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
@@ -202,13 +203,7 @@ class ApplicationService @Inject() (
   }
 
   def fetchAllForCollaborators(userIds: List[UserId]): Future[List[ApplicationWithCollaborators]] = {
-    Future.sequence(
-      userIds.map(userId =>
-        queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false))
-      )
-    )
-      .map(_.flatten)
-      .map(_.distinct)
+    queryService.fetchApplicationsByQuery(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(userIds))))
       .map(_.map(_.asAppWithCollaborators))
   }
 

@@ -36,6 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.UserIdsQP
 
 class ApplicationQueriesISpec
     extends ServerBaseISpec
@@ -728,5 +729,35 @@ class ApplicationQueriesISpec
     )
     queriedApps.head.stateHistory.value shouldBe List(stateHistoryData1)
     queriedApps.tail.head.stateHistory.value shouldBe List(stateHistoryData2)
+  }
+
+  "general query with user ids" in {
+    val application1     = anApplicationDataForTest(
+      id = ApplicationId.random,
+      prodClientId = ClientId.random
+    ).withCollaborators(developerCollaborator, adminOne)
+
+    val application2     = anApplicationDataForTest(
+      id = ApplicationId.random,
+      prodClientId = ClientId.random
+    ).withCollaborators(developerCollaborator, adminTwo)
+    
+    val application3     = anApplicationDataForTest(
+      id = ApplicationId.random,
+      prodClientId = ClientId.random
+    ).withCollaborators(adminOne)
+
+    await(applicationRepository.save(application1))
+    await(applicationRepository.save(application2))
+    await(applicationRepository.save(application3))
+
+    val queriedApps = await(
+      applicationRepository.fetchByGeneralOpenEndedApplicationQuery(GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(developerCollaborator.userId, adminOne.userId, adminTwo.userId)))))
+    )
+    .map(_.asAppWithCollaborators)
+
+    queriedApps should contain(application1.asAppWithCollaborators)
+    queriedApps should contain(application2.asAppWithCollaborators)
+    queriedApps should contain(application3.asAppWithCollaborators)
   }
 }
