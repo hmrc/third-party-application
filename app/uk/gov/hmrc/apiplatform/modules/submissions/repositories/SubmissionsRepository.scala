@@ -25,10 +25,11 @@ import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.models.ApplicationsByAnswer
 
 object SubmissionsRepository {
 
@@ -69,6 +70,7 @@ object SubmissionsRepository {
     implicit val SubmittedStatusFormat: OFormat[Submitted]                                       = Json.format[Submitted]
     implicit val answeringStatusFormat: OFormat[Answering]                                       = Json.format[Answering]
     implicit val CreatedStatusFormat: OFormat[Created]                                           = Json.format[Created]
+    implicit val applicationsByAnswerFormat: OFormat[ApplicationsByAnswer]                       = Json.format[ApplicationsByAnswer]
 
     implicit val submissionStatus: OFormat[Submission.Status] = Union.from[Submission.Status]("Submission.StatusType")
       .and[Declined]("declined")
@@ -96,6 +98,7 @@ class SubmissionsRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       collectionName = "submissions",
       mongoComponent = mongo,
       domainFormat = SubmissionsRepository.MongoFormats.submissionFormat,
+      extraCodecs = Seq(Codecs.playFormatCodec(SubmissionsRepository.MongoFormats.applicationsByAnswerFormat)),
       indexes = Seq(
         IndexModel(
           ascending("applicationId"),

@@ -30,6 +30,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ActualAnswer.TextAnswer
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ActualAnswer, Submission}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.util._
@@ -108,6 +109,25 @@ class SubmissionsDAOISpec
       await(submissionsDao.save(appBeforeOrigDeployment))
 
       await(submissionsDao.fetchLatestSubmissionForAll(instant.plus(1094L, ChronoUnit.DAYS))) should contain allOf (differentAppSubmission, laterSubmissionSameApp)
+    }
+
+    "find all applications for answer" in {
+      val subWithAnAnswer    = answeredSubmission.copy(startedOn = instant.plus(1093L, ChronoUnit.DAYS))
+      val otherSubWithAnswer = answeredSubmission.copy(id = submissionIdFour, applicationId = applicationIdTwo, startedOn = instant.plus(1095L, ChronoUnit.DAYS))
+      val subWithNoAnswer    = aSubmission.copy(id = submissionIdThree, applicationId = applicationIdThree)
+
+      await(submissionsDao.save(subWithAnAnswer))
+      await(submissionsDao.save(otherSubWithAnswer))
+      await(submissionsDao.save(subWithNoAnswer))
+
+      val answer = answeredSubmission.latestInstance.answersToQuestions.get(OrganisationDetails.question2a.id) match {
+        case Some(TextAnswer(ans)) => ans
+      }
+
+      val result = await(submissionsDao.fetchApplicationsByAnswer(OrganisationDetails.question2a.id))
+      result.length shouldBe 1
+      result.head.answer shouldBe answer
+      result.head.applicationIds should contain allOf (applicationIdTwo, applicationId)
     }
   }
 

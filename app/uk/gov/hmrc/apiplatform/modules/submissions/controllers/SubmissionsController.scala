@@ -18,16 +18,17 @@ package uk.gov.hmrc.apiplatform.modules.submissions.controllers
 
 import java.time.Instant
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.libs.json.{Json, OWrites, Reads}
-import play.api.mvc.{ControllerComponents, Results}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Results}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.InstantJsonFormatter.lenientFormatter
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 
 object SubmissionsController {
@@ -48,8 +49,8 @@ class SubmissionsController @Inject() (
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) {
-  import SubmissionsController._
   import Submission._
+  import SubmissionsController._
 
   def createSubmissionFor(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
@@ -59,6 +60,15 @@ class SubmissionsController @Inject() (
     withJsonBody[CreateSubmissionRequest] { submissionRequest =>
       service.create(applicationId, submissionRequest.requestedBy).map(_.fold(failed, success))
     }
+  }
+
+  def fetchApplicationsByAnswer(questionType: String): Action[AnyContent] = Action.async {
+    val questionId = questionType match {
+      case "company-registration-number" => Some(QuestionnaireDAO.Questionnaires.OrganisationDetails.question2a.id)
+      case "vat-registration-number"     => Some(QuestionnaireDAO.Questionnaires.OrganisationDetails.question2c.id)
+      case _                             => None
+    }
+    questionId.fold(Future.successful(NotFound(Results.EmptyContent())))(id => service.fetchApplicationsByAnswer(id).map(result => Ok(Json.toJson(result))))
   }
 
   def fetchSubmission(id: SubmissionId) = Action.async { _ =>

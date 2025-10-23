@@ -13,6 +13,7 @@
     </logger>
 
     <logger name="pekko" level="ERROR"/>
+    <logger name="org.mongodb.driver.protocol.command" level="DEBUG"/>
 
     <root level="${logger.application:-ERROR}">
         <appender-ref ref="STDOUT"/>

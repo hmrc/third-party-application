@@ -20,16 +20,18 @@ import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import org.mongodb.scala.model.Accumulators
+import org.mongodb.scala.bson.{BsonDocument, BsonNull}
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Sorts.descending
+import org.mongodb.scala.model.{Accumulators, Filters, Projections}
 
 import uk.gov.hmrc.mongo.play.json.Codecs
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.models.ApplicationsByAnswer
 
 @Singleton
 class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(implicit val ec: ExecutionContext) {
@@ -78,6 +80,30 @@ class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(im
       ),
       // $replaceRoot – flatten the wrapped document
       replaceRoot("$latestDoc")
+    ))
+      .toFuture().map(_.toList)
+  }
+
+  def fetchApplicationsByAnswer(questionId: Question.Id): Future[List[ApplicationsByAnswer]] = {
+    collection.aggregate[ApplicationsByAnswer](Seq(
+      group(
+        "$applicationId",
+        Accumulators.top(
+          fieldName = "latestDoc",
+          sortBy = descending("startedOn"),
+          outExpression = Codecs.toBson("$$ROOT")
+        )
+      ),
+      replaceRoot("$latestDoc"),
+      group(
+        BsonDocument("$first" -> s"$$instances.answersToQuestions.${questionId.value}.value"),
+        Accumulators.addToSet("applicationIds", "$applicationId")
+      ),
+      `match`(Filters.ne("_id", BsonNull())),
+      project(Projections.fields(
+        Projections.include("applicationIds"),
+        Projections.computed("answer", Codecs.toBson("$_id"))
+      ))
     ))
       .toFuture().map(_.toList)
   }
