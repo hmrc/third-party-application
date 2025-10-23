@@ -25,6 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.models.ApplicationsByAnswer
 import uk.gov.hmrc.thirdpartyapplication.util.CommonApplicationId
 
 trait StatusTestDataHelper {
@@ -85,6 +86,10 @@ trait ProgressTestDataHelper {
     def withNotApplicableProgresss(): ExtendedSubmission =
       ExtendedSubmission(submission, allQuestionnaireIds.map(i => (i -> notApplicableQuestionnaireProgress(i))).toList.toMap)
   }
+}
+
+trait ApplicationsByAnswerTestData extends CommonApplicationId {
+  val appsByAnswer = List(ApplicationsByAnswer("1234", List(applicationId)))
 }
 
 trait SubmissionsTestData extends CommonApplicationId with QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper with FixedClock {
