@@ -65,6 +65,13 @@ object ApplicationQueryConverter {
       List(equal("collaborators.userId", Codecs.toBson(userIdQp.value)))
     )
 
+  def asUsersFilters(implicit params: List[Param[_]]): List[Bson] = {
+    onFirst[UserIdsQP](userIdsQp => {
+      val userIdListText: String = userIdsQp.values.map(v => v.toString()).mkString("\"", "\",\"", "\"")
+      List(Document(s"""{$$expr: {$$not: {$$eq: [ { $$setIntersection: ["$$collaborators.userId", [$userIdListText] ] }, [] ] } } }"""))
+    })
+  }
+
   def asEnvironmentFilters(implicit params: List[Param[_]]): List[Bson] =
     onFirst[EnvironmentQP](environmentQp =>
       List(equal("environment", Codecs.toBson(environmentQp.value)))
@@ -168,6 +175,7 @@ object ApplicationQueryConverter {
       asSingleQueryFilters ++
         asSubscriptionFilters ++
         asUserFilters ++
+        asUsersFilters ++
         asEnvironmentFilters ++
         asDeleteRestrictionFilters ++
         asIncludeOrExcludeDeletedAppsFilters ++
