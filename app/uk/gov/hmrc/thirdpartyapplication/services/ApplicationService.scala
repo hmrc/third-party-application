@@ -202,9 +202,16 @@ class ApplicationService @Inject() (
     }
   }
 
-  def fetchAllForCollaborators(userIds: List[UserId]): Future[List[ApplicationWithCollaborators]] = {
-    queryService.fetchApplicationsByQuery(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(userIds))))
-      .map(_.map(_.asAppWithCollaborators))
+  def fetchAllForCollaborators(userIds: List[UserId], batchSize: Int = 50): Future[List[ApplicationWithCollaborators]] = {
+    val blocks = userIds.sliding(batchSize, batchSize).toList
+    Future.sequence(
+      blocks.map(blockOfUserIds =>
+        queryService.fetchApplicationsByQuery(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(blockOfUserIds))))
+          .map(_.map(_.asAppWithCollaborators))
+      )
+    )
+      .map(_.flatten)
+      .map(_.distinct)
   }
 
   import cats.data.OptionT

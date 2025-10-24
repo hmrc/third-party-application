@@ -31,12 +31,12 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{GrantLength, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.UserIdsQP
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.UserIdsQP
 
 class ApplicationQueriesISpec
     extends ServerBaseISpec
@@ -732,17 +732,17 @@ class ApplicationQueriesISpec
   }
 
   "general query with user ids" in {
-    val application1     = anApplicationDataForTest(
+    val application1 = anApplicationDataForTest(
       id = ApplicationId.random,
       prodClientId = ClientId.random
     ).withCollaborators(developerCollaborator, adminOne)
 
-    val application2     = anApplicationDataForTest(
+    val application2 = anApplicationDataForTest(
       id = ApplicationId.random,
       prodClientId = ClientId.random
     ).withCollaborators(developerCollaborator, adminTwo)
-    
-    val application3     = anApplicationDataForTest(
+
+    val application3 = anApplicationDataForTest(
       id = ApplicationId.random,
       prodClientId = ClientId.random
     ).withCollaborators(adminOne)
@@ -752,9 +752,13 @@ class ApplicationQueriesISpec
     await(applicationRepository.save(application3))
 
     val queriedApps = await(
-      applicationRepository.fetchByGeneralOpenEndedApplicationQuery(GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(developerCollaborator.userId, adminOne.userId, adminTwo.userId)))))
+      applicationRepository.fetchByGeneralOpenEndedApplicationQuery(GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(
+        developerCollaborator.userId,
+        adminOne.userId,
+        adminTwo.userId
+      )))))
     )
-    .map(_.asAppWithCollaborators)
+      .map(_.asAppWithCollaborators)
 
     queriedApps should contain(application1.asAppWithCollaborators)
     queriedApps should contain(application2.asAppWithCollaborators)

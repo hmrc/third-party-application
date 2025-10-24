@@ -29,7 +29,6 @@ import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
-import com.mongodb.BasicDBList
 
 object ApplicationQueryConverter {
 
@@ -68,7 +67,7 @@ object ApplicationQueryConverter {
 
   def asUsersFilters(implicit params: List[Param[_]]): List[Bson] = {
     onFirst[UserIdsQP](userIdsQp => {
-      val userIdListText: String = userIdsQp.values.map(v => v.toString()).mkString("\"", "\",\"","\"")
+      val userIdListText: String = userIdsQp.values.map(v => v.toString()).mkString("\"", "\",\"", "\"")
       List(Document(s"""{$$expr: {$$not: {$$eq: [ { $$setIntersection: ["$$collaborators.userId", [$userIdListText] ] }, [] ] } } }"""))
     })
   }
