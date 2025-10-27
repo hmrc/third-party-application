@@ -1015,6 +1015,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
+    println(facets)
+    
     val listRdr: Reads[List[QueriedStoredApplication]] = implicitly
     implicit val rdr                                   = transformApplications.andThen(listRdr)
     collection.aggregate[BsonValue](facets)

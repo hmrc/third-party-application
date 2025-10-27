@@ -747,9 +747,15 @@ class ApplicationQueriesISpec
       prodClientId = ClientId.random
     ).withCollaborators(adminOne)
 
+    val application4 = anApplicationDataForTest(
+      id = ApplicationId.random,
+      prodClientId = ClientId.random
+    ).withCollaborators(adminOne.copy(userId = UserId.random), developerOne.copy(userId = UserId.random))
+
     await(applicationRepository.save(application1))
     await(applicationRepository.save(application2))
     await(applicationRepository.save(application3))
+    await(applicationRepository.save(application4))
 
     val queriedApps = await(
       applicationRepository.fetchByGeneralOpenEndedApplicationQuery(GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(

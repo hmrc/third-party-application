@@ -67,8 +67,7 @@ object ApplicationQueryConverter {
 
   def asUsersFilters(implicit params: List[Param[_]]): List[Bson] = {
     onFirst[UserIdsQP](userIdsQp => {
-      val userIdListText: String = userIdsQp.values.map(v => v.toString()).mkString("\"", "\",\"", "\"")
-      List(Document(s"""{$$expr: {$$not: {$$eq: [ { $$setIntersection: ["$$collaborators.userId", [$userIdListText] ] }, [] ] } } }"""))
+      List(in("collaborators.userId", userIdsQp.values.map(_.toString):_*))
     })
   }
 
