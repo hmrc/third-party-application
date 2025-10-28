@@ -37,7 +37,8 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Clock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.UserIdsQP
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
@@ -201,15 +202,16 @@ class ApplicationService @Inject() (
     }
   }
 
-  def fetchAllForCollaborators(userIds: List[UserId]): Future[List[ApplicationWithCollaborators]] = {
+  def fetchAllForCollaborators(userIds: List[UserId], batchSize: Int = 50): Future[List[ApplicationWithCollaborators]] = {
+    val blocks = userIds.sliding(batchSize, batchSize).toList
     Future.sequence(
-      userIds.map(userId =>
-        queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false))
+      blocks.map(blockOfUserIds =>
+        queryService.fetchApplicationsByQuery(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(blockOfUserIds))))
+          .map(_.map(_.asAppWithCollaborators))
       )
     )
       .map(_.flatten)
       .map(_.distinct)
-      .map(_.map(_.asAppWithCollaborators))
   }
 
   import cats.data.OptionT

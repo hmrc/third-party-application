@@ -65,6 +65,12 @@ object ApplicationQueryConverter {
       List(equal("collaborators.userId", Codecs.toBson(userIdQp.value)))
     )
 
+  def asUsersFilters(implicit params: List[Param[_]]): List[Bson] = {
+    onFirst[UserIdsQP](userIdsQp => {
+      List(in("collaborators.userId", userIdsQp.values.map(_.toString):_*))
+    })
+  }
+
   def asEnvironmentFilters(implicit params: List[Param[_]]): List[Bson] =
     onFirst[EnvironmentQP](environmentQp =>
       List(equal("environment", Codecs.toBson(environmentQp.value)))
@@ -168,6 +174,7 @@ object ApplicationQueryConverter {
       asSingleQueryFilters ++
         asSubscriptionFilters ++
         asUserFilters ++
+        asUsersFilters ++
         asEnvironmentFilters ++
         asDeleteRestrictionFilters ++
         asIncludeOrExcludeDeletedAppsFilters ++
