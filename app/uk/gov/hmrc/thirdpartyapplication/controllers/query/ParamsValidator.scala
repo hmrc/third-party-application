@@ -74,6 +74,7 @@ object ParamsValidator {
     val onlyHasAllowableOtherParams = otherFilterParams.find(_ match {
       case GenericUserAgentQP(_) => false
       case ApiGatewayUserAgentQP => false
+      case EnvironmentQP(_)      => false
       case _                     => true
     }).fold[ErrorsOr[Unit]](().validNel)(f => "Cannot mix unqiue and non-unique filter params".invalidNel)
 
