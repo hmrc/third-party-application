@@ -195,6 +195,10 @@ class ParamsValidatorSpec
       test(Map(appOneParam), irrelevantHeader).value shouldBe List(ApplicationIdQP(applicationIdOne))
     }
 
+    "work when given a correct applicationId and only environment header" in {
+      test(Map(appOneParam, envParam), Map.empty).value shouldBe List(ApplicationIdQP(applicationIdOne), EnvironmentQP(Environment.PRODUCTION))
+    }
+
     "work when given a correct environment and userId" in {
       test(Map(userIdParam, envParam), Map.empty).value shouldBe List(UserIdQP(userIdOne), EnvironmentQP(Environment.PRODUCTION))
     }
