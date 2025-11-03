@@ -79,7 +79,7 @@ class ApplicationControllerSpec
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
-      FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
+      FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123", "USER-AGENT" -> "testme")
 
     val mockGatekeeperService: GatekeeperService     = mock[GatekeeperService]
     val mockEnrolment: Enrolment                     = mock[Enrolment]

@@ -6,40 +6,7 @@ by (or on behalf of) third parties to consume APIs registered on the API Platfor
 
 Application Search
 ------------------
-Searching of Applications within the microservice is acheived by issuing a `GET` to the `/applications` endpoint, making use of the following Query Parameters:
-
-Parameter Name    | Data Type/Allowed Values                                                                                       | Description
-------------------|----------------------------------------------------------------------------------------------------------------|------------
-`search`          | Free Text                                                                                                      | Search Application names and identifiers
-`status`          | `CREATED`, `PENDING_GATEKEEPER_CHECK`, `PENDING_SUBMITTER_VERIFICATION`, `ACTIVE`                              | Retrieve Applications based on lifecycle status
-`accessType`      | `STANDARD`, `ROPC`, `PRIVILEGED`                                                                               | Access type that Application uses
-`apiSubscription` | `ANY`, `NONE`, or specific API name                                                                            | Which API the Application is subscribed to
-`apiVersion`      | Version Number                                                                                                 | Version of the specific API that Application is subscribed to. Only relevant when the name of an API has been specified for `apiSubscription`
-`lastUseBefore`   | ISO Representation of date and (optionally) time (e.g. `2020-01-01` and `2020-01-01T15:35:22Z` are both valid) | Applications that were last accessed *before* the specified date and time
-`lastUseAfter`    | ISO Representation of date and (optionally) time (e.g. `2020-01-01` and `2020-01-01T15:35:22Z` are both valid) | Applications that were last accessed *after* the specified date and time
-
-Additionally, the results can be sorted through use of the following query parameters:
-
-Parameter Name | Data Type/Allowed Values                                                                    | Description
----------------|---------------------------------------------------------------------------------------------|------------
-`sort`         | `NAME_ASC`, `NAME_DESC`, `SUBMITTED_ASC`, `SUBMITTED_DESC`, `LAST_USE_ASC`, `LAST_USE_DESC` | Sort by application name, creation data, or last use date, ascending or descending respectively. Defaults to `SUBMITTED_ASC` if not specified
-
-Finally, the following query parameters are used to control the number of results returned:
-
-Parameter Name | Data Type/Allowed Values                             | Description
----------------|------------------------------------------------------|------------
-`page`         | Number (Defaults to `1` if not specified)            | The page number to display (based on `pageSize`)
-`pageSize`     | Number (Defaults to `Int.MaxValue` if not specified) | The maximum number of results to return
-
-### Examples
-
-Request                                                    | Description
------------------------------------------------------------|------------
-`/applications`                                            | All Applications
-`/applications?status=CREATED`                             | All Applications in testing
-`/applications?search=foo`                                 | All Applications containing the text `foo` in either their name or id
-`/applications?apiSubscription=test-service&apiVersion=v1` | All Applications subscribing to `v1` of `test-service` API
-`/applications?accessType=STANDARD&page=1&pageSize=25`     | First 25 Applications using `Standard` access type
+See documentation for One Query Endpoint (OQE) as all other query endpoints are now deprecated and could be removed at any time.
 
 Hashing of Secrets
 ------------------

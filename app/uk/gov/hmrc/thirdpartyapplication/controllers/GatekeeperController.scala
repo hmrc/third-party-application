@@ -29,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitationActionBuilders
-import uk.gov.hmrc.thirdpartyapplication.controllers.common.JsonUtils
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.{JsonUtils, WarnStillInUse}
 import uk.gov.hmrc.thirdpartyapplication.models.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services._
@@ -51,33 +51,44 @@ class GatekeeperController @Inject() (
     with JsonUtils
     with AnyGatekeeperRoleAuthorisationAction
     with OnlyStrideGatekeeperRoleAuthoriseAction
-    with TermsOfUseInvitationActionBuilders {
+    with TermsOfUseInvitationActionBuilders
+    with WarnStillInUse {
 
-  def fetchAppsForGatekeeper = anyAuthenticatedUserAction { loggedInRequest =>
-    gatekeeperService.fetchNonTestingAppsWithSubmittedDate() map {
-      apps => Ok(Json.toJson(apps))
-    } recover recovery
+  def fetchAppsForGatekeeper = warnStillInUse("fetchAppsForGatekeeper") {
+    anyAuthenticatedUserAction { loggedInRequest =>
+      gatekeeperService.fetchNonTestingAppsWithSubmittedDate() map {
+        apps => Ok(Json.toJson(apps))
+      } recover recovery
+    }
   }
 
-  def fetchAllAppsWithSubscriptions(): Action[AnyContent] = anyAuthenticatedUserAction {
-    _ => gatekeeperService.fetchAllWithSubscriptions() map { apps => Ok(Json.toJson(apps)) } recover recovery
+  def fetchAllAppsWithSubscriptions(): Action[AnyContent] = warnStillInUse("fetchAllAppsWithSubscriptions") {
+    anyAuthenticatedUserAction {
+      _ => gatekeeperService.fetchAllWithSubscriptions() map { apps => Ok(Json.toJson(apps)) } recover recovery
+    }
   }
 
-  def fetchAppById(id: ApplicationId) = anyAuthenticatedUserAction { loggedInRequest =>
-    gatekeeperService.fetchAppWithHistory(id) map (app => Ok(Json.toJson(app))) recover recovery
+  def fetchAppById(id: ApplicationId) = warnStillInUse("fetchAppById") {
+    anyAuthenticatedUserAction { loggedInRequest =>
+      gatekeeperService.fetchAppWithHistory(id) map (app => Ok(Json.toJson(app))) recover recovery
+    }
   }
 
-  def fetchAppStateHistoryById(id: ApplicationId) = anyAuthenticatedUserAction { loggedInRequest =>
-    gatekeeperService.fetchAppStateHistoryById(id) map (app => Ok(Json.toJson(app))) recover recovery
+  def fetchAppStateHistoryById(id: ApplicationId) = warnStillInUse("fetchAppStateHistoryById") {
+    anyAuthenticatedUserAction { loggedInRequest =>
+      gatekeeperService.fetchAppStateHistoryById(id) map (app => Ok(Json.toJson(app))) recover recovery
+    }
   }
 
   def fetchAppStateHistories() = anyAuthenticatedUserAction { _ =>
     gatekeeperService.fetchAppStateHistories() map (histories => Ok(Json.toJson(histories))) recover recovery
   }
 
-  def fetchAllForCollaborator(userId: UserId) = Action.async {
-    queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = true))
-      .map(apps => Ok(Json.toJson(apps))) recover recovery
+  def fetchAllForCollaborator(userId: UserId) = warnStillInUse("fetchAllForCollaborator") {
+    Action.async {
+      queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = true))
+        .map(apps => Ok(Json.toJson(apps))) recover recovery
+    }
   }
 
   def deleteApplication(id: ApplicationId) =

@@ -23,6 +23,7 @@ import org.apache.pekko.stream.testkit.NoMaterializer
 
 import play.api.libs.json._
 import play.api.test.FakeRequest
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifierFixtures
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, PaginatedApplications, StateHistoryFixtures}
@@ -33,6 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerSpec
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController
 import uk.gov.hmrc.thirdpartyapplication.mocks.QueryServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
 import uk.gov.hmrc.thirdpartyapplication.util.{CommonApplicationId, StoredApplicationFixtures}
 
 class QueryControllerSpec
@@ -48,7 +50,7 @@ class QueryControllerSpec
   implicit lazy val materializer: Materializer = NoMaterializer
 
   trait Setup extends QueryServiceMockModule {
-    val underTest            = new QueryController(QueryServiceMock.aMock, Helpers.stubControllerComponents())
+    val underTest            = new QueryController(QueryServiceMock.aMock, Helpers.stubControllerComponents(), mock[Metrics]) with NoOpMetricsTimer
     val appWithCollaborators = storedApp.asAppWithCollaborators
     val appWithSubs          = appWithCollaborators.withSubscriptions(Set(apiIdentifierOne, apiIdentifierTwo))
     val appWithStateHistory  = QueriedApplication(appWithCollaborators.details, appWithCollaborators.collaborators, None, None, stateHistory = Some(List(aStateHistoryTesting)))

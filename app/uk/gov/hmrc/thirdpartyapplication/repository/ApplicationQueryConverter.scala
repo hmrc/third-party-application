@@ -67,7 +67,7 @@ object ApplicationQueryConverter {
 
   def asUsersFilters(implicit params: List[Param[_]]): List[Bson] = {
     onFirst[UserIdsQP](userIdsQp => {
-      List(in("collaborators.userId", userIdsQp.values.map(_.toString):_*))
+      List(in("collaborators.userId", userIdsQp.values.map(_.toString): _*))
     })
   }
 
