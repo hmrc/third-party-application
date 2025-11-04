@@ -21,21 +21,25 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.libs.json._
 import play.api.mvc._
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.{GeneralOpenEndedApplicationQuery, PaginatedApplicationQuery}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQuery, SingleApplicationQuery}
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 @Singleton
 class QueryController @Inject() (
     queryService: QueryService,
-    cc: ControllerComponents
+    cc: ControllerComponents,
+    val metrics: Metrics
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
-    with ApplicationLogger {
+    with ApplicationLogger
+    with MetricsTimer {
 
   private def asBody(errorCode: String, message: Json.JsValueWrapper): JsObject =
     Json.obj(
@@ -54,20 +58,24 @@ class QueryController @Inject() (
   private val applicationNotFound = NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query"))
 
   private def execute(appQry: ApplicationQuery): Future[Result] = {
-    appQry match {
-      case q: SingleApplicationQuery => queryService.fetchSingleApplicationByQuery(q).map {
-          _.fold(applicationNotFound)(app => Ok(Json.toJson(app)))
-        }
+    val appQryText = appQry.asLogText
+    timeFuture(s"$appQryText", "QueryController.execute") {
 
-      case q: GeneralOpenEndedApplicationQuery =>
-        queryService.fetchApplicationsByQuery(q).map {
-          apps =>
-            Ok(Json.toJson(apps))
-        }
+      appQry match {
+        case q: SingleApplicationQuery => queryService.fetchSingleApplicationByQuery(q).map {
+            _.fold(applicationNotFound)(app => Ok(Json.toJson(app)))
+          }
 
-      case q: PaginatedApplicationQuery =>
-        queryService.fetchPaginatedApplications(q)
-          .map(results => Ok(Json.toJson(results)))
+        case q: GeneralOpenEndedApplicationQuery =>
+          queryService.fetchApplicationsByQuery(q).map {
+            apps =>
+              Ok(Json.toJson(apps))
+          }
+
+        case q: PaginatedApplicationQuery =>
+          queryService.fetchPaginatedApplications(q)
+            .map(results => Ok(Json.toJson(results)))
+      }
     }
   }
 }

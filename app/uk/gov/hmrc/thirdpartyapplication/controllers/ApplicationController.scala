@@ -42,7 +42,7 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAuthorisationActions, AuthKeyRefiner}
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsErrorResponse, JsonUtils}
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsErrorResponse, JsonUtils, WarnStillInUse}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -69,7 +69,8 @@ class ApplicationController @Inject() (
     with JsonUtils
     with ApplicationTypeAuthorisationActions
     with AuthKeyRefiner
-    with ApplicationLogger {
+    with ApplicationLogger
+    with WarnStillInUse {
 
   val applicationCacheExpiry  = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
@@ -133,8 +134,10 @@ class ApplicationController @Inject() (
   }
 
   // TODO - repoint users of this as fetch application and access via details.token
-  def fetchCredentials(applicationId: ApplicationId) = Action.async {
-    handleOption(queryService.fetchSingleApplicationByQuery(ApplicationQuery.ById(applicationId, List.empty, false, false, false)).map(_.map(_.details.token)))
+  def fetchCredentials(applicationId: ApplicationId) = warnStillInUse("fetchCredentials") {
+    Action.async {
+      handleOption(queryService.fetchSingleApplicationByQuery(ApplicationQuery.ById(applicationId, List.empty, false, false, false)).map(_.map(_.details.token)))
+    }
   }
 
 // TODO remove
@@ -226,10 +229,12 @@ class ApplicationController @Inject() (
     }
   }
 
-  def searchApplications = Action.async { implicit request =>
-    Try(ApplicationSearch.fromQueryString(request.queryString)) match {
-      case Success(applicationSearch) => applicationService.searchApplications(applicationSearch).map(apps => Ok(toJson(apps))) recover recovery
-      case Failure(e)                 => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, e.getMessage)))
+  def searchApplications = warnStillInUse("searchApplications") {
+    Action.async { implicit request =>
+      Try(ApplicationSearch.fromQueryString(request.queryString)) match {
+        case Success(applicationSearch) => applicationService.searchApplications(applicationSearch).map(apps => Ok(toJson(apps))) recover recovery
+        case Failure(e)                 => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, e.getMessage)))
+      }
     }
   }
 
@@ -300,9 +305,11 @@ class ApplicationController @Inject() (
     }
   }
 
-  def fetchAllForCollaborator(userId: UserId) = Action.async {
-    queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false, wantSubscriptions = true))
-      .map(apps => Ok(toJson(apps))) recover recovery
+  def fetchAllForCollaborator(userId: UserId) = warnStillInUse("fetchAllForCollaborator") {
+    Action.async {
+      queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false, wantSubscriptions = true))
+        .map(apps => Ok(toJson(apps))) recover recovery
+    }
   }
 
   private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment) = {
