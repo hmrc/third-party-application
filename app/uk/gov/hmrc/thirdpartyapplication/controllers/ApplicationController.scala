@@ -129,10 +129,8 @@ class ApplicationController @Inject() (
       }
   }
 
-  def fetch(applicationId: ApplicationId) = warnStillInUse("fetch") {
-    Action.async {
-      handleOptionT(applicationService.fetch(applicationId))
-    }
+  def fetch(applicationId: ApplicationId) = Action.async {
+    handleOptionT(applicationService.fetch(applicationId))
   }
 
   // TODO - repoint users of this as fetch application and access via details.token
