@@ -25,9 +25,9 @@ import play.api.libs.json.{JsError, JsSuccess, Json, OWrites, Reads}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ExtendedSubmission, MarkedSubmission, Submission}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.submissions.{ApplicationsByAnswerTestData, SubmissionsTestData}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
@@ -36,7 +36,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
   implicit val readsExtendedSubmission: Reads[Submission] = Json.reads[Submission]
 
-  trait Setup extends SubmissionsServiceMockModule with SubmissionsTestData {
+  trait Setup extends SubmissionsServiceMockModule with SubmissionsTestData with ApplicationsByAnswerTestData {
     val underTest = new SubmissionsController(SubmissionsServiceMock.aMock, Helpers.stubControllerComponents())
   }
 
@@ -130,6 +130,33 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       SubmissionsServiceMock.Fetch.thenReturnNone()
 
       val result = underTest.fetchSubmission(submissionId)(FakeRequest(GET, "/"))
+
+      status(result) shouldBe NOT_FOUND
+    }
+  }
+
+  "fetchApplicationsByAnswer" should {
+
+    "return ok response with details for Vat" in new Setup {
+      SubmissionsServiceMock.FetchApplicationsByAnswer.thenReturn(OrganisationDetails.question2c.id, appsByAnswer)
+
+      val result = underTest.fetchApplicationsByAnswer("vat-registration-number")(FakeRequest(GET, "/"))
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(appsByAnswer)
+    }
+
+    "return ok response with details for CRN" in new Setup {
+      SubmissionsServiceMock.FetchApplicationsByAnswer.thenReturn(OrganisationDetails.question2a.id, appsByAnswer)
+
+      val result = underTest.fetchApplicationsByAnswer("company-registration-number")(FakeRequest(GET, "/"))
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(appsByAnswer)
+    }
+
+    "return not found when not found" in new Setup {
+      val result = underTest.fetchApplicationsByAnswer("unknown-lookup")(FakeRequest(GET, "/"))
 
       status(result) shouldBe NOT_FOUND
     }

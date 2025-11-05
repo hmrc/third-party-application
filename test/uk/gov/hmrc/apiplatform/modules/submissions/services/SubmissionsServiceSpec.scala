@@ -24,11 +24,11 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Application
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.{SubmissionsDAOMockModule, _}
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
+import uk.gov.hmrc.apiplatform.modules.submissions.{ApplicationsByAnswerTestData, SubmissionsTestData}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util._
 
@@ -40,6 +40,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
       with ContextServiceMockModule
       with StoredApplicationFixtures
       with SubmissionsTestData
+      with ApplicationsByAnswerTestData
       with AsIdsHelpers {
     val underTest = new SubmissionsService(new QuestionnaireDAO(), SubmissionsDAOMock.aMock, ContextServiceMock.aMock, clock)
   }
@@ -89,6 +90,14 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         SubmissionsDAOMock.FetchOrganisationIdentifiers.thenReturn(answeredSubmission, answeredSubmission, answeredSubmission)
         val result = await(underTest.fetchOrganisationIdentifiers(*))
         result shouldBe Map("Unique Taxpayer Reference (UTR)" -> 3)
+      }
+    }
+
+    "fetchApplicationsByAnswer" should {
+      "fetch all" in new Setup {
+        SubmissionsDAOMock.FetchApplicationsByAnswers.thenReturn(appsByAnswer)
+        val result = await(underTest.fetchApplicationsByAnswer(OrganisationDetails.question2a.id))
+        result shouldBe appsByAnswer
       }
     }
 

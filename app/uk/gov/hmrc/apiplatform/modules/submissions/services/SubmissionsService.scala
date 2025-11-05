@@ -28,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.Su
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
+import uk.gov.hmrc.apiplatform.modules.submissions.models.ApplicationsByAnswer
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
 
 @Singleton
@@ -104,6 +105,10 @@ class SubmissionsService @Inject() (
       } yield MarkedSubmission(submission, markedAnswers)
     )
       .value
+  }
+
+  def fetchApplicationsByAnswer(questionId: Question.Id): Future[List[ApplicationsByAnswer]] = {
+    submissionsDAO.fetchApplicationsByAnswer(questionId)
   }
 
   def recordAnswers(submissionId: SubmissionId, questionId: Question.Id, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {

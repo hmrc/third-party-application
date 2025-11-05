@@ -23,6 +23,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.models.ApplicationsByAnswer
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.SubmissionsDAO
 
 trait SubmissionsDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -68,6 +69,10 @@ trait SubmissionsDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
       def verifyCalled() =
         verify(aMock, atLeast(1)).update(*[Submission])
+    }
+
+    object FetchApplicationsByAnswers {
+      def thenReturn(response: List[ApplicationsByAnswer]) = when(aMock.fetchApplicationsByAnswer(*[Question.Id])).thenReturn(successful(response))
     }
   }
 

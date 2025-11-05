@@ -24,6 +24,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.models.ApplicationsByAnswer
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 
 trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -140,9 +141,15 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
       def thenReturn(submission: Submission) =
         when(aMock.declineSubmission(*[ApplicationId], *, *)).thenReturn(successful(Some(submission)))
     }
+
+    object FetchApplicationsByAnswer {
+      def thenReturn(questionId: Question.Id, response: List[ApplicationsByAnswer]) = when(aMock.fetchApplicationsByAnswer(questionId)).thenReturn(successful(response))
+    }
+
   }
 
   object SubmissionsServiceMock extends BaseSubmissionsServiceMock {
     val aMock = mock[SubmissionsService]
+
   }
 }
