@@ -42,31 +42,31 @@ trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar wit
     object FetchSingleApplicationByQuery {
 
       def thenReturnsFor(qry: SingleApplicationQuery, app: QueriedApplication) =
-        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))).thenReturn(successful(Some(app)))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(*)).thenReturn(successful(Some(app)))
 
       def thenReturnsFor(qry: SingleApplicationQuery, app: ApplicationWithCollaborators) =
-        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))).thenReturn(successful(Some(QueriedApplication(app))))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(*)).thenReturn(successful(Some(QueriedApplication(app))))
 
       def thenReturns(app: ApplicationWithCollaborators) =
-        when(aMock.fetchSingleApplicationByQuery(*)).thenReturn(successful(Some(QueriedApplication(app))))
+        when(aMock.fetchSingleApplicationByQuery(*)(*)).thenReturn(successful(Some(QueriedApplication(app))))
 
       def thenReturnsFor(qry: SingleApplicationQuery, app: ApplicationWithSubscriptions) =
-        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))).thenReturn(successful(Some(QueriedApplication(app))))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(*)).thenReturn(successful(Some(QueriedApplication(app))))
 
       def thenReturns(app: ApplicationWithSubscriptions) =
-        when(aMock.fetchSingleApplicationByQuery(*)).thenReturn(successful(Some(QueriedApplication(app))))
+        when(aMock.fetchSingleApplicationByQuery(*)(*)).thenReturn(successful(Some(QueriedApplication(app))))
 
       def thenReturnsNone() =
-        when(aMock.fetchSingleApplicationByQuery(*)).thenReturn(successful(None))
+        when(aMock.fetchSingleApplicationByQuery(*)(*)).thenReturn(successful(None))
 
       def thenReturnsNoneFor(qry: SingleApplicationQuery) =
-        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))).thenReturn(successful(None))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(*)).thenReturn(successful(None))
 
       def thenFails(exc: Exception) =
-        when(aMock.fetchSingleApplicationByQuery(*)).thenReturn(failed(exc))
+        when(aMock.fetchSingleApplicationByQuery(*)(*)).thenReturn(failed(exc))
 
       def thenFailsFor(qry: SingleApplicationQuery, exc: Exception) =
-        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))).thenReturn(failed(exc))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(*)).thenReturn(failed(exc))
     }
 
     object FetchApplicationsByQuery {

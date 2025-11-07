@@ -32,7 +32,7 @@ class SubscriptionFieldsService @Inject() (
   )(implicit ec: ExecutionContext
   ) {
 
-  def fetchFieldValuesWithDefaults(deployedTo: Environment, clientId: ClientId, subscriptions: Set[ApiIdentifier])(implicit hc: HeaderCarrier): Future[ApiFieldMap[FieldValue]] = {
+  def fetchFieldValuesWithDefaults(clientId: ClientId, subscriptions: Set[ApiIdentifier])(implicit hc: HeaderCarrier): Future[ApiFieldMap[FieldValue]] = {
 
     def filterBySubs[V](data: ApiFieldMap[V]): ApiFieldMap[V] = {
       ThreeDMap.filter((c: ApiContext, v: ApiVersionNbr, _: FieldName, _: V) => subscriptions.contains(ApiIdentifier(c, v)))(data)
@@ -53,7 +53,6 @@ class SubscriptionFieldsService @Inject() (
 
   def createFieldValuesForApis(
       clientId: ClientId,
-      deployedTo: Environment,
       apiIdentifiers: Set[ApiIdentifier]
     )(implicit hc: HeaderCarrier
     ): Future[Either[Map[ApiIdentifier, FieldErrors], Unit]] = {
@@ -63,7 +62,7 @@ class SubscriptionFieldsService @Inject() (
 
     Future.sequence(
       apiIdentifiers.toList.map(api =>
-        createFieldValues(clientId, deployedTo, api).map(cfv =>
+        createFieldValues(clientId, api).map(cfv =>
           cfv.leftMap(err => Map(api -> err))
         )
       )
@@ -73,12 +72,11 @@ class SubscriptionFieldsService @Inject() (
 
   def createFieldValues(
       clientId: ClientId,
-      deployedTo: Environment,
       apiIdentifier: ApiIdentifier
     )(implicit hc: HeaderCarrier
     ): Future[Either[FieldErrors, Unit]] = {
     for {
-      fieldValues      <- fetchFieldValuesWithDefaults(deployedTo, clientId, Set(apiIdentifier))
+      fieldValues      <- fetchFieldValuesWithDefaults(clientId, Set(apiIdentifier))
       fieldValuesForApi = ApiFieldMap.extractApi(apiIdentifier)(fieldValues)
       fvResults        <- subscriptionFieldsConnector.saveFieldValues(clientId, apiIdentifier, fieldValuesForApi)
     } yield fvResults

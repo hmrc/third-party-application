@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, State}
 import uk.gov.hmrc.apiplatform.modules.applications.query._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{NonUniqueFilterParam, UniqueFilterParam}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{NonUniqueFilterParam, Param, UniqueFilterParam}
 
 class ParamsValidatorSpec
     extends HmrcSpec
@@ -42,6 +42,17 @@ class ParamsValidatorSpec
     inside(testThis) {
       case Invalid(_) => succeed
       case _          => fail("valid when expecting invalid")
+    }
+  }
+
+  "checWants" should {
+    val test: (List[Param[_]]) => ErrorsOr[Unit] = (ps) => ParamsValidator.validateParamCombinations(ps)
+    "disallow wantSubscriptionFields with anything other than a single app query" in {
+      test(List(WantSubscriptionFieldsQP, PageNbrQP(1))) should not be Pass
+      test(List(WantSubscriptionFieldsQP, UserIdQP(userIdOne))) should not be Pass
+      test(List(WantSubscriptionFieldsQP, ApplicationIdQP(applicationIdOne))) shouldBe Pass
+      test(List(WantSubscriptionFieldsQP, ClientIdQP(clientIdOne))) shouldBe Pass
+      test(List(WantSubscriptionFieldsQP, ServerTokenQP("abc"))) shouldBe Pass
     }
   }
 
