@@ -92,9 +92,11 @@ object ParamsValidator {
     }
   }
 
-  def checkWants(wantSubcriptions: Boolean, wantSubscriptionFields: Boolean, wantStateHistory: Boolean, wantPagination: Boolean): ErrorsOr[Unit] =
-    if ((wantSubcriptions || wantSubscriptionFields || wantStateHistory) && wantPagination) {
-      "Cannot return subscriptions, fields or state history with paginated queries".invalidNel
+  def checkWants(wantSubcriptions: Boolean, wantSubscriptionFields: Boolean, wantStateHistory: Boolean, resultInPagination: Boolean, resultInSingleApp: Boolean): ErrorsOr[Unit] =
+    if ((wantSubscriptionFields && !resultInSingleApp)) {
+      "Cannot return subscription fields with any query other than single application queries".invalidNel
+    } else if ((wantSubcriptions || wantStateHistory) && resultInPagination) {
+      "Cannot return subscriptions or state history with paginated queries".invalidNel
     } else {
       ().validNel
     }
@@ -129,7 +131,8 @@ object ParamsValidator {
     val paginationParams   = allParams.collect(_ match {
       case pp: PaginationParam[_] => pp
     })
-    val wantPagination     = paginationParams.headOption.isDefined
+    val resultInPagination = paginationParams.headOption.isDefined
+    val resultInSingleApp  = uniqueFilterParams.headOption.isDefined
 
     ((uniqueFilterParams, otherFilterParams, sortingParams, paginationParams) match {
       case (Nil, Nil, Nil, Nil)  => ().validNel // Only GK
@@ -142,7 +145,7 @@ object ParamsValidator {
       .combine(checkSubscriptionsParamsCombinations(otherFilterParams))
       .combine(checkLastUsedParamsCombinations(otherFilterParams))
       .combine(checkVerificationCodeUsesDeleteExclusion(otherFilterParams))
-      .combine(checkWants(wantSubcriptions, wantSubcriptionFields, wantStateHistory, wantPagination))
+      .combine(checkWants(wantSubcriptions, wantSubcriptionFields, wantStateHistory, resultInPagination, resultInSingleApp))
       .combine(checkAppStateFilters(otherFilterParams))
   }
 

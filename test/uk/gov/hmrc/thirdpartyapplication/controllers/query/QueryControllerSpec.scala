@@ -23,6 +23,7 @@ import org.apache.pekko.stream.testkit.NoMaterializer
 
 import play.api.libs.json._
 import play.api.test.FakeRequest
+import uk.gov.hmrc.apiplatformmicroservice.thirdpartyapplication.services.SubscriptionFieldsData
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifierFixtures
@@ -43,7 +44,8 @@ class QueryControllerSpec
     with ApplicationWithCollaboratorsFixtures
     with StateHistoryFixtures
     with ApiIdentifierFixtures
-    with StoredApplicationFixtures {
+    with StoredApplicationFixtures
+    with SubscriptionFieldsData {
   import play.api.test.Helpers._
   import play.api.test.Helpers
 
@@ -53,6 +55,7 @@ class QueryControllerSpec
     val underTest            = new QueryController(QueryServiceMock.aMock, Helpers.stubControllerComponents(), mock[Metrics]) with NoOpMetricsTimer
     val appWithCollaborators = storedApp.asAppWithCollaborators
     val appWithSubs          = appWithCollaborators.withSubscriptions(Set(apiIdentifierOne, apiIdentifierTwo))
+    val appWithSubsAndFields = appWithSubs.withFieldValues(fieldValues)
     val appWithStateHistory  = QueriedApplication(appWithCollaborators.details, appWithCollaborators.collaborators, None, None, stateHistory = Some(List(aStateHistoryTesting)))
   }
 
@@ -73,6 +76,16 @@ class QueryControllerSpec
       contentAsJson(result) shouldBe Json.toJson(appWithSubs)
     }
 
+    "work for single query with subs and fields" in new Setup {
+      QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(
+        ApplicationQuery.ByClientId(clientIdOne, false, Nil, wantSubscriptions = true, wantSubscriptionFields = true),
+        QueriedApplication(appWithSubs.details, appWithSubs.collaborators, Some(appWithSubs.subscriptions), Some(fieldValues), None)
+      )
+      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}&wantSubscriptions&wantSubscriptionFields"))
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(appWithSubsAndFields)
+    }
     "work for single query with state history" in new Setup {
       QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(ApplicationQuery.ByClientId(clientIdOne, false, Nil, wantStateHistory = true), appWithStateHistory)
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}&wantStateHistory"))

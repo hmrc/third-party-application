@@ -21,6 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.libs.json._
 import play.api.mvc._
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -57,7 +58,7 @@ class QueryController @Inject() (
 
   private val applicationNotFound = NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query"))
 
-  private def execute(appQry: ApplicationQuery): Future[Result] = {
+  private def execute(appQry: ApplicationQuery)(implicit hc: HeaderCarrier): Future[Result] = {
     val appQryText = appQry.asLogText
     timeFuture(s"$appQryText", "QueryController.execute") {
 

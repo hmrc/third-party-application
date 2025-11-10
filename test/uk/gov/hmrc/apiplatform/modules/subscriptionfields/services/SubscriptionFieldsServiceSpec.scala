@@ -26,93 +26,8 @@ import uk.gov.hmrc.apiplatform.modules.subscriptionfields.mocks.ApiSubscriptionF
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.services.SubscriptionFieldsService
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
-class SubscriptionFieldsServiceSpec extends AsyncHmrcSpec with ApiSubscriptionFieldsConnectorMockModule {
+class SubscriptionFieldsServiceSpec extends AsyncHmrcSpec with ApiSubscriptionFieldsConnectorMockModule with SubscriptionFieldsData {
   implicit val hc: HeaderCarrier = HeaderCarrier()
-
-  private val context1 = ApiContext("C1")
-  private val context2 = ApiContext("C2")
-  private val context3 = ApiContext("C3")
-  private val context4 = ApiContext("C4")
-
-  private val version1 = ApiVersionNbr("V1")
-  private val version2 = ApiVersionNbr("V2")
-
-  private val fieldName1 = FieldName("Fa")
-  private val fieldName2 = FieldName("Fb")
-  private val fieldName3 = FieldName("Fc")
-
-  def fieldDef(c: Int, v: Int, f: Int) = {
-    val cs = "abcdefghijklmnopqrstuxwxyz".charAt(c)
-    val vs = "abcdefghijklmnopqrstuxwxyz".charAt(v)
-    val fs = "abcdefghijklmnopqrstuxwxyz".charAt(f)
-    FieldDefinition(FieldName(s"F$cs$vs$fs"), s"field $f", "", FieldDefinitionType.STRING, s"short $f", None)
-  }
-
-  def fv(c: Int, v: Int, f: Int) = FieldValue(s"$c-$v-$f")
-
-  private val defns: ApiFieldMap[FieldDefinition] = Map(
-    context1 -> Map(
-      version1 -> Map(
-        fieldName1 -> fieldDef(1, 1, 1),
-        fieldName2 -> fieldDef(1, 1, 2)
-      ),
-      version2 -> Map(
-        fieldName1 -> fieldDef(1, 2, 1),
-        fieldName2 -> fieldDef(1, 2, 2)
-      )
-    ),
-    context2 -> Map(
-      version1 -> Map(
-        fieldName1 -> fieldDef(2, 1, 1)
-      ),
-      version2 -> Map(
-        fieldName1 -> fieldDef(2, 2, 1),
-        fieldName2 -> fieldDef(2, 2, 2)
-      )
-    ),
-    context3 -> Map(
-      version1 -> Map(
-        fieldName1 -> fieldDef(3, 1, 1),
-        fieldName2 -> fieldDef(3, 1, 2),
-        fieldName3 -> fieldDef(3, 1, 3)
-      )
-    ),
-    context4 -> Map(
-      version1 -> Map(
-        fieldName1 -> fieldDef(4, 1, 1),
-        fieldName2 -> fieldDef(4, 1, 2),
-        fieldName3 -> fieldDef(4, 1, 3)
-      )
-    )
-  )
-
-  private val values: ApiFieldMap[FieldValue] = Map(
-    context1 -> Map(
-      version1 -> Map(
-        fieldName1 -> fv(1, 1, 1),
-        fieldName2 -> fv(1, 1, 2)
-      ),
-      version2 -> Map(
-        fieldName1 -> fv(1, 2, 1),
-        fieldName2 -> fv(1, 2, 2)
-      )
-    ),
-    context2 -> Map(
-      version1 -> Map(
-        fieldName1 -> fv(2, 1, 1)
-      ),
-      version2 -> Map(
-        fieldName1 -> fv(2, 2, 1),
-        fieldName2 -> fv(2, 2, 2)
-      )
-    ),
-    context3 -> Map(
-      version1 -> Map(
-        fieldName1 -> fv(3, 1, 1),
-        fieldName2 -> fv(3, 1, 2)
-      )
-    )
-  )
 
   case class Setup(defns: ApiFieldMap[FieldDefinition], values: ApiFieldMap[FieldValue]) {
     ApiSubscriptionFieldsConnectorMock.FetchFieldValues.willReturnFields(values)
@@ -154,13 +69,13 @@ class SubscriptionFieldsServiceSpec extends AsyncHmrcSpec with ApiSubscriptionFi
   }
 
   "SubscriptionFieldsService" should {
-    "fetch values where field values match field definitions" in new Setup(defns, values) {
+    "fetch values where field values match field definitions" in new Setup(fieldDefns, fieldValues) {
       val subs: Set[ApiIdentifier] = Set(
         ApiIdentifier(context1, version1),
         ApiIdentifier(context2, version1)
       )
 
-      val result = await(fetcher.fetchFieldValuesWithDefaults(Environment.SANDBOX, ClientId("1"), subs))
+      val result = await(fetcher.fetchFieldValuesWithDefaults(ClientId("1"), subs))
 
       result.keys should contain.allOf(context1, context2)
 
@@ -180,14 +95,14 @@ class SubscriptionFieldsServiceSpec extends AsyncHmrcSpec with ApiSubscriptionFi
       )
     }
 
-    "fetch value where field definitions are missing field values" in new Setup(defns, values) {
+    "fetch value where field definitions are missing field values" in new Setup(fieldDefns, fieldValues) {
       val subs: Set[ApiIdentifier] = Set(
         ApiIdentifier(context1, version1),
         ApiIdentifier(context2, version1),
         ApiIdentifier(context3, version1)
       )
 
-      val result = await(fetcher.fetchFieldValuesWithDefaults(Environment.SANDBOX, ClientId("1"), subs))
+      val result = await(fetcher.fetchFieldValuesWithDefaults(ClientId("1"), subs))
 
       // Subscribed to contexts
       contexts(result) should contain.allOf(context1, context2, context3)
@@ -212,12 +127,12 @@ class SubscriptionFieldsServiceSpec extends AsyncHmrcSpec with ApiSubscriptionFi
       )
     }
 
-    "fetch value where all field values are missing" in new Setup(defns, values) {
+    "fetch value where all field values are missing" in new Setup(fieldDefns, fieldValues) {
       val subs: Set[ApiIdentifier] = Set(
         ApiIdentifier(context4, version1)
       )
 
-      val result = await(fetcher.fetchFieldValuesWithDefaults(Environment.SANDBOX, ClientId("1"), subs))
+      val result = await(fetcher.fetchFieldValuesWithDefaults(ClientId("1"), subs))
 
       // Subscribed to contexts
       contexts(result) should contain(context4)
