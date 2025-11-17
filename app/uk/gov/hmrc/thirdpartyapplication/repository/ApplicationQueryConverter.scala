@@ -60,6 +60,11 @@ object ApplicationQueryConverter {
     }
   }
 
+  def asOrganisationFilters(implicit params: List[Param[_]]): List[Bson] =
+    onFirst[OrganisationIdQP](organisationIdQp =>
+      List(equal("organisationId", Codecs.toBson(organisationIdQp.value)))
+    )
+
   def asUserFilters(implicit params: List[Param[_]]): List[Bson] =
     onFirst[UserIdQP](userIdQp =>
       List(equal("collaborators.userId", Codecs.toBson(userIdQp.value)))
@@ -173,6 +178,7 @@ object ApplicationQueryConverter {
     val individualFilters =
       asSingleQueryFilters ++
         asSubscriptionFilters ++
+        asOrganisationFilters ++
         asUserFilters ++
         asUsersFilters ++
         asEnvironmentFilters ++
