@@ -960,7 +960,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     "checkInformation",
     "blocked",
     "ipAllowlist",
-    "deleteRestriction"
+    "deleteRestriction",
+    "organisationId"
   )
 
   private val transformApplications: Reads[JsArray] = {

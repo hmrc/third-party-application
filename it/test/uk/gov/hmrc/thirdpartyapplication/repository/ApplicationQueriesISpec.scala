@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{GrantLength, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.UserIdsQP
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{OrganisationIdQP, UserIdsQP}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
@@ -47,7 +47,8 @@ class ApplicationQueriesISpec
     with BeforeAndAfterEach
     with MetricsHelper
     with FixedClock
-    with ApplicationRepositoryTestData {
+    with ApplicationRepositoryTestData
+    with OrganisationIdFixtures {
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -373,6 +374,28 @@ class ApplicationQueriesISpec
       result.head.environment shouldBe Environment.PRODUCTION
       result.map(
         _.collaborators.map(collaborator => collaborator.userId shouldBe userIdOne)
+      )
+    }
+  }
+
+  "applications by OrganisationId" should {
+    "return two applications that have the same organisationId" in {
+      val applicationId1   = ApplicationId.random
+      val applicationId2   = ApplicationId.random
+      val applicationId3   = ApplicationId.random
+      val prodApplication1 = anApplicationDataForTest(applicationId1, prodClientId = ClientId("aaa")).copy(organisationId = Some(organisationIdOne))
+      val prodApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).copy(organisationId = Some(organisationIdOne))
+      val prodApplication3 = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).copy(organisationId = None)
+
+      await(applicationRepository.save(prodApplication1))
+      await(applicationRepository.save(prodApplication2))
+      await(applicationRepository.save(prodApplication3))
+
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(OrganisationIdQP(organisationIdOne)))))
+
+      result.size shouldBe 2
+      result.foreach(
+        _.organisationId shouldBe Some(organisationIdOne)
       )
     }
   }

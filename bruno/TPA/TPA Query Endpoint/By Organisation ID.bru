@@ -1,0 +1,20 @@
+meta {
+  name: By Organisation ID
+  type: http
+  seq: 21
+}
+
+get {
+  url: {{baseUrl}}/query?organisationId=aa4bed91-3372-457b-9d9f-d3420e08fdf3
+  body: none
+  auth: inherit
+}
+
+params:query {
+  organisationId: aa4bed91-3372-457b-9d9f-d3420e08fdf3
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
