@@ -37,6 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.AdminUserIdQP
 
 class ApplicationQueriesISpec
     extends ServerBaseISpec
@@ -377,6 +378,31 @@ class ApplicationQueriesISpec
       )
     }
   }
+
+  "applications by admin user" should {
+    "return two applications when all have the same collaborator but only admin on two" in {
+      val applicationId1 = ApplicationId.random
+      val applicationId2 = ApplicationId.random
+      val applicationId3 = ApplicationId.random
+      val userId         = UserId.random
+
+      val asAdmin     = "user@example.com".admin(userId)
+      val asDev       = "user@example.com".developer(userId)
+      val testApplication1 = anApplicationDataForTest(applicationId1).withCollaborators(asAdmin)
+      val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(asAdmin)
+      val testApplication3 = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(asDev)
+
+      await(applicationRepository.save(testApplication1))
+      await(applicationRepository.save(testApplication2))
+      await(applicationRepository.save(testApplication3))
+
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(AdminUserIdQP(userId)))))
+
+      result.size shouldBe 2
+      result should contain.allOf(testApplication1, testApplication2)
+    }
+  }
+
 
   "applications by OrganisationId" should {
     "return two applications that have the same organisationId" in {

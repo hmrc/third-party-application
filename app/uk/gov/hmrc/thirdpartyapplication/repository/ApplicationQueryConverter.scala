@@ -70,6 +70,19 @@ object ApplicationQueryConverter {
       List(equal("collaborators.userId", Codecs.toBson(userIdQp.value)))
     )
 
+  def asAdminFilters(implicit params: List[Param[_]]): List[Bson] =
+    onFirst[AdminUserIdQP](qp =>
+      List(
+        elemMatch(
+          "collaborators",
+          and(
+            equal("userId", Codecs.toBson(qp.value)),
+            equal("role", "ADMINISTRATOR")
+          )
+        )
+      )
+    )
+
   def asUsersFilters(implicit params: List[Param[_]]): List[Bson] = {
     onFirst[UserIdsQP](userIdsQp => {
       List(in("collaborators.userId", userIdsQp.values.map(_.toString): _*))
@@ -180,6 +193,7 @@ object ApplicationQueryConverter {
         asSubscriptionFilters ++
         asOrganisationFilters ++
         asUserFilters ++
+        asAdminFilters ++
         asUsersFilters ++
         asEnvironmentFilters ++
         asDeleteRestrictionFilters ++
