@@ -222,6 +222,8 @@ object ApplicationQueryConverter {
     case Sorting.NoSorting             => List()
   }
 
+  def convertToLimit(limit: Option[Int]): List[Bson] = limit.toList.map(Aggregates.limit(_))
+
   // TODO : Work out why this is not used.
   // def identifySort(params: List[SortingParam[_]]): Sorting = {
   //   params match {
@@ -241,5 +243,4 @@ object ApplicationQueryConverter {
       case PageSizeQP(value) => value
     }.getOrElse(Int.MaxValue)
   }
-
 }
