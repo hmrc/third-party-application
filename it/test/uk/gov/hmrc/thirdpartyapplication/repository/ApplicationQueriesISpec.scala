@@ -31,13 +31,12 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{GrantLength, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{OrganisationIdQP, UserIdsQP}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{AdminUserIdQP, OrganisationIdQP, UserIdsQP}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.AdminUserIdQP
 
 class ApplicationQueriesISpec
     extends ServerBaseISpec
@@ -386,8 +385,8 @@ class ApplicationQueriesISpec
       val applicationId3 = ApplicationId.random
       val userId         = UserId.random
 
-      val asAdmin     = "user@example.com".admin(userId)
-      val asDev       = "user@example.com".developer(userId)
+      val asAdmin          = "user@example.com".admin(userId)
+      val asDev            = "user@example.com".developer(userId)
       val testApplication1 = anApplicationDataForTest(applicationId1).withCollaborators(asAdmin)
       val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(asAdmin)
       val testApplication3 = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(asDev)
@@ -402,7 +401,6 @@ class ApplicationQueriesISpec
       result should contain.allOf(testApplication1, testApplication2)
     }
   }
-
 
   "applications by OrganisationId" should {
     "return two applications that have the same organisationId" in {

@@ -1063,6 +1063,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Run General Query", "application.repository.fetchByGeneralOpenEndedApplicationQuery") {
       val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
       val sortingStage: List[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
+      val limitStage: List[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
 
       val needsLookup = qry.wantSubscriptions || qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
 
@@ -1071,7 +1072,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       val maybeStateHistoryLookup = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
 
-      val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ maybeStateHistoryLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage ++ sortingStage
+      val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ maybeStateHistoryLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage ++ sortingStage ++ limitStage
 
       executeAggregate(qry.wantSubscriptions, qry.wantStateHistory, pipeline)
     }
