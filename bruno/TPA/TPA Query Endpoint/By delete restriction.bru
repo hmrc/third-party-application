@@ -5,16 +5,17 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/query?deleteRestriction=DO_NOT_DELETE&wantSubscriptions
+  url: {{baseUrl}}/query?deleteRestriction=DO_NOT_DELETE
   body: none
   auth: inherit
 }
 
 params:query {
   deleteRestriction: DO_NOT_DELETE
-  wantSubscriptions: 
+  ~deleteRestriction: NO_RESTRICTION
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }

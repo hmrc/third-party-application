@@ -29,6 +29,7 @@ import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType
 
 object ApplicationQueryConverter {
 
@@ -95,12 +96,12 @@ object ApplicationQueryConverter {
     )
 
   def asDeleteRestrictionFilters(implicit params: List[Param[_]]): List[Bson] = {
-    def eq(text: String) = List(equal("deleteRestriction.deleteRestrictionType", Codecs.toBson(text)))
+    def eq(drt: DeleteRestrictionType) = equal("deleteRestriction.deleteRestrictionType", Codecs.toBson(drt))
 
     onFirst[DeleteRestrictionQP] {
-      _ match {
-        case Param.DoNotDeleteQP   => eq("DO_NOT_DELETE")
-        case Param.NoRestrictionQP => eq("NO_RESTRICTION")
+      _ match {        
+        case Param.DoNotDeleteQP   => List(eq(DeleteRestrictionType.DO_NOT_DELETE))
+        case Param.NoRestrictionQP => List(or(eq(DeleteRestrictionType.NO_RESTRICTION), exists("deleteRestriction.deleteRestrictionType", false)))
       }
     }
   }
