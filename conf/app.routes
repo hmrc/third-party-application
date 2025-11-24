@@ -54,3 +54,4 @@ GET           /application/:id/linked-subordinate-id                 uk.gov.hmrc
 POST          /application/:id/confirm-setup-complete                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.confirmSetupComplete(id: ApplicationId)
 
 GET           /query                                                 uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController.queryDispatcher()
+POST          /query                                                 uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController.queryPost()
