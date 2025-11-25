@@ -182,50 +182,54 @@ class ApplicationController @Inject() (
       .recover(recovery)
   }
 
-  def queryDispatcher() = Action.async { implicit request =>
-    val queryBy     = request.queryString.keys.toList.sorted
-    val serverToken = hc.valueOf(SERVER_TOKEN_HEADER)
+  def queryDispatcher() = warnStillInUse("queryDispatcher") {
+    Action.async { implicit request =>
+      val queryBy     = request.queryString.keys.toList.sorted
+      val serverToken = hc.valueOf(SERVER_TOKEN_HEADER)
+      logger.warn(s"""Unexpected queryDispatcher call using params ${queryBy.mkString("[", ",", "]")}${if (serverToken.isDefined) " & serverToken" else ""}""")
 
-    def addHeaders(pred: Result => Boolean, headers: (String, String)*)(res: Result): Result =
-      if (pred(res)) res.withHeaders(headers: _*) else res
+      def addHeaders(pred: Result => Boolean, headers: (String, String)*)(res: Result): Result =
+        if (pred(res)) res.withHeaders(headers: _*) else res
 
-    (queryBy, serverToken) match {
-      case (_, Some(token)) =>
-        fetchByServerToken(token)
-          .map(addHeaders(res => res.header.status == OK || res.header.status == NOT_FOUND, CACHE_CONTROL -> s"max-age=$applicationCacheExpiry", VARY -> SERVER_TOKEN_HEADER))
+      (queryBy, serverToken) match {
+        case (_, Some(token)) =>
+          fetchByServerToken(token)
+            .map(addHeaders(res => res.header.status == OK || res.header.status == NOT_FOUND, CACHE_CONTROL -> s"max-age=$applicationCacheExpiry", VARY -> SERVER_TOKEN_HEADER))
 
-      case ("clientId" :: _, _) =>
-        val clientId = ClientId(request.queryString("clientId").head)
-        fetchByClientId(clientId)
-          .map(addHeaders(_.header.status == OK, CACHE_CONTROL -> s"max-age=$applicationCacheExpiry"))
+        case ("clientId" :: _, _) =>
+          val clientId = ClientId(request.queryString("clientId").head)
+          fetchByClientId(clientId)
+            .map(addHeaders(_.header.status == OK, CACHE_CONTROL -> s"max-age=$applicationCacheExpiry"))
 
-      case ("environment" :: "userId" :: _, _) =>
-        val oUserId = UserId(request.queryString("userId").head)
-        val oEnv    = Environment(request.queryString("environment").head)
+        case ("environment" :: "userId" :: _, _) =>
+          val oUserId = UserId(request.queryString("userId").head)
+          val oEnv    = Environment(request.queryString("environment").head)
 
-        (oUserId, oEnv) match {
-          case (Some(u), Some(e)) => fetchAllForUserIdAndEnvironment(u, e)
-          case (None, None)       => successful(BadRequest(JsErrorResponse(
-              BAD_QUERY_PARAMETER,
-              s"Neither UserId ${request.queryString("userId").head} nor Environment ${request.queryString("environment").head} are valid"
-            )))
-          case (None, Some(_))    => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"UserId ${request.queryString("userId").head} is not a valid user Id")))
-          case (Some(_), None)    => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"Environment ${request.queryString("environment").head} is not a valid environment")))
-        }
+          (oUserId, oEnv) match {
+            case (Some(u), Some(e)) => fetchAllForUserIdAndEnvironment(u, e)
+            case (None, None)       => successful(BadRequest(JsErrorResponse(
+                BAD_QUERY_PARAMETER,
+                s"Neither UserId ${request.queryString("userId").head} nor Environment ${request.queryString("environment").head} are valid"
+              )))
+            case (None, Some(_))    => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"UserId ${request.queryString("userId").head} is not a valid user Id")))
+            case (Some(_), None)    =>
+              successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"Environment ${request.queryString("environment").head} is not a valid environment")))
+          }
 
-      case ("subscribesTo" :: "version" :: _, _) =>
-        val context       = ApiContext(request.queryString("subscribesTo").head)
-        val version       = ApiVersionNbr(request.queryString("version").head)
-        val apiIdentifier = ApiIdentifier(context, version)
-        queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier)).map(apps => Ok(Json.toJson(apps)))
+        case ("subscribesTo" :: "version" :: _, _) =>
+          val context       = ApiContext(request.queryString("subscribesTo").head)
+          val version       = ApiVersionNbr(request.queryString("version").head)
+          val apiIdentifier = ApiIdentifier(context, version)
+          queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier)).map(apps => Ok(Json.toJson(apps)))
 
-      case ("subscribesTo" :: _, _) =>
-        val context = ApiContext(request.queryString("subscribesTo").head)
-        queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByApiContext(context)).map(apps => Ok(Json.toJson(apps)))
+        case ("subscribesTo" :: _, _) =>
+          val context = ApiContext(request.queryString("subscribesTo").head)
+          queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByApiContext(context)).map(apps => Ok(Json.toJson(apps)))
 
-      case ("noSubscriptions" :: _, _) => queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByNoSubscriptions).map(apps => Ok(Json.toJson(apps)))
+        case ("noSubscriptions" :: _, _) => queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByNoSubscriptions).map(apps => Ok(Json.toJson(apps)))
 
-      case _ => successful(Redirect(uk.gov.hmrc.thirdpartyapplication.controllers.query.routes.QueryController.queryDispatcher().url, request.queryString))
+        case _ => successful(Redirect(uk.gov.hmrc.thirdpartyapplication.controllers.query.routes.QueryController.queryDispatcher().url, request.queryString))
+      }
     }
   }
 
@@ -299,9 +303,11 @@ class ApplicationController @Inject() (
     ) recover recovery
   }
 
-  def fetchAllForCollaborators(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[CollaboratorUserIds] { request =>
-      applicationService.fetchAllForCollaborators(request.userIds).map(apps => Ok(toJson(apps))) recover recovery
+  def fetchAllForCollaborators(): Action[JsValue] = warnStillInUse("fetchAllForCollaborators") {
+    Action.async(parse.json) { implicit request =>
+      withJsonBody[CollaboratorUserIds] { request =>
+        applicationService.fetchAllForCollaborators(request.userIds).map(apps => Ok(toJson(apps))) recover recovery
+      }
     }
   }
 
