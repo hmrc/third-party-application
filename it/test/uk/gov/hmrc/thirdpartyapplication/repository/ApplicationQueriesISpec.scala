@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.time.{Clock, Duration}
 
+import org.mongodb.scala.bson.collection.mutable.Document
 import org.scalatest.BeforeAndAfterEach
 
 import play.api.inject.bind
@@ -29,22 +30,14 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{GrantLength, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{DeleteRestriction, GrantLength, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{AdminUserIdQP, OrganisationIdQP, UserIdsQP}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{AdminUserIdQP, DoNotDeleteQP, NoRestrictionQP, OrganisationIdQP, UserIdsQP}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.DeleteRestrictionQP
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.DoNotDeleteQP
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.NoRestrictionQP
-import uk.gov.hmrc.thirdpartyapplication.repository
-import org.bson.conversions.Bson
-import org.mongodb.scala.bson.collection.mutable.Document
 
 class ApplicationQueriesISpec
     extends ServerBaseISpec
@@ -56,7 +49,7 @@ class ApplicationQueriesISpec
     with MetricsHelper
     with FixedClock
     with ApplicationRepositoryTestData
-    with OrganisationIdFixtures 
+    with OrganisationIdFixtures
     with ActorFixtures {
 
   protected override def appBuilder: GuiceApplicationBuilder = {
@@ -757,22 +750,22 @@ class ApplicationQueriesISpec
   }
 
   "general query testing both types of delete restriction" in {
-    val application1     = anApplicationDataForTest(
-      id = ApplicationId.random,
-      prodClientId = ClientId.random,
-    ).copy(deleteRestriction = DeleteRestriction.DoNotDelete("because", gatekeeperActorOne, instant))
-
-    val application2     = anApplicationDataForTest(
+    val application1 = anApplicationDataForTest(
       id = ApplicationId.random,
       prodClientId = ClientId.random
     ).copy(deleteRestriction = DeleteRestriction.DoNotDelete("because", gatekeeperActorOne, instant))
 
-    val application3     = anApplicationDataForTest(
+    val application2 = anApplicationDataForTest(
+      id = ApplicationId.random,
+      prodClientId = ClientId.random
+    ).copy(deleteRestriction = DeleteRestriction.DoNotDelete("because", gatekeeperActorOne, instant))
+
+    val application3 = anApplicationDataForTest(
       id = ApplicationId.random,
       prodClientId = ClientId.random
     ).copy(deleteRestriction = DeleteRestriction.NoRestriction)
 
-    val application4     = anApplicationDataForTest(
+    val application4 = anApplicationDataForTest(
       id = ApplicationId.random,
       prodClientId = ClientId.random
     )
@@ -781,17 +774,17 @@ class ApplicationQueriesISpec
     await(applicationRepository.save(application2))
     await(applicationRepository.save(application3))
     await(applicationRepository.save(application4))
-    applicationRepository.updateApplication(application4.id, Document("""{$unset: {deleteRestriction:1}}"""))   // Check old format records
+    applicationRepository.updateApplication(application4.id, Document("""{$unset: {deleteRestriction:1}}""")) // Check old format records
 
     await(
       applicationRepository.fetchByGeneralOpenEndedApplicationQuery(GeneralOpenEndedApplicationQuery(List(DoNotDeleteQP)))
     )
-    .map(_.details.id) shouldBe List(application1, application2).map(_.id)
+      .map(_.details.id) shouldBe List(application1, application2).map(_.id)
 
     await(
       applicationRepository.fetchByGeneralOpenEndedApplicationQuery(GeneralOpenEndedApplicationQuery(List(NoRestrictionQP)))
     )
-    .map(_.details.id) shouldBe List(application3, application4).map(_.id)
+      .map(_.details.id) shouldBe List(application3, application4).map(_.id)
   }
 
   "general query with state history" in {

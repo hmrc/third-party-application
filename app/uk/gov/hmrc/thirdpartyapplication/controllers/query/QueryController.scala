@@ -56,6 +56,16 @@ class QueryController @Inject() (
       )
   }
 
+  def queryPost(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    withJsonBody[Map[String, Seq[String]]] { payload =>
+      ParamsValidator.parseAndValidateParams(payload, request.headers.toMap)
+        .fold[Future[Result]](
+          nel => Future.successful(BadRequest(asBody("INVALID_QUERY", nel.toList))),
+          params => execute(ApplicationQuery.attemptToConstructQuery(params))
+        )
+    }
+  }
+
   private val applicationNotFound = NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query"))
 
   private def execute(appQry: ApplicationQuery)(implicit hc: HeaderCarrier): Future[Result] = {

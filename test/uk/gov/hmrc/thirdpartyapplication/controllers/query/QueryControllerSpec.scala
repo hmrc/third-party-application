@@ -22,7 +22,8 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 
 import play.api.libs.json._
-import play.api.test.FakeRequest
+import play.api.test.Helpers._
+import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.apiplatformmicroservice.thirdpartyapplication.services.SubscriptionFieldsData
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
@@ -30,8 +31,9 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifierFixture
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, PaginatedApplications, StateHistoryFixtures}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{NoSubscriptionsQP, UserIdQP}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{NoSubscriptionsQP, UserIdQP, UserIdsQP}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.services.QueryParamsToQueryStringMap
 import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerSpec
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController
 import uk.gov.hmrc.thirdpartyapplication.mocks.QueryServiceMockModule
@@ -46,8 +48,6 @@ class QueryControllerSpec
     with ApiIdentifierFixtures
     with StoredApplicationFixtures
     with SubscriptionFieldsData {
-  import play.api.test.Helpers._
-  import play.api.test.Helpers
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
@@ -194,6 +194,32 @@ class QueryControllerSpec
 
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(PaginatedApplications(List.empty, 1, 25, 102, 0))
+    }
+
+    "work for post query with applicationIdQP" in new Setup {
+      val qry                               = ApplicationQuery.ById(applicationIdOne, Nil, wantSubscriptions = true)
+      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toQuery(qry)
+
+      QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(qry, appWithSubs)
+      QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubs(appWithSubs)
+
+      val result = underTest.queryPost()(FakeRequest("POST", "/").withBody[JsValue](Json.toJson(payload)))
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(appWithSubs)
+    }
+
+    "work for post query with userIdsQP" in new Setup {
+      val postFilterQPs                     = List(UserIdsQP(List(userIdOne, userIdTwo, userIdThree)))
+      val qry                               = GeneralOpenEndedApplicationQuery(postFilterQPs, sorting = Sorting.NameAscending)
+      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toQuery(qry) // NOT !!! Map(ParamNames.UserIds -> Seq(userIdOne.toString, userIdTwo.toString, userIdThree.toString))
+
+      QueryServiceMock.FetchApplicationsByQuery.thenReturns(appWithCollaborators)
+
+      val result = underTest.queryPost()(FakeRequest("POST", "").withBody[JsValue](Json.toJson(payload)))
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(List(appWithCollaborators))
     }
 
     "report errors back" in new Setup {

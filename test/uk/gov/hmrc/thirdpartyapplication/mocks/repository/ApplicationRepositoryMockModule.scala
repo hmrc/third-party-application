@@ -449,15 +449,17 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object FetchByGeneralOpenEndedApplicationQuery {
       def thenReturns(apps: QueriedApplication*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(apps.toList))
-      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: QueriedApplication*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(qry)).thenReturn(successful(apps.toList))
+
+      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: QueriedApplication*) =
+        when(aMock.fetchByGeneralOpenEndedApplicationQuery(qry)).thenReturn(successful(apps.toList))
 
       def thenReturnsWithSubs(apps: QueriedApplication*) =
         when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(apps.toList))
     }
 
     object FetchStoredApplications {
-      def thenReturns(apps: StoredApplication*) = when(aMock.fetchStoredApplications(*)).thenReturn(successful(apps.toList))
-      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) = when(aMock.fetchStoredApplications(qry)).thenReturn(successful(apps.toList))
+      def thenReturns(apps: StoredApplication*)                                               = when(aMock.fetchStoredApplications(*)).thenReturn(successful(apps.toList))
+      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*)     = when(aMock.fetchStoredApplications(qry)).thenReturn(successful(apps.toList))
       def thenReturnsNoneFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) = when(aMock.fetchStoredApplications(qry)).thenReturn(successful(Nil))
     }
 

@@ -83,6 +83,9 @@ trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar wit
       def thenReturnsNoApps() =
         when(aMock.fetchApplicationsByQuery(*)).thenReturn(successful(List.empty))
 
+      def thenReturnsSubs(apps: ApplicationWithSubscriptions*) =
+        when(aMock.fetchApplicationsByQuery(*)).thenReturn(successful(apps.toList.map(QueriedApplication.apply)))
+
       def thenReturnsSubsFor(qry: GeneralOpenEndedApplicationQuery, apps: ApplicationWithSubscriptions*) =
         when(aMock.fetchApplicationsByQuery(eqTo(qry))).thenReturn(successful(apps.toList.map(QueriedApplication.apply)))
 
