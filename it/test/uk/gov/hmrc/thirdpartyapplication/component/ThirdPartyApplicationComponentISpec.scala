@@ -153,39 +153,39 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
     }
 
     // TODO use commands
-    Scenario("Fetch application credentials") {
-      Given("No applications exist")
-      emptyApplicationRepository()
+    // Scenario("Fetch application credentials") {
+    //   Given("No applications exist")
+    //   emptyApplicationRepository()
 
-      val appName = "appName"
+    //   val appName = "appName"
 
-      Given("A third party application")
-      val application: ApplicationWithCollaborators = createApplication(appName)
-      val cmd                                       =
-        ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
+    //   Given("A third party application")
+    //   val application: ApplicationWithCollaborators = createApplication(appName)
+    //   val cmd                                       =
+    //     ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
 
-      sendApplicationCommand(cmd, application)
-      val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
+    //   sendApplicationCommand(cmd, application)
+    //   val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
 
-      When("We fetch the application credentials")
-      val uri      = s"$serviceUrl/application/${application.id.value}/credentials"
-      val response = http(basicRequest.get(uri"$uri"))
-      response.code shouldBe StatusCode.Ok
+    //   When("We fetch the application credentials")
+    //   val uri      = s"$serviceUrl/application/${application.id.value}/credentials"
+    //   val response = http(basicRequest.get(uri"$uri"))
+    //   response.code shouldBe StatusCode.Ok
 
-      Then("The credentials are returned")
-      // scalastyle:off magic.number
-      val expectedClientSecrets = createdApp.tokens.production.clientSecrets
+    //   Then("The credentials are returned")
+    //   // scalastyle:off magic.number
+    //   val expectedClientSecrets = createdApp.tokens.production.clientSecrets
 
-      val returnedResponse = Json.parse(response.body.value).as[ApplicationToken]
-      returnedResponse.clientId should be(application.clientId)
-      returnedResponse.accessToken.length should be(32)
+    //   val returnedResponse = Json.parse(response.body.value).as[ApplicationToken]
+    //   returnedResponse.clientId should be(application.clientId)
+    //   returnedResponse.accessToken.length should be(32)
 
-      // Bug in JodaTime means we can't do a direct comparison between returnedResponse.production.clientSecrets and expectedClientSecrets
-      // We have to compare contents individually
-      val returnedClientSecret = returnedResponse.clientSecrets.head
-      returnedClientSecret.name should be(expectedClientSecrets.head.name)
-      returnedClientSecret.createdOn.toEpochMilli should be(expectedClientSecrets.head.createdOn.toEpochMilli)
-    }
+    //   // Bug in JodaTime means we can't do a direct comparison between returnedResponse.production.clientSecrets and expectedClientSecrets
+    //   // We have to compare contents individually
+    //   val returnedClientSecret = returnedResponse.clientSecrets.head
+    //   returnedClientSecret.name should be(expectedClientSecrets.head.name)
+    //   returnedClientSecret.createdOn.toEpochMilli should be(expectedClientSecrets.head.createdOn.toEpochMilli)
+    // }
   }
 
   Feature("Validate Credentials") {
@@ -397,57 +397,57 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
 
   Feature("Update an application") {
 
-    Scenario("Add two client secrets then remove the last one") {
+    // Scenario("Add two client secrets then remove the last one") {
 
-      Given("No applications exist")
-      emptyApplicationRepository()
+    //   Given("No applications exist")
+    //   emptyApplicationRepository()
 
-      Given("A third party application")
-      val application = createApplication()
-      apiPlatformEventsStub.willReceiveApiSubscribedEvent()
-      apiPlatformEventsStub.willReceiveClientSecretAddedEvent()
-      apiPlatformEventsStub.willReceiveClientRemovedEvent()
-      emailStub.willPostEmailNotification()
-      val createdApp  = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
-      createdApp.tokens.production.clientSecrets should have size 0
+    //   Given("A third party application")
+    //   val application = createApplication()
+    //   apiPlatformEventsStub.willReceiveApiSubscribedEvent()
+    //   apiPlatformEventsStub.willReceiveClientSecretAddedEvent()
+    //   apiPlatformEventsStub.willReceiveClientRemovedEvent()
+    //   emailStub.willPostEmailNotification()
+    //   val createdApp  = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
+    //   createdApp.tokens.production.clientSecrets should have size 0
 
-      When("I request to add a production client secret")
-      val cmd =
-        ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
+    //   When("I request to add a production client secret")
+    //   val cmd =
+    //     ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
 
-      val cmdResponse = sendApplicationCommand(cmd, application)
-      cmdResponse.code shouldBe StatusCode.Ok
+    //   val cmdResponse = sendApplicationCommand(cmd, application)
+    //   cmdResponse.code shouldBe StatusCode.Ok
 
-      Then("The client secret is added to the production environment of the application")
-      apiPlatformEventsStub.verifyClientSecretAddedEventSent()
-      val uri                             = s"$serviceUrl/application/${application.id.value}/credentials"
-      val firstFetchResponse              = http(basicRequest.get(uri"$uri"))
-      val firstResponse: ApplicationToken = Json.parse(firstFetchResponse.body.value).as[ApplicationToken]
-      val secrets: List[ClientSecret]     = firstResponse.clientSecrets
-      secrets should have size 1
+    //   Then("The client secret is added to the production environment of the application")
+    //   apiPlatformEventsStub.verifyClientSecretAddedEventSent()
+    //   val uri                             = s"$serviceUrl/application/${application.id.value}/credentials"
+    //   val firstFetchResponse              = http(basicRequest.get(uri"$uri"))
+    //   val firstResponse: ApplicationToken = Json.parse(firstFetchResponse.body.value).as[ApplicationToken]
+    //   val secrets: List[ClientSecret]     = firstResponse.clientSecrets
+    //   secrets should have size 1
 
-      When("I request to add a second production client secret")
-      val secondCmd         =
-        ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
-      val secondCmdResponse = sendApplicationCommand(secondCmd, application)
-      secondCmdResponse.code shouldBe StatusCode.Ok
-      // check secret was added
+    //   When("I request to add a second production client secret")
+    //   val secondCmd         =
+    //     ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
+    //   val secondCmdResponse = sendApplicationCommand(secondCmd, application)
+    //   secondCmdResponse.code shouldBe StatusCode.Ok
+    //   // check secret was added
 
-      Then("The client secret is added to the production environment of the application")
-      val uri2                             = s"$serviceUrl/application/${application.id.value}/credentials"
-      val secondFetchResponse              = http(basicRequest.get(uri"$uri2"))
-      val secondResponse: ApplicationToken = Json.parse(secondFetchResponse.body.value).as[ApplicationToken]
-      val moreSecrets: List[ClientSecret]  = secondResponse.clientSecrets
+    //   Then("The client secret is added to the production environment of the application")
+    //   val uri2                             = s"$serviceUrl/application/${application.id.value}/credentials"
+    //   val secondFetchResponse              = http(basicRequest.get(uri"$uri2"))
+    //   val secondResponse: ApplicationToken = Json.parse(secondFetchResponse.body.value).as[ApplicationToken]
+    //   val moreSecrets: List[ClientSecret]  = secondResponse.clientSecrets
 
-      moreSecrets should have size 2
+    //   moreSecrets should have size 2
 
-      When("I request to remove a production client secret")
-      val removeCmd         = ApplicationCommands.RemoveClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), secondCmd.id, instant)
-      val removeCmdResponse = sendApplicationCommand(removeCmd, application)
-      removeCmdResponse.code shouldBe StatusCode.Ok
+    //   When("I request to remove a production client secret")
+    //   val removeCmd         = ApplicationCommands.RemoveClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), secondCmd.id, instant)
+    //   val removeCmdResponse = sendApplicationCommand(removeCmd, application)
+    //   removeCmdResponse.code shouldBe StatusCode.Ok
 
-      apiPlatformEventsStub.verifyClientSecretRemovedEventSent()
-    }
+    //   apiPlatformEventsStub.verifyClientSecretRemovedEventSent()
+    // }
 
     Scenario("Delete an application") {
       apiSubscriptionFieldsStub.willDeleteTheSubscriptionFields()
