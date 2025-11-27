@@ -28,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.Querie
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.SingleApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.services.SubscriptionFieldsService
+import uk.gov.hmrc.thirdpartyapplication.models.db.QueriedApplicationWithOptionalToken
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 
 @Singleton
@@ -38,17 +39,17 @@ class QueryService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def fetchSingleApplicationByQuery(qry: SingleApplicationQuery)(implicit hc: HeaderCarrier): Future[Option[QueriedApplication]] = {
+  def fetchSingleApplicationByQuery(qry: SingleApplicationQuery)(implicit hc: HeaderCarrier): Future[Option[QueriedApplicationWithOptionalToken]] = {
     applicationRepository.fetchBySingleApplicationQuery(qry).flatMap(_ match {
       case None      => Future.successful(None)
       case Some(app) =>
-        if (qry.wantSubscriptionFields) {
-          subsFieldsService.fetchFieldValuesWithDefaults(app.details.token.clientId, app.subscriptions.getOrElse(Set.empty)).map { fields =>
-            Some(app.copy(fieldValues = Some(fields)))
-          }
-        } else {
-          Future.successful(Some(app))
-        }
+        (if (qry.wantSubscriptionFields) {
+           subsFieldsService.fetchFieldValuesWithDefaults(app.details.token.clientId, app.subscriptions.getOrElse(Set.empty)).map { fields =>
+             Some(app.copy(fieldValues = Some(fields)))
+           }
+         } else {
+           Future.successful(Some(app))
+         })
     })
   }
 

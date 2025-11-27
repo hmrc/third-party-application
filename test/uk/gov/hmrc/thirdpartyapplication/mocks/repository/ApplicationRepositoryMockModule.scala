@@ -415,27 +415,32 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.removeOldGrantLength(eqTo(applicationId))).thenReturn(successful(updatedApplicationData))
     }
 
-    object FetchBySingleApplicationQuery {
+    object FetchSingleAppByAggregates {
 
-      def thenReturnsNothing() =
-        when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(None))
+      def thenReturnsNoneFor(qry: SingleApplicationQuery) =
+        when(aMock.fetchSingleAppByAggregates(eqTo(qry))).thenReturn(successful(None))
 
-      def thenReturns(app: QueriedApplication) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Some(app)))
+      def thenReturnsFor(qry: SingleApplicationQuery, app: QueriedStoredApplication) =
+        when(aMock.fetchSingleAppByAggregates(eqTo(qry))).thenReturn(successful(Some(app)))
+
+      def thenReturnsNone() =
+        when(aMock.fetchSingleAppByAggregates(*)).thenReturn(successful(None))
+
+      def thenReturns(app: QueriedStoredApplication) = when(aMock.fetchSingleAppByAggregates(*)).thenReturn(successful(Some(app)))
     }
 
-    object FetchSingleApplication {
+    object FetchBySingleApplicationQuery {
 
-      def thenReturnNothing() =
-        when(aMock.fetchStoredApplication(*)).thenReturn(successful(None))
+      def thenReturnsNoneFor(qry: SingleApplicationQuery) =
+        when(aMock.fetchBySingleApplicationQuery(eqTo(qry))).thenReturn(successful(None))
 
-      def thenReturnNothingFor(qry: SingleApplicationQuery) =
-        when(aMock.fetchStoredApplication(eqTo(qry))).thenReturn(successful(None))
+      def thenReturnsFor(qry: SingleApplicationQuery, app: QueriedApplicationWithOptionalToken) =
+        when(aMock.fetchBySingleApplicationQuery(eqTo(qry))).thenReturn(successful(Some(app)))
 
-      def thenReturn(app: StoredApplication) =
-        when(aMock.fetchStoredApplication(*)).thenReturn(successful(Some(app)))
+      def thenReturnsNone() =
+        when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(None))
 
-      def thenReturnFor(qry: SingleApplicationQuery, app: StoredApplication) =
-        when(aMock.fetchStoredApplication(eqTo(qry))).thenReturn(successful(Some(app)))
+      def thenReturns(app: QueriedApplicationWithOptionalToken) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Some(app)))
     }
 
     object FetchApplications {

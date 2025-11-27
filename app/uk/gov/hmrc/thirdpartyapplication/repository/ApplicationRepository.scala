@@ -20,6 +20,7 @@ import java.time.{Clock, Instant, Period}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import cats.data.OptionT
 import cats.syntax.option._
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import com.typesafe.config.ConfigFactory
@@ -47,34 +48,14 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{SingleApplicationQuery, _}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.{ApiFieldMap, FieldValue}
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedStoredApplication, _}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object ApplicationRepository {
   import play.api.libs.functional.syntax._
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
-
-  protected case class QueriedStoredApplication(
-      app: StoredApplication,
-      subscriptions: Option[Set[ApiIdentifier]] = None,
-      fieldValues: Option[ApiFieldMap[FieldValue]] = None,
-      stateHistory: Option[List[StateHistory]] = None
-    ) {
-
-    def asQueriedApplication = {
-      val awc = app.asAppWithCollaborators
-      QueriedApplication(
-        details = awc.details,
-        collaborators = awc.collaborators,
-        subscriptions = subscriptions,
-        fieldValues = fieldValues,
-        stateHistory = stateHistory
-      )
-    }
-  }
 
   object MongoFormats {
     import uk.gov.hmrc.play.json.Union
@@ -260,7 +241,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     with ClockNow {
 
   import ApplicationRepository.MongoFormats._
-  import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.QueriedStoredApplication
 
   def save(application: StoredApplication): Future[StoredApplication] = {
     val query = equal("id", Codecs.toBson(application.id))
@@ -441,7 +421,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   }
 
   def fetch(id: ApplicationId): Future[Option[StoredApplication]] = {
-    fetchStoredApplication(ApplicationQuery.ById(id, List.empty))
+    fetchSingleAppByAggregates(ApplicationQuery.ById(id, List.empty)).map(_.map(_.app))
   }
 
   // TODO - definitely
@@ -1025,7 +1005,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       })
   }
 
-  protected def fetchSingleAppByAggregates(qry: SingleApplicationQuery): Future[Option[QueriedStoredApplication]] = {
+  def fetchSingleAppByAggregates(qry: SingleApplicationQuery): Future[Option[QueriedStoredApplication]] = {
     timeFuture("Run Single Query", "application.repository.fetchSingleAppByAggregates") {
       val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
 
@@ -1040,23 +1020,26 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  // So simple that we don't need to do anything other than use existing methods.  These could be done via conversion to AggregateQuery components at a later date.
-  private def internalFetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Option[QueriedStoredApplication]] = {
-    qry match {
-      case ApplicationQuery.ByClientId(clientId, true, _, _, _, _)       =>
-        findAndRecordApplicationUsage(clientId).map(osa => osa.map(app => QueriedStoredApplication(app, None, None, None)))
+  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Option[QueriedApplicationWithOptionalToken]] = {
+    def fetchAndMap(allowServerToken: Boolean) = OptionT(fetchSingleAppByAggregates(qry)).map(_.asQueriedApplicationWithOptionalToken(allowServerToken))
+
+    (qry match {
+      case ApplicationQuery.ByClientId(clientId, true, _, _, _, _) =>
+        (for {
+          _     <- OptionT(findAndRecordApplicationUsage(clientId))
+          fetch <- fetchAndMap(true)
+        } yield fetch)
+
       case ApplicationQuery.ByServerToken(serverToken, true, _, _, _, _) =>
-        findAndRecordServerTokenUsage(serverToken).map(osa => osa.map(app => QueriedStoredApplication(app, None, None, None)))
-      case _                                                             => fetchSingleAppByAggregates(qry)
-    }
-  }
+        (for {
+          _     <- OptionT(findAndRecordServerTokenUsage(serverToken))
+          fetch <- fetchAndMap(true)
+        } yield fetch)
 
-  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Option[QueriedApplication]] = {
-    internalFetchBySingleApplicationQuery(qry).map(_.map(_.asQueriedApplication))
-  }
-
-  def fetchStoredApplication(qry: SingleApplicationQuery): Future[Option[StoredApplication]] = {
-    internalFetchBySingleApplicationQuery(qry).map(_.map(_.app))
+      case _ =>
+        fetchAndMap(false)
+    })
+      .value
   }
 
   private def internalFetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedStoredApplication]] = {

@@ -69,7 +69,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
     val expectedQry = ApplicationQueries.applicationByClientId(clientId)
 
     "return none when no application exists in the repository for the given client id" in new Setup {
-      ApplicationRepoMock.FetchSingleApplication.thenReturnNothingFor(expectedQry)
+      ApplicationRepoMock.FetchSingleAppByAggregates.thenReturnsNoneFor(expectedQry)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, "aSecret")).value)
 
@@ -77,7 +77,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
     }
 
     "return none when credentials don't match with an application" in new Setup {
-      ApplicationRepoMock.FetchSingleApplication.thenReturnFor(expectedQry, applicationData)
+      ApplicationRepoMock.FetchSingleAppByAggregates.thenReturnsFor(expectedQry, QueriedStoredApplication(applicationData))
 
       ClientSecretServiceMock.ClientSecretIsValid.noMatchingClientSecret(applicationData.id, "wrongSecret", applicationData.tokens.production.clientSecrets)
 
@@ -94,7 +94,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
       val secret                      = UUID.randomUUID().toString
       val matchingClientSecret        = applicationData.tokens.production.clientSecrets.head
 
-      ApplicationRepoMock.FetchSingleApplication.thenReturnFor(expectedQry, applicationData)
+      ApplicationRepoMock.FetchSingleAppByAggregates.thenReturnsFor(expectedQry, QueriedStoredApplication(applicationData))
+
       ClientSecretServiceMock.ClientSecretIsValid
         .thenReturnValidationResult(applicationData.id, secret, productionToken.clientSecrets)(matchingClientSecret)
       ApplicationRepoMock.RecordClientSecretUsage.thenReturnWhen(applicationData.id, matchingClientSecret.id)(updatedApplicationData)
@@ -111,7 +112,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
       val matchingClientSecret        = applicationData.tokens.production.clientSecrets.head
       val thrownException             = new RuntimeException
 
-      ApplicationRepoMock.FetchSingleApplication.thenReturnFor(expectedQry, applicationData)
+      ApplicationRepoMock.FetchSingleAppByAggregates.thenReturnsFor(expectedQry, QueriedStoredApplication(applicationData))
       ClientSecretServiceMock.ClientSecretIsValid
         .thenReturnValidationResult(applicationData.id, secret, applicationData.tokens.production.clientSecrets)(matchingClientSecret)
       ApplicationRepoMock.RecordClientSecretUsage.thenFail(thrownException)

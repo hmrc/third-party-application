@@ -36,7 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{A
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedApplicationWithOptionalToken, StoredApplication}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationQueriesISpec
@@ -118,21 +118,22 @@ class ApplicationQueriesISpec
     }
 
     "retrieve the application for a given client id when it has a matching client id" in new Setup {
-      val retrieved = await(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByClientId(clientIdTwo)))
+      val retrieved =
+        await(applicationRepository.fetchSingleAppByAggregates(ApplicationQueries.applicationByClientId(clientIdTwo).copy(recordUsage = true, wantSubscriptions = true)))
 
-      retrieved.value shouldBe application2
+      retrieved.value.app shouldBe application2
     }
 
     "retrieve the grant length for an application for a given client id when it has a matching client id" in new Setup {
-      val retrieved1 = await(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByClientId(clientIdOne)))
-      val retrieved2 = await(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByClientId(clientIdTwo)))
+      val retrieved1 = await(applicationRepository.fetchSingleAppByAggregates(ApplicationQueries.applicationByClientId(clientIdOne)))
+      val retrieved2 = await(applicationRepository.fetchSingleAppByAggregates(ApplicationQueries.applicationByClientId(clientIdTwo)))
 
-      retrieved1.value.refreshTokensAvailableFor shouldBe grantLength1
-      retrieved2.value.refreshTokensAvailableFor shouldBe grantLength2
+      retrieved1.value.app.refreshTokensAvailableFor shouldBe grantLength1
+      retrieved2.value.app.refreshTokensAvailableFor shouldBe grantLength2
     }
 
     "do not retrieve the application for a given client id when it has a matching client id but is deleted" in new Setup {
-      val retrieved = await(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByClientId(application3.tokens.production.clientId)))
+      val retrieved = await(applicationRepository.fetchSingleAppByAggregates(ApplicationQueries.applicationByClientId(application3.tokens.production.clientId)))
 
       retrieved shouldBe None
     }
@@ -156,9 +157,9 @@ class ApplicationQueriesISpec
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
 
-      val retrieved = await(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByServerToken(application2.tokens.production.accessToken)))
+      val retrieved = await(applicationRepository.fetchSingleAppByAggregates(ApplicationQueries.applicationByServerToken(application2.tokens.production.accessToken)))
 
-      retrieved shouldBe Some(application2)
+      retrieved.value.app shouldBe application2
     }
 
     "do not retrieve the application when it is matched for access token but is deleted" in {
@@ -170,7 +171,7 @@ class ApplicationQueriesISpec
 
       await(applicationRepository.save(application1))
 
-      val retrieved = await(applicationRepository.fetchStoredApplication(ApplicationQueries.applicationByServerToken(application1.tokens.production.accessToken)))
+      val retrieved = await(applicationRepository.fetchSingleAppByAggregates(ApplicationQueries.applicationByServerToken(application1.tokens.production.accessToken)))
 
       retrieved shouldBe None
     }
@@ -376,52 +377,6 @@ class ApplicationQueriesISpec
       result.head.environment shouldBe Environment.PRODUCTION
       result.map(
         _.collaborators.map(collaborator => collaborator.userId shouldBe userIdOne)
-      )
-    }
-  }
-
-  "applications by admin user" should {
-    "return two applications when all have the same collaborator but only admin on two" in {
-      val applicationId1 = ApplicationId.random
-      val applicationId2 = ApplicationId.random
-      val applicationId3 = ApplicationId.random
-      val userId         = UserId.random
-
-      val asAdmin          = "user@example.com".admin(userId)
-      val asDev            = "user@example.com".developer(userId)
-      val testApplication1 = anApplicationDataForTest(applicationId1).withCollaborators(asAdmin)
-      val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(asAdmin)
-      val testApplication3 = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(asDev)
-
-      await(applicationRepository.save(testApplication1))
-      await(applicationRepository.save(testApplication2))
-      await(applicationRepository.save(testApplication3))
-
-      val result = await(applicationRepository.fetchStoredApplications(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(AdminUserIdQP(userId)))))
-
-      result.size shouldBe 2
-      result should contain.allOf(testApplication1, testApplication2)
-    }
-  }
-
-  "applications by OrganisationId" should {
-    "return two applications that have the same organisationId" in {
-      val applicationId1   = ApplicationId.random
-      val applicationId2   = ApplicationId.random
-      val applicationId3   = ApplicationId.random
-      val prodApplication1 = anApplicationDataForTest(applicationId1, prodClientId = ClientId("aaa")).copy(organisationId = Some(organisationIdOne))
-      val prodApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).copy(organisationId = Some(organisationIdOne))
-      val prodApplication3 = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).copy(organisationId = None)
-
-      await(applicationRepository.save(prodApplication1))
-      await(applicationRepository.save(prodApplication2))
-      await(applicationRepository.save(prodApplication3))
-
-      val result = await(applicationRepository.fetchStoredApplications(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(OrganisationIdQP(organisationIdOne)))))
-
-      result.size shouldBe 2
-      result.foreach(
-        _.organisationId shouldBe Some(organisationIdOne)
       )
     }
   }
@@ -726,6 +681,52 @@ class ApplicationQueriesISpec
     }
   }
 
+  "applications by admin user" should {
+    "return two applications when all have the same collaborator but only admin on two" in {
+      val applicationId1 = ApplicationId.random
+      val applicationId2 = ApplicationId.random
+      val applicationId3 = ApplicationId.random
+      val userId         = UserId.random
+
+      val asAdmin          = "user@example.com".admin(userId)
+      val asDev            = "user@example.com".developer(userId)
+      val testApplication1 = anApplicationDataForTest(applicationId1).withCollaborators(asAdmin)
+      val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).withCollaborators(asAdmin)
+      val testApplication3 = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).withCollaborators(asDev)
+
+      await(applicationRepository.save(testApplication1))
+      await(applicationRepository.save(testApplication2))
+      await(applicationRepository.save(testApplication3))
+
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(AdminUserIdQP(userId)))))
+
+      result.size shouldBe 2
+      result should contain.allOf(testApplication1, testApplication2)
+    }
+  }
+
+  "applications by OrganisationId" should {
+    "return two applications that have the same organisationId" in {
+      val applicationId1   = ApplicationId.random
+      val applicationId2   = ApplicationId.random
+      val applicationId3   = ApplicationId.random
+      val prodApplication1 = anApplicationDataForTest(applicationId1, prodClientId = ClientId("aaa")).copy(organisationId = Some(organisationIdOne))
+      val prodApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).copy(organisationId = Some(organisationIdOne))
+      val prodApplication3 = anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).copy(organisationId = None)
+
+      await(applicationRepository.save(prodApplication1))
+      await(applicationRepository.save(prodApplication2))
+      await(applicationRepository.save(prodApplication3))
+
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(OrganisationIdQP(organisationIdOne)))))
+
+      result.size shouldBe 2
+      result.foreach(
+        _.organisationId shouldBe Some(organisationIdOne)
+      )
+    }
+  }
+
   "single app query with state history" in {
     import LaxEmailAddress.StringSyntax
 
@@ -747,6 +748,80 @@ class ApplicationQueriesISpec
       applicationRepository.fetchBySingleApplicationQuery(ApplicationQuery.ById(application.id, Nil, wantSubscriptions = true, wantStateHistory = true))
     )
     queriedApp.value.stateHistory.value shouldBe List(stateHistoryData)
+  }
+
+  "application for lambda authoriser" should {
+    trait Setup {
+      val application1 = anApplicationDataForTest(
+        ApplicationId.random,
+        clientIdOne
+      )
+        .withState(appStateProduction)
+
+      val application2 = anApplicationDataForTest(
+        ApplicationId.random,
+        clientIdTwo
+      )
+        .withState(appStateProduction)
+
+      val application3 = anApplicationDataForTest(
+        ApplicationId.random,
+        clientIdThree
+      )
+        .withState(appStateDeleted)
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+    }
+
+    "retrieve the application for a given client id when it has a matching client id" in new Setup {
+      val retrieved = await(applicationRepository.fetchBySingleApplicationQuery(
+        ApplicationQuery.ByClientId(clientIdTwo, true, Nil, wantSubscriptions = true)
+      ))
+
+      inside(retrieved.value) {
+        case QueriedApplicationWithOptionalToken(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
+          maybeSubscriptions.value
+          maybeToken.value
+      }
+    }
+
+    "prove that no server token is exposed when not from lambda authoriser (by client id)" in new Setup {
+      val retrieved = await(applicationRepository.fetchBySingleApplicationQuery(
+        ApplicationQuery.ByClientId(clientIdTwo, false, Nil, wantSubscriptions = true)
+      ))
+
+      inside(retrieved.value) {
+        case QueriedApplicationWithOptionalToken(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
+          maybeSubscriptions.value
+          maybeToken shouldBe None
+      }
+    }
+
+    "retrieve the application for a given server token when it has a matches" in new Setup {
+      val retrieved = await(applicationRepository.fetchBySingleApplicationQuery(
+        ApplicationQuery.ByServerToken(application2.tokens.production.accessToken, true, Nil, wantSubscriptions = true)
+      ))
+
+      inside(retrieved.value) {
+        case QueriedApplicationWithOptionalToken(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
+          maybeSubscriptions.value
+          maybeToken.value
+      }
+    }
+
+    "prove that no server token is exposed when not from lambda authoriser (by server token)" in new Setup {
+      val retrieved = await(applicationRepository.fetchBySingleApplicationQuery(
+        ApplicationQuery.ByServerToken(application2.tokens.production.accessToken, false, Nil, wantSubscriptions = true)
+      ))
+
+      inside(retrieved.value) {
+        case QueriedApplicationWithOptionalToken(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
+          maybeSubscriptions.value
+          maybeToken shouldBe None
+      }
+    }
   }
 
   "general query testing both types of delete restriction" in {

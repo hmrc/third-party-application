@@ -1,7 +1,7 @@
 meta {
-  name: By Client ID
+  name: By Client ID from Gateway
   type: http
-  seq: 11
+  seq: 10
 }
 
 get {
@@ -13,6 +13,10 @@ get {
 params:query {
   clientId: OPZ4ERY15WG6j4dZEko3swJKWEie
   wantSubscriptions: 
+}
+
+headers {
+  X-GATEWAY-USER-AGENT: APIPlatformAuthorizer
 }
 
 settings {
