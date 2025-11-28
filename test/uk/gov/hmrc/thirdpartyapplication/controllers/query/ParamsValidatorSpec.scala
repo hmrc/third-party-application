@@ -23,6 +23,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiIdentifierFixtur
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders
 
 class ParamsValidatorSpec
     extends HmrcSpec
@@ -40,10 +41,11 @@ class ParamsValidatorSpec
     val noSubsParam      = "noSubscriptions" -> Seq()
     val irrelevantHeader = Map("someheadername" -> Seq("bob"))
 
-    val test = (ps: Map[String, Seq[String]], hs: Map[String, Seq[String]]) => ParamsValidator.parseAndValidateParams(ps, hs).toEither
+    def test(ps: Map[String, Seq[String]], hs: Map[String, Seq[String]] = Map.empty, eh: Map[String, String] = Map.empty) =
+      ParamsValidator.parseAndValidateParams(ps, hs, eh).toEither
 
     "work when given a correct applicationId" in {
-      test(Map(appOneParam), Map.empty).value shouldBe List(ApplicationIdQP(applicationIdOne))
+      test(Map(appOneParam)).value shouldBe List(ApplicationIdQP(applicationIdOne))
     }
 
     "work when given a correct applicationId and some irrelevant header" in {
@@ -51,19 +53,27 @@ class ParamsValidatorSpec
     }
 
     "work when given a correct applicationId and only environment header" in {
-      test(Map(appOneParam, envParam), Map.empty).value shouldBe List(ApplicationIdQP(applicationIdOne), EnvironmentQP(Environment.PRODUCTION))
+      test(Map(appOneParam, envParam)).value shouldBe List(ApplicationIdQP(applicationIdOne), EnvironmentQP(Environment.PRODUCTION))
     }
 
     "work when given a correct environment and userId" in {
-      test(Map(userIdParam, envParam), Map.empty).value shouldBe List(UserIdQP(userIdOne), EnvironmentQP(Environment.PRODUCTION))
+      test(Map(userIdParam, envParam)).value shouldBe List(UserIdQP(userIdOne), EnvironmentQP(Environment.PRODUCTION))
+    }
+
+    "work when given an extra header that is the gateway user agent" in {
+      test(Map.empty, Map.empty, Map(HttpHeaders.INTERNAL_USER_AGENT -> "APIPlatformAuthorizer")).value shouldBe List(ApiGatewayUserAgentQP)
+    }
+
+    "work when given an extra header that is just any old user agent" in {
+      test(Map.empty, Map.empty, Map(HttpHeaders.INTERNAL_USER_AGENT -> "Something else")).value shouldBe List(GenericUserAgentQP("Something else"))
     }
 
     "fail for applicationId with pageSize" in {
-      test(Map(appOneParam, pageSizeParam), Map.empty) shouldBe Left(NonEmptyList.one("Cannot mix unique queries with sorting or pagination"))
+      test(Map(appOneParam, pageSizeParam)) shouldBe Left(NonEmptyList.one("Cannot mix unique queries with sorting or pagination"))
     }
 
     "fail for applicationId, clientId, pageSize and two subscription params" in {
-      test(Map(appOneParam, clientIdParam, pageSizeParam, noSubsParam, "context" -> Seq(apiContextOne.toString)), Map.empty) shouldBe
+      test(Map(appOneParam, clientIdParam, pageSizeParam, noSubsParam, "context" -> Seq(apiContextOne.toString))) shouldBe
         Left(NonEmptyList.of(
           "Cannot mix one or more unique query params (serverToken, clientId and applicationId)",
           "Cannot mix unique queries with sorting or pagination",

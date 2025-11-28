@@ -22,9 +22,9 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.services._
 
 object ParamsValidator {
 
-  def parseAndValidateParams(rawQueryParams: Map[String, Seq[String]], rawHeaders: Map[String, Seq[String]]): ErrorsOr[List[Param[_]]] = {
+  def parseAndValidateParams(rawQueryParams: Map[String, Seq[String]], rawHeaders: Map[String, Seq[String]], extraHeaders: Map[String, String]): ErrorsOr[List[Param[_]]] = {
     val queryParams       = QueryParamsValidator.parseParams(rawQueryParams)
-    val headerParams      = HeaderValidator.parseHeaders(rawHeaders)
+    val headerParams      = HeaderValidator.parseHeaders(rawHeaders ++ extraHeaders.map { case (k, v) => k -> Seq(v) })
     val allParamsOrErrors = queryParams combine headerParams
 
     allParamsOrErrors.andThen(allParams => {
