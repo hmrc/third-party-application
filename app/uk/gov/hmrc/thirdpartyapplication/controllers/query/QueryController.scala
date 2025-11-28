@@ -48,8 +48,8 @@ class QueryController @Inject() (
       "message" -> message
     )
 
-  def queryDispatcher() = Action.async { implicit request =>
-    ParamsValidator.parseAndValidateParams(request.queryString, request.headers.toMap)
+  private def parseAndValidate(params: Map[String, Seq[String]], headers: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[Result] = {
+    ParamsValidator.parseAndValidateParams(params, headers, hc.extraHeaders.toMap)
       .fold[Future[Result]](
         nel => Future.successful(BadRequest(asBody("INVALID_QUERY", nel.toList))),
         params => {
@@ -58,13 +58,13 @@ class QueryController @Inject() (
       )
   }
 
+  def queryDispatcher() = Action.async { implicit request =>
+    parseAndValidate(request.queryString, request.headers.toMap)
+  }
+
   def queryPost(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     withJsonBody[Map[String, Seq[String]]] { payload =>
-      ParamsValidator.parseAndValidateParams(payload, request.headers.toMap)
-        .fold[Future[Result]](
-          nel => Future.successful(BadRequest(asBody("INVALID_QUERY", nel.toList))),
-          params => execute(ApplicationQuery.attemptToConstructQuery(params))
-        )
+      parseAndValidate(payload, request.headers.toMap)
     }
   }
 
