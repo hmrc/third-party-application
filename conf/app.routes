@@ -3,7 +3,7 @@
 GET           /developer/applications                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.queryDispatcher()
 POST          /collaborators                                         uk.gov.hmrc.thirdpartyapplication.controllers.CollaboratorController.searchCollaborators()
 
-GET           /applications                                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.searchApplications()
+#GET           /applications                                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.searchApplications()
 
 GET           /application                                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.queryDispatcher()
 GET           /application/subscriptions                             uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllAPISubscriptions()
@@ -16,7 +16,7 @@ PATCH         /application/:id/dispatch                              uk.gov.hmrc
 GET           /application/:id/access/scopes                         uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.readScopes(id: ApplicationId)
 GET           /application/:id/access/overrides                      uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.readOverrides(id: ApplicationId)
 
-GET           /application/:id/credentials                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchCredentials(id: ApplicationId)
+#GET           /application/:id/credentials                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchCredentials(id: ApplicationId)
 POST          /application/credentials/validate                      uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.validateCredentials()
 POST          /application/name/validate                             uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.validateApplicationName()
 
@@ -31,12 +31,12 @@ POST          /verify-uplift/:code                                   uk.gov.hmrc
 POST          /responsible-ind-or-admin/applications                 uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.getAppsForResponsibleIndividualOrAdmin()
 
 # Gatekeeper ONLY routes
-GET           /gatekeeper/applications                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppsForGatekeeper()
-GET           /gatekeeper/application/:id                            uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppById(id: ApplicationId)
-GET           /gatekeeper/application/:id/stateHistory               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistoryById(id: ApplicationId)
+#GET           /gatekeeper/applications                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppsForGatekeeper()
+#GET           /gatekeeper/application/:id                            uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppById(id: ApplicationId)
+#GET           /gatekeeper/application/:id/stateHistory               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistoryById(id: ApplicationId)
 GET           /gatekeeper/applications/stateHistory                  uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistories()
-GET           /gatekeeper/applications/subscriptions                 uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAllAppsWithSubscriptions()
-GET           /gatekeeper/developer/:userId/applications             uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAllForCollaborator(userId: UserId)
+#GET           /gatekeeper/applications/subscriptions                 uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAllAppsWithSubscriptions()
+#GET           /gatekeeper/developer/:userId/applications             uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAllForCollaborator(userId: UserId)
 POST          /gatekeeper/application/:id/delete                     uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.deleteApplication(id: ApplicationId)
 
 POST          /application/:id/check-information                     uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCheck(id: ApplicationId)
@@ -44,7 +44,7 @@ POST          /application/:id/check-information                     uk.gov.hmrc
 GET           /apis/*context/versions/:version/subscribers           uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscribers(context: ApiContext, version: ApiVersionNbr)
 DELETE        /apis/*context/versions/:version/subscribers           uk.gov.hmrc.thirdpartyapplication.controllers.PublisherController.deleteSubscribers(context: ApiContext, version: ApiVersionNbr)
 GET           /developer/:developerId/subscriptions                  uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscriptionsForDeveloper(developerId: UserId)
-GET           /developer/:userId/applications                        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllForCollaborator(userId: UserId)
+#GET           /developer/:userId/applications                        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllForCollaborator(userId: UserId)
 POST          /developer/applications                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllForCollaborators()
 
 POST          /admin/application/restore-aws-data                    uk.gov.hmrc.thirdpartyapplication.controllers.AwsRestoreController.restoreAwsData()

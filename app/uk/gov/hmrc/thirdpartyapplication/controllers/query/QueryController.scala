@@ -52,7 +52,9 @@ class QueryController @Inject() (
     ParamsValidator.parseAndValidateParams(request.queryString, request.headers.toMap)
       .fold[Future[Result]](
         nel => Future.successful(BadRequest(asBody("INVALID_QUERY", nel.toList))),
-        params => execute(ApplicationQuery.attemptToConstructQuery(params))
+        params => {
+          execute(ApplicationQuery.attemptToConstructQuery(params))
+        }
       )
   }
 
