@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
@@ -53,12 +53,6 @@ class GatekeeperController @Inject() (
     with OnlyStrideGatekeeperRoleAuthoriseAction
     with TermsOfUseInvitationActionBuilders
     with WarnStillInUse {
-
-  def fetchAllAppsWithSubscriptions(): Action[AnyContent] = warnStillInUse("fetchAllAppsWithSubscriptions") {
-    anyAuthenticatedUserAction {
-      _ => gatekeeperService.fetchAllWithSubscriptions() map { apps => Ok(Json.toJson(apps)) } recover recovery
-    }
-  }
 
   def fetchAppStateHistories() = anyAuthenticatedUserAction { _ =>
     gatekeeperService.fetchAppStateHistories() map (histories => Ok(Json.toJson(histories))) recover recovery

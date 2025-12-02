@@ -20,14 +20,14 @@ import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, _}
-import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, StoredApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -60,18 +60,6 @@ class GatekeeperService @Inject() (
       _ <- applicationService.deleteApplication(applicationId, Some(request), audit)
     } yield Deleted
 
-  }
-
-  def fetchAllWithSubscriptions(): Future[List[GatekeeperAppSubsResponse]] = {
-    applicationRepository.getAppsWithSubscriptions
-  }
-
-  private def fetchApp(applicationId: ApplicationId): Future[StoredApplication] = {
-    lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId}")
-    applicationRepository.fetch(applicationId).flatMap {
-      case None      => Future.failed(notFoundException)
-      case Some(app) => Future.successful(app)
-    }
   }
 
   val unit: Unit = ()

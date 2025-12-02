@@ -712,30 +712,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
-  // TODO - probably
-  def getAppsWithSubscriptions: Future[List[GatekeeperAppSubsResponse]] = {
-    implicit val readsGatekeeperAppSubsResponse: Reads[GatekeeperAppSubsResponse] = Json.reads[GatekeeperAppSubsResponse]
-
-    timeFuture("Applications with Subscription", "application.repository.getAppsWithSubscriptions") {
-      val pipeline = Seq(
-        lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis"),
-        unwind("$subscribedApis"),
-        group(
-          Document("id" -> "$id", "name" -> "$name"),
-          Accumulators.first("id", "$id"),
-          Accumulators.first("name", "$name"),
-          Accumulators.first("lastAccess", "$lastAccess"),
-          Accumulators.addToSet("apiIdentifiers", "$subscribedApis.apiIdentifier")
-        )
-      )
-
-      collection.aggregate[BsonValue](pipeline)
-        .map(Codecs.fromBson[GatekeeperAppSubsResponse])
-        .toFuture()
-        .map(_.toList)
-    }
-  }
-
   import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
 
   private val subscriptionsLookup: Bson =

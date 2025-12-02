@@ -45,7 +45,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServ
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule, QueryServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
-import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, TermsOfUseInvitation}
+import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.util._
@@ -162,34 +162,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
     }
   }
 
-  "fetchAllAppsWithSubscriptions" should {
-    val expected = List(
-      GatekeeperAppSubsResponse(ApplicationId.random, ApplicationName("Application Name"), None, Set())
-    )
-
-    "return app with subs for Stride GK User" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.fetchAllWithSubscriptions()).thenReturn(successful(expected))
-
-      val result = underTest.fetchAllAppsWithSubscriptions()(request)
-
-      status(result) shouldBe 200
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-
-    "return app with subs for LDAP GK User" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.fetchAllWithSubscriptions()).thenReturn(successful(expected))
-
-      val result = underTest.fetchAllAppsWithSubscriptions()(request)
-
-      status(result) shouldBe 200
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-  }
   "fetchAllForCollaborator" should {
     val userId                                                    = UserId.random
     val standardApplicationResponse: ApplicationWithSubscriptions = standardApp.withSubscriptions(Set.empty)

@@ -74,28 +74,6 @@ class GatekeeperServiceSpec
     when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
   }
 
-  "fetchAllWithSubscriptions" should {
-
-    "return no matching applications if application has a subscription" in new Setup {
-      ApplicationRepoMock.GetAppsWithSubscriptions.thenReturnNone()
-
-      val result: List[GatekeeperAppSubsResponse] = await(underTest.fetchAllWithSubscriptions())
-
-      result.size shouldBe 0
-    }
-
-    "return applications when there are no matching subscriptions" in new Setup {
-      private val appWithSubs: GatekeeperAppSubsResponse =
-        GatekeeperAppSubsResponse(id = ApplicationId.random, name = ApplicationName("name"), lastAccess = None, apiIdentifiers = Set())
-      ApplicationRepoMock.GetAppsWithSubscriptions.thenReturn(appWithSubs)
-
-      val result: List[GatekeeperAppSubsResponse] = await(underTest.fetchAllWithSubscriptions())
-
-      result.size shouldBe 1
-      result shouldBe List(appWithSubs)
-    }
-  }
-
   "fetchAppStateHistories" should {
     "return correct state history values" in new Setup {
       val appId1   = ApplicationId.random
