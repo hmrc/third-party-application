@@ -37,7 +37,6 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationSearch
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util._
 
@@ -127,13 +126,6 @@ class ApplicationRepositorySerialisationISpec
       }
       case None              => fail()
     }
-
-    val applicationSearch = new ApplicationSearch(filters = List())
-    val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
-
-    appSearchResult.applications.size shouldBe 1
-    appSearchResult.applications.head.id shouldBe applicationId
-    appSearchResult.applications.head.details.grantLength shouldBe GrantLength.EIGHTEEN_MONTHS
   }
 
   "create application with grantLength 1 day but no refreshTokensAvailableFor. refreshTokensAvailableFor is read back as 1 day " in new Setup {
@@ -148,13 +140,6 @@ class ApplicationRepositorySerialisationISpec
       }
       case None              => fail()
     }
-
-    val applicationSearch = new ApplicationSearch(filters = List())
-    val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
-
-    appSearchResult.applications.size shouldBe 1
-    appSearchResult.applications.head.id shouldBe applicationId
-    appSearchResult.applications.head.details.grantLength shouldBe GrantLength.ONE_DAY
   }
 
   "create application with no grantLength but refreshTokensAvailableFor 1 month. refreshTokensAvailableFor is read back as 1 month " in new Setup {
@@ -169,13 +154,6 @@ class ApplicationRepositorySerialisationISpec
       }
       case None              => fail()
     }
-
-    val applicationSearch = new ApplicationSearch(filters = List())
-    val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
-
-    appSearchResult.applications.size shouldBe 1
-    appSearchResult.applications.head.id shouldBe applicationId
-    appSearchResult.applications.head.details.grantLength shouldBe GrantLength.ONE_MONTH
   }
 
   "create application with grantLength 1 day and refreshTokensAvailableFor 1 month. refreshTokensAvailableFor is read back as 1 month " in new Setup {
@@ -190,13 +168,6 @@ class ApplicationRepositorySerialisationISpec
       }
       case None              => fail()
     }
-
-    val applicationSearch = new ApplicationSearch(filters = List())
-    val appSearchResult   = await(applicationRepository.searchApplications("testing")(applicationSearch))
-
-    appSearchResult.applications.size shouldBe 1
-    appSearchResult.applications.head.id shouldBe applicationId
-    appSearchResult.applications.head.details.grantLength shouldBe GrantLength.ONE_MONTH
   }
 
   "successfully remove old grantLength attribute when grantLength 1 day and refreshTokensAvailableFor 1 month" in new Setup {
@@ -224,5 +195,4 @@ class ApplicationRepositorySerialisationISpec
     val rawAppStillWithoutOldGrantLength = fetchApplicationRawJson(applicationId)
     validateGrantLength(rawAppStillWithoutOldGrantLength, false)
   }
-
 }

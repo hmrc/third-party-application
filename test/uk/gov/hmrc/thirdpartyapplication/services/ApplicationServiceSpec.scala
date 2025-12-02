@@ -757,41 +757,6 @@ class ApplicationServiceSpec
     }
   }
 
-  "Search" should {
-    "return results based on provided ApplicationSearch" in new Setup {
-      val standardApplicationData: StoredApplication   = storedApp.copy(id = ApplicationId.random, access = Access.Standard())
-      val privilegedApplicationData: StoredApplication = storedApp.copy(id = ApplicationId.random, access = Access.Privileged())
-      val ropcApplicationData: StoredApplication       = storedApp.copy(id = ApplicationId.random, access = Access.Ropc())
-
-      val search = ApplicationSearch(
-        pageNumber = 2,
-        pageSize = 5
-      )
-
-      ApplicationRepoMock.SearchApplications.thenReturn(
-        PaginatedApplications(
-          List(
-            standardApplicationData.asAppWithCollaborators,
-            privilegedApplicationData.asAppWithCollaborators,
-            ropcApplicationData.asAppWithCollaborators
-          ),
-          2,
-          5,
-          3,
-          3
-        )
-      )
-      val histories = List(aHistory(standardApplicationData.id), aHistory(privilegedApplicationData.id), aHistory(ropcApplicationData.id))
-      StateHistoryRepoMock.FetchDeletedByApplicationIds.thenReturnWhen(List(standardApplicationData.id, privilegedApplicationData.id, ropcApplicationData.id))(histories: _*)
-
-      val result: PaginatedApplications = await(underTest.searchApplications(search))
-
-      result.total shouldBe 3
-      result.matching shouldBe 3
-      result.applications.size shouldBe 3
-    }
-  }
-
   "getAppsForResponsibleIndividualOrAdmin" should {
     "fetch all applications for an email" in new Setup {
       val email        = LaxEmailAddress("john.doe@example.com")
@@ -840,9 +805,5 @@ class ApplicationServiceSpec
       adminTwo.emailAddress.text,
       ApplicationId.random
     )
-  }
-
-  private def aHistory(appId: ApplicationId, state: State = State.DELETED): StateHistory = {
-    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(State.TESTING), changedAt = instant)
   }
 }

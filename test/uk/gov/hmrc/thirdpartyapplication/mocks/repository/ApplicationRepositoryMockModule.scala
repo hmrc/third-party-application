@@ -180,12 +180,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.updateApplicationGrantLength(eqTo(applicationId), eqTo(newGrantLength))).thenReturn(successful(updatedApplicationData))
     }
 
-    object SearchApplications {
-
-      def thenReturn(data: PaginatedApplications) =
-        when(aMock.searchApplications(*)(*)).thenReturn(successful(data))
-    }
-
     object ProcessAll {
 
       def thenReturn() = {

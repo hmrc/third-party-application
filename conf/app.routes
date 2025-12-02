@@ -3,8 +3,6 @@
 GET           /developer/applications                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.queryDispatcher()
 POST          /collaborators                                         uk.gov.hmrc.thirdpartyapplication.controllers.CollaboratorController.searchCollaborators()
 
-#GET           /applications                                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.searchApplications()
-
 GET           /application                                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.queryDispatcher()
 GET           /application/subscriptions                             uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllAPISubscriptions()
 

@@ -50,7 +50,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, Qu
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.asAppWithCollaborators
-import uk.gov.hmrc.thirdpartyapplication.models.{ConfirmSetupCompleteRequest, DeleteApplicationRequest, ValidationRequest, _}
+import uk.gov.hmrc.thirdpartyapplication.models.{ConfirmSetupCompleteRequest, DeleteApplicationRequest, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -714,32 +714,6 @@ class ApplicationControllerSpec
       val result = underTest.fetchAllAPISubscriptions()(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-  }
-
-  "Search" should {
-    "pass an ApplicationSearch object to applicationService" in new Setup {
-      val req: FakeRequest[AnyContentAsEmpty.type] =
-        FakeRequest("GET", "/applications?apiSubscriptions=ANYSUB&page=1&pageSize=100")
-          .withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
-
-      // scalastyle:off magic.number
-      when(underTest.applicationService.searchApplications(any[ApplicationSearch]))
-        .thenReturn(Future(PaginatedApplications(applications = List.empty, page = 1, pageSize = 100, total = 0, matching = 0)))
-
-      val result = underTest.searchApplications(req)
-
-      status(result) shouldBe OK
-    }
-
-    "return BAD REQUEST if date/time cannot be parsed for lastUseBefore query parameter" in new Setup {
-      val req: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/applications?lastUseBefore=foo")
-
-      val result = underTest.searchApplications(req)
-
-      verifyZeroInteractions(ApplicationServiceMock.aMock)
-
-      status(result) shouldBe BAD_REQUEST
     }
   }
 

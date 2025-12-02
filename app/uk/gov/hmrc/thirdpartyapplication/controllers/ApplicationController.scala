@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 
 import cats.data.OptionT
 
@@ -215,15 +214,6 @@ class ApplicationController @Inject() (
         case ("noSubscriptions" :: _, _) => queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByNoSubscriptions).map(apps => Ok(Json.toJson(apps)))
 
         case _ => successful(Redirect(uk.gov.hmrc.thirdpartyapplication.controllers.query.routes.QueryController.queryDispatcher().url, request.queryString))
-      }
-    }
-  }
-
-  def searchApplications = warnStillInUse("searchApplications") {
-    Action.async { implicit request =>
-      Try(ApplicationSearch.fromQueryString(request.queryString)) match {
-        case Success(applicationSearch) => applicationService.searchApplications(applicationSearch).map(apps => Ok(toJson(apps))) recover recovery
-        case Failure(e)                 => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, e.getMessage)))
       }
     }
   }

@@ -220,25 +220,6 @@ class ApplicationService @Inject() (
     OptionT(applicationRepository.fetch(applicationId))
       .map(application => application.asAppWithCollaborators)
 
-  def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplications] = {
-
-    def buildApplication(app: ApplicationWithCollaborators, stateHistory: Option[StateHistory]) = {
-      app.modify(_.copy(lastActionActor = stateHistory.map(sh => ActorType.actorType(sh.actor)).getOrElse(ActorType.UNKNOWN)))
-    }
-
-    val applicationsResponse: Future[PaginatedApplications] = applicationRepository.searchApplications("applicationSearch")(applicationSearch)
-    val appHistory: Future[List[StateHistory]]              =
-      applicationsResponse
-        .map(data => data.applications.map(app => app.id))
-        .flatMap(id => stateHistoryRepository.fetchDeletedByApplicationIds(id))
-
-    applicationsResponse.zipWith(appHistory) {
-      case (data, appHistory) => data.copy(
-          applications = data.applications.map(app => buildApplication(app, appHistory.find(ah => ah.applicationId == app.id)))
-        )
-    }
-  }
-
   def getAppsForResponsibleIndividualOrAdmin(emailAddress: LaxEmailAddress): Future[List[ApplicationWithCollaborators]] = {
     applicationRepository.getAppsForResponsibleIndividualOrAdmin(emailAddress).map(_.map(application => StoredApplication.asAppWithCollaborators(application)))
   }
