@@ -32,11 +32,10 @@ import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationServiceMockModule, StrideGatekeeperRoleAuthorisationServiceMockModule}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -159,34 +158,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
 
       status(result) shouldBe 200
       contentAsJson(result) shouldBe Json.toJson(expectedAppStateHistories)
-    }
-  }
-
-  "fetchAllForCollaborator" should {
-    val userId                                                    = UserId.random
-    val standardApplicationResponse: ApplicationWithSubscriptions = standardApp.withSubscriptions(Set.empty)
-    val expectedQry                                               = ApplicationQueries.applicationsByUserId(userId, true)
-    "succeed with a 200 when applications are found for the collaborator by user id" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubsFor(expectedQry, standardApplicationResponse)
-
-      status(underTest.fetchAllForCollaborator(userId)(request)) shouldBe OK
-    }
-
-    "succeed with a 200 when no applications are found for the collaborator by user id" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsNoAppsFor(expectedQry)
-
-      val result = underTest.fetchAllForCollaborator(userId)(request)
-
-      status(result) shouldBe OK
-      contentAsString(result) shouldBe "[]"
-    }
-
-    "fail with a 500 when an exception is thrown" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenFails(new RuntimeException("Expected test failure"))
-
-      val result = underTest.fetchAllForCollaborator(userId)(request)
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 

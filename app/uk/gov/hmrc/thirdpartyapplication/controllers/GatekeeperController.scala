@@ -24,7 +24,6 @@ import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -56,13 +55,6 @@ class GatekeeperController @Inject() (
 
   def fetchAppStateHistories() = anyAuthenticatedUserAction { _ =>
     gatekeeperService.fetchAppStateHistories() map (histories => Ok(Json.toJson(histories))) recover recovery
-  }
-
-  def fetchAllForCollaborator(userId: UserId) = warnStillInUse("fetchAllForCollaborator") {
-    Action.async {
-      queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = true))
-        .map(apps => Ok(Json.toJson(apps))) recover recovery
-    }
   }
 
   def deleteApplication(id: ApplicationId) =
