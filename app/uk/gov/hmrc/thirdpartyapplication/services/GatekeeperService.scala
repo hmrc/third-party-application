@@ -25,8 +25,6 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, StoredApplication}
@@ -46,27 +44,6 @@ class GatekeeperService @Inject() (
     val clock: Clock
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
-
-  def fetchNonTestingAppsWithSubmittedDate(): Future[List[ApplicationWithUpliftRequest]] = {
-    def appError(applicationId: ApplicationId) = new InconsistentDataState(s"App not found for id: ${applicationId}")
-
-    def historyError(applicationId: ApplicationId) = new InconsistentDataState(s"History not found for id: ${applicationId}")
-
-    def latestUpliftRequestState(histories: List[StateHistory]) = {
-      for ((id, history) <- histories.groupBy(_.applicationId))
-        yield id -> history.maxBy(_.changedAt)
-    }
-
-    val appsFuture         = queryService.fetchApplicationsByQuery(ApplicationQueries.standardNonTestingApps)
-    val stateHistoryFuture = stateHistoryRepository.fetchByState(State.PENDING_GATEKEEPER_APPROVAL)
-    for {
-      apps      <- appsFuture.map(_.map(_.asAppWithCollaborators))
-      appIds     = apps.map(_.id)
-      histories <- stateHistoryFuture.map(_.filter(h => appIds.contains(h.applicationId)))
-      appsMap    = apps.groupBy(_.id).view.mapValues(_.head).toMap
-      historyMap = latestUpliftRequestState(histories)
-    } yield DataUtil.zipper(appsMap, historyMap, ApplicationWithUpliftRequest.create, appError, historyError)
-  }
 
   def fetchAppWithHistory(applicationId: ApplicationId): Future[ApplicationWithHistoryResponse] = {
     for {

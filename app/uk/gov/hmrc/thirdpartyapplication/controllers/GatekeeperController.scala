@@ -54,14 +54,6 @@ class GatekeeperController @Inject() (
     with TermsOfUseInvitationActionBuilders
     with WarnStillInUse {
 
-  def fetchAppsForGatekeeper = warnStillInUse("fetchAppsForGatekeeper") {
-    anyAuthenticatedUserAction { loggedInRequest =>
-      gatekeeperService.fetchNonTestingAppsWithSubmittedDate() map {
-        apps => Ok(Json.toJson(apps))
-      } recover recovery
-    }
-  }
-
   def fetchAllAppsWithSubscriptions(): Action[AnyContent] = warnStillInUse("fetchAllAppsWithSubscriptions") {
     anyAuthenticatedUserAction {
       _ => gatekeeperService.fetchAllWithSubscriptions() map { apps => Ok(Json.toJson(apps)) } recover recovery

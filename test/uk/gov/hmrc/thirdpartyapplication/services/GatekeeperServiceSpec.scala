@@ -83,23 +83,6 @@ class GatekeeperServiceSpec
     when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
   }
 
-  "fetch nonTestingApps with submitted date" should {
-
-    "return apps" in new Setup {
-      val app1     = storedApp.withId(ApplicationId.random).asAppWithCollaborators
-      val app2     = storedApp.withId(ApplicationId.random).asAppWithCollaborators
-      val history1 = aHistory(app1.id)
-      val history2 = aHistory(app2.id)
-
-      QueryServiceMock.FetchApplicationsByQuery.thenReturns(app1, app2)
-      StateHistoryRepoMock.FetchLatestByState.thenReturnWhen(State.PENDING_GATEKEEPER_APPROVAL)(history1, history2)
-
-      val result = await(underTest.fetchNonTestingAppsWithSubmittedDate())
-
-      result should contain theSameElementsAs List(ApplicationWithUpliftRequest.create(app1, history1), ApplicationWithUpliftRequest.create(app2, history2))
-    }
-  }
-
   "fetch application with history" should {
     val appId = ApplicationId.random
 

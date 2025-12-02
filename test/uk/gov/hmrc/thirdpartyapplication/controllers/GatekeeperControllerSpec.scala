@@ -123,42 +123,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
     )
   }
 
-  "Fetch apps" should {
-    "fails with unauthorised when the user is not authorised" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-
-      val result = underTest.fetchAppsForGatekeeper(request)
-
-      status(result) shouldBe UNAUTHORIZED
-
-      verifyZeroInteractions(mockGatekeeperService)
-    }
-
-    "return apps for stride role" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      val expected = List(anAppResult(), anAppResult(state = appStateProduction))
-      when(mockGatekeeperService.fetchNonTestingAppsWithSubmittedDate()).thenReturn(successful(expected))
-
-      val result = underTest.fetchAppsForGatekeeper(request)
-
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-
-    "return apps for ldap role" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      val expected = List(anAppResult(), anAppResult(state = appStateProduction))
-      when(mockGatekeeperService.fetchNonTestingAppsWithSubmittedDate()).thenReturn(successful(expected))
-
-      val result = underTest.fetchAppsForGatekeeper(request)
-
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-  }
-
   "Fetch app by id" should {
     val appId = ApplicationId.random
 
@@ -373,10 +337,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
 
   private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
     StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, instant)
-  }
-
-  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: Instant = instant, state: ApplicationState = appStateTesting) = {
-    ApplicationWithUpliftRequest(id, ApplicationName("app 1"), submittedOn, state.name)
   }
 
   private def anAppResponse(appId: ApplicationId) = {
