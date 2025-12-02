@@ -287,13 +287,6 @@ class ApplicationController @Inject() (
     }
   }
 
-  def fetchAllForCollaborator(userId: UserId) = warnStillInUse("fetchAllForCollaborator") {
-    Action.async {
-      queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false, wantSubscriptions = true))
-        .map(apps => Ok(toJson(apps))) recover recovery
-    }
-  }
-
   private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment) = {
     queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserIdAndEnvironment(userId, environment, wantSubscriptions = true))
       .map(apps => Ok(toJson(apps))) recover recovery
