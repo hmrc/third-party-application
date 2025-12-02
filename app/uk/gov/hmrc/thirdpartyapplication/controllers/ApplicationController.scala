@@ -34,7 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Eithe
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQueries, ApplicationQuery}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -133,13 +133,6 @@ class ApplicationController @Inject() (
     handleOptionT(applicationService.fetch(applicationId))
   }
 
-  // TODO - repoint users of this as fetch application and access via details.token
-  def fetchCredentials(applicationId: ApplicationId) = warnStillInUse("fetchCredentials") {
-    Action.async { implicit request =>
-      handleOption(queryService.fetchSingleApplicationByQuery(ApplicationQuery.ById(applicationId, List.empty, false, false, false)).map(_.map(_.details.token)))
-    }
-  }
-
 // TODO remove
   def fixCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[FixCollaboratorRequest] { fixCollaboratorRequest =>
@@ -169,13 +162,6 @@ class ApplicationController @Inject() (
           .map(r => Ok(Json.toJson(r)))
       } recover recovery
     }
-
-  private def handleOption[T](future: Future[Option[T]])(implicit writes: Writes[T]): Future[Result] = {
-    future.map {
-      case Some(v) => Ok(toJson(v))
-      case None    => handleNotFound("No application was found")
-    } recover recovery
-  }
 
   private def handleOptionT[T](opt: OptionT[Future, T])(implicit writes: Writes[T]): Future[Result] = {
     opt.fold(handleNotFound("No application was found"))(v => Ok(toJson(v)))

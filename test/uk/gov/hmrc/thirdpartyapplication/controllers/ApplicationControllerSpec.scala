@@ -216,35 +216,6 @@ class ApplicationControllerSpec
     }
   }
 
-  "fetch credentials" should {
-
-    "succeed with a 200 (ok) when the application exists for the given id" in new Setup {
-      QueryServiceMock.FetchSingleApplicationByQuery.thenReturns(standardApp.modify(_.copy(token = credentialServiceResponseToken)))
-
-      val result = underTest.fetchCredentials(applicationId)(request)
-
-      status(result) shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(credentialServiceResponseToken)
-    }
-
-    "fail with a 404 (not found) when no application exists for the given id" in new Setup {
-      QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsNone()
-
-      val result = underTest.fetchCredentials(applicationId)(request)
-
-      verifyErrorResult(result, NOT_FOUND, common.ErrorCode.APPLICATION_NOT_FOUND)
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      QueryServiceMock.FetchSingleApplicationByQuery.thenFails(new RuntimeException("Expected test failure"))
-
-      val result = underTest.fetchCredentials(applicationId)(request)
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-
-  }
-
   "confirmSetupComplete" should {
     "call applicationService correctly" in new Setup {
       val applicationId               = ApplicationId.random
