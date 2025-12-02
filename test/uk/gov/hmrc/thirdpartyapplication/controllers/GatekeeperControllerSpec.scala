@@ -29,7 +29,7 @@ import org.apache.pekko.stream.testkit.NoMaterializer
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, AnyContentAsJson, RequestHeader, Result}
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
@@ -121,59 +121,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
       "code"    -> common.ErrorCode.FORBIDDEN.toString,
       "message" -> "Insufficient enrolments"
     )
-  }
-
-  "Fetch app by id" should {
-    val appId = ApplicationId.random
-
-    "fails with unauthorised when the user is not authorised" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-
-      val result = underTest.fetchAppById(appId)(request)
-
-      status(result) shouldBe UNAUTHORIZED
-
-      verifyZeroInteractions(mockGatekeeperService)
-    }
-
-    "return app with history for LDAP user" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-      val expected = ApplicationWithHistoryResponse(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
-
-      when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
-
-      val result = underTest.fetchAppById(appId)(request)
-
-      status(result) shouldBe 200
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-
-    "return app with history for Gatekeeper user" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      val expected = ApplicationWithHistoryResponse(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
-
-      when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
-
-      val result = underTest.fetchAppById(appId)(request)
-
-      status(result) shouldBe 200
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-
-    "return 404 if the application doesn't exist" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.fetchAppWithHistory(appId))
-        .thenReturn(failed(new NotFoundException("application doesn't exist")))
-
-      val result = underTest.fetchAppById(appId)(request)
-
-      verifyErrorResult(result, 404, common.ErrorCode.APPLICATION_NOT_FOUND)
-    }
   }
 
   "fetchAppStateHistoryById" should {
@@ -337,9 +284,5 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
 
   private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
     StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, instant)
-  }
-
-  private def anAppResponse(appId: ApplicationId) = {
-    ApplicationWithCollaboratorsData.standardApp
   }
 }

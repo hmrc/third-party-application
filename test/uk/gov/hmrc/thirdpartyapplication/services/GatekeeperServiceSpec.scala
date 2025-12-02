@@ -22,7 +22,7 @@ import scala.concurrent.Future.successful
 import org.mockito.Strictness
 import org.scalatest.BeforeAndAfterAll
 
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress}
@@ -81,42 +81,6 @@ class GatekeeperServiceSpec
     when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
-  }
-
-  "fetch application with history" should {
-    val appId = ApplicationId.random
-
-    "return app" in new Setup {
-      val app1    = storedApp.withId(appId)
-      val history = List(aHistory(app1.id), aHistory(app1.id, State.PRODUCTION))
-
-      ApplicationRepoMock.Fetch.thenReturn(app1)
-      StateHistoryRepoMock.FetchByApplicationId.thenReturnWhen(appId)(history: _*)
-
-      val result = await(underTest.fetchAppWithHistory(appId))
-
-      result shouldBe ApplicationWithHistoryResponse(app1.asAppWithCollaborators, history.map(StateHistoryResponse.from))
-    }
-
-    "throw not found exception" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturnNone()
-
-      intercept[NotFoundException](await(underTest.fetchAppWithHistory(appId)))
-    }
-
-    "propagate the exception when the app repository fail" in new Setup {
-      ApplicationRepoMock.Fetch.thenFail(new RuntimeException("Expected test failure"))
-
-      intercept[RuntimeException](await(underTest.fetchAppWithHistory(appId)))
-    }
-
-    "propagate the exception when the history repository fail" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(storedApp.withId(appId))
-      StateHistoryRepoMock.FetchByApplicationId.thenFailWith(new RuntimeException("Expected test failure"))
-
-      intercept[RuntimeException](await(underTest.fetchAppWithHistory(appId)))
-    }
-
   }
 
   "fetchAppStateHistoryById" should {

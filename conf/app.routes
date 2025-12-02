@@ -28,7 +28,6 @@ POST          /verify-uplift/:code                                   uk.gov.hmrc
 POST          /responsible-ind-or-admin/applications                 uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.getAppsForResponsibleIndividualOrAdmin()
 
 # Gatekeeper ONLY routes
-#GET           /gatekeeper/application/:id                            uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppById(id: ApplicationId)
 #GET           /gatekeeper/application/:id/stateHistory               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistoryById(id: ApplicationId)
 GET           /gatekeeper/applications/stateHistory                  uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistories()
 #GET           /gatekeeper/applications/subscriptions                 uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAllAppsWithSubscriptions()

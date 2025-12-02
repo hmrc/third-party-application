@@ -45,15 +45,6 @@ class GatekeeperService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
-  def fetchAppWithHistory(applicationId: ApplicationId): Future[ApplicationWithHistoryResponse] = {
-    for {
-      app     <- fetchApp(applicationId)
-      history <- stateHistoryRepository.fetchByApplicationId(applicationId)
-    } yield {
-      ApplicationWithHistoryResponse(app.asAppWithCollaborators, history.map(StateHistoryResponse.from))
-    }
-  }
-
   def fetchAppStateHistoryById(id: ApplicationId): Future[List[StateHistoryResponse]] = {
     for {
       history <- stateHistoryRepository.fetchByApplicationId(id)
