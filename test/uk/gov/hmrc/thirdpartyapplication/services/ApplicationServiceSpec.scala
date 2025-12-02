@@ -47,8 +47,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreationAccess,
   StandardAccessDataToCopy
 }
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{ExcludeDeletedQP, UserIdsQP}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateLoginRedirectUris
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.mocks.ApiSubscriptionFieldsConnectorMockModule
@@ -577,39 +575,6 @@ class ApplicationServiceSpec
         ),
         collaborators = data.collaborators
       ))
-    }
-  }
-
-  "fetchAllForCollaborators" should {
-    "fetch all applications for two given collaborator user ids" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(userIdOne)), ExcludeDeletedQP)), standardApp)
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(userIdTwo)), ExcludeDeletedQP)), standardApp2)
-
-      val result = await(underTest.fetchAllForCollaborators(List(userIdOne, userIdTwo), 1))
-      result should contain theSameElementsAs List(standardApp, standardApp2)
-    }
-
-    "fetch all applications for two given collaborator user ids in one batch" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(
-        ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(userIdOne, userIdTwo)), ExcludeDeletedQP)),
-        standardApp,
-        standardApp2
-      )
-
-      val result = await(underTest.fetchAllForCollaborators(List(userIdOne, userIdTwo), 2))
-      result should contain theSameElementsAs List(standardApp, standardApp2)
-    }
-
-    "deduplicate applications if more than one user belongs to the same application" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(userIdOne)), ExcludeDeletedQP)), standardApp)
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(
-        ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(userIdTwo)), ExcludeDeletedQP)),
-        standardApp,
-        standardApp2
-      )
-
-      val result = await(underTest.fetchAllForCollaborators(List(userIdOne, userIdTwo), 1))
-      result should contain theSameElementsAs List(standardApp, standardApp2)
     }
   }
 

@@ -171,14 +171,6 @@ class ApplicationController @Inject() (
     }
   }
 
-  def fetchAllForCollaborators(): Action[JsValue] = warnStillInUse("fetchAllForCollaborators") {
-    Action.async(parse.json) { implicit request =>
-      withJsonBody[CollaboratorUserIds] { request =>
-        applicationService.fetchAllForCollaborators(request.userIds).map(apps => Ok(toJson(apps))) recover recovery
-      }
-    }
-  }
-
   def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async((request: Request[play.api.mvc.AnyContent]) =>
     subscriptionService.fetchAllSubscriptions()
       .map(subs => Ok(toJson(subs))) recover recovery
