@@ -24,7 +24,6 @@ import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
@@ -44,14 +43,6 @@ class GatekeeperServiceSpec
     with FixedClock {
 
   private val bobTheGKUser = Actors.GatekeeperUser("bob")
-
-  private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL): StateHistory = {
-    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(State.TESTING), changedAt = instant)
-  }
-
-  private def aStateHistoryResponse(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, instant)
-  }
 
   trait Setup extends AuditServiceMockModule
       with QueryServiceMockModule
@@ -81,23 +72,6 @@ class GatekeeperServiceSpec
     when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
-  }
-
-  "fetchAppStateHistoryById" should {
-    val appId = ApplicationId.random
-
-    "return app" in new Setup {
-      val app1              = storedApp.withId(appId)
-      val returnedHistories = List(aHistory(app1.id), aHistory(app1.id, State.PRODUCTION))
-      val expectedHistories = List(aStateHistoryResponse(app1.id), aStateHistoryResponse(app1.id, State.PRODUCTION))
-
-      ApplicationRepoMock.Fetch.thenReturn(app1)
-      StateHistoryRepoMock.FetchByApplicationId.thenReturnWhen(appId)(returnedHistories: _*)
-
-      val result = await(underTest.fetchAppStateHistoryById(appId))
-
-      result shouldBe expectedHistories
-    }
   }
 
   "fetchAllWithSubscriptions" should {

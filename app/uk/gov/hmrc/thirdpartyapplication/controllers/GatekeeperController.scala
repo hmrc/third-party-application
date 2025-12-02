@@ -60,12 +60,6 @@ class GatekeeperController @Inject() (
     }
   }
 
-  def fetchAppStateHistoryById(id: ApplicationId) = warnStillInUse("fetchAppStateHistoryById") {
-    anyAuthenticatedUserAction { loggedInRequest =>
-      gatekeeperService.fetchAppStateHistoryById(id) map (app => Ok(Json.toJson(app))) recover recovery
-    }
-  }
-
   def fetchAppStateHistories() = anyAuthenticatedUserAction { _ =>
     gatekeeperService.fetchAppStateHistories() map (histories => Ok(Json.toJson(histories))) recover recovery
   }
