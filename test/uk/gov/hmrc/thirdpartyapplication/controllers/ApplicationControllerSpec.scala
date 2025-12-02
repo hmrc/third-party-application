@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.time.{Duration, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
@@ -34,13 +33,12 @@ import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{ApplicationNameValidationResult, GetAppsForAdminOrRIRequest}
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -360,246 +358,6 @@ class ApplicationControllerSpec
       contentAsJson(result) shouldBe Json.toJson[ApplicationNameValidationResult](ApplicationNameValidationResult.Duplicate)
 
       verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(Some(appId)))
-    }
-  }
-
-  "query dispatcher" should {
-    val clientId = ClientId("A123XC")
-
-    trait LastAccessedSetup extends Setup {
-      val updatedLastAccessTime: Instant = instant
-      val updatedEpochMillis             = updatedLastAccessTime.toEpochMilli()
-
-      val lastAccessTime: Instant = updatedLastAccessTime.minus(Duration.ofDays(10)) // scalastyle:ignore magic.number
-      val lastAccessEpochMillis   = lastAccessTime.toEpochMilli()
-
-      val applicationId: ApplicationId = ApplicationId.random
-
-      val applicationResponse: ApplicationWithCollaborators        = ApplicationWithCollaboratorsData.standardApp.modify(_.copy(lastAccess = Some(lastAccessTime)))
-      val updatedApplicationResponse: ApplicationWithSubscriptions =
-        applicationResponse.modify(_.copy(lastAccess = Some(updatedLastAccessTime))).withSubscriptions(Set.empty)
-    }
-
-    def validateResult(result: Future[Result], expectedResponseCode: Int, expectedCacheControlHeader: Option[String], expectedVaryHeader: Option[String]) = {
-      status(result) shouldBe expectedResponseCode
-      headers(result).get(HeaderNames.CACHE_CONTROL) shouldBe expectedCacheControlHeader
-      headers(result).get(HeaderNames.VARY) shouldBe expectedVaryHeader
-    }
-
-    "retrieve by client id" in new Setup {
-      QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(ApplicationQueries.applicationByClientId(clientId), standardApp)
-
-      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}"))
-
-      validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), None)
-    }
-
-    "retrieve by server token" in new Setup {
-      QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(ApplicationQueries.applicationByServerToken(serverToken), standardApp)
-
-      private val scenarios =
-        Table(
-          ("serverTokenHeader", "expectedVaryHeader"),
-          ("X-Server-Token", "X-server-token"),
-          ("X-SERVER-TOKEN", "X-server-token")
-        )
-
-      forAll(scenarios) { (serverTokenHeader, expectedVaryHeader) =>
-        val result = underTest.queryDispatcher()(request.withHeaders(serverTokenHeader -> serverToken))
-
-        validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), Some(expectedVaryHeader))
-      }
-    }
-
-    "retrieve all with no immediate matches redirects to query controller" in new Setup {
-      private val result = underTest.queryDispatcher()(FakeRequest())
-
-      validateResult(result, SEE_OTHER, None, None)
-    }
-
-    "retrieve when requesting no subscriptions" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQueries.applicationsByNoSubscriptions, standardApp)
-
-      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions="))
-
-      validateResult(result, OK, None, None)
-    }
-
-    "fail with a 500 (internal server error) when a clientId is supplied" in new Setup {
-      QueryServiceMock.FetchSingleApplicationByQuery.thenFails(new RuntimeException("Expected test exception"))
-
-      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
-
-      validateResult(result, INTERNAL_SERVER_ERROR, None, None)
-    }
-
-    "update last accessed time and server token usage when an API gateway retrieves Application by Server Token" in new LastAccessedSetup {
-      val scenarios =
-        Table(
-          ("headers", "expectedLastAccessTime", "shouldUpdate"),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer"), updatedEpochMillis, true),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer,foobar"), updatedEpochMillis, true),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar,APIPlatformAuthorizer"), updatedEpochMillis, true),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar"), lastAccessEpochMillis, false),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken), lastAccessEpochMillis, false)
-        )
-
-      forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
-        QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(ApplicationQueries.applicationByServerToken(serverToken), applicationResponse)
-        when(underTest.applicationService.findAndRecordServerTokenUsage(serverToken)).thenReturn(Future(Some((updatedApplicationResponse, serverToken))))
-
-        val result = underTest.queryDispatcher()(request.withHeaders(headers: _*))
-
-        (contentAsJson(result) \ "details" \ "lastAccess").as[Instant].toEpochMilli() shouldBe expectedLastAccessTime
-        validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), Some(SERVER_TOKEN_HEADER))
-        if (shouldUpdate) {
-          verify(underTest.applicationService).findAndRecordServerTokenUsage(eqTo(serverToken))
-        }
-        reset(underTest.applicationService)
-      }
-    }
-
-    "update last accessed time when an API gateway retrieves Application by Client Id" in new LastAccessedSetup {
-      val scenarios =
-        Table(
-          ("headers", "expectedLastAccessTime", "shouldUpdate"),
-          (Seq(USER_AGENT -> "APIPlatformAuthorizer"), updatedEpochMillis, true),
-          (Seq(USER_AGENT -> "APIPlatformAuthorizer,foobar"), updatedEpochMillis, true),
-          (Seq(USER_AGENT -> "foobar,APIPlatformAuthorizer"), updatedEpochMillis, true),
-          (Seq(USER_AGENT -> "foobar"), lastAccessEpochMillis, false),
-          (Seq(), lastAccessEpochMillis, false)
-        )
-
-      forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
-        QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(ApplicationQueries.applicationByClientId(clientId), applicationResponse)
-        when(underTest.applicationService.findAndRecordApplicationUsage(clientId)).thenReturn(Future(Some((updatedApplicationResponse, "aServerToken"))))
-
-        val result =
-          underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}").withHeaders(headers: _*))
-
-        validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), None)
-        (contentAsJson(result) \ "details" \ "lastAccess").as[Instant].toEpochMilli() shouldBe expectedLastAccessTime
-        if (shouldUpdate) {
-          verify(underTest.applicationService).findAndRecordApplicationUsage(eqTo(clientId))
-        }
-        reset(underTest.applicationService)
-      }
-    }
-
-    val environment = Environment.PRODUCTION
-
-    "succeed with a 200 when applications are found for the collaborator by userId and environment" in new Setup with ExtendedResponses {
-      val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=${userIdOne.toString()}&environment=$environment")
-
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubsFor(
-        ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, environment, wantSubscriptions = true),
-        standardApp.withSubscriptions(Set(apiIdentifier1)),
-        privilegedApp.withSubscriptions(Set(apiIdentifier1)),
-        ropcApp.withSubscriptions(Set(apiIdentifier1))
-      )
-
-      status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe OK
-    }
-
-    "fail with a BadRequest when applications are requested for the collaborator by userId and environment but the userId is badly formed" in new Setup with ExtendedResponses {
-      val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=XXX&environment=$environment")
-
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubsFor(
-        ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, environment, wantSubscriptions = true),
-        standardApp.withSubscriptions(Set(apiIdentifier1)),
-        privilegedApp.withSubscriptions(Set(apiIdentifier1)),
-        ropcApp.withSubscriptions(Set(apiIdentifier1))
-      )
-
-      status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe BAD_REQUEST
-    }
-  }
-
-  "fetchAllForCollaborators" should {
-    val userId      = UserId.random
-    val requestBody = Json.obj("userIds" -> Json.arr(userId.value.toString()))
-    "succeed with a 200 when applications are found for the collaborator by user ids" in new Setup {
-
-      when(underTest.applicationService.fetchAllForCollaborators(List(userId)))
-        .thenReturn(successful(List(standardApp)))
-
-      status(underTest.fetchAllForCollaborators()(request.withBody(requestBody))) shouldBe OK
-    }
-
-    "succeed with a 200 when no applications are found for the collaborator by user ids" in new Setup {
-      when(underTest.applicationService.fetchAllForCollaborators(List(userId))).thenReturn(successful(Nil))
-
-      val result = underTest.fetchAllForCollaborators()(request.withBody(requestBody))
-
-      status(result) shouldBe OK
-      contentAsString(result) shouldBe "[]"
-    }
-
-    "fail with a 500 when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetchAllForCollaborators(List(userId))).thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.fetchAllForCollaborators()(request.withBody(requestBody))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-  }
-
-  "fetchAllBySubscription" when {
-    val subscribesTo = "an-api"
-
-    "not given a version" should {
-      val queryRequest = FakeRequest("GET", s"?subscribesTo=$subscribesTo")
-
-      "succeed with a 200 (ok) when applications are found" in new Setup {
-        val response: List[ApplicationWithCollaborators] = List(standardApp, privilegedApp, ropcApp)
-
-        QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQueries.applicationsByApiContext(subscribesTo.asContext), response: _*)
-
-        val result = underTest.queryDispatcher()(queryRequest)
-
-        status(result) shouldBe OK
-
-        contentAsJson(result) shouldBe Json.toJson(response)
-      }
-
-      "succeed with a 200 (ok) when no applications are found" in new Setup {
-        QueryServiceMock.FetchApplicationsByQuery.thenReturnsNoAppsFor(ApplicationQueries.applicationsByApiContext(subscribesTo.asContext))
-
-        val result = underTest.queryDispatcher()(queryRequest)
-
-        status(result) shouldBe OK
-
-        contentAsString(result) shouldBe "[]"
-      }
-    }
-
-    "given a version" should {
-      val version       = "1.0"
-      val queryRequest  = FakeRequest("GET", s"?subscribesTo=$subscribesTo&version=$version")
-      val apiIdentifier = subscribesTo.asIdentifier(version)
-
-      "succeed with a 200 (ok) when applications are found" in new Setup {
-        val response: List[ApplicationWithCollaborators] = List(standardApp, privilegedApp, ropcApp)
-
-        QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier), response: _*)
-
-        val result = underTest.queryDispatcher()(queryRequest)
-
-        status(result) shouldBe OK
-
-        contentAsJson(result) shouldBe Json.toJson(response)
-
-      }
-
-      "succeed with a 200 (ok) when no applications are found" in new Setup {
-        QueryServiceMock.FetchApplicationsByQuery.thenReturnsNoAppsFor(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier))
-
-        val result = underTest.queryDispatcher()(queryRequest)
-
-        status(result) shouldBe OK
-
-        contentAsString(result) shouldBe "[]"
-      }
     }
   }
 

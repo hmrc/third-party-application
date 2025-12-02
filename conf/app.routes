@@ -1,9 +1,7 @@
 # microservice specific routes
 
-GET           /developer/applications                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.queryDispatcher()
 POST          /collaborators                                         uk.gov.hmrc.thirdpartyapplication.controllers.CollaboratorController.searchCollaborators()
 
-GET           /application                                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.queryDispatcher()
 GET           /application/subscriptions                             uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllAPISubscriptions()
 
 GET           /application/:id                                       uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetch(id: ApplicationId)

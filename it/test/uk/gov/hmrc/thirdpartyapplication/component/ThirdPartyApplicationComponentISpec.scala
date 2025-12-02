@@ -113,26 +113,6 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
     response
   }
 
-  Feature("Fetch all applications") {
-
-    Scenario("Fetch all applications") {
-      Given("No applications exist")
-      emptyApplicationRepository()
-
-      Given("A third party application")
-      val application1: ApplicationWithCollaborators = createApplication(awsApiGatewayApplicationName)
-
-      When("We fetch all applications")
-      val response = http(basicRequest.get(uri"$serviceUrl/application"))
-
-      response.code shouldBe StatusCode.Ok
-      val result = Json.parse(response.body.value).as[Seq[ApplicationWithCollaborators]]
-
-      Then("The application is returned in the result")
-      result.exists(r => r.id == application1.id) shouldBe true
-    }
-  }
-
   Feature("Fetch an application") {
 
     Scenario("Fetch application from an application ID") {
@@ -151,41 +131,6 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       Then("The application is returned")
       result shouldBe application
     }
-
-    // TODO use commands
-    // Scenario("Fetch application credentials") {
-    //   Given("No applications exist")
-    //   emptyApplicationRepository()
-
-    //   val appName = "appName"
-
-    //   Given("A third party application")
-    //   val application: ApplicationWithCollaborators = createApplication(appName)
-    //   val cmd                                       =
-    //     ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, UUID.randomUUID().toString, instant)
-
-    //   sendApplicationCommand(cmd, application)
-    //   val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
-
-    //   When("We fetch the application credentials")
-    //   val uri      = s"$serviceUrl/application/${application.id.value}/credentials"
-    //   val response = http(basicRequest.get(uri"$uri"))
-    //   response.code shouldBe StatusCode.Ok
-
-    //   Then("The credentials are returned")
-    //   // scalastyle:off magic.number
-    //   val expectedClientSecrets = createdApp.tokens.production.clientSecrets
-
-    //   val returnedResponse = Json.parse(response.body.value).as[ApplicationToken]
-    //   returnedResponse.clientId should be(application.clientId)
-    //   returnedResponse.accessToken.length should be(32)
-
-    //   // Bug in JodaTime means we can't do a direct comparison between returnedResponse.production.clientSecrets and expectedClientSecrets
-    //   // We have to compare contents individually
-    //   val returnedClientSecret = returnedResponse.clientSecrets.head
-    //   returnedClientSecret.name should be(expectedClientSecrets.head.name)
-    //   returnedClientSecret.createdOn.toEpochMilli should be(expectedClientSecrets.head.createdOn.toEpochMilli)
-    // }
   }
 
   Feature("Validate Credentials") {
