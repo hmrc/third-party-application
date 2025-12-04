@@ -406,6 +406,10 @@ class ApplicationQueriesISpec
   }
 
   "applicationsByApiContext" should {
+    val matchingContext = "context"
+    val version1        = "version-1"
+    val version2        = "version-2"
+    val otherContext    = "other"
 
     "fetch only those applications when the context matches" in {
       val application1 = anApplicationDataForTest(
@@ -425,35 +429,40 @@ class ApplicationQueriesISpec
       await(applicationRepository.save(application3))
       await(
         subscriptionRepository.collection
-          .insertOne(aSubscriptionData("context", "version-1", application1.id))
+          .insertOne(aSubscriptionData(matchingContext, version1, application1.id))
           .toFuture()
       )
       await(
         subscriptionRepository.collection
-          .insertOne(aSubscriptionData("context", "version-2", application2.id))
+          .insertOne(aSubscriptionData(matchingContext, version2, application2.id))
           .toFuture()
       )
       await(
         subscriptionRepository.collection
-          .insertOne(aSubscriptionData("other", "version-2", application3.id))
+          .insertOne(aSubscriptionData(otherContext, version2, application3.id))
           .toFuture()
       )
 
-      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByApiContext("context".asContext)))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByApiContext(matchingContext.asContext)))
       result shouldBe List(application1, application2)
 
       val resultQA =
-        await(applicationRepository.fetchByGeneralOpenEndedApplicationQuery(ApplicationQueries.applicationsByApiContext("context".asContext).copy(wantSubscriptions = true)))
+        await(applicationRepository.fetchByGeneralOpenEndedApplicationQuery(ApplicationQueries.applicationsByApiContext(matchingContext.asContext).copy(wantSubscriptions = true)))
       resultQA.head.details shouldBe application1.asAppWithCollaborators.details
       resultQA.head.collaborators shouldBe application1.collaborators
-      resultQA.head.subscriptions.value shouldBe Set("context".asContext.asIdentifier("version-1"))
+      resultQA.head.subscriptions.value shouldBe Set(matchingContext.asContext.asIdentifier(version1))
       resultQA.head.stateHistory shouldBe None
     }
   }
 
   "applicationsByApiIdentifier" should {
 
-    "fetch only those applications when the context and version matches" in {
+    val matchingContext = "context"
+    val matchingVersion = "version-1"
+    val otherContext    = "other"
+    val otherVersion    = "version-2"
+
+    "fetch only those applications when the context AND version matches" in {
       val application1 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = ClientId.random
@@ -466,35 +475,33 @@ class ApplicationQueriesISpec
         id = ApplicationId.random,
         prodClientId = ClientId.random
       )
+      val application4 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = ClientId.random
+      )
+
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
+      await(applicationRepository.save(application4))
       await(
         subscriptionRepository.collection
-          .insertOne(aSubscriptionData("context", "version-1", application1.id))
+          .insertOne(aSubscriptionData(matchingContext, matchingVersion, application1.id))
           .toFuture()
       )
       await(
-        subscriptionRepository.collection
-          .insertOne(aSubscriptionData("context", "version-2", application2.id))
+        subscriptionRepository.collection.insertOne(aSubscriptionData(otherContext, matchingVersion, application2.id, application4.id))
           .toFuture()
       )
       await(
-        subscriptionRepository.collection
-          .insertOne(
-            aSubscriptionData(
-              "other",
-              "version-2",
-              application2.id,
-              application3.id
-            )
-          )
+        subscriptionRepository.collection.insertOne(aSubscriptionData(matchingContext, otherVersion, application3.id, application4.id))
           .toFuture()
       )
 
-      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByApiIdentifier("context".asIdentifier("version-2"))))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByApiIdentifier(matchingContext.asIdentifier(matchingVersion))))
 
-      result shouldBe List(application2)
+      result.size shouldBe 1
+      result shouldBe List(application1)
     }
 
     "fetch multiple applications with the same matching context and versions" in {
@@ -517,23 +524,16 @@ class ApplicationQueriesISpec
 
       await(
         subscriptionRepository.collection
-          .insertOne(aSubscriptionData("context", "version-1", application1.id))
+          .insertOne(aSubscriptionData(otherContext, otherVersion, application1.id))
           .toFuture()
       )
       await(
         subscriptionRepository.collection
-          .insertOne(
-            aSubscriptionData(
-              "context",
-              "version-2",
-              application2.id,
-              application3.id
-            )
-          )
+          .insertOne(aSubscriptionData(matchingContext, matchingVersion, application2.id, application3.id))
           .toFuture()
       )
 
-      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByApiIdentifier("context".asIdentifier("version-2"))))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByApiIdentifier(matchingContext.asIdentifier(matchingVersion))))
 
       result shouldBe List(application2, application3)
     }
