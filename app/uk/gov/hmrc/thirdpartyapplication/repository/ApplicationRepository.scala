@@ -1045,11 +1045,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val needsLookup = qry.wantSubscriptions || qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
 
       val maybeSubsLookupStage = subscriptionsLookup.some.filter(_ => needsLookup)
-      val maybeSubsUnwindStage = unwind("$subscribedApis").some.filter(_ => qry.hasSpecificSubscriptionFilter).filterNot(_ => qry.wantSubscriptions)
 
       val maybeStateHistoryLookupStage = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
 
-      val pipelineStages: List[Bson] = (maybeSubsLookupStage :: maybeSubsUnwindStage :: filtersStage :: maybeStateHistoryLookupStage :: sortingStage :: limitStage :: Nil) collect {
+      val pipelineStages: List[Bson] = (maybeSubsLookupStage :: filtersStage :: maybeStateHistoryLookupStage :: sortingStage :: limitStage :: Nil) collect {
         case Some(x) => x
       }
       val projectionToUseStage       = toProjectionToUseStage(qry.wantSubscriptions, qry.wantStateHistory)
@@ -1087,7 +1086,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val needsLookup = qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
 
       val maybeSubsLookupStage: Option[Bson] = subscriptionsLookup.some.filter(_ => needsLookup)
-      val maybeSubsUnwindStage: Option[Bson] = unwind("$subscribedApis").some.filter(_ => needsLookup && qry.hasSpecificSubscriptionFilter)
 
       val projectionToUseStage =
         project(
@@ -1101,7 +1099,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       val totalCount = Aggregates.count("total")
 
-      val commonPipeline: List[Bson] = (filtersStage :: maybeSubsLookupStage :: maybeSubsUnwindStage :: Nil) collect { case Some(x) => x }
+      val commonPipeline: List[Bson] = (filtersStage :: maybeSubsLookupStage :: Nil) collect { case Some(x) => x }
 
       val countMatchingPipeline: List[Bson] = commonPipeline :+ totalCount
 

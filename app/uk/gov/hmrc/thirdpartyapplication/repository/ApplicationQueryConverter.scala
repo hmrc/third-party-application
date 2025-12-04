@@ -48,16 +48,21 @@ object ApplicationQueryConverter {
     else if (first[HasSubscriptionsQP.type].isDefined)
       List(Document(s"""{$$expr: {$$gte: [{$$size:"$$subscribedApis"}, 1] }}"""))
     else {
-      first[ApiContextQP].fold(List.empty[Bson])(context => {
-        val contextFilter = equal("subscribedApis.apiIdentifier.context", Codecs.toBson(context.value))
-
-        first[ApiVersionNbrQP].fold(List(contextFilter))(versionNbr => {
-          val versionFilter = equal("subscribedApis.apiIdentifier.version", Codecs.toBson(versionNbr.value))
-
-          // TODO - on the same api
-          List(and(contextFilter, versionFilter))
-        })
-      })
+      (first[ApiContextQP], first[ApiVersionNbrQP]) match {
+        case (None, None)       => List.empty
+        case (Some(c), None)    => List(equal("subscribedApis.apiIdentifier.context", Codecs.toBson(c.value)))
+        case (Some(c), Some(v)) =>
+          List(
+            elemMatch(
+              "subscribedApis",
+              and(
+                equal("apiIdentifier.context", Codecs.toBson(c.value.value)),
+                equal("apiIdentifier.version", Codecs.toBson(v.value.value))
+              )
+            )
+          )
+        case _                  => throw new IllegalArgumentException("Should not have reached here in query processing with only a version")
+      }
     }
   }
 
