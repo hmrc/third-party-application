@@ -54,6 +54,7 @@ object ApplicationQueryConverter {
         first[ApiVersionNbrQP].fold(List(contextFilter))(versionNbr => {
           val versionFilter = equal("subscribedApis.apiIdentifier.version", Codecs.toBson(versionNbr.value))
 
+          // TODO - on the same api
           List(and(contextFilter, versionFilter))
         })
       })

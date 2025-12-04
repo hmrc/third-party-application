@@ -157,7 +157,7 @@ object ApplicationRepository {
 
     implicit val formatPaginationTotal: Format[PaginationTotal]                 = Json.format[PaginationTotal]
     implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
-    val readsQSA: Reads[QueriedStoredApplication]                      = Json.reads[QueriedStoredApplication]
+    val readsQSA: Reads[QueriedStoredApplication]                               = Json.reads[QueriedStoredApplication]
   }
 }
 
@@ -946,17 +946,17 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   private val transformApplication: Reads[JsObject] = {
     (__).read[JsObject].map { item =>
-        val obj              = item.as[JsObject]
-        val appFields        = Seq("app" -> (obj - "subscriptions" - "stateHistory"))
-        val oLRSubscriptions = (obj \ "subscriptions")
-        val oLRStateHistory  = (obj \ "stateHistory")
+      val obj              = item.as[JsObject]
+      val appFields        = Seq("app" -> (obj - "subscriptions" - "stateHistory"))
+      val oLRSubscriptions = (obj \ "subscriptions")
+      val oLRStateHistory  = (obj \ "stateHistory")
 
-        val allFields =
-          appFields ++
-            (if (oLRSubscriptions.isDefined) Seq(("subscriptions" -> oLRSubscriptions.get)) else Seq.empty) ++
-            (if (oLRStateHistory.isDefined) Seq(("stateHistory" -> oLRStateHistory.get)) else Seq.empty)
+      val allFields =
+        appFields ++
+          (if (oLRSubscriptions.isDefined) Seq(("subscriptions" -> oLRSubscriptions.get)) else Seq.empty) ++
+          (if (oLRStateHistory.isDefined) Seq(("stateHistory" -> oLRStateHistory.get)) else Seq.empty)
 
-        JsObject(allFields)
+      JsObject(allFields)
     }
   }
 
@@ -1006,7 +1006,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val maybeSubsLookupStage: Option[Bson]         = subscriptionsLookup.some.filter(_ => needsLookup)
       val maybeStateHistoryLookupStage: Option[Bson] = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
 
-      val pipelineStages: List[Bson] = (filtersStage :: maybeSubsLookupStage :: maybeStateHistoryLookupStage :: Nil) collect { case Some(x) => x }
+      val pipelineStages: List[Bson] = (maybeSubsLookupStage :: filtersStage :: maybeStateHistoryLookupStage :: Nil) collect { case Some(x) => x }
       val projectionToUseStage       = toProjectionToUseStage(qry.wantSubscriptions, qry.wantStateHistory)
 
       executeAggregate(projectionToUseStage, pipelineStages)
@@ -1049,7 +1049,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       val maybeStateHistoryLookupStage = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
 
-      val pipelineStages: List[Bson] = (filtersStage :: maybeSubsLookupStage :: maybeStateHistoryLookupStage :: maybeSubsUnwindStage :: sortingStage :: limitStage :: Nil) collect {
+      val pipelineStages: List[Bson] = (maybeSubsLookupStage :: maybeSubsUnwindStage :: filtersStage :: maybeStateHistoryLookupStage :: sortingStage :: limitStage :: Nil) collect {
         case Some(x) => x
       }
       val projectionToUseStage       = toProjectionToUseStage(qry.wantSubscriptions, qry.wantStateHistory)
