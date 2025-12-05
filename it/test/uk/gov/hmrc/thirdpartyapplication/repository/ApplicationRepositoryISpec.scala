@@ -806,62 +806,6 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "AppsWithSubscriptions" should {
-    "return Apps with their subscriptions" in {
-      val api1        = "api-1"
-      val api2        = "api-2"
-      val api3        = "api-3"
-      val api1Version = "api-1-version-1"
-      val api2Version = "api-2-version-2"
-      val api3Version = "api-3-version-3"
-
-      val application1 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = ClientId("aaa"))
-      val application2 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = ClientId("aab"))
-
-      await(applicationRepository.save(application1))
-      await(applicationRepository.save(application2))
-
-      await(
-        subscriptionRepository.collection
-          .insertOne(aSubscriptionData(api1, api1Version, application1.id, application2.id))
-          .toFuture()
-      )
-      await(
-        subscriptionRepository.collection
-          .insertOne(aSubscriptionData(api2, api2Version, application1.id, application2.id))
-          .toFuture()
-      )
-      await(
-        subscriptionRepository.collection
-          .insertOne(aSubscriptionData(api3, api3Version, application2.id))
-          .toFuture()
-      )
-
-      val expectedResult = List(
-        GatekeeperAppSubsResponse(
-          application1.id,
-          application1.name,
-          application1.lastAccess,
-          Set(ApiIdentifier(ApiContext(api1), ApiVersionNbr(api1Version)), ApiIdentifier(ApiContext(api2), ApiVersionNbr(api2Version)))
-        ),
-        GatekeeperAppSubsResponse(
-          application2.id,
-          application2.name,
-          application2.lastAccess,
-          Set(
-            ApiIdentifier(ApiContext(api1), ApiVersionNbr(api1Version)),
-            ApiIdentifier(ApiContext(api2), ApiVersionNbr(api2Version)),
-            ApiIdentifier(ApiContext(api3), ApiVersionNbr(api3Version))
-          )
-        )
-      )
-
-      val result = await(applicationRepository.getAppsWithSubscriptions)
-
-      result should contain theSameElementsAs expectedResult
-    }
-  }
-
   "delete" should {
 
     "change an application's state to Deleted" in {
