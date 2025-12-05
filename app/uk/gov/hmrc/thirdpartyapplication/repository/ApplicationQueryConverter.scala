@@ -48,15 +48,21 @@ object ApplicationQueryConverter {
     else if (first[HasSubscriptionsQP.type].isDefined)
       List(Document(s"""{$$expr: {$$gte: [{$$size:"$$subscribedApis"}, 1] }}"""))
     else {
-      first[ApiContextQP].fold(List.empty[Bson])(context => {
-        val contextFilter = equal("subscribedApis.apiIdentifier.context", Codecs.toBson(context.value))
-
-        first[ApiVersionNbrQP].fold(List(contextFilter))(versionNbr => {
-          val versionFilter = equal("subscribedApis.apiIdentifier.version", Codecs.toBson(versionNbr.value))
-
-          List(and(contextFilter, versionFilter))
-        })
-      })
+      (first[ApiContextQP], first[ApiVersionNbrQP]) match {
+        case (None, None)       => List.empty
+        case (Some(c), None)    => List(equal("subscribedApis.apiIdentifier.context", Codecs.toBson(c.value)))
+        case (Some(c), Some(v)) =>
+          List(
+            elemMatch(
+              "subscribedApis",
+              and(
+                equal("apiIdentifier.context", Codecs.toBson(c.value.value)),
+                equal("apiIdentifier.version", Codecs.toBson(v.value.value))
+              )
+            )
+          )
+        case _                  => throw new IllegalArgumentException("Should not have reached here in query processing with only a version")
+      }
     }
   }
 
@@ -187,7 +193,7 @@ object ApplicationQueryConverter {
     })
   }
 
-  def convertToFilter(implicit params: List[Param[_]]): List[Bson] = {
+  def convertToFilter(implicit params: List[Param[_]]): Option[Bson] = {
     val individualFilters =
       asSingleQueryFilters ++
         asSubscriptionFilters ++
@@ -206,31 +212,23 @@ object ApplicationQueryConverter {
         asSearchFilter
 
     if (individualFilters.isEmpty) {
-      List.empty
+      None
     } else {
-      List(Aggregates.filter(and(individualFilters: _*)))
+      Some(Aggregates.filter(and(individualFilters: _*)))
     }
   }
 
-  def convertToSort(sort: Sorting): List[Bson] = sort match {
-    case Sorting.NameAscending         => List(Aggregates.sort(Sorts.ascending("normalisedName")))
-    case Sorting.NameDescending        => List(Aggregates.sort(Sorts.descending("normalisedName")))
-    case Sorting.SubmittedAscending    => List(Aggregates.sort(Sorts.ascending("createdOn")))
-    case Sorting.SubmittedDescending   => List(Aggregates.sort(Sorts.descending("createdOn")))
-    case Sorting.LastUseDateAscending  => List(Aggregates.sort(Sorts.ascending("lastAccess")))
-    case Sorting.LastUseDateDescending => List(Aggregates.sort(Sorts.descending("lastAccess")))
-    case Sorting.NoSorting             => List()
+  def convertToSort(sort: Sorting): Option[Bson] = sort match {
+    case Sorting.NameAscending         => Some(Aggregates.sort(Sorts.ascending("normalisedName")))
+    case Sorting.NameDescending        => Some(Aggregates.sort(Sorts.descending("normalisedName")))
+    case Sorting.SubmittedAscending    => Some(Aggregates.sort(Sorts.ascending("createdOn")))
+    case Sorting.SubmittedDescending   => Some(Aggregates.sort(Sorts.descending("createdOn")))
+    case Sorting.LastUseDateAscending  => Some(Aggregates.sort(Sorts.ascending("lastAccess")))
+    case Sorting.LastUseDateDescending => Some(Aggregates.sort(Sorts.descending("lastAccess")))
+    case Sorting.NoSorting             => None
   }
 
-  def convertToLimit(limit: Option[Int]): List[Bson] = limit.toList.map(Aggregates.limit(_))
-
-  // TODO : Work out why this is not used.
-  // def identifySort(params: List[SortingParam[_]]): Sorting = {
-  //   params match {
-  //     case SortQP(sort) :: Nil => sort
-  //     case _                   => Sorting.SubmittedAscending
-  //   }
-  // }
+  def convertToLimit(limit: Option[Int]): Option[Bson] = limit.map(Aggregates.limit(_))
 
   def pageNumber(params: List[Param[_]]): Int = {
     params.collectFirst {

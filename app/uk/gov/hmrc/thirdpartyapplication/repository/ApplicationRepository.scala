@@ -157,7 +157,7 @@ object ApplicationRepository {
 
     implicit val formatPaginationTotal: Format[PaginationTotal]                 = Json.format[PaginationTotal]
     implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
-    implicit val readsQSA: Reads[QueriedStoredApplication]                      = Json.reads[QueriedStoredApplication]
+    val readsQSA: Reads[QueriedStoredApplication]                               = Json.reads[QueriedStoredApplication]
   }
 }
 
@@ -753,78 +753,72 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     "organisationId"
   )
 
-  private val transformApplications: Reads[JsArray] = {
-    (__ \ "applications").read[JsArray].map { array =>
-      JsArray(
-        array.value.map { item =>
-          val obj              = item.as[JsObject]
-          val appFields        = Seq("app" -> (obj - "subscriptions"))
-          val oLRSubscriptions = (obj \ "subscriptions")
-          val oLRStateHistory  = (obj \ "stateHistory")
+  private val transformApplication: Reads[JsObject] = {
+    (__).read[JsObject].map { item =>
+      val obj              = item.as[JsObject]
+      val appFields        = Seq("app" -> (obj - "subscriptions" - "stateHistory"))
+      val oLRSubscriptions = (obj \ "subscriptions")
+      val oLRStateHistory  = (obj \ "stateHistory")
 
-          val allFields =
-            appFields ++
-              (if (oLRSubscriptions.isDefined) Seq(("subscriptions" -> oLRSubscriptions.get)) else Seq.empty) ++
-              (if (oLRStateHistory.isDefined) Seq(("stateHistory" -> oLRStateHistory.get)) else Seq.empty)
+      val allFields =
+        appFields ++
+          (if (oLRSubscriptions.isDefined) Seq(("subscriptions" -> oLRSubscriptions.get)) else Seq.empty) ++
+          (if (oLRStateHistory.isDefined) Seq(("stateHistory" -> oLRStateHistory.get)) else Seq.empty)
 
-          JsObject(allFields)
-        }
-      )
+      JsObject(allFields)
     }
   }
 
-  private def executeAggregate(wantSubscriptions: Boolean, wantStateHistory: Boolean, pipeline: Seq[Bson]): Future[List[QueriedStoredApplication]] = {
-
-    val projectionToUse: Bson =
-      project(
-        fields(
-          (
-            Seq(
-              excludeId(),
-              include(
-                fieldsToProject: _*
-              )
-            ) ++ (
-              if (wantSubscriptions)
-                Seq(computed("subscriptions", "$subscribedApis.apiIdentifier"))
-              else
-                Seq.empty
-            ) ++ (
-              if (wantStateHistory)
-                Seq(computed("stateHistory", "$stateHistory"))
-              else
-                Seq.empty
+  private def toProjectionToUseStage(wantSubscriptions: Boolean, wantStateHistory: Boolean): Bson =
+    project(
+      fields(
+        (
+          Seq(
+            excludeId(),
+            include(
+              fieldsToProject: _*
             )
-          ): _*
-        )
-      )
-
-    val facets: Seq[Bson] = Seq(
-      facet(
-        model.Facet("applications", (pipeline :+ projectionToUse): _*)
+          ) ++ (
+            if (wantSubscriptions)
+              Seq(computed("subscriptions", "$subscribedApis.apiIdentifier"))
+            else
+              Seq.empty
+          ) ++ (
+            if (wantStateHistory)
+              Seq(computed("stateHistory", "$stateHistory"))
+            else
+              Seq.empty
+          )
+        ): _*
       )
     )
 
-    val listRdr: Reads[List[QueriedStoredApplication]] = implicitly
-    implicit val rdr                                   = transformApplications.andThen(listRdr)
-    collection.aggregate[BsonValue](facets)
-      .head()
+  private def executeAggregate(projectionToUseStage: Bson, pipelineStages: List[Bson]): Future[List[QueriedStoredApplication]] = {
+
+    val stages: Seq[Bson] = pipelineStages :+ projectionToUseStage
+
+    implicit val rdr: Reads[QueriedStoredApplication] = readsQSA.composeWith(transformApplication)
+
+    collection.aggregate[BsonValue](stages)
       .map(bson => {
-        Codecs.fromBson[List[QueriedStoredApplication]](bson)
+        Codecs.fromBson[QueriedStoredApplication](bson)
       })
+      .toFuture()
+      .map(_.toList)
   }
 
   def fetchSingleAppByAggregates(qry: SingleApplicationQuery): Future[Option[QueriedStoredApplication]] = {
     timeFuture("Run Single Query", "application.repository.fetchSingleAppByAggregates") {
-      val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+      val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
 
-      val needsLookup             = qry.wantSubscriptions
-      val maybeSubsLookup         = subscriptionsLookup.some.filter(_ => needsLookup)
-      val maybeStateHistoryLookup = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
+      val needsLookup                                = qry.wantSubscriptions
+      val maybeSubsLookupStage: Option[Bson]         = subscriptionsLookup.some.filter(_ => needsLookup)
+      val maybeStateHistoryLookupStage: Option[Bson] = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
 
-      val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ maybeStateHistoryLookup.toList ++ filtersStage
+      val pipelineStages: List[Bson] = (maybeSubsLookupStage :: filtersStage :: maybeStateHistoryLookupStage :: Nil) collect { case Some(x) => x }
+      val projectionToUseStage       = toProjectionToUseStage(qry.wantSubscriptions, qry.wantStateHistory)
 
-      executeAggregate(qry.wantSubscriptions, qry.wantStateHistory, pipeline)
+      executeAggregate(projectionToUseStage, pipelineStages)
         .map(_.headOption)
     }
   }
@@ -853,20 +847,22 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   private def internalFetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedStoredApplication]] = {
     timeFuture("Run General Query", "application.repository.fetchByGeneralOpenEndedApplicationQuery") {
-      val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
-      val sortingStage: List[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
-      val limitStage: List[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
+      val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+      val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
+      val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
 
       val needsLookup = qry.wantSubscriptions || qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
 
-      val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
-      val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => qry.hasSpecificSubscriptionFilter).filterNot(_ => qry.wantSubscriptions)
+      val maybeSubsLookupStage = subscriptionsLookup.some.filter(_ => needsLookup)
 
-      val maybeStateHistoryLookup = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
+      val maybeStateHistoryLookupStage = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
 
-      val pipeline: Seq[Bson] = maybeSubsLookup.toList ++ maybeStateHistoryLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage ++ sortingStage ++ limitStage
+      val pipelineStages: List[Bson] = (maybeSubsLookupStage :: filtersStage :: maybeStateHistoryLookupStage :: sortingStage :: limitStage :: Nil) collect {
+        case Some(x) => x
+      }
+      val projectionToUseStage       = toProjectionToUseStage(qry.wantSubscriptions, qry.wantStateHistory)
 
-      executeAggregate(qry.wantSubscriptions, qry.wantStateHistory, pipeline)
+      executeAggregate(projectionToUseStage, pipelineStages)
     }
   }
 
@@ -892,16 +888,15 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
     timeFuture("Run Pagination Query", "application.repository.fetchByPaginatedApplicationQuery") {
 
-      val filtersStage: List[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
-      val sortingStage: List[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
-      val paginationStage          = List(skip((qry.pagination.pageNbr - 1) * qry.pagination.pageSize), limit(qry.pagination.pageSize))
+      val filtersStage: Option[Bson]   = ApplicationQueryConverter.convertToFilter(qry.params)
+      val sortingStage: Option[Bson]   = ApplicationQueryConverter.convertToSort(qry.sorting)
+      val paginationStages: List[Bson] = List(skip((qry.pagination.pageNbr - 1) * qry.pagination.pageSize), limit(qry.pagination.pageSize))
 
       val needsLookup = qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
 
-      val maybeSubsLookup = subscriptionsLookup.some.filter(_ => needsLookup)
-      val maybeSubsUnwind = unwind("$subscribedApis").some.filter(_ => needsLookup && qry.hasSpecificSubscriptionFilter)
+      val maybeSubsLookupStage: Option[Bson] = subscriptionsLookup.some.filter(_ => needsLookup)
 
-      val projectionToUse =
+      val projectionToUseStage =
         project(
           fields(
             excludeId(),
@@ -911,16 +906,20 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           )
         )
 
-      val totalCount            = Aggregates.count("total")
-      val commonPipeline        = maybeSubsLookup.toList ++ maybeSubsUnwind.toList ++ filtersStage
-      val countMatchingPipeline = commonPipeline :+ totalCount
-      val pipeline: Seq[Bson]   = commonPipeline ++ sortingStage ++ paginationStage :+ projectionToUse
+      val totalCount = Aggregates.count("total")
 
+      val commonPipeline: List[Bson] = (filtersStage :: maybeSubsLookupStage :: Nil) collect { case Some(x) => x }
+
+      val countMatchingPipeline: List[Bson] = commonPipeline :+ totalCount
+
+      val matchingPipeline: List[Bson] = commonPipeline ++ sortingStage.toList ++ paginationStages :+ projectionToUseStage
+
+      // N.B. Facets induce COLLSCAN
       val facets: Seq[Bson] = Seq(
         facet(
           model.Facet("countOfAllApps", totalCount),
           model.Facet("countOfMatchingApps", countMatchingPipeline: _*),
-          model.Facet("applications", pipeline: _*)
+          model.Facet("applications", matchingPipeline: _*)
         )
       )
 
