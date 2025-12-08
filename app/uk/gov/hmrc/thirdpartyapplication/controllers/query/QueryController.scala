@@ -71,8 +71,8 @@ class QueryController @Inject() (
   private val applicationNotFound = NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query"))
 
   private def execute(appQry: ApplicationQuery)(implicit hc: HeaderCarrier): Future[Result] = {
-    logger.info(s"Executing query: $appQry")
     val appQryText = appQry.asLogText
+    logger.info(s"Executing query: $appQryText")
     timeFuture(s"$appQryText", "QueryController.execute") {
 
       appQry match {
