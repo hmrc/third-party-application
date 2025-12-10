@@ -19,8 +19,9 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 import java.time.{Clock, Instant, ZoneId}
 import javax.inject.Inject
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
+import com.mongodb.client.model.UpdateOptions
 import org.mongodb.scala.model.Filters.{and, equal}
 import org.mongodb.scala.model.Updates
 
@@ -86,7 +87,11 @@ class BulkInsertAppsJob @Inject() (
           createdOn = creationTime,
           lastAccess = None,
           environment = Environment.PRODUCTION,
-          deleteRestriction = DeleteRestriction.DoNotDelete(reason = "Bulking up the test data in Staging", actor = Actors.AppCollaborator(collaborators.head.emailAddress), timestamp = creationTime)
+          deleteRestriction = DeleteRestriction.DoNotDelete(
+            reason = "Bulking up the test data in Staging",
+            actor = Actors.AppCollaborator(collaborators.head.emailAddress),
+            timestamp = creationTime
+          )
         )
       })
 
@@ -96,30 +101,31 @@ class BulkInsertAppsJob @Inject() (
       val applications = generateRandomData(BatchSize)
 
       Await.ready(
-        try {
-          applicationRepository.collection.insertMany(applications).toFuture()
-        } catch {
-          case NonFatal(e) => logger.info(s"FAILED $name adding applications: " + e.getMessage()); Future.failed(e)
-        },
-        2.minutes
-      )
+        {
+          val f =
+            (for {
+              apps <- applicationRepository.collection.insertMany(applications).toFuture()
+              subs <- subscriptionRepository.collection.updateOne(
+                        filter = and(
+                          equal("apiIdentifier.context", Codecs.toBson("api-simulator")),
+                          equal("apiIdentifier.version", Codecs.toBson("1.0"))
+                        ),
+                        update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*),
+                        options = new UpdateOptions().upsert(true)
+                      ).toFuture()
+            } yield (apps, subs))
 
-      Await.ready(
-        try {
-          subscriptionRepository.collection.updateOne(
-            filter = and(
-              equal("apiIdentifier.context", Codecs.toBson("api-simulator")),
-              equal("apiIdentifier.version", Codecs.toBson("1.0"))
-            ),
-            update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*)
-          ).toFuture()
-        } catch {
-          case NonFatal(e) => logger.info(s"FAILED $name adding subscriptions: " + e.getMessage()); Future.failed(e)
-        },
-        2.minutes
-      )
+          f.onComplete {
+            case Success((apps, subs)) =>
+              logger.info(s"$name - added ${apps.getInsertedIds.size} applications and subscribed ${subs.getModifiedCount} of them")
+              logger.info(s"$name - Completed batch $batch")
+            case Failure(e)            => logger.info(s"FAILED $name adding data for batch $batch: " + e.getMessage())
+          }
 
-      logger.info(s"$name - Completed batch $batch")
+          f
+        },
+        2.minute
+      )
     }
   }
 }
