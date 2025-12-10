@@ -64,8 +64,8 @@ class BulkInsertAppsJob @Inject() (
   private def populateData(): Unit = {
     logger.info(s"$name - Populating data")
 
-    val BatchSize       = 2
-    val NumberOfBatches = 625
+    val BatchSize       = 625
+    val NumberOfBatches = 2
 
     def generateRandomData(batchSize: Int) =
       (1 to batchSize).map(n => {
