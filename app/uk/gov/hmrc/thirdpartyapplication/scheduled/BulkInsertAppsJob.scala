@@ -105,7 +105,7 @@ class BulkInsertAppsJob @Inject() (
           val f =
             (for {
               apps <- applicationRepository.collection.insertMany(applications).toFuture()
-              subs <- subscriptionRepository.collection.updateOne(
+              _    <- subscriptionRepository.collection.updateOne(
                         filter = and(
                           equal("apiIdentifier.context", Codecs.toBson("api-simulator")),
                           equal("apiIdentifier.version", Codecs.toBson("1.0"))
@@ -113,13 +113,13 @@ class BulkInsertAppsJob @Inject() (
                         update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*),
                         options = new UpdateOptions().upsert(true)
                       ).toFuture()
-            } yield (apps, subs))
+            } yield apps)
 
           f.onComplete {
-            case Success((apps, subs)) =>
-              logger.info(s"$name - added ${apps.getInsertedIds.size} applications and subscribed ${subs.getModifiedCount} of them")
+            case Success(apps) =>
+              logger.info(s"$name - added ${apps.getInsertedIds.size} applications")
               logger.info(s"$name - Completed batch $batch")
-            case Failure(e)            => logger.info(s"FAILED $name adding data for batch $batch: " + e.getMessage())
+            case Failure(e)    => logger.info(s"FAILED $name adding data for batch $batch: " + e.getMessage())
           }
 
           f
