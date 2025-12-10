@@ -63,18 +63,19 @@ class BulkInsertAppsJob @Inject() (
   private def populateData(): Unit = {
     logger.info(s"$name - Populating data")
 
-    val BatchSize       = 2000
-    val NumberOfBatches = 5
+    val BatchSize       = 2
+    val NumberOfBatches = 2
 
-    def generateRandomData(startNumber: Int, batchSize: Int) =
-      (startNumber to startNumber + batchSize - 1).map(n => {
-        val name                             = ApplicationName(s"FILLER_APP_$n")
+    def generateRandomData(batchSize: Int) =
+      (1 to batchSize).map(n => {
+        val applicationId                    = ApplicationId.random
+        val name                             = ApplicationName(s"FILLER_APP_$applicationId")
         val normalisedName                   = name.value.toLowerCase
         val collaborators: Set[Collaborator] =
           Set(Collaborators.Administrator(userId = UserId.unsafeApply("0312a26f-e265-4ecb-8b38-8f9c95d95fd6"), emailAddress = LaxEmailAddress("perf@digital.hmrc.gov.uk")))
         val creationTime                     = Instant.now(Clock.tickMillis(ZoneId.systemDefault()))
         StoredApplication(
-          id = ApplicationId.random,
+          id = applicationId,
           name = name,
           normalisedName = normalisedName,
           collaborators = collaborators,
@@ -85,14 +86,14 @@ class BulkInsertAppsJob @Inject() (
           createdOn = creationTime,
           lastAccess = None,
           environment = Environment.PRODUCTION,
-          deleteRestriction = DeleteRestriction.DoNotDelete(reason = "Test Application", actor = Actors.AppCollaborator(collaborators.head.emailAddress), timestamp = creationTime)
+          deleteRestriction = DeleteRestriction.DoNotDelete(reason = "Bulking up the test data in Staging", actor = Actors.AppCollaborator(collaborators.head.emailAddress), timestamp = creationTime)
         )
       })
 
     for (batch <- 1 to NumberOfBatches) {
       logger.info(s"$name - Starting batch $batch")
 
-      val applications = generateRandomData((batch - 1) * BatchSize + 1, BatchSize)
+      val applications = generateRandomData(BatchSize)
 
       Await.ready(
         try {
