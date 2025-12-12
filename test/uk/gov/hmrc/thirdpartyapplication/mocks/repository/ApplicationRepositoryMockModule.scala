@@ -136,15 +136,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.hardDelete(*[ApplicationId])).thenReturn(successful(HasSucceeded))
     }
 
-    object GetAppsWithSubscriptions {
-
-      def thenReturn(apps: GatekeeperAppSubsResponse*) =
-        when(aMock.getAppsWithSubscriptions).thenReturn(successful(apps.toList))
-
-      def thenReturnNone() =
-        when(aMock.getAppsWithSubscriptions).thenReturn(successful(Nil))
-    }
-
     object FindAndRecordApplicationUsage {
 
       def thenReturnWhen(clientId: ClientId)(applicationData: StoredApplication) =
@@ -178,12 +169,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def thenReturnWhen(applicationId: ApplicationId, newGrantLength: Period)(updatedApplicationData: StoredApplication) =
         when(aMock.updateApplicationGrantLength(eqTo(applicationId), eqTo(newGrantLength))).thenReturn(successful(updatedApplicationData))
-    }
-
-    object SearchApplications {
-
-      def thenReturn(data: PaginatedApplications) =
-        when(aMock.searchApplications(*)(*)).thenReturn(successful(data))
     }
 
     object ProcessAll {

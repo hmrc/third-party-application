@@ -29,14 +29,13 @@ import org.apache.pekko.stream.testkit.NoMaterializer
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, AnyContentAsJson, RequestHeader, Result}
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationServiceMockModule, StrideGatekeeperRoleAuthorisationServiceMockModule}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -45,7 +44,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServ
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule, QueryServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
-import uk.gov.hmrc.thirdpartyapplication.models.db.{GatekeeperAppSubsResponse, TermsOfUseInvitation}
+import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.util._
@@ -123,126 +122,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
     )
   }
 
-  "Fetch apps" should {
-    "fails with unauthorised when the user is not authorised" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-
-      val result = underTest.fetchAppsForGatekeeper(request)
-
-      status(result) shouldBe UNAUTHORIZED
-
-      verifyZeroInteractions(mockGatekeeperService)
-    }
-
-    "return apps for stride role" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      val expected = List(anAppResult(), anAppResult(state = appStateProduction))
-      when(mockGatekeeperService.fetchNonTestingAppsWithSubmittedDate()).thenReturn(successful(expected))
-
-      val result = underTest.fetchAppsForGatekeeper(request)
-
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-
-    "return apps for ldap role" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      val expected = List(anAppResult(), anAppResult(state = appStateProduction))
-      when(mockGatekeeperService.fetchNonTestingAppsWithSubmittedDate()).thenReturn(successful(expected))
-
-      val result = underTest.fetchAppsForGatekeeper(request)
-
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-  }
-
-  "Fetch app by id" should {
-    val appId = ApplicationId.random
-
-    "fails with unauthorised when the user is not authorised" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-
-      val result = underTest.fetchAppById(appId)(request)
-
-      status(result) shouldBe UNAUTHORIZED
-
-      verifyZeroInteractions(mockGatekeeperService)
-    }
-
-    "return app with history for LDAP user" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-      val expected = ApplicationWithHistoryResponse(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
-
-      when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
-
-      val result = underTest.fetchAppById(appId)(request)
-
-      status(result) shouldBe 200
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-
-    "return app with history for Gatekeeper user" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      val expected = ApplicationWithHistoryResponse(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
-
-      when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
-
-      val result = underTest.fetchAppById(appId)(request)
-
-      status(result) shouldBe 200
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-
-    "return 404 if the application doesn't exist" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.fetchAppWithHistory(appId))
-        .thenReturn(failed(new NotFoundException("application doesn't exist")))
-
-      val result = underTest.fetchAppById(appId)(request)
-
-      verifyErrorResult(result, 404, common.ErrorCode.APPLICATION_NOT_FOUND)
-    }
-  }
-
-  "fetchAppStateHistoryById" should {
-    val appId = ApplicationId.random
-
-    "return app with history for Stride GK User" in new Setup {
-      val expectedStateHistories = List(aHistory(appId), aHistory(appId, State.PRODUCTION))
-
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.fetchAppStateHistoryById(appId)).thenReturn(successful(expectedStateHistories))
-
-      val result = underTest.fetchAppStateHistoryById(appId)(request)
-
-      status(result) shouldBe 200
-      contentAsJson(result) shouldBe Json.toJson(expectedStateHistories)
-    }
-
-    "return app with history for LDAP GK User" in new Setup {
-      val expectedStateHistories = List(aHistory(appId), aHistory(appId, State.PRODUCTION))
-
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.fetchAppStateHistoryById(appId)).thenReturn(successful(expectedStateHistories))
-
-      val result = underTest.fetchAppStateHistoryById(appId)(request)
-
-      status(result) shouldBe 200
-      contentAsJson(result) shouldBe Json.toJson(expectedStateHistories)
-    }
-  }
-
   "fetchAppStateHistories" should {
     val expectedAppStateHistories = List(
       ApplicationStateHistoryResponse(
@@ -282,62 +161,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
     }
   }
 
-  "fetchAllAppsWithSubscriptions" should {
-    val expected = List(
-      GatekeeperAppSubsResponse(ApplicationId.random, ApplicationName("Application Name"), None, Set())
-    )
-
-    "return app with subs for Stride GK User" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.fetchAllWithSubscriptions()).thenReturn(successful(expected))
-
-      val result = underTest.fetchAllAppsWithSubscriptions()(request)
-
-      status(result) shouldBe 200
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-
-    "return app with subs for LDAP GK User" in new Setup {
-      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      when(mockGatekeeperService.fetchAllWithSubscriptions()).thenReturn(successful(expected))
-
-      val result = underTest.fetchAllAppsWithSubscriptions()(request)
-
-      status(result) shouldBe 200
-      contentAsJson(result) shouldBe Json.toJson(expected)
-    }
-  }
-  "fetchAllForCollaborator" should {
-    val userId                                                    = UserId.random
-    val standardApplicationResponse: ApplicationWithSubscriptions = standardApp.withSubscriptions(Set.empty)
-    val expectedQry                                               = ApplicationQueries.applicationsByUserId(userId, true)
-    "succeed with a 200 when applications are found for the collaborator by user id" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubsFor(expectedQry, standardApplicationResponse)
-
-      status(underTest.fetchAllForCollaborator(userId)(request)) shouldBe OK
-    }
-
-    "succeed with a 200 when no applications are found for the collaborator by user id" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsNoAppsFor(expectedQry)
-
-      val result = underTest.fetchAllForCollaborator(userId)(request)
-
-      status(result) shouldBe OK
-      contentAsString(result) shouldBe "[]"
-    }
-
-    "fail with a 500 when an exception is thrown" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenFails(new RuntimeException("Expected test failure"))
-
-      val result = underTest.fetchAllForCollaborator(userId)(request)
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-  }
-
   "strideUserDeleteApplication" should {
     val gatekeeperUserId        = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com".toLaxEmail
@@ -369,17 +192,5 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
       status(result) shouldBe INTERNAL_SERVER_ERROR
       verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(*)
     }
-  }
-
-  private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, instant)
-  }
-
-  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: Instant = instant, state: ApplicationState = appStateTesting) = {
-    ApplicationWithUpliftRequest(id, ApplicationName("app 1"), submittedOn, state.name)
-  }
-
-  private def anAppResponse(appId: ApplicationId) = {
-    ApplicationWithCollaboratorsData.standardApp
   }
 }

@@ -47,8 +47,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreationAccess,
   StandardAccessDataToCopy
 }
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{ExcludeDeletedQP, UserIdsQP}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateLoginRedirectUris
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.mocks.ApiSubscriptionFieldsConnectorMockModule
@@ -580,39 +578,6 @@ class ApplicationServiceSpec
     }
   }
 
-  "fetchAllForCollaborators" should {
-    "fetch all applications for two given collaborator user ids" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(userIdOne)), ExcludeDeletedQP)), standardApp)
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(userIdTwo)), ExcludeDeletedQP)), standardApp2)
-
-      val result = await(underTest.fetchAllForCollaborators(List(userIdOne, userIdTwo), 1))
-      result should contain theSameElementsAs List(standardApp, standardApp2)
-    }
-
-    "fetch all applications for two given collaborator user ids in one batch" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(
-        ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(userIdOne, userIdTwo)), ExcludeDeletedQP)),
-        standardApp,
-        standardApp2
-      )
-
-      val result = await(underTest.fetchAllForCollaborators(List(userIdOne, userIdTwo), 2))
-      result should contain theSameElementsAs List(standardApp, standardApp2)
-    }
-
-    "deduplicate applications if more than one user belongs to the same application" in new Setup {
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(userIdOne)), ExcludeDeletedQP)), standardApp)
-      QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(
-        ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(List(userIdTwo)), ExcludeDeletedQP)),
-        standardApp,
-        standardApp2
-      )
-
-      val result = await(underTest.fetchAllForCollaborators(List(userIdOne, userIdTwo), 1))
-      result should contain theSameElementsAs List(standardApp, standardApp2)
-    }
-  }
-
   "deleting an application" should {
     trait DeleteApplicationSetup extends Setup {
       val deleteRequestedBy = "email@example.com".toLaxEmail
@@ -757,41 +722,6 @@ class ApplicationServiceSpec
     }
   }
 
-  "Search" should {
-    "return results based on provided ApplicationSearch" in new Setup {
-      val standardApplicationData: StoredApplication   = storedApp.copy(id = ApplicationId.random, access = Access.Standard())
-      val privilegedApplicationData: StoredApplication = storedApp.copy(id = ApplicationId.random, access = Access.Privileged())
-      val ropcApplicationData: StoredApplication       = storedApp.copy(id = ApplicationId.random, access = Access.Ropc())
-
-      val search = ApplicationSearch(
-        pageNumber = 2,
-        pageSize = 5
-      )
-
-      ApplicationRepoMock.SearchApplications.thenReturn(
-        PaginatedApplications(
-          List(
-            standardApplicationData.asAppWithCollaborators,
-            privilegedApplicationData.asAppWithCollaborators,
-            ropcApplicationData.asAppWithCollaborators
-          ),
-          2,
-          5,
-          3,
-          3
-        )
-      )
-      val histories = List(aHistory(standardApplicationData.id), aHistory(privilegedApplicationData.id), aHistory(ropcApplicationData.id))
-      StateHistoryRepoMock.FetchDeletedByApplicationIds.thenReturnWhen(List(standardApplicationData.id, privilegedApplicationData.id, ropcApplicationData.id))(histories: _*)
-
-      val result: PaginatedApplications = await(underTest.searchApplications(search))
-
-      result.total shouldBe 3
-      result.matching shouldBe 3
-      result.applications.size shouldBe 3
-    }
-  }
-
   "getAppsForResponsibleIndividualOrAdmin" should {
     "fetch all applications for an email" in new Setup {
       val email        = LaxEmailAddress("john.doe@example.com")
@@ -840,9 +770,5 @@ class ApplicationServiceSpec
       adminTwo.emailAddress.text,
       ApplicationId.random
     )
-  }
-
-  private def aHistory(appId: ApplicationId, state: State = State.DELETED): StateHistory = {
-    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(State.TESTING), changedAt = instant)
   }
 }

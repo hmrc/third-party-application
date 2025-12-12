@@ -22,9 +22,8 @@ import scala.concurrent.Future.successful
 import org.mockito.Strictness
 import org.scalatest.BeforeAndAfterAll
 
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
@@ -44,14 +43,6 @@ class GatekeeperServiceSpec
     with FixedClock {
 
   private val bobTheGKUser = Actors.GatekeeperUser("bob")
-
-  private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL): StateHistory = {
-    StateHistory(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), Some(State.TESTING), changedAt = instant)
-  }
-
-  private def aStateHistoryResponse(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, Actors.AppCollaborator("anEmail".toLaxEmail), None, instant)
-  }
 
   trait Setup extends AuditServiceMockModule
       with QueryServiceMockModule
@@ -81,98 +72,6 @@ class GatekeeperServiceSpec
     when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
-  }
-
-  "fetch nonTestingApps with submitted date" should {
-
-    "return apps" in new Setup {
-      val app1     = storedApp.withId(ApplicationId.random).asAppWithCollaborators
-      val app2     = storedApp.withId(ApplicationId.random).asAppWithCollaborators
-      val history1 = aHistory(app1.id)
-      val history2 = aHistory(app2.id)
-
-      QueryServiceMock.FetchApplicationsByQuery.thenReturns(app1, app2)
-      StateHistoryRepoMock.FetchLatestByState.thenReturnWhen(State.PENDING_GATEKEEPER_APPROVAL)(history1, history2)
-
-      val result = await(underTest.fetchNonTestingAppsWithSubmittedDate())
-
-      result should contain theSameElementsAs List(ApplicationWithUpliftRequest.create(app1, history1), ApplicationWithUpliftRequest.create(app2, history2))
-    }
-  }
-
-  "fetch application with history" should {
-    val appId = ApplicationId.random
-
-    "return app" in new Setup {
-      val app1    = storedApp.withId(appId)
-      val history = List(aHistory(app1.id), aHistory(app1.id, State.PRODUCTION))
-
-      ApplicationRepoMock.Fetch.thenReturn(app1)
-      StateHistoryRepoMock.FetchByApplicationId.thenReturnWhen(appId)(history: _*)
-
-      val result = await(underTest.fetchAppWithHistory(appId))
-
-      result shouldBe ApplicationWithHistoryResponse(app1.asAppWithCollaborators, history.map(StateHistoryResponse.from))
-    }
-
-    "throw not found exception" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturnNone()
-
-      intercept[NotFoundException](await(underTest.fetchAppWithHistory(appId)))
-    }
-
-    "propagate the exception when the app repository fail" in new Setup {
-      ApplicationRepoMock.Fetch.thenFail(new RuntimeException("Expected test failure"))
-
-      intercept[RuntimeException](await(underTest.fetchAppWithHistory(appId)))
-    }
-
-    "propagate the exception when the history repository fail" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(storedApp.withId(appId))
-      StateHistoryRepoMock.FetchByApplicationId.thenFailWith(new RuntimeException("Expected test failure"))
-
-      intercept[RuntimeException](await(underTest.fetchAppWithHistory(appId)))
-    }
-
-  }
-
-  "fetchAppStateHistoryById" should {
-    val appId = ApplicationId.random
-
-    "return app" in new Setup {
-      val app1              = storedApp.withId(appId)
-      val returnedHistories = List(aHistory(app1.id), aHistory(app1.id, State.PRODUCTION))
-      val expectedHistories = List(aStateHistoryResponse(app1.id), aStateHistoryResponse(app1.id, State.PRODUCTION))
-
-      ApplicationRepoMock.Fetch.thenReturn(app1)
-      StateHistoryRepoMock.FetchByApplicationId.thenReturnWhen(appId)(returnedHistories: _*)
-
-      val result = await(underTest.fetchAppStateHistoryById(appId))
-
-      result shouldBe expectedHistories
-    }
-  }
-
-  "fetchAllWithSubscriptions" should {
-
-    "return no matching applications if application has a subscription" in new Setup {
-      ApplicationRepoMock.GetAppsWithSubscriptions.thenReturnNone()
-
-      val result: List[GatekeeperAppSubsResponse] = await(underTest.fetchAllWithSubscriptions())
-
-      result.size shouldBe 0
-    }
-
-    "return applications when there are no matching subscriptions" in new Setup {
-      private val appWithSubs: GatekeeperAppSubsResponse =
-        GatekeeperAppSubsResponse(id = ApplicationId.random, name = ApplicationName("name"), lastAccess = None, apiIdentifiers = Set())
-      ApplicationRepoMock.GetAppsWithSubscriptions.thenReturn(appWithSubs)
-
-      val result: List[GatekeeperAppSubsResponse] = await(underTest.fetchAllWithSubscriptions())
-
-      result.size shouldBe 1
-      result shouldBe List(appWithSubs)
-    }
   }
 
   "fetchAppStateHistories" should {
