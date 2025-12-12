@@ -908,7 +908,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       val totalCount = Aggregates.count("total")
 
-      val commonPipeline: List[Bson] = (filtersStage :: maybeSubsLookupStage :: Nil) collect { case Some(x) => x }
+      val commonPipeline: List[Bson] = (maybeSubsLookupStage :: filtersStage :: Nil) collect { case Some(x) => x }
 
       val countMatchingPipeline: List[Bson] = commonPipeline :+ totalCount
 
