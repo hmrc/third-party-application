@@ -36,9 +36,9 @@ import org.mongodb.scala.model._
 
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+import uk.gov.hmrc.mongo.{MongoComment, MongoComponent}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
@@ -1115,6 +1115,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
 
       collection.aggregate[BsonValue](facets)
+        .comment(MongoComment.NoIndexRequired)
         .head()
         .map(Codecs.fromBson[PaginatedApplicationData])
         .map(convertRawData(qry.pagination))
