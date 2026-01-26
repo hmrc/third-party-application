@@ -50,7 +50,7 @@ object GatekeeperRoles {
 
   case object SUPERUSER extends GatekeeperStrideRole {
     val isAdmin: Boolean        = false
-    val isSuperUser: Boolean    = false
+    val isSuperUser: Boolean    = true
     val isAdvancedUser: Boolean = true
     val isUser: Boolean         = true
   }
