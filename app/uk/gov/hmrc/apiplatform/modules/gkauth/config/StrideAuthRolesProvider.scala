@@ -28,11 +28,12 @@ class StrideAuthRolesProvider @Inject() (configuration: Configuration) extends S
 
   override def get(): StrideAuthRoles = {
 
-    val strideConfig  = configuration.underlying.getConfig("stride")
-    val adminRole     = strideConfig.getString("roles.admin")
-    val superUserRole = strideConfig.getString("roles.super-user")
-    val userRole      = strideConfig.getString("roles.user")
+    val strideConfig     = configuration.underlying.getConfig("stride")
+    val adminRole        = strideConfig.getString("roles.admin")
+    val superUserRole    = strideConfig.getString("roles.super-user")
+    val advancedUserRole = strideConfig.getString("roles.advanced-user")
+    val userRole         = strideConfig.getString("roles.user")
 
-    StrideAuthRoles(adminRole, superUserRole, userRole)
+    StrideAuthRoles(adminRole, superUserRole, advancedUserRole, userRole)
   }
 }
