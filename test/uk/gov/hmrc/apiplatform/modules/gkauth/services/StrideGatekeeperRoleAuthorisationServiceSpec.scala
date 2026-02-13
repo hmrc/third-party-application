@@ -34,7 +34,7 @@ class StrideGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with St
   trait Setup {
     def authControlConfig: AuthControlConfig
 
-    val fakeStrideAuthRoles = StrideAuthRoles("A", "B", "C")
+    val fakeStrideAuthRoles = StrideAuthRoles("A", "B", "C", "D")
 
     lazy val underTest = new StrideGatekeeperRoleAuthorisationService(authControlConfig, fakeStrideAuthRoles, StrideAuthConnectorMock.aMock)
   }
