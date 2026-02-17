@@ -297,8 +297,8 @@ object QuestionnaireDAO {
         Wording("Do you have a process for notifying HMRC in the case of a security breach?"),
         statement = Statement(
           CompoundFragment(
-            StatementText("Any issues concerning the security of personal or customer data must be reported immediately to HMRC by contacting "),
-            StatementLink("SDSTeam@hmrc.gov.uk", "mailto:SDSTeam@hmrc.gov.uk"),
+            StatementText("Any issues concerning the security of personal or customer data must be reported immediately to HMRC by "),
+            StatementLink("logging a ticket (opens in new tab)", "https://developer.service.hmrc.gov.uk/devhub-support"),
             StatementText(" within 72 hours, providing a breach contact name and telephone number.")
           ),
           CompoundFragment(
