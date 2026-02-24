@@ -19,14 +19,12 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 
 import cats.data.OptionT
 
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
@@ -34,7 +32,6 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Eithe
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQueries, ApplicationQuery}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -48,8 +45,6 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
-import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 @Singleton
 class ApplicationController @Inject() (
@@ -129,14 +124,9 @@ class ApplicationController @Inject() (
       }
   }
 
-  def fetch(applicationId: ApplicationId) = Action.async {
-    handleOptionT(applicationService.fetch(applicationId))
-  }
-
-  // TODO - repoint users of this as fetch application and access via details.token
-  def fetchCredentials(applicationId: ApplicationId) = warnStillInUse("fetchCredentials") {
-    Action.async { implicit request =>
-      handleOption(queryService.fetchSingleApplicationByQuery(ApplicationQuery.ById(applicationId, List.empty, false, false, false)).map(_.map(_.details.token)))
+  def fetch(applicationId: ApplicationId) = warnStillInUse("fetch") {
+    Action.async {
+      handleOptionT(applicationService.fetch(applicationId))
     }
   }
 
@@ -170,157 +160,15 @@ class ApplicationController @Inject() (
       } recover recovery
     }
 
-  private def handleOption[T](future: Future[Option[T]])(implicit writes: Writes[T]): Future[Result] = {
-    future.map {
-      case Some(v) => Ok(toJson(v))
-      case None    => handleNotFound("No application was found")
-    } recover recovery
-  }
-
   private def handleOptionT[T](opt: OptionT[Future, T])(implicit writes: Writes[T]): Future[Result] = {
     opt.fold(handleNotFound("No application was found"))(v => Ok(toJson(v)))
       .recover(recovery)
-  }
-
-  def queryDispatcher() = warnStillInUse("queryDispatcher") {
-    Action.async { implicit request =>
-      val queryBy     = request.queryString.keys.toList.sorted
-      val serverToken = hc.valueOf(SERVER_TOKEN_HEADER)
-      logger.warn(s"""Unexpected queryDispatcher call using params ${queryBy.mkString("[", ",", "]")}${if (serverToken.isDefined) " & serverToken" else ""}""")
-
-      def addHeaders(pred: Result => Boolean, headers: (String, String)*)(res: Result): Result =
-        if (pred(res)) res.withHeaders(headers: _*) else res
-
-      (queryBy, serverToken) match {
-        case (_, Some(token)) =>
-          fetchByServerToken(token)
-            .map(addHeaders(res => res.header.status == OK || res.header.status == NOT_FOUND, CACHE_CONTROL -> s"max-age=$applicationCacheExpiry", VARY -> SERVER_TOKEN_HEADER))
-
-        case ("clientId" :: _, _) =>
-          val clientId = ClientId(request.queryString("clientId").head)
-          fetchByClientId(clientId)
-            .map(addHeaders(_.header.status == OK, CACHE_CONTROL -> s"max-age=$applicationCacheExpiry"))
-
-        case ("environment" :: "userId" :: _, _) =>
-          val oUserId = UserId(request.queryString("userId").head)
-          val oEnv    = Environment(request.queryString("environment").head)
-
-          (oUserId, oEnv) match {
-            case (Some(u), Some(e)) => fetchAllForUserIdAndEnvironment(u, e)
-            case (None, None)       => successful(BadRequest(JsErrorResponse(
-                BAD_QUERY_PARAMETER,
-                s"Neither UserId ${request.queryString("userId").head} nor Environment ${request.queryString("environment").head} are valid"
-              )))
-            case (None, Some(_))    => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"UserId ${request.queryString("userId").head} is not a valid user Id")))
-            case (Some(_), None)    =>
-              successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"Environment ${request.queryString("environment").head} is not a valid environment")))
-          }
-
-        case ("subscribesTo" :: "version" :: _, _) =>
-          val context       = ApiContext(request.queryString("subscribesTo").head)
-          val version       = ApiVersionNbr(request.queryString("version").head)
-          val apiIdentifier = ApiIdentifier(context, version)
-          queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByApiIdentifier(apiIdentifier)).map(apps => Ok(Json.toJson(apps)))
-
-        case ("subscribesTo" :: _, _) =>
-          val context = ApiContext(request.queryString("subscribesTo").head)
-          queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByApiContext(context)).map(apps => Ok(Json.toJson(apps)))
-
-        case ("noSubscriptions" :: _, _) => queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByNoSubscriptions).map(apps => Ok(Json.toJson(apps)))
-
-        case _ => successful(Redirect(uk.gov.hmrc.thirdpartyapplication.controllers.query.routes.QueryController.queryDispatcher().url, request.queryString))
-      }
-    }
-  }
-
-  def searchApplications = warnStillInUse("searchApplications") {
-    Action.async { implicit request =>
-      Try(ApplicationSearch.fromQueryString(request.queryString)) match {
-        case Success(applicationSearch) => applicationService.searchApplications(applicationSearch).map(apps => Ok(toJson(apps))) recover recovery
-        case Failure(e)                 => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, e.getMessage)))
-      }
-    }
   }
 
   def getAppsForResponsibleIndividualOrAdmin() = Action.async(parse.json) { implicit request =>
     withJsonBody[GetAppsForAdminOrRIRequest] { getAppsForAdminOrRIRequest =>
       applicationService.getAppsForResponsibleIndividualOrAdmin(getAppsForAdminOrRIRequest.adminOrRespIndEmail).map(apps => Ok(toJson(apps))) recover recovery
     }
-  }
-
-  private def hasGatewayUserAgent(implicit hc: HeaderCarrier): Boolean = {
-    hc.extraHeaders
-      .find(_._1 == INTERNAL_USER_AGENT)
-      .map(_._2)
-      .map(_.split(","))
-      .flatMap(_.find(_ == apiGatewayUserAgent))
-      .isDefined
-  }
-
-  private def asNotFoundOrJson[T](notFoundMessage: String): Option[JsValue] => Result = _.fold(handleNotFound(notFoundMessage))(v => Ok(v))
-
-  private def asJsonResult[T](notFoundMessage: String)(maybeApplication: Option[T])(implicit writes: Writes[T]): Result = {
-    val js = maybeApplication.map(Json.toJson[T])
-    asNotFoundOrJson[T](notFoundMessage)(js)
-  }
-
-  private def asJsonResultWithServerToken[T](notFoundMessage: String)(maybeApplication: Option[(T, String)])(implicit writes: Writes[T]): Result = {
-    val js: Option[JsValue] = maybeApplication.map {
-      case (app, serverToken) =>
-        Json.toJson[T](app) match {
-          case o: JsObject => o + ("serverToken" -> JsString(serverToken))
-          case v           => v
-        }
-    }
-    asNotFoundOrJson[T](notFoundMessage)(js)
-  }
-
-  private def fetchByServerToken(serverToken: String)(implicit hc: HeaderCarrier): Future[Result] = {
-    lazy val notFoundMessage = "No application was found for server token"
-
-    // If request has originated from an API gateway, record usage of the Application
-    (
-      if (hasGatewayUserAgent) {
-        applicationService.findAndRecordServerTokenUsage(serverToken).map(asJsonResultWithServerToken(notFoundMessage))
-      } else {
-        queryService.fetchSingleApplicationByQuery(ApplicationQueries.applicationByServerToken(serverToken))
-          .map(asJsonResult(notFoundMessage))
-      }
-    ) recover recovery
-  }
-
-  private def fetchByClientId(clientId: ClientId)(implicit hc: HeaderCarrier): Future[Result] = {
-    lazy val notFoundMessage = "No application was found for client id"
-
-    // If request has originated from an API gateway, record usage of the Application
-    (
-      if (hasGatewayUserAgent) {
-        applicationService.findAndRecordApplicationUsage(clientId).map(asJsonResultWithServerToken(notFoundMessage))
-      } else {
-        queryService.fetchSingleApplicationByQuery(ApplicationQueries.applicationByClientId(clientId))
-          .map(asJsonResult(notFoundMessage))
-      }
-    ) recover recovery
-  }
-
-  def fetchAllForCollaborators(): Action[JsValue] = warnStillInUse("fetchAllForCollaborators") {
-    Action.async(parse.json) { implicit request =>
-      withJsonBody[CollaboratorUserIds] { request =>
-        applicationService.fetchAllForCollaborators(request.userIds).map(apps => Ok(toJson(apps))) recover recovery
-      }
-    }
-  }
-
-  def fetchAllForCollaborator(userId: UserId) = warnStillInUse("fetchAllForCollaborator") {
-    Action.async {
-      queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = false, wantSubscriptions = true))
-        .map(apps => Ok(toJson(apps))) recover recovery
-    }
-  }
-
-  private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: Environment) = {
-    queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserIdAndEnvironment(userId, environment, wantSubscriptions = true))
-      .map(apps => Ok(toJson(apps))) recover recovery
   }
 
   def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async((request: Request[play.api.mvc.AnyContent]) =>

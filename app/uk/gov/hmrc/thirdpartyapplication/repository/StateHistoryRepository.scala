@@ -76,24 +76,6 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
       .map(_ => stateHistory)
   }
 
-  def fetchByState(state: State): Future[List[StateHistory]] = {
-    collection.find(equal("state", Codecs.toBson(state)))
-      .toFuture()
-      .map(_.toList)
-  }
-
-  def findAll: Future[List[StateHistory]] = {
-    collection.find()
-      .toFuture()
-      .map(x => x.toList)
-  }
-
-  def fetchByApplicationId(applicationId: ApplicationId): Future[List[StateHistory]] = {
-    collection.find(equal("applicationId", Codecs.toBson(applicationId)))
-      .toFuture()
-      .map(x => x.toList)
-  }
-
   def fetchDeletedByApplicationIds(applicationIds: List[ApplicationId]): Future[List[StateHistory]] = {
     collection.find(and(
       in("applicationId", applicationIds.map(i => Codecs.toBson(i)): _*),

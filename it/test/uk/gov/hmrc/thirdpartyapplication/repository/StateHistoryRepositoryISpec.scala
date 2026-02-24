@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import org.mongodb.scala.bson.collection.immutable.Document
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -82,7 +83,7 @@ class StateHistoryRepositoryISpec
 
     "read existing document from mongo" in {
       saveMongoJson(json)
-      val result = await(repository.fetchByApplicationId(appId))
+      val result = await(repository.collection.find(Document()).toFuture())
       result shouldBe List(stateHistory)
     }
   }
@@ -96,45 +97,8 @@ class StateHistoryRepositoryISpec
       val result = await(repository.insert(stateHistory))
 
       result shouldBe stateHistory
-      val savedStateHistories = await(repository.findAll)
-      savedStateHistories shouldBe List(stateHistory)
-    }
-  }
-
-  "fetchByApplicationId" should {
-
-    "Return the state history of the application" in {
-
-      val applicationId          = ApplicationId.random
-      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = instant)
-      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = instant)
-      await(repository.insert(stateHistory))
-      await(repository.insert(anotherAppStateHistory))
-
-      val result = await(repository.fetchByApplicationId(applicationId))
-
-      result shouldBe List(stateHistory)
-    }
-  }
-
-  "fetchByState" should {
-
-    "Return the state history of the application" in {
-
-      val applicationId   = ApplicationId.random
-      val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = instant.minus(Duration.ofDays(5)))
-      val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = instant)
-      val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = instant)
-      val pendingHistory3 = StateHistory(ApplicationId.random, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = instant)
-
-      await(repository.insert(pendingHistory1))
-      await(repository.insert(approvedHistory))
-      await(repository.insert(pendingHistory2))
-      await(repository.insert(pendingHistory3))
-
-      val result = await(repository.fetchByState(State.PENDING_GATEKEEPER_APPROVAL))
-
-      result shouldBe List(pendingHistory1, pendingHistory2, pendingHistory3)
+      val savedStateHistories = await(repository.collection.find(Document()).toFuture())
+      savedStateHistories shouldBe Seq(stateHistory)
     }
   }
 
@@ -173,7 +137,7 @@ class StateHistoryRepositoryISpec
 
       await(repository.deleteByApplicationId(applicationId))
 
-      await(repository.findAll) shouldBe List(anotherAppStateHistory)
+      await(repository.collection.find(Document()).toFuture()) shouldBe Seq(anotherAppStateHistory)
     }
   }
 
@@ -190,8 +154,8 @@ class StateHistoryRepositoryISpec
       val result = await(repository.insert(stateHistory))
 
       result shouldBe stateHistory
-      val savedStateHistories = await(repository.findAll)
-      savedStateHistories shouldBe List(stateHistory)
+      val savedStateHistories = await(repository.collection.find(Document()).toFuture())
+      savedStateHistories shouldBe Seq(stateHistory)
     }
   }
   "fetchDeletedByApplicationIds" should {

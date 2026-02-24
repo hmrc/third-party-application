@@ -20,11 +20,10 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -54,41 +53,8 @@ class GatekeeperController @Inject() (
     with TermsOfUseInvitationActionBuilders
     with WarnStillInUse {
 
-  def fetchAppsForGatekeeper = warnStillInUse("fetchAppsForGatekeeper") {
-    anyAuthenticatedUserAction { loggedInRequest =>
-      gatekeeperService.fetchNonTestingAppsWithSubmittedDate() map {
-        apps => Ok(Json.toJson(apps))
-      } recover recovery
-    }
-  }
-
-  def fetchAllAppsWithSubscriptions(): Action[AnyContent] = warnStillInUse("fetchAllAppsWithSubscriptions") {
-    anyAuthenticatedUserAction {
-      _ => gatekeeperService.fetchAllWithSubscriptions() map { apps => Ok(Json.toJson(apps)) } recover recovery
-    }
-  }
-
-  def fetchAppById(id: ApplicationId) = warnStillInUse("fetchAppById") {
-    anyAuthenticatedUserAction { loggedInRequest =>
-      gatekeeperService.fetchAppWithHistory(id) map (app => Ok(Json.toJson(app))) recover recovery
-    }
-  }
-
-  def fetchAppStateHistoryById(id: ApplicationId) = warnStillInUse("fetchAppStateHistoryById") {
-    anyAuthenticatedUserAction { loggedInRequest =>
-      gatekeeperService.fetchAppStateHistoryById(id) map (app => Ok(Json.toJson(app))) recover recovery
-    }
-  }
-
   def fetchAppStateHistories() = anyAuthenticatedUserAction { _ =>
     gatekeeperService.fetchAppStateHistories() map (histories => Ok(Json.toJson(histories))) recover recovery
-  }
-
-  def fetchAllForCollaborator(userId: UserId) = warnStillInUse("fetchAllForCollaborator") {
-    Action.async {
-      queryService.fetchApplicationsByQuery(ApplicationQueries.applicationsByUserId(userId, includeDeleted = true))
-        .map(apps => Ok(Json.toJson(apps))) recover recovery
-    }
   }
 
   def deleteApplication(id: ApplicationId) =
