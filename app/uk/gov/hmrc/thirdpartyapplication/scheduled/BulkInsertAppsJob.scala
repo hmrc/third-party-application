@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, ZoneId}
 import javax.inject.Inject
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -64,34 +65,30 @@ class BulkInsertAppsJob @Inject() (
   private def populateData(): Unit = {
     logger.info(s"$name - Populating data")
 
-    val BatchSize       = 625
+    val BatchSize       = 500
     val NumberOfBatches = 2
 
     def generateRandomData(batchSize: Int) =
       (1 to batchSize).map(n => {
         val applicationId                    = ApplicationId.random
-        val name                             = ApplicationName(s"FILLER_APP_$applicationId")
+        val name                             = ApplicationName(s"NEVER_USED_APP_$applicationId")
         val normalisedName                   = name.value.toLowerCase
         val collaborators: Set[Collaborator] =
-          Set(Collaborators.Administrator(userId = UserId.unsafeApply("0312a26f-e265-4ecb-8b38-8f9c95d95fd6"), emailAddress = LaxEmailAddress("perf@digital.hmrc.gov.uk")))
-        val creationTime                     = Instant.now(Clock.tickMillis(ZoneId.systemDefault()))
+          Set(Collaborators.Administrator(userId = UserId.unsafeApply("011fdc2c-1f6a-4594-84bf-c4526d056aaf"), emailAddress = LaxEmailAddress("imran.akram@digital.hmrc.gov.uk")))
+        val creationTime                     = Instant.now(Clock.tickMillis(ZoneId.systemDefault())).minus(30, ChronoUnit.DAYS)
         StoredApplication(
           id = applicationId,
           name = name,
           normalisedName = normalisedName,
           collaborators = collaborators,
-          description = Some("API Platform Team"),
+          description = Some("API Platform Team - Never-Used Applications Test"),
           wso2ApplicationName = credentialGenerator.generate(),
           tokens = ApplicationTokens(production = StoredToken(clientId = ClientId.random, accessToken = "")),
           state = ApplicationState(State.PRODUCTION, updatedOn = creationTime),
           createdOn = creationTime,
-          lastAccess = None,
-          environment = Environment.PRODUCTION,
-          deleteRestriction = DeleteRestriction.DoNotDelete(
-            reason = "Bulking up the test data in Staging",
-            actor = Actors.AppCollaborator(collaborators.head.emailAddress),
-            timestamp = creationTime
-          )
+          lastAccess = Some(creationTime),
+          environment = Environment.SANDBOX,
+          deleteRestriction = DeleteRestriction.NoRestriction
         )
       })
 
@@ -107,7 +104,7 @@ class BulkInsertAppsJob @Inject() (
               apps <- applicationRepository.collection.insertMany(applications).toFuture()
               _    <- subscriptionRepository.collection.updateOne(
                         filter = and(
-                          equal("apiIdentifier.context", Codecs.toBson("api-simulator")),
+                          equal("apiIdentifier.context", Codecs.toBson("hello")),
                           equal("apiIdentifier.version", Codecs.toBson("1.0"))
                         ),
                         update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*),
