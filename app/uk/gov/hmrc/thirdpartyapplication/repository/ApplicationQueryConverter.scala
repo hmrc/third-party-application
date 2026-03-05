@@ -123,6 +123,14 @@ object ApplicationQueryConverter {
       case MatchAccessTypeQP(accessType) => List(equal("access.accessType", Codecs.toBson(accessType)))
     })
 
+  def asNeverUsedFilter(implicit params: List[Param[_]]): List[Bson] = {
+    onFirst[NeverUsedQP.type](qp => {
+      List(
+        Document("""{$expr: {$eq: ["$lastAccess", "$createdOn"] }}""")
+      )
+    })
+  }
+
   def asLastUsedFilters(implicit params: List[Param[_]]): List[Bson] = {
     import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.Implicits.jatInstantFormat
 
@@ -206,6 +214,7 @@ object ApplicationQueryConverter {
         asIncludeOrExcludeDeletedAppsFilters ++
         asAccessTypeFilters ++
         asLastUsedFilters ++
+        asNeverUsedFilter ++
         asAppStateFilters ++
         asNameFilter ++
         asVerificationCodeFilter ++

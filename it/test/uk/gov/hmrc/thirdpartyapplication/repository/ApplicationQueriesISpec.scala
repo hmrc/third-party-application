@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import java.time.temporal.ChronoUnit
 import java.time.{Clock, Duration}
 
 import org.mongodb.scala.bson.collection.mutable.Document
@@ -32,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{DeleteRestriction, GrantLength, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{AdminUserIdQP, DoNotDeleteQP, NoRestrictionQP, OrganisationIdQP, UserIdsQP}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
@@ -678,6 +679,28 @@ class ApplicationQueriesISpec
         State.PENDING_REQUESTER_VERIFICATION,
         0
       )
+    }
+  }
+
+  "applications by never used" should {
+    "return both apps that have the same creation and last used by dates" in {
+      val applicationId1   = ApplicationId.random
+      val applicationId2   = ApplicationId.random
+      val applicationId3   = ApplicationId.random
+      import cats.syntax.option._
+      val testApplication1 = anApplicationDataForTest(applicationId1).some.map(a => a.copy(lastAccess = Some(a.createdOn))).get
+      val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).some.map(a => a.copy(lastAccess = Some(a.createdOn))).get
+      val testApplication3 =
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).some.map(a => a.copy(lastAccess = Some(a.createdOn.plus(5, ChronoUnit.DAYS)))).get
+
+      await(applicationRepository.save(testApplication1))
+      await(applicationRepository.save(testApplication2))
+      await(applicationRepository.save(testApplication3))
+
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(NeverUsedQP))))
+
+      result.size shouldBe 2
+      result should contain.allOf(testApplication1, testApplication2)
     }
   }
 
