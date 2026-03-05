@@ -37,8 +37,6 @@ import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, Clock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{ExcludeDeletedQP, UserIdsQP}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
@@ -202,42 +200,11 @@ class ApplicationService @Inject() (
     }
   }
 
-  def fetchAllForCollaborators(userIds: List[UserId], batchSize: Int = 50): Future[List[ApplicationWithCollaborators]] = {
-    val blocks = userIds.sliding(batchSize, batchSize).toList
-    Future.sequence(
-      blocks.map(blockOfUserIds =>
-        queryService.fetchApplicationsByQuery(ApplicationQuery.GeneralOpenEndedApplicationQuery(List(UserIdsQP(blockOfUserIds), ExcludeDeletedQP)))
-          .map(_.map(_.asAppWithCollaborators))
-      )
-    )
-      .map(_.flatten)
-      .map(_.distinct)
-  }
-
   import cats.data.OptionT
 
   def fetch(applicationId: ApplicationId): OptionT[Future, ApplicationWithCollaborators] =
     OptionT(applicationRepository.fetch(applicationId))
       .map(application => application.asAppWithCollaborators)
-
-  def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplications] = {
-
-    def buildApplication(app: ApplicationWithCollaborators, stateHistory: Option[StateHistory]) = {
-      app.modify(_.copy(lastActionActor = stateHistory.map(sh => ActorType.actorType(sh.actor)).getOrElse(ActorType.UNKNOWN)))
-    }
-
-    val applicationsResponse: Future[PaginatedApplications] = applicationRepository.searchApplications("applicationSearch")(applicationSearch)
-    val appHistory: Future[List[StateHistory]]              =
-      applicationsResponse
-        .map(data => data.applications.map(app => app.id))
-        .flatMap(id => stateHistoryRepository.fetchDeletedByApplicationIds(id))
-
-    applicationsResponse.zipWith(appHistory) {
-      case (data, appHistory) => data.copy(
-          applications = data.applications.map(app => buildApplication(app, appHistory.find(ah => ah.applicationId == app.id)))
-        )
-    }
-  }
 
   def getAppsForResponsibleIndividualOrAdmin(emailAddress: LaxEmailAddress): Future[List[ApplicationWithCollaborators]] = {
     applicationRepository.getAppsForResponsibleIndividualOrAdmin(emailAddress).map(_.map(application => StoredApplication.asAppWithCollaborators(application)))

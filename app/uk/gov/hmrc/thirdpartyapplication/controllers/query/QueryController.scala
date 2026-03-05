@@ -72,6 +72,7 @@ class QueryController @Inject() (
 
   private def execute(appQry: ApplicationQuery)(implicit hc: HeaderCarrier): Future[Result] = {
     val appQryText = appQry.asLogText
+    logger.info(s"Executing query: $appQryText")
     timeFuture(s"$appQryText", "QueryController.execute") {
 
       appQry match {

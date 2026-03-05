@@ -37,7 +37,8 @@ class StrideGatekeeperRoleAuthorisationService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
 
-  private lazy val hasAnyGatekeeperEnrolment = Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
+  private lazy val hasAnyGatekeeperEnrolment =
+    Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.advancedUserRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
 
   protected def innerEnsureHasGatekeeperRole[A]()(implicit hc: HeaderCarrier): Future[Option[Result]] = {
     strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval)
