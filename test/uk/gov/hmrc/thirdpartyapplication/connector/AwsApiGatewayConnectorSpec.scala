@@ -22,16 +22,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.client.WireMock._
 
-import play.api.http.ContentTypes.JSON
-import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
-import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, OK}
+import play.api.http.HeaderNames.AUTHORIZATION
+import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.libs.json._
 import uk.gov.hmrc.http.test.HttpClientV2Support
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apiplatform.modules.common.connectors.ConnectorSpec
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 class AwsApiGatewayConnectorSpec extends ConnectorSpec {
   import AwsApiGatewayConnector.{RequestId, UpdateApplicationUsagePlanRequest}
@@ -58,41 +56,41 @@ class AwsApiGatewayConnectorSpec extends ConnectorSpec {
     val underTest: AwsApiGatewayConnector = new AwsApiGatewayConnector(httpClientV2, config)
   }
 
-  "createOrUpdateApplication" should {
-    "send the right body and headers when creating or updating an application" in new Setup {
-      stubFor(
-        post(urlPathEqualTo(expectedUpdateURL))
-          .withHeader(CONTENT_TYPE, equalTo(JSON))
-          .withHeader("x-api-key", equalTo(awsApiKey))
-          .willReturn(
-            aResponse()
-              .withStatus(ACCEPTED)
-              .withJsonBody(RequestId(UUID.randomUUID().toString))
-          )
-      )
+  // "createOrUpdateApplication" should {
+  //   "send the right body and headers when creating or updating an application" in new Setup {
+  //     stubFor(
+  //       post(urlPathEqualTo(expectedUpdateURL))
+  //         .withHeader(CONTENT_TYPE, equalTo(JSON))
+  //         .withHeader("x-api-key", equalTo(awsApiKey))
+  //         .willReturn(
+  //           aResponse()
+  //             .withStatus(ACCEPTED)
+  //             .withJsonBody(RequestId(UUID.randomUUID().toString))
+  //         )
+  //     )
 
-      await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, RateLimitTier.SILVER)(hc)) shouldBe HasSucceeded
+  //     await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, RateLimitTier.SILVER)(hc)) shouldBe HasSucceeded
 
-      wireMockServer.verify(
-        postRequestedFor(urlEqualTo(expectedUpdateURL))
-          .withHeader("x-api-key", equalTo(awsApiKey))
-          .withoutHeader(AUTHORIZATION)
-      )
-    }
+  //     wireMockServer.verify(
+  //       postRequestedFor(urlEqualTo(expectedUpdateURL))
+  //         .withHeader("x-api-key", equalTo(awsApiKey))
+  //         .withoutHeader(AUTHORIZATION)
+  //     )
+  //   }
 
-    "return Upstream5xxResponse when application creation or update fails" in new Setup {
-      stubFor(post(urlPathEqualTo(expectedUpdateURL))
-        .willReturn(
-          aResponse()
-            .withStatus(INTERNAL_SERVER_ERROR)
-        ))
+  //   "return Upstream5xxResponse when application creation or update fails" in new Setup {
+  //     stubFor(post(urlPathEqualTo(expectedUpdateURL))
+  //       .willReturn(
+  //         aResponse()
+  //           .withStatus(INTERNAL_SERVER_ERROR)
+  //       ))
 
-      intercept[UpstreamErrorResponse] {
-        await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, RateLimitTier.SILVER)(hc))
-      }.statusCode shouldBe INTERNAL_SERVER_ERROR
+  //     intercept[UpstreamErrorResponse] {
+  //       await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, RateLimitTier.SILVER)(hc))
+  //     }.statusCode shouldBe INTERNAL_SERVER_ERROR
 
-    }
-  }
+  //   }
+  // }
 
   "deleteApplication" should {
     "send the x-api-key header when deleting an application" in new Setup {

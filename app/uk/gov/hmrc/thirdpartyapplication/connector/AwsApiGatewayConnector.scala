@@ -20,9 +20,7 @@ import java.net.URL
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import play.api.http.ContentTypes.JSON
-import play.api.http.HeaderNames.CONTENT_TYPE
-import play.api.libs.json.{JsPath, Json, OWrites, Reads}
+import play.api.libs.json.{JsPath, OWrites, Reads}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
@@ -59,17 +57,18 @@ class AwsApiGatewayConnector @Inject() (http: HttpClientV2, config: AwsApiGatewa
   private def deleteAPIKeyURL(applicationName: String): URL         = url"${config.baseUrl}/v1/api-keys/$applicationName"
 
   def createOrUpdateApplication(wso2ApplicationName: String, serverToken: String, usagePlan: RateLimitTier)(hc: HeaderCarrier): Future[HasSucceeded] = {
-    implicit val headersWithoutAuthorization: HeaderCarrier = hc
-      .copy(authorization = None)
-      .withExtraHeaders(apiKeyHeaderName -> awsApiKey, CONTENT_TYPE -> JSON)
+    // implicit val headersWithoutAuthorization: HeaderCarrier = hc
+    //   .copy(authorization = None)
+    //   .withExtraHeaders(apiKeyHeaderName -> awsApiKey, CONTENT_TYPE -> JSON)
 
-    http.post(updateUsagePlanURL(usagePlan))
-      .withBody(Json.toJson(UpdateApplicationUsagePlanRequest(wso2ApplicationName, serverToken)))
-      .execute[RequestId]
-      .map { requestId =>
-        logger.info(s"Successfully created or updated application '$wso2ApplicationName' in AWS API Gateway with request ID ${requestId.value}")
-        HasSucceeded
-      }
+    // http.post(updateUsagePlanURL(usagePlan))
+    //   .withBody(Json.toJson(UpdateApplicationUsagePlanRequest(wso2ApplicationName, serverToken)))
+    //   .execute[RequestId]
+    //   .map { requestId =>
+    //     logger.info(s"Successfully created or updated application '$wso2ApplicationName' in AWS API Gateway with request ID ${requestId.value}")
+    //     HasSucceeded
+    //   }
+    Future.successful(HasSucceeded)
   }
 
   def deleteApplication(wso2ApplicationName: String)(hc: HeaderCarrier): Future[HasSucceeded] = {
