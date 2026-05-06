@@ -66,7 +66,7 @@ class SubscriptionService @Inject() (
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     val actor          = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators).getOrElse(Actors.Unknown)
-    val subscribeToApi = ApplicationCommands.SubscribeToApi(actor, api, instant())
+    val subscribeToApi = ApplicationCommands.SubscribeToApi(actor, api, instant)
     applicationCommandDispatcher.dispatch(applicationId, subscribeToApi, Set.empty).value.map {
       case Left(e)  =>
         logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")

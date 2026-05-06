@@ -125,14 +125,14 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
   }
 
   private def grantApp(application: StoredApplication): StoredApplication = {
-    application.withState(application.state.toPendingRequesterVerification(instant()))
+    application.withState(application.state.toPendingRequesterVerification(instant))
   }
 
   private def grantSubmission(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])(submission: Submission) = {
     warnings.fold(
-      Submission.grant(instant(), gatekeeperUserName, None, None)(submission)
+      Submission.grant(instant, gatekeeperUserName, None, None)(submission)
     )(value =>
-      Submission.grantWithWarnings(instant(), gatekeeperUserName, value, escalatedTo)(submission)
+      Submission.grantWithWarnings(instant, gatekeeperUserName, value, escalatedTo)(submission)
     )
   }
 

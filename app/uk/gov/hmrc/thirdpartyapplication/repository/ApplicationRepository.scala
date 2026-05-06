@@ -280,7 +280,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[StoredApplication]] = {
     // For startDate calculation, ifNull provides a default date when lastAccess is not yet set
     timeFuture("Find and Record Application Usage", "application.repository.findAndRecordApplicationUsage") {
-      val timeOfAccess    = instant().toString
+      val timeOfAccess    = instant.toString
       // lastAccess is set to the same as createdOn when a new application is created
       val aggregateUpdate = Seq(BsonDocument(
         s"""{
@@ -564,6 +564,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
 
       collection.aggregate[BsonValue](pipeline)
+        .comment(MongoComment.NoIndexRequired)
         .map(Codecs.fromBson[ApplicationWithSubscriptionCount])
         .toFuture()
         .map(_.map(x => s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(x._id.name)}" -> x.count)

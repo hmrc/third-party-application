@@ -54,7 +54,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
   implicit val hc: HeaderCarrier                                 = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val deleteTime: Instant = instant().minus(Period.ofDays(productionCredentialsRequestDeleteInterval.toDays.toInt))
+    val deleteTime: Instant = instant.minus(Period.ofDays(productionCredentialsRequestDeleteInterval.toDays.toInt))
     logger.info(s"Delete expired production credentials requests for production applications having status of TESTING with updatedOn earlier than $deleteTime with no delete restriction")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
@@ -74,7 +74,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
       s"name='${app.state.name}',state.updatedOn='${app.state.updatedOn}}'")
 
     val reasons = s"Delete expired production credentials request, updated on ${app.state.updatedOn}"
-    val request = ApplicationCommands.DeleteProductionCredentialsApplication(name, reasons, instant())
+    val request = ApplicationCommands.DeleteProductionCredentialsApplication(name, reasons, instant)
 
     (for {
       savedApp <- commandDispatcher.dispatch(app.id, request, Set.empty)

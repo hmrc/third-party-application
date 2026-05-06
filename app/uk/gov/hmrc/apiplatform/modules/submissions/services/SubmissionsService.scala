@@ -68,8 +68,8 @@ class SubmissionsService @Inject() (
         allQuestionnaires = groups.flatMap(_.links)
         submissionId      = SubmissionId.random
         context          <- contextService.deriveContext(applicationId)
-        newInstance       = Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(instant(), requestedBy)))
-        submission        = Submission(submissionId, applicationId, instant(), groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
+        newInstance       = Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(instant, requestedBy)))
+        submission        = Submission(submissionId, applicationId, instant, groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
         savedSubmission  <- liftF(submissionsDAO.save(submission))
       } yield savedSubmission
     )
@@ -147,7 +147,7 @@ class SubmissionsService @Inject() (
     (
       for {
         submission       <- fromOptionF(fetchLatest(appId), "submission not found")
-        updatedSubmission = Submission.decline(instant(), requestedByEmailAddress, reasons)(submission)
+        updatedSubmission = Submission.decline(instant, requestedByEmailAddress, reasons)(submission)
         savedSubmission  <- liftF(store(updatedSubmission))
       } yield savedSubmission
     )
@@ -159,7 +159,7 @@ class SubmissionsService @Inject() (
     (
       for {
         submission       <- fromOptionF(fetchLatest(appId), "submission not found")
-        updatedSubmission = Submission.automaticallyMark(instant(), requestedByEmailAddress)(submission)
+        updatedSubmission = Submission.automaticallyMark(instant, requestedByEmailAddress)(submission)
         savedSubmission  <- liftF(store(updatedSubmission))
       } yield savedSubmission
     )

@@ -49,7 +49,7 @@ class TermsOfUseInvitationOverdueJob @Inject() (
   implicit val hc: HeaderCarrier            = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val overdueTime: Instant = instant()
+    val overdueTime: Instant = instant
     logger.info(s"Set terms of use overdue for invitations having status of EMAIL_SENT or REMINDER_EMAIL_SENT with dueBy earlier than $overdueTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
