@@ -107,7 +107,7 @@ class ApplicationService @Inject() (
     for {
       app            <- fetchApp(applicationId)
       oldState        = app.state
-      newState        = app.state.toProduction(instant())
+      newState        = app.state.toProduction(instant)
       appWithNewState = app.withState(newState)
       updatedApp     <- applicationRepository.save(appWithNewState)
       stateHistory    = StateHistory(applicationId, newState.name, Actors.AppCollaborator(requesterEmailAddress), Some(oldState.name), None, app.state.updatedOn)
@@ -237,7 +237,7 @@ class ApplicationService @Inject() (
                    case AccessType.ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.ROPC)
                    case _                     => successful(())
                  }
-      basicApp = StoredApplication.create(createApplicationRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), instant())
+      basicApp = StoredApplication.create(createApplicationRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), instant)
       totp    <- generateApplicationTotp(createApplicationRequest.accessType)
       appData  = applyTotpForPrivAppsOnly(totp, basicApp)
       _       <- createInApiGateway(appData)
@@ -301,7 +301,7 @@ class ApplicationService @Inject() (
       actor: Actor,
       rollback: StoredApplication => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = instant())
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = instant)
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)

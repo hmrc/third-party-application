@@ -87,7 +87,7 @@ class GrantApprovalsService @Inject() (
         _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
         _ <- ET.cond(submission.status.isWarnings, (), RejectedDueToIncorrectSubmissionState)
 
-        updatedSubmission = Submission.grantWithWarnings(instant(), gatekeeperUserName, reasons, None)(submission)
+        updatedSubmission = Submission.grantWithWarnings(instant, gatekeeperUserName, reasons, None)(submission)
         savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
         _                <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
       } yield Actioned(originalApp)
@@ -109,7 +109,7 @@ class GrantApprovalsService @Inject() (
         _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
         _ <- ET.cond(submission.status.isFailed, (), RejectedDueToIncorrectSubmissionState)
 
-        updatedSubmission = Submission.decline(instant(), gatekeeperUserName, reasons)(submission)
+        updatedSubmission = Submission.decline(instant, gatekeeperUserName, reasons)(submission)
         savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
         _                <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))
       } yield Actioned(originalApp)
@@ -130,7 +130,7 @@ class GrantApprovalsService @Inject() (
       for {
         _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
 
-        updatedSubmission = Submission.decline(instant(), gatekeeperUserName, "RESET: " + reasons)(submission)
+        updatedSubmission = Submission.decline(instant, gatekeeperUserName, "RESET: " + reasons)(submission)
         savedSubmission  <- ET.liftF(submissionService.store(updatedSubmission))
         _                <- ET.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(submission.id, submission.latestInstance.index))
         _                <- ET.liftF(setTermsOfUseInvitationStatus(originalApp.id, savedSubmission))

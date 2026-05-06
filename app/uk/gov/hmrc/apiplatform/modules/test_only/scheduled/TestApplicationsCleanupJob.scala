@@ -58,7 +58,7 @@ class TestApplicationsCleanupJob @Inject() (
   logger.info("TestApplicationsCleanupJob ready!!!")
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val timeBeforeWhichAppIsConsideredExpired: Instant = instant().minus(jobConfig.expiryDuration.toMinutes, ChronoUnit.MINUTES)
+    val timeBeforeWhichAppIsConsideredExpired: Instant = instant.minus(jobConfig.expiryDuration.toMinutes, ChronoUnit.MINUTES)
     logger.info(s"Delete expired test applications created earlier than $timeBeforeWhichAppIsConsideredExpired ( ${jobConfig.expiryDuration.toMinutes} mins ago)")
 
     val result: Future[RunningOfJobSuccessful.type] = for {

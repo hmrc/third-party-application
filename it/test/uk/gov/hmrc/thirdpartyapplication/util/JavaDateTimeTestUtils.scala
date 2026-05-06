@@ -24,7 +24,7 @@ import org.scalatest.matchers.should.Matchers._
 trait JavaDateTimeTestUtils {
 
   def timestampShouldBeApproximatelyNow(date: Instant, thresholdMillis: Int = 500, clock: Clock) = {
-    val anInstant             = clock.instant().truncatedTo(ChronoUnit.MILLIS)
+    val anInstant             = clock.instant.truncatedTo(ChronoUnit.MILLIS)
     val reasonableExpectation = anInstant.minus(thresholdMillis, ChronoField.MILLI_OF_SECOND.getBaseUnit)
 
     withClue(s"timestamp $date was not within ${thresholdMillis}ms of ${anInstant}") {

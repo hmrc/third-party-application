@@ -45,7 +45,7 @@ class PublisherController @Inject() (
 
   def deleteSubscribers(context: ApiContext, version: ApiVersionNbr): Action[AnyContent] = Action.async { implicit request =>
     // can check user-agent header to check originator and check secret key, Unauth response if failed.
-    val ts: Instant   = instant()
+    val ts: Instant   = instant
     val apiIdentifier = ApiIdentifier(context, version)
     val command       = UnsubscribeFromApi(Actors.Process("Publisher"), apiIdentifier, ts)
 

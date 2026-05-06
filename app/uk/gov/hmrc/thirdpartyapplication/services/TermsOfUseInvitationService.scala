@@ -60,7 +60,7 @@ class TermsOfUseInvitationService @Inject() (
   }
 
   def updateResetBackToEmailSent(applicationId: ApplicationId): Future[HasSucceeded] = {
-    val newDueByDate = instant().plus(daysUntilDueWhenReset.toMinutes, MINUTES)
+    val newDueByDate = instant.plus(daysUntilDueWhenReset.toMinutes, MINUTES)
     termsOfUseRepository.updateResetBackToEmailSent(applicationId, newDueByDate)
   }
 

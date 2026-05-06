@@ -69,7 +69,7 @@ class TermsOfUseInvitationReminderJob @Inject() (
           subs.exists(sub => inv.applicationId == sub.applicationId && sub.instances.size == 1)
       )
     }
-    val reminderDueTime: Instant                                                                                 = instant().plus(termsOfUseInvitationReminderInterval.toMinutes, ChronoUnit.MINUTES)
+    val reminderDueTime: Instant                                                                                 = instant.plus(termsOfUseInvitationReminderInterval.toMinutes, ChronoUnit.MINUTES)
     logger.info(s"Send terms of use reminders for invitations having status of EMAIL_SENT with dueBy earlier than $reminderDueTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {

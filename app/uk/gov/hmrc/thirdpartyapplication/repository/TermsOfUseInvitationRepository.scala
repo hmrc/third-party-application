@@ -126,7 +126,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(
       Updates.set("status", Codecs.toBson(newState)),
-      Updates.set("lastUpdated", instant())
+      Updates.set("lastUpdated", instant)
     )
     collection.updateOne(filter, update)
       .toFuture()
@@ -137,8 +137,8 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(
       Updates.set("status", Codecs.toBson(REMINDER_EMAIL_SENT)),
-      Updates.set("reminderSent", instant()),
-      Updates.set("lastUpdated", instant())
+      Updates.set("reminderSent", instant),
+      Updates.set("lastUpdated", instant)
     )
     collection.updateOne(filter, update)
       .toFuture()
@@ -150,7 +150,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
     val update = Updates.combine(
       Updates.set("status", Codecs.toBson(EMAIL_SENT)),
       Updates.set("dueBy", newDueBy),
-      Updates.set("lastUpdated", instant())
+      Updates.set("lastUpdated", instant)
     )
     collection.updateOne(filter, update)
       .toFuture()
