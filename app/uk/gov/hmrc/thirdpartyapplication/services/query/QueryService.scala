@@ -30,13 +30,16 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.SingleAp
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.services.SubscriptionFieldsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.QueriedApplicationWithOptionalToken
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.Materializer
 
 @Singleton
 class QueryService @Inject() (
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     subsFieldsService: SubscriptionFieldsService
-  )(implicit val ec: ExecutionContext
+  )(implicit val ec: ExecutionContext, mat: Materializer
   ) extends ApplicationLogger {
 
   def fetchSingleApplicationByQuery(qry: SingleApplicationQuery)(implicit hc: HeaderCarrier): Future[Option[QueriedApplicationWithOptionalToken]] = {
@@ -53,8 +56,16 @@ class QueryService @Inject() (
     })
   }
 
-  def fetchApplicationsByQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedApplication]] = {
+  def fetchApplicationsByQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication,_] = {
     applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry)
+  }
+
+  def fetchApplicationsByQuery(qry: GeneralOpenEndedApplicationQuery): Future[Seq[QueriedApplication]] = {
+    val MAX_ALLOWED_SIZE = 1000
+
+    fetchApplicationsByQueryStream(qry)
+    .limit(MAX_ALLOWED_SIZE)
+    .runWith(Sink.seq)
   }
 
   def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {

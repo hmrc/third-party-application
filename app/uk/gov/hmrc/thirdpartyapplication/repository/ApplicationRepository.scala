@@ -51,6 +51,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedStoredApplication, _}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 
 object ApplicationRepository {
   import play.api.libs.functional.syntax._
@@ -794,6 +796,20 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
+  private def executeAggregateStream(projectionToUseStage: Bson, pipelineStages: List[Bson]): Source[QueriedStoredApplication, _] = {
+
+    val stages: Seq[Bson] = pipelineStages :+ projectionToUseStage
+
+    implicit val rdr: Reads[QueriedStoredApplication] = readsQSA.composeWith(transformApplication)
+
+    val raw = collection.aggregate[BsonValue](stages)
+      .map(bson => {
+        Codecs.fromBson[QueriedStoredApplication](bson)
+      })
+
+    Source.fromPublisher(raw)
+  }
+
   private def executeAggregate(projectionToUseStage: Bson, pipelineStages: List[Bson]): Future[List[QueriedStoredApplication]] = {
 
     val stages: Seq[Bson] = pipelineStages :+ projectionToUseStage
@@ -846,6 +862,26 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       .value
   }
 
+
+  private def internalFetchByGeneralOpenEndedApplicationQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedStoredApplication,_] = {
+      val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+      val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
+      val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
+
+      val needsLookup = qry.wantSubscriptions || qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
+
+      val maybeSubsLookupStage = subscriptionsLookup.some.filter(_ => needsLookup)
+
+      val maybeStateHistoryLookupStage = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
+
+      val pipelineStages: List[Bson] = (maybeSubsLookupStage :: filtersStage :: maybeStateHistoryLookupStage :: sortingStage :: limitStage :: Nil) collect {
+        case Some(x) => x
+      }
+      val projectionToUseStage       = toProjectionToUseStage(qry.wantSubscriptions, qry.wantStateHistory)
+
+      executeAggregateStream(projectionToUseStage, pipelineStages)
+  }
+
   private def internalFetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedStoredApplication]] = {
     timeFuture("Run General Query", "application.repository.fetchByGeneralOpenEndedApplicationQuery") {
       val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
@@ -867,8 +903,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedApplication]] = {
-    internalFetchByGeneralOpenEndedApplicationQuery(qry).map(_.map(_.asQueriedApplication))
+  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication,_] = {
+    internalFetchByGeneralOpenEndedApplicationQueryStream(qry).map(_.asQueriedApplication)
   }
 
   def fetchStoredApplications(qry: GeneralOpenEndedApplicationQuery): Future[List[StoredApplication]] = {
