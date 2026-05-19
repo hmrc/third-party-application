@@ -17,8 +17,11 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
+
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 
 import play.api.libs.json._
 import play.api.mvc._
@@ -31,20 +34,13 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{Applica
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
-import play.api.http.ContentTypes
-import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.util.ByteString
-import org.apache.pekko.stream.scaladsl.Sink
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
-import org.apache.pekko.stream.Materializer
-import higherkindness.droste.data.AttrImplicits
 
 @Singleton
 class QueryController @Inject() (
     queryService: QueryService,
     cc: ControllerComponents,
     val metrics: Metrics
-  )(implicit val ec: ExecutionContext, mat: Materializer
+  )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
     with ApplicationLogger
@@ -79,9 +75,6 @@ class QueryController @Inject() (
   private val applicationNotFound = NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query"))
 
   private def execute(appQry: ApplicationQuery)(implicit hc: HeaderCarrier): Future[Result] = {
-    // TODO
-    val wantStream: Boolean = true
-
     val appQryText = appQry.asLogText
     logger.info(s"Executing query: $appQryText")
     timeFuture(s"$appQryText", "QueryController.execute") {
@@ -92,17 +85,22 @@ class QueryController @Inject() (
           }
 
         case q: GeneralOpenEndedApplicationQuery =>
-          if(wantStream) {
-            val wrappedSource: Source[ByteString,_] = 
+          if (q.streamed) {
+            val wrappedSource: Source[ByteString, _] =
               queryService.fetchApplicationsByQueryStream(q).map(qas => ByteString(Json.toJson(qas).toString))
-              successful(Ok.chunked(wrappedSource, Some("application/stream+json")))
+            successful(Ok.chunked(wrappedSource, Some("application/stream+json")))
           } else {
             queryService.fetchApplicationsByQuery(q).map(apps => Ok(Json.toJson(apps.toList)))
           }
 
         case q: PaginatedApplicationQuery =>
-          queryService.fetchPaginatedApplications(q)
-            .map(results => Ok(Json.toJson(results)))
+          // if (q.streamed) {
+          //   val wrappedSource: Source[ByteString, _] =
+          //     queryService.fetchPaginatedApplicationsStream(q).map(qas => ByteString(Json.toJson(qas).toString))
+          //   successful(Ok.chunked(wrappedSource, Some("application/stream+json")))
+          // } else {
+          queryService.fetchPaginatedApplications(q).map(results => Ok(Json.toJson(results)))
+        // }
       }
     }
   }

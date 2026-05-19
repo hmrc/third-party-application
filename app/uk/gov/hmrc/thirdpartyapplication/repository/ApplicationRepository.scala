@@ -24,6 +24,7 @@ import cats.data.OptionT
 import cats.syntax.option._
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.stream.scaladsl.Source
 import org.bson.BsonValue
 import org.bson.conversions.Bson
 import org.mongodb.scala.bson._
@@ -51,8 +52,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedStoredApplication, _}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
-import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.util.ByteString
 
 object ApplicationRepository {
   import play.api.libs.functional.syntax._
@@ -862,28 +861,27 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       .value
   }
 
+  private def internalFetchByGeneralOpenEndedApplicationQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedStoredApplication, _] = {
+    val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+    val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
+    val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
 
-  private def internalFetchByGeneralOpenEndedApplicationQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedStoredApplication,_] = {
-      val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
-      val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
-      val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
+    val needsLookup = qry.wantSubscriptions || qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
 
-      val needsLookup = qry.wantSubscriptions || qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
+    val maybeSubsLookupStage = subscriptionsLookup.some.filter(_ => needsLookup)
 
-      val maybeSubsLookupStage = subscriptionsLookup.some.filter(_ => needsLookup)
+    val maybeStateHistoryLookupStage = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
 
-      val maybeStateHistoryLookupStage = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
+    val pipelineStages: List[Bson] = (maybeSubsLookupStage :: filtersStage :: maybeStateHistoryLookupStage :: sortingStage :: limitStage :: Nil) collect {
+      case Some(x) => x
+    }
+    val projectionToUseStage       = toProjectionToUseStage(qry.wantSubscriptions, qry.wantStateHistory)
 
-      val pipelineStages: List[Bson] = (maybeSubsLookupStage :: filtersStage :: maybeStateHistoryLookupStage :: sortingStage :: limitStage :: Nil) collect {
-        case Some(x) => x
-      }
-      val projectionToUseStage       = toProjectionToUseStage(qry.wantSubscriptions, qry.wantStateHistory)
-
-      executeAggregateStream(projectionToUseStage, pipelineStages)
+    executeAggregateStream(projectionToUseStage, pipelineStages)
   }
 
   private def internalFetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedStoredApplication]] = {
-    timeFuture("Run General Query", "application.repository.fetchByGeneralOpenEndedApplicationQuery") {
+    timeFuture("Run General Query", "application.repository.internalFetchByGeneralOpenEndedApplicationQuery") {
       val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
       val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
       val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
@@ -903,7 +901,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication,_] = {
+  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, _] = {
     internalFetchByGeneralOpenEndedApplicationQueryStream(qry).map(_.asQueriedApplication)
   }
 
