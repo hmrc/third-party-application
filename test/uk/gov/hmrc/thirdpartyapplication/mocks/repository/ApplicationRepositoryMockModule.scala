@@ -28,7 +28,6 @@ import uk.gov.hmrc.http.NotFoundException
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.SingleApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocation, SubmissionId, TermsAndConditionsLocation, TermsOfUseAcceptance}
@@ -435,16 +434,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.fetchStoredApplications(eqTo(qry))).thenReturn(successful(apps.toList))
 
       def thenFails(exc: Exception) = when(aMock.fetchStoredApplications(*)).thenReturn(failed(exc))
-    }
-
-    object FetchByGeneralOpenEndedApplicationQuery {
-      def thenReturns(apps: QueriedApplication*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(apps.toList))
-
-      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: QueriedApplication*) =
-        when(aMock.fetchByGeneralOpenEndedApplicationQuery(qry)).thenReturn(successful(apps.toList))
-
-      def thenReturnsWithSubs(apps: QueriedApplication*) =
-        when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(apps.toList))
     }
 
     object FetchStoredApplications {
