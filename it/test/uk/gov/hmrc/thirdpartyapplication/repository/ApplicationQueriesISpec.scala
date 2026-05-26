@@ -915,7 +915,7 @@ class ApplicationQueriesISpec
 
     val queriedApps = await(
       applicationRepository.fetchByGeneralOpenEndedApplicationQuery(GeneralOpenEndedApplicationQuery(Nil, wantSubscriptions = true, wantStateHistory = true))
-      .runWith(Sink.seq)
+        .runWith(Sink.seq)
     )
     queriedApps.head.stateHistory.value shouldBe List(stateHistoryData1)
     queriedApps.tail.head.stateHistory.value shouldBe List(stateHistoryData2)
@@ -953,8 +953,7 @@ class ApplicationQueriesISpec
         adminOne.userId,
         adminTwo.userId
       )))))
-      .runWith(Sink.seq)
-
+        .runWith(Sink.seq)
     )
       .map(_.asAppWithCollaborators)
 
