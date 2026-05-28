@@ -118,14 +118,6 @@ class QueryControllerSpec
       contentAsString(result) should include("APPLICATION_NOT_FOUND")
     }
 
-    "bad request when single query requested via streaming" in new Setup {
-      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}").withHeaders(ACCEPT -> "application/stream+json"))
-
-      status(result) shouldBe BAD_REQUEST
-      contentAsString(result) should include("Streaming is not supported for this query")
-      contentAsString(result) should include("STREAMING_NOT_SUPPORTED")
-    }
-
     "work for general query" in new Setup {
       QueryServiceMock.FetchApplicationsByQuery.thenReturnsFor(
         ApplicationQuery.GeneralOpenEndedApplicationQuery(UserIdQP(userIdOne) :: Nil),
@@ -208,14 +200,6 @@ class QueryControllerSpec
 
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(PaginatedApplications(List.empty, 1, 25, 102, 0))
-    }
-
-    "bad request when paginated query requested via streaming" in new Setup {
-      val result = underTest.queryDispatcher()(FakeRequest("GET", s"?pageNbr=1&userId=${userIdOne}").withHeaders(ACCEPT -> "application/stream+json"))
-
-      status(result) shouldBe BAD_REQUEST
-      contentAsString(result) should include("Streaming is not supported for this query")
-      contentAsString(result) should include("STREAMING_NOT_SUPPORTED")
     }
 
     "work for post query with applicationIdQP" in new Setup {

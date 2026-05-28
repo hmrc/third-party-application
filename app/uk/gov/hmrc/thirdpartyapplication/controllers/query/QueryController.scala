@@ -17,12 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
-
-import cats.syntax.either._
-import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.util.ByteString
 
 import play.api.libs.json._
 import play.api.mvc._
@@ -47,78 +42,53 @@ class QueryController @Inject() (
     with ApplicationLogger
     with MetricsTimer {
 
-  private lazy val AcceptsStreamedJson = Accepting("application/stream+json")
-
   private def asBody(errorCode: String, message: Json.JsValueWrapper): JsObject =
     Json.obj(
       "code"    -> errorCode.toString,
       "message" -> message
     )
 
-  private val applicationNotFound   = NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query"))
-  private val streamingNotSupported = BadRequest(asBody("STREAMING_NOT_SUPPORTED", "Streaming is not supported for this query"))
-
-  private def parseAndValidate(params: Map[String, Seq[String]], headers: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Either[Result, ApplicationQuery] = {
+  private def parseAndValidate(params: Map[String, Seq[String]], headers: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[Result] = {
     ParamsValidator.parseAndValidateParams(params, headers, hc.extraHeaders.toMap)
-      .toEither
-      .bimap(
-        nel => BadRequest(asBody("INVALID_QUERY", nel.toList)),
-        params => ApplicationQuery.attemptToConstructQuery(params)
-      )
-  }
-
-  private def handleRequest(params: Map[String, Seq[String]], headers: Map[String, Seq[String]])(implicit request: Request[_]): Future[Result] = {
-    parseAndValidate(params, headers)
-      .fold(
-        errResult => successful(errResult),
-        validQuery =>
-          render.async {
-            case Accepts.Json()        => execute(validQuery)(false)
-            case AcceptsStreamedJson() => execute(validQuery)(true)
-          }
+      .fold[Future[Result]](
+        nel => Future.successful(BadRequest(asBody("INVALID_QUERY", nel.toList))),
+        params => {
+          execute(ApplicationQuery.attemptToConstructQuery(params))
+        }
       )
   }
 
   def queryDispatcher() = Action.async { implicit request =>
-    handleRequest(request.queryString, request.headers.toMap)
+    parseAndValidate(request.queryString, request.headers.toMap)
   }
 
   def queryPost(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     withJsonBody[Map[String, Seq[String]]] { payload =>
-      handleRequest(payload, request.headers.toMap)
+      parseAndValidate(payload, request.headers.toMap)
     }
   }
 
-  private def execute(appQry: ApplicationQuery)(streamed: Boolean)(implicit hc: HeaderCarrier): Future[Result] = {
+  private val applicationNotFound = NotFound(asBody("APPLICATION_NOT_FOUND", "No application found for query"))
+
+  private def execute(appQry: ApplicationQuery)(implicit hc: HeaderCarrier): Future[Result] = {
     val appQryText = appQry.asLogText
     logger.info(s"Executing query: $appQryText")
-
     timeFuture(s"$appQryText", "QueryController.execute") {
+
       appQry match {
-        case q: SingleApplicationQuery =>
-          if (streamed) {
-            successful(streamingNotSupported)
-          } else {
-            queryService.fetchSingleApplicationByQuery(q).map {
-              _.fold(applicationNotFound)(app => Ok(Json.toJson(app)))
-            }
+        case q: SingleApplicationQuery => queryService.fetchSingleApplicationByQuery(q).map {
+            _.fold(applicationNotFound)(app => Ok(Json.toJson(app)))
           }
 
         case q: GeneralOpenEndedApplicationQuery =>
-          if (streamed) {
-            val wrappedSource: Source[ByteString, _] =
-              queryService.fetchApplicationsByQueryStream(q).map(qas => ByteString(Json.toJson(qas).toString))
-            successful(Ok.chunked(wrappedSource, Some("application/stream+json")))
-          } else {
-            queryService.fetchApplicationsByQuery(q).map(apps => Ok(Json.toJson(apps.toList)))
+          queryService.fetchApplicationsByQuery(q).map {
+            apps =>
+              Ok(Json.toJson(apps))
           }
 
         case q: PaginatedApplicationQuery =>
-          if (streamed) {
-            successful(streamingNotSupported)
-          } else {
-            queryService.fetchPaginatedApplications(q).map(results => Ok(Json.toJson(results)))
-          }
+          queryService.fetchPaginatedApplications(q)
+            .map(results => Ok(Json.toJson(results)))
       }
     }
   }
