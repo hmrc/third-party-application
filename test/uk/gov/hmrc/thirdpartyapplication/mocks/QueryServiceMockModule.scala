@@ -93,8 +93,10 @@ trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar wit
       def thenFails(exc: Exception) =
         when(aMock.fetchApplicationsByQuery(*)).thenReturn(failed(exc))
 
-      def thenFailsFor(qry: ApplicationQuery.GeneralOpenEndedApplicationQuery, exc: Exception) =
-        when(aMock.fetchApplicationsByQuery(eqTo(qry))).thenReturn(failed(exc))
+      def thenFailsFor(qry: ApplicationQuery.GeneralOpenEndedApplicationQuery, exc: Exception) = {
+        val w = when(aMock.fetchApplicationsByQuery(eqTo(qry)))
+        w.thenReturn(failed(exc))
+      }
     }
 
     object FetchPaginatedApplications {
