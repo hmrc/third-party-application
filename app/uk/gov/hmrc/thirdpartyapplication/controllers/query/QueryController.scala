@@ -48,6 +48,8 @@ class QueryController @Inject() (
     with MetricsTimer {
 
   private lazy val AcceptsStreamedJson = Accepting("application/stream+json")
+  private lazy val AcceptsHmrcVndJson  = Accepting("application/hmrc.vnd.1.0+json")
+  private lazy val AcceptsVndHmrcJson  = Accepting("application/vnd.hmrc.1.0+json")
 
   private def asBody(errorCode: String, message: Json.JsValueWrapper): JsObject =
     Json.obj(
@@ -73,8 +75,10 @@ class QueryController @Inject() (
         errResult => successful(errResult),
         validQuery =>
           render.async {
-            case Accepts.Json()        => execute(validQuery)(false)
-            case AcceptsStreamedJson() => execute(validQuery)(true)
+            case Accepts.Json()                              => execute(validQuery)(false)
+            // These should never be in API Platform code... but ebrdige configurations cause both these to be possible.
+            case AcceptsHmrcVndJson() | AcceptsVndHmrcJson() => execute(validQuery)(false)
+            case AcceptsStreamedJson()                       => execute(validQuery)(true)
           }
       )
   }
