@@ -147,7 +147,8 @@ object StoredApplication {
       createdOn,
       Some(createdOn),
       environment = environment,
-      checkInformation = checkInfo
+      checkInformation = checkInfo,
+      organisationId = createApplicationRequest.organisationId
     )
   }
 }
