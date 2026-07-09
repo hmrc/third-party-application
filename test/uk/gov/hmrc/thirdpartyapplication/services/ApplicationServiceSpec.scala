@@ -751,12 +751,13 @@ class ApplicationServiceSpec
       Some(CoreApplicationData.appDescription),
       environment,
       Set(adminTwo),
+      None,
       None
     )
   }
 
   private def aNewV1ApplicationRequest(access: CreationAccess = CreationAccess.Standard, environment: Environment = Environment.PRODUCTION) = {
-    CreateApplicationRequestV1(ApplicationName("MyApp"), access, Some(CoreApplicationData.appDescription), environment, Set(adminTwo), None)
+    CreateApplicationRequestV1(ApplicationName("MyApp"), access, Some(CoreApplicationData.appDescription), environment, Set(adminTwo), None, None)
   }
 
   private def aNewV2ApplicationRequest(environment: Environment) = {
@@ -768,7 +769,8 @@ class ApplicationServiceSpec
       Set(adminTwo),
       makeUpliftRequest(ApiIdentifier.random),
       adminTwo.emailAddress.text,
-      ApplicationId.random
+      ApplicationId.random,
+      None
     )
   }
 }

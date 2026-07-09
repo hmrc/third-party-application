@@ -60,7 +60,8 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with 
         description = None,
         environment = environment,
         collaborators = Set("jim@example.com".admin()),
-        subscriptions = None
+        subscriptions = None,
+        organisationId = Some(OrganisationId.random)
       )
 
     StoredApplication.create(
@@ -82,7 +83,8 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with 
           collaborators = Set("jim@example.com".admin()),
           upliftRequest = makeUpliftRequest(ApiIdentifier.random),
           requestedBy = "user@example.com",
-          sandboxApplicationId = ApplicationId.random
+          sandboxApplicationId = ApplicationId.random,
+          organisationId = Some(OrganisationId.random)
         )
 
       StoredApplication.create(

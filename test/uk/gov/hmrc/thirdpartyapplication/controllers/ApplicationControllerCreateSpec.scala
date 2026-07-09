@@ -355,7 +355,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       "admin@example.com".admin(),
       "dev@example.com".developer()
     ),
-    Some(Set(ApiIdentifier.random))
+    Some(Set(ApiIdentifier.random)),
+    Some(OrganisationId.random)
   )
 
   private def aCreateApplicationRequestV2(access: StandardAccessDataToCopy) = CreateApplicationRequestV2(
@@ -369,6 +370,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     ),
     makeUpliftRequest(ApiIdentifier.random),
     "bob@example.com",
-    ApplicationId.random
+    ApplicationId.random,
+    Some(OrganisationId.random)
   )
 }
