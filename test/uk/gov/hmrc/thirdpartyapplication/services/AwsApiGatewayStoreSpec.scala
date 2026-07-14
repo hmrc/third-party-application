@@ -24,7 +24,7 @@ import org.apache.pekko.actor.ActorSystem
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, _}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.StoredApplicationData.storedApp
@@ -42,28 +42,6 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateFixtures
     val serverToken: String = StoredApplicationData.serverToken
 
     val app = storedApp.copy(wso2ApplicationName = "abc123456")
-  }
-
-  "createApplication" should {
-    "create an application in AWS" in new Setup {
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(eqTo(app.wso2ApplicationName), *, eqTo(RateLimitTier.BRONZE))(eqTo(hc)))
-        .thenReturn(successful(HasSucceeded))
-
-      await(underTest.createApplication(app.wso2ApplicationName, serverToken))
-
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(eqTo(app.wso2ApplicationName), *, eqTo(RateLimitTier.BRONZE))(eqTo(hc))
-    }
-  }
-
-  "updateApplication" should {
-    "update rate limiting tier in AWS" in new Setup {
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(app.wso2ApplicationName, serverToken, RateLimitTier.SILVER)(hc)).thenReturn(successful(HasSucceeded))
-
-      await(underTest.updateApplication(app, RateLimitTier.SILVER))
-
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(app.wso2ApplicationName, serverToken, RateLimitTier.SILVER)(hc)
-    }
-
   }
 
   "deleteApplication" should {

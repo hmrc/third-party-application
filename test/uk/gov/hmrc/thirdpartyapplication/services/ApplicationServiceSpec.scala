@@ -238,7 +238,6 @@ class ApplicationServiceSpec
       val expectedApplicationData: StoredApplication = storedApp.withId(createdApp.application.id).withState(appStateTesting).withCollaborators(adminTwo).copy(description = None)
 
       createdApp.totp shouldBe None
-      ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
@@ -272,7 +271,6 @@ class ApplicationServiceSpec
       )
 
       createdApp.totp shouldBe None
-      ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
@@ -303,7 +301,6 @@ class ApplicationServiceSpec
         )
 
       createdApp.totp shouldBe None
-      ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
@@ -319,7 +316,6 @@ class ApplicationServiceSpec
 
     "create a new standard application in Mongo and the API gateway for the SUBORDINATE (SANDBOX) environment" in new Setup {
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.SANDBOX)
 
@@ -335,7 +331,6 @@ class ApplicationServiceSpec
 
       createdApp.totp shouldBe None
 
-      ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(
         createdApp.application.id,
@@ -356,7 +351,6 @@ class ApplicationServiceSpec
 
     "create a new Access.Privileged application in Mongo and the API gateway with a Production state" in new Setup {
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Privileged)
 
@@ -378,7 +372,6 @@ class ApplicationServiceSpec
 
       createdApp.totp shouldBe Some(CreateApplicationResponse.TotpSecret(prodTOTP.secret))
 
-      ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
@@ -416,25 +409,9 @@ class ApplicationServiceSpec
       ApplicationRepoMock.verifyZeroInteractions()
     }
 
-    "delete application when failed to create app in the API gateway" in new Setup {
-      TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(environment = Environment.SANDBOX)
-
-      private val exception = new scala.RuntimeException("failed to generate tokens")
-      ApiGatewayStoreMock.CreateApplication.thenFail(exception)
-      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
-
-      val ex: RuntimeException = intercept[RuntimeException](await(underTest.create(applicationRequest)))
-      ex.getMessage shouldBe exception.getMessage
-
-      ApplicationRepoMock.Save.verifyNeverCalled()
-      ApiGatewayStoreMock.DeleteApplication.verifyCalled()
-    }
-
     "delete application when failed to create state history" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest()
 
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))

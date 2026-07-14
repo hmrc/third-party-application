@@ -21,8 +21,6 @@ import scala.concurrent.ExecutionContext
 
 import cats.data._
 
-import uk.gov.hmrc.http.HeaderCarrier
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeRateLimitTier
@@ -54,10 +52,9 @@ class ChangeRateLimitTierCommandHandler @Inject() (
     )
   }
 
-  def process(app: StoredApplication, cmd: ChangeRateLimitTier)(implicit hc: HeaderCarrier): AppCmdResultT = {
+  def process(app: StoredApplication, cmd: ChangeRateLimitTier): AppCmdResultT = {
 
     for {
-      _        <- E.liftF(apiGatewayStore.updateApplication(app, cmd.rateLimitTier))
       savedApp <- E.liftF(applicationRepository.updateApplicationRateLimit(app.id, cmd.rateLimitTier))
       events    = asEvents(app, cmd)
     } yield (savedApp, events)

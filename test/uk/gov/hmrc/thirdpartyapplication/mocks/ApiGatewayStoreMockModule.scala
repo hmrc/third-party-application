@@ -21,7 +21,6 @@ import scala.concurrent.Future.{failed, successful}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
@@ -36,46 +35,6 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
     def verify(mode: VerificationMode) = MockitoSugar.verify(aMock, mode)
 
     def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
-
-    object CreateApplication {
-
-      def thenReturnHasSucceeded() = {
-        when(aMock.createApplication(*, *)(*)).thenReturn(successful(HasSucceeded))
-      }
-
-      def thenFail(failsWith: Throwable) = {
-        when(aMock.createApplication(*, *)(*)).thenReturn(failed(failsWith))
-      }
-
-      def verifyCalled() = {
-        verify.createApplication(*, *)(*)
-      }
-
-      def verifyNeverCalled() = {
-        verify(never).createApplication(*, *)(*)
-      }
-    }
-
-    object UpdateApplication {
-
-      def thenReturnHasSucceeded() = {
-        when(aMock.updateApplication(*, *)(*)).thenReturn(successful(HasSucceeded))
-      }
-
-      def thenFail(failsWith: Throwable) = {
-        when(aMock.updateApplication(*, *)(*)).thenReturn(failed(failsWith))
-      }
-
-      def verifyCalledWith(applicationData: StoredApplication, tier: RateLimitTier) =
-        verify.updateApplication(eqTo(applicationData), refEq(tier))(*)
-
-      def verifyCalled() =
-        verify.updateApplication(*, *)(*)
-
-      def verifyNeverCalled() =
-        verify(never).updateApplication(*, *)(*)
-
-    }
 
     object DeleteApplication {
 

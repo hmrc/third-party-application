@@ -69,7 +69,6 @@ class ChangeRateLimitTierCommandHandlerSpec extends CommandHandlerBaseSpec {
   "process" should {
     "create correct events for a valid request with app" in new Setup {
       ApplicationRepoMock.UpdateApplicationRateLimit.thenReturn(app.id, replaceWithRateLimitTier)(newApp)
-      ApiGatewayStoreMock.UpdateApplication.thenReturnHasSucceeded()
 
       checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
         underTest.process(app, update)
