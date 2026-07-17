@@ -215,14 +215,6 @@ class ApplicationService @Inject() (
 
     val wso2ApplicationName = credentialGenerator.generate()
 
-    def createInApiGateway(appData: StoredApplication): Future[HasSucceeded] = {
-      if (appData.isInPreProductionOrProduction) {
-        apiGatewayStore.createApplication(appData.wso2ApplicationName, appData.tokens.production.accessToken)
-      } else {
-        successful(HasSucceeded)
-      }
-    }
-
     def applyTotpForPrivAppsOnly(totp: Option[Totp], app: StoredApplication): StoredApplication = {
       val replaceAccess = app.access match {
         case access: Access.Privileged => access.copy(totpIds = extractTotpId(totp))
@@ -240,7 +232,6 @@ class ApplicationService @Inject() (
       basicApp = StoredApplication.create(createApplicationRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), instant)
       totp    <- generateApplicationTotp(createApplicationRequest.accessType)
       appData  = applyTotpForPrivAppsOnly(totp, basicApp)
-      _       <- createInApiGateway(appData)
       _       <- applicationRepository.save(appData)
       _       <- createStateHistory(appData)
       _        = auditAppCreated(appData)

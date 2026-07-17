@@ -26,10 +26,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 trait ApiGatewayStore extends EitherTHelper[String] {
 
@@ -39,24 +37,11 @@ trait ApiGatewayStore extends EitherTHelper[String] {
    * deleteApplication() are still called 'wso2ApplicationName' to make it clear that these values are distinct from the other Application names/identifiers.
    */
 
-  def createApplication(wso2ApplicationName: String, accessToken: String)(implicit hc: HeaderCarrier): Future[HasSucceeded]
-
   def deleteApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded]
-
-  def updateApplication(app: StoredApplication, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded]
 }
 
 @Singleton
 class AwsApiGatewayStore @Inject() (awsApiGatewayConnector: AwsApiGatewayConnector)(implicit val actorSystem: ActorSystem, val ec: ExecutionContext) extends ApiGatewayStore {
-
-  override def createApplication(wso2ApplicationName: String, accessToken: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    for {
-      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, accessToken, RateLimitTier.BRONZE)(hc)
-    } yield HasSucceeded
-  }
-
-  override def updateApplication(app: StoredApplication, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
-    awsApiGatewayConnector.createOrUpdateApplication(app.wso2ApplicationName, app.tokens.production.accessToken, rateLimitTier)(hc)
 
   override def deleteApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
     awsApiGatewayConnector.deleteApplication(wso2ApplicationName)(hc)
@@ -67,18 +52,9 @@ class StubApiGatewayStore @Inject() (implicit val ec: ExecutionContext) extends 
 
   lazy val stubApplications: concurrent.Map[String, mutable.ListBuffer[ApiIdentifier]] = concurrent.TrieMap()
 
-  override def createApplication(wso2ApplicationName: String, accessToken: String)(implicit hc: HeaderCarrier) = Future.successful {
-    stubApplications += (wso2ApplicationName -> mutable.ListBuffer.empty)
-    HasSucceeded
-  }
-
   override def deleteApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier) = Future.successful {
     stubApplications -= wso2ApplicationName
     HasSucceeded
-  }
-
-  override def updateApplication(app: StoredApplication, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    Future.successful(HasSucceeded)
   }
 
 }

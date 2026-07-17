@@ -904,7 +904,7 @@ class ApplicationCommandDispatcherSpec
       "call ChangeRateLimitTier Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockChangeRateLimitTierCommandHandler.process(*[StoredApplication], *[ChangeRateLimitTier])(*)).thenReturn(E.pure((
+        when(mockChangeRateLimitTierCommandHandler.process(*[StoredApplication], *[ChangeRateLimitTier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
