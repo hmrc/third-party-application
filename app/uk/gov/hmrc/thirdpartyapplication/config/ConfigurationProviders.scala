@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.config
 
-import java.time.LocalDate
 import java.util.concurrent.TimeUnit._
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -60,7 +59,6 @@ class ConfigurationModule extends Module {
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ClientSecretsHashingConfig].toProvider[ClientSecretsHashingConfigProvider],
       bind[ApplicationNamingService.Config].toProvider[ApplicationNamingServiceConfigProvider],
-      bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider],
       bind[RemoveAwsApiKeyJobConfig].toProvider[RemoveAwsApiKeyJobConfigProvider],
       bind[TermsOfUseInvitationConfig].toProvider[TermsOfUseInvitationConfigProvider]
     )
@@ -364,20 +362,6 @@ class ApiPlatformEventsConfigProvider @Inject() (val configuration: Configuratio
     val url     = baseUrl("api-platform-events")
     val enabled = getConfBool("api-platform-events.enabled", true)
     ApiPlatformEventsConnector.Config(url, enabled)
-  }
-}
-
-@Singleton
-class ResetLastAccessDateJobConfigProvider @Inject() (configuration: Configuration)
-    extends ServicesConfig(configuration)
-    with Provider[ResetLastAccessDateJobConfig] {
-
-  override def get(): ResetLastAccessDateJobConfig = {
-    val enabled                        = configuration.get[Boolean]("resetLastAccessDateJob.enabled")
-    val dryRun                         = configuration.get[Boolean]("resetLastAccessDateJob.dryRun")
-    val noLastAccessDateBeforeAsString = configuration.get[String]("resetLastAccessDateJob.noLastAccessDateBefore")
-
-    ResetLastAccessDateJobConfig(LocalDate.parse(noLastAccessDateBeforeAsString), enabled, dryRun)
   }
 }
 
