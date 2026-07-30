@@ -59,11 +59,8 @@ class RemoveAwsApiKeyJob @Inject() (
           if (dryRun) {
             logger.info(s"Dry run - would otherwise remove AWS key (${application.wso2ApplicationName}) for Application: ${application.id}")
           } else {
-            println(s"Call to delete application AWS Key ${application.wso2ApplicationName}")
             apiGateway.deleteApplication(application.wso2ApplicationName)
           }
-        } else {
-          println(s"Nothing to do for app with AWK Key ${application.wso2ApplicationName}")
         }
       }
   }
