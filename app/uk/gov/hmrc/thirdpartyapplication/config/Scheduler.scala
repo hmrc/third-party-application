@@ -42,6 +42,7 @@ class Scheduler @Inject() (
     upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
     bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
     resetLastAccessDateJob: ResetLastAccessDateJob,
+    removeAwsApiKeyJob: RemoveAwsApiKeyJob,
     productionCredentialsRequestExpiryWarningJob: ProductionCredentialsRequestExpiryWarningJob,
     productionCredentialsRequestExpiredJob: ProductionCredentialsRequestExpiredJob,
     responsibleIndividualVerificationReminderJob: ResponsibleIndividualVerificationReminderJob,
@@ -59,6 +60,7 @@ class Scheduler @Inject() (
     Seq(
       upliftVerificationExpiryJob,
       resetLastAccessDateJob,
+      removeAwsApiKeyJob,
       productionCredentialsRequestExpiryWarningJob,
       productionCredentialsRequestExpiredJob,
       responsibleIndividualVerificationReminderJob,
