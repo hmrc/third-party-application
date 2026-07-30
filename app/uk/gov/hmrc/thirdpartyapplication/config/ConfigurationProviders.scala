@@ -61,6 +61,7 @@ class ConfigurationModule extends Module {
       bind[ClientSecretsHashingConfig].toProvider[ClientSecretsHashingConfigProvider],
       bind[ApplicationNamingService.Config].toProvider[ApplicationNamingServiceConfigProvider],
       bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider],
+      bind[RemoveAwsApiKeyJobConfig].toProvider[RemoveAwsApiKeyJobConfigProvider],
       bind[TermsOfUseInvitationConfig].toProvider[TermsOfUseInvitationConfigProvider]
     )
   }
@@ -377,5 +378,18 @@ class ResetLastAccessDateJobConfigProvider @Inject() (configuration: Configurati
     val noLastAccessDateBeforeAsString = configuration.get[String]("resetLastAccessDateJob.noLastAccessDateBefore")
 
     ResetLastAccessDateJobConfig(LocalDate.parse(noLastAccessDateBeforeAsString), enabled, dryRun)
+  }
+}
+
+@Singleton
+class RemoveAwsApiKeyJobConfigProvider @Inject() (configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[RemoveAwsApiKeyJobConfig] {
+
+  override def get(): RemoveAwsApiKeyJobConfig = {
+    val enabled = configuration.get[Boolean]("removeAwsApiKeyJob.enabled")
+    val dryRun  = configuration.get[Boolean]("removeAwsApiKeyJob.dryRun")
+
+    RemoveAwsApiKeyJobConfig(enabled, dryRun)
   }
 }

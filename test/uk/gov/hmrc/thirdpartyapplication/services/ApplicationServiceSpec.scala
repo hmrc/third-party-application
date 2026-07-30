@@ -598,7 +598,7 @@ class ApplicationServiceSpec
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
-      ApiGatewayStoreMock.DeleteApplication.verifyCalledWith(applicationData)
+      ApiGatewayStoreMock.DeleteApplication.verifyCalledWith(applicationData.wso2ApplicationName)
     }
 
     "call to the API Subscription Fields service to delete subscription field data" in new DeleteApplicationSetup {
