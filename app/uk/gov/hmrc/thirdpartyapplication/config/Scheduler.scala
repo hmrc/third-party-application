@@ -41,7 +41,7 @@ class SchedulerModule extends AbstractModule with ApplicationLogger {
 class Scheduler @Inject() (
     upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
     bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
-    resetLastAccessDateJob: ResetLastAccessDateJob,
+    removeAwsApiKeyJob: RemoveAwsApiKeyJob,
     productionCredentialsRequestExpiryWarningJob: ProductionCredentialsRequestExpiryWarningJob,
     productionCredentialsRequestExpiredJob: ProductionCredentialsRequestExpiredJob,
     responsibleIndividualVerificationReminderJob: ResponsibleIndividualVerificationReminderJob,
@@ -58,7 +58,7 @@ class Scheduler @Inject() (
   override lazy val scheduledJobs: Seq[ExclusiveScheduledJob] = {
     Seq(
       upliftVerificationExpiryJob,
-      resetLastAccessDateJob,
+      removeAwsApiKeyJob,
       productionCredentialsRequestExpiryWarningJob,
       productionCredentialsRequestExpiredJob,
       responsibleIndividualVerificationReminderJob,

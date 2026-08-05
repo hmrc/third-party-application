@@ -22,7 +22,6 @@ import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
 
 trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -36,10 +35,11 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
 
     def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
 
+    def verifyNoMoreInteractions() = MockitoSugar.verifyNoMoreInteractions(aMock)
+
     object DeleteApplication {
 
-      def verifyCalledWith(application: StoredApplication) = {
-        import application.wso2ApplicationName
+      def verifyCalledWith(wso2ApplicationName: String) = {
         ApiGatewayStoreMock.verify.deleteApplication(eqTo(wso2ApplicationName))(*)
       }
 
