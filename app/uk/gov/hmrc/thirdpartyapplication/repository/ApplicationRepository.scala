@@ -518,7 +518,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def processAll(function: StoredApplication => Unit): Future[Unit] = {
     timeFuture("Process All Applications", "application.repository.processAll") {
 
-      collection.find(notEqual("state.name", State.DELETED.toString()))
+      collection.find()
         .map(function)
         .toFuture()
         .map(_ => ())
