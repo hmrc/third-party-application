@@ -4,11 +4,11 @@ import org.apache.ivy.core.module.descriptor.ExcludeRule
 object AppDependencies {
   def apply(): Seq[ModuleID] = compileDeps ++ testDeps
 
-  lazy val mockitoScalaVersion      = "2.0.0"
+  lazy val mockitoScalaVersion      = "2.2.1"
   lazy val bootstrapVersion         = "10.7.1"
   lazy val hmrcMongoVersion         = "2.13.0"
   lazy val applicationEventVersion  = "1.1.0" // Ensure this version of the application-events library uses the appDomainVersion below
-  lazy val applicationDomainVersion = "1.3.0"
+  lazy val applicationDomainVersion = "1.4.0"
 
   private lazy val compileDeps = Seq(
     "uk.gov.hmrc"                   %% "bootstrap-backend-play-30"                % bootstrapVersion,
