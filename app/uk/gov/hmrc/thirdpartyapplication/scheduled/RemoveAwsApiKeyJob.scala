@@ -25,6 +25,7 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
@@ -48,11 +49,23 @@ class RemoveAwsApiKeyJob @Inject() (
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    applicationRepository.processAll(removeAwsKey(jobConfig.dryRun))
-      .map(_ => RunningOfJobSuccessful)
+    applicationRepository.processAll(removeApplicationAwsKey(jobConfig.dryRun))
+      .flatMap(_ => removeOrphans())
   }
 
-  def removeAwsKey(dryRun: Boolean): StoredApplication => Unit = {
+  def removeOrphans(): Future[RunningOfJobSuccessful] = Future.sequence(
+    jobConfig.orphanedKeys.split(",").toList.map(key =>
+      if (jobConfig.dryRun) {
+        logger.info(s"Dry run - would otherwise remove orphaned AWS key (${key})")
+        Future.successful(HasSucceeded)
+      } else {
+        apiGateway.deleteApplication(key)
+      }
+    )
+  )
+    .map(_ => RunningOfJobSuccessful)
+
+  def removeApplicationAwsKey(dryRun: Boolean): StoredApplication => Unit = {
     application =>
       {
         if (application.wso2ApplicationName.isBlank() == false) {
@@ -74,4 +87,4 @@ class RemoveAwsApiKeyJobLockService @Inject() (repository: LockRepository)
   override val ttl: Duration                  = 1.hours
 }
 
-case class RemoveAwsApiKeyJobConfig(enabled: Boolean, dryRun: Boolean)
+case class RemoveAwsApiKeyJobConfig(enabled: Boolean, dryRun: Boolean, orphanedKeys: String)
