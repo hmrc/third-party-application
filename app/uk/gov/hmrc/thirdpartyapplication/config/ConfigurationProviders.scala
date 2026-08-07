@@ -371,9 +371,10 @@ class RemoveAwsApiKeyJobConfigProvider @Inject() (configuration: Configuration)
     with Provider[RemoveAwsApiKeyJobConfig] {
 
   override def get(): RemoveAwsApiKeyJobConfig = {
-    val enabled = configuration.get[Boolean]("removeAwsApiKeyJob.enabled")
-    val dryRun  = configuration.get[Boolean]("removeAwsApiKeyJob.dryRun")
+    val enabled      = configuration.get[Boolean]("removeAwsApiKeyJob.enabled")
+    val dryRun       = configuration.get[Boolean]("removeAwsApiKeyJob.dryRun")
+    val orphanedKeys = configuration.get[String]("removeAwsApiKeyJob.orphanedKeys")
 
-    RemoveAwsApiKeyJobConfig(enabled, dryRun)
+    RemoveAwsApiKeyJobConfig(enabled, dryRun, orphanedKeys)
   }
 }

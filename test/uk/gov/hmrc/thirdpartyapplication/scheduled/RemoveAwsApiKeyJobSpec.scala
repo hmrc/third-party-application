@@ -72,12 +72,14 @@ class RemoveAwsApiKeyJobSpec
   }
 
   trait DryRunSetup extends Setup {
-    val jobConfig: RemoveAwsApiKeyJobConfig = RemoveAwsApiKeyJobConfig(enabled = true, dryRun = true)
+    val jobConfig: RemoveAwsApiKeyJobConfig = RemoveAwsApiKeyJobConfig(enabled = true, dryRun = true, orphanedKeys = "a,b,c")
     val underTest                           = new RemoveAwsApiKeyJob(mockRemoveAwsApiKeyJobLockService, applicationRepository, mockApiGateway, jobConfig)
   }
 
   trait RemoveApiKeySetup extends Setup {
-    val jobConfig: RemoveAwsApiKeyJobConfig = RemoveAwsApiKeyJobConfig(enabled = true, dryRun = false)
+    ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
+
+    val jobConfig: RemoveAwsApiKeyJobConfig = RemoveAwsApiKeyJobConfig(enabled = true, dryRun = false, orphanedKeys = "a,b,c")
     val underTest                           = new RemoveAwsApiKeyJob(mockRemoveAwsApiKeyJobLockService, applicationRepository, mockApiGateway, jobConfig)
   }
 
@@ -102,6 +104,9 @@ class RemoveAwsApiKeyJobSpec
       ApiGatewayStoreMock.DeleteApplication.verifyCalledWith("name1")
       ApiGatewayStoreMock.DeleteApplication.verifyCalledWith("name2")
       ApiGatewayStoreMock.DeleteApplication.verifyCalledWith("name3")
+      ApiGatewayStoreMock.DeleteApplication.verifyCalledWith("a")
+      ApiGatewayStoreMock.DeleteApplication.verifyCalledWith("b")
+      ApiGatewayStoreMock.DeleteApplication.verifyCalledWith("c")
       ApiGatewayStoreMock.verifyNoMoreInteractions()
     }
 
