@@ -27,6 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLengthConfig
+import java.time.LocalDate
 
 case class StoredApplication(
     id: ApplicationId,
@@ -39,7 +40,7 @@ case class StoredApplication(
     state: ApplicationState,
     access: Access = Access.Standard(),
     createdOn: Instant,
-    lastAccess: Option[Instant],
+    lastAccess: Instant,
     refreshTokensAvailableFor: Period = Period.ofDays(grantLengthConfig),
     rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
     environment: Environment = Environment.PRODUCTION,
@@ -71,18 +72,26 @@ case class StoredApplication(
 }
 
 object StoredApplication {
+  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
 
+  private val initialLastAccessDate = LocalDate.of(2019, 6, 25).asInstant
+
+  def deriveLastAccess(createdOn: Instant, lastAccess: Instant): Option[Instant] = {
+    Some(lastAccess)
+    .filter(lad => ChronoUnit.SECONDS.between(createdOn, lad.asLocalDate) > 0)
+    .filter(lad => ChronoUnit.SECONDS.between(initialLastAccessDate.asLocalDate, lad.asLocalDate) > 0)
+  }
+  
   def asAppWithCollaborators(data: StoredApplication): ApplicationWithCollaborators = {
     ApplicationWithCollaborators(
       CoreApplication(
         data.id,
         data.tokens.production.asApplicationToken,
-        data.wso2ApplicationName,
         data.name,
         data.environment,
         data.description,
         data.createdOn,
-        data.lastAccess,
+        deriveLastAccess(data.createdOn, data.lastAccess),
         GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
         data.access,
         data.state,
@@ -145,7 +154,7 @@ object StoredApplication {
       applicationState,
       applicationAccess,
       createdOn,
-      Some(createdOn),
+      createdOn,
       environment = environment,
       checkInformation = checkInfo,
       organisationId = createApplicationRequest.organisationId
