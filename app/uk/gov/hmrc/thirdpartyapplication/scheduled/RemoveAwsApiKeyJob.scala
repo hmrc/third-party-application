@@ -20,6 +20,8 @@ import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
+import org.apache.pekko.stream.Materializer
+
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
@@ -35,7 +37,8 @@ class RemoveAwsApiKeyJob @Inject() (
     applicationRepository: ApplicationRepository,
     apiGateway: ApiGatewayStore,
     jobConfig: RemoveAwsApiKeyJobConfig
-  )(implicit val ec: ExecutionContext
+  )(implicit val ec: ExecutionContext,
+    mat: Materializer
   ) extends ScheduledMongoJob
     with ApplicationLogger
     with MongoJavatimeFormats.Implicits {

@@ -24,6 +24,7 @@ import cats.data.OptionT
 import cats.syntax.option._
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.bson.BsonValue
 import org.bson.conversions.Bson
@@ -515,14 +516,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   private def matches(predicates: Bson): Bson = filter(predicates)
 
-  def processAll(function: StoredApplication => Unit): Future[Unit] = {
-    timeFuture("Process All Applications", "application.repository.processAll") {
-
-      collection.find()
-        .map(function)
-        .toFuture()
-        .map(_ => ())
-    }
+  def processAll(function: StoredApplication => Unit)(implicit mat: Materializer): Future[Unit] = {
+    Source.fromPublisher(collection.find())
+      .runForeach(function)
+      .map(_ => ())
   }
 
   def hardDelete(id: ApplicationId): Future[HasSucceeded] = {
