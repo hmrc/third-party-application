@@ -690,10 +690,10 @@ class ApplicationQueriesISpec
       val applicationId2   = ApplicationId.random
       val applicationId3   = ApplicationId.random
       import cats.syntax.option._
-      val testApplication1 = anApplicationDataForTest(applicationId1).some.map(a => a.copy(lastAccess = Some(a.createdOn))).get
-      val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).some.map(a => a.copy(lastAccess = Some(a.createdOn))).get
+      val testApplication1 = anApplicationDataForTest(applicationId1).some.map(a => a.copy(lastAccess = a.createdOn)).get
+      val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).some.map(a => a.copy(lastAccess = a.createdOn)).get
       val testApplication3 =
-        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).some.map(a => a.copy(lastAccess = Some(a.createdOn.plus(5, ChronoUnit.DAYS)))).get
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc")).some.map(a => a.copy(lastAccess = a.createdOn.plus(5, ChronoUnit.DAYS))).get
 
       await(applicationRepository.save(testApplication1))
       await(applicationRepository.save(testApplication2))

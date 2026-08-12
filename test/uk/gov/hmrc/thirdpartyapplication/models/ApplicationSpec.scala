@@ -112,7 +112,7 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with 
 
     "use the same value for createdOn and lastAccess fields" in {
       val actual = createRequestV1(CreationAccess.Standard, Environment.PRODUCTION)
-      actual.createdOn shouldBe actual.lastAccess.get
+      actual.createdOn shouldBe actual.lastAccess
     }
   }
 

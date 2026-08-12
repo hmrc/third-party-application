@@ -42,7 +42,7 @@ trait ApplicationTestData extends ApplicationWithCollaboratorsFixtures with Coll
     state = appStateProduction,
     access = standardApp.access,
     createdOn = instant,
-    lastAccess = Some(instant),
+    lastAccess = instant,
     refreshTokensAvailableFor = GrantLength.EIGHTEEN_MONTHS.period,
     rateLimitTier = Some(RateLimitTier.BRONZE),
     environment = Environment.PRODUCTION,

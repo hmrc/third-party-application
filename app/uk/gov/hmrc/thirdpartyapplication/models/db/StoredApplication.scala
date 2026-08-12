@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.temporal.ChronoUnit
-import java.time.{Instant, Period}
+import java.time.{Instant, LocalDate, Period}
 
 import com.typesafe.config.ConfigFactory
 
@@ -27,7 +27,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLengthConfig
-import java.time.LocalDate
 
 case class StoredApplication(
     id: ApplicationId,
@@ -74,19 +73,20 @@ case class StoredApplication(
 object StoredApplication {
   import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
 
-  private val initialLastAccessDate = LocalDate.of(2019, 6, 25).asInstant
+  private val initialLastAccessDate = LocalDate.of(2019, 6, 25)
 
   def deriveLastAccess(createdOn: Instant, lastAccess: Instant): Option[Instant] = {
     Some(lastAccess)
-    .filter(lad => ChronoUnit.SECONDS.between(createdOn, lad.asLocalDate) > 0)
-    .filter(lad => ChronoUnit.SECONDS.between(initialLastAccessDate.asLocalDate, lad.asLocalDate) > 0)
+      .filter(lad => ChronoUnit.SECONDS.between(createdOn, lad) > 0)
+      .filter(lad => ChronoUnit.DAYS.between(initialLastAccessDate, lad.asLocalDate) > 0)
   }
-  
+
   def asAppWithCollaborators(data: StoredApplication): ApplicationWithCollaborators = {
     ApplicationWithCollaborators(
       CoreApplication(
         data.id,
         data.tokens.production.asApplicationToken,
+        data.wso2ApplicationName,
         data.name,
         data.environment,
         data.description,
