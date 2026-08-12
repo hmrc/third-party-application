@@ -538,7 +538,7 @@ class ApplicationServiceSpec
           deployedTo = data.environment,
           description = data.description,
           createdOn = data.createdOn,
-          lastAccess = None, // Some(data.lastAccess),
+          lastAccess = None,
           grantLength = GrantLength.EIGHTEEN_MONTHS,
           access = data.access,
           state = data.state,
