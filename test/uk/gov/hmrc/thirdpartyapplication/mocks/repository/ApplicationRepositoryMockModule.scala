@@ -20,6 +20,8 @@ import java.time.{Instant, Period}
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.testkit.NoMaterializer
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
@@ -38,6 +40,8 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   protected trait BaseApplicationRepoMock {
+    private implicit val materializer: Materializer = NoMaterializer
+
     def aMock: ApplicationRepository
 
     def verify = MockitoSugar.verify(aMock)
