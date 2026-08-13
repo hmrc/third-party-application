@@ -136,7 +136,7 @@ object ApplicationRepository {
         (JsPath \ "state").read[ApplicationState] and
         (JsPath \ "access").read[Access] and
         (JsPath \ "createdOn").read[Instant] and
-        (JsPath \ "lastAccess").readNullable[Instant] and
+        (JsPath \ "lastAccess").read[Instant] and
         (((JsPath \ "refreshTokensAvailableFor").read[Period]
           .orElse((JsPath \ "grantLength").read[Int].map(periodFromInt(_))))
           or Reads.pure(periodFromInt(grantLengthConfig))) and

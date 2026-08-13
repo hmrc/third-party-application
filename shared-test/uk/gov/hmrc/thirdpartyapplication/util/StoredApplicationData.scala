@@ -46,7 +46,7 @@ object StoredApplicationData extends FixedClock {
     state = ApplicationStateData.production,
     access = AccessData.Standard.default,
     createdOn = instant,
-    lastAccess = Some(instant),
+    lastAccess = instant,
     refreshTokensAvailableFor = GrantLength.EIGHTEEN_MONTHS.period,
     rateLimitTier = Some(RateLimitTier.BRONZE),
     environment = Environment.PRODUCTION,

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.temporal.ChronoUnit
-import java.time.{Instant, Period}
+import java.time.{Instant, LocalDate, Period}
 
 import com.typesafe.config.ConfigFactory
 
@@ -39,7 +39,7 @@ case class StoredApplication(
     state: ApplicationState,
     access: Access = Access.Standard(),
     createdOn: Instant,
-    lastAccess: Option[Instant],
+    lastAccess: Instant,
     refreshTokensAvailableFor: Period = Period.ofDays(grantLengthConfig),
     rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
     environment: Environment = Environment.PRODUCTION,
@@ -71,6 +71,15 @@ case class StoredApplication(
 }
 
 object StoredApplication {
+  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
+
+  private val initialLastAccessDate = LocalDate.of(2019, 6, 25)
+
+  def deriveLastAccess(createdOn: Instant, lastAccess: Instant): Option[Instant] = {
+    Some(lastAccess)
+      .filter(lad => ChronoUnit.SECONDS.between(createdOn, lad) > 0)
+      .filter(lad => ChronoUnit.DAYS.between(initialLastAccessDate, lad.asLocalDate) > 0)
+  }
 
   def asAppWithCollaborators(data: StoredApplication): ApplicationWithCollaborators = {
     ApplicationWithCollaborators(
@@ -82,7 +91,7 @@ object StoredApplication {
         data.environment,
         data.description,
         data.createdOn,
-        data.lastAccess,
+        deriveLastAccess(data.createdOn, data.lastAccess),
         GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
         data.access,
         data.state,
@@ -145,7 +154,7 @@ object StoredApplication {
       applicationState,
       applicationAccess,
       createdOn,
-      Some(createdOn),
+      createdOn,
       environment = environment,
       checkInformation = checkInfo,
       organisationId = createApplicationRequest.organisationId

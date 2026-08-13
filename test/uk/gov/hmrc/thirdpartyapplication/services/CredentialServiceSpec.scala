@@ -89,7 +89,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
 
     "return application details when credentials match" in new Setup {
 
-      val updatedApplicationData      = applicationData.copy(lastAccess = Some(instant))
+      val updatedApplicationData      = applicationData.copy(lastAccess = instant)
       val expectedApplicationResponse = updatedApplicationData.asAppWithCollaborators
       val secret                      = UUID.randomUUID().toString
       val matchingClientSecret        = applicationData.tokens.production.clientSecrets.head
