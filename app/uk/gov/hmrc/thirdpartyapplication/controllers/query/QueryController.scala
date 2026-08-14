@@ -95,7 +95,7 @@ class QueryController @Inject() (
 
   private def execute(appQry: ApplicationQuery)(streamed: Boolean)(implicit hc: HeaderCarrier): Future[Result] = {
     val appQryText = appQry.asLogText
-    logger.info(s"Executing query: $appQryText")
+    logger.info(s"""Executing ${if (streamed) "streamed " else ""} query: $appQryText""")
 
     timeFuture(s"$appQryText", "QueryController.execute") {
       appQry match {
