@@ -86,7 +86,6 @@ object StoredApplication {
       CoreApplication(
         data.id,
         data.tokens.production.asApplicationToken,
-        data.wso2ApplicationName,
         data.name,
         data.environment,
         data.description,

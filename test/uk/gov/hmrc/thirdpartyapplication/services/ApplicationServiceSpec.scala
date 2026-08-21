@@ -533,7 +533,6 @@ class ApplicationServiceSpec
         CoreApplication(
           id = applicationId,
           token = productionToken.asApplicationToken,
-          gatewayId = data.wso2ApplicationName,
           name = data.name,
           deployedTo = data.environment,
           description = data.description,
