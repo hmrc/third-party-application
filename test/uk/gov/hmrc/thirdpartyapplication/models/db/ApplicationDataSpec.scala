@@ -49,7 +49,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             organisationId = Some(OrganisationId.random)
           )
 
-        StoredApplication.create(request, "bob", token).checkInformation shouldBe None
+        StoredApplication.create(request, token).checkInformation shouldBe None
       }
 
       "set the check information for subscriptions when app is created with subs" in {
@@ -66,7 +66,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             organisationId = Some(OrganisationId.random)
           )
 
-        StoredApplication.create(request, "bob", token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
+        StoredApplication.create(request, token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
       }
 
       "ensure correct grant length when app is created" in {
@@ -83,7 +83,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             organisationId = Some(OrganisationId.random)
           )
 
-        StoredApplication.create(request, "bob", token).refreshTokensAvailableFor shouldBe refreshTokensAvailableFor
+        StoredApplication.create(request, token).refreshTokensAvailableFor shouldBe refreshTokensAvailableFor
       }
     }
 
@@ -104,11 +104,11 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
         )
 
       "not set the check information at all" in {
-        StoredApplication.create(request, "bob", token).checkInformation shouldBe None
+        StoredApplication.create(request, token).checkInformation shouldBe None
       }
 
       "ensure correct grant length when app is created" in {
-        StoredApplication.create(request, "bob", token).refreshTokensAvailableFor shouldBe refreshTokensAvailableFor
+        StoredApplication.create(request, token).refreshTokensAvailableFor shouldBe refreshTokensAvailableFor
       }
     }
   }

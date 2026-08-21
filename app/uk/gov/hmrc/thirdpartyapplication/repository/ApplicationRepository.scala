@@ -131,7 +131,6 @@ object ApplicationRepository {
         (JsPath \ "normalisedName").read[String] and
         (JsPath \ "collaborators").read[Set[Collaborator]] and
         (JsPath \ "description").readNullable[String] and
-        (JsPath \ "wso2ApplicationName").read[String] and
         (JsPath \ "tokens").read[ApplicationTokens] and
         (JsPath \ "state").read[ApplicationState] and
         (JsPath \ "access").read[Access] and

@@ -87,7 +87,6 @@ class ApplicationServiceSpec
 
   trait Setup
       extends AuditServiceMockModule
-      with ApiGatewayStoreMockModule
       with ApiSubscriptionFieldsConnectorMockModule
       with QueryServiceMockModule
       with ApplicationRepositoryMockModule
@@ -128,8 +127,7 @@ class ApplicationServiceSpec
 
     implicit val hc: HeaderCarrier = hcForLoggedInCollaborator
 
-    val mockCredentialGenerator: CredentialGenerator = mock[CredentialGenerator]
-    val mockNameValidationConfig                     = mock[ApplicationNamingService.Config]
+    val mockNameValidationConfig = mock[ApplicationNamingService.Config]
 
     when(mockNameValidationConfig.validateForDuplicateAppNames)
       .thenReturn(true)
@@ -149,8 +147,6 @@ class ApplicationServiceSpec
       mockTotpConnector,
       actorSystem.get,
       mockLockKeeper,
-      ApiGatewayStoreMock.aMock,
-      mockCredentialGenerator,
       ApiSubscriptionFieldsConnectorMock.aMock,
       mockThirdPartyDelegatedAuthorityConnector,
       TokenServiceMock.aMock,
@@ -160,7 +156,6 @@ class ApplicationServiceSpec
       clock
     ) with NoOpMetricsTimer
 
-    when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
     StateHistoryRepoMock.Insert.thenAnswer()
     when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
@@ -388,7 +383,6 @@ class ApplicationServiceSpec
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(CreationAccess.Privileged)
 
-      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
       intercept[ApplicationAlreadyExists] {
@@ -405,7 +399,6 @@ class ApplicationServiceSpec
       }
 
       mockLockKeeper.callsMadeToLockKeeper should be > 1
-      ApiGatewayStoreMock.verifyZeroInteractions()
       ApplicationRepoMock.verifyZeroInteractions()
     }
 
@@ -413,14 +406,12 @@ class ApplicationServiceSpec
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest()
 
       ApplicationRepoMock.Save.thenAnswer(successful)
-      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))
       ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
 
       intercept[RuntimeException](await(underTest.create(applicationRequest)))
 
       val dbApplication = ApplicationRepoMock.Save.verifyCalled()
-      ApiGatewayStoreMock.DeleteApplication.verifyCalled()
       ApplicationRepoMock.HardDelete.verifyCalledWith(dbApplication.id)
     }
   }
@@ -577,8 +568,6 @@ class ApplicationServiceSpec
       TermsOfUseInvitationRepositoryMock.Delete.thenReturn()
 
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
-
-      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
     }
 
     "return a state change to indicate that the application has been deleted" in new DeleteApplicationSetup {
@@ -588,16 +577,6 @@ class ApplicationServiceSpec
 
       val result = await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       result shouldBe Deleted
-    }
-
-    "call to ApiGatewayStore to delete the application" in new DeleteApplicationSetup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
-      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
-
-      await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
-
-      ApiGatewayStoreMock.DeleteApplication.verifyCalledWith(applicationData.wso2ApplicationName)
     }
 
     "call to the API Subscription Fields service to delete subscription field data" in new DeleteApplicationSetup {
@@ -687,7 +666,6 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.Fetch.verifyCalledWith(applicationId)
       verifyNoMoreInteractions(
-        ApiGatewayStoreMock.aMock,
         ApplicationRepoMock.aMock,
         StateHistoryRepoMock.aMock,
         SubscriptionRepoMock.aMock,

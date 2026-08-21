@@ -61,7 +61,6 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     "appname",
     Set(Collaborators.Administrator(userId, LaxEmailAddress("bob@example.com"))),
     None,
-    "wso2",
     ApplicationTokens(StoredToken(clientId, "accessABC", List(StoredClientSecret("a", instant, None, clientSecretId, "hashme")))),
     ApplicationState(State.TESTING, None, None, None, instant),
     Access.Standard(
@@ -98,7 +97,6 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
       "emailAddress" -> "bob@example.com",
       "role"         -> "ADMINISTRATOR"
     ))),
-    "wso2ApplicationName"       -> JsString("wso2"),
     "tokens"                    -> Json.obj(
       "production" -> Json.obj(
         "clientId"      -> JsString(clientId.toString()),

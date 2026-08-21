@@ -41,7 +41,6 @@ object StoredApplicationData extends FixedClock {
     normalisedName = "myapp",
     collaborators = CollaboratorData.collaborators,
     description = Some(CoreApplicationData.appDescription),
-    wso2ApplicationName = "aaaaaaaaaa",
     tokens = ApplicationTokens(productionToken),
     state = ApplicationStateData.production,
     access = AccessData.Standard.default,

@@ -48,18 +48,15 @@ class ConfigurationModule extends Module {
       bind[TermsOfUseInvitationReminderJobConfig].toProvider[TermsOfUseInvitationReminderJobConfigProvider],
       bind[TermsOfUseInvitationOverdueJobConfig].toProvider[TermsOfUseInvitationOverdueJobConfigProvider],
       bind[ApiSubscriptionFieldsConnector.Config].toProvider[ApiSubscriptionFieldsConfigProvider],
-      bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
       bind[AuthControlConfig].toProvider[AuthControlConfigProvider],
       bind[EmailConnector.Config].toProvider[EmailConfigProvider],
       bind[TotpConnector.Config].toProvider[TotpConfigProvider],
-      bind[AwsApiGatewayConnector.Config].toProvider[AwsApiGatewayConfigProvider],
       bind[ApiPlatformEventsConnector.Config].toProvider[ApiPlatformEventsConfigProvider],
       bind[ThirdPartyDelegatedAuthorityConnector.Config].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ClientSecretsHashingConfig].toProvider[ClientSecretsHashingConfigProvider],
       bind[ApplicationNamingService.Config].toProvider[ApplicationNamingServiceConfigProvider],
-      bind[RemoveAwsApiKeyJobConfig].toProvider[RemoveAwsApiKeyJobConfigProvider],
       bind[TermsOfUseInvitationConfig].toProvider[TermsOfUseInvitationConfigProvider]
     )
   }
@@ -221,16 +218,6 @@ class ApiSubscriptionFieldsConfigProvider @Inject() (val configuration: Configur
 }
 
 @Singleton
-class ApiStorageConfigProvider @Inject() (val configuration: Configuration)
-    extends Provider[ApiStorageConfig] {
-
-  override def get() = {
-    val disableAwsCalls = configuration.getOptional[Boolean]("disableAwsCalls").getOrElse(false)
-    ApiStorageConfig(disableAwsCalls)
-  }
-}
-
-@Singleton
 class AuthControlConfigProvider @Inject() (val configuration: Configuration)
     extends ServicesConfig(configuration)
     with Provider[AuthControlConfig] {
@@ -266,18 +253,6 @@ class TotpConfigProvider @Inject() (val configuration: Configuration)
   override def get() = {
     val url = baseUrl("totp")
     TotpConnector.Config(url)
-  }
-}
-
-@Singleton
-class AwsApiGatewayConfigProvider @Inject() (val configuration: Configuration)
-    extends ServicesConfig(configuration)
-    with Provider[AwsApiGatewayConnector.Config] {
-
-  override def get() = {
-    val url       = baseUrl("aws-gateway")
-    val awsApiKey = getString("awsApiKey")
-    AwsApiGatewayConnector.Config(url, awsApiKey)
   }
 }
 
@@ -362,19 +337,5 @@ class ApiPlatformEventsConfigProvider @Inject() (val configuration: Configuratio
     val url     = baseUrl("api-platform-events")
     val enabled = getConfBool("api-platform-events.enabled", true)
     ApiPlatformEventsConnector.Config(url, enabled)
-  }
-}
-
-@Singleton
-class RemoveAwsApiKeyJobConfigProvider @Inject() (configuration: Configuration)
-    extends ServicesConfig(configuration)
-    with Provider[RemoveAwsApiKeyJobConfig] {
-
-  override def get(): RemoveAwsApiKeyJobConfig = {
-    val enabled      = configuration.get[Boolean]("removeAwsApiKeyJob.enabled")
-    val dryRun       = configuration.get[Boolean]("removeAwsApiKeyJob.dryRun")
-    val orphanedKeys = configuration.get[String]("removeAwsApiKeyJob.orphanedKeys")
-
-    RemoveAwsApiKeyJobConfig(enabled, dryRun, orphanedKeys)
   }
 }

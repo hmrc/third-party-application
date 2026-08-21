@@ -34,7 +34,6 @@ case class StoredApplication(
     normalisedName: String,
     collaborators: Set[Collaborator],
     description: Option[String] = None,
-    wso2ApplicationName: String,
     tokens: ApplicationTokens,
     state: ApplicationState,
     access: Access = Access.Standard(),
@@ -110,7 +109,6 @@ object StoredApplication {
 
   def create(
       createApplicationRequest: CreateApplicationRequest,
-      wso2ApplicationName: String,
       productionToken: StoredToken,
       createdOn: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
     ): StoredApplication = {
@@ -148,7 +146,6 @@ object StoredApplication {
       name.value.toLowerCase,
       collaborators,
       createApplicationRequest.description.filterNot(_ => environment.isProduction),
-      wso2ApplicationName,
       ApplicationTokens(productionToken),
       applicationState,
       applicationAccess,

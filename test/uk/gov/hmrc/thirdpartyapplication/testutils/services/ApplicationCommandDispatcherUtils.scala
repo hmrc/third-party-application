@@ -30,7 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{
   SubscriptionRepositoryMockModule
 }
 import uk.gov.hmrc.thirdpartyapplication.mocks.{
-  ApiGatewayStoreMockModule,
   ApiPlatformEventServiceMockModule,
   AuditServiceMockModule,
   NotificationServiceMockModule,
@@ -66,7 +65,6 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       with NotificationServiceMockModule
       with ApiPlatformEventServiceMockModule
       with SubmissionsServiceMockModule
-      with ApiGatewayStoreMockModule
       with ThirdPartyDelegatedAuthorityServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()

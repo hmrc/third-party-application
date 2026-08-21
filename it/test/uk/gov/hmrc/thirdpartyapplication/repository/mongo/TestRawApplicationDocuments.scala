@@ -53,7 +53,6 @@ trait TestRawApplicationDocuments {
       "normalisedName"      -> application.normalisedName,
       "collaborators"       -> application.collaborators,
       "description"         -> application.description,
-      "wso2ApplicationName" -> application.wso2ApplicationName,
       "tokens"              -> application.tokens,
       "state"               -> application.state,
       "access"              -> application.access,

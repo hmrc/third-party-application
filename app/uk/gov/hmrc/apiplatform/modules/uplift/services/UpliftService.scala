@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, 
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AuditHelper, AuditService}
+import uk.gov.hmrc.thirdpartyapplication.services.{AuditHelper, AuditService}
 
 @Singleton
 class UpliftService @Inject() (
@@ -41,7 +41,6 @@ class UpliftService @Inject() (
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     applicationNamingService: UpliftNamingService,
-    apiGatewayStore: ApiGatewayStore,
     val clock: Clock
   )(implicit ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
