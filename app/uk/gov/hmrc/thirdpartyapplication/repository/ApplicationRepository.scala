@@ -713,7 +713,36 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
 
-  private val subscriptionsLookup: Bson =
+  private val subscriptionsLookup: BsonDocument = BsonDocument(
+    """{
+      $lookup: {
+        from: "subscription",
+        localField: "id",
+        foreignField: "applications",
+        pipeline: [
+          {
+            $project: { _id : 0, apiIdentifier: 1 }
+          }
+        ],
+        as: "subscribedApis"
+      }
+    }"""
+  )
+
+  /*
+db.A.aggregate([
+  {$lookup: {
+    from: "S",
+    let: {aId: "$id"},
+    pipeline: [
+      {$match: {$expr: {$in: ["$$aId", "$As"]}}},
+      {$project: {_id: 1}}
+    ],
+    as: "mySs"
+  }}
+])
+   */
+  private val oldSubsLookup                     =
     lookup(
       from = "subscription",
       as = "subscribedApis",
