@@ -717,8 +717,16 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     lookup(
       from = "subscription",
       as = "subscribedApis",
-      localField = "id",
-      foreignField = "applications"
+      let = Seq(Variable("appId", "$id")),
+      pipeline = Seq(
+        matches(expr(Document("$in" -> Seq("$$appId", "$applications")))),
+        project(
+          fields(
+            excludeId(),
+            include("apiIdentifier")
+          )
+        )
+      )
     )
 
   private val stateHistoryLookup: Bson =
