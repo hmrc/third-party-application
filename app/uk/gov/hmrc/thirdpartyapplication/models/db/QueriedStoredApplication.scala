@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.{ApiFieldMap, FieldValue}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 
@@ -27,30 +26,4 @@ case class QueriedStoredApplication(
     subscriptions: Option[Set[ApiIdentifier]] = None,
     fieldValues: Option[ApiFieldMap[FieldValue]] = None,
     stateHistory: Option[List[StateHistory]] = None
-  ) {
-
-  def asQueriedApplication = {
-    val awc = app.asAppWithCollaborators
-    QueriedApplication(
-      details = awc.details,
-      collaborators = awc.collaborators,
-      subscriptions = subscriptions,
-      fieldValues = fieldValues,
-      stateHistory = stateHistory
-    )
-  }
-
-  def asQueriedApplicationWithOptionalToken(allowServerToken: Boolean): QueriedApplicationWithOptionalToken = {
-    val awc              = app.asAppWithCollaborators
-    val maybeServerToken = Some(app.tokens.production.accessToken).filter(_ => allowServerToken)
-
-    QueriedApplicationWithOptionalToken(
-      details = awc.details,
-      collaborators = awc.collaborators,
-      subscriptions = subscriptions,
-      fieldValues = fieldValues,
-      stateHistory = stateHistory,
-      serverToken = maybeServerToken
-    )
-  }
-}
+  ) {}

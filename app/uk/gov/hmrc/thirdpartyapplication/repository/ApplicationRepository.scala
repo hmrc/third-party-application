@@ -728,35 +728,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }"""
   )
 
-  /*
-db.A.aggregate([
-  {$lookup: {
-    from: "S",
-    let: {aId: "$id"},
-    pipeline: [
-      {$match: {$expr: {$in: ["$$aId", "$As"]}}},
-      {$project: {_id: 1}}
-    ],
-    as: "mySs"
-  }}
-])
-   */
-  private val oldSubsLookup                     =
-    lookup(
-      from = "subscription",
-      as = "subscribedApis",
-      let = Seq(Variable("appId", "$id")),
-      pipeline = Seq(
-        matches(expr(Document("$in" -> Seq("$$appId", "$applications")))),
-        project(
-          fields(
-            excludeId(),
-            include("apiIdentifier")
-          )
-        )
-      )
-    )
-
   private val stateHistoryLookup: Bson =
     lookup(
       from = "stateHistory",
@@ -765,7 +736,7 @@ db.A.aggregate([
       foreignField = "applicationId"
     )
 
-  private val fieldsToProject = List(
+  private final val fieldsToProject = List(
     "id",
     "name",
     "normalisedName",
@@ -872,8 +843,22 @@ db.A.aggregate([
     }
   }
 
-  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Option[QueriedApplicationWithOptionalToken]] = {
-    def fetchAndMap(allowServerToken: Boolean) = OptionT(fetchSingleAppByAggregates(qry)).map(_.asQueriedApplicationWithOptionalToken(allowServerToken))
+  private def asQueriedApplication(allowServerToken: Boolean)(qsa: QueriedStoredApplication): QueriedApplication = {
+    QueriedApplication(
+      details = qsa.app.asCoreApplication,
+      collaborators = qsa.app.collaborators,
+      subscriptions = qsa.subscriptions,
+      fieldValues = qsa.fieldValues,
+      stateHistory = qsa.stateHistory,
+      serverToken = Some(qsa.app.tokens.production.accessToken).filter(_ => allowServerToken)
+    )
+  }
+
+  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Option[QueriedApplication]] = {
+
+    def fetchAndMap(allowServerToken: Boolean) = {
+      OptionT(fetchSingleAppByAggregates(qry)).map(asQueriedApplication(allowServerToken))
+    }
 
     (qry match {
       case ApplicationQuery.ByClientId(clientId, true, _, _, _, _) =>
@@ -935,7 +920,7 @@ db.A.aggregate([
   }
 
   def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, _] = {
-    internalFetchByGeneralOpenEndedApplicationQueryStream(qry).map(_.asQueriedApplication)
+    internalFetchByGeneralOpenEndedApplicationQueryStream(qry).map(asQueriedApplication(false))
   }
 
   def fetchStoredApplications(qry: GeneralOpenEndedApplicationQuery): Future[List[StoredApplication]] = {

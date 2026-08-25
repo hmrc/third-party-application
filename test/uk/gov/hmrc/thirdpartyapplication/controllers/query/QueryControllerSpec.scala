@@ -29,6 +29,7 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifierFixtures
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, PaginatedApplications, StateHistoryFixtures}
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{NoSubscriptionsQP, UserIdQP, UserIdsQP}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
@@ -36,7 +37,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.services.QueryP
 import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerSpec
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController
 import uk.gov.hmrc.thirdpartyapplication.mocks.QueryServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.QueriedApplicationWithOptionalToken
 import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
 import uk.gov.hmrc.thirdpartyapplication.util.{CommonApplicationId, StoredApplicationFixtures}
 
@@ -58,7 +58,7 @@ class QueryControllerSpec
     val appWithSubsAndFields = appWithSubs.withFieldValues(fieldValues)
 
     val appWithStateHistory =
-      QueriedApplicationWithOptionalToken(appWithCollaborators.details, appWithCollaborators.collaborators, None, None, stateHistory = Some(List(aStateHistoryTesting)), None)
+      QueriedApplication(appWithCollaborators.details, appWithCollaborators.collaborators, None, None, stateHistory = Some(List(aStateHistoryTesting)), None)
   }
 
   "QueryController" should {
@@ -81,7 +81,7 @@ class QueryControllerSpec
     "work for single query with subs and fields" in new Setup {
       QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(
         ApplicationQuery.ByClientId(clientIdOne, false, Nil, wantSubscriptions = true, wantSubscriptionFields = true),
-        QueriedApplicationWithOptionalToken(appWithSubs.details, appWithSubs.collaborators, Some(appWithSubs.subscriptions), Some(fieldValues), None, None)
+        QueriedApplication(appWithSubs.details, appWithSubs.collaborators, Some(appWithSubs.subscriptions), Some(fieldValues), None, None)
       )
       val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientIdOne}&wantSubscriptions&wantSubscriptionFields"))
 

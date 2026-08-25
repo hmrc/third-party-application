@@ -33,12 +33,13 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{DeleteRestriction, GrantLength, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedApplicationWithOptionalToken, StoredApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationQueriesISpec
@@ -806,7 +807,7 @@ class ApplicationQueriesISpec
       ))
 
       inside(retrieved.value) {
-        case QueriedApplicationWithOptionalToken(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
+        case QueriedApplication(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
           maybeSubscriptions.value
           maybeToken.value
       }
@@ -818,7 +819,7 @@ class ApplicationQueriesISpec
       ))
 
       inside(retrieved.value) {
-        case QueriedApplicationWithOptionalToken(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
+        case QueriedApplication(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
           maybeSubscriptions.value
           maybeToken shouldBe None
       }
@@ -830,7 +831,7 @@ class ApplicationQueriesISpec
       ))
 
       inside(retrieved.value) {
-        case QueriedApplicationWithOptionalToken(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
+        case QueriedApplication(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
           maybeSubscriptions.value
           maybeToken.value
       }
@@ -842,7 +843,7 @@ class ApplicationQueriesISpec
       ))
 
       inside(retrieved.value) {
-        case QueriedApplicationWithOptionalToken(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
+        case QueriedApplication(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
           maybeSubscriptions.value
           maybeToken shouldBe None
       }

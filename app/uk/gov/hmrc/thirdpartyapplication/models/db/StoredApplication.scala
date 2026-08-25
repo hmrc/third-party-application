@@ -66,6 +66,8 @@ case class StoredApplication(
 
   lazy val asAppWithCollaborators = StoredApplication.asAppWithCollaborators(this)
 
+  lazy val asCoreApplication = StoredApplication.asCoreApplication(this)
+
   lazy val asQueriedApplication = QueriedApplication(asAppWithCollaborators)
 }
 
@@ -80,27 +82,31 @@ object StoredApplication {
       .filter(lad => ChronoUnit.DAYS.between(initialLastAccessDate, lad.asLocalDate) > 0)
   }
 
+  def asCoreApplication(data: StoredApplication): CoreApplication = {
+    CoreApplication(
+      data.id,
+      data.tokens.production.asApplicationToken,
+      data.name,
+      data.environment,
+      data.description,
+      data.createdOn,
+      deriveLastAccess(data.createdOn, data.lastAccess),
+      GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
+      data.access,
+      data.state,
+      data.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
+      data.checkInformation,
+      data.blocked,
+      ipAllowlist = data.ipAllowlist,
+      lastActionActor = ActorType.UNKNOWN,
+      deleteRestriction = data.deleteRestriction,
+      organisationId = data.organisationId
+    )
+  }
+
   def asAppWithCollaborators(data: StoredApplication): ApplicationWithCollaborators = {
     ApplicationWithCollaborators(
-      CoreApplication(
-        data.id,
-        data.tokens.production.asApplicationToken,
-        data.name,
-        data.environment,
-        data.description,
-        data.createdOn,
-        deriveLastAccess(data.createdOn, data.lastAccess),
-        GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
-        data.access,
-        data.state,
-        data.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
-        data.checkInformation,
-        data.blocked,
-        ipAllowlist = data.ipAllowlist,
-        lastActionActor = ActorType.UNKNOWN,
-        deleteRestriction = data.deleteRestriction,
-        organisationId = data.organisationId
-      ),
+      asCoreApplication(data),
       data.collaborators
     )
   }

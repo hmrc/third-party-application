@@ -10,7 +10,7 @@ object AppDependencies {
 
   private val commonDomainVersion = "1.4.0"
   private val appEventsVersion    = "1.3.0"
-  private val appDomainVersion    = "1.6.0"
+  private val appDomainVersion    = "1.7.0-SNAPSHOT"
 
   private lazy val compileDeps = Seq(
     "uk.gov.hmrc"                   %% "bootstrap-backend-play-30"                % bootstrapVersion,
