@@ -5,7 +5,6 @@ object AppDependencies {
   def apply(): Seq[ModuleID] = compileDeps ++ testDeps
 
   private val bootstrapVersion         = "10.8.0"
-  private val mockitoScalaVersion      = "2.2.1"
   private val hmrcMongoVersion         = "2.13.0"
 
   private val commonDomainVersion = "1.4.0"
@@ -30,7 +29,6 @@ object AppDependencies {
     "uk.gov.hmrc"                   %% "bootstrap-test-play-30"                   % bootstrapVersion,
     "uk.gov.hmrc.mongo"             %% "hmrc-mongo-test-play-30"                  % hmrcMongoVersion,
     "com.softwaremill.sttp.client3" %% "core"                                     % "3.9.8",
-    "org.mockito"                   %% "mockito-scala-scalatest"                  % mockitoScalaVersion,
     "com.vladsch.flexmark"           % "flexmark-all"                             % "0.62.2",
     "uk.gov.hmrc"                   %% "api-platform-common-domain-fixtures"      % commonDomainVersion,
     "uk.gov.hmrc"                   %% "api-platform-application-domain-fixtures" % appDomainVersion

@@ -41,8 +41,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ApplicationDeleted, _}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
-// scalastyle:off number.of.types
-
 @Singleton
 class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(implicit val ec: ExecutionContext) {
 
@@ -78,7 +76,6 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
     }
   }
 
-  // scalastyle:off cyclomatic.complexity
   private def applyEvent(app: StoredApplication, event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     event match {
       case evt: ApplicationApprovalRequestGranted              => auditApplicationApprovalRequestGranted(app, evt)
@@ -102,7 +99,6 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       case _                                                   => Future.successful(None)
     }
   }
-  // scalastyle:on cyclomatic.complexity
 
   private def auditSandboxApplicationNameChangeAction(app: StoredApplication, evt: SandboxApplicationNameChanged)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     E.liftF(
@@ -534,5 +530,3 @@ object AuditHelper {
   }
 
 }
-
-// scalastyle:on number.of.types

@@ -22,7 +22,6 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 import org.apache.pekko.actor.{Cancellable, Scheduler}
-import org.mockito.scalatest.MockitoSugar
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Minute, Span}
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
@@ -35,7 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.config.{ClockModule, SchedulerModule}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
-class RunningOfScheduledJobsSpec extends AsyncHmrcSpec with Eventually with MockitoSugar with GuiceOneAppPerTest with FixedClock {
+class RunningOfScheduledJobsSpec extends AsyncHmrcSpec with Eventually with GuiceOneAppPerTest with FixedClock {
 
   final override def fakeApplication(): Application =
     GuiceApplicationBuilder()

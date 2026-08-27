@@ -483,7 +483,7 @@ class ApplicationRepositoryISpec
         anApplicationDataForTest(
           applicationId
         ).withState(appStateProduction)
-          .copy(lastAccess = instant.minus(Duration.ofDays(20))) // scalastyle:ignore magic.number
+          .copy(lastAccess = instant.minus(Duration.ofDays(20)))
 
       application.tokens.production.lastAccessTokenUsage shouldBe None
 
