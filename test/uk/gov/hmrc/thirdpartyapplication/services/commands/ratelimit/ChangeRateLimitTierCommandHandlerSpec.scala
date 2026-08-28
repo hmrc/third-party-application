@@ -25,7 +25,6 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApiGatewayStoreMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
@@ -34,7 +33,7 @@ class ChangeRateLimitTierCommandHandlerSpec extends CommandHandlerBaseSpec {
   val originalRateLimitTier = RateLimitTier.BRONZE
   val app                   = principalApp.copy(rateLimitTier = Some(originalRateLimitTier))
 
-  trait Setup extends ApiGatewayStoreMockModule with ApplicationRepositoryMockModule {
+  trait Setup extends ApplicationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -45,7 +44,7 @@ class ChangeRateLimitTierCommandHandlerSpec extends CommandHandlerBaseSpec {
     val timestamp = FixedClock.instant
     val update    = ApplicationCommands.ChangeRateLimitTier(gatekeeperUser, instant, replaceWithRateLimitTier)
 
-    val underTest = new ChangeRateLimitTierCommandHandler(ApiGatewayStoreMock.aMock, ApplicationRepoMock.aMock)
+    val underTest = new ChangeRateLimitTierCommandHandler(ApplicationRepoMock.aMock)
 
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value

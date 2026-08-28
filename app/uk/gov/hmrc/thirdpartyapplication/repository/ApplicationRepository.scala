@@ -131,7 +131,6 @@ object ApplicationRepository {
         (JsPath \ "normalisedName").read[String] and
         (JsPath \ "collaborators").read[Set[Collaborator]] and
         (JsPath \ "description").readNullable[String] and
-        (JsPath \ "wso2ApplicationName").read[String] and
         (JsPath \ "tokens").read[ApplicationTokens] and
         (JsPath \ "state").read[ApplicationState] and
         (JsPath \ "access").read[Access] and
@@ -728,35 +727,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       }
     }"""
   )
-
-  /*
-db.A.aggregate([
-  {$lookup: {
-    from: "S",
-    let: {aId: "$id"},
-    pipeline: [
-      {$match: {$expr: {$in: ["$$aId", "$As"]}}},
-      {$project: {_id: 1}}
-    ],
-    as: "mySs"
-  }}
-])
-   */
-  private val oldSubsLookup                     =
-    lookup(
-      from = "subscription",
-      as = "subscribedApis",
-      let = Seq(Variable("appId", "$id")),
-      pipeline = Seq(
-        matches(expr(Document("$in" -> Seq("$$appId", "$applications")))),
-        project(
-          fields(
-            excludeId(),
-            include("apiIdentifier")
-          )
-        )
-      )
-    )
 
   private val stateHistoryLookup: Bson =
     lookup(

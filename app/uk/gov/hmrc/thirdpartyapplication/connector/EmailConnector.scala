@@ -224,7 +224,7 @@ class EmailConnector @Inject() (httpClient: HttpClientV2, config: EmailConnector
       templateId,
       Map(
         "actorEmailAddress"  -> actorEmailAddress,
-        "clientSecretEnding" -> clientSecretName.takeRight(4), // scalastyle:off magic.number
+        "clientSecretEnding" -> clientSecretName.takeRight(4),
         "applicationName"    -> applicationName,
         "environmentName"    -> environmentName,
         "developerHubTitle"  -> devHubTitle

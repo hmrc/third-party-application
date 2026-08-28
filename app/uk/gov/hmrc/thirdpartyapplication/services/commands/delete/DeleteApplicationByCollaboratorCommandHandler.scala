@@ -32,14 +32,13 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.ThirdPartyDelegatedAuthorityService
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 
 @Singleton
 class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     val authControlConfig: AuthControlConfig,
     val applicationRepository: ApplicationRepository,
-    val apiGatewayStore: ApiGatewayStore,
     val notificationRepository: NotificationRepository,
     val responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
@@ -69,13 +68,12 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     val clientId       = app.tokens.production.clientId
     val requesterEmail = instigator.emailAddress
     NonEmptyList.of(
-      ApplicationEvents.ApplicationDeleted(
+      ApplicationEvents.ApplicationDeletedV2(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = Actors.AppCollaborator(requesterEmail),
         clientId = clientId,
-        wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons
       ),
       fromStateHistory(stateHistory, requesterEmail.text, requesterEmail)

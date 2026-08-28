@@ -42,7 +42,6 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
       with UpliftServiceMockModule
       with UpliftNamingServiceMockModule
       with UpliftLinksRepositoryMockModule
-      with ApiGatewayStoreMockModule
       with CommonApplicationId
       with StoredApplicationFixtures {
 
@@ -51,7 +50,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val underTest: UpliftService =
-      new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, UpliftNamingServiceMock.aMock, ApiGatewayStoreMock.aMock, clock)
+      new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, UpliftNamingServiceMock.aMock, clock)
   }
 
   "verifyUplift" should {

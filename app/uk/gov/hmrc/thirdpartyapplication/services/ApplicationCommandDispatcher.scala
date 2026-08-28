@@ -85,7 +85,6 @@ class ApplicationCommandDispatcher @Inject() (
     } yield (savedApp, events)
   }
 
-  // scalastyle:off cyclomatic.complexity
   private def process(app: StoredApplication, command: ApplicationCommand)(implicit hc: HeaderCarrier): AppCmdResultT = {
     command match {
       case cmd: ClientSecretCommand       => clientSecretCommandsProcessor.process(app, cmd)
@@ -105,5 +104,4 @@ class ApplicationCommandDispatcher @Inject() (
       case cmd: OrganisationCommand       => linkToOrganisationCommandsProcessor.process(app, cmd)
     }
   }
-  // scalastyle:on cyclomatic.complexity
 }

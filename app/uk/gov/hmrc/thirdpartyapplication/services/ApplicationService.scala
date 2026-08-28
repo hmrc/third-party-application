@@ -50,7 +50,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, MetricsTimer}
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, MetricsTimer}
 
 @Singleton
 class ApplicationService @Inject() (
@@ -68,8 +68,6 @@ class ApplicationService @Inject() (
     totpConnector: TotpConnector,
     system: ActorSystem,
     lockService: ApplicationLockService,
-    apiGatewayStore: ApiGatewayStore,
-    credentialGenerator: CredentialGenerator,
     apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
     thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
     tokenService: TokenService,
@@ -152,7 +150,6 @@ class ApplicationService @Inject() (
       app <- fetchApp(applicationId)
       _   <- deleteSubscriptions(app)
       _   <- thirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(app.tokens.production.clientId)
-      _   <- apiGatewayStore.deleteApplication(app.wso2ApplicationName)
       _   <- applicationRepository.hardDelete(applicationId)
       _   <- submissionsService.deleteAllAnswersForApplication(app.id)
       _   <- stateHistoryRepository.deleteByApplicationId(applicationId)
@@ -213,8 +210,6 @@ class ApplicationService @Inject() (
   private def createApp(createApplicationRequest: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
     logger.info(s"Creating application ${createApplicationRequest.name}")
 
-    val wso2ApplicationName = credentialGenerator.generate()
-
     def applyTotpForPrivAppsOnly(totp: Option[Totp], app: StoredApplication): StoredApplication = {
       val replaceAccess = app.access match {
         case access: Access.Privileged => access.copy(totpIds = extractTotpId(totp))
@@ -223,25 +218,19 @@ class ApplicationService @Inject() (
       app.copy(access = replaceAccess)
     }
 
-    val f = for {
+    for {
       _       <- createApplicationRequest.accessType match {
                    case AccessType.PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.PRIVILEGED)
                    case AccessType.ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.ROPC)
                    case _                     => successful(())
                  }
-      basicApp = StoredApplication.create(createApplicationRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), instant)
+      basicApp = StoredApplication.create(createApplicationRequest, tokenService.createEnvironmentToken(), instant)
       totp    <- generateApplicationTotp(createApplicationRequest.accessType)
       appData  = applyTotpForPrivAppsOnly(totp, basicApp)
       _       <- applicationRepository.save(appData)
       _       <- createStateHistory(appData)
       _        = auditAppCreated(appData)
     } yield CreateApplicationResponse(appData.asAppWithCollaborators, extractTotpSecret(totp))
-
-    f andThen {
-      case Failure(_) =>
-        apiGatewayStore.deleteApplication(wso2ApplicationName)
-          .map(_ => logger.info(s"deleted application: [$wso2ApplicationName]"))
-    }
   }
 
   private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[Totp]] = {

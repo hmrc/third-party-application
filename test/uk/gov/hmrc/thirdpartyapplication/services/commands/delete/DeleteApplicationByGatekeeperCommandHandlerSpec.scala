@@ -45,7 +45,6 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
     val underTest = new DeleteApplicationByGatekeeperCommandHandler(
       authControlConfig,
       ApplicationRepoMock.aMock,
-      ApiGatewayStoreMock.aMock,
       NotificationRepositoryMock.aMock,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       ThirdPartyDelegatedAuthorityServiceMock.aMock,
@@ -57,21 +56,20 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
       inside(result) { case (returnedApp, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
-            case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ApplicationDeletedByGatekeeper => true
-            case _                                                                                                  => false
+            case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ApplicationDeletedByGatekeeperV2 => true
+            case _                                                                                                    => false
           }
         )
         filteredEvents.size shouldBe 2
 
         filteredEvents.foreach(event =>
           inside(event) {
-            case ApplicationEvents.ApplicationDeletedByGatekeeper(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons, requestingAdminEmail) =>
+            case ApplicationEvents.ApplicationDeletedByGatekeeperV2(_, appId, eventDateTime, actor, clientId, evtReasons, requestingAdminEmail) =>
               appId shouldBe app.id
               actor shouldBe actor
               eventDateTime shouldBe ts
               clientId shouldBe app.tokens.production.clientId
               evtReasons shouldBe reasons
-              wsoApplicationName shouldBe app.wso2ApplicationName
               requestingAdminEmail shouldBe requestedByEmail
 
             case ApplicationEvents.ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
@@ -96,7 +94,6 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()
-      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.RevokeApplicationAuthorities.succeeds()
       NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()

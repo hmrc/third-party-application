@@ -37,7 +37,6 @@ trait ApplicationTestData extends ApplicationWithCollaboratorsFixtures with Coll
     normalisedName = "myapp",
     collaborators = standardApp.collaborators,
     description = standardApp.details.description,
-    wso2ApplicationName = "aaaaaaaaaa",
     tokens = ApplicationTokens(productionToken),
     state = appStateProduction,
     access = standardApp.access,

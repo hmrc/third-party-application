@@ -66,7 +66,6 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with 
 
     StoredApplication.create(
       createApplicationRequest = request,
-      wso2ApplicationName = "wso2ApplicationName",
       productionToken = StoredToken(ClientId("clientId"), "accessToken"),
       createdOn = instant
     )
@@ -89,7 +88,6 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with 
 
       StoredApplication.create(
         createApplicationRequest = request,
-        wso2ApplicationName = "wso2ApplicationName",
         productionToken = StoredToken(ClientId("clientId"), "accessToken"),
         createdOn = instant
       )

@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.StoredToken
 class TokenService {
 
   def createEnvironmentToken(): StoredToken = {
-    val randomBytes: Array[Byte] = new Array[Byte](16) // scalastyle:off magic.number
+    val randomBytes: Array[Byte] = new Array[Byte](16)
     new SecureRandom().nextBytes(randomBytes)
     val accessToken              = randomBytes.map("%02x".format(_)).mkString
     StoredToken(ClientId.random, accessToken)

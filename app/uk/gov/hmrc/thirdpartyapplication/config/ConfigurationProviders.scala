@@ -48,18 +48,15 @@ class ConfigurationModule extends Module {
       bind[TermsOfUseInvitationReminderJobConfig].toProvider[TermsOfUseInvitationReminderJobConfigProvider],
       bind[TermsOfUseInvitationOverdueJobConfig].toProvider[TermsOfUseInvitationOverdueJobConfigProvider],
       bind[ApiSubscriptionFieldsConnector.Config].toProvider[ApiSubscriptionFieldsConfigProvider],
-      bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
       bind[AuthControlConfig].toProvider[AuthControlConfigProvider],
       bind[EmailConnector.Config].toProvider[EmailConfigProvider],
       bind[TotpConnector.Config].toProvider[TotpConfigProvider],
-      bind[AwsApiGatewayConnector.Config].toProvider[AwsApiGatewayConfigProvider],
       bind[ApiPlatformEventsConnector.Config].toProvider[ApiPlatformEventsConfigProvider],
       bind[ThirdPartyDelegatedAuthorityConnector.Config].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ClientSecretsHashingConfig].toProvider[ClientSecretsHashingConfigProvider],
       bind[ApplicationNamingService.Config].toProvider[ApplicationNamingServiceConfigProvider],
-      bind[RemoveAwsApiKeyJobConfig].toProvider[RemoveAwsApiKeyJobConfigProvider],
       bind[TermsOfUseInvitationConfig].toProvider[TermsOfUseInvitationConfigProvider]
     )
   }
@@ -79,10 +76,10 @@ class UpliftVerificationExpiryJobConfigProvider @Inject() (val configuration: Co
 
   override def get() = {
     val jobConfig = configuration.underlying.as[Option[JobConfig]]("upliftVerificationExpiryJob")
-      .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true)) // scalastyle:off magic.number
+      .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true))
 
     val validity: FiniteDuration = configuration.getOptional[FiniteDuration]("upliftVerificationValidity")
-      .getOrElse(Duration(90, DAYS)) // scalastyle:off magic.number
+      .getOrElse(Duration(90, DAYS))
 
     UpliftVerificationExpiryJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, validity)
   }
@@ -95,10 +92,10 @@ class ProductionCredentialsRequestExpiryWarningJobConfigProvider @Inject() (val 
 
   override def get() = {
     val jobConfig = configuration.underlying.as[Option[JobConfig]]("productionCredentialsRequestExpiryWarningJob")
-      .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true)) // scalastyle:off magic.number
+      .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true))
 
     val warningInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("productionCredentialsRequestExpiryWarningJob.warningInterval")
-      .getOrElse(Duration(150, DAYS)) // scalastyle:off magic.number
+      .getOrElse(Duration(150, DAYS))
 
     ProductionCredentialsRequestExpiryWarningJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, warningInterval)
   }
@@ -111,10 +108,10 @@ class ProductionCredentialsRequestExpiredJobConfigProvider @Inject() (val config
 
   override def get() = {
     val jobConfig = configuration.underlying.as[Option[JobConfig]]("productionCredentialsRequestExpiredJob")
-      .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true)) // scalastyle:off magic.number
+      .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true))
 
     val deleteInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("productionCredentialsRequestExpiredJob.deleteInterval")
-      .getOrElse(Duration(183, DAYS)) // scalastyle:off magic.number
+      .getOrElse(Duration(183, DAYS))
 
     ProductionCredentialsRequestExpiredJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, deleteInterval)
   }
@@ -127,10 +124,10 @@ class ResponsibleIndividualVerificationReminderJobConfigProvider @Inject() (val 
 
   override def get() = {
     val jobConfig = configuration.underlying.as[Option[JobConfig]]("responsibleIndividualVerificationReminderJob")
-      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
+      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true))
 
     val reminderInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("responsibleIndividualVerificationReminderJob.reminderInterval")
-      .getOrElse(Duration(10, DAYS)) // scalastyle:off magic.number
+      .getOrElse(Duration(10, DAYS))
 
     ResponsibleIndividualVerificationReminderJobConfig(jobConfig.initialDelay, jobConfig.interval, reminderInterval, jobConfig.enabled)
   }
@@ -143,10 +140,10 @@ class ResponsibleIndividualVerificationRemovalJobConfigProvider @Inject() (val c
 
   override def get() = {
     val jobConfig = configuration.underlying.as[Option[JobConfig]]("responsibleIndividualVerificationRemovalJob")
-      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
+      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true))
 
     val removalInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("responsibleIndividualVerificationRemovalJob.removalInterval")
-      .getOrElse(Duration(10, DAYS)) // scalastyle:off magic.number
+      .getOrElse(Duration(10, DAYS))
 
     ResponsibleIndividualVerificationRemovalJobConfig(jobConfig.initialDelay, jobConfig.interval, removalInterval, jobConfig.enabled)
   }
@@ -159,10 +156,10 @@ class ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider @Inject() 
 
   override def get() = {
     val jobConfig = configuration.underlying.as[Option[JobConfig]]("responsibleIndividualUpdateVerificationRemovalJob")
-      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
+      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true))
 
     val removalInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("responsibleIndividualUpdateVerificationRemovalJob.removalInterval")
-      .getOrElse(Duration(10, DAYS)) // scalastyle:off magic.number
+      .getOrElse(Duration(10, DAYS))
 
     ResponsibleIndividualUpdateVerificationRemovalJobConfig(jobConfig.initialDelay, jobConfig.interval, removalInterval, jobConfig.enabled)
   }
@@ -175,7 +172,7 @@ class ResponsibleIndividualVerificationSetDefaultTypeJobConfigProvider @Inject()
 
   override def get() = {
     val jobConfig = configuration.underlying.as[Option[JobConfig]]("responsibleIndividualVerificationSetDefaultTypeJob")
-      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(30, DAYS), enabled = true)) // scalastyle:off magic.number
+      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(30, DAYS), enabled = true))
 
     ResponsibleIndividualVerificationSetDefaultTypeJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
@@ -188,10 +185,10 @@ class TermsOfUseInvitationReminderJobConfigProvider @Inject() (val configuration
 
   override def get() = {
     val jobConfig = configuration.underlying.as[Option[JobConfig]]("termsOfUseInvitationReminderJob")
-      .getOrElse(JobConfig(FiniteDuration(6, MINUTES), FiniteDuration(8, HOURS), enabled = true)) // scalastyle:off magic.number
+      .getOrElse(JobConfig(FiniteDuration(6, MINUTES), FiniteDuration(8, HOURS), enabled = true))
 
     val reminderInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("termsOfUseInvitationReminderJob.reminderInterval")
-      .getOrElse(Duration(30, DAYS)) // scalastyle:off magic.number
+      .getOrElse(Duration(30, DAYS))
 
     TermsOfUseInvitationReminderJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, reminderInterval)
   }
@@ -204,7 +201,7 @@ class TermsOfUseInvitationOverdueJobConfigProvider @Inject() (val configuration:
 
   override def get() = {
     val jobConfig = configuration.underlying.as[Option[JobConfig]]("termsOfUseInvitationOverdueJob")
-      .getOrElse(JobConfig(FiniteDuration(8, MINUTES), FiniteDuration(8, HOURS), enabled = true)) // scalastyle:off magic.number
+      .getOrElse(JobConfig(FiniteDuration(8, MINUTES), FiniteDuration(8, HOURS), enabled = true))
 
     TermsOfUseInvitationOverdueJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
@@ -217,16 +214,6 @@ class ApiSubscriptionFieldsConfigProvider @Inject() (val configuration: Configur
   override def get() = {
     val url = baseUrl("api-subscription-fields")
     ApiSubscriptionFieldsConnector.Config(url)
-  }
-}
-
-@Singleton
-class ApiStorageConfigProvider @Inject() (val configuration: Configuration)
-    extends Provider[ApiStorageConfig] {
-
-  override def get() = {
-    val disableAwsCalls = configuration.getOptional[Boolean]("disableAwsCalls").getOrElse(false)
-    ApiStorageConfig(disableAwsCalls)
   }
 }
 
@@ -266,18 +253,6 @@ class TotpConfigProvider @Inject() (val configuration: Configuration)
   override def get() = {
     val url = baseUrl("totp")
     TotpConnector.Config(url)
-  }
-}
-
-@Singleton
-class AwsApiGatewayConfigProvider @Inject() (val configuration: Configuration)
-    extends ServicesConfig(configuration)
-    with Provider[AwsApiGatewayConnector.Config] {
-
-  override def get() = {
-    val url       = baseUrl("aws-gateway")
-    val awsApiKey = getString("awsApiKey")
-    AwsApiGatewayConnector.Config(url, awsApiKey)
   }
 }
 
@@ -322,9 +297,9 @@ class TermsOfUseInvitationConfigProvider @Inject() (val configuration: Configura
 
   override def get() = {
     val daysUntilDueWhenCreated: FiniteDuration = configuration.getOptional[FiniteDuration]("termsOfUseDaysUntilDueWhenCreated")
-      .getOrElse(Duration(21, DAYS)) // scalastyle:off magic.number
-    val daysUntilDueWhenReset: FiniteDuration = configuration.getOptional[FiniteDuration]("termsOfUseDaysUntilDueWhenReset")
-      .getOrElse(Duration(30, DAYS)) // scalastyle:off magic.number
+      .getOrElse(Duration(21, DAYS))
+    val daysUntilDueWhenReset: FiniteDuration   = configuration.getOptional[FiniteDuration]("termsOfUseDaysUntilDueWhenReset")
+      .getOrElse(Duration(30, DAYS))
 
     TermsOfUseInvitationConfig(daysUntilDueWhenCreated, daysUntilDueWhenReset)
   }
@@ -362,19 +337,5 @@ class ApiPlatformEventsConfigProvider @Inject() (val configuration: Configuratio
     val url     = baseUrl("api-platform-events")
     val enabled = getConfBool("api-platform-events.enabled", true)
     ApiPlatformEventsConnector.Config(url, enabled)
-  }
-}
-
-@Singleton
-class RemoveAwsApiKeyJobConfigProvider @Inject() (configuration: Configuration)
-    extends ServicesConfig(configuration)
-    with Provider[RemoveAwsApiKeyJobConfig] {
-
-  override def get(): RemoveAwsApiKeyJobConfig = {
-    val enabled      = configuration.get[Boolean]("removeAwsApiKeyJob.enabled")
-    val dryRun       = configuration.get[Boolean]("removeAwsApiKeyJob.dryRun")
-    val orphanedKeys = configuration.get[String]("removeAwsApiKeyJob.orphanedKeys")
-
-    RemoveAwsApiKeyJobConfig(enabled, dryRun, orphanedKeys)
   }
 }

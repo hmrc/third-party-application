@@ -43,7 +43,6 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
       case Actors.Unknown                       => "Unknown"
     }
 
-  // scalastyle:off cyclomatic.complexity method.length
   def sendNotifications(
       app: StoredApplication,
       events: NonEmptyList[ApplicationEvent],
@@ -110,6 +109,5 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
 
     Future.sequence(events.toList.map(evt => sendNotification(evt)))
   }
-  // scalastyle:on cyclomatic.complexity method.length
 
 }
