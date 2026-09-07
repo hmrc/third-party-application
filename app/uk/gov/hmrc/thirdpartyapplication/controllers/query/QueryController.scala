@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,17 +30,15 @@ import play.api.mvc._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiIdentifier, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.{GeneralOpenEndedApplicationQuery, PaginatedApplicationQuery}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQuery, SingleApplicationQuery}
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifier
-import java.time.Instant
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 
 @Singleton
 class QueryController @Inject() (
@@ -118,10 +117,10 @@ class QueryController @Inject() (
             import play.api.libs.functional.syntax._
 
             implicit val writes: Writes[QueriedApplication] = (
-              (__ \ "details" \ "id" ).write[ApplicationId] and
-              (__ \ "details" \ "name").write[ApplicationName] and
-              (__ \ "details" \ "lastAccess").writeNullable[Instant] and
-              (__ \ "subscriptions").write[Set[ApiIdentifier]]
+              (__ \ "details" \ "id").write[ApplicationId] and
+                (__ \ "details" \ "name").write[ApplicationName] and
+                (__ \ "details" \ "lastAccess").writeNullable[Instant] and
+                (__ \ "subscriptions").write[Set[ApiIdentifier]]
             )(qas => (qas.details.id, qas.details.name, qas.details.lastAccess, qas.subscriptions.getOrElse(Set.empty)))
 
             val wrappedSource: Source[ByteString, _] =
