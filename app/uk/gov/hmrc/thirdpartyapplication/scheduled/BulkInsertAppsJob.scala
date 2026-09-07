@@ -34,11 +34,9 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 
 class BulkInsertAppsJob @Inject() (
     lockRepository: MongoLockRepository,
-    credentialGenerator: CredentialGenerator,
     applicationRepository: ApplicationRepository,
     subscriptionRepository: SubscriptionRepository
   )(implicit val ec: ExecutionContext
@@ -67,26 +65,29 @@ class BulkInsertAppsJob @Inject() (
 
     val BatchSize       = 500
     val NumberOfBatches = 2
+    val creationTime    = Instant.now(Clock.tickMillis(ZoneId.systemDefault()))
 
     def generateRandomData(batchSize: Int) =
       (1 to batchSize).map(n => {
         val applicationId                    = ApplicationId.random
-        val name                             = ApplicationName(s"NEVER_USED_APP_$applicationId")
+        val name                             = ApplicationName(s"LOAD_TEST_$applicationId")
         val normalisedName                   = name.value.toLowerCase
         val collaborators: Set[Collaborator] =
-          Set(Collaborators.Administrator(userId = UserId.unsafeApply("011fdc2c-1f6a-4594-84bf-c4526d056aaf"), emailAddress = LaxEmailAddress("imran.akram@digital.hmrc.gov.uk")))
-        val creationTime                     = Instant.now(Clock.tickMillis(ZoneId.systemDefault())).minus(30, ChronoUnit.DAYS)
+          Set(
+            Collaborators.Administrator(userId = UserId.unsafeApply("50112fdb-f9ba-473b-88b6-9676c92cdde7"), emailAddress = LaxEmailAddress("andy.spaven@digital.hmrc.gov.uk")),
+            Collaborators.Administrator(userId = UserId.unsafeApply("153b6fd1-5eeb-4103-9bd0-33b88b92dcf4"), emailAddress = LaxEmailAddress("john.green@digital.hmrc.gov.uk")),
+            Collaborators.Administrator(userId = UserId.unsafeApply("2cba65cb-cd86-4f27-9e46-387c185c2021"), emailAddress = LaxEmailAddress("pete.slater@digital.hmrc.gov.uk"))
+          )
         StoredApplication(
           id = applicationId,
           name = name,
           normalisedName = normalisedName,
           collaborators = collaborators,
-          description = Some("API Platform Team - Never-Used Applications Test"),
-          wso2ApplicationName = credentialGenerator.generate(),
+          description = Some("API Platform Team - Load Test"),
           tokens = ApplicationTokens(production = StoredToken(clientId = ClientId.random, accessToken = "")),
           state = ApplicationState(State.PRODUCTION, updatedOn = creationTime),
           createdOn = creationTime,
-          lastAccess = Some(creationTime),
+          lastAccess = creationTime,
           environment = Environment.SANDBOX,
           deleteRestriction = DeleteRestriction.NoRestriction
         )
@@ -106,6 +107,38 @@ class BulkInsertAppsJob @Inject() (
                         filter = and(
                           equal("apiIdentifier.context", Codecs.toBson("hello")),
                           equal("apiIdentifier.version", Codecs.toBson("1.0"))
+                        ),
+                        update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*),
+                        options = new UpdateOptions().upsert(true)
+                      ).toFuture()
+              _    <- subscriptionRepository.collection.updateOne(
+                        filter = and(
+                          equal("apiIdentifier.context", Codecs.toBson("api-simulator")),
+                          equal("apiIdentifier.version", Codecs.toBson("2.0"))
+                        ),
+                        update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*),
+                        options = new UpdateOptions().upsert(true)
+                      ).toFuture()
+              _    <- subscriptionRepository.collection.updateOne(
+                        filter = and(
+                          equal("apiIdentifier.context", Codecs.toBson("test/publisher")),
+                          equal("apiIdentifier.version", Codecs.toBson("1.0"))
+                        ),
+                        update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*),
+                        options = new UpdateOptions().upsert(true)
+                      ).toFuture()
+              _    <- subscriptionRepository.collection.updateOne(
+                        filter = and(
+                          equal("apiIdentifier.context", Codecs.toBson("ciao/hey/welcome")),
+                          equal("apiIdentifier.version", Codecs.toBson("2.0"))
+                        ),
+                        update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*),
+                        options = new UpdateOptions().upsert(true)
+                      ).toFuture()
+              _    <- subscriptionRepository.collection.updateOne(
+                        filter = and(
+                          equal("apiIdentifier.context", Codecs.toBson("ciao/hey/welcome")),
+                          equal("apiIdentifier.version", Codecs.toBson("3.0"))
                         ),
                         update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*),
                         options = new UpdateOptions().upsert(true)
