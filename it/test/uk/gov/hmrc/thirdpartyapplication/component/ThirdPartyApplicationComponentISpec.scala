@@ -24,7 +24,6 @@ import org.scalatest.{EitherValues, Inside}
 import sttp.client3._
 import sttp.model.{Header, Method, StatusCode}
 
-import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{Json, OWrites}
 
@@ -43,10 +42,6 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
-class DummyCredentialGenerator extends CredentialGenerator {
-  override def generate() = "a" * 10
-}
-
 class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherValues with CollaboratorTestData with Inside with FixedClock {
 
   val configOverrides = Map[String, Any](
@@ -63,7 +58,6 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
   override def fakeApplication(): play.api.Application = {
     GuiceApplicationBuilder()
       .configure(configOverrides + ("metrics.jvm" -> false))
-      .overrides(bind[CredentialGenerator].to[DummyCredentialGenerator])
       .disable(classOf[SchedulerModule])
       .build()
   }

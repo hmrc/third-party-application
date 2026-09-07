@@ -58,7 +58,7 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
   override val lockService: LockService     = responsibleIndividualVerificationReminderJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val remindIfCreatedBeforeNow                    = instant().minus(jobConfig.reminderInterval.toSeconds, SECONDS)
+    val remindIfCreatedBeforeNow                    = instant.minus(jobConfig.reminderInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
       remindersDue <-
         repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.INITIAL, remindIfCreatedBeforeNow)

@@ -45,10 +45,11 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             description = None,
             environment = Environment.PRODUCTION,
             collaborators = Set("jim@example.com".admin()),
-            subscriptions = None
+            subscriptions = None,
+            organisationId = Some(OrganisationId.random)
           )
 
-        StoredApplication.create(request, "bob", token).checkInformation shouldBe None
+        StoredApplication.create(request, token).checkInformation shouldBe None
       }
 
       "set the check information for subscriptions when app is created with subs" in {
@@ -61,10 +62,11 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             description = None,
             environment = Environment.PRODUCTION,
             collaborators = Set("jim@example.com".admin()),
-            subscriptions = Some(Set("context".asIdentifier))
+            subscriptions = Some(Set("context".asIdentifier)),
+            organisationId = Some(OrganisationId.random)
           )
 
-        StoredApplication.create(request, "bob", token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
+        StoredApplication.create(request, token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
       }
 
       "ensure correct grant length when app is created" in {
@@ -77,10 +79,11 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             description = None,
             environment = Environment.PRODUCTION,
             collaborators = Set("jim@example.com".admin()),
-            subscriptions = Some(Set("context".asIdentifier))
+            subscriptions = Some(Set("context".asIdentifier)),
+            organisationId = Some(OrganisationId.random)
           )
 
-        StoredApplication.create(request, "bob", token).refreshTokensAvailableFor shouldBe refreshTokensAvailableFor
+        StoredApplication.create(request, token).refreshTokensAvailableFor shouldBe refreshTokensAvailableFor
       }
     }
 
@@ -96,15 +99,16 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
           collaborators = Set("jim@example.com".admin()),
           upliftRequest = makeUpliftRequest(ApiIdentifier.random),
           requestedBy = "user@example.com",
-          sandboxApplicationId = ApplicationId.random
+          sandboxApplicationId = ApplicationId.random,
+          organisationId = Some(OrganisationId.random)
         )
 
       "not set the check information at all" in {
-        StoredApplication.create(request, "bob", token).checkInformation shouldBe None
+        StoredApplication.create(request, token).checkInformation shouldBe None
       }
 
       "ensure correct grant length when app is created" in {
-        StoredApplication.create(request, "bob", token).refreshTokensAvailableFor shouldBe refreshTokensAvailableFor
+        StoredApplication.create(request, token).refreshTokensAvailableFor shouldBe refreshTokensAvailableFor
       }
     }
   }

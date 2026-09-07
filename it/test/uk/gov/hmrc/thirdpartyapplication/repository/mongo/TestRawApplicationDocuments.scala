@@ -48,21 +48,20 @@ trait TestRawApplicationDocuments {
     }
 
     val applicationJson: JsObject = Json.obj(
-      "id"                  -> application.id,
-      "name"                -> application.name,
-      "normalisedName"      -> application.normalisedName,
-      "collaborators"       -> application.collaborators,
-      "description"         -> application.description,
-      "wso2ApplicationName" -> application.wso2ApplicationName,
-      "tokens"              -> application.tokens,
-      "state"               -> application.state,
-      "access"              -> application.access,
-      "createdOn"           -> dateToJsonObj(application.createdOn),
-      "lastAccess"          -> dateToJsonObj(application.createdOn),
-      "rateLimitTier"       -> "BRONZE",
-      "environment"         -> "PRODUCTION",
-      "blocked"             -> false,
-      "ipAllowlist"         -> application.ipAllowlist
+      "id"             -> application.id,
+      "name"           -> application.name,
+      "normalisedName" -> application.normalisedName,
+      "collaborators"  -> application.collaborators,
+      "description"    -> application.description,
+      "tokens"         -> application.tokens,
+      "state"          -> application.state,
+      "access"         -> application.access,
+      "createdOn"      -> dateToJsonObj(application.createdOn),
+      "lastAccess"     -> dateToJsonObj(application.createdOn),
+      "rateLimitTier"  -> "BRONZE",
+      "environment"    -> "PRODUCTION",
+      "blocked"        -> false,
+      "ipAllowlist"    -> application.ipAllowlist
     )
 
     addAttributes(applicationJson)

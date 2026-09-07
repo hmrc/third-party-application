@@ -35,7 +35,7 @@ abstract class BaseService(stateHistoryRepository: StateHistoryRepository, val c
       actor: Actor,
       rollback: StoredApplication => Any
     ): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = instant())
+    val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = instant)
     stateHistoryRepository.insert(stateHistory)
       .andThen {
         case e: Failure[_] =>

@@ -53,7 +53,7 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
   implicit val hc: HeaderCarrier                                        = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val warningTime: Instant = instant().minus(Period.ofDays(productionCredentialsRequestExpiryWarningInterval.toDays.toInt))
+    val warningTime: Instant = instant.minus(Period.ofDays(productionCredentialsRequestExpiryWarningInterval.toDays.toInt))
     logger.info(s"Send production credentials request expiry warning email for production applications having status of TESTING with updatedOn earlier than $warningTime with no delete restriction")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
@@ -81,7 +81,7 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
       sent <- emailConnector.sendProductionCredentialsRequestExpiryWarning(app.name, recipients)
       _    <- notificationRepository.createEntity(Notification(
                 app.id,
-                instant(),
+                instant,
                 NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING,
                 NotificationStatus.SENT
               ))

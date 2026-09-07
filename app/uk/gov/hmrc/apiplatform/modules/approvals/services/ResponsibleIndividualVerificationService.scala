@@ -46,7 +46,7 @@ class ResponsibleIndividualVerificationService @Inject() (
       submissionId = submissionId,
       submissionInstance = submissionInstance,
       applicationName = applicationData.name,
-      createdOn = instant()
+      createdOn = instant
     )
     responsibleIndividualVerificationRepository.save(verification)
   }
@@ -63,7 +63,7 @@ class ResponsibleIndividualVerificationService @Inject() (
       submissionId = submissionId,
       submissionInstance = submissionInstance,
       applicationName = applicationData.name,
-      createdOn = instant(),
+      createdOn = instant,
       requestingAdminName = requestedByName,
       requestingAdminEmail = requestedByEmailAddress
     )

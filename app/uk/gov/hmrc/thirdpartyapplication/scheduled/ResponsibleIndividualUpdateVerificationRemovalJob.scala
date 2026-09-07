@@ -52,7 +52,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
   override val lockService: LockService     = responsibleIndividualUpdateVerificationRemovalJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val removeIfCreatedBeforeNow                    = instant().minus(jobConfig.removalInterval.toSeconds, SECONDS)
+    val removeIfCreatedBeforeNow                    = instant.minus(jobConfig.removalInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
       removalsDue <-
         repository.fetchByStateAgeAndTypes(
@@ -73,7 +73,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
   }
 
   def sendRemovalEmailAndRemoveRecord(verificationDueForRemoval: ResponsibleIndividualVerification) = {
-    val request = DeclineResponsibleIndividualDidNotVerify(verificationDueForRemoval.id.value, instant())
+    val request = DeclineResponsibleIndividualDidNotVerify(verificationDueForRemoval.id.value, instant)
 
     logger.info(s"Responsible individual update verification timed out for application ${verificationDueForRemoval.applicationName} (started at ${verificationDueForRemoval.createdOn})")
     (for {

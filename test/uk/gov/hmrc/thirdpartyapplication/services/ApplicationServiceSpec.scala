@@ -87,7 +87,6 @@ class ApplicationServiceSpec
 
   trait Setup
       extends AuditServiceMockModule
-      with ApiGatewayStoreMockModule
       with ApiSubscriptionFieldsConnectorMockModule
       with QueryServiceMockModule
       with ApplicationRepositoryMockModule
@@ -128,8 +127,7 @@ class ApplicationServiceSpec
 
     implicit val hc: HeaderCarrier = hcForLoggedInCollaborator
 
-    val mockCredentialGenerator: CredentialGenerator = mock[CredentialGenerator]
-    val mockNameValidationConfig                     = mock[ApplicationNamingService.Config]
+    val mockNameValidationConfig = mock[ApplicationNamingService.Config]
 
     when(mockNameValidationConfig.validateForDuplicateAppNames)
       .thenReturn(true)
@@ -149,8 +147,6 @@ class ApplicationServiceSpec
       mockTotpConnector,
       actorSystem.get,
       mockLockKeeper,
-      ApiGatewayStoreMock.aMock,
-      mockCredentialGenerator,
       ApiSubscriptionFieldsConnectorMock.aMock,
       mockThirdPartyDelegatedAuthorityConnector,
       TokenServiceMock.aMock,
@@ -160,7 +156,6 @@ class ApplicationServiceSpec
       clock
     ) with NoOpMetricsTimer
 
-    when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
     StateHistoryRepoMock.Insert.thenAnswer()
     when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
@@ -238,7 +233,6 @@ class ApplicationServiceSpec
       val expectedApplicationData: StoredApplication = storedApp.withId(createdApp.application.id).withState(appStateTesting).withCollaborators(adminTwo).copy(description = None)
 
       createdApp.totp shouldBe None
-      ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
@@ -272,7 +266,6 @@ class ApplicationServiceSpec
       )
 
       createdApp.totp shouldBe None
-      ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
@@ -303,7 +296,6 @@ class ApplicationServiceSpec
         )
 
       createdApp.totp shouldBe None
-      ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
@@ -319,7 +311,6 @@ class ApplicationServiceSpec
 
     "create a new standard application in Mongo and the API gateway for the SUBORDINATE (SANDBOX) environment" in new Setup {
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.SANDBOX)
 
@@ -335,7 +326,6 @@ class ApplicationServiceSpec
 
       createdApp.totp shouldBe None
 
-      ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(
         createdApp.application.id,
@@ -356,7 +346,6 @@ class ApplicationServiceSpec
 
     "create a new Access.Privileged application in Mongo and the API gateway with a Production state" in new Setup {
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Privileged)
 
@@ -378,7 +367,6 @@ class ApplicationServiceSpec
 
       createdApp.totp shouldBe Some(CreateApplicationResponse.TotpSecret(prodTOTP.secret))
 
-      ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
@@ -395,7 +383,6 @@ class ApplicationServiceSpec
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(CreationAccess.Privileged)
 
-      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
       intercept[ApplicationAlreadyExists] {
@@ -412,38 +399,19 @@ class ApplicationServiceSpec
       }
 
       mockLockKeeper.callsMadeToLockKeeper should be > 1
-      ApiGatewayStoreMock.verifyZeroInteractions()
       ApplicationRepoMock.verifyZeroInteractions()
-    }
-
-    "delete application when failed to create app in the API gateway" in new Setup {
-      TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(environment = Environment.SANDBOX)
-
-      private val exception = new scala.RuntimeException("failed to generate tokens")
-      ApiGatewayStoreMock.CreateApplication.thenFail(exception)
-      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
-
-      val ex: RuntimeException = intercept[RuntimeException](await(underTest.create(applicationRequest)))
-      ex.getMessage shouldBe exception.getMessage
-
-      ApplicationRepoMock.Save.verifyNeverCalled()
-      ApiGatewayStoreMock.DeleteApplication.verifyCalled()
     }
 
     "delete application when failed to create state history" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest()
 
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
-      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))
       ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
 
       intercept[RuntimeException](await(underTest.create(applicationRequest)))
 
       val dbApplication = ApplicationRepoMock.Save.verifyCalled()
-      ApiGatewayStoreMock.DeleteApplication.verifyCalled()
       ApplicationRepoMock.HardDelete.verifyCalledWith(dbApplication.id)
     }
   }
@@ -556,12 +524,11 @@ class ApplicationServiceSpec
         CoreApplication(
           id = applicationId,
           token = productionToken.asApplicationToken,
-          gatewayId = data.wso2ApplicationName,
           name = data.name,
           deployedTo = data.environment,
           description = data.description,
           createdOn = data.createdOn,
-          lastAccess = data.lastAccess,
+          lastAccess = None,
           grantLength = GrantLength.EIGHTEEN_MONTHS,
           access = data.access,
           state = data.state,
@@ -601,8 +568,6 @@ class ApplicationServiceSpec
       TermsOfUseInvitationRepositoryMock.Delete.thenReturn()
 
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
-
-      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
     }
 
     "return a state change to indicate that the application has been deleted" in new DeleteApplicationSetup {
@@ -612,16 +577,6 @@ class ApplicationServiceSpec
 
       val result = await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       result shouldBe Deleted
-    }
-
-    "call to ApiGatewayStore to delete the application" in new DeleteApplicationSetup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.HardDelete.thenReturnHasSucceeded()
-      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
-
-      await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
-
-      ApiGatewayStoreMock.DeleteApplication.verifyCalledWith(applicationData)
     }
 
     "call to the API Subscription Fields service to delete subscription field data" in new DeleteApplicationSetup {
@@ -711,7 +666,6 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.Fetch.verifyCalledWith(applicationId)
       verifyNoMoreInteractions(
-        ApiGatewayStoreMock.aMock,
         ApplicationRepoMock.aMock,
         StateHistoryRepoMock.aMock,
         SubscriptionRepoMock.aMock,
@@ -751,12 +705,13 @@ class ApplicationServiceSpec
       Some(CoreApplicationData.appDescription),
       environment,
       Set(adminTwo),
+      None,
       None
     )
   }
 
   private def aNewV1ApplicationRequest(access: CreationAccess = CreationAccess.Standard, environment: Environment = Environment.PRODUCTION) = {
-    CreateApplicationRequestV1(ApplicationName("MyApp"), access, Some(CoreApplicationData.appDescription), environment, Set(adminTwo), None)
+    CreateApplicationRequestV1(ApplicationName("MyApp"), access, Some(CoreApplicationData.appDescription), environment, Set(adminTwo), None, None)
   }
 
   private def aNewV2ApplicationRequest(environment: Environment) = {
@@ -768,7 +723,8 @@ class ApplicationServiceSpec
       Set(adminTwo),
       makeUpliftRequest(ApiIdentifier.random),
       adminTwo.emailAddress.text,
-      ApplicationId.random
+      ApplicationId.random,
+      None
     )
   }
 }

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.temporal.ChronoUnit
-import java.time.{Instant, Period}
+import java.time.{Instant, LocalDate, Period}
 
 import com.typesafe.config.ConfigFactory
 
@@ -34,12 +34,11 @@ case class StoredApplication(
     normalisedName: String,
     collaborators: Set[Collaborator],
     description: Option[String] = None,
-    wso2ApplicationName: String,
     tokens: ApplicationTokens,
     state: ApplicationState,
     access: Access = Access.Standard(),
     createdOn: Instant,
-    lastAccess: Option[Instant],
+    lastAccess: Instant,
     refreshTokensAvailableFor: Period = Period.ofDays(grantLengthConfig),
     rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
     environment: Environment = Environment.PRODUCTION,
@@ -71,18 +70,26 @@ case class StoredApplication(
 }
 
 object StoredApplication {
+  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
+
+  private val initialLastAccessDate = LocalDate.of(2019, 6, 25)
+
+  def deriveLastAccess(createdOn: Instant, lastAccess: Instant): Option[Instant] = {
+    Some(lastAccess)
+      .filter(lad => ChronoUnit.SECONDS.between(createdOn, lad) > 0)
+      .filter(lad => ChronoUnit.DAYS.between(initialLastAccessDate, lad.asLocalDate) > 0)
+  }
 
   def asAppWithCollaborators(data: StoredApplication): ApplicationWithCollaborators = {
     ApplicationWithCollaborators(
       CoreApplication(
         data.id,
         data.tokens.production.asApplicationToken,
-        data.wso2ApplicationName,
         data.name,
         data.environment,
         data.description,
         data.createdOn,
-        data.lastAccess,
+        deriveLastAccess(data.createdOn, data.lastAccess),
         GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
         data.access,
         data.state,
@@ -102,7 +109,6 @@ object StoredApplication {
 
   def create(
       createApplicationRequest: CreateApplicationRequest,
-      wso2ApplicationName: String,
       productionToken: StoredToken,
       createdOn: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
     ): StoredApplication = {
@@ -140,14 +146,14 @@ object StoredApplication {
       name.value.toLowerCase,
       collaborators,
       createApplicationRequest.description.filterNot(_ => environment.isProduction),
-      wso2ApplicationName,
       ApplicationTokens(productionToken),
       applicationState,
       applicationAccess,
       createdOn,
-      Some(createdOn),
+      createdOn,
       environment = environment,
-      checkInformation = checkInfo
+      checkInformation = checkInfo,
+      organisationId = createApplicationRequest.organisationId
     )
   }
 }

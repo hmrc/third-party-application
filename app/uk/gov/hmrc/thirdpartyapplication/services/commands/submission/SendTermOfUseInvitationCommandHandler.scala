@@ -93,7 +93,7 @@ class SendTermsOfUseInvitationCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: SendTermsOfUseInvitation): AppCmdResultT = {
     def createInvitation(applicationId: ApplicationId): TermsOfUseInvitation = {
       val daysUntilDueWhenCreated = config.daysUntilDueWhenCreated
-      val now                     = instant()
+      val now                     = instant
       TermsOfUseInvitation(
         applicationId,
         now,

@@ -34,12 +34,10 @@ import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscript
 import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepository
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, SubscriptionRepository, TermsOfUseInvitationRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 
 @Singleton
 class CloneApplicationService @Inject() (
     applicationRepository: ApplicationRepository,
-    credentialGenerator: CredentialGenerator,
     subscriptionRepository: SubscriptionRepository,
     notificationRepository: NotificationRepository,
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
@@ -106,13 +104,11 @@ class CloneApplicationService @Inject() (
         suffix            = Instant.now().toEpochMilli().toHexString
         newName           = ApplicationName(s"${oldApp.name} clone $suffix")
         newNormalisedName = newName.value.toLowerCase
-        newGatewayId      = credentialGenerator.generate()
         newApp            =
           oldApp.copy(
             id = newId,
             name = newName,
             normalisedName = newNormalisedName,
-            wso2ApplicationName = newGatewayId,
             tokens = oldApp.tokens.copy(production = oldApp.tokens.production.copy(clientId = newClientId))
           )
         _                <- E.liftF(testAppRepo.record(newId))

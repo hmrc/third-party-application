@@ -212,7 +212,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         responsibleIndividual: ResponsibleIndividual
       ): Future[StoredApplication] = {
       if (addTouAcceptance) {
-        val acceptance = TermsOfUseAcceptance(responsibleIndividual, instant(), submissionId, submissionInstance)
+        val acceptance = TermsOfUseAcceptance(responsibleIndividual, instant, submissionId, submissionInstance)
         applicationRepository.addApplicationTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
       } else {
         Future.successful(appWithoutTouAcceptance)

@@ -20,6 +20,8 @@ import java.time.{Instant, Period}
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.testkit.NoMaterializer
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
@@ -28,7 +30,6 @@ import uk.gov.hmrc.http.NotFoundException
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId, _}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.SingleApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocation, SubmissionId, TermsAndConditionsLocation, TermsOfUseAcceptance}
@@ -39,6 +40,8 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   protected trait BaseApplicationRepoMock {
+    private implicit val materializer: Materializer = NoMaterializer
+
     def aMock: ApplicationRepository
 
     def verify = MockitoSugar.verify(aMock)
@@ -435,16 +438,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.fetchStoredApplications(eqTo(qry))).thenReturn(successful(apps.toList))
 
       def thenFails(exc: Exception) = when(aMock.fetchStoredApplications(*)).thenReturn(failed(exc))
-    }
-
-    object FetchByGeneralOpenEndedApplicationQuery {
-      def thenReturns(apps: QueriedApplication*) = when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(apps.toList))
-
-      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: QueriedApplication*) =
-        when(aMock.fetchByGeneralOpenEndedApplicationQuery(qry)).thenReturn(successful(apps.toList))
-
-      def thenReturnsWithSubs(apps: QueriedApplication*) =
-        when(aMock.fetchByGeneralOpenEndedApplicationQuery(*)).thenReturn(successful(apps.toList))
     }
 
     object FetchStoredApplications {

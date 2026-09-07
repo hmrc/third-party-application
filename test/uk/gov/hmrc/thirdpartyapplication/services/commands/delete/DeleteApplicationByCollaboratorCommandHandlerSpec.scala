@@ -46,7 +46,6 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
     val underTest = new DeleteApplicationByCollaboratorCommandHandler(
       authControlConfig,
       ApplicationRepoMock.aMock,
-      ApiGatewayStoreMock.aMock,
       NotificationRepositoryMock.aMock,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       ThirdPartyDelegatedAuthorityServiceMock.aMock,
@@ -58,21 +57,20 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
       inside(result) { case (returnedApp, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
-            case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ApplicationDeleted => true
-            case _                                                                                      => false
+            case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ApplicationDeletedV2 => true
+            case _                                                                                        => false
           }
         )
         filteredEvents.size shouldBe 2
 
         filteredEvents.foreach(event =>
           inside(event) {
-            case ApplicationEvents.ApplicationDeleted(_, appId, eventDateTime, actor, clientId, wsoApplicationName, evtReasons) =>
+            case ApplicationEvents.ApplicationDeletedV2(_, appId, eventDateTime, actor, clientId, evtReasons) =>
               appId shouldBe app.id
               actor shouldBe actor
               eventDateTime shouldBe instant
               clientId shouldBe app.tokens.production.clientId
               evtReasons shouldBe reasons
-              wsoApplicationName shouldBe app.wso2ApplicationName
 
             case ApplicationEvents.ApplicationStateChanged(_, appId, eventDateTime, evtActor, oldAppState, newAppState, requestingAdminName, requestingAdminEmail) =>
               appId shouldBe app.id
@@ -93,7 +91,6 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
     "succeed as gkUserActor" in new Setup {
       ApplicationRepoMock.UpdateApplicationState.thenReturn(app)
       StateHistoryRepoMock.Insert.succeeds()
-      ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
       ThirdPartyDelegatedAuthorityServiceMock.RevokeApplicationAuthorities.succeeds()
       NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()

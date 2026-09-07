@@ -61,7 +61,6 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     "appname",
     Set(Collaborators.Administrator(userId, LaxEmailAddress("bob@example.com"))),
     None,
-    "wso2",
     ApplicationTokens(StoredToken(clientId, "accessABC", List(StoredClientSecret("a", instant, None, clientSecretId, "hashme")))),
     ApplicationState(State.TESTING, None, None, None, instant),
     Access.Standard(
@@ -75,7 +74,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
       ))
     ),
     instant,
-    None,
+    instant,
     GrantLength.EIGHTEEN_MONTHS.period,
     Some(RateLimitTier.BRONZE),
     Environment.PRODUCTION,
@@ -98,7 +97,6 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
       "emailAddress" -> "bob@example.com",
       "role"         -> "ADMINISTRATOR"
     ))),
-    "wso2ApplicationName"       -> JsString("wso2"),
     "tokens"                    -> Json.obj(
       "production" -> Json.obj(
         "clientId"      -> JsString(clientId.toString()),
@@ -153,6 +151,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
       "accessType"              -> JsString("STANDARD")
     ),
     "createdOn"                 -> MongoJavatimeHelper.asJsValue(instant),
+    "lastAccess"                -> MongoJavatimeHelper.asJsValue(instant),
     "refreshTokensAvailableFor" -> GrantLength.EIGHTEEN_MONTHS.period,
     "rateLimitTier"             -> JsString("BRONZE"),
     "environment"               -> JsString("PRODUCTION"),
@@ -327,7 +326,7 @@ class ApplicationRepositoryISpec
             .withState(appStateProduction)
             .copy(
               rateLimitTier = Some(RateLimitTier.BRONZE),
-              lastAccess = Some(instant)
+              lastAccess = instant
             )
         )
       )
@@ -438,7 +437,7 @@ class ApplicationRepositoryISpec
   }
 
   "recordApplicationUsage" should {
-    def createApplication(createdOn: Instant, lastAccess: Option[Instant]) = {
+    def createApplication(createdOn: Instant, lastAccess: Instant) = {
 
       val application = anApplicationDataForTest(applicationId, clientIdOne)
         .withState(appStateProduction)
@@ -451,38 +450,30 @@ class ApplicationRepositoryISpec
     "do not update the lastAccess property if it is today, and different to the createdOn date" in {
       val midnightToday = instant.truncatedTo(ChronoUnit.DAYS)
       val yesterday     = midnightToday.minus(Duration.ofHours(1))
-      createApplication(createdOn = yesterday, lastAccess = Some(midnightToday))
+      createApplication(createdOn = yesterday, lastAccess = midnightToday)
 
       val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
 
-      retrieved.lastAccess.get shouldBe midnightToday
+      retrieved.lastAccess shouldBe midnightToday
     }
 
     "update the lastAccess property if it is today, and the same as the createdOn date" in {
       val aMinuteAgo = instant.minus(Duration.ofMinutes(1))
-      createApplication(createdOn = aMinuteAgo, lastAccess = Some(aMinuteAgo))
+      createApplication(createdOn = aMinuteAgo, lastAccess = aMinuteAgo)
 
       val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
 
-      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
+      timestampShouldBeApproximatelyNow(retrieved.lastAccess, clock = clock)
     }
 
     "update the lastAccess property if it is before today" in {
       val aDayAgo  = instant.minus(Duration.ofDays(1))
       val aWeekAgo = instant.minus(Duration.ofDays(7))
-      createApplication(createdOn = aWeekAgo, lastAccess = Some(aDayAgo))
+      createApplication(createdOn = aWeekAgo, lastAccess = aDayAgo)
 
       val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
 
-      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
-    }
-
-    "update the lastAccess property if it is missing" in {
-      createApplication(createdOn = instant, lastAccess = None)
-
-      val retrieved = await(applicationRepository.findAndRecordApplicationUsage(clientIdOne)).get
-
-      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
+      timestampShouldBeApproximatelyNow(retrieved.lastAccess, clock = clock)
     }
   }
 
@@ -492,7 +483,7 @@ class ApplicationRepositoryISpec
         anApplicationDataForTest(
           applicationId
         ).withState(appStateProduction)
-          .copy(lastAccess = Some(instant.minus(Duration.ofDays(20)))) // scalastyle:ignore magic.number
+          .copy(lastAccess = instant.minus(Duration.ofDays(20)))
 
       application.tokens.production.lastAccessTokenUsage shouldBe None
 
@@ -500,7 +491,7 @@ class ApplicationRepositoryISpec
       val retrieved =
         await(applicationRepository.findAndRecordServerTokenUsage(application.tokens.production.accessToken)).get
 
-      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
+      timestampShouldBeApproximatelyNow(retrieved.lastAccess, clock = clock)
       timestampShouldBeApproximatelyNow(
         retrieved.tokens.production.lastAccessTokenUsage.get,
         clock = clock

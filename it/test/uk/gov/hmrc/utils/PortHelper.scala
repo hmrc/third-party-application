@@ -28,8 +28,6 @@ object PortHelper {
   val usedPorts      = List[Int]()
   val logger: Logger = Logger(this.getClass())
 
-  // scalastyle:off magic.number
-
   @tailrec
   def randomAvailable: Int = {
     range(rnd.nextInt(range length)) match {
@@ -67,5 +65,4 @@ object PortHelper {
       if (socket != null) socket.close()
     }
   }
-  // scalastyle:on magic.number
 }

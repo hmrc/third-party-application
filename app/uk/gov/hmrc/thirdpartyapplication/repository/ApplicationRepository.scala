@@ -24,6 +24,8 @@ import cats.data.OptionT
 import cats.syntax.option._
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
 import org.bson.BsonValue
 import org.bson.conversions.Bson
 import org.mongodb.scala.bson._
@@ -129,12 +131,11 @@ object ApplicationRepository {
         (JsPath \ "normalisedName").read[String] and
         (JsPath \ "collaborators").read[Set[Collaborator]] and
         (JsPath \ "description").readNullable[String] and
-        (JsPath \ "wso2ApplicationName").read[String] and
         (JsPath \ "tokens").read[ApplicationTokens] and
         (JsPath \ "state").read[ApplicationState] and
         (JsPath \ "access").read[Access] and
         (JsPath \ "createdOn").read[Instant] and
-        (JsPath \ "lastAccess").readNullable[Instant] and
+        (JsPath \ "lastAccess").read[Instant] and
         (((JsPath \ "refreshTokensAvailableFor").read[Period]
           .orElse((JsPath \ "grantLength").read[Int].map(periodFromInt(_))))
           or Reads.pure(periodFromInt(grantLengthConfig))) and
@@ -280,7 +281,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[StoredApplication]] = {
     // For startDate calculation, ifNull provides a default date when lastAccess is not yet set
     timeFuture("Find and Record Application Usage", "application.repository.findAndRecordApplicationUsage") {
-      val timeOfAccess    = instant().toString
+      val timeOfAccess    = instant.toString
       // lastAccess is set to the same as createdOn when a new application is created
       val aggregateUpdate = Seq(BsonDocument(
         s"""{
@@ -514,14 +515,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   private def matches(predicates: Bson): Bson = filter(predicates)
 
-  def processAll(function: StoredApplication => Unit): Future[Unit] = {
-    timeFuture("Process All Applications", "application.repository.processAll") {
-
-      collection.find(notEqual("state.name", State.DELETED.toString()))
-        .map(function)
-        .toFuture()
-        .map(_ => ())
-    }
+  def processAll(function: StoredApplication => Unit)(implicit mat: Materializer): Future[Unit] = {
+    Source.fromPublisher(collection.find())
+      .runForeach(function)
+      .map(_ => ())
   }
 
   def hardDelete(id: ApplicationId): Future[HasSucceeded] = {
@@ -564,6 +561,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
 
       collection.aggregate[BsonValue](pipeline)
+        .comment(MongoComment.NoIndexRequired)
         .map(Codecs.fromBson[ApplicationWithSubscriptionCount])
         .toFuture()
         .map(_.map(x => s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(x._id.name)}" -> x.count)
@@ -714,13 +712,21 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
 
-  private val subscriptionsLookup: Bson =
-    lookup(
-      from = "subscription",
-      as = "subscribedApis",
-      localField = "id",
-      foreignField = "applications"
-    )
+  private val subscriptionsLookup: BsonDocument = BsonDocument(
+    """{
+      $lookup: {
+        from: "subscription",
+        localField: "id",
+        foreignField: "applications",
+        pipeline: [
+          {
+            $project: { _id : 0, apiIdentifier: 1 }
+          }
+        ],
+        as: "subscribedApis"
+      }
+    }"""
+  )
 
   private val stateHistoryLookup: Bson =
     lookup(
@@ -793,6 +799,20 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
+  private def executeAggregateStream(projectionToUseStage: Bson, pipelineStages: List[Bson]): Source[QueriedStoredApplication, _] = {
+
+    val stages: Seq[Bson] = pipelineStages :+ projectionToUseStage
+
+    implicit val rdr: Reads[QueriedStoredApplication] = readsQSA.composeWith(transformApplication)
+
+    val raw = collection.aggregate[BsonValue](stages)
+      .map(bson => {
+        Codecs.fromBson[QueriedStoredApplication](bson)
+      })
+
+    Source.fromPublisher(raw)
+  }
+
   private def executeAggregate(projectionToUseStage: Bson, pipelineStages: List[Bson]): Future[List[QueriedStoredApplication]] = {
 
     val stages: Seq[Bson] = pipelineStages :+ projectionToUseStage
@@ -845,8 +865,27 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       .value
   }
 
+  private def internalFetchByGeneralOpenEndedApplicationQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedStoredApplication, _] = {
+    val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+    val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
+    val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
+
+    val needsLookup = qry.wantSubscriptions || qry.hasAnySubscriptionFilter || qry.hasSpecificSubscriptionFilter
+
+    val maybeSubsLookupStage = subscriptionsLookup.some.filter(_ => needsLookup)
+
+    val maybeStateHistoryLookupStage = stateHistoryLookup.some.filter(_ => qry.wantStateHistory)
+
+    val pipelineStages: List[Bson] = (maybeSubsLookupStage :: filtersStage :: maybeStateHistoryLookupStage :: sortingStage :: limitStage :: Nil) collect {
+      case Some(x) => x
+    }
+    val projectionToUseStage       = toProjectionToUseStage(qry.wantSubscriptions, qry.wantStateHistory)
+
+    executeAggregateStream(projectionToUseStage, pipelineStages)
+  }
+
   private def internalFetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedStoredApplication]] = {
-    timeFuture("Run General Query", "application.repository.fetchByGeneralOpenEndedApplicationQuery") {
+    timeFuture("Run General Query", "application.repository.internalFetchByGeneralOpenEndedApplicationQuery") {
       val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
       val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
       val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
@@ -866,8 +905,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedApplication]] = {
-    internalFetchByGeneralOpenEndedApplicationQuery(qry).map(_.map(_.asQueriedApplication))
+  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, _] = {
+    internalFetchByGeneralOpenEndedApplicationQueryStream(qry).map(_.asQueriedApplication)
   }
 
   def fetchStoredApplications(qry: GeneralOpenEndedApplicationQuery): Future[List[StoredApplication]] = {

@@ -31,14 +31,13 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.ThirdPartyDelegatedAuthorityService
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ThirdPartyDelegatedAuthorityService}
 
 @Singleton
 class DeleteApplicationByGatekeeperCommandHandler @Inject() (
     val authControlConfig: AuthControlConfig,
     val applicationRepository: ApplicationRepository,
-    val apiGatewayStore: ApiGatewayStore,
     val notificationRepository: NotificationRepository,
     val responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
@@ -57,13 +56,12 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
     val requesterEmail = cmd.requestedByEmailAddress
     val clientId       = app.tokens.production.clientId
     NonEmptyList.of(
-      ApplicationEvents.ApplicationDeletedByGatekeeper(
+      ApplicationEvents.ApplicationDeletedByGatekeeperV2(
         id = EventId.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         clientId = clientId,
-        wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons,
         requestingAdminEmail = requesterEmail
       ),

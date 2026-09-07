@@ -42,7 +42,6 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
       with UpliftServiceMockModule
       with UpliftNamingServiceMockModule
       with UpliftLinksRepositoryMockModule
-      with ApiGatewayStoreMockModule
       with CommonApplicationId
       with StoredApplicationFixtures {
 
@@ -51,14 +50,13 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val underTest: UpliftService =
-      new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, UpliftNamingServiceMock.aMock, ApiGatewayStoreMock.aMock, clock)
+      new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, UpliftNamingServiceMock.aMock, clock)
   }
 
   "verifyUplift" should {
     val upliftRequestedBy = appStateRequestByEmail.toLaxEmail
 
     "update the state of the application and create app in the API gateway when application is in pendingRequesterVerification state" in new Setup {
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       AuditServiceMock.AuditWithTags.thenReturnSuccess()
       ApplicationRepoMock.Save.thenReturn(mock[StoredApplication])
 
@@ -75,7 +73,6 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
 
       val expectedApplication: StoredApplication = application.withState(appStatePreProduction)
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplication)
-      ApiGatewayStoreMock.CreateApplication.verifyCalled()
 
       result shouldBe UpliftVerified
 
@@ -85,7 +82,6 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
     }
 
     "fail if the application save fails" in new Setup {
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       val saveException = new RuntimeException("application failed to save")
       ApplicationRepoMock.Save.thenFail(saveException)
 
@@ -95,7 +91,6 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
     }
 
     "rollback if saving the state history fails" in new Setup {
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       val application: StoredApplication = storedApp.withState(appStatePendingRequesterVerification)
       ApplicationRepoMock.Save.thenReturn(mock[StoredApplication])
 

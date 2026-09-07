@@ -28,7 +28,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 trait AbstractDeleteApplicationCommandHandler extends CommandHandler {
   val applicationRepository: ApplicationRepository
-  val apiGatewayStore: ApiGatewayStore
   val notificationRepository: NotificationRepository
   val responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository
   val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService
@@ -44,7 +43,6 @@ trait AbstractDeleteApplicationCommandHandler extends CommandHandler {
       _ <- E.liftF(stateHistoryRepository.insert(stateHistory))
       _ <- E.liftF(thirdPartyDelegatedAuthorityService.revokeApplicationAuthorities(app.tokens.production.clientId))
       _ <- E.liftF(responsibleIndividualVerificationRepository.deleteAllByApplicationId(app.id))
-      _ <- E.liftF(apiGatewayStore.deleteApplication(app.wso2ApplicationName))
       _ <- E.liftF(notificationRepository.deleteAllByApplicationId(app.id))
       _ <- E.liftF(termsOfUseInvitationRepository.delete(app.id))
     } yield HasSucceeded
