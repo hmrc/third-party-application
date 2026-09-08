@@ -449,7 +449,7 @@ class ApplicationQueriesISpec
       result shouldBe List(application1, application2)
 
       val source   =
-        applicationRepository.fetchByGeneralOpenEndedApplicationQuery(ApplicationQueries.applicationsByApiContext(matchingContext.asContext).copy(wantSubscriptions = true))
+        applicationRepository.fetchByGeneralOpenEndedApplicationQueryStream(ApplicationQueries.applicationsByApiContext(matchingContext.asContext).copy(wantSubscriptions = true))
       val resultQA = await(source.runWith(Sink.seq))
       resultQA.head.details shouldBe application1.asAppWithCollaborators.details
       resultQA.head.collaborators shouldBe application1.collaborators
