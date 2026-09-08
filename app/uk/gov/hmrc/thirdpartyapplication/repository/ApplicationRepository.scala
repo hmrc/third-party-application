@@ -52,8 +52,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{SingleA
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedStoredApplication, _}
-import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.LimitedApp
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object ApplicationRepository {
   import play.api.libs.functional.syntax._
@@ -64,8 +64,7 @@ object ApplicationRepository {
       createdOn: Instant,
       lastAccess: Instant,
       subscriptions: Option[Set[ApiIdentifier]] = None
-  )
-
+    )
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
@@ -777,7 +776,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     "createdOn",
     "lastAccess"
   )
-
 
   private val transformApplication: Reads[JsObject] = {
     (__).read[JsObject].map { item =>
