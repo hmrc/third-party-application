@@ -52,10 +52,20 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{SingleA
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedStoredApplication, _}
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.LimitedApp
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
+import org.apache.pekko.stream.OverflowStrategy
 
 object ApplicationRepository {
   import play.api.libs.functional.syntax._
+
+  case class LimitedApp(
+      id: ApplicationId,
+      name: ApplicationName,
+      createdOn: Instant,
+      lastAccess: Instant,
+      subscriptions: Option[Set[ApiIdentifier]] = None
+    )
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
@@ -147,6 +157,8 @@ object ApplicationRepository {
         ((JsPath \ "deleteRestriction").read[DeleteRestriction] or Reads.pure[DeleteRestriction](DeleteRestriction.NoRestriction)) and
         (JsPath \ "organisationId").readNullable[OrganisationId]
     )(StoredApplication.apply _)
+
+    implicit val readLimitedApp: Reads[LimitedApp] = Json.reads[LimitedApp]
 
     implicit val formatStoredApplication: OFormat[StoredApplication] = OFormat(readStoredApplication, Json.writes[StoredApplication])
 
@@ -759,6 +771,13 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     "organisationId"
   )
 
+  private val limitedFieldsToProject = List(
+    "id",
+    "name",
+    "createdOn",
+    "lastAccess"
+  )
+
   private val transformApplication: Reads[JsObject] = {
     (__).read[JsObject].map { item =>
       val obj              = item.as[JsObject]
@@ -775,14 +794,14 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  private def toProjectionToUseStage(wantSubscriptions: Boolean, wantStateHistory: Boolean): Bson =
+  private def toProjectionToUseStage(wantSubscriptions: Boolean, wantStateHistory: Boolean, fieldList: List[String] = fieldsToProject): Bson =
     project(
       fields(
         (
           Seq(
             excludeId(),
             include(
-              fieldsToProject: _*
+              fieldList: _*
             )
           ) ++ (
             if (wantSubscriptions)
@@ -799,18 +818,18 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
-  private def executeAggregateStream(projectionToUseStage: Bson, pipelineStages: List[Bson]): Source[QueriedStoredApplication, _] = {
+  private def executeAggregateStream(projectionToUseStage: Bson, pipelineStages: List[Bson]): Source[LimitedApp, _] = {
 
     val stages: Seq[Bson] = pipelineStages :+ projectionToUseStage
 
-    implicit val rdr: Reads[QueriedStoredApplication] = readsQSA.composeWith(transformApplication)
+    // implicit val rdr: Reads[QueriedStoredApplication] = readsQSA.composeWith(transformApplication)
 
     val raw = collection.aggregate[BsonValue](stages)
       .map(bson => {
-        Codecs.fromBson[QueriedStoredApplication](bson)
+        Codecs.fromBson[LimitedApp](bson)
       })
 
-    Source.fromPublisher(raw)
+    Source.fromPublisher(raw).buffer(100, OverflowStrategy.backpressure)
   }
 
   private def executeAggregate(projectionToUseStage: Bson, pipelineStages: List[Bson]): Future[List[QueriedStoredApplication]] = {
@@ -865,7 +884,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       .value
   }
 
-  private def internalFetchByGeneralOpenEndedApplicationQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedStoredApplication, _] = {
+  def fetchByGeneralOpenEndedApplicationQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[LimitedApp, _] = {
     val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
     val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
     val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
@@ -879,7 +898,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     val pipelineStages: List[Bson] = (maybeSubsLookupStage :: filtersStage :: maybeStateHistoryLookupStage :: sortingStage :: limitStage :: Nil) collect {
       case Some(x) => x
     }
-    val projectionToUseStage       = toProjectionToUseStage(qry.wantSubscriptions, qry.wantStateHistory)
+    val projectionToUseStage       = toProjectionToUseStage(qry.wantSubscriptions, qry.wantStateHistory, limitedFieldsToProject)
 
     executeAggregateStream(projectionToUseStage, pipelineStages)
   }
@@ -905,8 +924,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, _] = {
-    internalFetchByGeneralOpenEndedApplicationQueryStream(qry).map(_.asQueriedApplication)
+  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedApplication]] = {
+    internalFetchByGeneralOpenEndedApplicationQuery(qry).map(_.map(_.asQueriedApplication))
   }
 
   def fetchStoredApplications(qry: GeneralOpenEndedApplicationQuery): Future[List[StoredApplication]] = {

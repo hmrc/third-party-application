@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.Source
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -57,16 +57,13 @@ class QueryService @Inject() (
     })
   }
 
-  def fetchApplicationsByQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, _] = {
-    applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry)
+  def fetchApplicationsByQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[ApplicationRepository.LimitedApp, _] = {
+    applicationRepository.fetchByGeneralOpenEndedApplicationQueryStream(qry)
   }
 
   def fetchApplicationsByQuery(qry: GeneralOpenEndedApplicationQuery): Future[Seq[QueriedApplication]] = {
-    val MAX_ALLOWED_SIZE = 1000
-
-    fetchApplicationsByQueryStream(qry)
-      .limit(MAX_ALLOWED_SIZE)
-      .runWith(Sink.seq)
+    // Limit currently removed
+    applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry)
   }
 
   def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {
