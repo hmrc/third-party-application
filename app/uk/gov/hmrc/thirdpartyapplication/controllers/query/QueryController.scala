@@ -39,6 +39,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{Applica
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.LimitedApp
 
 @Singleton
 class QueryController @Inject() (
@@ -116,12 +117,12 @@ class QueryController @Inject() (
           if (streamed) {
             import play.api.libs.functional.syntax._
 
-            implicit val writes: Writes[QueriedApplication] = (
+            implicit val writes: Writes[LimitedApp] = (
               (__ \ "details" \ "id").write[ApplicationId] and
                 (__ \ "details" \ "name").write[ApplicationName] and
                 (__ \ "details" \ "lastAccess").writeNullable[Instant] and
                 (__ \ "subscriptions").write[Set[ApiIdentifier]]
-            )(qas => (qas.details.id, qas.details.name, qas.details.lastAccess, qas.subscriptions.getOrElse(Set.empty)))
+            )(qas => (qas.id, qas.name, Some(qas.lastAccess).filterNot(_.getEpochSecond() == qas.createdOn.getEpochSecond()), qas.subscriptions.getOrElse(Set.empty)))
 
             val wrappedSource: Source[ByteString, _] =
               queryService.fetchApplicationsByQueryStream(q).map {
