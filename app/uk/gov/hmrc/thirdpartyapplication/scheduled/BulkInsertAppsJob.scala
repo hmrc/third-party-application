@@ -74,9 +74,9 @@ class BulkInsertAppsJob @Inject() (
         val normalisedName                   = name.value.toLowerCase
         val collaborators: Set[Collaborator] =
           Set(
-            Collaborators.Administrator(userId = UserId.unsafeApply("50112fdb-f9ba-473b-88b6-9676c92cdde7"), emailAddress = LaxEmailAddress("andy.spaven@digital.hmrc.gov.uk")),
-            Collaborators.Administrator(userId = UserId.unsafeApply("153b6fd1-5eeb-4103-9bd0-33b88b92dcf4"), emailAddress = LaxEmailAddress("john.green@digital.hmrc.gov.uk")),
-            Collaborators.Administrator(userId = UserId.unsafeApply("2cba65cb-cd86-4f27-9e46-387c185c2021"), emailAddress = LaxEmailAddress("pete.slater@digital.hmrc.gov.uk"))
+            Collaborators.Administrator(userId = UserId.unsafeApply("c24ac239-c2f5-4021-a9f8-3cf8c2b14ff5"), emailAddress = LaxEmailAddress("john.green+loadtest1@digital.hmrc.gov.uk")),
+            Collaborators.Administrator(userId = UserId.unsafeApply("587c4a9c-5f42-426b-a48a-7e18a54b1fe7"), emailAddress = LaxEmailAddress("john.green+loadtest2@digital.hmrc.gov.uk")),
+            Collaborators.Administrator(userId = UserId.unsafeApply("2f20a5fa-b51e-439f-a1de-e2d722dbd787"), emailAddress = LaxEmailAddress("john.green+loadtest3@digital.hmrc.gov.uk"))
           )
         StoredApplication(
           id = applicationId,
@@ -113,15 +113,7 @@ class BulkInsertAppsJob @Inject() (
                       ).toFuture()
               _    <- subscriptionRepository.collection.updateOne(
                         filter = and(
-                          equal("apiIdentifier.context", Codecs.toBson("api-simulator")),
-                          equal("apiIdentifier.version", Codecs.toBson("2.0"))
-                        ),
-                        update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*),
-                        options = new UpdateOptions().upsert(true)
-                      ).toFuture()
-              _    <- subscriptionRepository.collection.updateOne(
-                        filter = and(
-                          equal("apiIdentifier.context", Codecs.toBson("test/publisher")),
+                          equal("apiIdentifier.context", Codecs.toBson("organisations/basis-period-reform")),
                           equal("apiIdentifier.version", Codecs.toBson("1.0"))
                         ),
                         update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*),
@@ -129,16 +121,16 @@ class BulkInsertAppsJob @Inject() (
                       ).toFuture()
               _    <- subscriptionRepository.collection.updateOne(
                         filter = and(
-                          equal("apiIdentifier.context", Codecs.toBson("ciao/hey/welcome")),
-                          equal("apiIdentifier.version", Codecs.toBson("2.0"))
+                          equal("apiIdentifier.context", Codecs.toBson("individuals/calculations")),
+                          equal("apiIdentifier.version", Codecs.toBson("8.0"))
                         ),
                         update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*),
                         options = new UpdateOptions().upsert(true)
                       ).toFuture()
               _    <- subscriptionRepository.collection.updateOne(
                         filter = and(
-                          equal("apiIdentifier.context", Codecs.toBson("ciao/hey/welcome")),
-                          equal("apiIdentifier.version", Codecs.toBson("3.0"))
+                          equal("apiIdentifier.context", Codecs.toBson("lifetime-isa")),
+                          equal("apiIdentifier.version", Codecs.toBson("2.0"))
                         ),
                         update = Updates.addEachToSet("applications", applications.map(app => Codecs.toBson(app.id)): _*),
                         options = new UpdateOptions().upsert(true)
