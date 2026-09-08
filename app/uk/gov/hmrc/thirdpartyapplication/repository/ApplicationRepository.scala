@@ -54,6 +54,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedStoredApplication, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.LimitedApp
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
+import org.apache.pekko.stream.OverflowStrategy
 
 object ApplicationRepository {
   import play.api.libs.functional.syntax._
@@ -828,7 +829,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
         Codecs.fromBson[LimitedApp](bson)
       })
 
-    Source.fromPublisher(raw)
+    Source.fromPublisher(raw).buffer(100, OverflowStrategy.backpressure)
   }
 
   private def executeAggregate(projectionToUseStage: Bson, pipelineStages: List[Bson]): Future[List[QueriedStoredApplication]] = {
