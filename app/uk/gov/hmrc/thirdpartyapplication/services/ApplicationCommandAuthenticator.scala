@@ -68,7 +68,8 @@ class ApplicationCommandAuthenticator @Inject() (
   }
 
   private def authorise()(implicit hc: HeaderCarrier): Future[Option[Name]] = {
-    val hasAnyGatekeeperEnrolment = Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
+    val hasAnyGatekeeperEnrolment =
+      Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.advancedUserRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
     val retrieval                 = Retrievals.name
     strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, retrieval)
   }
