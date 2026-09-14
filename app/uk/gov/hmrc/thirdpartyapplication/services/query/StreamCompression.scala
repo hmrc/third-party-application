@@ -16,26 +16,27 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.query
 
-import org.apache.pekko.stream.scaladsl.Source
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifier
-import play.api.libs.json._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import java.time.Instant
+import scala.collection.mutable.{ArrayBuffer, ListBuffer, Map}
+
+import org.apache.pekko.stream.scaladsl.Source
+
+import play.api.libs.json._
 import uk.gov.hmrc.play.json.Union
-import scala.collection.mutable.{ListBuffer, Map}
-import scala.collection.mutable.ArrayBuffer
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiIdentifier, ApplicationId}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 sealed trait Output
 
 case class OutputApp[A](
-  app: A,
-  subscriptions: Option[Set[Int]] = None
-)(implicit val fmt: Format[A] ) extends Output
+    app: A,
+    subscriptions: Option[Set[Int]] = None
+  )(implicit val fmt: Format[A]
+  ) extends Output
 
 case class OutputSubscription(apiIdentifier: ApiIdentifier) extends Output
-
 
 object OutputApp {
   implicit def fmt[A](implicit fmt: OFormat[A]): OFormat[OutputApp[A]] = Json.format[OutputApp[A]]
@@ -46,18 +47,19 @@ object OutputSubscription {
 }
 
 object Output {
-    def fmt[A](implicit fmt: OFormat[A]): OFormat[Output] = Union.from[Output]("otype")
+
+  def fmt[A](implicit fmt: OFormat[A]): OFormat[Output] = Union.from[Output]("otype")
     .and[OutputApp[A]]("app")
     .and[OutputSubscription]("sub")
     .format
 }
 
 case class SimpleApp(
-  id: ApplicationId,
-  name: ApplicationName,
-  createdOn: Instant,
-  lastAccess: Instant
-)
+    id: ApplicationId,
+    name: ApplicationName,
+    createdOn: Instant,
+    lastAccess: Instant
+  )
 
 object SimpleApp {
   implicit val fmt: OFormat[SimpleApp] = Json.format[SimpleApp]
@@ -66,14 +68,13 @@ object SimpleApp {
 object StreamCompression {
   type LookupTable = Map[ApiIdentifier, Int]
 
-  def compress( in: (LookupTable, ApplicationRepository.LimitedApp) ): (LookupTable, List[Output]) = {
-    val ( lt, app) = in
+  def compress(in: (LookupTable, ApplicationRepository.LimitedApp)): (LookupTable, List[Output]) = {
+    val (lt, app) = in
     app.subscriptions match {
       case None => (lt, List(OutputApp(SimpleApp(app.id, app.name, app.createdOn, app.lastAccess), None)))
 
       case Some(allSubs) =>
-
-        val (knownSubs, newSubs) = allSubs.partition( id => lt.contains(id) )
+        val (knownSubs, newSubs) = allSubs.partition(id => lt.contains(id))
 
         val output = ListBuffer.empty[Output]
 
@@ -89,23 +90,23 @@ object StreamCompression {
     }
   }
 
-  def decompress(in: (ArrayBuffer[ApiIdentifier], List[Output]) ): (ArrayBuffer[ApiIdentifier], List[ApplicationRepository.LimitedApp]) = {
+  def decompress(in: (ArrayBuffer[ApiIdentifier], List[Output])): (ArrayBuffer[ApiIdentifier], List[ApplicationRepository.LimitedApp]) = {
     val lookupTable = in._1
-    val resultList = ListBuffer.empty[ApplicationRepository.LimitedApp]
+    val resultList  = ListBuffer.empty[ApplicationRepository.LimitedApp]
 
     in._2.foreach(_ match {
-      case OutputSubscription(id) => lookupTable.append(id)
-      case OutputApp(SimpleApp(id,name, createdOn, lastAccess), subKeys) =>
-        val subs: Option[Set[ApiIdentifier]] = subKeys.map(_.map(k => lookupTable(k-1)))
+      case OutputSubscription(id)                                         => lookupTable.append(id)
+      case OutputApp(SimpleApp(id, name, createdOn, lastAccess), subKeys) =>
+        val subs: Option[Set[ApiIdentifier]] = subKeys.map(_.map(k => lookupTable(k - 1)))
         resultList.append(ApplicationRepository.LimitedApp(id, name, createdOn, lastAccess, subs))
     })
 
     (lookupTable, resultList.toList)
   }
 
-  def compressStream(in: Source[ApplicationRepository.LimitedApp, _] ): Source[List[Output], _] = {
-    in.statefulMap[LookupTable, List[Output]]( () => Map.empty[ApiIdentifier, Int] )(
-      (map, app) => compress( (map,app) ),
+  def compressStream(in: Source[ApplicationRepository.LimitedApp, _]): Source[List[Output], _] = {
+    in.statefulMap[LookupTable, List[Output]](() => Map.empty[ApiIdentifier, Int])(
+      (map, app) => compress((map, app)),
       _ => None
     )
   }

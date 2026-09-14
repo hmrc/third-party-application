@@ -24,8 +24,8 @@ import cats.data.OptionT
 import cats.syntax.option._
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import com.typesafe.config.ConfigFactory
-import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.{Materializer, OverflowStrategy}
 import org.bson.BsonValue
 import org.bson.conversions.Bson
 import org.mongodb.scala.bson._
@@ -54,7 +54,6 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedStoredApplication, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.LimitedApp
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
-import org.apache.pekko.stream.OverflowStrategy
 
 object ApplicationRepository {
   import play.api.libs.functional.syntax._
