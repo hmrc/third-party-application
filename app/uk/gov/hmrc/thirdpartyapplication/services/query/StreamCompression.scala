@@ -29,19 +29,16 @@ import scala.collection.mutable.ArrayBuffer
 
 sealed trait Output
 
-case class OutputApp(
-  id: ApplicationId,
-  name: ApplicationName,
-  createdOn: Instant,
-  lastAccess: Instant,
+case class OutputApp[A](
+  app: A,
   subscriptions: Option[Set[Int]] = None
-) extends Output
+)(implicit val fmt: Format[A] ) extends Output
 
 case class OutputSubscription(apiIdentifier: ApiIdentifier) extends Output
 
 
 object OutputApp {
-  implicit val fmt: OFormat[OutputApp] = Json.format[OutputApp]
+  implicit def fmt[A](implicit fmt: OFormat[A]): OFormat[OutputApp[A]] = Json.format[OutputApp[A]]
 }
 
 object OutputSubscription {
@@ -49,10 +46,21 @@ object OutputSubscription {
 }
 
 object Output {
-    implicit val fmt: OFormat[Output] = Union.from[Output]("otype")
-    .and[OutputApp]("app")
+    def fmt[A](implicit fmt: OFormat[A]): OFormat[Output] = Union.from[Output]("otype")
+    .and[OutputApp[A]]("app")
     .and[OutputSubscription]("sub")
     .format
+}
+
+case class SimpleApp(
+  id: ApplicationId,
+  name: ApplicationName,
+  createdOn: Instant,
+  lastAccess: Instant
+)
+
+object SimpleApp {
+  implicit val fmt: OFormat[SimpleApp] = Json.format[SimpleApp]
 }
 
 object StreamCompression {
@@ -61,7 +69,7 @@ object StreamCompression {
   def compress( in: (LookupTable, ApplicationRepository.LimitedApp) ): (LookupTable, List[Output]) = {
     val ( lt, app) = in
     app.subscriptions match {
-      case None => (lt, List(OutputApp(app.id, app.name, app.createdOn, app.lastAccess, None)))
+      case None => (lt, List(OutputApp(SimpleApp(app.id, app.name, app.createdOn, app.lastAccess), None)))
 
       case Some(allSubs) =>
 
@@ -76,7 +84,7 @@ object StreamCompression {
         }
         val replacedSubs: Set[Int] = allSubs.map(id => lt(id))
 
-        output += OutputApp(app.id, app.name, app.createdOn, app.lastAccess, Some(replacedSubs))
+        output += OutputApp(SimpleApp(app.id, app.name, app.createdOn, app.lastAccess), Some(replacedSubs))
         (lt, output.toList)
     }
   }
@@ -85,9 +93,9 @@ object StreamCompression {
     val lookupTable = in._1
     val resultList = ListBuffer.empty[ApplicationRepository.LimitedApp]
 
-    in._2.foreach( _ match {
+    in._2.foreach(_ match {
       case OutputSubscription(id) => lookupTable.append(id)
-      case OutputApp(id,name, createdOn, lastAccess, subKeys) =>
+      case OutputApp(SimpleApp(id,name, createdOn, lastAccess), subKeys) =>
         val subs: Option[Set[ApiIdentifier]] = subKeys.map(_.map(k => lookupTable(k-1)))
         resultList.append(ApplicationRepository.LimitedApp(id, name, createdOn, lastAccess, subs))
     })

@@ -41,6 +41,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 import uk.gov.hmrc.thirdpartyapplication.services.query.StreamCompression.{compressStream => compressStreamqueryService}
 import uk.gov.hmrc.thirdpartyapplication.services.query.StreamCompression
+import uk.gov.hmrc.thirdpartyapplication.services.query.Output
+import uk.gov.hmrc.thirdpartyapplication.services.query.SimpleApp
 
 @Singleton
 class QueryController @Inject() (
@@ -116,8 +118,9 @@ class QueryController @Inject() (
 
         case q: GeneralOpenEndedApplicationQuery =>
           if (streamed) {
-            import play.api.libs.functional.syntax._
+            implicit val fmt = Output.fmt[SimpleApp]
 
+            // import play.api.libs.functional.syntax._
             // implicit val writes: Writes[LimitedApp] = (
             //   (__ \ "details" \ "id").write[ApplicationId] and
             //     (__ \ "details" \ "name").write[ApplicationName] and

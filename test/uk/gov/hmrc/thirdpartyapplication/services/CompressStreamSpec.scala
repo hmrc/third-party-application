@@ -36,7 +36,7 @@ class CompressStreamSpec extends HmrcSpec with CoreApplicationFixtures with ApiI
       val compressed = StreamCompression.compress( (table, app0) )
       
       compressed shouldBe
-        (( empty, List(OutputApp(applicationIdZero, appNameZero, instant, instant, None)) ))
+        (( empty, List(OutputApp(SimpleApp(applicationIdZero, appNameZero, instant, instant), None)) ))
 
       StreamCompression.decompress( (ArrayBuffer.empty[ApiIdentifier], compressed._2) )._2 shouldBe List(app0)
     }
@@ -52,7 +52,7 @@ class CompressStreamSpec extends HmrcSpec with CoreApplicationFixtures with ApiI
           List(
             OutputSubscription(apiIdentifierOne),
             OutputSubscription(apiIdentifierTwo),
-            OutputApp(applicationIdOne, appNameOne, instant, instant, Some(Set(1,2)))
+            OutputApp(SimpleApp(applicationIdOne, appNameOne, instant, instant), Some(Set(1,2)))
           ) 
         ))
 
@@ -72,7 +72,7 @@ class CompressStreamSpec extends HmrcSpec with CoreApplicationFixtures with ApiI
         (( 
           Map(apiIdentifierOne -> 1, apiIdentifierTwo -> 2), 
           List(
-            OutputApp(applicationIdTwo, appNameTwo, instant, instant, Some(Set(1,2)))
+            OutputApp(SimpleApp(applicationIdTwo, appNameTwo, instant, instant), Some(Set(1,2)))
           ) 
         ))
 
@@ -91,7 +91,7 @@ class CompressStreamSpec extends HmrcSpec with CoreApplicationFixtures with ApiI
           Map(apiIdentifierOne -> 1, apiIdentifierTwo -> 2, apiIdentifierThree -> 3), 
           List(
             OutputSubscription(apiIdentifierThree),
-            OutputApp(applicationIdThree, appNameThree, instant, instant, Some(Set(2,3)))
+            OutputApp(SimpleApp(applicationIdThree, appNameThree, instant, instant), Some(Set(2,3)))
           ) 
         ))
 
