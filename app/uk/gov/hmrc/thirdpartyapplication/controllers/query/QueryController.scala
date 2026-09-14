@@ -39,6 +39,8 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersControl
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.LimitedApp
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
+import uk.gov.hmrc.thirdpartyapplication.services.query.StreamCompression.{compressStream => compressStreamqueryService}
+import uk.gov.hmrc.thirdpartyapplication.services.query.StreamCompression
 
 @Singleton
 class QueryController @Inject() (
@@ -116,16 +118,16 @@ class QueryController @Inject() (
           if (streamed) {
             import play.api.libs.functional.syntax._
 
-            implicit val writes: Writes[LimitedApp] = (
-              (__ \ "details" \ "id").write[ApplicationId] and
-                (__ \ "details" \ "name").write[ApplicationName] and
-                (__ \ "details" \ "lastAccess").writeNullable[Instant] and
-                (__ \ "subscriptions").write[Set[ApiIdentifier]]
-            )(qas => (qas.id, qas.name, Some(qas.lastAccess).filterNot(_.getEpochSecond() == qas.createdOn.getEpochSecond()), qas.subscriptions.getOrElse(Set.empty)))
+            // implicit val writes: Writes[LimitedApp] = (
+            //   (__ \ "details" \ "id").write[ApplicationId] and
+            //     (__ \ "details" \ "name").write[ApplicationName] and
+            //     (__ \ "details" \ "lastAccess").writeNullable[Instant] and
+            //     (__ \ "subscriptions").write[Set[ApiIdentifier]]
+            // )(qas => (qas.id, qas.name, Some(qas.lastAccess).filterNot(_.getEpochSecond() == qas.createdOn.getEpochSecond()), qas.subscriptions.getOrElse(Set.empty)))
 
             val wrappedSource: Source[ByteString, _] =
-              queryService.fetchApplicationsByQueryStream(q).map {
-                qas => ByteString(Json.toJson(qas).toString)
+              StreamCompression.compressStream(queryService.fetchApplicationsByQueryStream(q)).map {
+                os => ByteString(Json.toJson(os).toString)
               }
             successful(Ok.chunked(wrappedSource, Some("application/stream+json")))
           } else {
