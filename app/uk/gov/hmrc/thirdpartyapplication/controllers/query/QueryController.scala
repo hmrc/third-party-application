@@ -110,7 +110,7 @@ class QueryController @Inject() (
 
         case q: GeneralOpenEndedApplicationQuery =>
           if (streamed) {
-            implicit val fmt = Output.fmt[SimpleApp]
+            implicit val wrt = Output.writes[SimpleApp]
 
             // import play.api.libs.functional.syntax._
             // implicit val writes: Writes[LimitedApp] = (
@@ -120,10 +120,14 @@ class QueryController @Inject() (
             //     (__ \ "subscriptions").write[Set[ApiIdentifier]]
             // )(qas => (qas.id, qas.name, Some(qas.lastAccess).filterNot(_.getEpochSecond() == qas.createdOn.getEpochSecond()), qas.subscriptions.getOrElse(Set.empty)))
 
-            val wrappedSource: Source[ByteString, _] =
-              StreamCompression.compressStream(queryService.fetchApplicationsByQueryStream(q)).map {
-                os => ByteString(Json.toJson(os).toString)
+            val wrappedSource: Source[ByteString, _] = {
+              val a = StreamCompression.compressStream(queryService.fetchApplicationsByQueryStream(q))
+              a.map { os =>
+                val x: Writes[Output] = implicitly
+
+                ByteString(Json.toJson(os)(x).toString)
               }
+            }
             successful(Ok.chunked(wrappedSource, Some("application/stream+json")))
           } else {
             queryService.fetchApplicationsByQuery(q).map(apps => Ok(Json.toJson(apps.toList)))
