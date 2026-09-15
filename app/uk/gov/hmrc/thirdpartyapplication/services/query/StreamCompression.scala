@@ -80,7 +80,7 @@ object StreamCompression {
       case Some(allSubs) =>
         val (knownSubs, newSubs) = allSubs.partition(id => lt.contains(id))
 
-        val output = ListBuffer.empty[Output]
+        val output = ArrayBuffer.empty[Output]
 
         newSubs.foreach { ns =>
           val nextKey = lt.size + 1
@@ -96,7 +96,7 @@ object StreamCompression {
 
   def decompress(in: (ArrayBuffer[ApiIdentifier], List[Output])): (ArrayBuffer[ApiIdentifier], List[ApplicationRepository.LimitedApp]) = {
     val lookupTable = in._1
-    val resultList  = ListBuffer.empty[ApplicationRepository.LimitedApp]
+    val resultList  = ArrayBuffer.empty[ApplicationRepository.LimitedApp]
 
     in._2.foreach(_ match {
       case OutputSubscription(id)                                         => lookupTable.append(id)
