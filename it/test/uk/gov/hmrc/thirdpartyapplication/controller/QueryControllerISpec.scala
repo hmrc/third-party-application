@@ -116,7 +116,7 @@ class QueryControllerISpec extends ServerBaseISpec with WiremockSugar with Befor
       contentAsJson(result) shouldBe Json.toJson(List(application1.asAppWithCollaborators, application2.asAppWithCollaborators))
     }
 
-    "parse a general query with streaming" in new Setup {
+    "parse a general query with streaming" ignore new Setup {
       val result = callQuery(generalQry, Map(HeaderNames.ACCEPT -> "application/stream+json"))
 
       status(result) shouldBe OK

@@ -33,8 +33,9 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.{GeneralOpenEndedApplicationQuery, PaginatedApplicationQuery}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQuery, SingleApplicationQuery}
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsonUtils}
-import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
+import uk.gov.hmrc.thirdpartyapplication.services.query.{Output, QueryService, SimpleApp, StreamCompression}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
+import org.apache.pekko.stream.OverflowStrategy
 
 @Singleton
 class QueryController @Inject() (
@@ -110,8 +111,26 @@ class QueryController @Inject() (
 
         case q: GeneralOpenEndedApplicationQuery =>
           if (streamed) {
-            val wrappedSource: Source[ByteString, _] =
-              queryService.fetchApplicationsByQueryStream(q).map(qas => ByteString(Json.toJson(qas).toString))
+            implicit val wrt = Output.writes[SimpleApp]
+            val x: Writes[Output] = implicitly
+
+            // import play.api.libs.functional.syntax._
+            // implicit val writes: Writes[LimitedApp] = (
+            //   (__ \ "details" \ "id").write[ApplicationId] and
+            //     (__ \ "details" \ "name").write[ApplicationName] and
+            //     (__ \ "details" \ "lastAccess").writeNullable[Instant] and
+            //     (__ \ "subscriptions").write[Set[ApiIdentifier]]
+            // )(qas => (qas.id, qas.name, Some(qas.lastAccess).filterNot(_.getEpochSecond() == qas.createdOn.getEpochSecond()), qas.subscriptions.getOrElse(Set.empty)))
+
+            val wrappedSource: Source[ByteString, _] = {
+              val a = StreamCompression.compressStream(
+                queryService.fetchApplicationsByQueryStream(q)
+                .buffer(100, OverflowStrategy.backpressure)
+              )
+              a.map { os =>
+                ByteString(Json.toJson(os)(x).toString)
+              }
+            }
             successful(Ok.chunked(wrappedSource, Some("application/stream+json")))
           } else {
             queryService.fetchApplicationsByQuery(q).map(apps => Ok(Json.toJson(apps.toList)))
