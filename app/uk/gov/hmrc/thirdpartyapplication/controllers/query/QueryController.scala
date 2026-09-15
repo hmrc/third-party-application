@@ -35,6 +35,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{Applica
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.services.query.{Output, QueryService, SimpleApp, StreamCompression}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
+import org.apache.pekko.stream.OverflowStrategy
 
 @Singleton
 class QueryController @Inject() (
@@ -111,6 +112,7 @@ class QueryController @Inject() (
         case q: GeneralOpenEndedApplicationQuery =>
           if (streamed) {
             implicit val wrt = Output.writes[SimpleApp]
+            val x: Writes[Output] = implicitly
 
             // import play.api.libs.functional.syntax._
             // implicit val writes: Writes[LimitedApp] = (
@@ -121,10 +123,11 @@ class QueryController @Inject() (
             // )(qas => (qas.id, qas.name, Some(qas.lastAccess).filterNot(_.getEpochSecond() == qas.createdOn.getEpochSecond()), qas.subscriptions.getOrElse(Set.empty)))
 
             val wrappedSource: Source[ByteString, _] = {
-              val a = StreamCompression.compressStream(queryService.fetchApplicationsByQueryStream(q))
+              val a = StreamCompression.compressStream(
+                queryService.fetchApplicationsByQueryStream(q)
+                .buffer(100, OverflowStrategy.backpressure)
+              )
               a.map { os =>
-                val x: Writes[Output] = implicitly
-
                 ByteString(Json.toJson(os)(x).toString)
               }
             }

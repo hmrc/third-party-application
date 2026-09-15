@@ -38,7 +38,7 @@ case class OutputSubscription(apiIdentifier: ApiIdentifier) extends Output
 
 object OutputApp {
   def writes[A](implicit w: OWrites[A]): OWrites[OutputApp[A]] = Json.writes[OutputApp[A]]
-  def reads[A](implicit r: Reads[A]): Reads[OutputApp[A]] = Json.reads[OutputApp[A]]
+  def reads[A](implicit r: Reads[A]): Reads[OutputApp[A]]      = Json.reads[OutputApp[A]]
 }
 
 object OutputSubscription {
@@ -109,11 +109,10 @@ object StreamCompression {
   }
 
   def compressStream(in: Source[ApplicationRepository.LimitedApp, _]): Source[Output, _] = {
-    val x = in.statefulMap[LookupTable, List[Output]](() => Map.empty[ApiIdentifier, Int])(
+    in.statefulMap[LookupTable, List[Output]](() => Map.empty[ApiIdentifier, Int])(
       (map, app) => compress((map, app)),
       _ => None
     )
-
-    x.flatMapConcat(os => Source(os))
+    .flatMapConcat(os => Source(os))
   }
 }
