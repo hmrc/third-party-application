@@ -5,7 +5,7 @@ object AppDependencies {
   def apply(): Seq[ModuleID] = compileDeps ++ testDeps
 
   private val bootstrapVersion         = "10.8.0"
-  private val hmrcMongoVersion         = "2.13.0"
+  private val hmrcMongoVersion         = "2.14.0"
 
   private val commonDomainVersion = "1.4.0"
   private val appEventsVersion    = "1.3.0"
