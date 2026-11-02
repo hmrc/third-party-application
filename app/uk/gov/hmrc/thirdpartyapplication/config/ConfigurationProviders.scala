@@ -69,9 +69,6 @@ object ConfigHelper {
   }
 
   def getJobConfig(configuration: Configuration, key: String): Option[JobConfig] = {
-    import pureconfig.generic.ProductHint
-    implicit def hint[A]: ProductHint[A] = ProductHint[A](ConfigFieldMapping(CamelCase, CamelCase))
-
     val conf = configuration.underlying.atKey(key)
     ConfigSource.fromConfig(conf).load[JobConfig].toOption
   }

@@ -51,11 +51,8 @@ class TestApplicationsCleanupJobConfigProvider @Inject() (val configuration: Con
   override def get() = {
     import pureconfig._
     import pureconfig.generic.auto._
-    import pureconfig.generic.ProductHint
 
     val conf: Config = configuration.underlying.getConfig("testApplicationsCleanupJob")
-
-    implicit def hint[A]: ProductHint[A] = ProductHint[A](ConfigFieldMapping(CamelCase, CamelCase))
 
     val jobConfig = ConfigSource.fromConfig(conf)
       .load[TestApplicationsCleanupJob.Config]
