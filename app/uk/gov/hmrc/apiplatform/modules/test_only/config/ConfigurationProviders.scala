@@ -18,8 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.test_only.config
 
 import javax.inject.{Inject, Provider, Singleton}
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import com.typesafe.config.Config
 
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
@@ -50,8 +49,17 @@ class TestApplicationsCleanupJobConfigProvider @Inject() (val configuration: Con
     with Provider[TestApplicationsCleanupJob.Config] {
 
   override def get() = {
-    val jobConfig = configuration.underlying.as[TestApplicationsCleanupJob.Config]("testApplicationsCleanupJob")
+    import pureconfig._
+    import pureconfig.generic.auto._
+    import pureconfig.generic.ProductHint
 
-    TestApplicationsCleanupJob.Config(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, jobConfig.expiryDuration)
+    val conf: Config = configuration.underlying.getConfig("testApplicationsCleanupJob")
+
+    implicit def hint[A]: ProductHint[A] = ProductHint[A](ConfigFieldMapping(CamelCase, CamelCase))
+
+    val jobConfig = ConfigSource.fromConfig(conf)
+      .load[TestApplicationsCleanupJob.Config]
+
+    jobConfig.getOrElse(throw new RuntimeException("Config for TestApplicationsCleanupJob could not be read"))
   }
 }

@@ -20,8 +20,8 @@ import java.util.concurrent.TimeUnit._
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import pureconfig._
+import pureconfig.generic.auto._
 
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
@@ -67,6 +67,14 @@ object ConfigHelper {
   def getConfig[T](key: String, f: String => Option[T]): T = {
     f(key).getOrElse(throw new RuntimeException(s"[$key] is not configured!"))
   }
+
+  def getJobConfig(configuration: Configuration, key: String): Option[JobConfig] = {
+    import pureconfig.generic.ProductHint
+    implicit def hint[A]: ProductHint[A] = ProductHint[A](ConfigFieldMapping(CamelCase, CamelCase))
+
+    val conf = configuration.underlying.atKey(key)
+    ConfigSource.fromConfig(conf).load[JobConfig].toOption
+  }
 }
 
 @Singleton
@@ -75,7 +83,7 @@ class UpliftVerificationExpiryJobConfigProvider @Inject() (val configuration: Co
     with Provider[UpliftVerificationExpiryJobConfig] {
 
   override def get() = {
-    val jobConfig = configuration.underlying.as[Option[JobConfig]]("upliftVerificationExpiryJob")
+    val jobConfig = ConfigHelper.getJobConfig(configuration, "upliftVerificationExpiryJob")
       .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true))
 
     val validity: FiniteDuration = configuration.getOptional[FiniteDuration]("upliftVerificationValidity")
@@ -91,7 +99,7 @@ class ProductionCredentialsRequestExpiryWarningJobConfigProvider @Inject() (val 
     with Provider[ProductionCredentialsRequestExpiryWarningJobConfig] {
 
   override def get() = {
-    val jobConfig = configuration.underlying.as[Option[JobConfig]]("productionCredentialsRequestExpiryWarningJob")
+    val jobConfig = ConfigHelper.getJobConfig(configuration, "productionCredentialsRequestExpiryWarningJob")
       .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true))
 
     val warningInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("productionCredentialsRequestExpiryWarningJob.warningInterval")
@@ -107,7 +115,7 @@ class ProductionCredentialsRequestExpiredJobConfigProvider @Inject() (val config
     with Provider[ProductionCredentialsRequestExpiredJobConfig] {
 
   override def get() = {
-    val jobConfig = configuration.underlying.as[Option[JobConfig]]("productionCredentialsRequestExpiredJob")
+    val jobConfig = ConfigHelper.getJobConfig(configuration, "productionCredentialsRequestExpiredJob")
       .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true))
 
     val deleteInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("productionCredentialsRequestExpiredJob.deleteInterval")
@@ -123,7 +131,7 @@ class ResponsibleIndividualVerificationReminderJobConfigProvider @Inject() (val 
     with Provider[ResponsibleIndividualVerificationReminderJobConfig] {
 
   override def get() = {
-    val jobConfig = configuration.underlying.as[Option[JobConfig]]("responsibleIndividualVerificationReminderJob")
+    val jobConfig = ConfigHelper.getJobConfig(configuration, "responsibleIndividualVerificationReminderJob")
       .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true))
 
     val reminderInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("responsibleIndividualVerificationReminderJob.reminderInterval")
@@ -139,7 +147,7 @@ class ResponsibleIndividualVerificationRemovalJobConfigProvider @Inject() (val c
     with Provider[ResponsibleIndividualVerificationRemovalJobConfig] {
 
   override def get() = {
-    val jobConfig = configuration.underlying.as[Option[JobConfig]]("responsibleIndividualVerificationRemovalJob")
+    val jobConfig = ConfigHelper.getJobConfig(configuration, "responsibleIndividualVerificationRemovalJob")
       .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true))
 
     val removalInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("responsibleIndividualVerificationRemovalJob.removalInterval")
@@ -155,7 +163,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider @Inject() 
     with Provider[ResponsibleIndividualUpdateVerificationRemovalJobConfig] {
 
   override def get() = {
-    val jobConfig = configuration.underlying.as[Option[JobConfig]]("responsibleIndividualUpdateVerificationRemovalJob")
+    val jobConfig = ConfigHelper.getJobConfig(configuration, "responsibleIndividualUpdateVerificationRemovalJob")
       .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true))
 
     val removalInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("responsibleIndividualUpdateVerificationRemovalJob.removalInterval")
@@ -171,7 +179,7 @@ class ResponsibleIndividualVerificationSetDefaultTypeJobConfigProvider @Inject()
     with Provider[ResponsibleIndividualVerificationSetDefaultTypeJobConfig] {
 
   override def get() = {
-    val jobConfig = configuration.underlying.as[Option[JobConfig]]("responsibleIndividualVerificationSetDefaultTypeJob")
+    val jobConfig = ConfigHelper.getJobConfig(configuration, "responsibleIndividualVerificationSetDefaultTypeJob")
       .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(30, DAYS), enabled = true))
 
     ResponsibleIndividualVerificationSetDefaultTypeJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
@@ -184,7 +192,7 @@ class TermsOfUseInvitationReminderJobConfigProvider @Inject() (val configuration
     with Provider[TermsOfUseInvitationReminderJobConfig] {
 
   override def get() = {
-    val jobConfig = configuration.underlying.as[Option[JobConfig]]("termsOfUseInvitationReminderJob")
+    val jobConfig = ConfigHelper.getJobConfig(configuration, "termsOfUseInvitationReminderJob")
       .getOrElse(JobConfig(FiniteDuration(6, MINUTES), FiniteDuration(8, HOURS), enabled = true))
 
     val reminderInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("termsOfUseInvitationReminderJob.reminderInterval")
@@ -200,7 +208,7 @@ class TermsOfUseInvitationOverdueJobConfigProvider @Inject() (val configuration:
     with Provider[TermsOfUseInvitationOverdueJobConfig] {
 
   override def get() = {
-    val jobConfig = configuration.underlying.as[Option[JobConfig]]("termsOfUseInvitationOverdueJob")
+    val jobConfig = ConfigHelper.getJobConfig(configuration, "termsOfUseInvitationOverdueJob")
       .getOrElse(JobConfig(FiniteDuration(8, MINUTES), FiniteDuration(8, HOURS), enabled = true))
 
     TermsOfUseInvitationOverdueJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
