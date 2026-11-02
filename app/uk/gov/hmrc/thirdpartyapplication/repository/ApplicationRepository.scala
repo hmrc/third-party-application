@@ -21,41 +21,41 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.OptionT
-import cats.syntax.option._
+import cats.syntax.option.*
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import com.typesafe.config.ConfigFactory
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.bson.BsonValue
 import org.bson.conversions.Bson
-import org.mongodb.scala.bson._
+import org.mongodb.scala.bson.*
 import org.mongodb.scala.model
-import org.mongodb.scala.model.Aggregates._
-import org.mongodb.scala.model.Filters.{exists, _}
+import org.mongodb.scala.model.Aggregates.*
+import org.mongodb.scala.model.Filters.{*, exists}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
-import org.mongodb.scala.model._
+import org.mongodb.scala.model.*
 
-import play.api.libs.json.Json._
-import play.api.libs.json._
+import play.api.libs.json.Json.*
+import play.api.libs.json.*
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.mongo.{MongoComment, MongoComponent}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{SingleApplicationQuery, _}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedStoredApplication, _}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{*, SingleApplicationQuery}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.db.{*, QueriedStoredApplication}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object ApplicationRepository {
-  import play.api.libs.functional.syntax._
+  import play.api.libs.functional.syntax.*
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
@@ -77,7 +77,7 @@ object ApplicationRepository {
     // Because the data in the db might be old and not a valid redirect URI we need this
     // to use new to avoid the filter on RedirectUri.apply()
     private val convertToLoginRedirectUri: List[String] => List[LoginRedirectUri] = items =>
-      items.map(new LoginRedirectUri(_))
+      items.map(LoginRedirectUri.unsafeApply(_)) // TODO Is unsafeApply what we want here?
 
     implicit val readsStandard: Reads[Access.Standard] = (
       ((JsPath \ "redirectUris").read[List[String]].map[List[LoginRedirectUri]](convertToLoginRedirectUri)) and
@@ -87,15 +87,15 @@ object ApplicationRepository {
         (JsPath \ "overrides").read[Set[OverrideFlag]] and
         (JsPath \ "sellResellOrDistribute").readNullable[SellResellOrDistribute] and
         (JsPath \ "importantSubmissionData").readNullable[ImportantSubmissionData]
-    )(Access.Standard.apply _)
+    )(Access.Standard.apply)
 
     implicit val formatPrivileged: OFormat[Access.Privileged] = Json.format[Access.Privileged]
     implicit val formatRopc: OFormat[Access.Ropc]             = Json.format[Access.Ropc]
 
     implicit val formatAccess: OFormat[Access] = Union.from[Access]("accessType")
-      .and[Access.Standard](AccessType.STANDARD.toString)
-      .and[Access.Privileged](AccessType.PRIVILEGED.toString)
-      .and[Access.Ropc](AccessType.ROPC.toString)
+      .and[Access.Standard](AccessType.Standard.toString)
+      .and[Access.Privileged](AccessType.Privileged.toString)
+      .and[Access.Ropc](AccessType.Ropc.toString)
       .format
 
     private val readsCheckInformation: Reads[CheckInformation] = (
@@ -108,7 +108,7 @@ object ApplicationRepository {
         (JsPath \ "applicationDetails").readNullable[String] and
         ((JsPath \ "teamConfirmed").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "termsOfUseAgreements").read[List[TermsOfUseAgreement]] or Reads.pure(List.empty[TermsOfUseAgreement]))
-    )(CheckInformation.apply _)
+    )(CheckInformation.apply)
 
     implicit val formatCheckInformation: Format[CheckInformation] = Format(readsCheckInformation, Json.writes[CheckInformation])
 
@@ -119,7 +119,7 @@ object ApplicationRepository {
     val ipAllowlistReads: Reads[IpAllowlist]             = (
       ((JsPath \ "required").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "allowlist").read[Set[String]] or Reads.pure(Set.empty[String]))
-    )(IpAllowlist.apply _)
+    )(IpAllowlist.apply)
     implicit val formatIpAllowlist: OFormat[IpAllowlist] = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
 
     def periodFromInt(i: Int): Period = (GrantLength.apply(i).getOrElse(GrantLength.EIGHTEEN_MONTHS)).period
@@ -146,7 +146,7 @@ object ApplicationRepository {
         ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
         ((JsPath \ "deleteRestriction").read[DeleteRestriction] or Reads.pure[DeleteRestriction](DeleteRestriction.NoRestriction)) and
         (JsPath \ "organisationId").readNullable[OrganisationId]
-    )(StoredApplication.apply _)
+    )(StoredApplication.apply)
 
     implicit val formatStoredApplication: OFormat[StoredApplication] = OFormat(readStoredApplication, Json.writes[StoredApplication])
 
@@ -317,7 +317,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       val query = and(
         equal("tokens.production.clientId", clientId),
-        notEqual("state.name", State.DELETED.toString())
+        notEqual("state.name", State.Deleted.toString())
       )
 
       val options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
@@ -330,7 +330,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Find and Record Application Server Token Usage", "application.repository.findAndRecordServerTokenUsage") {
       val query = and(
         equal("tokens.production.accessToken", serverToken),
-        notEqual("state.name", State.DELETED.toString())
+        notEqual("state.name", State.Deleted.toString())
       )
       collection.findOneAndUpdate(
         filter = query,
@@ -431,7 +431,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       Seq(
         filter(equal("state.name", state.toString())),
         filter(equal("environment", Codecs.toBson(environment))),
-        filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DO_NOT_DELETE.toString())),
+        filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DoNotDelete.toString())),
         filter(lte("state.updatedOn", updatedBefore))
       )
     ).toFuture()
@@ -452,7 +452,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           filter(equal("state.name", state.toString())),
           filter(lte("state.updatedOn", updatedBefore)),
           filter(equal("environment", Codecs.toBson(environment))),
-          filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DO_NOT_DELETE.toString())),
+          filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DoNotDelete.toString())),
           lookup(from = "notifications", localField = "id", foreignField = "applicationId", as = "matched"),
           filter(size("matched", 0))
         )
@@ -503,8 +503,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
     timeFuture("Fetch Production Application State Histories", "application.repository.fetchProdAppStateHistories") {
       val pipeline: Seq[Bson] = Seq(
-        matches(equal("environment", Codecs.toBson(Environment.PRODUCTION.toString()))),
-        matches(notEqual("state.name", State.DELETED.toString())),
+        matches(equal("environment", Codecs.toBson(Environment.Production.toString()))),
+        matches(notEqual("state.name", State.Deleted.toString())),
         addFields(Field("version", conditional(Document("$not" -> BsonString("$access.importantSubmissionData")), 1, 2))),
         lookup(from = "stateHistory", localField = "id", foreignField = "applicationId", as = "states"),
         sort(ascending("createdOn", "states.changedAt"))
@@ -531,7 +531,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     updateApplication(
       id,
       Updates.combine(
-        Updates.set("state.name", State.DELETED.toString()),
+        Updates.set("state.name", State.Deleted.toString()),
         Updates.set("state.updatedOn", updatedOn)
       )
     )
@@ -554,7 +554,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Applications with Subscription Count", "application.repository.getApplicationWithSubscriptionCount") {
 
       val pipeline = Seq(
-        matches(notEqual("state.name", State.DELETED.toString())),
+        matches(notEqual("state.name", State.Deleted.toString())),
         lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis"),
         unwind("$subscribedApis"),
         group(Document("id" -> "$id", "name" -> "$name"), Accumulators.sum("count", 1))
@@ -782,7 +782,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           Seq(
             excludeId(),
             include(
-              fieldsToProject: _*
+              fieldsToProject *
             )
           ) ++ (
             if (wantSubscriptions)
@@ -795,11 +795,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
             else
               Seq.empty
           )
-        ): _*
+        ) *
       )
     )
 
-  private def executeAggregateStream(projectionToUseStage: Bson, pipelineStages: List[Bson]): Source[QueriedStoredApplication, _] = {
+  private def executeAggregateStream(projectionToUseStage: Bson, pipelineStages: List[Bson]): Source[QueriedStoredApplication, ?] = {
 
     val stages: Seq[Bson] = pipelineStages :+ projectionToUseStage
 
@@ -829,7 +829,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   def fetchSingleAppByAggregates(qry: SingleApplicationQuery): Future[Option[QueriedStoredApplication]] = {
     timeFuture("Run Single Query", "application.repository.fetchSingleAppByAggregates") {
-      val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+      val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(using qry.params)
 
       val needsLookup                                = qry.wantSubscriptions
       val maybeSubsLookupStage: Option[Bson]         = subscriptionsLookup.some.filter(_ => needsLookup)
@@ -865,8 +865,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       .value
   }
 
-  private def internalFetchByGeneralOpenEndedApplicationQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedStoredApplication, _] = {
-    val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+  private def internalFetchByGeneralOpenEndedApplicationQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedStoredApplication, ?] = {
+    val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(using qry.params)
     val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
     val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
 
@@ -886,7 +886,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   private def internalFetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedStoredApplication]] = {
     timeFuture("Run General Query", "application.repository.internalFetchByGeneralOpenEndedApplicationQuery") {
-      val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+      val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(using qry.params)
       val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
       val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
 
@@ -905,7 +905,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, _] = {
+  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, ?] = {
     internalFetchByGeneralOpenEndedApplicationQueryStream(qry).map(_.asQueriedApplication)
   }
 
@@ -927,7 +927,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
     timeFuture("Run Pagination Query", "application.repository.fetchByPaginatedApplicationQuery") {
 
-      val filtersStage: Option[Bson]   = ApplicationQueryConverter.convertToFilter(qry.params)
+      val filtersStage: Option[Bson]   = ApplicationQueryConverter.convertToFilter(using qry.params)
       val sortingStage: Option[Bson]   = ApplicationQueryConverter.convertToSort(qry.sorting)
       val paginationStages: List[Bson] = List(skip((qry.pagination.pageNbr - 1) * qry.pagination.pageSize), limit(qry.pagination.pageSize))
 
@@ -940,7 +940,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           fields(
             excludeId(),
             include(
-              fieldsToProject: _*
+              fieldsToProject *
             )
           )
         )
@@ -957,8 +957,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val facets: Seq[Bson] = Seq(
         facet(
           model.Facet("countOfAllApps", totalCount),
-          model.Facet("countOfMatchingApps", countMatchingPipeline: _*),
-          model.Facet("applications", matchingPipeline: _*)
+          model.Facet("countOfMatchingApps", countMatchingPipeline *),
+          model.Facet("applications", matchingPipeline *)
         )
       )
 
@@ -981,11 +981,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
               equal("role", "ADMINISTRATOR")
             )
           ),
-          notEqual("state.name", State.DELETED.toString())
+          notEqual("state.name", State.Deleted.toString())
         ),
         and(
           equal("access.importantSubmissionData.responsibleIndividual.emailAddress", emailAddress.text),
-          notEqual("state.name", State.DELETED.toString())
+          notEqual("state.name", State.Deleted.toString())
         )
       )
 

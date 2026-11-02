@@ -22,7 +22,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 trait WarnStillInUse {
-  self: BackendController with ApplicationLogger =>
+  self: BackendController & ApplicationLogger =>
 
   def warnStillInUse[A](method: String)(action: Action[A]) = Action.async(action.parser) { request =>
     logger.warn(s"""Unexpected call to $method from ${request.headers.get("requestid").fold("???")(v => s"RequestId=$v")}${request.headers.get("USER-AGENT").fold("")(v =>

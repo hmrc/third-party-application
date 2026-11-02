@@ -82,7 +82,7 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
       _              <- OptionT.liftF(emailConnector.sendVerifyResponsibleIndividualNotification(
                           ri.fullName.value,
                           ri.emailAddress,
-                          app.name.value,
+                          app.name,
                           requesterName,
                           verificationDueForReminder.id.value
                         ))

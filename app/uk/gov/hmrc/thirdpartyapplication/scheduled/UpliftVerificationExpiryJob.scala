@@ -60,9 +60,9 @@ class UpliftVerificationExpiryJob @Inject() (
       updatedApp <- applicationRepository.save(app.withState(app.state.toTesting(instant)))
       _          <- stateHistoryRepository.insert(StateHistory(
                       app.id,
-                      State.TESTING,
+                      State.Testing,
                       Actors.ScheduledJob("UpliftVerificationExpiryJob"),
-                      Some(State.PENDING_REQUESTER_VERIFICATION),
+                      Some(State.PendingRequesterVerification),
                       changedAt = instant
                     ))
       _          <- submissionService.declineSubmission(app.id, app.state.requestedByEmailAddress.getOrElse(""), "Automatically declined because requester did not verify")
@@ -74,7 +74,7 @@ class UpliftVerificationExpiryJob @Inject() (
     logger.info(s"Move back applications to TESTING having status 'PENDING_REQUESTER_VERIFICATION' with timestamp earlier than $expiredTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
-      expiredApps <- applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, expiredTime))
+      expiredApps <- applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, expiredTime))
       _            = logger.info(s"Scheduled job $name found ${expiredApps.size} applications")
       _           <- Future.sequence(expiredApps.map(transitionAppBackToTesting))
     } yield RunningOfJobSuccessful

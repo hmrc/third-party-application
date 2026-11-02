@@ -15,7 +15,7 @@ object AppDependencies {
     "uk.gov.hmrc"                   %% "bootstrap-backend-play-30"                % bootstrapVersion,
     "uk.gov.hmrc.mongo"             %% "hmrc-mongo-work-item-repo-play-30"        % hmrcMongoVersion,
     "commons-net"                    % "commons-net"                              % "3.6",
-    "com.github.t3hnar"             %% "scala-bcrypt"                             % "4.1",
+    // "com.github.t3hnar"             %% "scala-bcrypt"                             % "4.3.0",
     "commons-validator"              % "commons-validator"                        % "1.7",
     "uk.gov.hmrc"                   %% "internal-auth-client-play-30"             % "3.1.0",
     "org.typelevel"                 %% "cats-core"                                % "2.13.0",

@@ -26,9 +26,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ActorType
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.*
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.SingleApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.services.SubscriptionFieldsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.QueriedApplicationWithOptionalToken
@@ -57,7 +57,7 @@ class QueryService @Inject() (
     })
   }
 
-  def fetchApplicationsByQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, _] = {
+  def fetchApplicationsByQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, ?] = {
     applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry)
   }
 
@@ -71,7 +71,7 @@ class QueryService @Inject() (
 
   def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {
     def patchApplication(app: ApplicationWithCollaborators, deleteHistory: Option[StateHistory]): ApplicationWithCollaborators = {
-      app.modify(_.copy(lastActionActor = deleteHistory.map(sh => ActorType.actorType(sh.actor)).getOrElse(ActorType.UNKNOWN)))
+      app.modify(_.copy(lastActionActor = deleteHistory.map(sh => ActorType.actorType(sh.actor)).getOrElse(ActorType.Unknown)))
     }
 
     def patchApplications(apps: List[ApplicationWithCollaborators], histories: List[StateHistory]): List[ApplicationWithCollaborators] = {

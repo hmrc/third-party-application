@@ -103,13 +103,13 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def isNotInProcessOfBeingApproved(app: StoredApplication): Validated[Failures, Unit] =
     cond(
-      app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION || app.state.name == State.TESTING,
+      app.state.name == State.Production || app.state.name == State.PRE_PRODUCTION || app.state.name == State.TESTING,
       GenericFailure("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION")
     )
 
   def isApproved(app: StoredApplication): Validated[Failures, Unit] =
     cond(
-      app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION,
+      app.state.name == State.Production || app.state.name == State.PRE_PRODUCTION,
       GenericFailure("App is not in PRE_PRODUCTION or in PRODUCTION state")
     )
 

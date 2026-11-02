@@ -39,16 +39,16 @@ object TermsOfUseInvitationActionBuilders {
   object ApplicationStateFilter {
     type Type = State => Boolean
 
-    val notProduction: Type = _ != State.PRODUCTION
-    val production: Type    = _ == State.PRODUCTION
-    val preProduction: Type = _ == State.PRE_PRODUCTION
-    val inTesting: Type     = _ == State.TESTING
+    val notProduction: Type = _ != State.Production
+    val production: Type    = _ == State.Production
+    val preProduction: Type = _ == State.PreProduction
+    val inTesting: Type     = _ == State.Testing
     val allAllowed: Type    = _ => true
 
     val pendingApproval: Type = s =>
-      s == State.PENDING_GATEKEEPER_APPROVAL ||
-        s == State.PENDING_REQUESTER_VERIFICATION ||
-        s == State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+      s == State.PendingGatekeeperApproval ||
+        s == State.PendingRequesterVerification ||
+        s == State.PendingResponsibleIndividualVerification
   }
 }
 
@@ -133,7 +133,7 @@ trait TermsOfUseInvitationActionBuilders {
     )(
       applicationId: ApplicationId
     )(
-      block: ApplicationRequest[_] => Future[Result]
+      block: ApplicationRequest[?] => Future[Result]
     ): Action[AnyContent] = {
     Action.async { implicit request =>
       (

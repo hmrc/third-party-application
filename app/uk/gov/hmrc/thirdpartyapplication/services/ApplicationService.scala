@@ -220,8 +220,8 @@ class ApplicationService @Inject() (
 
     for {
       _       <- createApplicationRequest.accessType match {
-                   case AccessType.PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.PRIVILEGED)
-                   case AccessType.ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.ROPC)
+                   case AccessType.Privileged => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, AccessType.Privileged)
+                   case AccessType.Ropc       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, AccessType.Ropc)
                    case _                     => successful(())
                  }
       basicApp = StoredApplication.create(createApplicationRequest, tokenService.createEnvironmentToken(), instant)
@@ -235,7 +235,7 @@ class ApplicationService @Inject() (
 
   private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[Totp]] = {
     accessType match {
-      case AccessType.PRIVILEGED => totpConnector.generateTotp().map(Some(_))
+      case AccessType.Privileged => totpConnector.generateTotp().map(Some(_))
       case _                     => Future(None)
     }
   }
@@ -250,7 +250,7 @@ class ApplicationService @Inject() (
 
   def createStateHistory(appData: StoredApplication)(implicit hc: HeaderCarrier) = {
     val actor = appData.access.accessType match {
-      case AccessType.PRIVILEGED | AccessType.ROPC => Actors.Unknown
+      case AccessType.Privileged | AccessType.Ropc => Actors.Unknown
       case _                                       => loggedInActor
     }
     insertStateHistory(appData, appData.state.name, None, actor, (a: StoredApplication) => applicationRepository.hardDelete(a.id))
@@ -261,7 +261,7 @@ class ApplicationService @Inject() (
       AppCreated,
       Map(
         "applicationId"             -> app.id.toString,
-        "newApplicationName"        -> app.name.value,
+        "newApplicationName"        -> app.name,
         "newApplicationDescription" -> app.description.getOrElse("")
       )
     )
@@ -288,7 +288,7 @@ class ApplicationService @Inject() (
     }
   }
 
-  val recoverAll: Future[_] => Future[_] = {
+  val recoverAll: Future[?] => Future[?] = {
     _ recover {
       case e: Throwable => logger.error(e.getMessage); (): Unit
     }

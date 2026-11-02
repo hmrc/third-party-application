@@ -52,7 +52,7 @@ class ApplicationCommandAuthenticator @Inject() (
     }
   }
 
-  private def isStrideAuthorised(gkcmd: ApplicationCommand with GatekeeperMixin)(implicit hc: HeaderCarrier): Future[Boolean] = {
+  private def isStrideAuthorised(gkcmd: ApplicationCommand & GatekeeperMixin)(implicit hc: HeaderCarrier): Future[Boolean] = {
     authorise() map {
       case Some(name) => checkName(gkcmd, name)
       case _          => {
@@ -74,7 +74,7 @@ class ApplicationCommandAuthenticator @Inject() (
     strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, retrieval)
   }
 
-  private def checkName(gkcmd: ApplicationCommand with GatekeeperMixin, retrieveName: Name): Boolean = {
+  private def checkName(gkcmd: ApplicationCommand & GatekeeperMixin, retrieveName: Name): Boolean = {
     retrieveName.name.fold {
       logger.info("Authorisation failed because name retrieved was empty")
       false
