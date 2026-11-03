@@ -40,8 +40,8 @@ case class StoredApplication(
     createdOn: Instant,
     lastAccess: Instant,
     refreshTokensAvailableFor: Period = Period.ofDays(grantLengthConfig),
-    rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-    environment: Environment = Environment.PRODUCTION,
+    rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.Bronze),
+    environment: Environment = Environment.Production,
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,
     ipAllowlist: IpAllowlist = IpAllowlist(),
@@ -93,11 +93,11 @@ object StoredApplication {
         GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
         data.access,
         data.state,
-        data.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
+        data.rateLimitTier.getOrElse(RateLimitTier.Bronze),
         data.checkInformation,
         data.blocked,
         ipAllowlist = data.ipAllowlist,
-        lastActionActor = ActorType.UNKNOWN,
+        lastActionActor = ActorType.Unknown,
         deleteRestriction = data.deleteRestriction,
         organisationId = data.organisationId
       ),
@@ -115,9 +115,9 @@ object StoredApplication {
     import createApplicationRequest._
 
     val applicationState = (environment, accessType) match {
-      case (Environment.SANDBOX, _)                     => ApplicationState(State.PRODUCTION, updatedOn = createdOn)
-      case (_, AccessType.PRIVILEGED | AccessType.ROPC) => ApplicationState(State.PRODUCTION, collaborators.headOption.map(_.emailAddress.text), updatedOn = createdOn)
-      case _                                            => ApplicationState(State.TESTING, updatedOn = createdOn)
+      case (Environment.Sandbox, _)                     => ApplicationState(State.Production, updatedOn = createdOn)
+      case (_, AccessType.Privileged | AccessType.Ropc) => ApplicationState(State.Production, collaborators.headOption.map(_.emailAddress.text), updatedOn = createdOn)
+      case _                                            => ApplicationState(State.Testing, updatedOn = createdOn)
     }
 
     val checkInfo = createApplicationRequest match {

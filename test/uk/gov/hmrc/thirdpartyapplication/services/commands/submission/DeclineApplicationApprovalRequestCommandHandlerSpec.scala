@@ -53,8 +53,8 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
       None,
       ResponsibleIndividual.build(riName, riEmail.text),
       Set.empty,
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 
@@ -107,7 +107,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
               evtActor shouldBe Actors.GatekeeperUser(gatekeeperUser)
               eventDateTime shouldBe ts
               oldAppState shouldBe applicationData.state.name.toString()
-              newAppState shouldBe State.TESTING.toString()
+              newAppState shouldBe State.Testing.toString()
               requestingAdminEmail shouldBe requesterEmail
               requestingAdminName shouldBe requesterName
           }

@@ -208,7 +208,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       Given("No applications exist")
       emptyApplicationRepository()
 
-      awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
+      awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.Bronze)
       val appName = "privileged-app-name"
 
       Given("The gatekeeper is logged in")
@@ -551,7 +551,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
 
       Given("A third party application")
       val application: ApplicationWithCollaborators = createApplication()
-      application.details.rateLimitTier shouldBe RateLimitTier.BRONZE
+      application.details.rateLimitTier shouldBe RateLimitTier.Bronze
 
       Given("The gatekeeper is logged in")
       authStub.willValidateLoggedInUserHasGatekeeperRole("admin@example.com")
@@ -599,7 +599,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
   }
 
   private def createApplication(appName: String = applicationName1, access: Access = standardAccess): ApplicationWithCollaborators = {
-    awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
+    awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.Bronze)
     val createdResponse = sendJsonRequest("/application", applicationRequest(appName, access))
     createdResponse.code shouldBe StatusCode.Created
     Json.parse(createdResponse.body.value).as[ApplicationWithCollaborators]

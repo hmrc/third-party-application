@@ -49,8 +49,8 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
       None,
       ResponsibleIndividual.build(oldRiName, oldRiEmail.text),
       Set.empty,
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 

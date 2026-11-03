@@ -129,9 +129,9 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
         "app 1",
         1,
         List(
-          ApplicationStateHistoryResponse.Item(State.TESTING, Instant.parse("2022-07-01T12:00:00Z")),
-          ApplicationStateHistoryResponse.Item(State.PENDING_GATEKEEPER_APPROVAL, Instant.parse("2022-07-01T13:00:00Z")),
-          ApplicationStateHistoryResponse.Item(State.PRODUCTION, Instant.parse("2022-07-01T14:00:00Z"))
+          ApplicationStateHistoryResponse.Item(State.Testing, Instant.parse("2022-07-01T12:00:00Z")),
+          ApplicationStateHistoryResponse.Item(State.PendingGatekeeperApproval, Instant.parse("2022-07-01T13:00:00Z")),
+          ApplicationStateHistoryResponse.Item(State.Production, Instant.parse("2022-07-01T14:00:00Z"))
         )
       ),
       ApplicationStateHistoryResponse(ApplicationId.random, "app 2", 2, List())

@@ -37,7 +37,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
     val oldUrl      = "http://example.com/old"
     val newUrl      = "http://example.com/new"
-    val newLocation = TermsAndConditionsLocations.Url(newUrl)
+    val newLocation = TermsAndConditionsLocation.Url(newUrl)
 
     val newJourneyApp = storedApp.copy(
       collaborators = Set(
@@ -121,7 +121,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
     "return an error if application is still in the process of being approved" in new Setup {
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
-        underTest.process(newJourneyApp.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant)), update)
+        underTest.process(newJourneyApp.withState(ApplicationState(State.PendingGatekeeperApproval, updatedOn = instant)), update)
       }
     }
 
@@ -153,7 +153,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
     "return an error if application is still in the process of being approved" in new Setup {
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
-        underTest.process(oldJourneyApp.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant)), update)
+        underTest.process(oldJourneyApp.withState(ApplicationState(State.PendingGatekeeperApproval, updatedOn = instant)), update)
       }
     }
 

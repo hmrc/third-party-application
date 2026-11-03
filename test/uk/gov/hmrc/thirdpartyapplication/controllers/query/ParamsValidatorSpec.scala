@@ -36,7 +36,7 @@ class ParamsValidatorSpec
     val appOneParam      = "applicationId"   -> Seq(applicationIdOne.toString)
     val userIdParam      = "userId"          -> Seq(userIdOne.toString)
     val clientIdParam    = "clientId"        -> Seq(userIdOne.toString)
-    val envParam         = "environment"     -> Seq(Environment.PRODUCTION.toString)
+    val envParam         = "environment"     -> Seq(Environment.Production.toString)
     val pageSizeParam    = "pageSize"        -> Seq("10")
     val noSubsParam      = "noSubscriptions" -> Seq()
     val irrelevantHeader = Map("someheadername" -> Seq("bob"))
@@ -53,11 +53,11 @@ class ParamsValidatorSpec
     }
 
     "work when given a correct applicationId and only environment header" in {
-      test(Map(appOneParam, envParam)).value shouldBe List(ApplicationIdQP(applicationIdOne), EnvironmentQP(Environment.PRODUCTION))
+      test(Map(appOneParam, envParam)).value shouldBe List(ApplicationIdQP(applicationIdOne), EnvironmentQP(Environment.Production))
     }
 
     "work when given a correct environment and userId" in {
-      test(Map(userIdParam, envParam)).value shouldBe List(UserIdQP(userIdOne), EnvironmentQP(Environment.PRODUCTION))
+      test(Map(userIdParam, envParam)).value shouldBe List(UserIdQP(userIdOne), EnvironmentQP(Environment.Production))
     }
 
     "work when given an extra header that is the gateway user agent" in {

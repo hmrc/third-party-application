@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.util._
 object StateHistoryRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random
   val actor: Actor = Actors.AppCollaborator("admin@example.com".toLaxEmail)
-  val stateHistory = StateHistory(appId, State.TESTING, actor, changedAt = instant)
+  val stateHistory = StateHistory(appId, State.Testing, actor, changedAt = instant)
 
   val json = Json.obj(
     "applicationId" -> JsString(appId.toString()),
@@ -92,7 +92,7 @@ class StateHistoryRepositoryISpec
 
     "Save a state history" in {
 
-      val stateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = instant)
+      val stateHistory = StateHistory(ApplicationId.random, State.Testing, actor, changedAt = instant)
 
       val result = await(repository.insert(stateHistory))
 
@@ -107,17 +107,17 @@ class StateHistoryRepositoryISpec
     "Return the state history of the application" in {
 
       val applicationId   = ApplicationId.random
-      val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = instant.minus(Duration.ofDays(5)))
-      val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = instant)
-      val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = instant)
-      val pendingHistory3 = StateHistory(ApplicationId.random, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = instant)
+      val pendingHistory1 = StateHistory(applicationId, State.PendingGatekeeperApproval, actor, changedAt = instant.minus(Duration.ofDays(5)))
+      val approvedHistory = StateHistory(applicationId, State.PendingRequesterVerification, actor, changedAt = instant)
+      val pendingHistory2 = StateHistory(applicationId, State.PendingGatekeeperApproval, actor, changedAt = instant)
+      val pendingHistory3 = StateHistory(ApplicationId.random, State.PendingGatekeeperApproval, actor, changedAt = instant)
 
       await(repository.insert(pendingHistory1))
       await(repository.insert(approvedHistory))
       await(repository.insert(pendingHistory2))
       await(repository.insert(pendingHistory3))
 
-      val result = await(repository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL))
+      val result = await(repository.fetchLatestByStateForApplication(applicationId, State.PendingGatekeeperApproval))
 
       result shouldBe Some(pendingHistory2)
     }
@@ -128,9 +128,9 @@ class StateHistoryRepositoryISpec
     "Delete the state histories of the application" in {
 
       val applicationId          = ApplicationId.random
-      val stateHistory1          = StateHistory(applicationId, State.TESTING, actor, changedAt = instant)
-      val stateHistory2          = StateHistory(applicationId, State.PRODUCTION, actor, changedAt = instant.plusMillis(1))
-      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = instant)
+      val stateHistory1          = StateHistory(applicationId, State.Testing, actor, changedAt = instant)
+      val stateHistory2          = StateHistory(applicationId, State.Production, actor, changedAt = instant.plusMillis(1))
+      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.Testing, actor, changedAt = instant)
       await(repository.insert(stateHistory1))
       await(repository.insert(stateHistory2))
       await(repository.insert(anotherAppStateHistory))
@@ -149,7 +149,7 @@ class StateHistoryRepositoryISpec
       val ts             = instant
       val actor: Actor   = Actors.AppCollaborator(requesterEmail)
 
-      val stateHistory = StateHistory(appId, State.PENDING_GATEKEEPER_APPROVAL, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
+      val stateHistory = StateHistory(appId, State.PendingGatekeeperApproval, actor, Some(State.PendingResponsibleIndividualVerification), changedAt = ts)
 
       val result = await(repository.insert(stateHistory))
 
@@ -165,7 +165,7 @@ class StateHistoryRepositoryISpec
       val ts             = instant
       val actor: Actor   = Actors.AppCollaborator(requesterEmail)
 
-      val stateHistory = StateHistory(appId, State.DELETED, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
+      val stateHistory = StateHistory(appId, State.Deleted, actor, Some(State.PendingResponsibleIndividualVerification), changedAt = ts)
 
       val result = await(repository.insert(stateHistory))
       result shouldBe stateHistory
@@ -182,7 +182,7 @@ class StateHistoryRepositoryISpec
       val ts             = instant
       val actor: Actor   = Actors.AppCollaborator(requesterEmail)
 
-      val stateHistory  = StateHistory(appId, State.DELETED, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
+      val stateHistory  = StateHistory(appId, State.Deleted, actor, Some(State.PendingResponsibleIndividualVerification), changedAt = ts)
       val stateHistory2 = stateHistory.copy(applicationId = appId2)
       val stateHistory3 = stateHistory.copy(applicationId = appId3)
 
@@ -205,9 +205,9 @@ class StateHistoryRepositoryISpec
       val ts             = instant
       val actor: Actor   = Actors.AppCollaborator(requesterEmail)
 
-      val stateHistory  = StateHistory(appId, State.DELETED, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
+      val stateHistory  = StateHistory(appId, State.Deleted, actor, Some(State.PendingResponsibleIndividualVerification), changedAt = ts)
       val stateHistory2 = stateHistory.copy(applicationId = appId2)
-      val stateHistory3 = stateHistory.copy(applicationId = appId3, state = State.PENDING_GATEKEEPER_APPROVAL)
+      val stateHistory3 = stateHistory.copy(applicationId = appId3, state = State.PendingGatekeeperApproval)
 
       await(repository.insert(stateHistory))
       await(repository.insert(stateHistory2))

@@ -44,8 +44,8 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Stored
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InEEA),
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 

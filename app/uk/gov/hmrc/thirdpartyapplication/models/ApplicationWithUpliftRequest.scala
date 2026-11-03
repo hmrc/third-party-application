@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 object ApplicationWithUpliftRequest {
 
   def create(app: ApplicationWithCollaborators, upliftRequest: StateHistory): ApplicationWithUpliftRequest = {
-    if (upliftRequest.state != State.PENDING_GATEKEEPER_APPROVAL) {
+    if (upliftRequest.state != State.PendingGatekeeperApproval) {
       throw new InconsistentDataState(s"cannot create with invalid state: ${upliftRequest.state}")
     }
     ApplicationWithUpliftRequest(app.id, app.name, upliftRequest.changedAt, app.state.name)

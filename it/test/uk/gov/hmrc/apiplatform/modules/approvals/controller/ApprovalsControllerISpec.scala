@@ -94,8 +94,8 @@ class ApprovalsControllerISpec
         Some("organisationUrl.com"),
         responsibleIndividual,
         Set(ServerLocation.InUK),
-        TermsAndConditionsLocations.InDesktopSoftware,
-        PrivacyPolicyLocations.InDesktopSoftware,
+        TermsAndConditionsLocation.InDesktopSoftware,
+        PrivacyPolicyLocation.InDesktopSoftware,
         List.empty
       )
       val application: StoredApplication =

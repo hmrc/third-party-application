@@ -47,8 +47,8 @@ object StoredApplicationData extends FixedClock {
     createdOn = instant,
     lastAccess = instant,
     refreshTokensAvailableFor = GrantLength.EIGHTEEN_MONTHS.period,
-    rateLimitTier = Some(RateLimitTier.BRONZE),
-    environment = Environment.PRODUCTION,
+    rateLimitTier = Some(RateLimitTier.Bronze),
+    environment = Environment.Production,
     ipAllowlist = IpAllowListData.default
   )
 }
@@ -65,8 +65,8 @@ trait StoredApplicationFixtures extends CoreApplicationFixtures with FixedClock 
     def withId(anId: ApplicationId): StoredApplication       = app.focus(_.id).replace(anId)
     def withName(aName: ApplicationName): StoredApplication  = app.focus(_.name).replace(aName).focus(_.normalisedName).replace(aName.value.toLowerCase())
     def withEnvironment(env: Environment): StoredApplication = app.focus(_.environment).replace(env)
-    def inSandbox(): StoredApplication                       = app.focus(_.environment).replace(Environment.SANDBOX)
-    def inProduction(): StoredApplication                    = app.focus(_.environment).replace(Environment.PRODUCTION)
+    def inSandbox(): StoredApplication                       = app.focus(_.environment).replace(Environment.Sandbox)
+    def inProduction(): StoredApplication                    = app.focus(_.environment).replace(Environment.Production)
 
     def withCollaborators(collabs: Set[Collaborator]): StoredApplication = app.focus(_.collaborators).replace(collabs)
     def withCollaborators(collabs: Collaborator*): StoredApplication     = withCollaborators(collabs.toSet)

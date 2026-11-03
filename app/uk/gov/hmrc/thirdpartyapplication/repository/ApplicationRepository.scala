@@ -93,9 +93,9 @@ object ApplicationRepository {
     implicit val formatRopc: OFormat[Access.Ropc]             = Json.format[Access.Ropc]
 
     implicit val formatAccess: OFormat[Access] = Union.from[Access]("accessType")
-      .and[Access.Standard](AccessType.STANDARD.toString)
-      .and[Access.Privileged](AccessType.PRIVILEGED.toString)
-      .and[Access.Ropc](AccessType.ROPC.toString)
+      .and[Access.Standard](AccessType.Standard.toString)
+      .and[Access.Privileged](AccessType.Privileged.toString)
+      .and[Access.Ropc](AccessType.Ropc.toString)
       .format
 
     private val readsCheckInformation: Reads[CheckInformation] = (
@@ -317,7 +317,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
       val query = and(
         equal("tokens.production.clientId", clientId),
-        notEqual("state.name", State.DELETED.toString())
+        notEqual("state.name", State.Deleted.toString())
       )
 
       val options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
@@ -330,7 +330,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Find and Record Application Server Token Usage", "application.repository.findAndRecordServerTokenUsage") {
       val query = and(
         equal("tokens.production.accessToken", serverToken),
-        notEqual("state.name", State.DELETED.toString())
+        notEqual("state.name", State.Deleted.toString())
       )
       collection.findOneAndUpdate(
         filter = query,
@@ -431,7 +431,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       Seq(
         filter(equal("state.name", state.toString())),
         filter(equal("environment", Codecs.toBson(environment))),
-        filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DO_NOT_DELETE.toString())),
+        filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DoNotDelete.toString())),
         filter(lte("state.updatedOn", updatedBefore))
       )
     ).toFuture()
@@ -452,7 +452,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           filter(equal("state.name", state.toString())),
           filter(lte("state.updatedOn", updatedBefore)),
           filter(equal("environment", Codecs.toBson(environment))),
-          filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DO_NOT_DELETE.toString())),
+          filter(notEqual("deleteRestriction.deleteRestrictionType", DeleteRestrictionType.DoNotDelete.toString())),
           lookup(from = "notifications", localField = "id", foreignField = "applicationId", as = "matched"),
           filter(size("matched", 0))
         )
@@ -503,8 +503,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
     timeFuture("Fetch Production Application State Histories", "application.repository.fetchProdAppStateHistories") {
       val pipeline: Seq[Bson] = Seq(
-        matches(equal("environment", Codecs.toBson(Environment.PRODUCTION.toString()))),
-        matches(notEqual("state.name", State.DELETED.toString())),
+        matches(equal("environment", Codecs.toBson(Environment.Production.toString()))),
+        matches(notEqual("state.name", State.Deleted.toString())),
         addFields(Field("version", conditional(Document("$not" -> BsonString("$access.importantSubmissionData")), 1, 2))),
         lookup(from = "stateHistory", localField = "id", foreignField = "applicationId", as = "states"),
         sort(ascending("createdOn", "states.changedAt"))
@@ -531,7 +531,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     updateApplication(
       id,
       Updates.combine(
-        Updates.set("state.name", State.DELETED.toString()),
+        Updates.set("state.name", State.Deleted.toString()),
         Updates.set("state.updatedOn", updatedOn)
       )
     )
@@ -554,7 +554,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     timeFuture("Applications with Subscription Count", "application.repository.getApplicationWithSubscriptionCount") {
 
       val pipeline = Seq(
-        matches(notEqual("state.name", State.DELETED.toString())),
+        matches(notEqual("state.name", State.Deleted.toString())),
         lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis"),
         unwind("$subscribedApis"),
         group(Document("id" -> "$id", "name" -> "$name"), Accumulators.sum("count", 1))
@@ -981,11 +981,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
               equal("role", "ADMINISTRATOR")
             )
           ),
-          notEqual("state.name", State.DELETED.toString())
+          notEqual("state.name", State.Deleted.toString())
         ),
         and(
           equal("access.importantSubmissionData.responsibleIndividual.emailAddress", emailAddress.text),
-          notEqual("state.name", State.DELETED.toString())
+          notEqual("state.name", State.Deleted.toString())
         )
       )
 

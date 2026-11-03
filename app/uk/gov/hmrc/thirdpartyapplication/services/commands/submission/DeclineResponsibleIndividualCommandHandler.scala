@@ -111,7 +111,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
           eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
           app.state.name.toString,
-          State.TESTING.toString,
+          State.Testing.toString,
           requestingAdminName = requesterName,
           requestingAdminEmail = requesterEmail
         )
@@ -121,8 +121,8 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
     for {
       valid                                                             <- E.fromEither(validate().toEither)
       (responsibleIndividual, requestingAdminEmail, requestingAdminName) = valid
-      stateHistory                                                       = StateHistory(app.id, State.TESTING, Actors.AppCollaborator(requestingAdminEmail), Some(app.state.name), changedAt = cmd.timestamp)
-      _                                                                 <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requestingAdminEmail.text, requestingAdminName))
+      stateHistory                                                       = StateHistory(app.id, State.Testing, Actors.AppCollaborator(requestingAdminEmail), Some(app.state.name), changedAt = cmd.timestamp)
+      _                                                                 <- E.liftF(applicationRepository.updateApplicationState(app.id, State.Testing, cmd.timestamp, requestingAdminEmail.text, requestingAdminName))
       _                                                                 <- E.liftF(stateHistoryRepository.insert(stateHistory))
       _                                                                 <- E.liftF(responsibleIndividualVerificationRepository.deleteSubmissionInstance(riVerification.submissionId, riVerification.submissionInstance))
       (riDeclined, approvalDeclined, stateEvt)                           = asEvents(responsibleIndividual, requestingAdminEmail, requestingAdminName)

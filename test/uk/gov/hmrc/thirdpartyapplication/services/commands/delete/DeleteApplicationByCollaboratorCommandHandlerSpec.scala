@@ -77,7 +77,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
               evtActor shouldBe actor
               eventDateTime shouldBe instant
               oldAppState shouldBe app.state.name.toString()
-              newAppState shouldBe State.DELETED.toString()
+              newAppState shouldBe State.Deleted.toString()
               requestingAdminEmail shouldBe actor.email
               requestingAdminName shouldBe actor.email.text
           }

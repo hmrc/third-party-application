@@ -49,7 +49,7 @@ class RateLimitMetricsSpec extends AsyncHmrcSpec {
       private val numberOfUnknown = 1
 
       private val applicationsToReturn: List[StoredApplication] =
-        applicationsWithRateLimit(Some(RateLimitTier.BRONZE), numberOfBronze) ++
+        applicationsWithRateLimit(Some(RateLimitTier.Bronze), numberOfBronze) ++
           applicationsWithRateLimit(Some(RateLimitTier.SILVER), numberOfSilver) ++
           applicationsWithRateLimit(Some(RateLimitTier.GOLD), numberOfGold) ++
           applicationsWithRateLimit(None, numberOfUnknown)

@@ -79,7 +79,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
               evtActor shouldBe actor
               eventDateTime shouldBe ts
               oldAppState shouldBe app.state.name.toString
-              newAppState shouldBe State.DELETED.toString
+              newAppState shouldBe State.Deleted.toString
               requestingAdminEmail.text shouldBe actor.jobId.toLowerCase
               requestingAdminName shouldBe actor.jobId
           }
@@ -104,7 +104,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
 
     "return an error when app is NOT in testing state" in new Setup {
       checkFailsWith("App is not in TESTING state") {
-        underTest.process(app.withState(app.state.copy(name = State.PRE_PRODUCTION)), cmd)
+        underTest.process(app.withState(app.state.copy(name = State.PreProduction)), cmd)
       }
     }
   }

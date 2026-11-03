@@ -42,7 +42,7 @@ object DeriveContext {
     val resell    = application.sellResellOrDistribute.fold("No")(s => s.answer)
     val inHouse   = if (resell == "Yes") "No" else "Yes"
     val newUplift = application.state.name match {
-      case State.PRODUCTION => "Yes"
+      case State.Production => "Yes"
       case _                => "No"
     }
 

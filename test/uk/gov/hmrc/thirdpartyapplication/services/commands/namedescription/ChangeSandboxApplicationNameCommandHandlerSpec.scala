@@ -111,7 +111,7 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
 
     "return an error if application is still in the process of being approved" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val appPendingApproval = app.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
+      val appPendingApproval = app.withState(ApplicationState(State.PendingGatekeeperApproval, updatedOn = instant))
 
       checkFailsWith("App is not in PRE_PRODUCTION or in PRODUCTION state") {
         underTest.process(appPendingApproval, update)

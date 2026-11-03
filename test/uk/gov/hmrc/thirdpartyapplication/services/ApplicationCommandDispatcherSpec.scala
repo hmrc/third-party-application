@@ -301,7 +301,7 @@ class ApplicationCommandDispatcherSpec
     "ChangeProductionApplicationPrivacyPolicyLocation is received" should {
 
       val newUrl      = "http://example.com/new"
-      val newLocation = PrivacyPolicyLocations.Url(newUrl)
+      val newLocation = PrivacyPolicyLocation.Url(newUrl)
       val userId      = adminOne.userId
       val timestamp   = instant
       val actor       = otherAdminAsActor
@@ -340,7 +340,7 @@ class ApplicationCommandDispatcherSpec
     "ChangeProductionApplicationTermsAndConditionsLocation is received" should {
 
       val newUrl      = "http://example.com/new"
-      val newLocation = TermsAndConditionsLocations.Url(newUrl)
+      val newLocation = TermsAndConditionsLocation.Url(newUrl)
       val userId      = adminOne.userId
       val timestamp   = instant
       val actor       = otherAdminAsActor
@@ -889,7 +889,7 @@ class ApplicationCommandDispatcherSpec
     }
 
     "ChangeRateLimitTier is received" should {
-      val oldRateLimitTier = RateLimitTier.BRONZE
+      val oldRateLimitTier = RateLimitTier.Bronze
       val newRateLimitTier = RateLimitTier.GOLD
       val cmd              = ChangeRateLimitTier(gatekeeperUser, timestamp, newRateLimitTier)
       val evt              = ApplicationEvents.RateLimitChanged(

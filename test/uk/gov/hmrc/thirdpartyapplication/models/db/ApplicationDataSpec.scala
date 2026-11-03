@@ -43,7 +43,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             name = ApplicationName("bob"),
             access = CreationAccess.Standard,
             description = None,
-            environment = Environment.PRODUCTION,
+            environment = Environment.Production,
             collaborators = Set("jim@example.com".admin()),
             subscriptions = None,
             organisationId = Some(OrganisationId.random)
@@ -60,7 +60,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             name = ApplicationName("bob"),
             access = CreationAccess.Standard,
             description = None,
-            environment = Environment.PRODUCTION,
+            environment = Environment.Production,
             collaborators = Set("jim@example.com".admin()),
             subscriptions = Some(Set("context".asIdentifier)),
             organisationId = Some(OrganisationId.random)
@@ -77,7 +77,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             name = ApplicationName("bob"),
             access = CreationAccess.Standard,
             description = None,
-            environment = Environment.PRODUCTION,
+            environment = Environment.Production,
             collaborators = Set("jim@example.com".admin()),
             subscriptions = Some(Set("context".asIdentifier)),
             organisationId = Some(OrganisationId.random)
@@ -95,7 +95,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
           name = ApplicationName("bob"),
           access = StandardAccessDataToCopy(),
           description = None,
-          environment = Environment.PRODUCTION,
+          environment = Environment.Production,
           collaborators = Set("jim@example.com".admin()),
           upliftRequest = makeUpliftRequest(ApiIdentifier.random),
           requestedBy = "user@example.com",

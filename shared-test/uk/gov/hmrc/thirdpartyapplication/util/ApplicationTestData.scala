@@ -43,8 +43,8 @@ trait ApplicationTestData extends ApplicationWithCollaboratorsFixtures with Coll
     createdOn = instant,
     lastAccess = instant,
     refreshTokensAvailableFor = GrantLength.EIGHTEEN_MONTHS.period,
-    rateLimitTier = Some(RateLimitTier.BRONZE),
-    environment = Environment.PRODUCTION,
+    rateLimitTier = Some(RateLimitTier.Bronze),
+    environment = Environment.Production,
     ipAllowlist = IpAllowlist()
   )
 

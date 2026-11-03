@@ -44,7 +44,7 @@ class ChangeRateLimitTierCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
-        oldRateLimit = app.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
+        oldRateLimit = app.rateLimitTier.getOrElse(RateLimitTier.Bronze),
         newRateLimit = cmd.rateLimitTier
       )
     )

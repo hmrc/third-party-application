@@ -61,7 +61,7 @@ class ApprovalsController @Inject() (
           case Actioned(application)                  => Ok(Json.toJson(application.asAppWithCollaborators))
           case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_WARNINGS_STATE", s"Submission for $applicationId was not in a warnings state"))
           case RejectedDueToIncorrectApplicationState =>
-            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.Production}'"))
           case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
         })
     }
@@ -77,7 +77,7 @@ class ApprovalsController @Inject() (
           case Actioned(application)                  => Ok(Json.toJson(application.asAppWithCollaborators))
           case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_WARNINGS_STATE", s"Submission for $applicationId was not in a warnings state"))
           case RejectedDueToIncorrectApplicationState =>
-            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.Production}'"))
           case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
         })
     }
@@ -94,7 +94,7 @@ class ApprovalsController @Inject() (
           case RejectedDueToIncorrectSubmissionState  =>
             PreconditionFailed(asJsonError("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId was not in the expected state"))
           case RejectedDueToIncorrectApplicationState =>
-            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.Production}'"))
           case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
         })
     }
@@ -109,7 +109,7 @@ class ApprovalsController @Inject() (
         .map(_ match {
           case Actioned(application)                  => Ok(Json.toJson(application.asAppWithCollaborators))
           case RejectedDueToIncorrectApplicationState =>
-            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.Production}'"))
         })
     }
       .recover(recovery)

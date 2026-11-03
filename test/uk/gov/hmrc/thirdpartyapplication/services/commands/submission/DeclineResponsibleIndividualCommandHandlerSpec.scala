@@ -69,8 +69,8 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
       None,
       ResponsibleIndividual.build(riName, riEmail.text),
       Set.empty,
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 
@@ -163,8 +163,8 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseS
             stateEvent.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             stateEvent.requestingAdminEmail shouldBe requesterEmail
             stateEvent.requestingAdminName shouldBe requesterName
-            stateEvent.newAppState shouldBe State.TESTING.toString()
-            stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION.toString()
+            stateEvent.newAppState shouldBe State.Testing.toString()
+            stateEvent.oldAppState shouldBe State.PendingResponsibleIndividualVerification.toString()
         }
       }
     }

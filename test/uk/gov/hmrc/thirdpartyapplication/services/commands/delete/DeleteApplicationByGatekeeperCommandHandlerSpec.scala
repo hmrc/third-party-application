@@ -77,7 +77,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
               evtActor shouldBe actor
               eventDateTime shouldBe ts
               oldAppState shouldBe app.state.name.toString()
-              newAppState shouldBe State.DELETED.toString()
+              newAppState shouldBe State.Deleted.toString()
               requestingAdminEmail shouldBe requestedByEmail
               requestingAdminName shouldBe requestedByEmail.text
           }

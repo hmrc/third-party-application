@@ -46,8 +46,8 @@ class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with Befo
       None,
       ResponsibleIndividual.build(riName, riEmail),
       Set.empty,
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 

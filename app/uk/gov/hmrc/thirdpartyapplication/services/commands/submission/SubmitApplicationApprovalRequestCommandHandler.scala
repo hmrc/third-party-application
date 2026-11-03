@@ -130,7 +130,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       newAppState                         = determineNewApplicationState(isRequesterTheResponsibleIndividual, app, cmd)
       savedApp                           <- E.liftF(applicationRepository.save(deriveNewAppDetails(app, ApplicationName(newAppName), importantSubmissionData, newAppState)))
       updatedApp                         <- E.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, cmd.timestamp, cmd.requesterName, cmd.requesterEmail))
-      _                                  <- E.liftF(stateHistoryRepository.insert(createStateHistory(updatedApp, State.TESTING, Actors.AppCollaborator(cmd.requesterEmail), cmd.timestamp)))
+      _                                  <- E.liftF(stateHistoryRepository.insert(createStateHistory(updatedApp, State.Testing, Actors.AppCollaborator(cmd.requesterEmail), cmd.timestamp)))
       updatedSubmission                   = Submission.submit(cmd.timestamp, cmd.requesterEmail.text)(submission)
       savedSubmission                    <- E.liftF(submissionService.store(updatedSubmission))
       createTouUpliftResult               = createResponsibleIndividualVerificationRecordIfNeeded(isRequesterTheResponsibleIndividual, savedApp, savedSubmission, cmd)

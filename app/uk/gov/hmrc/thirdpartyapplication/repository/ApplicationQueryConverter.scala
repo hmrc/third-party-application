@@ -32,7 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 
 object ApplicationQueryConverter {
 
-  private val excludeDeleted = notEqual("state.name", State.DELETED.toString)
+  private val excludeDeleted = notEqual("state.name", State.Deleted.toString)
 
   def first[T <: Param[_]](implicit params: List[Param[_]], ct: ClassTag[T]): Option[T] = params.collect {
     case qp: T => qp
@@ -105,8 +105,8 @@ object ApplicationQueryConverter {
 
     onFirst[DeleteRestrictionQP] {
       _ match {
-        case Param.DoNotDeleteQP   => List(eq(DeleteRestrictionType.DO_NOT_DELETE))
-        case Param.NoRestrictionQP => List(or(eq(DeleteRestrictionType.NO_RESTRICTION), exists("deleteRestriction.deleteRestrictionType", false)))
+        case Param.DoNotDeleteQP   => List(eq(DeleteRestrictionType.DoNotDelete))
+        case Param.NoRestrictionQP => List(or(eq(DeleteRestrictionType.NoRestriction), exists("deleteRestriction.deleteRestrictionType", false)))
       }
     }
   }
@@ -166,7 +166,7 @@ object ApplicationQueryConverter {
   def asAppStateFilters(implicit params: List[Param[_]]): List[Bson] =
     onFirst[AppStateParam[_]](_ match {
       case NoStateFilteringQP        => List.empty
-      case ActiveStateQP             => List(applicationStateMatch(State.PRE_PRODUCTION, State.PRODUCTION))
+      case ActiveStateQP             => List(applicationStateMatch(State.PreProduction, State.Production))
       case ExcludeDeletedQP          => List(excludeDeleted)
       case BlockedStateQP            => List(and(equal("blocked", BsonBoolean(true)), excludeDeleted))
       case MatchOneStateQP(state)    => List(equal("state.name", state.toString))

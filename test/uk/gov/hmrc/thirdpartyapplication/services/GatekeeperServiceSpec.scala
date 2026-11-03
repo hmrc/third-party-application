@@ -85,8 +85,8 @@ class GatekeeperServiceSpec
         "app1",
         2,
         List(
-          StateHistory(appId1, State.TESTING, bobTheGKUser, None, None, ts1),
-          StateHistory(appId1, State.PRODUCTION, bobTheGKUser, Some(State.TESTING), None, ts2)
+          StateHistory(appId1, State.Testing, bobTheGKUser, None, None, ts1),
+          StateHistory(appId1, State.Production, bobTheGKUser, Some(State.Testing), None, ts2)
         )
       )
       val history2 = ApplicationWithStateHistory(
@@ -94,7 +94,7 @@ class GatekeeperServiceSpec
         "app2",
         2,
         List(
-          StateHistory(appId2, State.TESTING, bobTheGKUser, None, None, ts3)
+          StateHistory(appId2, State.Testing, bobTheGKUser, None, None, ts3)
         )
       )
       ApplicationRepoMock.FetchProdAppStateHistories.thenReturn(history1, history2)
@@ -106,8 +106,8 @@ class GatekeeperServiceSpec
           "app1",
           2,
           List(
-            ApplicationStateHistoryResponse.Item(State.TESTING, ts1),
-            ApplicationStateHistoryResponse.Item(State.PRODUCTION, ts2)
+            ApplicationStateHistoryResponse.Item(State.Testing, ts1),
+            ApplicationStateHistoryResponse.Item(State.Production, ts2)
           )
         ),
         ApplicationStateHistoryResponse(
@@ -115,7 +115,7 @@ class GatekeeperServiceSpec
           "app2",
           2,
           List(
-            ApplicationStateHistoryResponse.Item(State.TESTING, ts3)
+            ApplicationStateHistoryResponse.Item(State.Testing, ts3)
           )
         )
       )

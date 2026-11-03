@@ -68,8 +68,8 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       None,
       ResponsibleIndividual.build(riName, riEmail.text),
       Set.empty,
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 
@@ -151,8 +151,8 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
             stateEvent.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             stateEvent.requestingAdminEmail shouldBe requesterEmail
             stateEvent.requestingAdminName shouldBe requesterName
-            stateEvent.newAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL.toString()
-            stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION.toString()
+            stateEvent.newAppState shouldBe State.PendingGatekeeperApproval.toString()
+            stateEvent.oldAppState shouldBe State.PendingResponsibleIndividualVerification.toString()
         }
       }
     }

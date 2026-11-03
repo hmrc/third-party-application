@@ -116,7 +116,7 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
       // Set application state to user verification
       updatedApp                            = grantApp(originalApp)
       savedApp                             <- E.liftF(applicationRepository.save(updatedApp))
-      _                                    <- E.liftF(stateHistoryRepository.insert(createStateHistory(savedApp, State.PENDING_GATEKEEPER_APPROVAL, Actors.GatekeeperUser(cmd.gatekeeperUser), cmd.timestamp)))
+      _                                    <- E.liftF(stateHistoryRepository.insert(createStateHistory(savedApp, State.PendingGatekeeperApproval, Actors.GatekeeperUser(cmd.gatekeeperUser), cmd.timestamp)))
       updatedSubmission                     = grantSubmission(cmd.gatekeeperUser, cmd.warnings, cmd.escalatedTo)(submission)
       savedSubmission                      <- E.liftF(submissionService.store(updatedSubmission))
       events                                = asEvents(savedApp, cmd, savedSubmission)

@@ -60,13 +60,13 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
       AuditServiceMock.AuditWithTags.thenReturnSuccess()
       ApplicationRepoMock.Save.thenReturn(mock[StoredApplication])
 
-      val upliftWasRequested             = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator(upliftRequestedBy), Some(State.TESTING), changedAt = instant)
+      val upliftWasRequested             = StateHistory(applicationId, State.PendingGatekeeperApproval, Actors.AppCollaborator(upliftRequestedBy), Some(State.Testing), changedAt = instant)
       val application: StoredApplication = storedApp.withState(appStatePendingRequesterVerification)
 
       val qry = ApplicationQueries.applicationsByVerifiableUplift(appStateVerificationCode)
       ApplicationRepoMock.FetchStoredApplications.thenReturnsFor(qry, application)
 
-      StateHistoryRepoMock.FetchLatestByStateForApplication.thenReturnWhen(applicationId, State.PENDING_GATEKEEPER_APPROVAL)(upliftWasRequested)
+      StateHistoryRepoMock.FetchLatestByStateForApplication.thenReturnWhen(applicationId, State.PendingGatekeeperApproval)(upliftWasRequested)
       StateHistoryRepoMock.Insert.thenAnswer()
 
       val result: ApplicationStateChange = await(underTest.verifyUplift(appStateVerificationCode))
@@ -77,7 +77,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
       result shouldBe UpliftVerified
 
       val expectedStateHistory =
-        StateHistory(applicationId, State.PRE_PRODUCTION, Actors.AppCollaborator(upliftRequestedBy), Some(State.PENDING_REQUESTER_VERIFICATION), changedAt = instant)
+        StateHistory(applicationId, State.PreProduction, Actors.AppCollaborator(upliftRequestedBy), Some(State.PendingRequesterVerification), changedAt = instant)
       StateHistoryRepoMock.Insert.verifyCalledWith(expectedStateHistory)
     }
 

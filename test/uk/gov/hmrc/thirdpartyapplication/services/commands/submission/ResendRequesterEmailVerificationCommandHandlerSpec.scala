@@ -49,8 +49,8 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
       None,
       ResponsibleIndividual.build("Bob", "bob@example.com"),
       Set.empty,
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 
@@ -114,7 +114,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
     "return an error if the application has no verification code" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val noVerificationCodeApp = app.withState(ApplicationState(State.PENDING_REQUESTER_VERIFICATION, Some(appAdminEmail.text), Some(appAdminName), None, instant))
+      val noVerificationCodeApp = app.withState(ApplicationState(State.PendingRequesterVerification, Some(appAdminEmail.text), Some(appAdminName), None, instant))
 
       checkFailsWith("The verificationCode has not been set for this application") {
         underTest.process(noVerificationCodeApp, ResendRequesterEmailVerification(gatekeeperUser, instant))

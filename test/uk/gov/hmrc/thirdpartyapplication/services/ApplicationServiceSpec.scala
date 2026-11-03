@@ -226,7 +226,7 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequestWithCollaboratorWithUserId(access = CreationAccess.Standard, environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequestWithCollaboratorWithUserId(access = CreationAccess.Standard, environment = Environment.Production)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -234,7 +234,7 @@ class ApplicationServiceSpec
 
       createdApp.totp shouldBe None
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.Testing, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -253,7 +253,7 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV2ApplicationRequest(environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV2ApplicationRequest(environment = Environment.Production)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -267,7 +267,7 @@ class ApplicationServiceSpec
 
       createdApp.totp shouldBe None
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.Testing, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -283,7 +283,7 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.Production)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -297,7 +297,7 @@ class ApplicationServiceSpec
 
       createdApp.totp shouldBe None
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.Testing, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -312,16 +312,16 @@ class ApplicationServiceSpec
     "create a new standard application in Mongo and the API gateway for the SUBORDINATE (SANDBOX) environment" in new Setup {
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.SANDBOX)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.Sandbox)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: StoredApplication =
         storedApp.copy(
           id = createdApp.application.id,
-          state = ApplicationState(State.PRODUCTION, updatedOn = instant),
+          state = ApplicationState(State.Production, updatedOn = instant),
           collaborators = Set(loggedInUserAdminCollaborator),
-          environment = Environment.SANDBOX
+          environment = Environment.Sandbox
         )
 
       createdApp.totp shouldBe None
@@ -329,7 +329,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(
         createdApp.application.id,
-        State.PRODUCTION,
+        State.Production,
         Actors.AppCollaborator(adminTwo.emailAddress),
         changedAt = instant
       ))
@@ -359,7 +359,7 @@ class ApplicationServiceSpec
 
       val expectedApplicationData: StoredApplication = storedApp.copy(
         id = createdApp.application.id,
-        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(adminTwo.emailAddress.text), updatedOn = instant),
+        state = ApplicationState(name = State.Production, requestedByEmailAddress = Some(adminTwo.emailAddress.text), updatedOn = instant),
         collaborators = Set(loggedInUserAdminCollaborator),
         access = Access.Privileged(totpIds = Some(TotpId("prodTotpId"))),
         description = None
@@ -368,7 +368,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe Some(CreateApplicationResponse.TotpSecret(prodTOTP.secret))
 
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = instant))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.Production, Actors.Unknown, changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -446,11 +446,11 @@ class ApplicationServiceSpec
       verify(StateHistoryRepoMock.aMock).insert(stateHistoryCaptor.capture)
 
       applicationResponse.id shouldBe applicationId
-      applicationResponse.state.name shouldBe State.PRODUCTION
+      applicationResponse.state.name shouldBe State.Production
 
       val stateHistory = stateHistoryCaptor.value
-      stateHistory.state shouldBe State.PRODUCTION
-      stateHistory.previousState shouldBe Some(State.PRE_PRODUCTION)
+      stateHistory.state shouldBe State.Production
+      stateHistory.previousState shouldBe Some(State.PreProduction)
       stateHistory.applicationId shouldBe applicationId
       stateHistory.actor shouldBe Actors.AppCollaborator(requestedByEmail)
     }
@@ -536,7 +536,7 @@ class ApplicationServiceSpec
           checkInformation = None,
           blocked = false,
           ipAllowlist = IpAllowlist(),
-          lastActionActor = ActorType.UNKNOWN,
+          lastActionActor = ActorType.Unknown,
           deleteRestriction = DeleteRestriction.NoRestriction,
           organisationId = None
         ),
@@ -710,7 +710,7 @@ class ApplicationServiceSpec
     )
   }
 
-  private def aNewV1ApplicationRequest(access: CreationAccess = CreationAccess.Standard, environment: Environment = Environment.PRODUCTION) = {
+  private def aNewV1ApplicationRequest(access: CreationAccess = CreationAccess.Standard, environment: Environment = Environment.Production) = {
     CreateApplicationRequestV1(ApplicationName("MyApp"), access, Some(CoreApplicationData.appDescription), environment, Set(adminTwo), None, None)
   }
 

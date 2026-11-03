@@ -24,7 +24,7 @@ import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocation, PrivacyPolicyLocations}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocation}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationPrivacyPolicyLocation
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -42,8 +42,8 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
   def processLegacyApp(oldUrl: String, app: StoredApplication, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
     def validate: Validated[Failures, String] = {
       val newUrl     = cmd.newLocation match {
-        case PrivacyPolicyLocations.Url(value) => Some(value)
-        case _                                 => None
+        case PrivacyPolicyLocation.Url(value) => Some(value)
+        case _                                => None
       }
       val isJustAUrl = cond(newUrl.isDefined, "Unexpected new PrivacyPolicyLocation type specified for legacy application: " + cmd.newLocation)
 
@@ -69,8 +69,8 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
     }
 
     cmd.newLocation match {
-      case PrivacyPolicyLocations.Url(value) => value
-      case _                                 => false
+      case PrivacyPolicyLocation.Url(value) => value
+      case _                                => false
     }
 
     for {
@@ -113,7 +113,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
     app.access match {
       case Access.Standard(_, _, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => processApp(privacyPolicyLocation, app, cmd)
       case Access.Standard(_, _, _, maybePrivacyPolicyUrl, _, _, None)                                            => processLegacyApp(maybePrivacyPolicyUrl.getOrElse(""), app, cmd)
-      case _                                                                                                      => processApp(PrivacyPolicyLocations.InDesktopSoftware, app, cmd) // This will not valdate
+      case _                                                                                                      => processApp(PrivacyPolicyLocation.InDesktopSoftware, app, cmd) // This will not valdate
     }
   }
 }

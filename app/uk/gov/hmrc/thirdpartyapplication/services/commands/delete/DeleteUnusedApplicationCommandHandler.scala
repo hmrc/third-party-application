@@ -80,8 +80,8 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: DeleteUnusedApplication)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
       valid       <- E.fromEither(validate(app, cmd).toEither)
-      savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
-      stateHistory = StateHistory(app.id, State.DELETED, Actors.ScheduledJob(cmd.jobId), Some(app.state.name), changedAt = cmd.timestamp)
+      savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.Deleted, cmd.timestamp, cmd.jobId, cmd.jobId))
+      stateHistory = StateHistory(app.id, State.Deleted, Actors.ScheduledJob(cmd.jobId), Some(app.state.name), changedAt = cmd.timestamp)
       events       = asEvents(savedApp, cmd, stateHistory)
       _           <- deleteApplication(app, stateHistory)
     } yield (savedApp, events)

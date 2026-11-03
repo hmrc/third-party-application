@@ -40,7 +40,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val applicationId: ApplicationId = ApplicationId.random
-    val accessType: AccessType       = AccessType.STANDARD
+    val accessType: AccessType       = AccessType.Standard
     val underTest                    = new ApprovalsNamingService(AuditServiceMock.aMock, QueryServiceMock.aMock, ApplicationNameValidationConfigMock.aMock)
   }
 

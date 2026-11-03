@@ -62,8 +62,8 @@ class SubmitTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec 
       None,
       ResponsibleIndividual.build("Bob", "bob@example.com"),
       Set.empty,
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 

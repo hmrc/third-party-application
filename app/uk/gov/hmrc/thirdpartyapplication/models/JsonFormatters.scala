@@ -39,9 +39,9 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   import uk.gov.hmrc.play.json.Union
 
   implicit val formatAccess: OFormat[Access] = Union.from[Access]("accessType")
-    .and[Access.Standard](AccessType.STANDARD.toString)
-    .and[Access.Privileged](AccessType.PRIVILEGED.toString)
-    .and[Access.Ropc](AccessType.ROPC.toString)
+    .and[Access.Standard](AccessType.Standard.toString)
+    .and[Access.Privileged](AccessType.Privileged.toString)
+    .and[Access.Ropc](AccessType.Ropc.toString)
     .format
 
   implicit val formatCheckInformation: OFormat[CheckInformation] = Json.format[CheckInformation]

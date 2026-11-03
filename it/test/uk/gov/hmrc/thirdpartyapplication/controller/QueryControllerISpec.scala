@@ -91,7 +91,7 @@ class QueryControllerISpec extends ServerBaseISpec with WiremockSugar with Befor
   }
 
   val singleQry    = asParams(ApplicationQueries.applicationByClientId(clientIdOne))
-  val paginatedQry = asParams(ApplicationQuery.attemptToConstructQuery(List(PageNbrQP(1), MatchOneStateQP(State.PENDING_GATEKEEPER_APPROVAL))))
+  val paginatedQry = asParams(ApplicationQuery.attemptToConstructQuery(List(PageNbrQP(1), MatchOneStateQP(State.PendingGatekeeperApproval))))
   val generalQry   = asParams(ApplicationQueries.applicationsByUserId(userIdOne))
 
   "QueryController:queryDispatcher" should {

@@ -73,8 +73,8 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
     for {
       valid              <- E.fromEither(validate(app).toEither)
       kindOfRequesterName = cmd.requestedByEmailAddress.text
-      stateHistory        = StateHistory(app.id, State.DELETED, Actors.GatekeeperUser(cmd.gatekeeperUser), Some(app.state.name), changedAt = cmd.timestamp)
-      savedApp           <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, kindOfRequesterName, kindOfRequesterName))
+      stateHistory        = StateHistory(app.id, State.Deleted, Actors.GatekeeperUser(cmd.gatekeeperUser), Some(app.state.name), changedAt = cmd.timestamp)
+      savedApp           <- E.liftF(applicationRepository.updateApplicationState(app.id, State.Deleted, cmd.timestamp, kindOfRequesterName, kindOfRequesterName))
       events              = asEvents(app, cmd, stateHistory)
       _                  <- deleteApplication(app, stateHistory)
     } yield (savedApp, events)

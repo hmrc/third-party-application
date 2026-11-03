@@ -54,7 +54,7 @@ class UpliftService @Inject() (
 
     def findLatestUpliftRequester(applicationId: ApplicationId): Future[String] =
       for {
-        history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL)
+        history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PendingGatekeeperApproval)
         state    = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId}"))
       } yield state.actor match {
         case Actors.Unknown                => "Unknown"
@@ -73,8 +73,8 @@ class UpliftService @Inject() (
       _ <- applicationRepository.save(app.withState(app.state.toPreProduction(instant)))
       _ <- insertStateHistory(
              app,
-             State.PRE_PRODUCTION,
-             Some(State.PENDING_REQUESTER_VERIFICATION),
+             State.PreProduction,
+             Some(State.PendingRequesterVerification),
              Actors.AppCollaborator(LaxEmailAddress(app.state.requestedByEmailAddress.get)),
              (a: StoredApplication) => applicationRepository.save(a)
            )
@@ -90,9 +90,9 @@ class UpliftService @Inject() (
                )
 
       result <- app.state.name match {
-                  case State.PRE_PRODUCTION | State.PRODUCTION => verifyProduction(app)
-                  case State.PENDING_REQUESTER_VERIFICATION    => verifyPending(app)
-                  case _                                       => throw InvalidUpliftVerificationCode(verificationCode)
+                  case State.PreProduction | State.Production => verifyProduction(app)
+                  case State.PendingRequesterVerification     => verifyPending(app)
+                  case _                                      => throw InvalidUpliftVerificationCode(verificationCode)
                 }
     } yield result
   }

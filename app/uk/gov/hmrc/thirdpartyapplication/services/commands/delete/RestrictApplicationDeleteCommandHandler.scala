@@ -24,7 +24,7 @@ import cats.data._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType.NO_RESTRICTION
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType.NoRestriction
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RestrictApplicationDelete
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._

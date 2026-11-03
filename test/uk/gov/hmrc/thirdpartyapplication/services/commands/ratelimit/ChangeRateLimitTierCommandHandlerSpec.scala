@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 
 class ChangeRateLimitTierCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  val originalRateLimitTier = RateLimitTier.BRONZE
+  val originalRateLimitTier = RateLimitTier.Bronze
   val app                   = principalApp.copy(rateLimitTier = Some(originalRateLimitTier))
 
   trait Setup extends ApplicationRepositoryMockModule {

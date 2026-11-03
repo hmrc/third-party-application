@@ -350,7 +350,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     ApplicationName("My Application"),
     access,
     Some("Description"),
-    Environment.PRODUCTION,
+    Environment.Production,
     Set(
       "admin@example.com".admin(),
       "dev@example.com".developer()
@@ -363,7 +363,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     ApplicationName("My Application"),
     access,
     Some("Description"),
-    Environment.PRODUCTION,
+    Environment.Production,
     Set(
       "admin@example.com".admin(),
       "dev@example.com".developer()

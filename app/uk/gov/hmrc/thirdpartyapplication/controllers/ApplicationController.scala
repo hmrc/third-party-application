@@ -74,7 +74,7 @@ class ApplicationController @Inject() (
 
   private val E = EitherTHelper.make[String]
 
-  def create = requiresAuthenticationFor(AccessType.PRIVILEGED, AccessType.ROPC).async(parse.json) { implicit request =>
+  def create = requiresAuthenticationFor(AccessType.Privileged, AccessType.Ropc).async(parse.json) { implicit request =>
     def onV2(createApplicationRequest: CreateApplicationRequest, fn: CreateApplicationRequestV2 => Future[HasSucceeded]): Future[HasSucceeded] =
       createApplicationRequest match {
         case _: CreateApplicationRequestV1 => successful(HasSucceeded)

@@ -373,10 +373,10 @@ class ApplicationQueriesISpec
       await(applicationRepository.save(prodApplication2))
       await(applicationRepository.save(sandboxApplication))
 
-      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, Environment.PRODUCTION)))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, Environment.Production)))
 
       result.size shouldBe 1
-      result.head.environment shouldBe Environment.PRODUCTION
+      result.head.environment shouldBe Environment.Production
       result.map(
         _.collaborators.map(collaborator => collaborator.userId shouldBe userIdOne)
       )
@@ -609,76 +609,76 @@ class ApplicationQueriesISpec
 
     "retrieve the only application with PENDING_REQUESTER_VERIFICATION state that have been updated before the expiryDay" in {
       val applications = Seq(
-        createAppWithStatusUpdatedOn(State.TESTING, expiryOnTheDayBefore),
-        createAppWithStatusUpdatedOn(State.PENDING_GATEKEEPER_APPROVAL, expiryOnTheDayBefore),
-        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, expiryOnTheDayBefore),
-        createAppWithStatusUpdatedOn(State.PRODUCTION, expiryOnTheDayBefore)
+        createAppWithStatusUpdatedOn(State.Testing, expiryOnTheDayBefore),
+        createAppWithStatusUpdatedOn(State.PendingGatekeeperApproval, expiryOnTheDayBefore),
+        createAppWithStatusUpdatedOn(State.PendingRequesterVerification, expiryOnTheDayBefore),
+        createAppWithStatusUpdatedOn(State.Production, expiryOnTheDayBefore)
       )
       applications.foreach(application =>
         await(applicationRepository.save(application))
       )
 
       val applicationDetails = await(
-        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
+        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, dayOfExpiry))
       )
 
       verifyApplications(
         applicationDetails,
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         1
       )
     }
 
     "retrieve the application with PENDING_REQUESTER_VERIFICATION state that have been updated before the dayOfExpiry" in {
       val application = createAppWithStatusUpdatedOn(
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         expiryOnTheDayBefore
       )
       await(applicationRepository.save(application))
 
       val applicationDetails = await(
-        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
+        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, dayOfExpiry))
       )
 
       verifyApplications(
         applicationDetails,
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         1
       )
     }
 
     "retrieve the application with PENDING_REQUESTER_VERIFICATION state that have been updated on the dayOfExpiry" in {
       val application = createAppWithStatusUpdatedOn(
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         dayOfExpiry
       )
       await(applicationRepository.save(application))
 
       val applicationDetails = await(
-        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
+        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, dayOfExpiry))
       )
 
       verifyApplications(
         applicationDetails,
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         1
       )
     }
 
     "retrieve no application with PENDING_REQUESTER_VERIFICATION state that have been updated after the dayOfExpiry" in {
       val application = createAppWithStatusUpdatedOn(
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         expiryOnTheDayAfter
       )
       await(applicationRepository.save(application))
 
       val applicationDetail = await(
-        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
+        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, dayOfExpiry))
       )
 
       verifyApplications(
         applicationDetail,
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         0
       )
     }
@@ -763,7 +763,7 @@ class ApplicationQueriesISpec
       aSubscriptionData("context", "version", application.id)
 
     val actor: Actor     = Actors.AppCollaborator("admin@example.com".toLaxEmail)
-    val stateHistoryData = StateHistory(application.id, State.TESTING, actor, changedAt = instant)
+    val stateHistoryData = StateHistory(application.id, State.Testing, actor, changedAt = instant)
 
     await(applicationRepository.save(application))
     await(subscriptionRepository.collection.insertOne(subscriptionData).toFuture())
@@ -904,8 +904,8 @@ class ApplicationQueriesISpec
       aSubscriptionData("context", "version", application1.id)
 
     val actor: Actor      = Actors.AppCollaborator("admin@example.com".toLaxEmail)
-    val stateHistoryData1 = StateHistory(application1.id, State.TESTING, actor, changedAt = instant)
-    val stateHistoryData2 = StateHistory(application2.id, State.TESTING, actor, changedAt = instant)
+    val stateHistoryData1 = StateHistory(application1.id, State.Testing, actor, changedAt = instant)
+    val stateHistoryData2 = StateHistory(application2.id, State.Testing, actor, changedAt = instant)
 
     await(applicationRepository.save(application1))
     await(applicationRepository.save(application2))

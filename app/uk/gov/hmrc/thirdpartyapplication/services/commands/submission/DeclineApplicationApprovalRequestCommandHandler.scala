@@ -95,7 +95,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
 
     val stateHistory = StateHistory(
       applicationId = app.id,
-      state = State.TESTING,
+      state = State.Testing,
       previousState = Some(app.state.name),
       actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
       changedAt = cmd.timestamp
@@ -104,7 +104,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     for {
       validated                                  <- E.fromValidatedF(validate(app))
       (requesterEmail, requesterName, submission) = validated
-      savedApp                                   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requesterEmail.text, requesterName))
+      savedApp                                   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.Testing, cmd.timestamp, requesterEmail.text, requesterName))
       _                                          <- E.liftF(stateHistoryRepository.insert(stateHistory))
       (approvalDeclined, stateChange)             = asEvents(savedApp, cmd, submission, requesterEmail, requesterName, stateHistory)
       _                                          <- E.liftF(submissionService.declineApplicationApprovalRequest(approvalDeclined))

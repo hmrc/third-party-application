@@ -56,8 +56,8 @@ class NotificationServiceSpec
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 
@@ -97,8 +97,8 @@ class NotificationServiceSpec
 
     "when receive a ProductionAppPrivacyPolicyLocationChanged, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.thenReturnSuccess()
-      val previousPrivacyPolicyUrl = PrivacyPolicyLocations.Url("https://example.com/old-privacy-policy")
-      val newPrivacyPolicyUrl      = PrivacyPolicyLocations.Url("https://example.com/new-privacy-policy")
+      val previousPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/old-privacy-policy")
+      val newPrivacyPolicyUrl      = PrivacyPolicyLocation.Url("https://example.com/new-privacy-policy")
       val event                    = ApplicationEvents.ProductionAppPrivacyPolicyLocationChanged(
         EventId.random,
         applicationId,
@@ -143,8 +143,8 @@ class NotificationServiceSpec
 
     "when receive a ProductionAppTermsConditionsLocationChanged, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.thenReturnSuccess()
-      val previousTermsAndConditionsUrl = TermsAndConditionsLocations.Url("https://example.com/old-terms-conds")
-      val newTermsAndConditionsUrl      = TermsAndConditionsLocations.Url("https://example.com/new-terms-conds")
+      val previousTermsAndConditionsUrl = TermsAndConditionsLocation.Url("https://example.com/old-terms-conds")
+      val newTermsAndConditionsUrl      = TermsAndConditionsLocation.Url("https://example.com/new-terms-conds")
       val event                         = ApplicationEvents.ProductionAppTermsConditionsLocationChanged(
         EventId.random,
         applicationId,

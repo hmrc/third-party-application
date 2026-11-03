@@ -23,7 +23,6 @@ import javax.inject.Inject
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-import com.github.t3hnar.bcrypt._
 import com.google.inject.Singleton
 
 import play.api.LoggerLike
@@ -46,7 +45,8 @@ class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike, val clock: Cloc
     logger.info("[bcrypt Performance] Starting performance measurement")
 
     val timings = workFactorRangeToTest.map(workFactor => {
-
+      import uk.gov.hmrc.apiplatform.modules.crypto.services.BCrypt.*
+      
       val timedValue: TimedValue[String] = timeThis(() => stringToHash.bcrypt(workFactor))
 
       s"Hashing with Work Factor [$workFactor] took [${timedValue.duration.toMillis()}ms]"

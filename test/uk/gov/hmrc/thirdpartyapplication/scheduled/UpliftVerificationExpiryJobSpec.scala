@@ -85,7 +85,7 @@ class UpliftVerificationExpiryJobSpec
       val app2: StoredApplication =
         storedApp.withId(ApplicationId.random).withState(appStatePendingRequesterVerification.copy(requestedByEmailAddress = Some("requester2@example.com")))
       val expectedDate            = instant.minus(JavaTimeDuration.ofDays(expiryTimeInDays))
-      val expectedQry             = ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, expectedDate)
+      val expectedQry             = ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, expectedDate)
 
       ApplicationRepoMock.FetchApplications.thenReturnsFor(expectedQry, app1, app2)
 
@@ -100,16 +100,16 @@ class UpliftVerificationExpiryJobSpec
       ApplicationRepoMock.Save.verifyCalledWith(app2.withState(appStateTesting))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app1.id,
-        State.TESTING,
+        State.Testing,
         Actors.ScheduledJob("UpliftVerificationExpiryJob"),
-        Some(State.PENDING_REQUESTER_VERIFICATION),
+        Some(State.PendingRequesterVerification),
         changedAt = instant
       ))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app2.id,
-        State.TESTING,
+        State.Testing,
         Actors.ScheduledJob("UpliftVerificationExpiryJob"),
-        Some(State.PENDING_REQUESTER_VERIFICATION),
+        Some(State.PendingRequesterVerification),
         changedAt = instant
       ))
       verify(mockSubmissionsService).declineSubmission(
@@ -145,7 +145,7 @@ class UpliftVerificationExpiryJobSpec
       val app2: StoredApplication = storedApp.withId(ApplicationId.random).withState(appStateTesting)
 
       val expectedDate = instant.minus(JavaTimeDuration.ofDays(expiryTimeInDays))
-      val expectedQry  = ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, expectedDate)
+      val expectedQry  = ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, expectedDate)
       ApplicationRepoMock.FetchApplications.thenReturnsFor(expectedQry, app1, app2)
 
       ApplicationRepoMock.Save.thenFail(new RuntimeException("A failure on executing save db query"))

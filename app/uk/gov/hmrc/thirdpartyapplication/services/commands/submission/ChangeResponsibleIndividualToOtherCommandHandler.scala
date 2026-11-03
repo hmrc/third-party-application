@@ -113,7 +113,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
           eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
           app.state.name.toString,
-          State.PENDING_GATEKEEPER_APPROVAL.toString,
+          State.PendingGatekeeperApproval.toString,
           requestingAdminName = requesterName,
           requestingAdminEmail = requesterEmail
         )
@@ -131,9 +131,9 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
                                                                  riVerificationToU.submissionId,
                                                                  riVerificationToU.submissionInstance
                                                                ))
-      savedApp                                              <- E.liftF(applicationRepository.updateApplicationState(app.id, State.PENDING_GATEKEEPER_APPROVAL, cmd.timestamp, requesterEmail.text, requesterName))
+      savedApp                                              <- E.liftF(applicationRepository.updateApplicationState(app.id, State.PendingGatekeeperApproval, cmd.timestamp, requesterEmail.text, requesterName))
       _                                                     <- E.liftF(responsibleIndividualVerificationRepository.deleteResponsibleIndividualVerification(cmd.code))
-      stateHistory                                           = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator(requesterEmail), Some(app.state.name), changedAt = cmd.timestamp)
+      stateHistory                                           = StateHistory(app.id, State.PendingGatekeeperApproval, Actors.AppCollaborator(requesterEmail), Some(app.state.name), changedAt = cmd.timestamp)
       _                                                     <- E.liftF(stateHistoryRepository.insert(stateHistory))
       (riEvt, stateEvt)                                      = asEvents(stateHistory, responsibleIndividual, requesterEmail, requesterName)
     } yield (savedApp, NonEmptyList(riEvt, List(stateEvt)))

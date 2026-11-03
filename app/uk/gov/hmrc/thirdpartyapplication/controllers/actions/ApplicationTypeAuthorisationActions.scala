@@ -44,10 +44,10 @@ trait ApplicationTypeAuthorisationActions {
     Action andThen PayloadBasedApplicationTypeFilter(accessTypes.toList)
 
   def requiresAuthenticationForStandardApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
-    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(AccessType.STANDARD), true)
+    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(AccessType.Standard), true)
 
   def requiresAuthenticationForPrivilegedOrRopcApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
-    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(AccessType.PRIVILEGED, AccessType.ROPC), false)
+    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(AccessType.Privileged, AccessType.Ropc), false)
 
   private abstract class ApplicationTypeFilter(toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)(implicit ec: ExecutionContext)
       extends ActionFilter[Request] {
