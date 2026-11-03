@@ -42,7 +42,7 @@ class RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler @Inject() (
       cmd: RemoveSandboxApplicationTermsAndConditionsUrl
     ): Validated[Failures, String] = {
 
-    Apply[Validated[Failures, *]].map4(
+    Apply[Validated[Failures, ?]].map4(
       isInSandboxEnvironment(app),
       isApproved(app),
       ensureStandardAccess(app),

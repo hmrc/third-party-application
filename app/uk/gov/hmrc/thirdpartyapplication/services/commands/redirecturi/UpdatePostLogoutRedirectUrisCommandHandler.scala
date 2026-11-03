@@ -40,7 +40,7 @@ class UpdatePostLogoutRedirectUrisCommandHandler @Inject() (applicationRepositor
   private def validate(app: StoredApplication, cmd: UpdatePostLogoutRedirectUris): Validated[Failures, Access.Standard] = {
     val hasSixOrFewerURIs = cond(cmd.newRedirectUris.size <= 6, CommandFailures.GenericFailure("Can have at most 6 redirect URIs"))
 
-    Apply[Validated[Failures, *]].map3(
+    Apply[Validated[Failures, ?]].map3(
       ensureStandardAccess(app),
       isAdminIfInProductionOrGatekeeperActor(cmd.actor, app),
       hasSixOrFewerURIs

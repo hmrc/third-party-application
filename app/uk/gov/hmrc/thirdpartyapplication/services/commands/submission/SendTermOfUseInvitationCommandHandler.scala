@@ -64,7 +64,7 @@ class SendTermsOfUseInvitationCommandHandler @Inject() (
 
     getExistingRecords(app.id).map {
       case (maybeSubmission, maybeInvitation) => {
-        Apply[Validated[Failures, *]].map4(
+        Apply[Validated[Failures, ?]].map4(
           ensureStandardAccess(app),
           isInProduction(app),
           cond(maybeSubmission.isEmpty, s"Submission already exists for application ${app.id.value}"),

@@ -56,7 +56,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     cond(app.deleteRestriction == DeleteRestriction.NoRestriction, "This application is delete restricted")
 
   private def validate(app: StoredApplication, cmd: DeleteApplicationByCollaborator): Validated[Failures, Collaborator] = {
-    Apply[Validated[Failures, *]].map4(
+    Apply[Validated[Failures, ?]].map4(
       isAdminOnApp(cmd.instigator, app),
       ensureStandardAccess(app),
       canDeleteApplicationsOrNotProductionApp(app),

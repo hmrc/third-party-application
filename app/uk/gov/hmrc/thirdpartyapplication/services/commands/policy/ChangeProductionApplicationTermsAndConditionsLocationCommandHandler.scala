@@ -47,7 +47,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
       }
       val ensureIsAUrl = mustBeDefined(newUrl, s"Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
 
-      Apply[Validated[Failures, *]].map4(
+      Apply[Validated[Failures, ?]].map4(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         ensureStandardAccess(app),
@@ -77,7 +77,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
 
   def processApp(oldLocation: TermsAndConditionsLocation, app: StoredApplication, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
     def validate: Validated[Failures, StoredApplication] = {
-      Apply[Validated[Failures, *]].map3(
+      Apply[Validated[Failures, ?]].map3(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         ensureStandardAccess(app)

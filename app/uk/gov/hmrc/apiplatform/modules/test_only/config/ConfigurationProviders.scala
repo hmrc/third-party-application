@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.scheduled.TestApplicationsCleanupJob
 
 class ConfigurationModule extends Module with ApplicationLogger {
 
-  override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
+  override def bindings(environment: Environment, configuration: Configuration): List[Binding[?]] = {
     List(
       bind[TestApplicationsCleanupJob.Config].toProvider[TestApplicationsCleanupJobConfigProvider]
     )

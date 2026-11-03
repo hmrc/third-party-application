@@ -46,7 +46,7 @@ class ChangeGrantLengthCommandHandler @Inject() (
       s"Grant length is already $grantLength"
     }
 
-    Apply[Validated[Failures, *]].map(
+    Apply[Validated[Failures, ?]].map(
       cond(
         (cmd.grantLength.period != app.refreshTokensAvailableFor),
         CommandFailures.GenericFailure(printRefreshTokensAvailableFor(app.refreshTokensAvailableFor))

@@ -47,7 +47,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
       }
       val isJustAUrl = cond(newUrl.isDefined, "Unexpected new PrivacyPolicyLocation type specified for legacy application: " + cmd.newLocation)
 
-      Apply[Validated[Failures, *]].map4(
+      Apply[Validated[Failures, ?]].map4(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         ensureStandardAccess(app),
@@ -82,7 +82,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject() (
 
   def processApp(oldLocation: PrivacyPolicyLocation, app: StoredApplication, cmd: ChangeProductionApplicationPrivacyPolicyLocation): AppCmdResultT = {
     def validate: Validated[Failures, StoredApplication] = {
-      Apply[Validated[Failures, *]].map3(
+      Apply[Validated[Failures, ?]].map3(
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         ensureStandardAccess(app)

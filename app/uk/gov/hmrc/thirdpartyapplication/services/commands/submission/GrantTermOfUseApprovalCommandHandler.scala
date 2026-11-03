@@ -64,7 +64,7 @@ class GrantTermsOfUseApprovalCommandHandler @Inject() (
         GenericFailure(s"No submission found for application ${app.id.value}").invalidNel[(Submission, ResponsibleIndividual)]
       ) {
         case (submission) => {
-          Apply[Validated[Failures, *]].map5(
+          Apply[Validated[Failures, ?]].map5(
             ensureStandardAccess(app),
             isInProduction(app),
             ensureResponsibleIndividualDefined(app),

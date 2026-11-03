@@ -47,7 +47,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
       cmd: ChangeProductionApplicationName,
       nameValidationResult: ApplicationNameValidationResult
     ): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, *]].map5(
+    Apply[Validated[Failures, ?]].map5(
       isAdminOnApp(cmd.instigator, app),
       isNotInProcessOfBeingApproved(app),
       cond(app.name.value != cmd.newName.value, "App already has that name"),

@@ -66,7 +66,7 @@ class SubmitTermsOfUseApprovalCommandHandler @Inject() (
         GenericFailure(s"No submission/termsOfUseInvitation found for application ${app.id.value}").invalidNel[(Submission)]
       ) {
         case (submission, _) => {
-          Apply[Validated[Failures, *]].map3(
+          Apply[Validated[Failures, ?]].map3(
             ensureStandardAccess(app),
             isInProduction(app),
             cond(submission.status.isAnsweredCompletely, "Submission has not been answered completely")

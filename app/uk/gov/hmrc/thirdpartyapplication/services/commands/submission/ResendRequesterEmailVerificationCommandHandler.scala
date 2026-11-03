@@ -50,7 +50,7 @@ class ResendRequesterEmailVerificationCommandHandler @Inject() (
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[Failures, *]].map6(
+      Apply[Validated[Failures, ?]].map6(
         isStandardNewJourneyApp(app),
         isPendingRequesterVerification(app),
         ensureRequesterEmailDefined(app),

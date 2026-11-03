@@ -77,7 +77,7 @@ object ApplicationRepository {
     // Because the data in the db might be old and not a valid redirect URI we need this
     // to use new to avoid the filter on RedirectUri.apply()
     private val convertToLoginRedirectUri: List[String] => List[LoginRedirectUri] = items =>
-      items.map(new LoginRedirectUri(_))
+      items.map(new LoginRedirectUr(_))
 
     implicit val readsStandard: Reads[Access.Standard] = (
       ((JsPath \ "redirectUris").read[List[String]].map[List[LoginRedirectUri]](convertToLoginRedirectUri)) and
@@ -799,7 +799,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
-  private def executeAggregateStream(projectionToUseStage: Bson, pipelineStages: List[Bson]): Source[QueriedStoredApplication, _] = {
+  private def executeAggregateStream(projectionToUseStage: Bson, pipelineStages: List[Bson]): Source[QueriedStoredApplication, ?] = {
 
     val stages: Seq[Bson] = pipelineStages :+ projectionToUseStage
 
@@ -865,7 +865,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       .value
   }
 
-  private def internalFetchByGeneralOpenEndedApplicationQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedStoredApplication, _] = {
+  private def internalFetchByGeneralOpenEndedApplicationQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedStoredApplication, ?] = {
     val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
     val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
     val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
@@ -905,7 +905,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, _] = {
+  def fetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, ?] = {
     internalFetchByGeneralOpenEndedApplicationQueryStream(qry).map(_.asQueriedApplication)
   }
 

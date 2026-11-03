@@ -69,7 +69,7 @@ class QueryController @Inject() (
       )
   }
 
-  private def handleRequest(params: Map[String, Seq[String]], headers: Map[String, Seq[String]])(implicit request: Request[_]): Future[Result] = {
+  private def handleRequest(params: Map[String, Seq[String]], headers: Map[String, Seq[String]])(implicit request: Request[?]): Future[Result] = {
     parseAndValidate(params, headers)
       .fold(
         errResult => successful(errResult),
@@ -110,7 +110,7 @@ class QueryController @Inject() (
 
         case q: GeneralOpenEndedApplicationQuery =>
           if (streamed) {
-            val wrappedSource: Source[ByteString, _] =
+            val wrappedSource: Source[ByteString, ?] =
               queryService.fetchApplicationsByQueryStream(q).map(qas => ByteString(Json.toJson(qas).toString))
             successful(Ok.chunked(wrappedSource, Some("application/stream+json")))
           } else {

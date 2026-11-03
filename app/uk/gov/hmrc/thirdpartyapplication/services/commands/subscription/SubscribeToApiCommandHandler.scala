@@ -45,7 +45,7 @@ class SubscribeToApiCommandHandler @Inject() (
     def isAuthorisedUser       = cond(rolePassed, s"Unauthorized to subscribe any API to app ${app.name}")
     def notAlreadySubscribedTo = cond(!alreadySubcribed, s"Application ${app.name} is already subscribed to API ${cmd.apiIdentifier.asText(" v")}")
 
-    Apply[Validated[Failures, *]].map2(
+    Apply[Validated[Failures, ?]].map2(
       isAuthorisedUser,
       notAlreadySubscribedTo
     ) { case _ => () }

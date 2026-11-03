@@ -63,7 +63,7 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
         GenericFailure(s"No submission or important submission data found for application ${app.id.value}").invalidNel[(Submission, ImportantSubmissionData)]
       ) {
         case (submission, importantSubmissionData) => {
-          Apply[Validated[Failures, *]].map5(
+          Apply[Validated[Failures, ?]].map5(
             ensureStandardAccess(app),
             isInPendingGatekeeperApproval(app),
             cond(app.state.requestedByEmailAddress.nonEmpty, "No requestedBy email found"),

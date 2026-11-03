@@ -46,7 +46,7 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
       case Standard(_, _, _, privacyPolicyUrl, _, _, _) => (true, privacyPolicyUrl)
       case _                                            => (false, None)
     }
-    Apply[Validated[Failures, *]].map4(
+    Apply[Validated[Failures, ?]].map4(
       isInSandboxEnvironment(app),
       isApproved(app),
       ensureStandardAccess(app),

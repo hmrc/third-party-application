@@ -60,7 +60,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
     )
 
   private def validate(app: StoredApplication, cmd: VerifyResponsibleIndividual): Validated[Failures, Collaborator] = {
-    Apply[Validated[Failures, *]].map5(
+    Apply[Validated[Failures, ?]].map5(
       isStandardNewJourneyApp(app),
       isApproved(app),
       isAdminOnApp(cmd.instigator, app),

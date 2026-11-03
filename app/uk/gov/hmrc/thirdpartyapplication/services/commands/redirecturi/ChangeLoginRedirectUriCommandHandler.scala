@@ -50,7 +50,7 @@ class ChangeLoginRedirectUriCommandHandler @Inject() (applicationRepository: App
       else
         ().validNel
 
-    Apply[Validated[Failures, *]].map3(
+    Apply[Validated[Failures, ?]].map3(
       standardAccess,
       isAdminIfInProduction(cmd.actor, app),
       uriExists

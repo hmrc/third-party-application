@@ -40,7 +40,7 @@ class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
       app: StoredApplication,
       cmd: ChangeSandboxApplicationPrivacyPolicyUrl
     ): Validated[Failures, Option[String]] = {
-    Apply[Validated[Failures, *]].map5(
+    Apply[Validated[Failures, ?]].map5(
       isInSandboxEnvironment(app),
       isApproved(app),
       ensureStandardAccess(app),

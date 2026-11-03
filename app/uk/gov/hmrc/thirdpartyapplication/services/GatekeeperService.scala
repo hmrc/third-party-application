@@ -64,7 +64,7 @@ class GatekeeperService @Inject() (
 
   val unit: Unit = ()
 
-  val recoverAll: Future[_] => Future[_] = {
+  val recoverAll: Future[?] => Future[?] = {
     _ recover {
       case e: Throwable => logger.error(e.getMessage); unit
     }

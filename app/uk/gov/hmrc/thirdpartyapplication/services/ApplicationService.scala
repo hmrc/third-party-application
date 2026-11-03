@@ -288,7 +288,7 @@ class ApplicationService @Inject() (
     }
   }
 
-  val recoverAll: Future[_] => Future[_] = {
+  val recoverAll: Future[?] => Future[?] = {
     _ recover {
       case e: Throwable => logger.error(e.getMessage); (): Unit
     }

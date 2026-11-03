@@ -57,7 +57,7 @@ class QueryService @Inject() (
     })
   }
 
-  def fetchApplicationsByQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, _] = {
+  def fetchApplicationsByQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedApplication, ?] = {
     applicationRepository.fetchByGeneralOpenEndedApplicationQuery(qry)
   }
 

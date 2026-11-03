@@ -39,7 +39,7 @@ class UpdateLoginRedirectUrisCommandHandler @Inject() (applicationRepository: Ap
 
   private def validate(app: StoredApplication, cmd: UpdateLoginRedirectUris): Validated[Failures, Access.Standard] = {
     val hasFiveOrFewerURIs = cond(cmd.newRedirectUris.size <= 5, CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
-    Apply[Validated[Failures, *]].map3(
+    Apply[Validated[Failures, ?]].map3(
       ensureStandardAccess(app),
       isAdminIfInProductionOrGatekeeperActor(cmd.actor, app),
       hasFiveOrFewerURIs

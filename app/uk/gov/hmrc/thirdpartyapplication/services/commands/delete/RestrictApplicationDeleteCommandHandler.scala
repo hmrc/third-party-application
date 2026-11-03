@@ -41,7 +41,7 @@ class RestrictApplicationDeleteCommandHandler @Inject() (
   import CommandHandler._
 
   private def validate(app: StoredApplication): Validated[Failures, Unit] = {
-    Apply[Validated[Failures, *]].map(
+    Apply[Validated[Failures, ?]].map(
       cond((app.deleteRestriction.deleteRestrictionType == NO_RESTRICTION), CommandFailures.GenericFailure(s"Delete is already restricted"))
     ) { case _ => () }
   }

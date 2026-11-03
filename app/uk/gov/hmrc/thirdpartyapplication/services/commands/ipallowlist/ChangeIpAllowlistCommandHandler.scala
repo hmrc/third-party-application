@@ -56,7 +56,7 @@ class ChangeIpAllowlistCommandHandler @Inject() (
   }
 
   private def validate(app: StoredApplication, cmd: ChangeIpAllowlist): Validated[Failures, Unit] = {
-    Apply[Validated[Failures, *]].map2(
+    Apply[Validated[Failures, ?]].map2(
       isAdminIfInProductionOrGatekeeperActor(cmd.actor, app),
       cond(validateAllNewIps(cmd), CommandFailures.GenericFailure("Not all new allowlist IP addresses are valid CIDR blocks"))
     ) { case _ => () }

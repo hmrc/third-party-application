@@ -42,7 +42,7 @@ class ChangeApplicationSellResellOrDistributeCommandHandler @Inject() (
   import CommandHandler._
 
   private def validate(app: StoredApplication): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, *]].map(
+    Apply[Validated[Failures, ?]].map(
       ensureStandardAccess(app)
     ) { case _ => app }
   }

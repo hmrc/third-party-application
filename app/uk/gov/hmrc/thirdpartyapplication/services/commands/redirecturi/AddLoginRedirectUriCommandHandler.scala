@@ -44,7 +44,7 @@ class AddLoginRedirectUriCommandHandler @Inject() (applicationRepository: Applic
 
     val hasFourOrFewerURIs = cond((existingRedirects.size < 5), CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
 
-    Apply[Validated[Failures, *]].map3(
+    Apply[Validated[Failures, ?]].map3(
       ensureStandardAccess(app),
       isAdminIfInProduction(cmd.actor, app),
       hasFourOrFewerURIs

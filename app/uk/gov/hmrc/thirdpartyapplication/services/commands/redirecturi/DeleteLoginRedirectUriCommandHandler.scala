@@ -53,7 +53,7 @@ class DeleteLoginRedirectUriCommandHandler @Inject() (applicationRepository: App
       else
         ().validNel
 
-    Apply[Validated[Failures, *]].map3(
+    Apply[Validated[Failures, ?]].map3(
       ensureStandardAccess(app),
       isAdminIfInProduction(cmd.actor, app),
       hasRequestedUri

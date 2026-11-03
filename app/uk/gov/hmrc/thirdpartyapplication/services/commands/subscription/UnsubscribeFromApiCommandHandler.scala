@@ -46,7 +46,7 @@ class UnsubscribeFromApiCommandHandler @Inject() (
     def isGatekeeperUser    = cond(rolePassed, CommandFailures.InsufficientPrivileges(s"Unauthorized to unsubscribe any API from app ${app.name}"))
     def alreadySubscribedTo = cond(alreadySubcribed, CommandFailures.NotSubscribedToApi)
 
-    Apply[Validated[Failures, *]].map2(
+    Apply[Validated[Failures, ?]].map2(
       isGatekeeperUser,
       alreadySubscribedTo
     ) { case _ => () }

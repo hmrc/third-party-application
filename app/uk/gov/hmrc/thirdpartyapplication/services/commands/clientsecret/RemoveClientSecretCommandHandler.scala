@@ -45,7 +45,7 @@ class RemoveClientSecretCommandHandler @Inject() (
         CommandFailures.GenericFailure(s"Client Secret Id ${clientSecretId.value} not found in Application ${app.id.value}")
       )
 
-    Apply[Validated[CommandHandler.Failures, *]].map2(
+    Apply[Validated[Failures, ?]].map2(
       isAdminIfInProduction(cmd.actor, app),
       clientSecretExists(cmd.clientSecretId, app)
     ) { case _ => app }

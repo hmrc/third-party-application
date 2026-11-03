@@ -35,7 +35,7 @@ trait AnyGatekeeperRoleAuthorisationAction extends ApplicationLogger {
   def ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService
   def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
 
-  def anyAuthenticatedUserAction(block: Request[_] => Future[Result]): Action[AnyContent] = {
+  def anyAuthenticatedUserAction(block: Request[?] => Future[Result]): Action[AnyContent] = {
     Action.async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
       ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()

@@ -54,7 +54,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[Failures, *]].map5(
+      Apply[Validated[Failures, ?]].map5(
         isStandardNewJourneyApp(app),
         isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app),
         ensureRequesterEmailDefined(app),

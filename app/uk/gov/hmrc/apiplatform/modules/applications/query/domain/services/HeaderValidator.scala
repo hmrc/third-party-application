@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders
 
 sealed trait HeaderValidator {
   def headerName: String
-  def validate(values: Seq[String]): ErrorsOr[Param[_]]
+  def validate(values: Seq[String]): ErrorsOr[Param[?]]
 }
 
 object HeaderValidator {
@@ -54,7 +54,7 @@ object HeaderValidator {
     val headerName                  = HttpHeaders.INTERNAL_USER_AGENT
     val ApiGatewayUserAgent: String = "APIPlatformAuthorizer"
 
-    def validate(values: Seq[String]): ErrorsOr[Param.UserAgentParam[_]] = {
+    def validate(values: Seq[String]): ErrorsOr[Param.UserAgentParam[?]] = {
       SingleValueExpected(headerName)(values) map {
         _ match {
           case `ApiGatewayUserAgent` => Param.ApiGatewayUserAgentQP
@@ -69,8 +69,8 @@ object HeaderValidator {
     HeaderValidator.InternalUserAgentValidator
   )
 
-  def parseHeaders(rawHeaders: Map[String, Seq[String]]): ErrorsOr[List[Param[_]]] = {
-    val z: ValidatedNel[ErrorMessage, List[Param[_]]] = List.empty.validNel
+  def parseHeaders(rawHeaders: Map[String, Seq[String]]): ErrorsOr[List[Param[?]]] = {
+    val z: ValidatedNel[ErrorMessage, List[Param[?]]] = List.empty.validNel
 
     headerValidators.map(hv => {
       rawHeaders.find {

@@ -63,7 +63,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualToUVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[Failures, *]].map6(
+      Apply[Validated[Failures, ?]].map6(
         isStandardNewJourneyApp(app),
         isPendingResponsibleIndividualVerification(app),
         isApplicationIdTheSame(app, riVerification),
@@ -132,7 +132,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
 
   def processTouUplift(app: StoredApplication, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualTouUpliftVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[Failures, *]].map6(
+      Apply[Validated[Failures, ?]].map6(
         isStandardNewJourneyApp(app),
         isInProduction(app),
         isApplicationIdTheSame(app, riVerification),
@@ -188,7 +188,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualUpdateVerification): AppCmdResultT = {
 
     def validate(): Validated[Failures, Unit] = {
-      Apply[Validated[Failures, *]].map4(
+      Apply[Validated[Failures, ?]].map4(
         isStandardNewJourneyApp(app),
         isApproved(app),
         isApplicationIdTheSame(app, riVerification),

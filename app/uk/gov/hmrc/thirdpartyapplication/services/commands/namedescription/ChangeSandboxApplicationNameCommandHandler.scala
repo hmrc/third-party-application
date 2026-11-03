@@ -46,7 +46,7 @@ class ChangeSandboxApplicationNameCommandHandler @Inject() (
       cmd: ChangeSandboxApplicationName,
       nameValidationResult: ApplicationNameValidationResult
     ): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, *]].map6(
+    Apply[Validated[Failures, ?]].map6(
       isInSandboxEnvironment(app),
       isApproved(app),
       isAppActorACollaboratorOnApp(cmd.actor, app),

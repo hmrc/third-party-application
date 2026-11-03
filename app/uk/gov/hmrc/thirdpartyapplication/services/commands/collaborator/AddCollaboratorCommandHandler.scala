@@ -39,11 +39,11 @@ class AddCollaboratorCommandHandler @Inject() (
 
   private def validate(app: StoredApplication, cmd: AddCollaborator): Validated[Failures, Unit] = {
     cmd.actor match {
-      case actor: Actors.AppCollaborator => Apply[Validated[Failures, *]].map2(
+      case actor: Actors.AppCollaborator => Apply[Validated[Failures, ?]].map2(
           isAppActorACollaboratorOnApp(actor, app),
           collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)
         ) { (_, _) => () }
-      case _                             => Apply[Validated[Failures, *]]
+      case _                             => Apply[Validated[Failures, ?]]
           .map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app))(_ => ())
     }
   }

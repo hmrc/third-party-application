@@ -133,7 +133,7 @@ trait TermsOfUseInvitationActionBuilders {
     )(
       applicationId: ApplicationId
     )(
-      block: ApplicationRequest[_] => Future[Result]
+      block: ApplicationRequest[?] => Future[Result]
     ): Action[AnyContent] = {
     Action.async { implicit request =>
       (

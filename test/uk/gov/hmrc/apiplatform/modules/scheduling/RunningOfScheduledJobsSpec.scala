@@ -159,7 +159,7 @@ class RunningOfScheduledJobsSpec extends AsyncHmrcSpec with Eventually with Guic
         /* Intentionally burning CPU cycles for fixed period */
       }
 
-      val stopFuture: Future[_] = testApp.stop()
+      val stopFuture: Future[?] = testApp.stop()
       stopFuture should not be Symbol("completed")
 
       stoppableJob.isRunning = Future.successful(false)

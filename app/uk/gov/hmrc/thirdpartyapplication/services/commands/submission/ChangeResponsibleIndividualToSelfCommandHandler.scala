@@ -64,7 +64,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[Failures, *]].map6(
+      Apply[Validated[Failures, ?]].map6(
         isStandardNewJourneyApp(app),
         isApproved(app),
         isAdminOnApp(cmd.instigator, app),

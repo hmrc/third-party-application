@@ -77,7 +77,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
 
   def processTou(app: StoredApplication, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualToUVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[Failures, *]].map6(
+      Apply[Validated[Failures, ?]].map6(
         isStandardNewJourneyApp(app),
         isPendingResponsibleIndividualVerification(app),
         isApplicationIdTheSame(app, riVerificationToU),
@@ -141,7 +141,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
 
   def processTouUplift(app: StoredApplication, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualTouUpliftVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[Failures, *]].map6(
+      Apply[Validated[Failures, ?]].map6(
         isStandardNewJourneyApp(app),
         isInProduction(app),
         isApplicationIdTheSame(app, riVerificationToU),
@@ -244,7 +244,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     val newResponsibleIndividual = riVerification.responsibleIndividual
 
     def validateUpdate(): Validated[Failures, ResponsibleIndividual] = {
-      Apply[Validated[Failures, *]].map5(
+      Apply[Validated[Failures, ?]].map5(
         isStandardNewJourneyApp(app),
         isApproved(app),
         isApplicationIdTheSame(app, riVerification),

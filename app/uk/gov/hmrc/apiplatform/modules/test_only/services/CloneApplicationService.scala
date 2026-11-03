@@ -59,20 +59,20 @@ class CloneApplicationService @Inject() (
       }
     }
 
-    def cloneNotifications(): Future[_] = {
+    def cloneNotifications(): Future[?] = {
       notificationRepository.find(appId).flatMap { notificationsToCopy =>
         Future.sequence(notificationsToCopy.map(n => notificationRepository.createEntity(n.copy(applicationId = newId))))
       }
     }
 
-    def cloneTermsOfUseInvitation(): Future[_] = {
+    def cloneTermsOfUseInvitation(): Future[?] = {
       OptionT(termsOfUseInvitationRepository.fetch(appId)).flatMap { t =>
         OptionT(termsOfUseInvitationRepository.create(t.copy(applicationId = newId)))
       }
         .value
     }
 
-    def cloneSubmissions(): Future[_] = {
+    def cloneSubmissions(): Future[?] = {
       submissionsDAO.fetchAllForApplication(appId).flatMap { submissionsToCopy =>
         Future.sequence(submissionsToCopy.map { s =>
           submissionsDAO.save(s.copy(id = SubmissionId.random, applicationId = newId))
@@ -80,7 +80,7 @@ class CloneApplicationService @Inject() (
       }
     }
 
-    def cloneSubsFields(oldClientId: ClientId, subs: Set[ApiIdentifier])(implicit hc: HeaderCarrier): Future[_] = {
+    def cloneSubsFields(oldClientId: ClientId, subs: Set[ApiIdentifier])(implicit hc: HeaderCarrier): Future[?] = {
       subsFieldsConnector.fetchFieldValues(oldClientId).flatMap { subsFields =>
         Future.sequence(
           subsFields.flatMap {

@@ -36,7 +36,7 @@ class CommandHandlerSpec extends HmrcSpec with StoredApplicationFixtures with Co
     fn shouldBe Validated.Valid(expected)
   }
 
-  def checkFailsWith(failure: CommandFailure, failures: CommandFailure*)(fn: => Validated[CommandHandler.Failures, _]) = {
+  def checkFailsWith(failure: CommandFailure, failures: CommandFailure*)(fn: => Validated[CommandHandler.Failures, ?]) = {
     fn shouldBe Validated.Invalid(NonEmptyList.of(failure, failures*))
   }
 

@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, Cre
 
 class ConfigurationModule extends Module {
 
-  override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
+  override def bindings(environment: Environment, configuration: Configuration): List[Binding[?]] = {
     List(
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[ProductionCredentialsRequestExpiryWarningJobConfig].toProvider[ProductionCredentialsRequestExpiryWarningJobConfigProvider],

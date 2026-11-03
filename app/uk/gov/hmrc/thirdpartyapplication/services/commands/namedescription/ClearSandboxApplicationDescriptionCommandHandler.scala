@@ -40,7 +40,7 @@ class ClearSandboxApplicationDescriptionCommandHandler @Inject() (
       app: StoredApplication,
       cmd: ClearSandboxApplicationDescription
     ): Validated[Failures, String] = {
-    Apply[Validated[Failures, *]].map3(
+    Apply[Validated[Failures, ?]].map3(
       isInSandboxEnvironment(app),
       isApproved(app),
       isAppActorACollaboratorOnApp(cmd.actor, app)

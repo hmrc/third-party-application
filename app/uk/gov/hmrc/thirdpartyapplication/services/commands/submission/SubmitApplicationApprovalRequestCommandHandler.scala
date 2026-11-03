@@ -67,7 +67,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
         GenericFailure(s"No submission found for application ${app.id.value}").invalidNel[(Submission, String)]
       ) {
         case (submission, nameFromSubmission, nameValidationResult) => {
-          Apply[Validated[Failures, *]].map5(
+          Apply[Validated[Failures, ?]].map5(
             ensureStandardAccess(app),
             isInTesting(app),
             cond(submission.status.isAnsweredCompletely, "Submission has not been answered completely"),
