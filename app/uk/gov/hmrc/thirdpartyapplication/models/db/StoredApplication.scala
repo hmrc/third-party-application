@@ -143,7 +143,7 @@ object StoredApplication {
     StoredApplication(
       ApplicationId.random,
       name,
-      name.value.toLowerCase,
+      name.toLowerCase,
       collaborators,
       createApplicationRequest.description.filterNot(_ => environment.isProduction),
       ApplicationTokens(productionToken),

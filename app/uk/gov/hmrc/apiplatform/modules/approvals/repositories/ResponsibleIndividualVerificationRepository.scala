@@ -176,7 +176,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     val verification = ResponsibleIndividualUpdateVerification(
       ResponsibleIndividualVerificationId(evt.verificationId),
       evt.applicationId,
-      SubmissionId(evt.submissionId.value),
+      evt.submissionId,
       evt.submissionIndex,
       evt.applicationName,
       evt.eventDateTime,
@@ -186,7 +186,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       ResponsibleIndividualVerificationState.INITIAL
     )
 
-    deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
+    deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
       .flatMap(_ => save(verification))
       .map(_ => HasSucceeded)
   }
@@ -200,9 +200,9 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       case evt: ApplicationEvents.ResponsibleIndividualVerificationStarted => addResponsibleIndividualVerification(evt)
       case evt: ApplicationEvents.ResponsibleIndividualSet                 => deleteResponsibleIndividualVerification(evt.code)
       case evt: ApplicationEvents.ResponsibleIndividualChanged             => deleteResponsibleIndividualVerification(evt.code)
-      case evt: ApplicationEvents.ResponsibleIndividualDeclined            => deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
+      case evt: ApplicationEvents.ResponsibleIndividualDeclined            => deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
       case evt: ApplicationEvents.ResponsibleIndividualDeclinedUpdate      => deleteResponsibleIndividualVerification(evt.code)
-      case evt: ApplicationEvents.ResponsibleIndividualDidNotVerify        => deleteSubmissionInstance(SubmissionId(evt.submissionId.value), evt.submissionIndex)
+      case evt: ApplicationEvents.ResponsibleIndividualDidNotVerify        => deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
       case _                                                               => Future.successful(HasSucceeded)
     }
   }

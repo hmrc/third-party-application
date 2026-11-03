@@ -103,7 +103,7 @@ class CloneApplicationService @Inject() (
         oldApp           <- E.fromOptionF(applicationRepository.fetch(appId), newId)
         suffix            = Instant.now().toEpochMilli().toHexString
         newName           = ApplicationName(s"${oldApp.name} clone $suffix")
-        newNormalisedName = newName.value.toLowerCase
+        newNormalisedName = newName.toLowerCase
         newApp            =
           oldApp.copy(
             id = newId,

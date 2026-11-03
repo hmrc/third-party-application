@@ -36,7 +36,7 @@ final case class TermsOfUseInvitationWithApplication(
   ) {
 
   def getApplicationName(): String = {
-    applications.head.name.value
+    applications.head.name
   }
 }
 

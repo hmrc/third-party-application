@@ -220,8 +220,8 @@ class ApplicationService @Inject() (
 
     for {
       _       <- createApplicationRequest.accessType match {
-                   case AccessType.Privileged => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.Privileged)
-                   case AccessType.Ropc       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.Ropc)
+                   case AccessType.Privileged => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, AccessType.Privileged)
+                   case AccessType.Ropc       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, AccessType.Ropc)
                    case _                     => successful(())
                  }
       basicApp = StoredApplication.create(createApplicationRequest, tokenService.createEnvironmentToken(), instant)
@@ -261,7 +261,7 @@ class ApplicationService @Inject() (
       AppCreated,
       Map(
         "applicationId"             -> app.id.toString,
-        "newApplicationName"        -> app.name.value,
+        "newApplicationName"        -> app.name,
         "newApplicationDescription" -> app.description.getOrElse("")
       )
     )

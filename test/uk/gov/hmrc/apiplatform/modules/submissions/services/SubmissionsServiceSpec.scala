@@ -259,7 +259,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
           Actors.AppCollaborator("requester@example.com".toLaxEmail),
           "Mr New Ri",
           "ri@example.com".toLaxEmail,
-          SubmissionId(submissionId.value),
+          submissionId,
           0,
           reasons,
           "Mr Admin",

@@ -134,7 +134,7 @@ class SubmissionsService @Inject() (
   def declineApplicationApprovalRequest(evt: ApplicationEvents.ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
     (
       for {
-        extSubmission    <- fromOptionF(fetch(SubmissionId(evt.submissionId.value)), "submission not found")
+        extSubmission    <- fromOptionF(fetch(evt.submissionId), "submission not found")
         updatedSubmission = Submission.decline(evt.eventDateTime, evt.decliningUserEmail.text, evt.reasons)(extSubmission.submission) // Is this correct use of email addresss or should we use decliningUserName ?
         savedSubmission  <- liftF(store(updatedSubmission))
       } yield savedSubmission
