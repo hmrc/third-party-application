@@ -81,7 +81,7 @@ class ApprovalsControllerISpec
     ): WSResponse =
     wsClient
       .url(url)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withFollowRedirects(false)
       .post(body)
       .futureValue

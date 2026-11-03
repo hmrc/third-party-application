@@ -30,6 +30,6 @@ abstract class ExtraHeadersController(cc: ControllerComponents) extends BackendC
 
     val extraHeaders =
       List(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER), renamedHeader(USER_AGENT, INTERNAL_USER_AGENT)).flatten
-    super.hc.withExtraHeaders(extraHeaders: _*)
+    super.hc.withExtraHeaders(extraHeaders*)
   }
 }

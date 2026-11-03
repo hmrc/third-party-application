@@ -615,7 +615,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       basicRequest
         .method(method, uri"$uri")
         .contentType("application/json")
-        .headers(extraHeaders: _*)
+        .headers(extraHeaders*)
         .body(data)
     )
   }

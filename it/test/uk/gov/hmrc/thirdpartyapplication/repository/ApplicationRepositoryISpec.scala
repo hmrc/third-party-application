@@ -1423,7 +1423,7 @@ class ApplicationRepositoryISpec
     val existingCollaborators = app.collaborators
 
     val appWithNewCollaborator = await(applicationRepository.addCollaborator(applicationId, collaborator))
-    appWithNewCollaborator.collaborators should contain only (existingCollaborators.toList ++ List(collaborator): _*)
+    appWithNewCollaborator.collaborators should contain only (existingCollaborators.toList ++ List(collaborator)*)
   }
 
   "handle removeCollaborator correctly" in {
@@ -1438,7 +1438,7 @@ class ApplicationRepositoryISpec
     val userIdToDelete        = existingCollaborators.head.userId
 
     val appWithOutDeletedCollaborator = await(applicationRepository.removeCollaborator(applicationId, userIdToDelete))
-    appWithOutDeletedCollaborator.collaborators should contain only (existingCollaborators.toList.filterNot(_.userId == userIdToDelete): _*)
+    appWithOutDeletedCollaborator.collaborators should contain only (existingCollaborators.toList.filterNot(_.userId == userIdToDelete)*)
   }
 
   "handle ProductionAppPrivacyPolicyLocationChanged correctly" in {

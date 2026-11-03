@@ -37,7 +37,7 @@ class CommandHandlerSpec extends HmrcSpec with StoredApplicationFixtures with Co
   }
 
   def checkFailsWith(failure: CommandFailure, failures: CommandFailure*)(fn: => Validated[CommandHandler.Failures, _]) = {
-    fn shouldBe Validated.Invalid(NonEmptyList.of(failure, failures: _*))
+    fn shouldBe Validated.Invalid(NonEmptyList.of(failure, failures*))
   }
 
   "appHasLessThanLimitOfSecrets" should {

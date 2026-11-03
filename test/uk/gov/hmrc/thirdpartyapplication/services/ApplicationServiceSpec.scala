@@ -422,7 +422,7 @@ class ApplicationServiceSpec
       val clientId      = applicationData.tokens.production.clientId
       val expectedToken = applicationData.tokens.production.accessToken
       ApplicationRepoMock.FindAndRecordApplicationUsage.thenReturnWhen(clientId)(applicationData)
-      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq: _*)
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq*)
 
       val result = await(underTest.findAndRecordApplicationUsage(clientId))
 
@@ -470,7 +470,7 @@ class ApplicationServiceSpec
       val subscriptions = Set("myContext".asIdentifier("myVersion"))
       val aServerToken  = applicationData.tokens.production.accessToken
       ApplicationRepoMock.FindAndRecordServerTokenUsage.thenReturnWhen(aServerToken)(applicationData)
-      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq: _*)
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq*)
 
       val result = await(underTest.findAndRecordServerTokenUsage(aServerToken))
 

@@ -60,7 +60,7 @@ trait ApplicationRepositoryTestData extends StoredApplicationFixtures with Colla
       version: String,
       applicationIds: ApplicationId*
     ) = {
-    SubscriptionData(context.asIdentifier(version), Set(applicationIds: _*))
+    SubscriptionData(context.asIdentifier(version), Set(applicationIds*))
   }
 
   def anApplicationDataForTest(

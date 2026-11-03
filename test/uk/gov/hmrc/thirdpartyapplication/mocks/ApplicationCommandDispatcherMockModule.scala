@@ -75,7 +75,7 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
       }
 
       def thenReturnSuccess(applicationData: StoredApplication, event: ApplicationEvent, moreEvents: ApplicationEvent*) = {
-        val success: CommandHandler.Success = (applicationData, NonEmptyList.of(event, moreEvents: _*))
+        val success: CommandHandler.Success = (applicationData, NonEmptyList.of(event, moreEvents*))
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(E.pure(success))
       }
 
@@ -86,12 +86,12 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
         when(aMock.dispatch(eqTo(appId), *[ApplicationCommand], *)(*)).thenReturn(EitherT.leftT(mockErrors))
 
       def thenReturnFailed(fails: CommandFailure, otherFails: CommandFailure*) =
-        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(EitherT.leftT(NonEmptyList.of(fails, otherFails: _*)))
+        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(EitherT.leftT(NonEmptyList.of(fails, otherFails*)))
 
       def thenReturnFailed(msg: String, otherMsgs: String*) =
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(EitherT.leftT(NonEmptyList.of(
           CommandFailures.GenericFailure(msg),
-          otherMsgs.map(CommandFailures.GenericFailure(_)): _*
+          otherMsgs.map(CommandFailures.GenericFailure(_))*
         )))
 
       def verifyNeverCalled =

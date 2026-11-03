@@ -225,7 +225,7 @@ class SubscriptionRepositoryISpec
 
       forAll(scenarios) { (apiIdentifier, expectedApplications) =>
         val applications: Set[ApplicationId] = await(subscriptionRepository.getSubscribers(apiIdentifier))
-        applications should contain only (expectedApplications: _*)
+        applications should contain only (expectedApplications*)
       }
     }
   }
@@ -345,12 +345,12 @@ class SubscriptionRepositoryISpec
   def subscriptionData(apiContext: ApiContext, version: ApiVersionNbr, applicationIds: ApplicationId*): SubscriptionData = {
     SubscriptionData(
       ApiIdentifier(apiContext, version),
-      Set(applicationIds: _*)
+      Set(applicationIds*)
     )
   }
 
   def aSubscriptionData(apiContext: String, version: String, applicationIds: ApplicationId*): SubscriptionData = {
-    subscriptionData(ApiContext(apiContext), ApiVersionNbr(version), applicationIds: _*)
+    subscriptionData(ApiContext(apiContext), ApiVersionNbr(version), applicationIds*)
   }
 
   def anApplicationData(

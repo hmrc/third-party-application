@@ -116,7 +116,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
     val bsonStates = states.map(s => Codecs.toBson(s))
     collection.aggregate(
       Seq(
-        filter(in("status", bsonStates: _*)),
+        filter(in("status", bsonStates*)),
         filter(lte("dueBy", dueByBefore))
       )
     ).toFuture()
@@ -178,7 +178,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
         Document()
       } else {
         val bsonStates = states.map(s => Codecs.toBson(s))
-        in("status", bsonStates: _*)
+        in("status", bsonStates*)
       }
     }
 
@@ -195,7 +195,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
     }
 
     val statusFilters = filters.collect { case sf: TermsOfUseStatusFilter => sf }
-    statusMatch(statusFilters.map(sf => getFilterState(sf)): _*)
+    statusMatch(statusFilters.map(sf => getFilterState(sf))*)
   }
 
   private def convertFilterToTextQueryClause(filters: List[TermsOfUseSearchFilter], searchCriteria: TermsOfUseSearch): Bson = {

@@ -782,7 +782,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           Seq(
             excludeId(),
             include(
-              fieldsToProject: _*
+              fieldsToProject*
             )
           ) ++ (
             if (wantSubscriptions)
@@ -795,7 +795,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
             else
               Seq.empty
           )
-        ): _*
+        )*
       )
     )
 
@@ -940,7 +940,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
           fields(
             excludeId(),
             include(
-              fieldsToProject: _*
+              fieldsToProject*
             )
           )
         )
@@ -957,8 +957,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       val facets: Seq[Bson] = Seq(
         facet(
           model.Facet("countOfAllApps", totalCount),
-          model.Facet("countOfMatchingApps", countMatchingPipeline: _*),
-          model.Facet("applications", matchingPipeline: _*)
+          model.Facet("countOfMatchingApps", countMatchingPipeline*),
+          model.Facet("applications", matchingPipeline*)
         )
       )
 

@@ -91,7 +91,7 @@ object ApplicationQueryConverter {
 
   def asUsersFilters(implicit params: List[Param[_]]): List[Bson] = {
     onFirst[UserIdsQP](userIdsQp => {
-      List(in("collaborators.userId", userIdsQp.values.map(_.toString): _*))
+      List(in("collaborators.userId", userIdsQp.values.map(_.toString)*))
     })
   }
 
@@ -161,7 +161,7 @@ object ApplicationQueryConverter {
     a ++ b
   }
 
-  def applicationStateMatch(states: State*): Bson = in("state.name", states.map(_.toString): _*)
+  def applicationStateMatch(states: State*): Bson = in("state.name", states.map(_.toString)*)
 
   def asAppStateFilters(implicit params: List[Param[_]]): List[Bson] =
     onFirst[AppStateParam[_]](_ match {
@@ -170,7 +170,7 @@ object ApplicationQueryConverter {
       case ExcludeDeletedQP          => List(excludeDeleted)
       case BlockedStateQP            => List(and(equal("blocked", BsonBoolean(true)), excludeDeleted))
       case MatchOneStateQP(state)    => List(equal("state.name", state.toString))
-      case MatchManyStatesQP(states) => List(in("state.name", states.toList.map(_.toString): _*))
+      case MatchManyStatesQP(states) => List(in("state.name", states.toList.map(_.toString)*))
     }) ++
       onFirst[AppStateBeforeDateQP](qp => List(lte("state.updatedOn", qp.value)))
 
@@ -178,7 +178,7 @@ object ApplicationQueryConverter {
     onFirst[SearchTextQP](qp =>
       List(
         or(
-          List("id", "name", "tokens.production.clientId").map(field => regex(field, qp.value, "i")): _* // TODO This list of search fields is a bit naff
+          List("id", "name", "tokens.production.clientId").map(field => regex(field, qp.value, "i"))* // TODO This list of search fields is a bit naff
         )
       )
     )
@@ -223,7 +223,7 @@ object ApplicationQueryConverter {
     if (individualFilters.isEmpty) {
       None
     } else {
-      Some(Aggregates.filter(and(individualFilters: _*)))
+      Some(Aggregates.filter(and(individualFilters*)))
     }
   }
 

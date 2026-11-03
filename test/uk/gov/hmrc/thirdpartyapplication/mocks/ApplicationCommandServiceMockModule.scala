@@ -75,7 +75,7 @@ trait ApplicationCommandServiceMockModule extends MockitoSugar with ArgumentMatc
       }
 
       def thenReturnSuccess(applicationData: StoredApplication, event: ApplicationEvent, moreEvents: ApplicationEvent*) = {
-        val success: CommandHandler.Success = (applicationData, NonEmptyList.of(event, moreEvents: _*))
+        val success: CommandHandler.Success = (applicationData, NonEmptyList.of(event, moreEvents*))
         when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(E.pure(success))
       }
 
@@ -86,18 +86,18 @@ trait ApplicationCommandServiceMockModule extends MockitoSugar with ArgumentMatc
         when(aMock.authenticateAndDispatch(eqTo(appId), *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(EitherT.leftT(mockErrors))
 
       def thenReturnFailed(fails: CommandFailure, otherFails: CommandFailure*) =
-        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(EitherT.leftT(NonEmptyList.of(fails, otherFails: _*)))
+        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(EitherT.leftT(NonEmptyList.of(fails, otherFails*)))
 
       def thenReturnFailed(msg: String, otherMsgs: String*) =
         when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(EitherT.leftT(NonEmptyList.of(
           CommandFailures.GenericFailure(msg),
-          otherMsgs.map(CommandFailures.GenericFailure(_)): _*
+          otherMsgs.map(CommandFailures.GenericFailure(_))*
         )))
 
       def thenReturnAuthFailed(msg: String, otherMsgs: String*) =
         when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(EitherT.leftT(NonEmptyList.of(
           CommandFailures.InsufficientPrivileges(msg),
-          otherMsgs.map(CommandFailures.GenericFailure(_)): _*
+          otherMsgs.map(CommandFailures.GenericFailure(_))*
         )))
 
       def verifyNeverCalled =

@@ -55,7 +55,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       auditSource = "third-party-application",
       auditType = action.auditType,
       tags = hc.toAuditTags(action.name, "-") ++ HeaderCarrierHelper.headersToUserContext(hc) ++ tags,
-      detail = hc.toAuditDetails(data.toSeq: _*)
+      detail = hc.toAuditDetails(data.toSeq*)
     ))
 
   def auditGatekeeperAction(

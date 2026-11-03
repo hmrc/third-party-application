@@ -94,7 +94,7 @@ class AuditServiceSpec
         auditSource = "third-party-application",
         auditType = AppCreated.auditType,
         tags = hc.toAuditTags(AppCreated.name, "-"),
-        detail = hc.toAuditDetails(data.toSeq: _*)
+        detail = hc.toAuditDetails(data.toSeq*)
       )
 
       auditService.audit(AppCreated, data)
@@ -114,7 +114,7 @@ class AuditServiceSpec
         auditSource = "third-party-application",
         auditType = AppCreated.auditType,
         tags = hc.toAuditTags(AppCreated.name, "-"),
-        detail = hc.toAuditDetails(data.toSeq: _*)
+        detail = hc.toAuditDetails(data.toSeq*)
       )
 
       val expected = event.copy(
@@ -137,7 +137,7 @@ class AuditServiceSpec
         auditSource = "third-party-application",
         auditType = AppCreated.auditType,
         tags = emailHc.toAuditTags(AppCreated.name, "-"),
-        detail = emailHc.toAuditDetails(data.toSeq: _*)
+        detail = emailHc.toAuditDetails(data.toSeq*)
       )
 
       val expected = event.copy(

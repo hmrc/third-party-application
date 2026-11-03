@@ -76,7 +76,7 @@ class QueryControllerISpec extends ServerBaseISpec with WiremockSugar with Befor
 
     def callQuery(params: Map[String, String] = Map.empty, headers: Map[String, String] = Map.empty) = {
       val paramString                                           = params.toSeq.map { case (a, b) => s"$a=$b" } mkString ("?", "&", "")
-      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(GET, s"/query${paramString}").withHeaders(headers.toSeq: _*)
+      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(GET, s"/query${paramString}").withHeaders(headers.toSeq*)
 
       inTest.queryDispatcher()(request)
     }

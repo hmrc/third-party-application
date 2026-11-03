@@ -106,7 +106,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     collection.aggregate(
       Seq(
         filter(equal("state", Codecs.toBson(state))),
-        filter(in("verificationType", verificationTypes: _*)),
+        filter(in("verificationType", verificationTypes*)),
         filter(lte("createdOn", minimumCreatedOn))
       )
     ).toFuture()
