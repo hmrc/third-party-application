@@ -32,7 +32,7 @@ import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._

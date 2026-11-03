@@ -26,7 +26,7 @@ import uk.gov.hmrc.http.test.HttpClientV2Support
 
 import uk.gov.hmrc.apiplatform.modules.common.connectors.ConnectorSpec
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._

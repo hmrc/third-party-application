@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationStateFixtures, State, StateHistory}
