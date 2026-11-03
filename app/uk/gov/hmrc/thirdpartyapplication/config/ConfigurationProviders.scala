@@ -21,7 +21,6 @@ import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 import pureconfig._
-import pureconfig.generic.auto._
 
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}

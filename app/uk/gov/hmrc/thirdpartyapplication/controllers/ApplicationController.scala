@@ -141,22 +141,24 @@ class ApplicationController @Inject() (
   }
 
   def validateCredentials: Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[ValidationRequest] { vr: ValidationRequest =>
-      credentialService.validateCredentials(vr).value map {
-        case Some(application) => Ok(toJson(application))
-        case None              => Unauthorized(JsErrorResponse(INVALID_CREDENTIALS, "Invalid client id or secret"))
-      } recover recovery
+    withJsonBody[ValidationRequest] {
+      vr: ValidationRequest =>
+        credentialService.validateCredentials(vr).value map {
+          case Some(application) => Ok(toJson(application))
+          case None              => Unauthorized(JsErrorResponse(INVALID_CREDENTIALS, "Invalid client id or secret"))
+        } recover recovery
     }
   }
 
   def validateApplicationName: Action[JsValue] =
     Action.async(parse.json) { implicit request =>
-      withJsonBody[ApplicationNameValidationRequest] { applicationNameValidationRequest: ApplicationNameValidationRequest =>
-        (applicationNameValidationRequest match {
-          case ChangeApplicationNameValidationRequest(nameToValidate, appId) => upliftNamingService.validateApplicationName(nameToValidate, Some(appId))
-          case NewApplicationNameValidationRequest(nameToValidate)           => upliftNamingService.validateApplicationName(nameToValidate, None)
-        })
-          .map(r => Ok(Json.toJson(r)))
+      withJsonBody[ApplicationNameValidationRequest] {
+        applicationNameValidationRequest: ApplicationNameValidationRequest =>
+          (applicationNameValidationRequest match {
+            case ChangeApplicationNameValidationRequest(nameToValidate, appId) => upliftNamingService.validateApplicationName(nameToValidate, Some(appId))
+            case NewApplicationNameValidationRequest(nameToValidate)           => upliftNamingService.validateApplicationName(nameToValidate, None)
+          })
+            .map(r => Ok(Json.toJson(r)))
       } recover recovery
     }
 

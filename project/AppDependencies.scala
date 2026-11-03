@@ -18,7 +18,6 @@ object AppDependencies {
     "commons-validator"              % "commons-validator"                        % "1.7",
     "uk.gov.hmrc"                   %% "internal-auth-client-play-30"             % "3.1.0",
     "com.github.pureconfig"         %% "pureconfig-core"                          % "0.17.11",
-    "com.github.pureconfig"         %% "pureconfig-generic"                       % "0.17.11",
     "org.typelevel"                 %% "cats-core"                                % "2.13.0",
     "uk.gov.hmrc"                   %% "api-platform-common-domain"               % commonDomainVersion,
     "uk.gov.hmrc"                   %% "api-platform-application-domain"          % appDomainVersion,

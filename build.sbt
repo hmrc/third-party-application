@@ -5,7 +5,7 @@ lazy val appName = "third-party-application"
 Global / bloopAggregateSourceDependencies := true
 Global / bloopExportJarClassifiers := Some(Set("sources"))
 
-ThisBuild / scalaVersion := "2.13.18"
+ThisBuild / scalaVersion := "3.7.4"
 ThisBuild / majorVersion := 0
 ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
@@ -25,9 +25,6 @@ lazy val microservice = Project(appName, file("."))
       "uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._",
       "uk.gov.hmrc.apiplatform.modules.submissions.domain.models._"
     )
-  )
-  .settings(
-    addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.4" cross CrossVersion.full)
   )
   .settings(
     Test / parallelExecution := false,
