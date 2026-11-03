@@ -30,6 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.Su
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.given
 
 object SubmissionsController {
 

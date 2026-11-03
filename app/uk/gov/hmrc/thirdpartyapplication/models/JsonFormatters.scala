@@ -71,7 +71,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   implicit val createApplicationResponseWrites: OWrites[CreateApplicationResponse] = (
     JsPath.write[ApplicationWithCollaborators] and (JsPath \ "totp").writeNullable[CreateApplicationResponse.TotpSecret]
-  )(unlift(CreateApplicationResponse.unapply))
+  )( car => (car.application, car.totp) )
 }
 
 object JsonFormatters extends JsonFormatters

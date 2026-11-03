@@ -30,7 +30,8 @@ import uk.gov.hmrc.apiplatform.modules.common.connectors.ResponseUtils
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters.given
+import play.api.libs.ws.JsonBodyWritables
 
 case class DisplayEvent(
     applicationId: ApplicationId,
@@ -56,7 +57,7 @@ object ApiPlatformEventsConnector {
 }
 
 class ApiPlatformEventsConnector @Inject() (http: HttpClientV2, config: ApiPlatformEventsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils
-    with ApplicationLogger {
+    with ApplicationLogger with JsonBodyWritables {
 
   val serviceBaseUrl: String      = s"${config.baseUrl}"
   private val applicationEventUri = "/application-event"

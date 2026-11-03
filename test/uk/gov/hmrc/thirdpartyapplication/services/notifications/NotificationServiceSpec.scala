@@ -209,7 +209,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendVerifyResponsibleIndividualUpdateNotification.verifyCalledWith(
         event.responsibleIndividualName,
         event.responsibleIndividualEmail,
-        event.applicationName.value,
+        event.applicationName,
         event.requestingAdminName,
         event.verificationId
       )
@@ -237,7 +237,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendVerifyResponsibleIndividualNotification.verifyCalledWith(
         event.responsibleIndividualName,
         event.responsibleIndividualEmail,
-        event.applicationName.value,
+        event.applicationName,
         event.requestingAdminName,
         event.verificationId
       )

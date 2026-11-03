@@ -45,7 +45,7 @@ class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike, val clock: Cloc
     logger.info("[bcrypt Performance] Starting performance measurement")
 
     val timings = workFactorRangeToTest.map(workFactor => {
-      import uk.gov.hmrc.apiplatform.modules.crypto.services.BCrypt.* 
+      import uk.gov.hmrc.apiplatform.modules.crypto.services.bcrypt.bcrypt
 
       val timedValue: TimedValue[String] = timeThis(() => stringToHash.bcrypt(workFactor))
 

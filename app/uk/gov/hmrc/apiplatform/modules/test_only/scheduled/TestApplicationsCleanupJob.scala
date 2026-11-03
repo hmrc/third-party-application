@@ -33,9 +33,10 @@ import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepo
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import pureconfig.ConfigReader
 
 object TestApplicationsCleanupJob {
-  case class Config(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean, expiryDuration: FiniteDuration)
+  case class Config(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean, expiryDuration: FiniteDuration) derives ConfigReader
 }
 
 @Singleton

@@ -44,6 +44,7 @@ import uk.gov.hmrc.mongo.{MongoComment, MongoComponent}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.given
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
@@ -77,7 +78,7 @@ object ApplicationRepository {
     // Because the data in the db might be old and not a valid redirect URI we need this
     // to use new to avoid the filter on RedirectUri.apply()
     private val convertToLoginRedirectUri: List[String] => List[LoginRedirectUri] = items =>
-      items.map(new LoginRedirectUr(_))
+      items.map(LoginRedirectUri.unsafeApply(_))
 
     implicit val readsStandard: Reads[Access.Standard] = (
       ((JsPath \ "redirectUris").read[List[String]].map[List[LoginRedirectUri]](convertToLoginRedirectUri)) and
@@ -87,7 +88,7 @@ object ApplicationRepository {
         (JsPath \ "overrides").read[Set[OverrideFlag]] and
         (JsPath \ "sellResellOrDistribute").readNullable[SellResellOrDistribute] and
         (JsPath \ "importantSubmissionData").readNullable[ImportantSubmissionData]
-    )(Access.Standard.apply _)
+    )(Access.Standard.apply)
 
     implicit val formatPrivileged: OFormat[Access.Privileged] = Json.format[Access.Privileged]
     implicit val formatRopc: OFormat[Access.Ropc]             = Json.format[Access.Ropc]
@@ -108,7 +109,7 @@ object ApplicationRepository {
         (JsPath \ "applicationDetails").readNullable[String] and
         ((JsPath \ "teamConfirmed").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "termsOfUseAgreements").read[List[TermsOfUseAgreement]] or Reads.pure(List.empty[TermsOfUseAgreement]))
-    )(CheckInformation.apply _)
+    )(CheckInformation.apply)
 
     implicit val formatCheckInformation: Format[CheckInformation] = Format(readsCheckInformation, Json.writes[CheckInformation])
 
@@ -119,7 +120,7 @@ object ApplicationRepository {
     val ipAllowlistReads: Reads[IpAllowlist]             = (
       ((JsPath \ "required").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "allowlist").read[Set[String]] or Reads.pure(Set.empty[String]))
-    )(IpAllowlist.apply _)
+    )(IpAllowlist.apply)
     implicit val formatIpAllowlist: OFormat[IpAllowlist] = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
 
     def periodFromInt(i: Int): Period = (GrantLength.apply(i).getOrElse(GrantLength.EIGHTEEN_MONTHS)).period
@@ -146,7 +147,7 @@ object ApplicationRepository {
         ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
         ((JsPath \ "deleteRestriction").read[DeleteRestriction] or Reads.pure[DeleteRestriction](DeleteRestriction.NoRestriction)) and
         (JsPath \ "organisationId").readNullable[OrganisationId]
-    )(StoredApplication.apply _)
+    )(StoredApplication.apply)
 
     implicit val formatStoredApplication: OFormat[StoredApplication] = OFormat(readStoredApplication, Json.writes[StoredApplication])
 
@@ -234,8 +235,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       ),
       replaceIndexes = true,
       extraCodecs = Seq(
-        Codecs.playFormatCodec(LaxEmailAddress.format),
-        Codecs.playFormatCodec(ClientId.format)
+        Codecs.playFormatCodec(LaxEmailAddress.given_Format_LaxEmailAddress),
+        Codecs.playFormatCodec(ClientId.given_Format_ClientId)
       )
     ) with MetricsTimer
     with ApplicationLogger
@@ -829,7 +830,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   def fetchSingleAppByAggregates(qry: SingleApplicationQuery): Future[Option[QueriedStoredApplication]] = {
     timeFuture("Run Single Query", "application.repository.fetchSingleAppByAggregates") {
-      val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+      val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(using qry.params)
 
       val needsLookup                                = qry.wantSubscriptions
       val maybeSubsLookupStage: Option[Bson]         = subscriptionsLookup.some.filter(_ => needsLookup)
@@ -866,7 +867,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
   }
 
   private def internalFetchByGeneralOpenEndedApplicationQueryStream(qry: GeneralOpenEndedApplicationQuery): Source[QueriedStoredApplication, ?] = {
-    val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+    val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(using qry.params)
     val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
     val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
 
@@ -886,7 +887,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
   private def internalFetchByGeneralOpenEndedApplicationQuery(qry: GeneralOpenEndedApplicationQuery): Future[List[QueriedStoredApplication]] = {
     timeFuture("Run General Query", "application.repository.internalFetchByGeneralOpenEndedApplicationQuery") {
-      val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(qry.params)
+      val filtersStage: Option[Bson] = ApplicationQueryConverter.convertToFilter(using qry.params)
       val sortingStage: Option[Bson] = ApplicationQueryConverter.convertToSort(qry.sorting)
       val limitStage: Option[Bson]   = ApplicationQueryConverter.convertToLimit(qry.limit)
 
@@ -927,7 +928,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
     timeFuture("Run Pagination Query", "application.repository.fetchByPaginatedApplicationQuery") {
 
-      val filtersStage: Option[Bson]   = ApplicationQueryConverter.convertToFilter(qry.params)
+      val filtersStage: Option[Bson]   = ApplicationQueryConverter.convertToFilter(using qry.params)
       val sortingStage: Option[Bson]   = ApplicationQueryConverter.convertToSort(qry.sorting)
       val paginationStages: List[Bson] = List(skip((qry.pagination.pageNbr - 1) * qry.pagination.pageSize), limit(qry.pagination.pageSize))
 

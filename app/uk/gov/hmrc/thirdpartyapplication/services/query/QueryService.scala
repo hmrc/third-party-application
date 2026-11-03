@@ -71,7 +71,8 @@ class QueryService @Inject() (
 
   def fetchPaginatedApplications(qry: PaginatedApplicationQuery): Future[PaginatedApplications] = {
     def patchApplication(app: ApplicationWithCollaborators, deleteHistory: Option[StateHistory]): ApplicationWithCollaborators = {
-      app.modify(_.copy(lastActionActor = deleteHistory.map(sh => ActorType.actorType(sh.actor)).getOrElse(ActorType.Unknown)))
+      import uk.gov.hmrc.apiplatform.modules.common.domain.models.actorType
+      app.modify(_.copy(lastActionActor = deleteHistory.map(sh => sh.actor.actorType).getOrElse(ActorType.Unknown)))
     }
 
     def patchApplications(apps: List[ApplicationWithCollaborators], histories: List[StateHistory]): List[ApplicationWithCollaborators] = {

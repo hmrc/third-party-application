@@ -32,6 +32,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.models.ApplicationsByAnswer
+import org.mongodb.scala.ObservableFuture
+import com.mongodb.client.result.DeleteResult
 
 @Singleton
 class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(implicit val ec: ExecutionContext) {
@@ -122,6 +124,6 @@ class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(im
   def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Long] = {
     collection.deleteOne(equal("applicationId", Codecs.toBson(applicationId)))
       .toFuture()
-      .map(x => x.getDeletedCount)
+      .map(xs => xs.map(_.getDeletedCount).sum)
   }
 }

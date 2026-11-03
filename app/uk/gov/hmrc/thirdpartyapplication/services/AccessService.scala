@@ -32,10 +32,10 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 class AccessService @Inject() (applicationRepository: ApplicationRepository, auditService: AuditService)(implicit val ec: ExecutionContext) {
 
   def readScopes(applicationId: ApplicationId): Future[ScopeResponse] =
-    fetchApp(applicationId) map getScopes map ScopeResponse
+    fetchApp(applicationId).map(getScopes).map(ScopeResponse.apply)
 
   def readOverrides(applicationId: ApplicationId): Future[OverridesResponse] =
-    fetchApp(applicationId) map getOverrides map OverridesResponse
+    fetchApp(applicationId).map(getOverrides).map(OverridesResponse.apply)
 
   private def fetchApp(applicationId: ApplicationId): Future[StoredApplication] =
     applicationRepository.fetch(applicationId).flatMap {

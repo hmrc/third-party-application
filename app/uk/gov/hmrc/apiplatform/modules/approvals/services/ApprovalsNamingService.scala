@@ -53,8 +53,8 @@ class ApprovalsNamingService @Inject() (
       validationResult <- validateApplicationNameWithExclusions(applicationName, approvalsFilter(appId))
       _                <- validationResult match {
                             case ApplicationNameValidationResult.Valid     => successful(())
-                            case ApplicationNameValidationResult.Duplicate => auditDeniedDueToNaming(applicationName.value, accessType, Some(appId))
-                            case ApplicationNameValidationResult.Invalid   => auditDeniedDueToDenyListed(applicationName.value, accessType, Some(appId))
+                            case ApplicationNameValidationResult.Duplicate => auditDeniedDueToNaming(applicationName, accessType, Some(appId))
+                            case ApplicationNameValidationResult.Invalid   => auditDeniedDueToDenyListed(applicationName, accessType, Some(appId))
                           }
     } yield validationResult
 }

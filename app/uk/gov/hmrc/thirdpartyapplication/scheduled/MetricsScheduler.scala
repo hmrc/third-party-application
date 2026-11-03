@@ -44,9 +44,9 @@ class MetricsScheduler @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  lazy val refreshInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("queue.metricsGauges.interval").getOrElse(10.minutes)
-  lazy val initialDelay: FiniteDuration    = configuration.getOptional[FiniteDuration]("queue.initialDelay").getOrElse(2.minutes)
-  lazy val isEnabled: Boolean              = configuration.getOptional[Boolean]("metricsJob.enabled").getOrElse(false)
+  val refreshInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("queue.metricsGauges.interval").getOrElse(10.minutes)
+  val initialDelay: FiniteDuration    = configuration.getOptional[FiniteDuration]("queue.initialDelay").getOrElse(2.minutes)
+  val isEnabled: Boolean              = configuration.getOptional[Boolean]("metricsJob.enabled").getOrElse(false)
 
   val lockService: LockService = LockService(lockRepository = lockRepository, lockId = "queue", ttl = refreshInterval)
 

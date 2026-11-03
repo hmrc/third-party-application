@@ -30,6 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.common.connectors.ResponseUtils
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, _}
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import play.api.libs.ws.JsonBodyWritables
 
 object ApiSubscriptionFieldsConnector {
   case class Config(baseUrl: String)
@@ -47,7 +48,7 @@ object ApiSubscriptionFieldsConnector {
 }
 
 @Singleton
-class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config: ApiSubscriptionFieldsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils {
+class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config: ApiSubscriptionFieldsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils with JsonBodyWritables {
   import ApiSubscriptionFieldsConnector._
 
   def delete(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {

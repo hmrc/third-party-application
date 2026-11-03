@@ -27,8 +27,8 @@ object ParamsValidator {
     val headerParams      = HeaderValidator.parseHeaders(rawHeaders ++ extraHeaders.map { case (k, v) => k -> Seq(v) })
     val allParamsOrErrors = queryParams combine headerParams
 
-    allParamsOrErrors.andThen(allParams => {
-      ParamsCombinationValidator.validateParamCombinations(allParams)
+    allParamsOrErrors.andThen( allParams => {
+      ParamsCombinationValidator.validateParamCombinations(using allParams)
         .map(_ => allParams)
     })
   }

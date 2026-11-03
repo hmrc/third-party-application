@@ -70,8 +70,8 @@ abstract class AbstractApplicationNamingService(
 
   def validateApplicationNameWithExclusions(applicationName: ValidatedApplicationName, exclusions: ExclusionCondition): Future[ApplicationNameValidationResult] = {
     for {
-      isDuplicate <- isDuplicateName(applicationName.value, exclusions)
-      isDenyListed = isDenyListedName(applicationName.value)
+      isDuplicate <- isDuplicateName(applicationName, exclusions)
+      isDenyListed = isDenyListedName(applicationName)
     } yield (isDenyListed, isDuplicate) match {
       case (false, false) => ApplicationNameValidationResult.Valid
       case (true, _)      => ApplicationNameValidationResult.Invalid
