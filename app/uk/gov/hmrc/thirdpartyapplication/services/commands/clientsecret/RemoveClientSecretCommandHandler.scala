@@ -20,7 +20,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
@@ -45,10 +47,10 @@ class RemoveClientSecretCommandHandler @Inject() (
         CommandFailures.GenericFailure(s"Client Secret Id ${clientSecretId.value} not found in Application ${app.id.value}")
       )
 
-    Apply[Validated[Failures, ?]].map2(
+    (
       isAdminIfInProduction(cmd.actor, app),
       clientSecretExists(cmd.clientSecretId, app)
-    ) { case _ => app }
+    ).mapN( (_,_) => app )
   }
 
   private def asEvents(app: StoredApplication, cmd: RemoveClientSecret): NonEmptyList[ApplicationEvent] = {

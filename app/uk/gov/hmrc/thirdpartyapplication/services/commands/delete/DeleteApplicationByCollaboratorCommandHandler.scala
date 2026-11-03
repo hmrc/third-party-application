@@ -20,7 +20,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -56,12 +58,12 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     cond(app.deleteRestriction == DeleteRestriction.NoRestriction, "This application is delete restricted")
 
   private def validate(app: StoredApplication, cmd: DeleteApplicationByCollaborator): Validated[Failures, Collaborator] = {
-    Apply[Validated[Failures, ?]].map4(
+    (
       isAdminOnApp(cmd.instigator, app),
       ensureStandardAccess(app),
       canDeleteApplicationsOrNotProductionApp(app),
       canDeleteApplication(app)
-    ) { case (admin, _, _, _) => admin }
+    ).mapN( (admin, _, _, _) => admin )
   }
 
   private def asEvents(app: StoredApplication, cmd: DeleteApplicationByCollaborator, instigator: Collaborator, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {

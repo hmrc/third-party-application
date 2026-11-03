@@ -21,7 +21,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, SellResellOrDistribute}
@@ -42,9 +44,9 @@ class ChangeApplicationSellResellOrDistributeCommandHandler @Inject() (
   import CommandHandler._
 
   private def validate(app: StoredApplication): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, ?]].map(
+     (
       ensureStandardAccess(app)
-    ) { case _ => app }
+    ).map( _ => app )
   }
 
   private def asEvents(

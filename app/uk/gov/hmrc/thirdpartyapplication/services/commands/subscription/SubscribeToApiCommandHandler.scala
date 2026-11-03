@@ -19,8 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.subscription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -45,10 +47,10 @@ class SubscribeToApiCommandHandler @Inject() (
     def isAuthorisedUser       = cond(rolePassed, s"Unauthorized to subscribe any API to app ${app.name}")
     def notAlreadySubscribedTo = cond(!alreadySubcribed, s"Application ${app.name} is already subscribed to API ${cmd.apiIdentifier.asText(" v")}")
 
-    Apply[Validated[Failures, ?]].map2(
+     (
       isAuthorisedUser,
       notAlreadySubscribedTo
-    ) { case _ => () }
+    ).mapN( (_,_) => ())
   }
 
   private def asEvents(app: StoredApplication, cmd: SubscribeToApi): NonEmptyList[ApplicationEvent] = {

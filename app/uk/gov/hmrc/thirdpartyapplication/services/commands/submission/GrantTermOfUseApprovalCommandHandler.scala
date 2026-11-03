@@ -22,10 +22,13 @@ import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, OptionT, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.data.OptionT
+import cats.syntax.apply._
 import cats.syntax.validated._
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ResponsibleIndividual, TermsOfUseAcceptance}
@@ -64,13 +67,13 @@ class GrantTermsOfUseApprovalCommandHandler @Inject() (
         GenericFailure(s"No submission found for application ${app.id.value}").invalidNel[(Submission, ResponsibleIndividual)]
       ) {
         case (submission) => {
-          Apply[Validated[Failures, ?]].map5(
+           (
             ensureStandardAccess(app),
             isInProduction(app),
             ensureResponsibleIndividualDefined(app),
             cond(app.state.requestedByEmailAddress.nonEmpty, "No requestedBy email found"),
             cond((submission.status.isGrantedWithWarnings || submission.status.isFailed), "Rejected due to incorrect submission state")
-          ) { case (_, _, responsibleIndividual, _, _) => (submission, responsibleIndividual) }
+          ).mapN( (_, _, responsibleIndividual, _, _) => (submission, responsibleIndividual) )
         }
       }
   }

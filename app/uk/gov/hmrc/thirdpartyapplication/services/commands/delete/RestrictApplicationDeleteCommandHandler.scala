@@ -19,8 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.delete
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
@@ -31,6 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction
 
 @Singleton
 class RestrictApplicationDeleteCommandHandler @Inject() (
@@ -41,9 +44,9 @@ class RestrictApplicationDeleteCommandHandler @Inject() (
   import CommandHandler._
 
   private def validate(app: StoredApplication): Validated[Failures, Unit] = {
-    Apply[Validated[Failures, ?]].map(
-      cond((app.deleteRestriction.deleteRestrictionType == NO_RESTRICTION), CommandFailures.GenericFailure(s"Delete is already restricted"))
-    ) { case _ => () }
+    (
+      cond((app.deleteRestriction.deleteRestrictionType == DeleteRestriction.NoRestriction), CommandFailures.GenericFailure(s"Delete is already restricted"))
+    ).map(_ => () )
   }
 
   private def asEvents(app: StoredApplication, cmd: RestrictApplicationDelete): NonEmptyList[ApplicationEvent] = {

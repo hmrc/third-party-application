@@ -32,7 +32,7 @@ object ResponsibleIndividualVerificationRequiredNotification {
     emailConnector.sendVerifyResponsibleIndividualNotification(
       event.responsibleIndividualName,
       event.responsibleIndividualEmail,
-      event.applicationName.value,
+      event.applicationName,
       event.requestingAdminName,
       event.verificationId
     )

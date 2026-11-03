@@ -20,8 +20,10 @@ import java.time.Period
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeGrantLength
@@ -46,12 +48,12 @@ class ChangeGrantLengthCommandHandler @Inject() (
       s"Grant length is already $grantLength"
     }
 
-    Apply[Validated[Failures, ?]].map(
+    (
       cond(
         (cmd.grantLength.period != app.refreshTokensAvailableFor),
         CommandFailures.GenericFailure(printRefreshTokensAvailableFor(app.refreshTokensAvailableFor))
       )
-    ) { case _ => () }
+    ).map( _ => () )
   }
 
   private def asEvents(app: StoredApplication, cmd: ChangeGrantLength): NonEmptyList[ApplicationEvent] = {

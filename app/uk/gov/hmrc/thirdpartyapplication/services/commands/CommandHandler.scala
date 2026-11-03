@@ -18,7 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext
 
-import cats.data.{NonEmptyList, Validated}
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
@@ -49,8 +52,8 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
       applicationId = stateHistory.applicationId,
       eventDateTime = stateHistory.changedAt,
       actor = stateHistory.actor,
-      stateHistory.previousState.fold("")(_.toString),
-      stateHistory.state.toString,
+      stateHistory.previousState.getOrElse(stateHistory.state),
+      stateHistory.state,
       requestingAdminName,
       requestingAdminEmail
     )

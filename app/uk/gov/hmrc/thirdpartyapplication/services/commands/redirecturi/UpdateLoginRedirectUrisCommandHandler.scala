@@ -19,8 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.LoginRedirectUri
@@ -39,11 +41,11 @@ class UpdateLoginRedirectUrisCommandHandler @Inject() (applicationRepository: Ap
 
   private def validate(app: StoredApplication, cmd: UpdateLoginRedirectUris): Validated[Failures, Access.Standard] = {
     val hasFiveOrFewerURIs = cond(cmd.newRedirectUris.size <= 5, CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
-    Apply[Validated[Failures, ?]].map3(
+    (
       ensureStandardAccess(app),
       isAdminIfInProductionOrGatekeeperActor(cmd.actor, app),
       hasFiveOrFewerURIs
-    )((s, _, _) => s)
+    ).mapN( (s, _, _) => s )
   }
 
   private def asEvents(app: StoredApplication, oldUris: List[LoginRedirectUri], cmd: UpdateLoginRedirectUris): NonEmptyList[ApplicationEvent] = {

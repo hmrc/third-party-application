@@ -19,8 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.subscription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -46,10 +48,10 @@ class UnsubscribeFromApiCommandHandler @Inject() (
     def isGatekeeperUser    = cond(rolePassed, CommandFailures.InsufficientPrivileges(s"Unauthorized to unsubscribe any API from app ${app.name}"))
     def alreadySubscribedTo = cond(alreadySubcribed, CommandFailures.NotSubscribedToApi)
 
-    Apply[Validated[Failures, ?]].map2(
+     (
       isGatekeeperUser,
       alreadySubscribedTo
-    ) { case _ => () }
+    ).mapN( (_,_) => ())
   }
 
   private def asEvents(app: StoredApplication, cmd: UnsubscribeFromApi): NonEmptyList[ApplicationEvent] = {

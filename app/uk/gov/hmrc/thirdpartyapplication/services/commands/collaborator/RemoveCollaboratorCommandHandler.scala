@@ -21,7 +21,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
@@ -44,17 +46,17 @@ class RemoveCollaboratorCommandHandler @Inject() (
   private def validate(app: StoredApplication, cmd: RemoveCollaborator) = {
 
     cmd.actor match {
-      case actor: Actors.AppCollaborator => Apply[Validated[Failures, ?]]
-          .map3(
-            isAppActorACollaboratorOnApp(actor, app),
-            isCollaboratorOnApp(cmd.collaborator, app),
-            applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)
-          ) { case _ => app }
-      case _                             => Apply[Validated[Failures, ?]]
-          .map2(
-            isCollaboratorOnApp(cmd.collaborator, app),
-            applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)
-          ) { case _ => app }
+      case actor: Actors.AppCollaborator => 
+        (
+          isAppActorACollaboratorOnApp(actor, app),
+          isCollaboratorOnApp(cmd.collaborator, app),
+          applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)
+        ).mapN( (_,_,_) => app )
+      case _                             => 
+        (
+          isCollaboratorOnApp(cmd.collaborator, app),
+          applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)
+        ).mapN( (_,_) => app )
     }
 
   }

@@ -19,8 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.policy
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveSandboxApplicationPrivacyPolicyUrl
@@ -46,15 +48,16 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
       case Standard(_, _, _, privacyPolicyUrl, _, _, _) => (true, privacyPolicyUrl)
       case _                                            => (false, None)
     }
-    Apply[Validated[Failures, ?]].map4(
+    (
       isInSandboxEnvironment(app),
       isApproved(app),
       ensureStandardAccess(app),
       isAppActorACollaboratorOnApp(cmd.actor, app)
-    ) { case (_, _, std, _) => std.privacyPolicyUrl }
-      .andThen(privacyPolicyUrl =>
-        mustBeDefined(privacyPolicyUrl, CommandFailures.GenericFailure("Cannot remove a Privacy Policy URL that is already empty"))
-      )
+    )
+    .mapN( (_, _, std, _) => std.privacyPolicyUrl )
+    .andThen(privacyPolicyUrl =>
+      mustBeDefined(privacyPolicyUrl, CommandFailures.GenericFailure("Cannot remove a Privacy Policy URL that is already empty"))
+    )
   }
 
   private def asEvents(app: StoredApplication, cmd: RemoveSandboxApplicationPrivacyPolicyUrl, oldPrivacyPolicyUrl: String): NonEmptyList[ApplicationEvent] = {

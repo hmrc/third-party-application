@@ -21,7 +21,10 @@ import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, OptionT, Validated}
+import cats.data.Validated
+import cats.data.OptionT
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
@@ -66,11 +69,11 @@ class SubmitTermsOfUseApprovalCommandHandler @Inject() (
         GenericFailure(s"No submission/termsOfUseInvitation found for application ${app.id.value}").invalidNel[(Submission)]
       ) {
         case (submission, _) => {
-          Apply[Validated[Failures, ?]].map3(
+           (
             ensureStandardAccess(app),
             isInProduction(app),
             cond(submission.status.isAnsweredCompletely, "Submission has not been answered completely")
-          ) { case _ => submission }
+          ).mapN( (_,_,_) => submission )
         }
       }
   }

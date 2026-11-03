@@ -20,7 +20,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
@@ -65,12 +67,12 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualUpdateVerification): AppCmdResultT = {
 
     def validate(): Validated[Failures, Unit] = {
-      Apply[Validated[Failures, ?]].map4(
+       (
         isStandardNewJourneyApp(app),
         isApproved(app),
         isApplicationIdTheSame(app, riVerification),
         ensureResponsibleIndividualDefined(app)
-      ) { case _ => () }
+      ).mapN( (_,_,_,_) => ())
     }
 
     def asEvents(): NonEmptyList[ApplicationEvent] = {
@@ -84,7 +86,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
           actor = Actors.AppCollaborator(riVerification.requestingAdminEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress,
-          submissionId = SubmissionId(riVerification.submissionId.value),
+          submissionId = riVerification.submissionId,
           submissionIndex = riVerification.submissionInstance,
           code = cmd.code,
           requestingAdminName = riVerification.requestingAdminName,
@@ -102,14 +104,14 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualToUVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[Failures, ?]].map6(
+       (
         isStandardNewJourneyApp(app),
         isPendingResponsibleIndividualVerification(app),
         isApplicationIdTheSame(app, riVerification),
         ensureResponsibleIndividualDefined(app),
         ensureRequesterEmailDefined(app),
         ensureRequesterNameDefined(app)
-      ) { case (_, _, _, responsibleIndividual, requesterEmail, requesterName) => (responsibleIndividual, requesterEmail, requesterName) }
+      ).mapN( (_, _, _, responsibleIndividual, requesterEmail, requesterName) => (responsibleIndividual, requesterEmail, requesterName) )
     }
 
     def asEvents(
@@ -126,7 +128,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
           actor = Actors.AppCollaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress,
-          submissionId = SubmissionId(riVerification.submissionId.value),
+          submissionId = riVerification.submissionId,
           submissionIndex = riVerification.submissionInstance,
           code = cmd.code,
           requestingAdminName = requesterName,
@@ -139,7 +141,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
           actor = Actors.AppCollaborator(requesterEmail),
           decliningUserName = responsibleIndividual.fullName.value,
           decliningUserEmail = responsibleIndividual.emailAddress,
-          submissionId = SubmissionId(riVerification.submissionId.value),
+          submissionId = riVerification.submissionId,
           submissionIndex = riVerification.submissionInstance,
           reasons = "The responsible individual did not accept the terms of use in 20 days.",
           requestingAdminName = requesterName,
@@ -163,14 +165,14 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualTouUpliftVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[Failures, ?]].map6(
+       (
         isStandardNewJourneyApp(app),
         isInProduction(app),
         isApplicationIdTheSame(app, riVerification),
         ensureResponsibleIndividualDefined(app),
         ensureRequesterEmailDefined(app),
         ensureRequesterNameDefined(app)
-      ) { case (_, _, _, responsibleIndividual, requesterEmail, requesterName) => (responsibleIndividual, requesterEmail, requesterName) }
+      ).mapN( (_, _, _, responsibleIndividual, requesterEmail, requesterName) => (responsibleIndividual, requesterEmail, requesterName) )
     }
 
     def asEvents(
@@ -186,7 +188,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
           actor = Actors.AppCollaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress,
-          submissionId = SubmissionId(riVerification.submissionId.value),
+          submissionId = riVerification.submissionId,
           submissionIndex = riVerification.submissionInstance,
           code = cmd.code,
           requestingAdminName = requesterName,

@@ -21,7 +21,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
@@ -77,14 +79,14 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
 
   def processTou(app: StoredApplication, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualToUVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[Failures, ?]].map6(
+       (
         isStandardNewJourneyApp(app),
         isPendingResponsibleIndividualVerification(app),
         isApplicationIdTheSame(app, riVerificationToU),
         ensureResponsibleIndividualDefined(app),
         ensureRequesterEmailDefined(app),
         ensureRequesterNameDefined(app)
-      ) { case (_, _, _, responsibleIndividual, requesterEmail, requesterName) => (responsibleIndividual, requesterEmail, requesterName) }
+      ).mapN( (_, _, _, responsibleIndividual, requesterEmail, requesterName) => (responsibleIndividual, requesterEmail, requesterName) )
     }
 
     def asEvents(
@@ -101,7 +103,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
           actor = Actors.AppCollaborator(requesterEmail),
           responsibleIndividualName = responsibleIndividual.fullName.value,
           responsibleIndividualEmail = responsibleIndividual.emailAddress,
-          submissionId = SubmissionId(riVerificationToU.submissionId.value),
+          submissionId = riVerificationToU.submissionId,
           submissionIndex = riVerificationToU.submissionInstance,
           code = cmd.code,
           requestingAdminName = requesterName,
@@ -112,8 +114,8 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
           applicationId = app.id,
           eventDateTime = cmd.timestamp,
           actor = Actors.AppCollaborator(requesterEmail),
-          app.state.name.toString,
-          State.PendingGatekeeperApproval.toString,
+          app.state.name,
+          State.PendingGatekeeperApproval,
           requestingAdminName = requesterName,
           requestingAdminEmail = requesterEmail
         )
@@ -141,14 +143,14 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
 
   def processTouUplift(app: StoredApplication, cmd: ChangeResponsibleIndividualToOther, riVerificationToU: ResponsibleIndividualTouUpliftVerification): AppCmdResultT = {
     def validate(): Validated[Failures, (ResponsibleIndividual, LaxEmailAddress, String)] = {
-      Apply[Validated[Failures, ?]].map6(
+       (
         isStandardNewJourneyApp(app),
         isInProduction(app),
         isApplicationIdTheSame(app, riVerificationToU),
         ensureResponsibleIndividualDefined(app),
         ensureRequesterEmailDefined(app),
         ensureRequesterNameDefined(app)
-      ) { case (_, _, _, responsibleIndividual, requesterEmail, requesterName) => (responsibleIndividual, requesterEmail, requesterName) }
+      ).mapN( (_, _, _, responsibleIndividual, requesterEmail, requesterName) => (responsibleIndividual, requesterEmail, requesterName) )
     }
 
     def asEvents(
@@ -169,7 +171,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
             applicationId = app.id,
             eventDateTime = cmd.timestamp,
             actor = Actors.AppCollaborator(requesterEmail),
-            submissionId = SubmissionId(riVerificationToU.submissionId.value),
+            submissionId = riVerificationToU.submissionId,
             submissionIndex = riVerificationToU.submissionInstance
           )
         )
@@ -196,7 +198,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         actor = Actors.AppCollaborator(requesterEmail),
         responsibleIndividualName = responsibleIndividual.fullName.value,
         responsibleIndividualEmail = responsibleIndividual.emailAddress,
-        submissionId = SubmissionId(riVerificationToU.submissionId.value),
+        submissionId = riVerificationToU.submissionId,
         submissionIndex = riVerificationToU.submissionInstance,
         code = cmd.code,
         requestingAdminName = requesterName,
@@ -244,13 +246,13 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     val newResponsibleIndividual = riVerification.responsibleIndividual
 
     def validateUpdate(): Validated[Failures, ResponsibleIndividual] = {
-      Apply[Validated[Failures, ?]].map5(
+       (
         isStandardNewJourneyApp(app),
         isApproved(app),
         isApplicationIdTheSame(app, riVerification),
         ensureResponsibleIndividualDefined(app),
         isNotCurrentRi(newResponsibleIndividual.fullName.value, newResponsibleIndividual.emailAddress, app)
-      ) { case (_, _, _, currentResponsibleIndividual, _) => currentResponsibleIndividual }
+      ).mapN( (_, _, _, currentResponsibleIndividual, _) => currentResponsibleIndividual )
     }
 
     def asEventsUpdate(currentResponsibleIndividual: ResponsibleIndividual): ResponsibleIndividualChanged = {
@@ -263,7 +265,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
         previousResponsibleIndividualEmail = currentResponsibleIndividual.emailAddress,
         newResponsibleIndividualName = newResponsibleIndividual.fullName.value,
         newResponsibleIndividualEmail = newResponsibleIndividual.emailAddress,
-        submissionId = SubmissionId(riVerification.submissionId.value),
+        submissionId = riVerification.submissionId,
         submissionIndex = riVerification.submissionInstance,
         code = cmd.code,
         requestingAdminName = riVerification.requestingAdminName,

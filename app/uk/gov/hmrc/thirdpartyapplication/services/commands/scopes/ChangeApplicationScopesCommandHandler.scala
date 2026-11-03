@@ -22,7 +22,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.sequence
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -49,9 +51,9 @@ class ChangeApplicationScopesCommandHandler @Inject() (
   import CommandHandler._
 
   private def validate(app: StoredApplication): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, ?]].map(
+    (
       ensurePrivilegedOrROPCAccess(app)
-    ) { case _ => app }
+    ).map( _ => app )
   }
 
   private def asEvents(

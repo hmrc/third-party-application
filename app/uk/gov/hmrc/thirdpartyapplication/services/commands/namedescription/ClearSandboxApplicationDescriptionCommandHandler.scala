@@ -19,8 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ClearSandboxApplicationDescription
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -40,14 +42,14 @@ class ClearSandboxApplicationDescriptionCommandHandler @Inject() (
       app: StoredApplication,
       cmd: ClearSandboxApplicationDescription
     ): Validated[Failures, String] = {
-    Apply[Validated[Failures, ?]].map3(
+    (
       isInSandboxEnvironment(app),
       isApproved(app),
       isAppActorACollaboratorOnApp(cmd.actor, app)
-    ) { case _ => () }
-      .andThen(_ =>
-        mustBeDefined(app.description, "App does not currently have a description to clear")
-      )
+    ).mapN( (_,_,_) => () )
+    .andThen(_ =>
+      mustBeDefined(app.description, "App does not currently have a description to clear")
+    )
   }
 
   private def asEvents(app: StoredApplication, oldDescription: String, cmd: ClearSandboxApplicationDescription): NonEmptyList[ApplicationEvent] = {

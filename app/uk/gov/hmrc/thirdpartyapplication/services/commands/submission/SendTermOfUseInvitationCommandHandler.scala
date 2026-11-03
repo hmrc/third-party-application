@@ -22,7 +22,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
@@ -64,12 +66,12 @@ class SendTermsOfUseInvitationCommandHandler @Inject() (
 
     getExistingRecords(app.id).map {
       case (maybeSubmission, maybeInvitation) => {
-        Apply[Validated[Failures, ?]].map4(
+         (
           ensureStandardAccess(app),
           isInProduction(app),
           cond(maybeSubmission.isEmpty, s"Submission already exists for application ${app.id.value}"),
           cond(maybeInvitation.isEmpty, s"Terms of Use Invitation already exists for application ${app.id.value}")
-        ) { case _ => app }
+        ).mapN( (_,_,_,_) => app )
       }
     }
   }

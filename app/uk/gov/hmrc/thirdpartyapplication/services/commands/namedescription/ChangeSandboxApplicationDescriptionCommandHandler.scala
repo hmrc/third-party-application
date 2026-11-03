@@ -19,8 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationDescription
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -40,13 +42,13 @@ class ChangeSandboxApplicationDescriptionCommandHandler @Inject() (
       app: StoredApplication,
       cmd: ChangeSandboxApplicationDescription
     ): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, ?]].map5(
+    (
       isInSandboxEnvironment(app),
       isApproved(app),
       isAppActorACollaboratorOnApp(cmd.actor, app),
       cond(cmd.description.isBlank() == false, "Description cannot be blank when changing the description"),
       cond(app.description != Some(cmd.description).filterNot(_.isBlank()), "App already has that description")
-    ) { case _ => app }
+    ).mapN( (_,_,_,_,_) => app )
   }
 
   private def asEvents(app: StoredApplication, cmd: ChangeSandboxApplicationDescription): NonEmptyList[ApplicationEvent] = {

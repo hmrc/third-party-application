@@ -22,10 +22,13 @@ import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, OptionT, Validated}
+import cats.data.Validated
+import cats.data.OptionT
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 import cats.syntax.validated._
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
@@ -63,13 +66,13 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
         GenericFailure(s"No submission or important submission data found for application ${app.id.value}").invalidNel[(Submission, ImportantSubmissionData)]
       ) {
         case (submission, importantSubmissionData) => {
-          Apply[Validated[Failures, ?]].map5(
+           (
             ensureStandardAccess(app),
             isInPendingGatekeeperApproval(app),
             cond(app.state.requestedByEmailAddress.nonEmpty, "No requestedBy email found"),
             cond(app.state.requestedByName.nonEmpty, "No requestedBy name found"),
             cond(submission.status.isSubmitted, "Submission has not been submitted")
-          ) { case _ => (submission, importantSubmissionData) }
+          ).mapN( (_,_,_,_,_) => (submission, importantSubmissionData) )
         }
       }
   }

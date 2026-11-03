@@ -19,8 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data.{NonEmptyList, Validated}
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
@@ -53,11 +55,11 @@ class DeleteLoginRedirectUriCommandHandler @Inject() (applicationRepository: App
       else
         ().validNel
 
-    Apply[Validated[Failures, ?]].map3(
+    (
       ensureStandardAccess(app),
       isAdminIfInProduction(cmd.actor, app),
       hasRequestedUri
-    )((_, _, _) => existingRedirects)
+    ).mapN( (_, _, _) => existingRedirects)
   }
 
   private def asEvents(app: StoredApplication, cmd: DeleteLoginRedirectUri): NonEmptyList[ApplicationEvent] = {

@@ -19,9 +19,11 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.ipallowlist
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data.Validated._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
+
 import org.apache.commons.net.util.SubnetUtils
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CidrBlock, IpAllowlist}
@@ -56,10 +58,10 @@ class ChangeIpAllowlistCommandHandler @Inject() (
   }
 
   private def validate(app: StoredApplication, cmd: ChangeIpAllowlist): Validated[Failures, Unit] = {
-    Apply[Validated[Failures, ?]].map2(
+    (
       isAdminIfInProductionOrGatekeeperActor(cmd.actor, app),
       cond(validateAllNewIps(cmd), CommandFailures.GenericFailure("Not all new allowlist IP addresses are valid CIDR blocks"))
-    ) { case _ => () }
+    ).mapN( (_, _) => () )
   }
 
   private def buildIpAllowlist(cmd: ChangeIpAllowlist) = {

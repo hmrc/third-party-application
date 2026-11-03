@@ -20,7 +20,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
@@ -50,14 +52,14 @@ class ResendRequesterEmailVerificationCommandHandler @Inject() (
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[Failures, ?]].map6(
+       (
         isStandardNewJourneyApp(app),
         isPendingRequesterVerification(app),
         ensureRequesterEmailDefined(app),
         ensureRequesterNameDefined(app),
         ensureVerificationCodeDefined(app),
         checkSubmission(maybeSubmission)
-      ) { case (_, _, requesterEmail, requesterName, _, submission) => (requesterEmail, requesterName, submission) }
+      ).mapN( (_, _, requesterEmail, requesterName, _, submission) => (requesterEmail, requesterName, submission) )
     }
   }
 

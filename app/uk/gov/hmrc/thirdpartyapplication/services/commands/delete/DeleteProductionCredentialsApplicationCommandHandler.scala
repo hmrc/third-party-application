@@ -20,7 +20,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -50,8 +52,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
   import CommandHandler._
 
   private def validate(app: StoredApplication): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, ?]]
-      .map(isInTesting(app)) { case _ => app }
+    isInTesting(app).map(_ => app)
   }
 
   private def asEvents(app: StoredApplication, cmd: DeleteProductionCredentialsApplication, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {

@@ -20,7 +20,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
@@ -54,13 +56,13 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[Failures, ?]].map5(
+       (
         isStandardNewJourneyApp(app),
         isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app),
         ensureRequesterEmailDefined(app),
         ensureRequesterNameDefined(app),
         checkSubmission(maybeSubmission)
-      ) { case (_, _, requesterEmail, requesterName, submission) => (requesterEmail, requesterName, submission) }
+      ).mapN( (_, _, requesterEmail, requesterName, submission) => (requesterEmail, requesterName, submission) )
     }
   }
 
@@ -81,7 +83,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         decliningUserName = cmd.gatekeeperUser,
         decliningUserEmail = LaxEmailAddress(cmd.gatekeeperUser), // Not nice but we have nothing better
-        submissionId = SubmissionId(submission.id.value),
+        submissionId = submission.id,
         submissionIndex = submission.latestInstance.index,
         reasons = cmd.reasons,
         requestingAdminName = requesterName,

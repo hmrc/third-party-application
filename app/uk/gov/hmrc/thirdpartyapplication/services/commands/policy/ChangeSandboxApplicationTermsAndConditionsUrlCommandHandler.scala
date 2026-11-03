@@ -19,8 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.policy
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationTermsAndConditionsUrl
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -41,13 +43,13 @@ class ChangeSandboxApplicationTermsAndConditionsUrlCommandHandler @Inject() (
       cmd: ChangeSandboxApplicationTermsAndConditionsUrl
     ): Validated[Failures, Option[String]] = {
 
-    Apply[Validated[Failures, ?]].map5(
+    (
       isInSandboxEnvironment(app),
       isApproved(app),
       ensureStandardAccess(app),
       isAppActorACollaboratorOnApp(cmd.actor, app),
       cond(cmd.termsAndConditionsUrl.isBlank() == false, "Terms and Conditions URL cannot be empty")
-    ) { case (_, _, std, _, _) => std.termsAndConditionsUrl }
+    ).mapN( (_, _, std, _, _) => std.termsAndConditionsUrl )
   }
 
   private def asEvents(app: StoredApplication, oldTermsAndConditionsUrl: Option[String], cmd: ChangeSandboxApplicationTermsAndConditionsUrl): NonEmptyList[ApplicationEvent] = {

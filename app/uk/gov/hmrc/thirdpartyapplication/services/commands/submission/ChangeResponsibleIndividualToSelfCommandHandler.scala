@@ -20,7 +20,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
@@ -64,14 +66,14 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[Failures, ?]].map6(
+       (
         isStandardNewJourneyApp(app),
         isApproved(app),
         isAdminOnApp(cmd.instigator, app),
         ensureResponsibleIndividualDefined(app),
         isNotCurrentRi(cmd.name, cmd.email, app),
         checkSubmission(maybeSubmission)
-      ) { case (_, _, _, _, _, submission) => submission }
+      ).mapN( (_, _, _, _, _, submission) => submission )
     }
   }
 
@@ -92,7 +94,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
         actor = Actors.AppCollaborator(requesterEmail),
         previousResponsibleIndividualName = previousResponsibleIndividual.fullName.value,
         previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress,
-        submissionId = SubmissionId(submission.id.value),
+        submissionId = submission.id,
         submissionIndex = submission.latestInstance.index,
         requestingAdminName = requesterName,
         requestingAdminEmail = requesterEmail

@@ -20,7 +20,10 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, OptionT, Validated}
+import cats.data.Validated
+import cats.data.OptionT
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 import cats.syntax.validated._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
@@ -67,13 +70,13 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
         GenericFailure(s"No submission found for application ${app.id.value}").invalidNel[(Submission, String)]
       ) {
         case (submission, nameFromSubmission, nameValidationResult) => {
-          Apply[Validated[Failures, ?]].map5(
+           (
             ensureStandardAccess(app),
             isInTesting(app),
             cond(submission.status.isAnsweredCompletely, "Submission has not been answered completely"),
             cond(nameValidationResult != ApplicationNameValidationResult.Duplicate, CommandFailures.DuplicateApplicationName(nameFromSubmission)),
             cond(nameValidationResult != ApplicationNameValidationResult.Invalid, CommandFailures.InvalidApplicationName(nameFromSubmission))
-          ) { case _ => (submission, nameFromSubmission) }
+          ).mapN( (_,_,_,_,_) => (submission, nameFromSubmission) )
         }
       }
   }
@@ -170,7 +173,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       newState: ApplicationState
     ): StoredApplication = existing.copy(
     name = applicationName,
-    normalisedName = applicationName.value.toLowerCase,
+    normalisedName = applicationName.toLowerCase,
     access = updateStandardData(existing.access, importantSubmissionData),
     state = newState
   )

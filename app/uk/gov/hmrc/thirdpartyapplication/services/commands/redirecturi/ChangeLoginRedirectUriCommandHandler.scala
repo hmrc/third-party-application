@@ -19,8 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.LoginRedirectUri
@@ -50,11 +52,11 @@ class ChangeLoginRedirectUriCommandHandler @Inject() (applicationRepository: App
       else
         ().validNel
 
-    Apply[Validated[Failures, ?]].map3(
+    (
       standardAccess,
       isAdminIfInProduction(cmd.actor, app),
       uriExists
-    )((_, _, _) => existingUris)
+    ).mapN( (_, _, _) => existingUris )
   }
 
   private def asEvents(app: StoredApplication, cmd: ChangeLoginRedirectUri): NonEmptyList[ApplicationEvent] = {

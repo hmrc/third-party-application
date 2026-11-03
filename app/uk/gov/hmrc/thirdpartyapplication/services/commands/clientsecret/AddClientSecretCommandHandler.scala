@@ -19,8 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddClientSecret
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
@@ -41,10 +43,10 @@ class AddClientSecretCommandHandler @Inject() (
   private val clientSecretLimit = config.clientSecretLimit
 
   private def validate(app: StoredApplication, cmd: AddClientSecret): Validated[Failures, Unit] = {
-    Apply[Validated[Failures, ?]].map2(
+    (
       isAdminIfInProduction(cmd.actor, app),
       appHasLessThanLimitOfSecrets(app, clientSecretLimit)
-    ) { case _ => () }
+    ).mapN( (_,_) => () )
   }
 
   private def asEvents(app: StoredApplication, cmd: AddClientSecret): NonEmptyList[ApplicationEvent] = {

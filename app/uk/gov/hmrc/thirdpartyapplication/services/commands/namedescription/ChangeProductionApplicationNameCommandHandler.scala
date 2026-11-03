@@ -19,8 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.Apply
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
@@ -47,13 +49,13 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
       cmd: ChangeProductionApplicationName,
       nameValidationResult: ApplicationNameValidationResult
     ): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, ?]].map5(
+    (
       isAdminOnApp(cmd.instigator, app),
       isNotInProcessOfBeingApproved(app),
-      cond(app.name.value != cmd.newName.value, "App already has that name"),
+      cond(app.name != cmd.newName.value, "App already has that name"),
       cond(nameValidationResult != ApplicationNameValidationResult.Duplicate, "New name is a duplicate"),
       cond(nameValidationResult != ApplicationNameValidationResult.Invalid, "New name is invalid")
-    ) { case _ => app }
+    ).mapN( (_,_,_,_,_) => app )
   }
 
   private def asEvents(app: StoredApplication, cmd: ChangeProductionApplicationName): NonEmptyList[ApplicationEvent] = {

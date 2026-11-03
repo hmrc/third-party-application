@@ -23,7 +23,9 @@ import scala.concurrent.ExecutionContext
 import scala.util.Try
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
+import cats.data.NonEmptyList
+import cats.syntax.apply._
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -58,8 +60,7 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
     cond(base64Decode(cmd.authorisationKey).map(_ == authControlConfig.authorisationKey).getOrElse(false), "Cannot delete this application")
 
   private def validate(app: StoredApplication, cmd: DeleteUnusedApplication): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, ?]]
-      .map(matchesAuthorisationKey(cmd)) { case _ => app }
+    matchesAuthorisationKey(cmd).map( _ => app )
   }
 
   private def asEvents(app: StoredApplication, cmd: DeleteUnusedApplication, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
