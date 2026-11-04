@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.delete
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 

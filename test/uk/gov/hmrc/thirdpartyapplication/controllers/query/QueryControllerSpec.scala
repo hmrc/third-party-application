@@ -220,12 +220,15 @@ class QueryControllerSpec
 
     "work for post query with applicationIdQP" in new Setup {
       val qry                          = ApplicationQuery.ById(applicationIdOne, Nil, wantSubscriptions = true)
-      val payload: Map[String, String] = QueryParamsToQueryStringMap.toHttpQueryString(qry)
+      // val payload: Map[String, String] = QueryParamsToQueryStringMap.toHttpQueryString(qry)
+      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toHttpQueryString(qry).map{ case (k,v) => k->Seq(v) }
 
       QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(qry, appWithSubs)
       QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubs(appWithSubs)
 
-      val result = underTest.queryPost()(FakeRequest("POST", "/").withBody[JsValue](Json.toJson(payload)))
+      val request = FakeRequest("POST", "/").withJsonBody(Json.toJson(payload)).withHeaders(CONTENT_TYPE -> "application/json", ACCEPT -> "application/json")
+      println(request.body)
+      val result = underTest.queryPost()(request)
 
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(appWithSubs)
@@ -250,7 +253,7 @@ class QueryControllerSpec
       status(result) shouldBe BAD_REQUEST
       contentAsJson(result) shouldBe JsObject(Map(
         "code"    -> JsString("INVALID_QUERY"),
-        "message" -> JsArray(Seq(JsString("ABC is not a valid user id"), JsString("STAGING is not a valid environment")))
+        "message" -> JsArray(Seq(JsString("ABC is not a valid userId"), JsString("STAGING is not a valid environment")))
       ))
     }
   }

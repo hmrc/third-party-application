@@ -25,14 +25,13 @@ import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.NoRestriction
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType.DoNotDelete
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AllowApplicationDelete
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType
 
 @Singleton
 class AllowApplicationDeleteCommandHandler @Inject() (
@@ -44,7 +43,7 @@ class AllowApplicationDeleteCommandHandler @Inject() (
 
   private def validate(app: StoredApplication): Validated[Failures, Unit] = {
     (
-      cond((app.deleteRestriction.deleteRestrictionType == DeleteRestriction.DoNotDelete), CommandFailures.GenericFailure(s"Delete is already allowed"))
+      cond((app.deleteRestriction.deleteRestrictionType == DeleteRestrictionType.DoNotDelete), CommandFailures.GenericFailure(s"Delete is already allowed"))
     ).map(_ => ())
   }
 
@@ -63,8 +62,8 @@ class AllowApplicationDeleteCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: AllowApplicationDelete): AppCmdResultT = {
 
     for {
-      valid    <- E.fromEither(validate(app).toEither)
-      savedApp <- E.liftF(applicationRepository.updateDeleteRestriction(app.id, NoRestriction))
+      _        <- E.fromEither(validate(app).toEither)
+      savedApp <- E.liftF(applicationRepository.updateDeleteRestriction(app.id, DeleteRestriction.NoRestriction))
       events    = asEvents(app, cmd)
     } yield (savedApp, events)
   }

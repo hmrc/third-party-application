@@ -79,10 +79,10 @@ class ChangeApplicationAccessOverridesCommandHandler @Inject() (
       applicationData.withAccess(getStandardAccess(applicationData).copy(overrides = newOverrides))
 
     for {
-      validateResult           <- E.fromValidated(validate(app))
+      _                        <- E.fromValidated(validate(app))
       oldOverrides              = getOverrides(app)
       newOverrides              = cmd.overrides
-      persistedApplicationData <- E.liftF(applicationRepository.save(updateWithOverrides(app, newOverrides)))
+      _                        <- E.liftF(applicationRepository.save(updateWithOverrides(app, newOverrides)))
       _                         = sequence(oldOverrides diff newOverrides map OverrideRemoved.details map (auditService.audit(OverrideRemoved, _)))
       _                         = sequence(newOverrides diff oldOverrides map OverrideAdded.details map (auditService.audit(OverrideAdded, _)))
       events                    = asEvents(app, cmd, oldOverrides, newOverrides)

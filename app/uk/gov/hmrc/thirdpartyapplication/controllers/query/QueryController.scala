@@ -76,7 +76,7 @@ class QueryController @Inject() (
         validQuery =>
           render.async {
             case Accepts.Json()                              => execute(validQuery)(false)
-            // These should never be in API Platform code... but ebrdige configurations cause both these to be possible.
+            // These should never be in API Platform code... but ebridge configurations cause both these to be possible.
             case AcceptsHmrcVndJson() | AcceptsVndHmrcJson() => execute(validQuery)(false)
             case AcceptsStreamedJson()                       => execute(validQuery)(true)
           }

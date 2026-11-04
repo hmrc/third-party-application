@@ -48,7 +48,7 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with 
         ApplicationWithUpliftRequest.create(app.asAppWithCollaborators, history.copy(state = State.PendingRequesterVerification))
       }
 
-      ex.getMessage shouldBe "cannot create with invalid state: PENDING_REQUESTER_VERIFICATION"
+      ex.getMessage shouldBe "cannot create with invalid state: PendingRequesterVerification"
     }
   }
 
@@ -93,7 +93,7 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with 
       )
     }
 
-    "be automatically uplifted to PRODUCTION state when the app is for the sandbox environment" in {
+    "be automatically uplifted to Production state when the app is for the sandbox environment" in {
       val actual = createRequestV1(CreationAccess.Standard, Environment.Sandbox)
       actual.state.name shouldBe State.Production
     }

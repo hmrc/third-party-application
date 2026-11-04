@@ -53,7 +53,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
     )
 
     def checkSuccessResult()(result: CommandHandler.Success) = {
-      inside(result) { case (returnedApp, events) =>
+      inside(result) { case (_, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
             case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ApplicationDeletedByGatekeeperV2 => true
@@ -76,7 +76,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
               appId shouldBe app.id
               evtActor shouldBe actor
               eventDateTime shouldBe ts
-              oldAppState shouldBe app.state
+              oldAppState shouldBe app.state.name
               newAppState shouldBe State.Deleted
               requestingAdminEmail shouldBe requestedByEmail
               requestingAdminName shouldBe requestedByEmail.text

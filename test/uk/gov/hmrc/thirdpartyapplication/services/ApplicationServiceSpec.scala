@@ -461,7 +461,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Save.thenAnswer()
 
       val ex: RuntimeException = intercept[RuntimeException](await(underTest.confirmSetupComplete(applicationId, requestedByEmail)))
-      ex.getMessage shouldBe "Transition to 'PRODUCTION' state requires the application to be in 'PRE_PRODUCTION' state, but it was in 'PENDING_GATEKEEPER_APPROVAL'"
+      ex.getMessage shouldBe "Transition to 'Production' state requires the application to be in 'PreProduction' state, but it was in 'PendingGatekeeperApproval'"
     }
   }
 

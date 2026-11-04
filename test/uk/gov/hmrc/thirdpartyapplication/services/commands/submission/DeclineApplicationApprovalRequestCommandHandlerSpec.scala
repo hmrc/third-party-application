@@ -106,7 +106,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
               appId shouldBe returnedApp.id
               evtActor shouldBe Actors.GatekeeperUser(gatekeeperUser)
               eventDateTime shouldBe ts
-              oldAppState shouldBe applicationData.state
+              oldAppState shouldBe applicationData.state.name
               newAppState shouldBe State.Testing
               requestingAdminEmail shouldBe requesterEmail
               requestingAdminName shouldBe requesterName

@@ -54,7 +54,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
     )
 
     def checkSuccessResult()(result: CommandHandler.Success) = {
-      inside(result) { case (returnedApp, events) =>
+      inside(result) { case (_, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
             case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ApplicationDeletedV2 => true
@@ -76,7 +76,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
               appId shouldBe app.id
               evtActor shouldBe actor
               eventDateTime shouldBe instant
-              oldAppState shouldBe app.state
+              oldAppState shouldBe app.state.name
               newAppState shouldBe State.Deleted
               requestingAdminEmail shouldBe actor.email
               requestingAdminName shouldBe actor.email.text

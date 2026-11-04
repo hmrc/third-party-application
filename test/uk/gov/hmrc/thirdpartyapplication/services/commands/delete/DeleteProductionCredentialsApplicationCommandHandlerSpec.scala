@@ -78,7 +78,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
               appId shouldBe app.id
               evtActor shouldBe actor
               eventDateTime shouldBe ts
-              oldAppState shouldBe app.state
+              oldAppState shouldBe app.state.name
               newAppState shouldBe State.Deleted
               requestingAdminEmail.text shouldBe actor.jobId.toLowerCase
               requestingAdminName shouldBe actor.jobId

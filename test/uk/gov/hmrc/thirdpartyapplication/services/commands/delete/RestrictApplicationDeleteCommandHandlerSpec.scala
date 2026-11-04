@@ -22,7 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RestrictApplicationDelete
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -36,7 +36,7 @@ class RestrictApplicationDeleteCommandHandlerSpec extends CommandHandlerBaseSpec
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appWithDeleteAllowed         = storedApp.inSandbox()
+    val appWithDeleteAllowed         = storedApp.inSandbox().copy(deleteRestriction = NoRestriction)
     val timestamp                    = FixedClock.instant
     val deleteRestrictionDoNotDelete = DoNotDelete(reasons, Actors.GatekeeperUser(gatekeeperUser), timestamp)
     val appWithDeleteRestricted      = appWithDeleteAllowed.copy(deleteRestriction = deleteRestrictionDoNotDelete)

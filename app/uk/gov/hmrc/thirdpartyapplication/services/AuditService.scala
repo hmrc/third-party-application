@@ -40,6 +40,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ApplicationDeleted, *}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.EnumJsonHelper.asScreamingSnakeCase
 
 @Singleton
 class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(implicit val ec: ExecutionContext) {
@@ -415,14 +416,14 @@ object AuditAction {
     val name      = "Override added to an application"
     val auditType = "OverrideAddedToApplication"
 
-    def details(anOverride: OverrideFlag) = Map("newOverride" -> OverrideFlag.asOverrideType(anOverride).toString)
+    def details(anOverride: OverrideFlag) = Map("newOverride" -> OverrideFlag.asOverrideType(anOverride).asScreamingSnakeCase)
   }
 
   case object OverrideRemoved extends AuditAction {
     val name      = "Override removed from an application"
     val auditType = "OverrideRemovedFromApplication"
 
-    def details(anOverride: OverrideFlag) = Map("removedOverride" -> OverrideFlag.asOverrideType(anOverride).toString)
+    def details(anOverride: OverrideFlag) = Map("removedOverride" -> OverrideFlag.asOverrideType(anOverride).asScreamingSnakeCase)
   }
 
   case object ApplicationDeleted extends AuditAction {

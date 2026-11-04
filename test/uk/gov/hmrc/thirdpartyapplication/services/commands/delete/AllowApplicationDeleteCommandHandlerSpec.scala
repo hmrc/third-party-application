@@ -22,7 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.{DoNotDelete, NoRestriction}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -38,7 +38,7 @@ class AllowApplicationDeleteCommandHandlerSpec extends CommandHandlerBaseSpec {
 
     val appWithDeleteAllowed         = storedApp.inSandbox()
     val timestamp                    = FixedClock.instant
-    val deleteRestrictionDoNotDelete = DoNotDelete(reasons, Actors.GatekeeperUser(gatekeeperUser), timestamp)
+    val deleteRestrictionDoNotDelete = DeleteRestriction.DoNotDelete(reasons, Actors.GatekeeperUser(gatekeeperUser), timestamp)
     val appWithDeleteBlocked         = appWithDeleteAllowed.copy(deleteRestriction = deleteRestrictionDoNotDelete)
 
     val underTest = new AllowApplicationDeleteCommandHandler(ApplicationRepoMock.aMock)
@@ -65,7 +65,7 @@ class AllowApplicationDeleteCommandHandlerSpec extends CommandHandlerBaseSpec {
     val cmd = ApplicationCommands.AllowApplicationDelete(gatekeeperUser, reasons, instant)
 
     "create correct event for a valid request with app" in new Setup {
-      ApplicationRepoMock.UpdateDeleteRestriction.thenReturnWhen(NoRestriction)(appWithDeleteAllowed)
+      ApplicationRepoMock.UpdateDeleteRestriction.thenReturnWhen(DeleteRestriction.NoRestriction)(appWithDeleteAllowed)
 
       checkSuccessResult(Actors.GatekeeperUser(gatekeeperUser)) {
         underTest.process(appWithDeleteBlocked, cmd)
