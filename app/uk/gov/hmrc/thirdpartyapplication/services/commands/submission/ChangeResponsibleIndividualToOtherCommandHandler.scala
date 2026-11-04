@@ -45,7 +45,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status.*
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.*
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -222,9 +222,9 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
 
     def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
       submission.status match {
-        case Granted(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
-        case Warnings(_, _)      => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
-        case Failed(_, _)        => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
+        case Granted(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TermsOfUseInvitationState.TERMS_OF_USE_V2)
+        case Warnings(_, _)      => termsOfUseInvitationRepository.updateState(applicationId, TermsOfUseInvitationState.WARNINGS)
+        case Failed(_, _)        => termsOfUseInvitationRepository.updateState(applicationId, TermsOfUseInvitationState.FAILED)
         case _                   => Future.successful(HasSucceeded)
       }
     }

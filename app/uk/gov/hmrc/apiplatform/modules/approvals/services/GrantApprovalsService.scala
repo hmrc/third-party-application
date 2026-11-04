@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status.*
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.*
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
@@ -60,10 +60,10 @@ class GrantApprovalsService @Inject() (
 
   private def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
     submission.status match {
-      case Granted(_, _, _, _)             => termsOfUseInvitationService.updateStatus(applicationId, TERMS_OF_USE_V2)
-      case GrantedWithWarnings(_, _, _, _) => termsOfUseInvitationService.updateStatus(applicationId, TERMS_OF_USE_V2_WITH_WARNINGS)
-      case Warnings(_, _)                  => termsOfUseInvitationService.updateStatus(applicationId, WARNINGS)
-      case Failed(_, _)                    => termsOfUseInvitationService.updateStatus(applicationId, FAILED)
+      case Granted(_, _, _, _)             => termsOfUseInvitationService.updateStatus(applicationId, TermsOfUseInvitationState.TERMS_OF_USE_V2)
+      case GrantedWithWarnings(_, _, _, _) => termsOfUseInvitationService.updateStatus(applicationId, TermsOfUseInvitationState.TERMS_OF_USE_V2_WITH_WARNINGS)
+      case Warnings(_, _)                  => termsOfUseInvitationService.updateStatus(applicationId, TermsOfUseInvitationState.WARNINGS)
+      case Failed(_, _)                    => termsOfUseInvitationService.updateStatus(applicationId, TermsOfUseInvitationState.FAILED)
       case Answering(_, _)                 => termsOfUseInvitationService.updateResetBackToEmailSent(applicationId)
       case _                               => successful(HasSucceeded)
     }

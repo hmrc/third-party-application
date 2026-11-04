@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.*
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
@@ -58,9 +58,9 @@ class TermsOfUseInvitationOverdueJobSpec extends AsyncHmrcSpec with BeforeAndAft
     val startDate3 = nowInstant.minus(32, ChronoUnit.DAYS)
     val dueBy3     = startDate3.plus(21, ChronoUnit.DAYS)
 
-    val touInvite1 = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
-    val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, EMAIL_SENT)
-    val touInvite3 = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, REMINDER_EMAIL_SENT)
+    val touInvite1 = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, TermsOfUseInvitationState.EMAIL_SENT)
+    val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, TermsOfUseInvitationState.EMAIL_SENT)
+    val touInvite3 = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, TermsOfUseInvitationState.REMINDER_EMAIL_SENT)
 
     val initialDelay = FiniteDuration(6, MINUTES)
     val interval     = FiniteDuration(8, HOURS)
@@ -76,8 +76,8 @@ class TermsOfUseInvitationOverdueJobSpec extends AsyncHmrcSpec with BeforeAndAft
 
       await(job.runJob)
 
-      TermsOfUseInvitationRepositoryMock.FetchByStatusesBeforeDueBy.verifyCalledWith(nowInstant, EMAIL_SENT, REMINDER_EMAIL_SENT)
-      TermsOfUseInvitationRepositoryMock.UpdateState.verifyCalledWith(applicationId1, OVERDUE)
+      TermsOfUseInvitationRepositoryMock.FetchByStatusesBeforeDueBy.verifyCalledWith(nowInstant, TermsOfUseInvitationState.EMAIL_SENT, TermsOfUseInvitationState.REMINDER_EMAIL_SENT)
+      TermsOfUseInvitationRepositoryMock.UpdateState.verifyCalledWith(applicationId1, TermsOfUseInvitationState.OVERDUE)
     }
 
     "update state of database record for multiple records" in new Setup {
@@ -89,10 +89,10 @@ class TermsOfUseInvitationOverdueJobSpec extends AsyncHmrcSpec with BeforeAndAft
 
       await(job.runJob)
 
-      TermsOfUseInvitationRepositoryMock.FetchByStatusesBeforeDueBy.verifyCalledWith(nowInstant, EMAIL_SENT, REMINDER_EMAIL_SENT)
-      TermsOfUseInvitationRepositoryMock.UpdateState.verifyCalledWith(applicationId1, OVERDUE)
-      TermsOfUseInvitationRepositoryMock.UpdateState.verifyCalledWith(applicationId2, OVERDUE)
-      TermsOfUseInvitationRepositoryMock.UpdateState.verifyCalledWith(applicationId3, OVERDUE)
+      TermsOfUseInvitationRepositoryMock.FetchByStatusesBeforeDueBy.verifyCalledWith(nowInstant, TermsOfUseInvitationState.EMAIL_SENT, TermsOfUseInvitationState.REMINDER_EMAIL_SENT)
+      TermsOfUseInvitationRepositoryMock.UpdateState.verifyCalledWith(applicationId1, TermsOfUseInvitationState.OVERDUE)
+      TermsOfUseInvitationRepositoryMock.UpdateState.verifyCalledWith(applicationId2, TermsOfUseInvitationState.OVERDUE)
+      TermsOfUseInvitationRepositoryMock.UpdateState.verifyCalledWith(applicationId3, TermsOfUseInvitationState.OVERDUE)
     }
 
     "not update state if no application record" in new Setup {
@@ -101,20 +101,20 @@ class TermsOfUseInvitationOverdueJobSpec extends AsyncHmrcSpec with BeforeAndAft
 
       await(job.runJob)
 
-      TermsOfUseInvitationRepositoryMock.FetchByStatusesBeforeDueBy.verifyCalledWith(nowInstant, EMAIL_SENT, REMINDER_EMAIL_SENT)
+      TermsOfUseInvitationRepositoryMock.FetchByStatusesBeforeDueBy.verifyCalledWith(nowInstant, TermsOfUseInvitationState.EMAIL_SENT, TermsOfUseInvitationState.REMINDER_EMAIL_SENT)
       TermsOfUseInvitationRepositoryMock.UpdateState.verifyNeverCalled()
     }
 
     "not update state if application record has state of DELETED" in new Setup with StoredApplicationFixtures {
       val deletedApp   = storedApp.withState(appStateDeleted)
-      val touInviteDel = TermsOfUseInvitation(applicationId, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
+      val touInviteDel = TermsOfUseInvitation(applicationId, startDate1, startDate1, dueBy1, None, TermsOfUseInvitationState.EMAIL_SENT)
 
       TermsOfUseInvitationRepositoryMock.FetchByStatusesBeforeDueBy.thenReturn(List(touInviteDel))
       ApplicationRepoMock.Fetch.thenReturn(deletedApp)
 
       await(job.runJob)
 
-      TermsOfUseInvitationRepositoryMock.FetchByStatusesBeforeDueBy.verifyCalledWith(nowInstant, EMAIL_SENT, REMINDER_EMAIL_SENT)
+      TermsOfUseInvitationRepositoryMock.FetchByStatusesBeforeDueBy.verifyCalledWith(nowInstant, TermsOfUseInvitationState.EMAIL_SENT, TermsOfUseInvitationState.REMINDER_EMAIL_SENT)
       TermsOfUseInvitationRepositoryMock.UpdateState.verifyNeverCalled()
     }
   }

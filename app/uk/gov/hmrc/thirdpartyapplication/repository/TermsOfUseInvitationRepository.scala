@@ -37,7 +37,7 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.thirdpartyapplication.models.*
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{TermsOfUseInvitationState, *}
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
@@ -136,7 +136,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
   def updateReminderSent(applicationId: ApplicationId): Future[HasSucceeded] = {
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(
-      Updates.set("status", Codecs.toBson(REMINDER_EMAIL_SENT)),
+      Updates.set("status", Codecs.toBson(TermsOfUseInvitationState.REMINDER_EMAIL_SENT)),
       Updates.set("reminderSent", instant),
       Updates.set("lastUpdated", instant)
     )
@@ -148,7 +148,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
   def updateResetBackToEmailSent(applicationId: ApplicationId, newDueBy: Instant): Future[HasSucceeded] = {
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(
-      Updates.set("status", Codecs.toBson(EMAIL_SENT)),
+      Updates.set("status", Codecs.toBson(TermsOfUseInvitationState.EMAIL_SENT)),
       Updates.set("dueBy", newDueBy),
       Updates.set("lastUpdated", instant)
     )
@@ -184,13 +184,13 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
 
     def getFilterState(filter: TermsOfUseStatusFilter): TermsOfUseInvitationState = {
       filter match {
-        case EmailSent                => EMAIL_SENT
-        case ReminderEmailSent        => REMINDER_EMAIL_SENT
-        case Overdue                  => OVERDUE
-        case Warnings                 => WARNINGS
-        case Failed                   => FAILED
-        case TermsOfUseV2WithWarnings => TERMS_OF_USE_V2_WITH_WARNINGS
-        case TermsOfUseV2             => TERMS_OF_USE_V2
+        case EmailSent                => TermsOfUseInvitationState.EMAIL_SENT
+        case ReminderEmailSent        => TermsOfUseInvitationState.REMINDER_EMAIL_SENT
+        case Overdue                  => TermsOfUseInvitationState.OVERDUE
+        case Warnings                 => TermsOfUseInvitationState.WARNINGS
+        case Failed                   => TermsOfUseInvitationState.FAILED
+        case TermsOfUseV2WithWarnings => TermsOfUseInvitationState.TERMS_OF_USE_V2_WITH_WARNINGS
+        case TermsOfUseV2             => TermsOfUseInvitationState.TERMS_OF_USE_V2
       }
     }
 

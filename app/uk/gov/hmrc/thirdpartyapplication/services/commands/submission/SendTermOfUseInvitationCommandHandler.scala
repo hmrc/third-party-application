@@ -33,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.*
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationConfig
@@ -101,7 +101,7 @@ class SendTermsOfUseInvitationCommandHandler @Inject() (
         now,
         now.plus(daysUntilDueWhenCreated.toMinutes, MINUTES),
         None,
-        EMAIL_SENT
+        TermsOfUseInvitationState.EMAIL_SENT
       )
     }
     lazy val noInvitation                                                    = NonEmptyList.one(GenericFailure(s"Failed to create terms of use invitation for application ${app.id}"))

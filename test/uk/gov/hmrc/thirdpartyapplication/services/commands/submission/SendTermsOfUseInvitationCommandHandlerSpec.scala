@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.*
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationConfig
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
@@ -56,7 +56,7 @@ class SendTermsOfUseInvitationCommandHandlerSpec extends CommandHandlerBaseSpec 
     val daysUntilDueWhenCreated = FiniteDuration(21, java.util.concurrent.TimeUnit.DAYS)
     val ts                      = FixedClock.instant
     val dueBy                   = ts.plus(daysUntilDueWhenCreated.toMinutes, MINUTES)
-    val invite                  = TermsOfUseInvitation(app.id, ts, ts, dueBy, None, EMAIL_SENT)
+    val invite                  = TermsOfUseInvitation(app.id, ts, ts, dueBy, None, TermsOfUseInvitationState.EMAIL_SENT)
 
     val underTest = new SendTermsOfUseInvitationCommandHandler(
       ApplicationRepoMock.aMock,

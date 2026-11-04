@@ -43,7 +43,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule, QueryServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.*
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, *}
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
@@ -71,7 +71,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
     implicit val headers: HeaderCarrier = HeaderCarrier()
 
     val nowInstant = instant
-    val invite     = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, EMAIL_SENT)
+    val invite     = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, TermsOfUseInvitationState.EMAIL_SENT)
 
     lazy val underTest =
       new GatekeeperController(

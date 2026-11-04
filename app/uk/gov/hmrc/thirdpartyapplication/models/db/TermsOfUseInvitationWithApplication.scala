@@ -23,7 +23,7 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{EMAIL_SENT, TermsOfUseInvitationState}
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 
 final case class TermsOfUseInvitationWithApplication(
     applicationId: ApplicationId,
@@ -31,7 +31,7 @@ final case class TermsOfUseInvitationWithApplication(
     lastUpdated: Instant,
     dueBy: Instant,
     reminderSent: Option[Instant] = None,
-    status: TermsOfUseInvitationState = EMAIL_SENT,
+    status: TermsOfUseInvitationState = TermsOfUseInvitationState.EMAIL_SENT,
     applications: Set[TermsOfUseApplication]
   ) {
 

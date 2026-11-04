@@ -42,7 +42,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status.*
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.*
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -198,7 +198,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
 
     def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
       submission.status match {
-        case Answering(_, _) => termsOfUseInvitationRepository.updateState(applicationId, EMAIL_SENT)
+        case Answering(_, _) => termsOfUseInvitationRepository.updateState(applicationId, TermsOfUseInvitationState.EMAIL_SENT)
         case _               => Future.successful(HasSucceeded)
       }
     }
