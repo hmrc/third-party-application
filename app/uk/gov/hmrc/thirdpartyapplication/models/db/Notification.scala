@@ -18,25 +18,33 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import java.time.Instant
 
-import play.api.libs.json.Format
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+  import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
 
-object NotificationStatus extends Enumeration {
-  type NotificationStatus = Value
-  val SENT, FAILED = Value
-
-  implicit val formatNotificationStatus: Format[NotificationStatus] = ??? // EnumJson.enumFormat(NotificationStatus)
+enum NotificationStatus {
+  case SENT, FAILED
 }
 
-object NotificationType extends Enumeration {
-  type NotificationType = Value
-  val PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING = Value
+object NotificationStatus {
+  def apply(text: String): Option[NotificationStatus] = NotificationStatus.values.find(_.toString().equalsIgnoreCase(text))
 
-  implicit val formatNotificationType: Format[NotificationType] = ??? // EnumJson.enumFormat(NotificationType)
+  def unsafeApply(text: String): NotificationStatus = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid Notification Status"))
+
+  import play.api.libs.json.Format
+  given Format[NotificationStatus] = SimpleEnumJsonFormatting.createStringFormatFor("Notification Status", apply)
 }
 
-import NotificationStatus._
-import NotificationType._
+enum NotificationType {
+  case PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING
+}
+
+object NotificationType {
+  def apply(text: String): Option[NotificationType] = NotificationType.values.find(_.toString().equalsIgnoreCase(text))
+
+  def unsafeApply(text: String): NotificationType = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid Notification Type"))
+
+  import play.api.libs.json.Format
+  given Format[NotificationType] = SimpleEnumJsonFormatting.createStringFormatFor("Notification Type", apply)
+}
 
 case class Notification(applicationId: ApplicationId, lastUpdated: Instant, notificationType: NotificationType, status: NotificationStatus)
