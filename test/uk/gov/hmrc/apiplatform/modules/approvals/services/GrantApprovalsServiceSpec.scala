@@ -83,13 +83,10 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     val underTest =
       new GrantApprovalsService(
-        AuditServiceMock.aMock,
-        ApplicationRepoMock.aMock,
         StateHistoryRepoMock.aMock,
         TermsOfUseInvitationServiceMock.aMock,
         ResponsibleIndividualVerificationRepositoryMock.aMock,
         SubmissionsServiceMock.aMock,
-        EmailConnectorMock.aMock,
         clock
       )
   }
@@ -194,7 +191,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       TermsOfUseInvitationServiceMock.UpdateResetBackToEmailSent.thenReturn()
       ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
 
-      val result = await(underTest.deleteTouUplift(applicationProduction, pendingRISubmission, gatekeeperUserName))
+      val result = await(underTest.deleteTouUplift(applicationProduction))
 
       result should matchPattern {
         case GrantApprovalsService.Actioned(app) =>
@@ -205,7 +202,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to delete the specified submission if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.deleteTouUplift(applicationProduction.withState(appStateTesting), pendingRISubmission, gatekeeperUserName))
+      val result = await(underTest.deleteTouUplift(applicationProduction.withState(appStateTesting)))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }

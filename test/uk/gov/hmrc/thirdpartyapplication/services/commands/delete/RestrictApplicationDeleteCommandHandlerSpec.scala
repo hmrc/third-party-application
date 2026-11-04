@@ -73,7 +73,6 @@ class RestrictApplicationDeleteCommandHandlerSpec extends CommandHandlerBaseSpec
     }
 
     "return an error if delete is already restricted" in new Setup {
-
       checkFailsWith("Delete is already restricted") {
         underTest.process(appWithDeleteRestricted, cmd)
       }

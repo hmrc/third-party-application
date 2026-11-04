@@ -104,8 +104,8 @@ class ApprovalsController @Inject() (
   def deleteTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
     import GrantApprovalsService._
 
-    withJsonBodyFromAnyContent[TouDeleteRequest] { deleteRequest =>
-      grantApprovalService.deleteTouUplift(request.application, request.submission, deleteRequest.gatekeeperUserName)
+    withJsonBodyFromAnyContent[TouDeleteRequest] { _ =>
+      grantApprovalService.deleteTouUplift(request.application)
         .map(_ match {
           case Actioned(application)                  => Ok(Json.toJson(application.asAppWithCollaborators))
           case RejectedDueToIncorrectApplicationState =>

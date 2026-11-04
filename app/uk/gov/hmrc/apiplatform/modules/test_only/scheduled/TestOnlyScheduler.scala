@@ -23,7 +23,7 @@ import play.api.Application
 import play.api.inject.ApplicationLifecycle
 
 import uk.gov.hmrc.apiplatform.modules.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
-import uk.gov.hmrc.thirdpartyapplication.scheduled._
+import uk.gov.hmrc.thirdpartyapplication.scheduled.*
 
 @Singleton
 class TestOnlyScheduler @Inject() (

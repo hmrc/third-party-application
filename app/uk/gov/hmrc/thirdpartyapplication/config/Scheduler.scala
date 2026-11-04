@@ -26,7 +26,7 @@ import play.api.{Application, LoggerLike}
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
-import uk.gov.hmrc.thirdpartyapplication.scheduled._
+import uk.gov.hmrc.thirdpartyapplication.scheduled.*
 
 class SchedulerModule extends AbstractModule with ApplicationLogger {
 
