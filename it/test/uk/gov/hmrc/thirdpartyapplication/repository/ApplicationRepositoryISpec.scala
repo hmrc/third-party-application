@@ -38,7 +38,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators.{Administrator, Developer}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType.NoRestriction
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
@@ -46,6 +45,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util._
+import org.mongodb.scala.ObservableFuture
+
 
 object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock with CommonApplicationId with CollaboratorTestData {
   val clientId       = ClientId.random
@@ -253,6 +254,7 @@ class ApplicationRepositoryISpec
     import org.mongodb.scala.result.InsertOneResult
 
     def saveMongoJson(rawJson: JsObject): InsertOneResult = {
+      import org.mongodb.scala.SingleObservableFuture
       await(mongoDatabase.getCollection("application").insertOne(Document(rawJson.toString())).toFuture())
     }
 
@@ -301,7 +303,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      savedApplication.deleteRestriction.deleteRestrictionType shouldBe NO_RESTRICTION
+      savedApplication.deleteRestriction.deleteRestrictionType shouldBe DeleteRestrictionType.NoRestriction
 
       val updatedApplication = await(
         applicationRepository.updateDeleteRestriction(
@@ -331,7 +333,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      val updatedRateLimit   = RateLimitTier.GOLD
+      val updatedRateLimit   = RateLimitTier.Gold
       val updatedApplication = await(
         applicationRepository.updateApplicationRateLimit(
           applicationId,
@@ -371,7 +373,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      val updatedRateLimit   = RateLimitTier.GOLD
+      val updatedRateLimit   = RateLimitTier.Gold
       val updatedApplication = await(
         applicationRepository.updateApplicationRateLimit(
           applicationId,
@@ -978,9 +980,9 @@ class ApplicationRepositoryISpec
           .toFuture()
       )
 
-      val sanitisedApp1Name = sanitiseGrafanaNodeName(application1.name.value)
-      val sanitisedApp2Name = sanitiseGrafanaNodeName(application2.name.value)
-      val sanitisedApp3Name = sanitiseGrafanaNodeName(application3.name.value)
+      val sanitisedApp1Name = sanitiseGrafanaNodeName(application1.name)
+      val sanitisedApp2Name = sanitiseGrafanaNodeName(application2.name)
+      val sanitisedApp3Name = sanitiseGrafanaNodeName(application3.name)
 
       val result =
         await(applicationRepository.getApplicationWithSubscriptionCount())
@@ -1423,7 +1425,7 @@ class ApplicationRepositoryISpec
     val existingCollaborators = app.collaborators
 
     val appWithNewCollaborator = await(applicationRepository.addCollaborator(applicationId, collaborator))
-    appWithNewCollaborator.collaborators should contain only (existingCollaborators.toList ++ List(collaborator)*)
+    appWithNewCollaborator.collaborators should contain only (existingCollaborators.toList ++ List(collaborator))
   }
 
   "handle removeCollaborator correctly" in {
@@ -1438,7 +1440,7 @@ class ApplicationRepositoryISpec
     val userIdToDelete        = existingCollaborators.head.userId
 
     val appWithOutDeletedCollaborator = await(applicationRepository.removeCollaborator(applicationId, userIdToDelete))
-    appWithOutDeletedCollaborator.collaborators should contain only (existingCollaborators.toList.filterNot(_.userId == userIdToDelete)*)
+    appWithOutDeletedCollaborator.collaborators should contain only(existingCollaborators.toList.filterNot(_.userId == userIdToDelete))
   }
 
   "handle ProductionAppPrivacyPolicyLocationChanged correctly" in {
@@ -1587,7 +1589,7 @@ class ApplicationRepositoryISpec
     await(applicationRepository.save(app))
 
     val appWithUpdatedName = await(applicationRepository.updateApplicationName(applicationId, newName))
-    appWithUpdatedName.name.value shouldBe newName
+    appWithUpdatedName.name shouldBe newName
     appWithUpdatedName.normalisedName shouldBe newName.toLowerCase
 
     await(applicationRepository.hardDelete(applicationId))
@@ -1665,7 +1667,7 @@ class ApplicationRepositoryISpec
       val stateHistory3 = saveHistoryStatePair(app.id, State.PendingGatekeeperApproval, State.Production, Duration.ofHours(3))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results shouldBe List(ApplicationWithStateHistory(app.id, app.name.value, 2, List(stateHistory1, stateHistory2, stateHistory3)))
+      results shouldBe List(ApplicationWithStateHistory(app.id, app.name, 2, List(stateHistory1, stateHistory2, stateHistory3)))
     }
 
     "return app state history correctly for old journey app" in {
@@ -1675,7 +1677,7 @@ class ApplicationRepositoryISpec
       val stateHistory3 = saveHistoryStatePair(app.id, State.PendingGatekeeperApproval, State.Production, Duration.ofHours(3))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results shouldBe List(ApplicationWithStateHistory(app.id, app.name.value, 1, List(stateHistory1, stateHistory2, stateHistory3)))
+      results shouldBe List(ApplicationWithStateHistory(app.id, app.name, 1, List(stateHistory1, stateHistory2, stateHistory3)))
     }
 
     "return app state histories sorted correctly" in {
@@ -1690,9 +1692,9 @@ class ApplicationRepositoryISpec
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
       results shouldBe List(
-        ApplicationWithStateHistory(app1.id, app1.name.value, 2, List(app1History)),
-        ApplicationWithStateHistory(app3.id, app2.name.value, 2, List(app3History)),
-        ApplicationWithStateHistory(app2.id, app3.name.value, 2, List(app2History))
+        ApplicationWithStateHistory(app1.id, app1.name, 2, List(app1History)),
+        ApplicationWithStateHistory(app3.id, app2.name, 2, List(app3History)),
+        ApplicationWithStateHistory(app2.id, app3.name, 2, List(app2History))
       )
     }
 
@@ -1705,7 +1707,7 @@ class ApplicationRepositoryISpec
       saveHistory(sandboxApp.id, None, State.Production, Duration.ofHours(1))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results shouldBe List(ApplicationWithStateHistory(prodApp.id, prodApp.name.value, 2, List(stateHistory1, stateHistory2)))
+      results shouldBe List(ApplicationWithStateHistory(prodApp.id, prodApp.name, 2, List(stateHistory1, stateHistory2)))
     }
 
     "do not return app state history for a deleted app" in {

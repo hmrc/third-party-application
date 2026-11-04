@@ -122,8 +122,10 @@ class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(im
   }
 
   def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Long] = {
+    import org.mongodb.scala.SingleObservableFuture
+
     collection.deleteOne(equal("applicationId", Codecs.toBson(applicationId)))
       .toFuture()
-      .map(xs => xs.map(_.getDeletedCount).sum)
+      .map(_.getDeletedCount)
   }
 }

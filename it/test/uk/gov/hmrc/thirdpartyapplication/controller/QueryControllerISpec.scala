@@ -37,6 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.services.QueryP
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, ApplicationRepositoryTestData}
 import uk.gov.hmrc.thirdpartyapplication.util.WiremockSugar
+import org.mongodb.scala.ObservableFuture
 
 class QueryControllerISpec extends ServerBaseISpec with WiremockSugar with BeforeAndAfterEach with ApplicationLogger with FixedClock with ClientIdFixtures with UserIdFixtures
     with ApplicationWithCollaboratorsFixtures with ApplicationRepositoryTestData {
@@ -85,9 +86,7 @@ class QueryControllerISpec extends ServerBaseISpec with WiremockSugar with Befor
   val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
   def asParams(qry: ApplicationQuery): Map[String, String] = {
-    QueryParamsToQueryStringMap.toQuery(qry).map {
-      case (k, vs) => k -> vs.mkString
-    }
+    QueryParamsToQueryStringMap.toHttpQueryString(qry)
   }
 
   val singleQry    = asParams(ApplicationQueries.applicationByClientId(clientIdOne))

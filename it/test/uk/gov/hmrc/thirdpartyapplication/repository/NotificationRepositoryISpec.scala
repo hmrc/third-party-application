@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{Notification, NotificationStatus, NotificationType}
 import uk.gov.hmrc.thirdpartyapplication.util._
+import org.mongodb.scala.SingleObservableFuture
 
 object NotificationRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random
@@ -134,7 +135,7 @@ class NotificationRepositoryISpec
       val result = await(notificationRepository.deleteAllByApplicationId(applicationId1))
 
       result shouldBe HasSucceeded
-      await(notificationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) shouldBe 1
+      await(notificationRepository.collection.countDocuments().toFuture()) shouldBe 1L
     }
 
     "not fail when deleting a non-existing record" in {

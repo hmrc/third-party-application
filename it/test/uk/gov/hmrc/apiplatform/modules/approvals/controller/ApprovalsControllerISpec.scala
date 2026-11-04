@@ -38,6 +38,8 @@ import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util._
+import org.mongodb.scala.ObservableFuture
+import play.api.libs.ws.WSBodyWritables.writeableOf_String
 
 class ApprovalsControllerISpec
     extends ServerBaseISpec
@@ -117,6 +119,7 @@ class ApprovalsControllerISpec
       )
 
       result.status shouldBe NOT_FOUND
+      import play.api.libs.ws.WSBodyReadables.readableAsString
       result.body shouldBe s"""{"code":"APPLICATION_NOT_FOUND","message":"Application $randomAppId doesn't exist"}"""
     }
 

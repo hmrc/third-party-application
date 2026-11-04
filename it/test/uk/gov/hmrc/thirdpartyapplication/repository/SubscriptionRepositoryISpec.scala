@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
 import uk.gov.hmrc.thirdpartyapplication.util._
+import org.mongodb.scala.ObservableFuture
 
 class SubscriptionRepositoryISpec
     extends ServerBaseISpec
@@ -225,7 +226,7 @@ class SubscriptionRepositoryISpec
 
       forAll(scenarios) { (apiIdentifier, expectedApplications) =>
         val applications: Set[ApplicationId] = await(subscriptionRepository.getSubscribers(apiIdentifier))
-        applications should contain only (expectedApplications*)
+        applications should contain only (expectedApplications)
       }
     }
   }

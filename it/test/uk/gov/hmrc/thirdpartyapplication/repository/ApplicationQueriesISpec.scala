@@ -40,6 +40,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedApplicationWithOptionalToken, StoredApplication}
 import uk.gov.hmrc.thirdpartyapplication.util._
+import org.mongodb.scala.ObservableFuture
 
 class ApplicationQueriesISpec
     extends ServerBaseISpec
@@ -753,7 +754,7 @@ class ApplicationQueriesISpec
   }
 
   "single app query with state history" in {
-    import LaxEmailAddress.StringSyntax
+    import LaxEmailAddress.StringSyntax.toLaxEmail
 
     val application      = anApplicationDataForTest(
       id = ApplicationId.random,
@@ -890,7 +891,7 @@ class ApplicationQueriesISpec
   }
 
   "general query with state history" in {
-    import LaxEmailAddress.StringSyntax
+    import LaxEmailAddress.StringSyntax.toLaxEmail
 
     val application1     = anApplicationDataForTest(
       id = ApplicationId.random,

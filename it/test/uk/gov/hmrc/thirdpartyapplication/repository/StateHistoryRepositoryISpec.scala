@@ -31,6 +31,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, Appl
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.util._
+import org.mongodb.scala.ObservableFuture
+import org.mongodb.scala.SingleObservableFuture
 
 object StateHistoryRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random

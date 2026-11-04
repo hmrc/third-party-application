@@ -41,6 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util._
+import org.mongodb.scala.ObservableFuture
 
 class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherValues with CollaboratorTestData with Inside with FixedClock {
 
@@ -558,7 +559,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
 
       Given("I have updated the rate limit to GOLD")
       apiPlatformEventsStub.willReceiveChangeRateLimitEvent()
-      val subcmd   = ApplicationCommands.ChangeRateLimitTier("admin@example.com", instant, RateLimitTier.GOLD)
+      val subcmd   = ApplicationCommands.ChangeRateLimitTier("admin@example.com", instant, RateLimitTier.Gold)
       val response = sendApplicationCommand(subcmd, application, Seq(Header.authorization("Bearer", UUID.randomUUID.toString)))
       response.body.value.contains("\"rateLimitTier\":\"GOLD\"") shouldBe true
 

@@ -34,6 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ActualAnswer.Te
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ActualAnswer, Submission}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.util._
+import org.mongodb.scala.ObservableFuture
 
 class SubmissionsDAOISpec
     extends ServerBaseISpec
@@ -77,12 +78,12 @@ class SubmissionsDAOISpec
         await(submissionsDao.save(aSubmission))
       }
 
+      import org.mongodb.scala.SingleObservableFuture
       await(
         submissionsRepository.collection
           .countDocuments()
           .toFuture()
-          .map(x => x.toInt)
-      ) shouldBe 1
+      ) shouldBe 1L
     }
   }
 
