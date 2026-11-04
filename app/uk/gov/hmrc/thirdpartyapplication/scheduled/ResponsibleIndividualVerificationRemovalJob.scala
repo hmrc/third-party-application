@@ -72,7 +72,7 @@ class ResponsibleIndividualVerificationRemovalJob @Inject() (
 
     logger.info(s"Responsible individual verification timed out for application ${verificationDueForRemoval.applicationName} (started at ${verificationDueForRemoval.createdOn})")
     (for {
-      savedApp <- commandDispatcher.dispatch(verificationDueForRemoval.applicationId, request, Set.empty)
+      _ <- commandDispatcher.dispatch(verificationDueForRemoval.applicationId, request, Set.empty)
     } yield HasSucceeded).value
   }
 }
